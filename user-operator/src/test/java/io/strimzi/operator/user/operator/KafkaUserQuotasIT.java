@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.I0Itec.zkclient.ZkClient;
@@ -22,8 +21,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -295,13 +294,12 @@ public class KafkaUserQuotasIT {
 
         assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(false));
 
-        Checkpoint async = testContext.checkpoint();
         kuq.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, quotas)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
                 assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
                 testDescribeUserQuotas(username, quotas);
-                async.flag();
+                testContext.completeNow();
             })));
     }
 
@@ -332,13 +330,12 @@ public class KafkaUserQuotasIT {
         updatedQuotas.setRequestPercentage(75);
         updatedQuotas.setControllerMutationRate(10d);
 
-        Checkpoint async = testContext.checkpoint();
         kuq.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, updatedQuotas)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
                 assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
                 testDescribeUserQuotas(username, updatedQuotas);
-                async.flag();
+                testContext.completeNow();
             })));
     }
 
@@ -368,13 +365,12 @@ public class KafkaUserQuotasIT {
         updatedQuotas.setProducerByteRate(3_000_000);
         updatedQuotas.setControllerMutationRate(20d);
 
-        Checkpoint async = testContext.checkpoint();
         kuq.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, updatedQuotas)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
                 assertThat(isPathExist("/config/users/" + encodeUsername(username)), is(true));
                 testDescribeUserQuotas(username, updatedQuotas);
-                async.flag();
+                testContext.completeNow();
             })));
 
     }
@@ -400,11 +396,10 @@ public class KafkaUserQuotasIT {
         assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(true));
         testDescribeUserQuotas(username, initialQuotas);
 
-        Checkpoint async = testContext.checkpoint();
         kuq.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, null)
             .onComplete(testContext.succeeding(rr -> testContext.verify(() -> {
                 assertThat(kuq.exists(Reconciliation.DUMMY_RECONCILIATION, username), is(false));
-                async.flag();
+                testContext.completeNow();
             })));
     }
 
@@ -413,13 +408,10 @@ public class KafkaUserQuotasIT {
     }
 
     private String encodeUsername(String username) {
-        try {
-            return URLEncoder.encode(username, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Failed to encode username", e);
-        }
+        return URLEncoder.encode(username, StandardCharsets.UTF_8);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void createScramShaUser(String username, String password) {
         // creating SCRAM-SHA user upfront to check it works because it shares same path in ZK as quotas
         ScramShaCredentials scramShaCred = new ScramShaCredentials(kafkaCluster.zKConnectString(), 6_000);

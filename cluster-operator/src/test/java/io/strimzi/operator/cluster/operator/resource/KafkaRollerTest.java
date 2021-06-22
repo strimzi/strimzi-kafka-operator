@@ -4,19 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -30,7 +17,6 @@ import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.Admin;
@@ -44,6 +30,19 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static io.vertx.core.Future.failedFuture;
 import static io.vertx.core.Future.succeededFuture;
@@ -154,7 +153,7 @@ public class KafkaRollerTest {
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 KafkaRoller.FatalProblem.class, "Error while waiting for restarted pod c-kafka-1 to become ready",
-                asList(1));
+                List.of(1));
         // On the next reconciliation only pod 2 (controller) would need rolling, and we expect it to fail in the same way
         kafkaRoller = rollerWithControllers(sts, podOps, 2);
         clearRestarted();
@@ -175,7 +174,7 @@ public class KafkaRollerTest {
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 KafkaRoller.FatalProblem.class, "Error while waiting for restarted pod c-kafka-3 to become ready",
-                asList(3));
+                singletonList(3));
         // On the next reconciliation only pods 2 (controller) and 4 would need rolling, and we expect it to fail in the same way
         kafkaRoller = rollerWithControllers(sts, podOps, 2);
         clearRestarted();
@@ -449,19 +448,17 @@ public class KafkaRollerTest {
 
     private void doSuccessfulConfigUpdate(VertxTestContext testContext, TestingKafkaRoller kafkaRoller,
                                             List<Integer> expected) {
-        Checkpoint async = testContext.checkpoint();
         kafkaRoller.rollingRestart(pod -> emptyList())
                 .onComplete(testContext.succeeding(v -> {
                     testContext.verify(() -> assertThat(restarted(), is(expected)));
                     assertNoUnclosedAdminClient(testContext, kafkaRoller);
-                    async.flag();
+                    testContext.completeNow();
                 }));
     }
 
     private void doSuccessfulRollingRestart(VertxTestContext testContext, TestingKafkaRoller kafkaRoller,
                                     Collection<Integer> podsToRestart,
                                     List<Integer> expected) {
-        Checkpoint async = testContext.checkpoint();
         kafkaRoller.rollingRestart(pod -> {
             if (podsToRestart.contains(podName2Number(pod.getMetadata().getName()))) {
                 return singletonList("roll");
@@ -472,7 +469,7 @@ public class KafkaRollerTest {
             .onComplete(testContext.succeeding(v -> {
                 testContext.verify(() -> assertThat(restarted(), is(expected)));
                 assertNoUnclosedAdminClient(testContext, kafkaRoller);
-                async.flag();
+                testContext.completeNow();
             }));
     }
 
@@ -657,7 +654,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Config brokerConfig(int brokerId) throws ForceableProblem, InterruptedException {
+        protected Config brokerConfig(int brokerId) throws ForceableProblem {
             ForceableProblem problem = getConfigsException.apply(brokerId);
             if (problem != null) {
                 throw problem;
@@ -665,12 +662,12 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Config brokerLogging(int brokerId) throws ForceableProblem, InterruptedException {
+        protected Config brokerLogging(int brokerId) {
             return new Config(emptyList());
         }
 
         @Override
-        protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem, InterruptedException {
+        protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem {
             ForceableProblem problem = alterConfigsException.apply(podId);
             if (problem != null) {
                 throw problem;

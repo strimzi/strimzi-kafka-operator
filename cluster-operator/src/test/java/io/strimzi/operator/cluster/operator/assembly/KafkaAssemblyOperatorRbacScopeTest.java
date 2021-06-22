@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.certs.CertManager;
@@ -27,7 +29,6 @@ import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.RoleOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.hamcrest.Description;
@@ -78,7 +79,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
     /**
      * Override KafkaAssemblyOperator to only run reconciliation steps that concern the STRIMZI_RBAC_SCOPE feature
      */
-    class KafkaAssemblyOperatorRolesSubset extends KafkaAssemblyOperator {
+    static class KafkaAssemblyOperatorRolesSubset extends KafkaAssemblyOperator {
         public KafkaAssemblyOperatorRolesSubset(
                 Vertx vertx,
                 PlatformFeaturesAvailability pfa,
@@ -93,12 +94,12 @@ public class KafkaAssemblyOperatorRbacScopeTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return reconcileState.getEntityOperatorDescription()
-                    .compose(state -> state.entityOperatorRole())
-                    .compose(state -> state.entityUserOperatorRole())
-                    .compose(state -> state.entityTopicOperatorRole())
-                    .compose(state -> state.entityOperatorServiceAccount())
-                    .compose(state -> state.entityOperatorTopicOpRoleBindingForRole())
-                    .compose(state -> state.entityOperatorUserOpRoleBindingForRole())
+                    .compose(ReconciliationState::entityOperatorRole)
+                    .compose(ReconciliationState::entityUserOperatorRole)
+                    .compose(ReconciliationState::entityTopicOperatorRole)
+                    .compose(ReconciliationState::entityOperatorServiceAccount)
+                    .compose(ReconciliationState::entityOperatorTopicOpRoleBindingForRole)
+                    .compose(ReconciliationState::entityOperatorUserOpRoleBindingForRole)
                     .map((Void) null);
         }
 
@@ -134,7 +135,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
@@ -155,7 +156,6 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                 supplier,
                 configNamespaceRbacScope);
 
-        Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     List<String> roleBindingNames = roleBindingNameCaptor.getAllValues();
@@ -181,7 +181,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
 
                     verify(supplier.clusterRoleBindingOperator, never()).reconcile(any(), anyString(), any());
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -215,7 +215,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
@@ -236,7 +236,6 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                 supplier,
                 config);
 
-        Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     List<String> roleBindingNames = roleBindingNameCaptor.getAllValues();
@@ -260,7 +259,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                             .withName("test-instance-entity-operator")
                             .build()));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -296,7 +295,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
@@ -325,7 +324,6 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                 supplier,
                 configNamespaceRbacScope);
 
-        Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     List<String> roleBindingNames = roleBindingNameCaptor.getAllValues();
@@ -384,12 +382,12 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                     assertThat(roleNames.get(2), is("test-instance-entity-operator"));
                     assertThat(roles.get(2).getMetadata().getNamespace(), is("another-ns"));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
     public static Matcher<RoleBinding> hasRoleRef(RoleRef roleRef) {
-        return new TypeSafeDiagnosingMatcher<RoleBinding>() {
+        return new TypeSafeDiagnosingMatcher<>() {
 
             @Override
             public void describeTo(final Description description) {
@@ -401,7 +399,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                 boolean matches = roleRef.equals(actual.getRoleRef());
                 if (!matches) {
                     mismatchDescription.appendText(" was ").appendValue(actual.getRoleRef())
-                    .appendText(" in ").appendValue(actual);
+                            .appendText(" in ").appendValue(actual);
                 }
 
                 return matches;

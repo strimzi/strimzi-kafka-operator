@@ -16,7 +16,6 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -37,6 +36,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
 
 
@@ -107,7 +107,6 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
 
         ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
             .onComplete(context.succeeding(rr -> {
                 context.verify(() -> assertThat(rr, instanceOf(ReconcileResult.Noop.class)));
@@ -117,7 +116,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
                 verify(mockResource, never()).create();
                 verify(mockResource, never()).createOrReplace(any());
                 verify(mockCms, never()).createOrReplace(any());
-                async.flag();
+                context.completeNow();
             }));
     }
 
@@ -162,7 +161,6 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
 
         ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient, true);
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, desired)
                 .onComplete(context.succeeding(rr -> {
                     verify(mockResource, times(1)).patch(any(ServiceAccount.class));
@@ -173,7 +171,7 @@ public class ServiceAccountOperatorTest extends AbstractResourceOperatorTest<Kub
                     assertThat(saCaptor.getValue().getMetadata().getLabels().get("lKey"), is("lValue"));
                     assertThat(saCaptor.getValue().getMetadata().getAnnotations().get("aKey"), is("aValue"));
 
-                    async.flag();
+                    context.completeNow();
                 }));
     }
 }

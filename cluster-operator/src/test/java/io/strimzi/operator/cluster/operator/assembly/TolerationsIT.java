@@ -15,7 +15,6 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetDiff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterEach;
@@ -35,7 +34,7 @@ import static org.hamcrest.Matchers.is;
 public class TolerationsIT {
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
-    private String namespace = "kafka-it-2";
+    private final String namespace = "kafka-it-2";
 
     @BeforeEach
     public void beforeEach() {
@@ -88,12 +87,11 @@ public class TolerationsIT {
         client.apps().statefulSets().inNamespace(namespace).create(ss);
         StatefulSet stsk8s = client.apps().statefulSets().inNamespace(namespace).withName("foo").get();
         StatefulSetDiff diff = new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, ss, stsk8s);
-        Checkpoint checkpoint = context.checkpoint();
         context.verify(() -> {
                 assertThat(diff.changesSpecTemplate(), is(false));
                 assertThat(stsk8s.getSpec().getTemplate().getSpec().getTolerations().get(0).getValue(), is(nullValue()));
                 assertThat(ss.getSpec().getTemplate().getSpec().getTolerations().get(0).getValue(), is(nullValue()));
-                checkpoint.flag();
+                context.completeNow();
             }
         );
     }

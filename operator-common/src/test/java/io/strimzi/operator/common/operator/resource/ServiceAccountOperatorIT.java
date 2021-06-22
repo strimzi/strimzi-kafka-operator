@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.hamcrest.Matchers;
@@ -60,7 +59,6 @@ public class ServiceAccountOperatorIT extends AbstractResourceOperatorIT<Kuberne
     @Test
     @Override
     public void testCreateModifyDelete(VertxTestContext context)    {
-        Checkpoint async = context.checkpoint();
         ServiceAccountOperator op = new ServiceAccountOperator(vertx, client, true);
 
         ServiceAccount newResource = getOriginal();
@@ -96,7 +94,7 @@ public class ServiceAccountOperatorIT extends AbstractResourceOperatorIT<Kuberne
                             30_000, () -> op.get(namespace, resourceName) == null)
                             .onComplete(del -> {
                                 assertThat(op.get(namespace, resourceName), Matchers.is(nullValue()));
-                                async.flag();
+                                context.completeNow();
                             })
                     );
                 }));

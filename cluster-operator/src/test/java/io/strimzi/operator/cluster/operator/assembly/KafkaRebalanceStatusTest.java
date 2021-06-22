@@ -24,9 +24,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.is;
 
 public class KafkaRebalanceStatusTest {
 

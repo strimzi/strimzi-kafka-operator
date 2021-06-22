@@ -12,15 +12,13 @@ import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.zookeeper.CreateMode;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -32,76 +30,53 @@ public class ZkImplTest {
 
     private EmbeddedZooKeeper zkServer;
 
-    private static Vertx vertx;
     private Zk zk;
 
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
-    }
-
-    @AfterAll
-    public static void after() {
-        vertx.close();
-    }
-
     @BeforeEach
-    public void setup() throws IOException, InterruptedException {
+    public void setup(Vertx vertx) throws IOException, InterruptedException {
         this.zkServer = new EmbeddedZooKeeper();
         zk = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
     }
 
+    //For fun and games add a VertxTestContext as an injected parameter, and watch Vert.x's Junit code hang the test.
     @AfterEach
-    public void teardown(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
-
+    public void teardown() throws ExecutionException, InterruptedException {
         Promise<Void> zkDisconnected = Promise.promise();
         zk.disconnect(result -> zkDisconnected.complete());
-
-        zkDisconnected.future().compose(v -> {
-            if (this.zkServer != null) {
-                this.zkServer.close();
-            }
-            async.flag();
-            return Future.succeededFuture();
-        });
-
+        zkDisconnected.future().toCompletionStage().toCompletableFuture().get();
     }
 
-    @Disabled
     @Test
-    public void testReconnectOnBounce(VertxTestContext context) throws IOException, InterruptedException {
-        Checkpoint async = context.checkpoint();
+    public void testReconnectOnBounce(Vertx vertx, VertxTestContext context) throws IOException, InterruptedException {
 
         Zk zkImpl = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
         zkServer.restart();
 
-        Promise fooCreated = Promise.promise();
+        Promise<Void> fooCreated = Promise.promise();
 
         zkImpl.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, context.succeeding(v -> fooCreated.complete()));
 
         fooCreated.future().compose(v -> {
             try {
                 zkServer.restart();
-                // TODO Without the sleep this test fails, because there's a race between the creation of /bar
-                // and the reconnection within ZkImpl. We probably need to fix ZkImpl to retry if things fail due to
-                // connection loss, possibly with some limit on the number of retries.
-                // TODO We also need to reset the watches on reconnection.
-                Thread.sleep(2000);
-                zkImpl.create("/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, context.succeeding(vv -> async.flag()));
+                zkImpl.create("/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, x -> { });
             } catch (Exception e) {
                 context.failNow(e);
             }
             return Future.succeededFuture();
-        });
+        }).onComplete(x -> context.completeNow());
 
     }
 
     @Test
     public void testWatchThenUnwatchChildren(VertxTestContext context) {
-        Checkpoint async = context.checkpoint(2);
 
-        Promise fooCreated = Promise.promise();
+        //Left these checkpoints intact because they seem to be relevant to use both.
+        Checkpoint deletionOccurred = context.checkpoint();
+        Checkpoint createOccurred = context.checkpoint();
+
+
+        Promise<Void> fooCreated = Promise.promise();
 
         // Create a node
         zk.create("/foo", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, context.succeeding(v -> fooCreated.complete()));
@@ -111,13 +86,16 @@ public class ZkImplTest {
             zk.watchChildren("/foo", context.succeeding(watchResult -> {
                 if (watchResult.equals(singletonList("bar"))) {
                     zk.unwatchChildren("/foo");
-                    zk.delete("/foo/bar", -1, deleteResult -> async.flag());
+                    zk.delete("/foo/bar", -1, deleteResult -> deletionOccurred.flag());
                 }
             }))
                 .compose(ignored -> {
                     zk.children("/foo",  context.succeeding(lsResult -> {
                         context.verify(() -> assertThat(lsResult, is(emptyList())));
-                        zk.create("/foo/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ig -> async.flag());
+                        zk.create("/foo/bar", null, AclBuilder.PUBLIC, CreateMode.PERSISTENT, ig -> {
+                            //Nota bene - as this is the last checkpoint, flagging it completes the test
+                            createOccurred.flag();
+                        });
                     }));
                     return Future.succeededFuture();
                 });
@@ -127,9 +105,7 @@ public class ZkImplTest {
 
     @Test
     public void testWatchThenUnwatchData(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
-
-        Promise fooCreated = Promise.promise();
+        Promise<Void> fooCreated = Promise.promise();
 
         // Create a node
         byte[] data1 = new byte[]{1};
@@ -137,14 +113,12 @@ public class ZkImplTest {
 
         fooCreated.future().compose(v -> {
             byte[] data2 = {2};
-            return zk.watchData("/foo", context.succeeding(dataWatch -> {
-                context.verify(() -> assertThat(dataWatch, is(data2)));
-            }))
+            return zk.watchData("/foo", context.succeeding(dataWatch -> context.verify(() -> assertThat(dataWatch, is(data2)))))
             .compose(zk -> {
                 zk.getData("/foo", context.succeeding(dataResult -> {
                     context.verify(() -> assertThat(dataResult, is(data1)));
 
-                    zk.setData("/foo", data2, -1, context.succeeding(setResult -> async.flag()));
+                    zk.setData("/foo", data2, -1, context.succeeding(setResult -> context.completeNow()));
                 }));
                 return Future.succeededFuture();
             });
@@ -153,7 +127,6 @@ public class ZkImplTest {
 
     @Test
     public void testPathExists(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
 
         Promise<Void> fooCreated = Promise.promise();
 
@@ -165,6 +138,6 @@ public class ZkImplTest {
             .future()
             .compose(v -> zk.pathExists("/foo"))
             .onComplete(context.succeeding(b -> context.verify(() -> assertThat("Zk path doesn't exist", b))))
-            .onComplete(context.succeeding(v -> async.flag()));
+            .onComplete(context.succeeding(v -> context.completeNow()));
     }
 }

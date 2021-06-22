@@ -4,13 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiPredicate;
-import java.util.function.Function;
-
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
@@ -39,11 +32,17 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.exceptions.base.MockitoException;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
 
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -58,6 +57,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("rawtypes")
 public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<KubernetesClient, StatefulSet, StatefulSetList,
                                 RollableScalableResource<StatefulSet>> {
 
@@ -106,6 +106,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
                 .build();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected void mocker(KubernetesClient mockClient, MixedOperation op) {
         AppsAPIGroupDSL mockExt = mock(AppsAPIGroupDSL.class);
@@ -165,6 +166,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         testCreateWhenExistsWithoutChangeIsNotAPatch(context, false);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testRollingUpdateSuccess(VertxTestContext context) {
         StatefulSet resource = resource();
@@ -205,9 +207,8 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }
         };
 
-        Checkpoint a = context.checkpoint();
         op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod -> singletonList("roll"))
-            .onComplete(context.succeeding(v -> a.flag()));
+            .onComplete(context.succeeding(v -> context.completeNow()));
     }
 
     @Test
@@ -256,14 +257,14 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }
         };
 
-        Checkpoint a = context.checkpoint();
         op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod -> singletonList("roll"))
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
-                a.flag();
+                context.completeNow();
             })));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testRollingUpdateReadinessTimeout(VertxTestContext context) {
         StatefulSet resource = resource();
@@ -303,13 +304,13 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }
         };
 
-        Checkpoint a = context.checkpoint();
         op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod -> singletonList("roll")).onComplete(context.failing(e -> context.verify(() -> {
             assertThat(e, instanceOf(TimeoutException.class));
-            a.flag();
+            context.completeNow();
         })));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testRollingUpdateReconcileFailed(VertxTestContext context) {
         StatefulSet resource = resource();
@@ -348,14 +349,14 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }
         };
 
-        Checkpoint a = context.checkpoint();
         op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod -> singletonList("roll"))
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e.getMessage(), is("reconcile failed"));
-                a.flag();
+                context.completeNow();
             })));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testInternalReplace(VertxTestContext context)   {
         StatefulSet sts1 = new StatefulSetBuilder()
@@ -450,11 +451,10 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }
         };
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test", "kind", "namespace", "name"), sts1.getMetadata().getNamespace(), sts1.getMetadata().getName(), sts2)
             .onComplete(context.succeeding(rrState -> {
                 verify(mockDeletable).delete();
-                async.flag();
+                context.completeNow();
             }));
     }
 
@@ -495,11 +495,10 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }
         };
 
-        Checkpoint async = context.checkpoint();
         op.deleteAsync(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, true)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(cascadingCaptor.getValue(), is(DeletionPropagation.FOREGROUND));
-                async.flag();
+                context.completeNow();
             })));
     }
 
@@ -540,11 +539,10 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }
         };
 
-        Checkpoint a = context.checkpoint();
         op.deleteAsync(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, false)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(cascadingCaptor.getValue(), is(DeletionPropagation.ORPHAN));
-                a.flag();
+                context.completeNow();
             })));
     }
 
@@ -580,9 +578,8 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }
         };
 
-        Checkpoint a = context.checkpoint();
         op.deleteAsync(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, false)
-            .onComplete(context.failing(e -> a.flag()));
+            .onComplete(context.failing(e -> context.completeNow()));
     }
 
     @Test
@@ -621,12 +618,11 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }
         };
 
-        Checkpoint async = context.checkpoint();
         op.deleteAsync(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, false)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(MockitoException.class));
                 assertThat(e.getMessage(), is("Something failed"));
-                async.flag();
+                context.completeNow();
             })));
     }
 }

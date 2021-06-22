@@ -14,10 +14,14 @@ import io.fabric8.openshift.api.model.BuildBuilder;
 import io.fabric8.openshift.api.model.BuildConfig;
 import io.fabric8.openshift.api.model.BuildConfigBuilder;
 import io.fabric8.openshift.api.model.BuildRequest;
+import io.fabric8.openshift.client.OpenShiftClient;
+import io.strimzi.api.kafka.KafkaConnectList;
+import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
@@ -46,7 +50,6 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -73,6 +76,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("deprecation")
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
     private static final String NAMESPACE = "my-ns";
@@ -92,6 +96,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         vertx.close();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testBuildOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
@@ -121,8 +126,8 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList>  mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -213,7 +218,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -237,10 +241,11 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testBuildFailureOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
@@ -266,12 +271,10 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectBuild build = KafkaConnectBuild.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
-
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList>  mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -353,14 +356,11 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
-            .onComplete(context.failing(v -> context.verify(() -> {
-                async.flag();
-            })));
+            .onComplete(context.failing(v -> context.verify(context::completeNow)));
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength"})
+    @SuppressWarnings({"checkstyle:MethodLength", "unchecked"})
     @Test
     public void testUpdateWithRebuildOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
@@ -406,8 +406,8 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList>  mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -503,7 +503,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -527,10 +526,11 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testUpdateWithoutRebuildOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
@@ -561,8 +561,8 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList>  mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -570,7 +570,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
         PodOperator mockPodOps = supplier.podOperations;
         BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
-        BuildOperator mockBuildOps = supplier.buildOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
@@ -630,7 +629,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -652,10 +650,11 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testUpdateWithForcedRebuildOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
@@ -686,8 +685,8 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList>  mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -780,7 +779,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS), x -> mockConnectClient);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -804,11 +802,11 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength"})
+    @SuppressWarnings({"checkstyle:MethodLength", "unchecked"})
     @Test
     public void testContinueWithPreviousBuildOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
@@ -854,8 +852,8 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList>  mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -974,7 +972,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -996,11 +993,11 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength"})
+    @SuppressWarnings({"checkstyle:MethodLength", "unchecked"})
     @Test
     public void testRestartPreviousBuildOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
@@ -1046,8 +1043,8 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList>  mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1166,7 +1163,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -1190,11 +1186,11 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength"})
+    @SuppressWarnings({"checkstyle:MethodLength", "unchecked"})
     @Test
     public void testRestartPreviousBuildDueToFailureOnOpenShift(VertxTestContext context) {
         Plugin plugin1 = new PluginBuilder()
@@ -1240,8 +1236,8 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList>  mockConnectOps = supplier.connectOperator;
+        CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1360,7 +1356,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
-        Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Verify Deployment
@@ -1384,7 +1379,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
                 assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
 
-                async.flag();
+                context.completeNow();
             })));
     }
 }

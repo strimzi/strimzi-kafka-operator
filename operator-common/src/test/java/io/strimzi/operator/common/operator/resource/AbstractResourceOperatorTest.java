@@ -16,13 +16,13 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.CoreMatchers.endsWith;
@@ -63,6 +63,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
     /**
      * The type of the resource being tested
      */
+    @SuppressWarnings("rawtypes")
     protected abstract Class<? extends Resource> resourceType();
 
     /**
@@ -79,7 +80,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
      * Configure the given {@code mockClient} to return the given {@code op}
      * that's appropriate for the kind of resource being tests.
      */
-    protected abstract void mocker(C mockClient, MixedOperation op);
+    protected abstract void mocker(C mockClient, MixedOperation<T, L, R> op);
 
     /** Create the subclass of ResourceOperation to be tested */
     protected abstract AbstractResourceOperator<C, T, L, R> createResourceOperations(Vertx vertx, C mockClient);
@@ -94,6 +95,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         testCreateWhenExistsWithChangeIsAPatch(context, true);
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context, boolean cascade) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
@@ -115,7 +117,6 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, modifiedResource()).onComplete(context.succeeding(rr -> context.verify(() -> {
             verify(mockResource).get();
             verify(mockR).patch((T) any());
@@ -123,7 +124,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
             verify(mockResource, never()).create();
             verify(mockResource, never()).createOrReplace(any());
             verify(mockCms, never()).createOrReplace(any());
-            async.flag();
+            context.completeNow();
         })));
     }
 
@@ -132,6 +133,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         testCreateWhenExistsWithoutChangeIsNotAPatch(context, true);
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testCreateWhenExistsWithoutChangeIsNotAPatch(VertxTestContext context, boolean cascade) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
@@ -150,7 +152,6 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource()).onComplete(context.succeeding(rr -> context.verify(() -> {
             verify(mockResource).get();
             verify(mockResource, never()).patch(any());
@@ -158,11 +159,12 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
             verify(mockResource, never()).create();
             verify(mockResource, never()).createOrReplace(any());
             verify(mockCms, never()).createOrReplace(any());
-            async.flag();
+            context.completeNow();
         })));
     }
 
     @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testExistenceCheckThrows(VertxTestContext context) {
         T resource = resource();
         RuntimeException ex = new RuntimeException();
@@ -181,14 +183,14 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.failing(e -> context.verify(() -> {
             assertThat(e, is(ex));
-            async.flag();
+            context.completeNow();
         })));
     }
 
     @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testSuccessfulCreation(VertxTestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
@@ -206,15 +208,15 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, R> op = createResourceOperationsWithMockedReadiness(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.succeeding(rr -> context.verify(() -> {
             verify(mockResource).get();
             verify(mockResource).create(eq(resource));
-            async.flag();
+            context.completeNow();
         })));
     }
 
     @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testCreateOrUpdateThrowsWhenCreateThrows(VertxTestContext context) {
         T resource = resource();
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
@@ -234,14 +236,14 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.failing(e -> {
             context.verify(() -> assertThat(e, is(ex)));
-            async.flag();
+            context.completeNow();
         }));
     }
 
     @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testDeleteWhenResourceDoesNotExistIsANop(VertxTestContext context) {
         T resource = resource();
         Resource mockResource = mock(resourceType());
@@ -257,16 +259,16 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockResource).get();
                 verify(mockResource, never()).delete();
-                async.flag();
+                context.completeNow();
             })));
     }
 
     @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testReconcileDeleteWhenResourceExistsStillDeletes(VertxTestContext context) {
         EditReplacePatchDeletable mockDeletable = mock(EditReplacePatchDeletable.class);
         when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
@@ -282,9 +284,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         when(mockResource.watch(any())).thenAnswer(invocation -> {
             Watcher watcher = invocation.getArgument(0);
             watcher.eventReceived(Watcher.Action.DELETED, resource);
-            return (Watch) () -> {
-                watchClosed.set(true);
-            };
+            return (Watch) () -> watchClosed.set(true);
         });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
@@ -298,15 +298,15 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockDeletable).delete();
-                async.flag();
+                context.completeNow();
             })));
     }
 
     @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testReconcileDeletionSuccessfullyDeletes(VertxTestContext context) {
         EditReplacePatchDeletable mockDeletable = mock(EditReplacePatchDeletable.class);
         when(mockDeletable.delete()).thenReturn(Boolean.TRUE);
@@ -322,9 +322,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         when(mockResource.watch(any())).thenAnswer(invocation -> {
             Watcher watcher = invocation.getArgument(0);
             watcher.eventReceived(Watcher.Action.DELETED, resource);
-            return (Watch) () -> {
-                watchClosed.set(true);
-            };
+            return (Watch) () -> watchClosed.set(true);
         });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
@@ -338,15 +336,15 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .onComplete(context.succeeding(rr -> context.verify(() -> {
                 verify(mockDeletable).delete();
-                async.flag();
+                context.completeNow();
             })));
     }
 
     @Test
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public void testReconcileDeleteThrowsWhenDeletionThrows(VertxTestContext context) {
         RuntimeException ex = new RuntimeException("Testing this exception is handled correctly");
         EditReplacePatchDeletable mockDeletable = mock(EditReplacePatchDeletable.class);
@@ -365,9 +363,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         when(mockResource.watch(any())).thenAnswer(invocation -> {
             Watcher watcher = invocation.getArgument(0);
             watcher.eventReceived(Watcher.Action.DELETED, resource);
-            return (Watch) () -> {
-                watchClosed.set(true);
-            };
+            return (Watch) () -> watchClosed.set(true);
         });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
@@ -381,16 +377,15 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, is(ex));
-                async.flag();
+                context.completeNow();
             })));
     }
 
     @Test
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public void testReconcileDeleteThrowsWhenDeletionReturnsFalse(VertxTestContext context) {
         EditReplacePatchDeletable mockDeletable = mock(EditReplacePatchDeletable.class);
         when(mockDeletable.delete()).thenReturn(Boolean.FALSE);
@@ -406,9 +401,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
         when(mockResource.watch(any())).thenAnswer(invocation -> {
             Watcher watcher = invocation.getArgument(0);
             watcher.eventReceived(Watcher.Action.DELETED, resource);
-            return (Watch) () -> {
-                watchClosed.set(true);
-            };
+            return (Watch) () -> watchClosed.set(true);
         });
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
@@ -422,11 +415,10 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
                 .onComplete(context.failing(e -> context.verify(() -> {
                     assertThat(e.getMessage(), endsWith("could not be deleted (returned false)"));
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 }

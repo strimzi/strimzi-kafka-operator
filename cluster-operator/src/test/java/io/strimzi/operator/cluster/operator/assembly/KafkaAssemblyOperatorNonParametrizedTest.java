@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -40,7 +42,6 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
@@ -78,8 +79,8 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
     public static final String NAMESPACE = "test";
     public static final String NAME = "my-kafka";
     private static Vertx vertx;
-    private OpenSslCertManager certManager = new OpenSslCertManager();
-    private PasswordGenerator passwordGenerator = new PasswordGenerator(12,
+    private final OpenSslCertManager certManager = new OpenSslCertManager();
+    private final PasswordGenerator passwordGenerator = new PasswordGenerator(12,
             "abcdefghijklmnopqrstuvwxyz" +
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
             "abcdefghijklmnopqrstuvwxyz" +
@@ -149,9 +150,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
-        Checkpoint async = context.checkpoint();
-
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas(() -> new Date())
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas(Date::new)
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
                     assertThat(clusterCaKey.getAllValues(), hasSize(1));
@@ -177,7 +176,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                         assertThat(clientsCaKeySecret.getMetadata().getLabels(), not(hasEntry(entry.getKey(), entry.getValue())));
                     }
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -229,9 +228,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
-        Checkpoint async = context.checkpoint();
-
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas(() -> new Date())
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas(Date::new)
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
                     assertThat(clusterCaKey.getAllValues(), hasSize(1));
@@ -251,7 +248,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     assertThat(clientsCaCertSecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
                     assertThat(clientsCaKeySecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -303,9 +300,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
-        Checkpoint async = context.checkpoint();
-
-        op.new ReconciliationState(reconciliation, kafka).reconcileCas(() -> new Date())
+        op.new ReconciliationState(reconciliation, kafka).reconcileCas(Date::new)
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
                     assertThat(clusterCaKey.getAllValues(), hasSize(1));
@@ -325,7 +320,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     assertThat(clusterCaCertSecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
                     assertThat(clusterCaKeySecret.getMetadata().getOwnerReferences().get(0), is(ownerReference));
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -371,13 +366,10 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), 1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
-        Checkpoint async = context.checkpoint();
-
         op.new ReconciliationState(reconciliation, kafka).getCruiseControlDescription()
                 .onComplete(context.failing(c -> context.verify(() -> {
                     assertThat(c.getMessage(), is("Failed ConfigMap getAsync call"));
-
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -392,14 +384,12 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
-        Checkpoint async = context.checkpoint();
-
         op.delete(reconciliation)
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(desiredCrb.getValue(), is(nullValue()));
                     Mockito.verify(mockCrbOps, times(1)).reconcile(any(), any(), any());
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -427,7 +417,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
@@ -452,7 +442,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 supplier, config);
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(reconciliation)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // The resource labels don't match the selector labels => the reconciliation should exit right on
@@ -469,7 +458,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                             supplier.deploymentOperations
                     );
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -519,7 +508,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
@@ -550,7 +539,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup()));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(reconciliation)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(ingressCaptor.getAllValues().size(), is(0));
@@ -560,7 +548,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     verify(mockIngressOps, never()).reconcile(any(), any(), any(), any());
                     verify(mockIngressOps, never()).hasIngressAddress(any(), any(), any(), anyLong(), anyLong());
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
@@ -610,7 +598,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
@@ -641,7 +629,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup()));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
-        Checkpoint async = context.checkpoint();
         op.reconcile(reconciliation)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(ingressCaptor.getAllValues().size(), is(4));
@@ -651,14 +638,14 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     verify(mockIngressV1Beta1ops, never()).reconcile(any(), any(), any(), any());
                     verify(mockIngressV1Beta1ops, never()).hasIngressAddress(any(), any(), any(), anyLong(), anyLong());
 
-                    async.flag();
+                    context.completeNow();
                 })));
     }
 
     /**
      * Override KafkaAssemblyOperator to only run reconciliation steps that concern the Ingress resources feature
      */
-    class MockKafkaAssemblyOperatorForIngressTests extends KafkaAssemblyOperator {
+    static class MockKafkaAssemblyOperatorForIngressTests extends KafkaAssemblyOperator {
         public MockKafkaAssemblyOperatorForIngressTests(
                 Vertx vertx,
                 PlatformFeaturesAvailability pfa,
@@ -673,10 +660,10 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             return reconcileState.getKafkaClusterDescription()
-                    .compose(state -> state.kafkaIngresses())
-                    .compose(state -> state.kafkaIngressesV1Beta1())
-                    .compose(state -> state.kafkaIngressesReady())
-                    .compose(state -> state.kafkaIngressesV1Beta1Ready())
+                    .compose(ReconciliationState::kafkaIngresses)
+                    .compose(ReconciliationState::kafkaIngressesV1Beta1)
+                    .compose(ReconciliationState::kafkaIngressesReady)
+                    .compose(ReconciliationState::kafkaIngressesV1Beta1Ready)
                     .map((Void) null);
         }
     }

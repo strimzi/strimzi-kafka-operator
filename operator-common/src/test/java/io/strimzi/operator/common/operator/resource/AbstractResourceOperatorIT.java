@@ -14,7 +14,6 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.logging.log4j.LogManager;
@@ -53,8 +52,6 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
     protected static KubernetesClient client;
     protected static String namespace = "resource-operator-it-namespace";
 
-    private static KubeClusterResource cluster;
-
     @BeforeEach
     public void renameResource() {
         this.resourceName = getResourceName(RESOURCE_NAME);
@@ -62,10 +59,10 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
 
     @BeforeAll
     public static void before() {
-        cluster = KubeClusterResource.getInstance();
+        KubeClusterResource cluster = KubeClusterResource.getInstance();
         cluster.setTestNamespace(namespace);
 
-        assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
+        assertDoesNotThrow(KubeCluster::bootstrap, "Could not bootstrap server");
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
 
@@ -97,7 +94,6 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
 
     @Test
     public void testCreateModifyDelete(VertxTestContext context)    {
-        Checkpoint async = context.checkpoint();
         AbstractResourceOperator<C, T, L, R> op = operator();
 
         T newResource = getOriginal();
@@ -121,11 +117,13 @@ public abstract class AbstractResourceOperatorIT<C extends KubernetesClient,
             .onComplete(context.succeeding(rrDeleted -> {
                 // it seems the resource is cached for some time so we need wait for it to be null
                 context.verify(() -> {
+
+                        //TODO this sus looking code
                         Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
                                 30_000, () -> op.get(namespace, resourceName) == null)
                                 .onComplete(del -> {
                                     assertThat(op.get(namespace, resourceName), is(nullValue()));
-                                    async.flag();
+                                    context.completeNow();
                                 });
                     }
                 );
