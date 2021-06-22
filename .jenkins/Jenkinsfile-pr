@@ -215,6 +215,9 @@ pipeline {
                                 docker pull strimzi/java-kafka-producer:latest
                                 docker tag strimzi/java-kafka-producer:latest quay.io/strimzi-examples/java-kafka-producer:latest
                                 minikube image load quay.io/strimzi-examples/java-kafka-producer:latest
+                                docker pull strimzi/java-kafka-consumer:latest
+                                docker tag strimzi/java-kafka-consumer:latest quay.io/strimzi-examples/java-kafka-consumer:latest
+                                minikube image load quay.io/strimzi-examples/java-kafka-consumer:latest
                             """)
                             sh(script: "cat ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json")
                             sh(script: "cat ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml")
