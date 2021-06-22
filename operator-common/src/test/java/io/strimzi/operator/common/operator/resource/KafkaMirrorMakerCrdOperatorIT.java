@@ -58,7 +58,6 @@ public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperato
                     .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()
-                    .withWhitelist("*")
                     .withNewConsumer()
                         .withBootstrapServers("localhost:9092")
                         .withGroupId("my-group")
