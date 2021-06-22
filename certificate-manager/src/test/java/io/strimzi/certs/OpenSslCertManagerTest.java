@@ -32,9 +32,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Assumptions;
@@ -105,7 +103,7 @@ public class OpenSslCertManagerTest {
         Instant now = Instant.now();
         ZonedDateTime notBefore = now.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
         ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
-        ssl.generateRootCaCert(key, cert, sbj, notBefore, notAfter, 0);
+        ssl.generateRootCaCert(sbj, key, cert, notBefore, notAfter, 0);
         ssl.addCertToTrustStore(cert, "ca", store, "123456");
 
         // cert verification
@@ -194,7 +192,7 @@ public class OpenSslCertManagerTest {
         ZonedDateTime notBefore = now.plus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
         ZonedDateTime notAfter = now.plus(2, ChronoUnit.HOURS).truncatedTo(ChronoUnit.SECONDS).atZone(OpenSslCertManager.UTC);
         int rootPathLen = 1;
-        ssl.generateRootCaCert(rootKey, rootCert, rootSubject, notBefore, notAfter, rootPathLen);
+        ssl.generateRootCaCert(rootSubject, rootKey, rootCert, notBefore, notAfter, rootPathLen);
 
         X509Certificate rootX509 = loadCertificate(rootCert);
         assertTrue(selfVerifies(rootX509),
@@ -223,15 +221,15 @@ public class OpenSslCertManagerTest {
 
         File leafKey = File.createTempFile("key-", ".key");
         File csr = File.createTempFile("csr-", ".csr");
-        Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
-        Map<String, String> subjectAltNames = new HashMap<>();
-        subjectAltNames.put("DNS.1", "example1.com");
-        subjectAltNames.put("DNS.2", "example2.com");
-        sbj.setSubjectAltNames(subjectAltNames);
+        Subject subject = new Subject.Builder()
+                .withCommonName("MyCommonName")
+                .withOrganizationName("MyOrganization")
+                .addDnsName("example1.com")
+                .addDnsName("example2.com").build();
 
         File leafCert = File.createTempFile("crt-", ".crt");
 
-        doGenerateSignedCert(intermediateKey, intermediateCert, intermediateSubject, leafKey, csr, leafCert, null, "123456", sbj);
+        doGenerateSignedCert(intermediateKey, intermediateCert, intermediateSubject, leafKey, csr, leafCert, null, "123456", subject);
 
         // Validate that when the root cert is trusted and the cert chain includes the leaf+intermediate,
         // that the leaf is considered valid by PKIX validation
@@ -241,9 +239,10 @@ public class OpenSslCertManagerTest {
 
         PKIXParameters pkixp = new PKIXParameters(trustAnchors);
         pkixp.setRevocationEnabled(false);
-        pkixp.setDate(new Date(now.plus(90, ChronoUnit.MINUTES).getEpochSecond() * 1000));
 
+        pkixp.setDate(new Date(now.plus(90, ChronoUnit.MINUTES).toEpochMilli()));
         CertPathValidator.getInstance("PKIX").validate(cp, pkixp);
+
 
         leafKey.delete();
         csr.delete();
@@ -296,16 +295,16 @@ public class OpenSslCertManagerTest {
 
         File key = File.createTempFile("key-", ".key");
         File csr = File.createTempFile("csr-", ".csr");
-        Subject sbj = new Subject.Builder().withCommonName("MyCommonName").withOrganizationName("MyOrganization").build();
-        Map<String, String> subjectAltNames = new HashMap<>();
-        subjectAltNames.put("DNS.1", "example1.com");
-        subjectAltNames.put("DNS.2", "example2.com");
-        sbj.setSubjectAltNames(subjectAltNames);
+        Subject subject = new Subject.Builder()
+                .withCommonName("MyCommonName")
+                .withOrganizationName("MyOrganization")
+                .addDnsName("example1.com")
+                .addDnsName("example2.com").build();
 
         File cert = File.createTempFile("crt-", ".crt");
 
         ssl.generateSelfSignedCert(caKey, caCert, caSbj, 365);
-        doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", sbj);
+        doGenerateSignedCert(caKey, caCert, caSbj, key, csr, cert, store, "123456", subject);
 
         caKey.delete();
         caCert.delete();

@@ -32,6 +32,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
@@ -541,5 +543,15 @@ public class Util {
         }
 
         return true;
+    }
+
+    public static void delete(Path key) {
+        if (key != null) {
+            try {
+                Files.deleteIfExists(key);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

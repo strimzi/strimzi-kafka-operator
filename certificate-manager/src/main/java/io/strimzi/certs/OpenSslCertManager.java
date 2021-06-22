@@ -24,6 +24,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -59,8 +60,15 @@ public class OpenSslCertManager implements CertManager {
 
     private static final Logger LOGGER = LogManager.getLogger(OpenSslCertManager.class);
     public static final ZoneId UTC = ZoneId.of("UTC");
+    private final Clock clock;
 
-    public OpenSslCertManager() {}
+    public OpenSslCertManager() {
+        this(Clock.systemUTC());
+    }
+
+    public OpenSslCertManager(Clock clock) {
+        this.clock = clock;
+    }
 
     void checkValidity(ZonedDateTime notBefore, ZonedDateTime notAfter) {
         Objects.requireNonNull(notBefore);
@@ -111,7 +119,7 @@ public class OpenSslCertManager implements CertManager {
                 out.append("basicConstraints = critical,CA:true,pathlen:0\n");
             }
             if (sbj != null) {
-                if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
+                if (sbj.hasSubjectAltNames()) {
                     out.append("subjectAltName = @alt_names\n" +
                             "\n" +
                             "[alt_names]\n");
@@ -131,95 +139,85 @@ public class OpenSslCertManager implements CertManager {
 
     @Override
     public void generateSelfSignedCert(File keyFile, File certFile, Subject sbj, int days) throws IOException {
-        Instant now = Instant.now();
+        Instant now = clock.instant();
         ZonedDateTime notBefore = now.atZone(UTC);
         ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(UTC);
-        generateRootCaCert(keyFile, certFile, sbj, notBefore, notAfter, 0);
+        generateRootCaCert(sbj, keyFile, certFile, notBefore, notAfter, 0);
     }
 
-    public void generateRootCaCert(File keyFile, File certFile, Subject subject,
+    /**
+     * Generate a root (i.e. self-signed) CA certificate, using either a new CA key or reusing an existing subject key.
+     *
+     * @param subject The required subject, SAN etc..
+     * @param subjectKeyFile The subject key file.
+     *                       If this file is empty then a new CA key will be generated and populated by this call.
+     *                       Otherwise it is assumed to contain the existing CA key in PKCS#8 format.
+     * @param subjectCertFile The subject certificate file, populated by this call.
+     * @param notBefore The required NotBefore date of the issued certificate.
+     * @param notAfter The required NotAfter date of the issued certificate.
+     * @param pathLength The number of CA certificates below this certificate in a certificate chain.
+     *                   For example, this would be 0 if the CA certificate and key produced by this call would
+     *                   only be used to issue end entity certificates, or &gt;0 when issuing intermediate CA certificates.
+     * @throws IOException IO problems
+     */
+    @Override
+    public void generateRootCaCert(Subject subject, File subjectKeyFile, File subjectCertFile,
                                    ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
-        // Preconditions
-        Objects.requireNonNull(keyFile);
-        Objects.requireNonNull(certFile);
-        Objects.requireNonNull(subject);
-        checkValidity(notBefore, notAfter);
-        if (pathLength < 0) {
-            throw new IllegalArgumentException("pathLength cannot be negative: " + pathLength);
-        }
-        if (subject.subjectAltNames() != null && !subject.subjectAltNames().isEmpty()) {
-            throw new IllegalArgumentException("CA certificates should not have Subject Alternative Names");
-        }
-
-        // Generate a CSR for the key
-        Path tmpKey = null;
-        Path defaultConfig = null;
-        Path csrFile = null;
-        Path newCertsDir = null;
-        Path database = null;
-        Path attr = null;
-
-        try {
-            tmpKey = Files.createTempFile(null, null);
-            // Generate a key pair
-            new OpensslArgs("openssl", "genrsa")
-                    .optArg("-out", tmpKey)
-                    .opt("4096")
-                    .exec();
-
-            csrFile = Files.createTempFile(null, null);
-            new OpensslArgs("openssl", "req")
-                    .opt("-new")
-                    .optArg("-key", tmpKey)
-                    .optArg("-out", csrFile)
-                    .optArg("-subj", subject)
-                    .exec();
-
-            // Generate a self signed cert for the CA
-            database = Files.createTempFile(null, null);
-            attr = Files.createFile(new File(database.toString() + ".attr").toPath());
-            newCertsDir = Files.createTempDirectory(null);
-            defaultConfig = createDefaultConfig();
-            new OpensslArgs("openssl", "ca")
-                    .opt("-utf8").opt("-batch").opt("-notext")
-                    .opt("-selfsign")
-                    .optArg("-in", csrFile)
-                    .optArg("-out", certFile)
-                    .optArg("-keyfile", tmpKey)
-                    .optArg("-startdate", notBefore)
-                    .optArg("-enddate", notAfter)
-                    .optArg("-subj", subject)
-                    .optArg("-config", defaultConfig)
-                    .database(database, attr)
-                    .newCertsDir(newCertsDir)
-                    .basicConstraints("critical,CA:true,pathlen:" + pathLength)
-                    .keyUsage("critical,keyCertSign,cRLSign")
-                    .exec(false);
-
-            // The key will be in pkcs#1 format (bracketed by BEGIN/END RSA PRIVATE KEY)
-            // Convert it to pkcs#8 format (bracketed by BEGIN/END PRIVATE KEY)
-            new OpensslArgs("openssl", "pkcs8")
-                    .opt("-topk8").opt("-nocrypt")
-                    .optArg("-in", tmpKey)
-                    .optArg("-out", keyFile)
-                    .exec();
-        } finally {
-            delete(tmpKey);
-            delete(database);
-            delete(attr);
-            delete(newCertsDir);
-            delete(csrFile);
-            delete(defaultConfig);
-        }
+        generateCaCert(null, null, subject, subjectKeyFile, subjectCertFile, notBefore, notAfter, pathLength);
     }
 
+    /**
+     * Generate an intermediate CA certificate, using either a new CA key or reusing an existing subject key.
+     *
+     * @param issuerCaKeyFile The issuing CA key.
+     * @param issuerCaCertFile The issuing CA cert.
+     * @param subject The required subject, SAN etc..
+     * @param subjectKeyFile The subject key file.
+     *                       If this file is empty then a new CA key will be generated and populated by this call.
+     *                       Otherwise it is assumed to contain the existing CA key in PKCS#8 format.
+     * @param subjectCertFile The subject certificate file, populated by this call.
+     * @param notBefore The required NotBefore date of the issued certificate.
+     * @param notAfter The required NotAfter date of the issued certificate.
+     * @param pathLength The number of CA certificates below this certificate in a certificate chain.
+     *                   For example, this would be 0 if the CA certificate and key produced by this call would
+     *                   only be used to issue end entity certificates, or &gt;0 when issuing intermediate CA certificates.
+     * @throws IOException IO problems
+     */
+    @Override
     public void generateIntermediateCaCert(File issuerCaKeyFile, File issuerCaCertFile,
                                            Subject subject,
                                            File subjectKeyFile, File subjectCertFile,
                                            ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
-        // Preconditions
         Objects.requireNonNull(issuerCaKeyFile);
         Objects.requireNonNull(issuerCaCertFile);
+        generateCaCert(issuerCaKeyFile, issuerCaCertFile, subject, subjectKeyFile, subjectCertFile, notBefore, notAfter, pathLength);
+    }
+
+    /**
+     * Generate an intermediate CA certificate, using either a new CA key or reusing an existing subject key.
+     *
+     * @param issuerCaKeyFile The issuing CA key (or null for a root CA).
+     * @param issuerCaCertFile The issuing CA cert (or null for a root CA).
+     * @param subject The required subject, SAN etc..
+     * @param subjectKeyFile The subject key file.
+     *                       If this file is empty then a new CA key will be generated and populated by this call.
+     *                       Otherwise it is assumed to contain the existing CA key in PKCS#8 format.
+     * @param subjectCertFile The subject certificate file, populated by this call.
+     * @param notBefore The required NotBefore date of the issued certificate.
+     * @param notAfter The required NotAfter date of the issued certificate.
+     * @param pathLength The number of CA certificates below this certificate in a certificate chain.
+     *                   For example, this would be 0 if the CA certificate and key produced by this call would
+     *                   only be used to issue end entity certificates, or &gt;0 when issuing intermediate CA certificates.
+     * @throws IOException IO problems
+     */
+    private void generateCaCert(File issuerCaKeyFile, File issuerCaCertFile,
+                                Subject subject,
+                                File subjectKeyFile, File subjectCertFile,
+                                ZonedDateTime notBefore, ZonedDateTime notAfter, int pathLength) throws IOException {
+        if (issuerCaKeyFile == null ^ issuerCaCertFile == null) {
+            throw new IllegalArgumentException();
+        }
+        // Preconditions
         Objects.requireNonNull(subject);
         Objects.requireNonNull(subjectKeyFile);
         Objects.requireNonNull(subjectCertFile);
@@ -227,7 +225,7 @@ public class OpenSslCertManager implements CertManager {
         if (pathLength < 0) {
             throw new IllegalArgumentException("pathLength cannot be negative: " + pathLength);
         }
-        if (subject.subjectAltNames() != null && !subject.subjectAltNames().isEmpty()) {
+        if (subject.hasSubjectAltNames()) {
             throw new IllegalArgumentException("CA certificates should not have Subject Alternative Names");
         }
 
@@ -241,11 +239,18 @@ public class OpenSslCertManager implements CertManager {
 
         try {
             tmpKey = Files.createTempFile(null, null);
-            // Generate a key pair
-            new OpensslArgs("openssl", "genrsa")
-                    .optArg("-out", tmpKey)
-                    .opt("4096")
-                    .exec();
+            boolean keyInPkcs1;
+            if (subjectKeyFile.length() == 0) {
+                // Generate a key pair
+                new OpensslArgs("openssl", "genrsa")
+                        .optArg("-out", tmpKey)
+                        .opt("4096")
+                        .exec();
+                keyInPkcs1 = true;
+            } else {
+                Files.copy(subjectKeyFile.toPath(), tmpKey, StandardCopyOption.REPLACE_EXISTING);
+                keyInPkcs1 = false;
+            }
 
             csrFile = Files.createTempFile(null, null);
             defaultConfig = buildConfigFile(subject, true);
@@ -262,29 +267,36 @@ public class OpenSslCertManager implements CertManager {
             attr = Files.createFile(new File(database.toString() + ".attr").toPath());
             newCertsDir = Files.createTempDirectory(null);
             defaultConfig = createDefaultConfig();
-            new OpensslArgs("openssl", "ca")
-                    .opt("-utf8").opt("-batch").opt("-notext")
-                    .optArg("-in", csrFile)
+            OpensslArgs opt = new OpensslArgs("openssl", "ca")
+                    .opt("-utf8").opt("-batch").opt("-notext");
+            if (issuerCaCertFile == null) {
+                opt.opt("-selfsign");
+                opt.optArg("-keyfile", tmpKey);
+            } else {
+                opt.optArg("-cert", issuerCaCertFile);
+                opt.optArg("-keyfile", issuerCaKeyFile);
+            }
+            opt.optArg("-in", csrFile)
                     .optArg("-out", subjectCertFile)
                     .optArg("-startdate", notBefore)
                     .optArg("-enddate", notAfter)
                     .optArg("-subj", subject)
                     .optArg("-config", defaultConfig)
-                    .optArg("-cert", issuerCaCertFile)
-                    .optArg("-keyfile", issuerCaKeyFile)
                     .database(database, attr)
                     .newCertsDir(newCertsDir)
                     .basicConstraints("critical,CA:true,pathlen:" + pathLength)
                     .keyUsage("critical,keyCertSign,cRLSign")
                     .exec(false);
 
-            // The key will be in pkcs#1 format (bracketed by BEGIN/END RSA PRIVATE KEY)
-            // Convert it to pkcs#8 format (bracketed by BEGIN/END PRIVATE KEY)
-            new OpensslArgs("openssl", "pkcs8")
-                    .opt("-topk8").opt("-nocrypt")
-                    .optArg("-in", tmpKey)
-                    .optArg("-out", subjectKeyFile)
-                    .exec();
+            if (keyInPkcs1) {
+                // If the key is in pkcs#1 format (bracketed by BEGIN/END RSA PRIVATE KEY)
+                // convert it to pkcs#8 format (bracketed by BEGIN/END PRIVATE KEY)
+                new OpensslArgs("openssl", "pkcs8")
+                        .opt("-topk8").opt("-nocrypt")
+                        .optArg("-in", tmpKey)
+                        .optArg("-out", subjectKeyFile)
+                        .exec();
+            }
         } finally {
             delete(tmpKey);
             delete(database);
@@ -366,51 +378,10 @@ public class OpenSslCertManager implements CertManager {
 
     @Override
     public void renewSelfSignedCert(File keyFile, File certFile, Subject subject, int days) throws IOException {
-        // Preconditions
-        Objects.requireNonNull(keyFile);
-        Objects.requireNonNull(certFile);
-        Objects.requireNonNull(subject);
-        if (days <= 0) {
-            throw new IllegalArgumentException("Invalid validityDays " + days);
-        }
-
-        // See https://serverfault.com/a/501513
-        Path sna = null;
-        Path csrFile = null;
-        try {
-            csrFile = Files.createTempFile(null, null);
-
-            OpensslArgs args = new OpensslArgs("openssl", "req")
-                    .opt("-new")
-                    .opt("-batch")
-                    .optArg("-out", csrFile)
-                    .optArg("-key", keyFile);
-            if (subject != null) {
-                if (subject.subjectAltNames() != null && subject.subjectAltNames().size() > 0) {
-                    sna = buildConfigFile(subject, true);
-                    args.optArg("-config", sna, true).optArg("-extensions", "v3_req");
-                }
-                args.optArg("-subj", subject);
-            }
-
-            args.exec();
-            delete(sna);
-
-            // subject alt names need to be in an openssl configuration file
-            sna = buildConfigFile(subject, true);
-            new OpensslArgs("openssl", "x509")
-                    .opt("-req")
-                    .optArg("-days", String.valueOf(days))
-                    .optArg("-in", csrFile)
-                    .optArg("-signkey", keyFile)
-                    .optArg("-out", certFile)
-                    .optArg("-extfile", sna, true)
-                    .optArg("-extensions", "v3_req")
-                    .exec();
-        } finally {
-            delete(sna);
-            delete(csrFile);
-        }
+        Instant now = clock.instant();
+        ZonedDateTime notBefore = now.atZone(UTC);
+        ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(UTC);
+        generateCaCert(null, null, subject, keyFile, certFile, notBefore, notAfter, 0);
     }
 
     @Override
@@ -426,18 +397,13 @@ public class OpenSslCertManager implements CertManager {
 
         Path sna = null;
         try {
-            if (subject != null) {
-
-                if (subject.subjectAltNames() != null && subject.subjectAltNames().size() > 0) {
-
-                    // subject alt names need to be in an openssl configuration file
-                    sna = buildConfigFile(subject, false);
-                    cmd.optArg("-config", sna, true).optArg("-extensions", "v3_req");
-                }
-
-                cmd.optArg("-subj", subject);
+            if (subject.hasSubjectAltNames()) {
+                // subject alt names need to be in an openssl configuration file
+                sna = buildConfigFile(subject, false);
+                cmd.optArg("-config", sna, true).optArg("-extensions", "v3_req");
             }
 
+            cmd.optArg("-subj", subject);
             cmd.exec();
         } finally {
             delete(sna);
@@ -446,7 +412,7 @@ public class OpenSslCertManager implements CertManager {
 
     @Override
     public void generateCert(File csrFile, File caKey, File caCert, File crtFile, Subject sbj, int days) throws IOException {
-        Instant now = Instant.now();
+        Instant now = clock.instant();
         ZonedDateTime notBefore = now.atZone(UTC);
         ZonedDateTime notAfter = now.plus(days, ChronoUnit.DAYS).atZone(UTC);
         generateCert(csrFile, caKey, caCert, crtFile, sbj, notBefore, notAfter);
@@ -481,7 +447,7 @@ public class OpenSslCertManager implements CertManager {
                     .optArg("-enddate", notAfter)
                     .optArg("-config", defaultConfig, true);
 
-            if (sbj.subjectAltNames() != null && sbj.subjectAltNames().size() > 0) {
+            if (sbj.hasSubjectAltNames()) {
                 cmd.optArg("-extensions", "v3_req");
                 // subject alt names need to be in an openssl configuration file
                 sna = buildConfigFile(sbj, false);
@@ -559,7 +525,7 @@ public class OpenSslCertManager implements CertManager {
 
         public OpensslArgs optArg(String opt, Subject subject) {
             opt(opt);
-            pb.command().add(subject.toString());
+            pb.command().add(subject.opensslDn());
             return this;
         }
 

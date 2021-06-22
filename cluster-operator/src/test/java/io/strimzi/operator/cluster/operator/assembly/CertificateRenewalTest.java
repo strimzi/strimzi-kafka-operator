@@ -180,9 +180,9 @@ public class CertificateRenewalTest {
         File clusterCaCertFile = File.createTempFile("tls", "cluster-ca-cert");
         File clusterCaStoreFile = File.createTempFile("tls", "cluster-ca-store");
         try {
-            Subject sbj = new Subject();
-            sbj.setOrganizationName("io.strimzi");
-            sbj.setCommonName(commonName);
+            Subject sbj = new Subject.Builder()
+                .withOrganizationName("io.strimzi")
+                .withCommonName(commonName).build();
 
             certManager.generateSelfSignedCert(clusterCaKeyFile, clusterCaCertFile, sbj, ModelUtils.getCertificateValidity(certificateAuthority));
             certManager.addCertToTrustStore(clusterCaCertFile, CA_CRT, clusterCaStoreFile, clusterCaStorePassword);
