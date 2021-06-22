@@ -7,6 +7,7 @@ package io.strimzi.kafka.api.conversion.cli;
 import io.strimzi.kafka.api.conversion.converter.MultipartConversions;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import picocli.CommandLine;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Objects;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -91,20 +93,24 @@ public class ConvertResourceCommandSampleResourcesIT {
         convertSampleResource("kafka-toleration-conflict.yaml", 1);
     }
 
+    @SuppressWarnings("InstantiationOfUtilityClass")
     private void convertSampleResource(String testFile, int expectedExitCode)    {
-        String testResource = getClass().getResource(testFile).getPath();
-
+        String testResource = Objects.requireNonNull(getClass().getResource(testFile)).getPath();
+        StringWriter sw = new StringWriter();
         try {
             CLUSTER.createCustomResources(testResource);
 
             CommandLine cmd = new CommandLine(new EntryCommand());
-            StringWriter sw = new StringWriter();
+
             PrintWriter pw = new PrintWriter(sw);
             cmd.setOut(pw);
             cmd.setErr(pw);
 
             int exitCode = cmd.execute("convert-resource", "--namespace", NAMESPACE);
             assertThat("Checking exit code for conversion of " + testFile + " is " + expectedExitCode, exitCode, is(expectedExitCode));
+        } catch (AssertionError e) {
+            System.out.println(sw);
+            throw e;
         } finally {
             CLUSTER.deleteCustomResources(testResource);
         }
