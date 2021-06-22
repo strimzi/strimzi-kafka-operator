@@ -9,7 +9,7 @@ image:
   registry: quay.io
   repository: strimzi
   name: operator
-  tag: 0.24.0-rc1
+  tag: 0.24.0-rc2
 logVolume: co-config-volume
 logConfigMap: strimzi-cluster-operator
 logLevel: ${env:STRIMZI_LOG_LEVEL:-INFO}
@@ -35,55 +35,55 @@ zookeeper:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.24.0-rc1
+    tagPrefix: 0.24.0-rc2
 kafka:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.24.0-rc1
+    tagPrefix: 0.24.0-rc2
 kafkaConnect:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.24.0-rc1
+    tagPrefix: 0.24.0-rc2
 kafkaConnects2i:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.24.0-rc1
+    tagPrefix: 0.24.0-rc2
 topicOperator:
   image:
     registry: quay.io
     repository: strimzi
     name: operator
-    tag: 0.24.0-rc1
+    tag: 0.24.0-rc2
 userOperator:
   image:
     registry: quay.io
     repository: strimzi
     name: operator
-    tag: 0.24.0-rc1
+    tag: 0.24.0-rc2
 kafkaInit:
   image:
     registry: quay.io
     repository: strimzi
     name: operator
-    tag: 0.24.0-rc1
+    tag: 0.24.0-rc2
 tlsSidecarEntityOperator:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.24.0-rc1
+    tagPrefix: 0.24.0-rc2
 kafkaMirrorMaker:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.24.0-rc1
+    tagPrefix: 0.24.0-rc2
 kafkaBridge:
   image:
     registry: quay.io
@@ -95,37 +95,37 @@ kafkaExporter:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.24.0-rc1
+    tagPrefix: 0.24.0-rc2
 jmxTrans:
   image:
     registry: quay.io
     repository: strimzi
     name: jmxtrans
-    tag: 0.24.0-rc1
+    tag: 0.24.0-rc2
 kafkaMirrorMaker2:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.24.0-rc1
+    tagPrefix: 0.24.0-rc2
 cruiseControl:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.24.0-rc1
+    tagPrefix: 0.24.0-rc2
 tlsSidecarCruiseControl:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: 0.24.0-rc1
+    tagPrefix: 0.24.0-rc2
 kanikoExecutor:
   image:
     registry: quay.io
     repository: strimzi
     name: kaniko-executor
-    tag: 0.24.0-rc1
+    tag: 0.24.0-rc2
 resources:
   limits:
     memory: 384Mi

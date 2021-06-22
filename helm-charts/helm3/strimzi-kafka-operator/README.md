@@ -98,7 +98,7 @@ the documentation for more details.
 | `image.registry`                     | Cluster Operator image registry           | `quay.io`                                            |
 | `image.repository`                   | Cluster Operator image repository         | `strimzi`                                            |
 | `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
-| `image.tag`                          | Cluster Operator image tag                | `0.24.0-rc1`                                             |
+| `image.tag`                          | Cluster Operator image tag                | `0.24.0-rc2`                                             |
 | `image.imagePullPolicy`              | Image pull policy for all pods deployed by Cluster Operator       | `IfNotPresent`               |
 | `image.imagePullSecrets`             | Docker registry pull secret               | `nil`                                                |
 | `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
@@ -109,51 +109,51 @@ the documentation for more details.
 | `zookeeper.image.registry  `         | ZooKeeper image registry                  | `quay.io`                                            |
 | `zookeeper.image.repository`         | ZooKeeper image repository                | `strimzi`                                            |
 | `zookeeper.image.name`               | ZooKeeper image name                      | `kafka`                                              |
-| `zookeeper.image.tag`                | ZooKeeper image tag prefix                | `0.24.0-rc1`                                             |
+| `zookeeper.image.tag`                | ZooKeeper image tag prefix                | `0.24.0-rc2`                                             |
 | `jmxtrans.image.registry`            | JmxTrans image registry                   | `quay.io`                                            |
 | `jmxtrans.image.repository`          | JmxTrans image repository                 | `strimzi`                                            |
 | `jmxtrans.image.name`                | JmxTrans image name                       | `jmxtrans`                                           |
-| `jmxtrans.image.tag`                 | JmxTrans image tag prefix                 | `0.24.0-rc1`                                             |
+| `jmxtrans.image.tag`                 | JmxTrans image tag prefix                 | `0.24.0-rc2`                                             |
 | `kafka.image.registry`               | Kafka image registry                      | `quay.io`                                            |
 | `kafka.image.repository`             | Kafka image repository                    | `strimzi`                                            |
 | `kafka.image.name`                   | Kafka image name                          | `kafka`                                              |
-| `kafka.image.tagPrefix`              | Kafka image tag prefix                    | `0.24.0-rc1`                                             |
+| `kafka.image.tagPrefix`              | Kafka image tag prefix                    | `0.24.0-rc2`                                             |
 | `kafkaConnect.image.registry`        | Kafka Connect image registry              | `quay.io`                                            |
 | `kafkaConnect.image.repository`      | Kafka Connect image repository            | `strimzi`                                            |
 | `kafkaConnect.image.name`            | Kafka Connect image name                  | `kafka`                                              |
-| `kafkaConnect.image.tagPrefix`       | Kafka Connect image tag prefix            | `0.24.0-rc1`                                             |
+| `kafkaConnect.image.tagPrefix`       | Kafka Connect image tag prefix            | `0.24.0-rc2`                                             |
 | `kafkaConnects2i.image.registry`     | Kafka Connect s2i image registry          | `quay.io`                                            |
 | `kafkaConnects2i.image.repository`   | Kafka Connect s2i image repository        | `strimzi`                                            |
 | `kafkaConnects2i.image.name`         | Kafka Connect s2i image name              | `kafka`                                              |
-| `kafkaConnects2i.image.tagPrefix`    | Kafka Connect s2i image tag prefix        | `0.24.0-rc1`                                             |
+| `kafkaConnects2i.image.tagPrefix`    | Kafka Connect s2i image tag prefix        | `0.24.0-rc2`                                             |
 | `kafkaMirrorMaker.image.registry`    | Kafka Mirror Maker image registry         | `quay.io`                                            |
 | `kafkaMirrorMaker.image.repository`  | Kafka Mirror Maker image repository       | `strimzi`                                            |
 | `kafkaMirrorMaker.image.name`        | Kafka Mirror Maker image name             | `kafka`                                              |
-| `kafkaMirrorMaker.image.tagPrefix`   | Kafka Mirror Maker image tag prefix       | `0.24.0-rc1`                                             |
+| `kafkaMirrorMaker.image.tagPrefix`   | Kafka Mirror Maker image tag prefix       | `0.24.0-rc2`                                             |
 | `cruiseControl.image.registry`       | Cruise Control image registry             | `quay.io`                                            |
 | `cruiseControl.image.repository`     | Cruise Control image repository           | `strimzi`                                            |
 | `cruiseControl.image.name`           | Cruise Control image name                 | `kafka`                                              |
-| `cruiseControl.image.tag`            | Cruise Control image tag prefix           | `0.24.0-rc1`                                             |
+| `cruiseControl.image.tag`            | Cruise Control image tag prefix           | `0.24.0-rc2`                                             |
 | `topicOperator.image.registry`       | Topic Operator image registry             | `quay.io`                                            |
 | `topicOperator.image.repository`     | Topic Operator image repository           | `strimzi`                                            |
 | `topicOperator.image.name`           | Topic Operator image name                 | `operator`                                           |
-| `topicOperator.image.tag`            | Topic Operator image tag                  | `0.24.0-rc1`                                             |
+| `topicOperator.image.tag`            | Topic Operator image tag                  | `0.24.0-rc2`                                             |
 | `userOperator.image.registry`        | User Operator image registry              | `quay.io`                                            |
 | `userOperator.image.repository`      | User Operator image repository            | `strimzi`                                            |
 | `userOperator.image.name`            | User Operator image name                  | `operator`                                           |
-| `userOperator.image.tag`             | User Operator image tag                   | `0.24.0-rc1`                                             |
+| `userOperator.image.tag`             | User Operator image tag                   | `0.24.0-rc2`                                             |
 | `kafkaInit.image.registry`           | Init Kafka image registry                 | `quay.io`                                            |
 | `kafkaInit.image.repository`         | Init Kafka image repository               | `strimzi`                                            |
 | `kafkaInit.image.name`               | Init Kafka image name                     | `operator`                                           |
-| `kafkaInit.image.tag`                | Init Kafka image tag                      | `0.24.0-rc1`                                             |
+| `kafkaInit.image.tag`                | Init Kafka image tag                      | `0.24.0-rc2`                                             |
 | `tlsSidecarCruiseControl.image.registry` | TLS Sidecar for Cruise Control image registry | `quay.io`                                    |
 | `tlsSidecarCruiseControl.image.repository` | TLS Sidecar for Cruise Control image repository | `strimzi`                                |
 | `tlsSidecarCruiseControl.image.name`     | TLS Sidecar for Cruise Control image name      | `kafka`                                     |
-| `tlsSidecarCruiseControl.image.tag`      | TLS Sidecar for Cruise Control image tag prefix | `0.24.0-rc1`                                   |
+| `tlsSidecarCruiseControl.image.tag`      | TLS Sidecar for Cruise Control image tag prefix | `0.24.0-rc2`                                   |
 | `tlsSidecarTopicOperator.image.registry` | TLS Sidecar for Topic Operator image registry | `quay.io`                                    |
 | `tlsSidecarTopicOperator.image.repository` | TLS Sidecar for Topic Operator image repository | `strimzi`                                |
 | `tlsSidecarTopicOperator.image.name` | TLS Sidecar for Topic Operator image name | `kafka`                                              |
-| `tlsSidecarTopicOperator.image.tag`  | TLS Sidecar for Topic Operator image tag prefix | `0.24.0-rc1`                                       |
+| `tlsSidecarTopicOperator.image.tag`  | TLS Sidecar for Topic Operator image tag prefix | `0.24.0-rc2`                                       |
 | `kafkaBridge.image.registry`         | Kafka Bridge image registry               | `quay.io`                                            |
 | `kafkaBridge.image.repository`       | Kafka Bridge image repository             | `strimzi`                                            |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge                                        |
@@ -161,7 +161,7 @@ the documentation for more details.
 | `kanikoExecutor.image.registry`      | Kaniko Executor image registry            | `quay.io`                                            |
 | `kanikoExecutor.image.repository`    | Kaniko Executor image repository          | `strimzi`                                            |
 | `kanikoExecutor.image.name`          | Kaniko Executor image name                | `kaniko-executor`                                    |
-| `kanikoExecutor.image.tag`           | Kaniko Executor image tag                 | `0.24.0-rc1`                                             |
+| `kanikoExecutor.image.tag`           | Kaniko Executor image tag                 | `0.24.0-rc2`                                             |
 | `resources.limits.memory`            | Memory constraint for limits              | `256Mi`                                              |
 | `resources.limits.cpu`               | CPU constraint for limits                 | `1000m`                                              |
 | `resources.requests.memory`          | Memory constraint for requests            | `256Mi`                                              |

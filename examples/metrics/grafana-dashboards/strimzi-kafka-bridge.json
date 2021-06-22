@@ -163,7 +163,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(strimzi_bridge_http_server_active_connections{container=~\"^.+-bridge\"})",
+          "expr": "sum(strimzi_bridge_http_server_connections{container=~\"^.+-bridge\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -284,7 +284,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(strimzi_bridge_http_server_active_requests{container=~\"^.+-bridge\"})",
+          "expr": "sum(strimzi_bridge_http_server_requests{container=~\"^.+-bridge\"})",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -1956,7 +1956,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_requests_total{container=~\"^.+-bridge\"}[1m])) by (method)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\"}[1m])) by (method)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2053,7 +2053,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_requests_total{container=~\"^.+-bridge\"}[1m]))",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\"}[1m]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2061,7 +2061,7 @@
           "refId": "A"
         },
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_requests_total{code=~\"^2..$\", container=~\"^.+-bridge\"}[1m]))",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{code=~\"^2..$\", container=~\"^.+-bridge\"}[1m]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2069,7 +2069,7 @@
           "refId": "B"
         },
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_requests_total{code=~\"^4..$\", container=~\"^.+-bridge\"}[1m]))",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{code=~\"^4..$\", container=~\"^.+-bridge\"}[1m]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2077,7 +2077,7 @@
           "refId": "C"
         },
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_requests_total{code=~\"^5..$\", container=~\"^.+-bridge\"}[1m]))",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{code=~\"^5..$\", container=~\"^.+-bridge\"}[1m]))",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2175,7 +2175,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_bytes_written_total{container=~\"^.+-bridge\"}[1m])) by (container)",
+          "expr": "sum(rate(strimzi_bridge_http_server_bytesSent_count{container=~\"^.+-bridge\"}[1m])) by (container)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2273,7 +2273,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_bytes_read_total{container=~\"^.+-bridge\"}[1m])) by (container)",
+          "expr": "sum(rate(strimzi_bridge_http_server_bytesReceived_count{container=~\"^.+-bridge\"}[1m])) by (container)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2370,7 +2370,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_requests_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/topics/[^/]+\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/topics/[^/]+\"}[1m])) by (path)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "B"
@@ -2465,7 +2465,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_requests_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/topics/.+/partitions/[0-9]+\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/topics/.+/partitions/[0-9]+\"}[1m])) by (path)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2562,7 +2562,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_requests_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/consumers/[^/]+\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/consumers/[^/]+\"}[1m])) by (path)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2660,7 +2660,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_requests_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/consumers/.+/instances/.+/subscription\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/consumers/.+/instances/.+/subscription\"}[1m])) by (path)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2758,7 +2758,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_requests_total{container=~\"^.+-bridge\",method=\"DELETE\",path=~\"/consumers/.+/instances/.+\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"DELETE\",path=~\"/consumers/.+/instances/.+\"}[1m])) by (path)",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -2857,7 +2857,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_requests_total{container=~\"^.+-bridge\",method=\"GET\",path=~\"/consumers/.+/instances/.+/records\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"GET\",path=~\"/consumers/.+/instances/.+/records\"}[1m])) by (path)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -2955,7 +2955,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(strimzi_bridge_http_server_requests_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/consumers/.+/instances/.+/offsets\"}[1m])) by (path)",
+          "expr": "sum(rate(strimzi_bridge_http_server_requestCount_total{container=~\"^.+-bridge\",method=\"POST\",path=~\"/consumers/.+/instances/.+/offsets\"}[1m])) by (path)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
