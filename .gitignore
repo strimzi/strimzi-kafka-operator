@@ -57,3 +57,5 @@ hs_err_pid*
 
 # Cluster operator config models
 **/cluster-operator/src/main/resources/kafka-*-config-model.json
+
+.github/workflows/lclarkenz-ci.yml
