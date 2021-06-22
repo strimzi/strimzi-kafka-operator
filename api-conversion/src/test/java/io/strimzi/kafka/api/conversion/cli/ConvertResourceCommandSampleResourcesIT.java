@@ -7,7 +7,6 @@ package io.strimzi.kafka.api.conversion.cli;
 import io.strimzi.kafka.api.conversion.converter.MultipartConversions;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
