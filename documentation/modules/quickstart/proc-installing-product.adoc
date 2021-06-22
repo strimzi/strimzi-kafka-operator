@@ -78,10 +78,6 @@ kubectl create -f install/cluster-operator/020-RoleBinding-strimzi-cluster-opera
 ----
 [source, shell, subs=+quotes]
 ----
-kubectl create -f install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml -n my-kafka-project
-----
-[source, shell, subs=+quotes]
-----
 kubectl create -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n my-kafka-project
 ----
 --

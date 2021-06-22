@@ -51,7 +51,6 @@ repeating them for `watched-namespace-1`, `watched-namespace-2`, `watched-namesp
 [source,shell,subs="+quotes,attributes+"]
 kubectl create -f install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml -n _watched-namespace_
 kubectl create -f install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml -n _watched-namespace_
-kubectl create -f install/cluster-operator/032-RoleBinding-strimzi-cluster-operator-topic-operator-delegation.yaml -n _watched-namespace_
 
 . Deploy the Cluster Operator:
 +
