@@ -13,7 +13,7 @@
 * Added support for configuring cluster-operator's worker thread pool size that is used for various sync and async tasks
 * Add Kafka Quotas plugin with produce, consume, and storage quotas
 * Support pausing reconciliation of KafkaTopic CR with annotation `strimzi.io/pause-reconciliation`
-* Update cruise control to 2.5.55
+* Update cruise control to 2.5.57
 * Update to Strimzi Kafka Bridge to 0.20.0
 * Support for broker load information added to the rebalance optimization proposal. Information on the load difference, before and after a rebalance is stored in a ConfigMap
 * Add support for selectively changing the verbosity of logging for individual CRs, using markers.
