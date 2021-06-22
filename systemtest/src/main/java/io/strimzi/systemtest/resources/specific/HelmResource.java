@@ -39,9 +39,14 @@ public class HelmResource implements SpecificResourceType {
     public static final String LIMITS_CPU = "1000m";
 
     private String namespaceToWatch;
+    private String namespaceInstallTo;
 
-    public HelmResource() { }
-    public HelmResource(String namespaceToWatch) {
+    public HelmResource(String namespace) {
+        this.namespaceInstallTo = namespace;
+        this.namespaceToWatch = namespace;
+    }
+    public HelmResource(String namespaceInstallTo, String namespaceToWatch) {
+        this.namespaceInstallTo = namespaceInstallTo;
         this.namespaceToWatch = namespaceToWatch;
     }
 
@@ -141,12 +146,13 @@ public class HelmResource implements SpecificResourceType {
      * Delete CO deployed via helm chart.
      */
     private void deleteClusterOperator() {
-        ResourceManager.helmClient().delete(HELM_RELEASE_NAME);
+        ResourceManager.helmClient().delete(namespaceInstallTo, HELM_RELEASE_NAME);
         DeploymentUtils.waitForDeploymentDeletion(ResourceManager.getCoDeploymentName());
+        // TODO not needed ?
         cmdKubeClient().delete(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
     }
 
-    public String getNamespaceEnv() {
+    public String getNamespaceToWatch() {
         return this.namespaceToWatch;
     }
 }

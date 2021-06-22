@@ -7,6 +7,7 @@ package io.strimzi.systemtest.logs;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 import java.util.Set;
 
 import static io.strimzi.test.TestUtils.writeFile;
@@ -55,8 +57,8 @@ public class LogCollector implements LogCollect {
     private final String testSuiteName;
     private final File testCase;
     private final File logDir;
-    private final Pod clusterOperatorPod;
-    private final String clusterOperatorNamespace;
+    private Pod clusterOperatorPod = null;
+    private String clusterOperatorNamespace = null;
     private File namespaceFile;
 
     public LogCollector(String testSuiteName, String testCaseName, KubeClient kubeClient, String logDir) throws IOException {
@@ -68,22 +70,32 @@ public class LogCollector implements LogCollect {
 
         this.testSuite = new File(logSuiteDir);
 
-        // @BeforeAll in AbstractST always pass, and I ensure that we always deploy CO and after that some error can occur
-        this.clusterOperatorPod = kubeClient.getClient().pods().inAnyNamespace().list().getItems().stream()
-            .filter(pod -> pod.getMetadata().getName().contains(Constants.STRIMZI_DEPLOYMENT_NAME))
+        Optional<Pod> optionalCoPod = kubeClient.getClient().pods().inAnyNamespace().list().getItems().stream()
+            .filter(pod -> pod.getMetadata().getName().contains(ResourceManager.getCoDeploymentName()))
             // contract only one Cluster Operator deployment inside all namespaces
-            .findFirst()
-            .orElseThrow();
-        this.clusterOperatorNamespace = this.clusterOperatorPod.getMetadata().getNamespace();
+            .findFirst();
+
+        if (optionalCoPod.isPresent()) {
+            // @BeforeAll in AbstractST always pass, and I ensure that we always deploy CO and after that some error can occur
+            this.clusterOperatorPod = optionalCoPod.get();
+            this.clusterOperatorNamespace = this.clusterOperatorPod.getMetadata().getNamespace();
+        }
+
         this.testCase = new File(logSuiteDir + "/" + testCaseName);
 
         boolean logDirExist = this.logDir.exists() || this.logDir.mkdirs();
         boolean logTestSuiteDirExist = this.testSuite.exists() || this.testSuite.mkdirs();
         boolean logTestCaseDirExist = this.testCase.exists() || this.testCase.mkdirs();
 
-        if (!logDirExist) throw new IOException("Unable to create path");
-        if (!logTestSuiteDirExist) throw new IOException("Unable to create path");
-        if (!logTestCaseDirExist) throw new IOException("Unable to create path");
+        if (!logDirExist) {
+            throw new IOException("Unable to create path");
+        }
+        if (!logTestSuiteDirExist) {
+            throw new IOException("Unable to create path");
+        }
+        if (!logTestCaseDirExist) {
+            throw new IOException("Unable to create path");
+        }
     }
 
     /**
@@ -118,7 +130,7 @@ public class LogCollector implements LogCollect {
             LOGGER.info("Collecting logs for Pod(s) in namespace {}", namespaceFile.getName());
 
             // in case we are in the cluster operator namespace we wants shared logs for whole test suite
-            if (namespaceFile.getName().equals(this.clusterOperatorNamespace)) {
+            if (namespaceFile.getName().equals(this.clusterOperatorNamespace) || this.clusterOperatorNamespace == null) {
                 kubeClient.listPods(namespaceFile.getName()).forEach(pod -> {
                     String podName = pod.getMetadata().getName();
                     pod.getStatus().getContainerStatuses().forEach(containerStatus -> {

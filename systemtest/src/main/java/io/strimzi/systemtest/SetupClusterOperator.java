@@ -92,7 +92,7 @@ public class SetupClusterOperator {
             }
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
-            helmResource = new HelmResource(namespaceToWatch);
+            helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
             cluster.setNamespace(namespaceInstallTo);
             cluster.createNamespace(namespaceInstallTo);
             helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
