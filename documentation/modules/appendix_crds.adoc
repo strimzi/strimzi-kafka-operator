@@ -788,9 +788,9 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |brokersService            1.2+<.<a|Template for Kafka broker `Service`.
 |xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
 |externalBootstrapService  1.2+<.<a|Template for Kafka external bootstrap `Service`.
-|xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`]
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |perPodService             1.2+<.<a|Template for Kafka per-pod `Services` used for access from outside of Kubernetes.
-|xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`]
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |externalBootstrapRoute    1.2+<.<a|Template for Kafka external bootstrap `Route`.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |perPodRoute               1.2+<.<a|Template for Kafka per-pod `Routes` used for access from outside of OpenShift.
@@ -833,7 +833,7 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:
 [id='type-MetadataTemplate-{context}']
 ### `MetadataTemplate` schema reference
 
-Used in: xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`], xref:type-ExternalServiceTemplate-{context}[`ExternalServiceTemplate`], xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`], xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
+Used in: xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`], xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`], xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
 
 xref:type-MetadataTemplate-schema-{context}[Full list of `MetadataTemplate` schema properties]
 
@@ -919,26 +919,6 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 |string (one of [RequireDualStack, SingleStack, PreferDualStack])
 |ipFamilies      1.2+<.<a|Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. Available on Kubernetes 1.20 and newer.
 |string (one or more of [IPv6, IPv4]) array
-|====
-
-[id='type-ExternalServiceTemplate-{context}']
-### `ExternalServiceTemplate` schema reference
-
-Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`]
-
-xref:type-ExternalServiceTemplate-schema-{context}[Full list of `ExternalServiceTemplate` schema properties]
-
-include::../api/io.strimzi.api.kafka.model.template.ExternalServiceTemplate.adoc[leveloffset=+1]
-
-[id='type-ExternalServiceTemplate-schema-{context}']
-==== `ExternalServiceTemplate` schema properties
-
-
-[options="header"]
-|====
-|Property         |Description
-|metadata  1.2+<.<a|Metadata applied to the resource.
-|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |====
 
 [id='type-ResourceTemplate-{context}']

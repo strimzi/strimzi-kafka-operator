@@ -5,10 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
-import io.strimzi.api.kafka.model.listener.KafkaListeners;
-import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
@@ -17,7 +13,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerCon
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.api.kafka.model.listener.arraylistener.ListenersConvertor;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
@@ -42,25 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ParallelSuite
 public class ListenersValidatorTest {
     @ParallelTest
-    public void testValidateOldListener() {
-        KafkaListeners oldListeners = new KafkaListenersBuilder()
-                .withNewPlain()
-                    .withAuth(new KafkaListenerAuthenticationScramSha512())
-                .endPlain()
-                .withNewTls()
-                    .withAuth(new KafkaListenerAuthenticationTls())
-                .endTls()
-                .withNewKafkaListenerExternalRoute()
-                    .withAuth(new KafkaListenerAuthenticationTls())
-                .endKafkaListenerExternalRoute()
-                .build();
-
-        List<GenericKafkaListener> newListeners = ListenersConvertor.convertToNewFormat(oldListeners);
-        ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, newListeners);
-    }
-
-    @ParallelTest
-    public void testValidateNewListeners() {
+    public void testValidateListeners() {
         GenericKafkaListener listener1 = new GenericKafkaListenerBuilder()
                 .withName("listener1")
                 .withPort(9900)

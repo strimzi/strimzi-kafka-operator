@@ -4,6 +4,10 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    listeners: []
+    listeners:
+      - name: plain
+        port: 9092
+        tls: false
+        type: internal
     rack:
       topologyKey: "failure-domain.beta.kubernetes.io/zone"

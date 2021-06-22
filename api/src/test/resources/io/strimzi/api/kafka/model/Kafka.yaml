@@ -11,15 +11,6 @@ spec:
     resources:
       limits:
         memory: "5Gi"
-    tolerations:
-      - key: "key1"
-        operator: "Equal"
-        value: "value1"
-        effect: "NoSchedule"
-      - key: "key2"
-        operator: "Equal"
-        value: "value2"
-        effect: "NoSchedule"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1
@@ -37,7 +28,9 @@ spec:
     config:
       min.insync.replicas: 3
     listeners:
-      plain:
+      - name: plain
+        port: 9092
+        type: internal
         authentication:
           type: scram-sha-512
         networkPolicyPeers:
@@ -50,50 +43,12 @@ spec:
           - podSelector:
               matchLabels:
                 app: kafka-producer
-      tls:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
         authentication:
           type: tls
-        networkPolicyPeers:
-          - namespaceSelector:
-              matchLabels:
-                kafka-enabled: true
-            podSelector:
-              matchLabels:
-                app: kafka-consumer
-          - podSelector:
-              matchLabels:
-                app: kafka-producer
-      external:
-        type: route
-        authentication:
-          type: tls
-        networkPolicyPeers:
-          - namespaceSelector:
-              matchLabels:
-                kafka-enabled: true
-            podSelector:
-              matchLabels:
-                app: kafka-consumer
-          - podSelector:
-              matchLabels:
-                app: kafka-producer
-        overrides:
-          bootstrap:
-            address: my-bootstrap-host
-            host: my-bootstrap-host
-          brokers:
-            - broker: 0
-              advertisedHost: my-broker-0
-              advertisedPort: 10000
-              host: my-broker-0
-            - broker: 1
-              advertisedHost: my-broker-1
-              advertisedPort: 10001
-              host: my-broker-1
-            - broker: 2
-              advertisedHost: my-broker-2
-              advertisedPort: 10002
-              host: my-broker-2
     authorization:
       type: simple
       superUsers:
@@ -116,15 +71,6 @@ spec:
     resources:
       limits:
         memory: "512Mi"
-    tolerations:
-      - key: "key1"
-        operator: "Equal"
-        value: "value1"
-        effect: "NoSchedule"
-      - key: "key2"
-        operator: "Equal"
-        value: "value2"
-        effect: "NoSchedule"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1
@@ -136,8 +82,10 @@ spec:
       -Xms: "512Mi"
     storage:
       type: ephemeral
-  topicOperator:
-    watchedNamespace: my-ns
+  entityOperator:
+    topicOperator:
+      watchedNamespace: my-ns
+    userOperator: {}
   clusterCa:
     renewalDays: 32
     validityDays: 395

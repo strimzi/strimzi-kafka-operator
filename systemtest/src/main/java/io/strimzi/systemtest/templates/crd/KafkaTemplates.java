@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.systemtest.Constants;
@@ -191,20 +192,18 @@ public class KafkaTemplates {
                     .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
                     .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
                     .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-                            .withPort(9092)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(false)
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                        .endGenericKafkaListener()
-                    .endListeners()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .build(),
+                            new GenericKafkaListenerBuilder()
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .build())
                     .withNewInlineLogging()
                         .addToLoggers("kafka.root.logger.level", "DEBUG")
                     .endInlineLogging()

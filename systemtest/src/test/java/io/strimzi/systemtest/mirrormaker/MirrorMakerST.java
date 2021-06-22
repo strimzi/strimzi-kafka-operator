@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
@@ -187,15 +188,13 @@ public class MirrorMakerST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withAuth(new KafkaListenerAuthenticationTls())
-                        .endGenericKafkaListener()
-                    .endListeners()
+                            .build())
                 .endKafka()
             .endSpec()
             .build());
@@ -204,15 +203,13 @@ public class MirrorMakerST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withAuth(new KafkaListenerAuthenticationTls())
-                        .endGenericKafkaListener()
-                    .endListeners()
+                            .build())
                 .endKafka()
             .endSpec()
             .build());
@@ -334,15 +331,13 @@ public class MirrorMakerST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withAuth(new KafkaListenerAuthenticationScramSha512())
-                        .endGenericKafkaListener()
-                    .endListeners()
+                            .build())
                 .endKafka()
             .endSpec()
             .build());
@@ -351,15 +346,13 @@ public class MirrorMakerST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withAuth(new KafkaListenerAuthenticationScramSha512())
-                        .endGenericKafkaListener()
-                    .endListeners()
+                            .build())
                 .endKafka()
             .endSpec()
             .build());

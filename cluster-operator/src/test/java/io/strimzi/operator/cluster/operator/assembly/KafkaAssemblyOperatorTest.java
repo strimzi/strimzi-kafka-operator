@@ -773,14 +773,12 @@ public class KafkaAssemblyOperatorTest {
         String metricsCMName = "metrics-cm";
         JmxPrometheusExporterMetrics jmxMetricsConfig = metrics ? null : io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
 
-        Kafka resource = ResourceUtils.createKafka(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, metricsCmJson, jmxMetricsConfig, kafkaConfig, zooConfig, kafkaStorage, zkStorage, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG, exporter, null);
+        Kafka resource = ResourceUtils.createKafka(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig, kafkaStorage, zkStorage, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG, exporter, null);
 
         Kafka kafka = new KafkaBuilder(resource)
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .withGenericKafkaListeners(kafkaListeners)
-                        .endListeners()
+                        .withListeners(kafkaListeners)
                     .endKafka()
                     .withEntityOperator(eoConfig)
                 .endSpec()
@@ -852,17 +850,6 @@ public class KafkaAssemblyOperatorTest {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setReplicas(2);
-        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
-    }
-
-    @ParameterizedTest
-    @MethodSource("data")
-    public void testUpdateClusterMetricsConfig(Params params, VertxTestContext context) {
-        setFields(params);
-        Kafka kafkaAssembly = getKafkaAssembly("bar");
-        kafkaAssembly.getSpec().getKafka().setMetrics(singletonMap("something", "changed"));
-        JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, differentMetricsCMName);
-        kafkaAssembly.getSpec().getKafka().setMetricsConfig(jmxMetricsConfig);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 

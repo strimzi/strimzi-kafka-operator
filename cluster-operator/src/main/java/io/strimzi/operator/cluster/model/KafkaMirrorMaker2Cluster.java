@@ -103,7 +103,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         return fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
     }
 
-    @SuppressWarnings("deprecation")
     private static KafkaConnectSpec buildKafkaConnectSpec(KafkaMirrorMaker2Spec spec, KafkaMirrorMaker2ClusterSpec connectCluster) {
         
         KafkaConnectTls connectTls = null;
@@ -132,8 +131,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 .withJmxOptions(spec.getJmxOptions())
                 .withMetricsConfig(spec.getMetricsConfig())
                 .withTracing(spec.getTracing())
-                .withAffinity(spec.getAffinity())
-                .withTolerations(spec.getTolerations())
                 .withTemplate(spec.getTemplate())
                 .withExternalConfiguration(spec.getExternalConfiguration())
                 .build();
@@ -164,7 +161,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                     for (CertSecretSource certSecretSource : trustedCertificates) {
                         String volumeName = mirrorMaker2Cluster.getAlias() + '-' + certSecretSource.getSecretName();
                         // skipping if a volume with same Secret name was already added
-                        if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeName))) {
+                        if (volumeList.stream().noneMatch(v -> v.getName().equals(volumeName))) {
                             volumeList.add(VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), isOpenShift));
                         }
                     }
@@ -192,7 +189,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                     for (CertSecretSource certSecretSource : trustedCertificates) {
                         String volumeMountName = alias + '-' + certSecretSource.getSecretName();
                         // skipping if a volume mount with same Secret name was already added
-                        if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeMountName))) {
+                        if (volumeMountList.stream().noneMatch(vm -> vm.getName().equals(volumeMountName))) {
                             volumeMountList.add(VolumeUtils.createVolumeMount(volumeMountName,
                                 tlsVolumeMountPath + certSecretSource.getSecretName()));
                         }

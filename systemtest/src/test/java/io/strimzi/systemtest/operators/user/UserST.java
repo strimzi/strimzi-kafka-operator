@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
@@ -264,28 +265,26 @@ class UserST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-                            .withPort(9092)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(false)
-                            .withNewKafkaListenerAuthenticationScramSha512Auth()
-                            .endKafkaListenerAuthenticationScramSha512Auth()
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withNewKafkaListenerAuthenticationTlsAuth()
-                            .endKafkaListenerAuthenticationTlsAuth()
-                        .endGenericKafkaListener()
-                    .endListeners()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .withNewKafkaListenerAuthenticationScramSha512Auth()
+                                .endKafkaListenerAuthenticationScramSha512Auth()
+                                .build(),
+                            new GenericKafkaListenerBuilder()
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                                .build())
                 .endKafka()
                 .editEntityOperator()
                     .editUserOperator()
-                        .withNewSecretPrefix(secretPrefix)
+                        .withSecretPrefix(secretPrefix)
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()

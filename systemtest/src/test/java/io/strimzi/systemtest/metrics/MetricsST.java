@@ -470,9 +470,7 @@ public class MetricsST extends AbstractST {
                 .endValueFrom()
                 .build();
         KafkaResource.replaceKafkaResourceInSpecificNamespace(SECOND_CLUSTER, k -> {
-            // JMX metrics have higher priority
             k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics);
-            k.getSpec().getKafka().setMetrics(null);
         }, SECOND_NAMESPACE);
 
         PodUtils.verifyThatRunningPodsAreStable(SECOND_NAMESPACE, SECOND_CLUSTER);

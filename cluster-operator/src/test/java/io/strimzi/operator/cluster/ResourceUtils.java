@@ -47,7 +47,7 @@ import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
-import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
@@ -122,9 +122,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -165,20 +165,18 @@ public class ResourceUtils {
                     .withNewKafka()
                         .withReplicas(replicas)
                         .withImage(image)
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("plain")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(false)
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withName("tls")
-                                .withPort(9093)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(true)
-                            .endGenericKafkaListener()
-                        .endListeners()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                    .withName("plain")
+                                    .withPort(9092)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(false)
+                                    .build(),
+                                new GenericKafkaListenerBuilder()
+                                    .withName("tls")
+                                    .withPort(9093)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(true)
+                                    .build())
                         .withLivenessProbe(probe)
                         .withReadinessProbe(probe)
                         .withStorage(new EphemeralStorage())
@@ -195,20 +193,17 @@ public class ResourceUtils {
 
     public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
-                                    Map<String, Object> metricsMap,
                                     MetricsConfig metricsConfig,
                                     Map<String, Object> kafkaConfigurationJson,
                                     Map<String, Object> zooConfigurationJson) {
         return new KafkaBuilder(createKafka(namespace, name, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .editKafka()
-                        .withMetrics(metricsMap)
                         .withConfig(kafkaConfigurationJson)
                         .withMetricsConfig(metricsConfig)
                     .endKafka()
                     .editZookeeper()
                         .withConfig(zooConfigurationJson)
-                        .withMetrics(metricsMap)
                         .withMetricsConfig(metricsConfig)
                     .endZookeeper()
                 .endSpec()
@@ -343,12 +338,11 @@ public class ResourceUtils {
 
     public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
-                                    Map<String, Object> metricsCm,
                                     MetricsConfig metricsConfig,
                                     Map<String, Object> kafkaConfigurationJson,
                                     Logging kafkaLogging, Logging zkLogging) {
         return new KafkaBuilder(createKafka(namespace, name, replicas, image, healthDelay,
-                    healthTimeout, metricsCm, metricsConfig, kafkaConfigurationJson, emptyMap()))
+                    healthTimeout, metricsConfig, kafkaConfigurationJson, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withLogging(kafkaLogging)
@@ -362,7 +356,6 @@ public class ResourceUtils {
 
     public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
-                                    Map<String, Object> metricsCm,
                                     MetricsConfig metricsConfig,
                                     Map<String, Object> kafkaConfiguration,
                                     Map<String, Object> zooConfiguration,
@@ -383,7 +376,7 @@ public class ResourceUtils {
 
         KafkaClusterSpec kafkaClusterSpec = new KafkaClusterSpec();
         kafkaClusterSpec.setReplicas(replicas);
-        kafkaClusterSpec.setListeners(new ArrayOrObjectKafkaListeners(emptyList()));
+        kafkaClusterSpec.setListeners(singletonList(new GenericKafkaListenerBuilder().withName("plain").withPort(9092).withTls(false).withType(KafkaListenerType.INTERNAL).build()));
         kafkaClusterSpec.setImage(image);
         if (kafkaLogging != null) {
             kafkaClusterSpec.setLogging(kafkaLogging);
@@ -396,9 +389,6 @@ public class ResourceUtils {
         livenessProbe.setPeriodSeconds(33);
         kafkaClusterSpec.setLivenessProbe(livenessProbe);
         kafkaClusterSpec.setReadinessProbe(livenessProbe);
-        if (metricsCm != null) {
-            kafkaClusterSpec.setMetrics(metricsCm);
-        }
         kafkaClusterSpec.setMetricsConfig(metricsConfig);
 
         if (kafkaConfiguration != null) {
@@ -419,9 +409,6 @@ public class ResourceUtils {
             zk.setConfig(zooConfiguration);
         }
         zk.setStorage(zkStorage);
-        if (metricsCm != null) {
-            zk.setMetrics(metricsCm);
-        }
         zk.setMetricsConfig(metricsConfig);
 
         spec.setKafkaExporter(keSpec);
@@ -437,7 +424,7 @@ public class ResourceUtils {
      * Create a Kafka Connect S2I custom resource
      */
     public static KafkaConnectS2I createKafkaConnectS2I(String namespace, String name, int replicas,
-                                                        String image, int healthDelay, int healthTimeout, MetricsConfig metrics, String metricsCmJson,
+                                                        String image, int healthDelay, int healthTimeout, MetricsConfig metrics,
                                                         String connectConfig, boolean insecureSourceRepo, String bootstrapServers,
                                                         ResourceRequirements builResourceRequirements) {
 
@@ -449,7 +436,6 @@ public class ResourceUtils {
                     .withBootstrapServers(bootstrapServers)
                     .withLivenessProbe(new Probe(healthDelay, healthTimeout))
                     .withReadinessProbe(new Probe(healthDelay, healthTimeout))
-                    .withMetrics((Map<String, Object>) TestUtils.fromJson(metricsCmJson, Map.class))
                     .withMetricsConfig(metrics)
                     .withConfig((Map<String, Object>) TestUtils.fromJson(connectConfig, Map.class))
                     .withInsecureSourceRepository(insecureSourceRepo)
@@ -526,13 +512,13 @@ public class ResourceUtils {
     }
 
     public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, KafkaMirrorMakerProducerSpec producer,
-                                                          KafkaMirrorMakerConsumerSpec consumer, String include, Map<String, Object> metricsCm) {
-        return createKafkaMirrorMaker(namespace, name, image, null, producer, consumer, include, metricsCm);
+                                                          KafkaMirrorMakerConsumerSpec consumer, String include) {
+        return createKafkaMirrorMaker(namespace, name, image, null, producer, consumer, include);
     }
 
     public static KafkaMirrorMaker createKafkaMirrorMaker(String namespace, String name, String image, Integer replicas,
                                                           KafkaMirrorMakerProducerSpec producer, KafkaMirrorMakerConsumerSpec consumer,
-                                                          String include, Map<String, Object> metricsCm) {
+                                                          String include) {
 
         KafkaMirrorMakerBuilder builder = new KafkaMirrorMakerBuilder()
                 .withMetadata(new ObjectMetaBuilder()
@@ -546,7 +532,6 @@ public class ResourceUtils {
                     .withProducer(producer)
                     .withConsumer(consumer)
                     .withInclude(include)
-                    .withMetrics(metricsCm)
                 .endSpec();
 
         if (replicas != null) {

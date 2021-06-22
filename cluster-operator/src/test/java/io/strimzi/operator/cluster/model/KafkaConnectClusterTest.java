@@ -235,7 +235,7 @@ public class KafkaConnectClusterTest {
     public void testGenerateServiceWithoutMetrics()   {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
-                    .withMetrics(null)
+                    .withMetricsConfig(null)
                 .endSpec()
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);

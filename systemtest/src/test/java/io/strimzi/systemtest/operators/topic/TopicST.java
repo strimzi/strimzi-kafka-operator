@@ -6,6 +6,7 @@ package io.strimzi.systemtest.operators.topic;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.systemtest.AbstractST;
@@ -129,14 +130,12 @@ public class TopicST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
-                        .endGenericKafkaListener()
-                    .endListeners()
+                            .build())
                 .endKafka()
             .endSpec()
             .build());
@@ -185,14 +184,12 @@ public class TopicST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(false)
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                     .editEntityOperator()
                         .editTopicOperator()

@@ -8,63 +8,28 @@ spec:
     replicas: 3
     image: "strimzi/kafka:latest"
     listeners:
-      plain:
-        networkPolicyPeers:
-        - namespaceSelector:
-            matchLabels:
-              kafka-enabled: "true"
-          podSelector:
-            matchLabels:
-              app: "kafka-consumer"
-        - podSelector:
-            matchLabels:
-              app: "kafka-producer"
-        authentication:
-          type: "scram-sha-512"
-      tls:
-        networkPolicyPeers:
-        - namespaceSelector:
-            matchLabels:
-              kafka-enabled: "true"
-          podSelector:
-            matchLabels:
-              app: "kafka-consumer"
-        - podSelector:
-            matchLabels:
-              app: "kafka-producer"
-        authentication:
-          type: "tls"
-      external:
-        type: "route"
-        authentication:
-          type: "tls"
-        overrides:
-          bootstrap:
-            address: "my-bootstrap-host"
-            host: "my-bootstrap-host"
-          brokers:
-          - broker: 0
-            advertisedHost: "my-broker-0"
-            advertisedPort: 10000
-            host: "my-broker-0"
-          - broker: 1
-            advertisedHost: "my-broker-1"
-            advertisedPort: 10001
-            host: "my-broker-1"
-          - broker: 2
-            advertisedHost: "my-broker-2"
-            advertisedPort: 10002
-            host: "my-broker-2"
-        networkPolicyPeers:
-        - namespaceSelector:
-            matchLabels:
-              kafka-enabled: "true"
-          podSelector:
-            matchLabels:
-              app: "kafka-consumer"
-        - podSelector:
-            matchLabels:
-              app: "kafka-producer"
+    - name: "plain"
+      port: 9092
+      type: "internal"
+      tls: false
+      authentication:
+        type: "scram-sha-512"
+      networkPolicyPeers:
+      - namespaceSelector:
+          matchLabels:
+            kafka-enabled: "true"
+        podSelector:
+          matchLabels:
+            app: "kafka-consumer"
+      - podSelector:
+          matchLabels:
+            app: "kafka-producer"
+    - name: "tls"
+      port: 9093
+      type: "internal"
+      tls: true
+      authentication:
+        type: "tls"
     config:
       min.insync.replicas: 3
     storage:
@@ -81,15 +46,6 @@ spec:
       - "CN=sergey"
       - "CN=andryi"
     brokerRackInitImage: "strimzi/kafka-init:latest"
-    tolerations:
-    - effect: "NoSchedule"
-      key: "key1"
-      operator: "Equal"
-      value: "value1"
-    - effect: "NoSchedule"
-      key: "key2"
-      operator: "Equal"
-      value: "value2"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1
@@ -115,15 +71,6 @@ spec:
     image: "strimzi/zookeeper:latest"
     storage:
       type: "ephemeral"
-    tolerations:
-    - effect: "NoSchedule"
-      key: "key1"
-      operator: "Equal"
-      value: "value1"
-    - effect: "NoSchedule"
-      key: "key2"
-      operator: "Equal"
-      value: "value2"
     livenessProbe:
       initialDelaySeconds: 5
       timeoutSeconds: 1
@@ -136,11 +83,10 @@ spec:
     resources:
       limits:
         memory: "512Mi"
-  topicOperator:
-    watchedNamespace: "my-ns"
-    reconciliationIntervalSeconds: 120
-    zookeeperSessionTimeoutSeconds: 18
-    topicMetadataMaxAttempts: 6
+  entityOperator:
+    topicOperator:
+      watchedNamespace: "my-ns"
+    userOperator: {}
   clusterCa:
     generateCertificateAuthority: false
     validityDays: 395

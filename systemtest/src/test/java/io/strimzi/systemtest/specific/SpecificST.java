@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Rack;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
@@ -347,8 +348,7 @@ public class SpecificST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.LOADBALANCER)
@@ -363,8 +363,7 @@ public class SpecificST extends AbstractST {
                                         .build())
                                 .withFinalizers(LB_FINALIZERS)
                             .endConfiguration()
-                        .endGenericKafkaListener()
-                    .endListeners()
+                            .build())
                 .endKafka()
             .endSpec()
             .build());
@@ -430,8 +429,7 @@ public class SpecificST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.LOADBALANCER)
@@ -440,8 +438,7 @@ public class SpecificST extends AbstractST {
                                 .withLoadBalancerSourceRanges(Collections.singletonList(ipWithPrefix))
                                 .withFinalizers(LB_FINALIZERS)
                             .endConfiguration()
-                        .endGenericKafkaListener()
-                    .endListeners()
+                            .build())
                 .endKafka()
             .endSpec()
             .build());
@@ -464,7 +461,16 @@ public class SpecificST extends AbstractST {
         LOGGER.info("Replacing Kafka CR invalid load-balancer source range to {}", invalidNetworkAddress);
 
         KafkaResource.replaceKafkaResource(clusterName, kafka ->
-                kafka.getSpec().getKafka().getTemplate().getExternalBootstrapService().setLoadBalancerSourceRanges(Collections.singletonList(invalidNetworkAddress))
+                kafka.getSpec().getKafka().setListeners(Collections.singletonList(new GenericKafkaListenerBuilder()
+                        .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                        .withPort(9094)
+                        .withType(KafkaListenerType.LOADBALANCER)
+                        .withTls(false)
+                        .withNewConfiguration()
+                            .withLoadBalancerSourceRanges(Collections.singletonList(ipWithPrefix))
+                            .withFinalizers(LB_FINALIZERS)
+                        .endConfiguration()
+                        .build()))
         );
 
         LOGGER.info("Expecting that clients will not be able to connect to external load-balancer service cause of invalid load-balancer source range.");

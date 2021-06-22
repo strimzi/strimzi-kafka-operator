@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.SetupClusterOperator;
@@ -110,16 +111,14 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeScramShaClusterName, 1, 1)
             .editSpec()
             .editKafka()
-                .withNewListeners()
-                    .addNewGenericKafkaListener()
+                .withListeners(new GenericKafkaListenerBuilder()
                         .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                         .withPort(9093)
                         .withType(KafkaListenerType.INTERNAL)
                         .withTls(true)
                         .withNewKafkaListenerAuthenticationScramSha512Auth()
                         .endKafkaListenerAuthenticationScramSha512Auth()
-                    .endGenericKafkaListener()
-                .endListeners()
+                        .build())
             .endKafka()
             .endSpec().build());
 
@@ -151,7 +150,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
                         .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                     .endConsumer()
                     .withNewKafkaClientAuthenticationScramSha512()
-                        .withNewUsername(USER_NAME)
+                        .withUsername(USER_NAME)
                         .withPasswordSecret(passwordSecret)
                     .endKafkaClientAuthenticationScramSha512()
                     .withNewTls()

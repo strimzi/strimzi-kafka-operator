@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthentication;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.SetupClusterOperator;
@@ -117,22 +118,20 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withAuth(auth)
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(true)
-                            .withAuth(auth)
-                        .endGenericKafkaListener()
-                    .endListeners()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .withAuth(auth)
+                                .build(),
+                            new GenericKafkaListenerBuilder()
+                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(true)
+                                .withAuth(auth)
+                                .build())
                 .endKafka()
             .endSpec().build());
 

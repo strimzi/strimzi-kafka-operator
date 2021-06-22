@@ -9,9 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -34,7 +32,6 @@ public class KafkaSpec extends Spec {
 
     private KafkaClusterSpec kafka;
     private ZookeeperClusterSpec zookeeper;
-    private TopicOperatorSpec topicOperator;
     private EntityOperatorSpec entityOperator;
     private CertificateAuthority clusterCa;
     private JmxTransSpec jmxTrans;
@@ -62,22 +59,6 @@ public class KafkaSpec extends Spec {
 
     public void setZookeeper(ZookeeperClusterSpec zookeeper) {
         this.zookeeper = zookeeper;
-    }
-
-    @PresentInVersions("v1alpha1-v1beta1")
-    @Deprecated
-    @DeprecatedProperty(
-            movedToPath = "spec.entityOperator.topicOperator",
-            removalVersion = "v1beta2"
-    )
-    @Description("Configuration of the Topic Operator")
-    public TopicOperatorSpec getTopicOperator() {
-        return topicOperator;
-    }
-
-    @Deprecated
-    public void setTopicOperator(TopicOperatorSpec topicOperator) {
-        this.topicOperator = topicOperator;
     }
 
     @Description("Configuration of the Entity Operator")

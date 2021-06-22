@@ -164,7 +164,6 @@
         <module>crd-annotations</module>
         <module>crd-generator</module>
         <module>api</module>
-        <module>api-conversion</module>
         <module>mockkube</module>
         <module>config-model</module>
         <module>config-model-generator</module>

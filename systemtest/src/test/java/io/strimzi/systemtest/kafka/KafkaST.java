@@ -27,7 +27,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
-import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -1033,7 +1033,7 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Editing kafka with external listener");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
-            ArrayOrObjectKafkaListeners lst = new ArrayOrObjectKafkaListeners(asList(
+            List<GenericKafkaListener> lst = asList(
                     new GenericKafkaListenerBuilder()
                             .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)
@@ -1049,7 +1049,7 @@ class KafkaST extends AbstractST {
                                 .withFinalizers(LB_FINALIZERS)
                             .endConfiguration()
                             .build()
-            ));
+            );
             kafka.getSpec().getKafka().setListeners(lst);
         }, namespaceName);
 

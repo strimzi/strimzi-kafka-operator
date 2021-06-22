@@ -161,9 +161,7 @@ public class MultipleListenersST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .withGenericKafkaListeners(listeners)
-                    .endListeners()
+                    .withListeners(listeners)
                 .endKafka()
             .endSpec()
             .build());

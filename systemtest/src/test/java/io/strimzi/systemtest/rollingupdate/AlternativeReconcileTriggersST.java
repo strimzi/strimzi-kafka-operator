@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -227,7 +226,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             LOGGER.info("Adding new bootstrap dns: {} to external listeners", bootstrapDns);
             kafka.getSpec().getKafka()
-                .setListeners(new ArrayOrObjectKafkaListeners(asList(
+                .setListeners(asList(
                     new GenericKafkaListenerBuilder()
                         .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                         .withPort(9092)
@@ -245,7 +244,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
                             .endBootstrap()
                         .endConfiguration()
                         .build()
-                )));
+                ));
         }, namespaceName);
 
         StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);

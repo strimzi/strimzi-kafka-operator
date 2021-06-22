@@ -142,7 +142,7 @@ public class KafkaExporterTest {
     @ParallelTest
     public void testFromConfigMapDefaultConfig() {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, null,
-                healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, new KafkaExporterSpec(), null);
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
         assertThat(ke.getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
@@ -259,7 +259,7 @@ public class KafkaExporterTest {
                 .build();
 
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, exporterSpec, null);
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
@@ -295,7 +295,7 @@ public class KafkaExporterTest {
                 .build();
 
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, exporterSpec, null);
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
@@ -307,7 +307,7 @@ public class KafkaExporterTest {
     @ParallelTest
     public void testExporterNotDeployed() {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, null);
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
@@ -318,7 +318,7 @@ public class KafkaExporterTest {
     @ParallelTest
     public void testGenerateDeploymentWhenDisabled()   {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, null);
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 

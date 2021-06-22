@@ -13,7 +13,7 @@ ifneq ($(RELEASE_VERSION),latest)
   GITHUB_VERSION = $(RELEASE_VERSION)
 endif
 
-SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api api-conversion mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init docker-images packaging/helm-charts/helm3 packaging/install packaging/examples
+SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init docker-images packaging/helm-charts/helm3 packaging/install packaging/examples
 DOCKER_TARGETS=docker_build docker_push docker_tag
 
 all: prerequisites_check $(SUBDIRS) crd_install helm_install shellcheck docu_versions docu_check

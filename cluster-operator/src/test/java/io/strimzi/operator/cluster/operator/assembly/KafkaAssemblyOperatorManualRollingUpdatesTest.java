@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.KubernetesVersion;
@@ -88,14 +89,12 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(3)
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
                     .endKafka()
@@ -156,14 +155,12 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(3)
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
                     .endKafka()
@@ -242,14 +239,12 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(3)
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
                     .endKafka()

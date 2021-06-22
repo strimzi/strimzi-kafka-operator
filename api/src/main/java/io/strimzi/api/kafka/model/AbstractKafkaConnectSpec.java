@@ -7,22 +7,15 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.Toleration;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
-
-import java.util.List;
-import java.util.Map;
 
 @Buildable(
         editableEnabled = false,
@@ -31,8 +24,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "version", "image", "resources", 
         "livenessProbe", "readinessProbe", "jvmOptions",  "jmxOptions",
-        "affinity", "tolerations", "logging", "metrics", "metricsConfig", "tracing",
-        "template", "externalConfiguration"})
+        "logging", "metricsConfig", "tracing", "template", "externalConfiguration"})
 @EqualsAndHashCode(doNotUseGetters = true)
 public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfigurableMetrics {
     private static final long serialVersionUID = 1L;
@@ -48,10 +40,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
     private KafkaJmxOptions jmxOptions;
     private JvmOptions jvmOptions;
     private MetricsConfig metricsConfig;
-    private Map<String, Object> metrics;
     private Tracing tracing;
-    private Affinity affinity;
-    private List<Toleration> tolerations;
     private KafkaConnectTemplate template;
     private ExternalConfiguration externalConfiguration;
 
@@ -159,22 +148,6 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
         this.metricsConfig = metricsConfig;
     }
 
-    @DeprecatedProperty(movedToPath = "spec.metricsConfig", removalVersion = "v1beta2")
-    @PresentInVersions("v1alpha1-v1beta1")
-    @Deprecated
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("The Prometheus JMX Exporter configuration. " +
-            "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
-    @Override
-    public Map<String, Object> getMetrics() {
-        return metrics;
-    }
-
-    @Override
-    public void setMetrics(Map<String, Object> metrics) {
-        this.metrics = metrics;
-    }
-
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The configuration of tracing in Kafka Connect.")
     public Tracing getTracing() {
@@ -183,36 +156,6 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
 
     public void setTracing(Tracing tracing) {
         this.tracing = tracing;
-    }
-
-    @PresentInVersions("v1alpha1-v1beta1")
-    @Description("The pod's affinity rules.")
-    @KubeLink(group = "core", version = "v1", kind = "affinity")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @DeprecatedProperty(movedToPath = "spec.template.pod.affinity", removalVersion = "v1beta2")
-    @Deprecated
-    public Affinity getAffinity() {
-        return affinity;
-    }
-
-    @Deprecated
-    public void setAffinity(Affinity affinity) {
-        this.affinity = affinity;
-    }
-
-    @PresentInVersions("v1alpha1-v1beta1")
-    @Description("The pod's tolerations.")
-    @KubeLink(group = "core", version = "v1", kind = "toleration")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @DeprecatedProperty(movedToPath = "spec.template.pod.tolerations", removalVersion = "v1beta2")
-    @Deprecated
-    public List<Toleration> getTolerations() {
-        return tolerations;
-    }
-
-    @Deprecated
-    public void setTolerations(List<Toleration> tolerations) {
-        this.tolerations = tolerations;
     }
 
     @Description("Template for Kafka Connect and Kafka Connect S2I resources. " +

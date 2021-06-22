@@ -24,4 +24,8 @@ spec:
               - another-node-label-value
   kafka:
     replicas: 2
-    listeners: []
+    listeners:
+      - name: plain
+        port: 9092
+        tls: false
+        type: internal

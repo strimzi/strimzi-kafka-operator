@@ -4,15 +4,11 @@
  */
 package io.strimzi.api.kafka.model;
 
-import java.util.Map;
-
 /**
  * This interface is used for sections of our custom resources which support configurable metrics - either using the
  * inlined Map or using the reference to the ConfigMp with the configuration.
  */
 public interface HasConfigurableMetrics {
-    Map<String, Object> getMetrics();
-    void setMetrics(Map<String, Object> metrics);
     MetricsConfig getMetricsConfig();
     void setMetricsConfig(MetricsConfig metricsConfig);
 }

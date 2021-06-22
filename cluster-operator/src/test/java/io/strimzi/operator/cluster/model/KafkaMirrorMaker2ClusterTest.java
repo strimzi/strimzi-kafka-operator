@@ -243,7 +243,7 @@ public class KafkaMirrorMaker2ClusterTest {
     public void testGenerateServiceWithoutMetrics()   {
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editSpec()
-                    .withMetrics(null)
+                    .withMetricsConfig(null)
                 .endSpec()
                 .build();
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);

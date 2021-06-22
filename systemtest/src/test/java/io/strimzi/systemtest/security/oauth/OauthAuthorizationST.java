@@ -7,7 +7,7 @@ package io.strimzi.systemtest.security.oauth;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListenersBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -39,6 +39,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -450,8 +451,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         LOGGER.info("Adding the maxSecondsWithoutReauthentication to Kafka listener with OAuth authentication");
         KafkaResource.replaceKafkaResource(oauthClusterName, kafka -> {
-            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListenersBuilder()
-                .addNewGenericKafkaListener()
+            kafka.getSpec().getKafka().setListeners(Arrays.asList(new GenericKafkaListenerBuilder()
                     .withName("tls")
                     .withPort(9093)
                     .withType(KafkaListenerType.INTERNAL)
@@ -470,8 +470,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
                         .withDisableTlsHostnameVerification(true)
                         .withMaxSecondsWithoutReauthentication(30)
                     .endKafkaListenerAuthenticationOAuth()
-                .endGenericKafkaListener()
-                .build());
+                .build()));
         });
 
         KafkaUtils.waitForKafkaReady(oauthClusterName);
@@ -557,8 +556,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         LOGGER.info("Changing configuration of Kafka back to it's original form");
         KafkaResource.replaceKafkaResource(oauthClusterName, kafka -> {
-            kafka.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListenersBuilder()
-                .addNewGenericKafkaListener()
+            kafka.getSpec().getKafka().setListeners(Arrays.asList(new GenericKafkaListenerBuilder()
                     .withName("tls")
                     .withPort(9093)
                     .withType(KafkaListenerType.INTERNAL)
@@ -576,8 +574,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
                                 .build())
                         .withDisableTlsHostnameVerification(true)
                     .endKafkaListenerAuthenticationOAuth()
-                .endGenericKafkaListener()
-                .build());
+                .build()));
         });
 
         KafkaUtils.waitForKafkaReady(oauthClusterName);
@@ -608,8 +605,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
@@ -627,8 +623,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
                                         .build())
                                 .withDisableTlsHostnameVerification(true)
                             .endKafkaListenerAuthenticationOAuth()
-                        .endGenericKafkaListener()
-                    .endListeners()
+                        .build())
                     .withNewKafkaAuthorizationKeycloak()
                         .withClientId(KAFKA_CLIENT_ID)
                         .withDisableTlsHostnameVerification(true)

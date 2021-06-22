@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.KafkaConnectTlsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
@@ -252,16 +253,14 @@ class ConnectS2IST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
                             .withNewKafkaListenerAuthenticationScramSha512Auth()
                             .endKafkaListenerAuthenticationScramSha512Auth()
-                        .endGenericKafkaListener()
-                    .endListeners()
+                            .build())
                 .endKafka()
             .endSpec()
             .build());
