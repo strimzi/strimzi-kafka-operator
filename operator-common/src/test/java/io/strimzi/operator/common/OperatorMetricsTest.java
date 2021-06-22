@@ -101,7 +101,7 @@ public class OperatorMetricsTest {
                     MeterRegistry registry = metrics.meterRegistry();
 
                     assertThat(registry.getMeters().get(0).getId().getTags().size(), is(2));
-                    assertThat(registry.getMeters().get(0).getId().getTags().get(1), is(Tag.of("selector", selectorLabels !=null ? selectorLabels.toSelectorString() : "")));
+                    assertThat(registry.getMeters().get(0).getId().getTags().get(1), is(Tag.of("selector", selectorLabels != null ? selectorLabels.toSelectorString() : "")));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(1.0));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
