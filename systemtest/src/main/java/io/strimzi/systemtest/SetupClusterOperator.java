@@ -80,13 +80,14 @@ public class SetupClusterOperator {
             LOGGER.info("Going to install ClusterOperator via OLM");
             // cluster-wide olm co-operator
             if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
+                cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
                 createClusterRoleBindings();
                 olmResource = new OlmResource(cluster.getDefaultOlmNamespace());
                 olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
             // single-namespace olm co-operator
             } else {
                 cluster.setNamespace(namespaceInstallTo);
-                cluster.createNamespace(namespaceInstallTo);
+                cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
                 olmResource = new OlmResource(namespaceInstallTo);
                 olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
             }
@@ -94,7 +95,7 @@ public class SetupClusterOperator {
             LOGGER.info("Going to install ClusterOperator via Helm");
             helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
             cluster.setNamespace(namespaceInstallTo);
-            cluster.createNamespace(namespaceInstallTo);
+            cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
             helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
         } else {
             LOGGER.info("Going to install ClusterOperator via Yaml bundle");
