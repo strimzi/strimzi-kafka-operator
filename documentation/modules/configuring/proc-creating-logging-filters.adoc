@@ -12,6 +12,7 @@ you can also define logging filters to limit what's returned in the log.
 Logging filters are useful when you have a large number of logging messages.
 Suppose you set the log level for the logger as DEBUG (`rootLogger.level="DEBUG"`).
 Logging filters reduce the number of logs returned for the logger at that level, so you can focus on a specific resource.
+When the filter is set, only log messages matching the filter are logged.
 
 Filters use _markers_ to specify what to include in the log.
 You specify a kind, namespace and name for the marker.
