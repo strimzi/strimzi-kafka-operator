@@ -9,6 +9,10 @@
 If you are using a ConfigMap to configure the (log4j2) logging levels for Strimzi Operators,
 you can also define logging filters to limit what's returned in the log.
 
+Logging filters are useful when you have a large number of logging messages.
+Suppose you set the log level for the logger as DEBUG (`rootLogger.level="DEBUG"`).
+Logging filters reduce the number of logs returned for the logger at that level, so you can focus on a specific resource.
+
 Filters use _markers_ to specify what to include in the log.
 You specify a kind, namespace and name for the marker.
 For example, if a Kafka cluster is failing, you can isolate the logs by specifying the kind as `Kafka`, and use the namespace and name of the failing cluster.
@@ -18,6 +22,7 @@ This example shows a marker filter for a Kafka cluster named `my-kafka-cluster`.
 .Basic logging filter configuration
 [source,yaml,subs="+attributes"]
 ----
+rootLogger.level="INFO"
 appender.console.filter.filter1.type=MarkerFilter <1>
 appender.console.filter.filter1.onMatch=ACCEPT <2>
 appender.console.filter.filter1.onMismatch=DENY <3>
@@ -73,7 +78,7 @@ Alternatively, edit the `ConfigMap` directly:
 +
 [source,shell,subs=+quotes]
 ----
-kubectl edit cm strimzi-cluster-operator
+kubectl edit configmap strimzi-cluster-operator
 ----
 
 . If you updated the YAML file instead of editing the `ConfigMap` directly, apply the changes by deploying the ConfigMap:

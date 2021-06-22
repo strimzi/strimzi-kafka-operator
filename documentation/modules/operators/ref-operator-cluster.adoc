@@ -295,7 +295,7 @@ kubectl create -f _install/cluster-operator/050-ConfigMap-strimzi-cluster-operat
 
 Alternatively, edit the `ConfigMap` directly:
 [source,shell,subs=+quotes]
-kubectl edit cm strimzi-cluster-operator
+kubectl edit configmap strimzi-cluster-operator
 
 To change the frequency of the reload interval, set a time in seconds in the `monitorInterval` option in the created `ConfigMap`.
 

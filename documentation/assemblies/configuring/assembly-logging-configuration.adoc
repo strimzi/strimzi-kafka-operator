@@ -7,13 +7,14 @@
 
 [role="_abstract"]
 Configure logging levels in the custom resources of Kafka components and Strimzi Operators.
-You can specify the logging levels directly in the `spec.logging` property of the resource YAML.
-Or you can define the logging properties in a ConfigMap that's referenced in the YAML using the `configMapKeyRef` property.
+You can specify the logging levels directly in the `spec.logging` property of the custom resource.
+Or you can define the logging properties in a ConfigMap that's referenced in the custom resource using the `configMapKeyRef` property.
 
 The advantages of using a ConfigMap are that the logging properties are maintained in one place and are accessible to more than one resource.
+You can also reuse the ConfigMap for more than one resource.
 If you are using a ConfigMap to specify loggers for Strimzi Operators, you can also append the logging specification to add filters.
 
-You specify a `type` in your logging specification:
+You specify a logging `type` in your logging specification:
 
 * `inline` when specifying logging levels directly
 * `external` when referencing a ConfigMap
