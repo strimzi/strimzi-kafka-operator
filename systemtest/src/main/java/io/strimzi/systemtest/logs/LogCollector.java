@@ -127,7 +127,7 @@ public class LogCollector implements LogCollect {
             LOGGER.info("Collecting logs for Pod(s) in namespace {}", namespaceFile.getName());
 
             // in case we are in the cluster operator namespace we wants shared logs for whole test suite
-            if (namespaceFile.getName().equals(this.clusterOperatorNamespace) || this.clusterOperatorNamespace == null) {
+            if (namespaceFile.getName().equals(this.clusterOperatorNamespace)) {
                 kubeClient.listPods(namespaceFile.getName()).forEach(pod -> {
                     String podName = pod.getMetadata().getName();
                     pod.getStatus().getContainerStatuses().forEach(containerStatus -> {

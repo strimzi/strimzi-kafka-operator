@@ -148,8 +148,6 @@ public class HelmResource implements SpecificResourceType {
     private void deleteClusterOperator() {
         ResourceManager.helmClient().delete(namespaceInstallTo, HELM_RELEASE_NAME);
         DeploymentUtils.waitForDeploymentDeletion(ResourceManager.getCoDeploymentName());
-        // TODO not needed ?
-        cmdKubeClient().delete(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
     }
 
     public String getNamespaceToWatch() {
