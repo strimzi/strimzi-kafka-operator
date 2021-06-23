@@ -113,7 +113,7 @@ The broker load is stored in a ConfigMap (with the same name as the KafakRebalan
 Each metric consist of three values.
 The first is the metric value before the optimization proposal is applied, the second is the expected value of the metric after the proposal is applied, and the third is the difference between the first two values (after minus before).
 
-NOTE: The ConfigMap will appear once the KafkaRebalance is in `ProposalReady` state and remain even after the rebalancing process.
+NOTE: The ConfigMap appears when the KafkaRebalance resource is in the `ProposalReady` state and remains after the rebalance is complete.
 
 To extract the JSON string from the ConfigMap you could use the following command, which uses the jq command line JSON parser tool:
 
