@@ -39,7 +39,7 @@ parameters:
   value: "my-source-group-id"
 - description: List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions
   displayName: List of topics which are included for mirroring.
-  name: MIRROR_MAKER_WHITELIST
+  name: MIRROR_MAKER_INCLUDE
   required: true
   value: ".*"
 objects:
@@ -55,4 +55,4 @@ objects:
       groupId: ${{MIRROR_MAKER_GROUP_ID}}
     producer:
       bootstrapServers: ${{MIRROR_MAKER_TARGET}}
-    whitelist: ${{MIRROR_MAKER_WHITELIST}}
+    include: ${{MIRROR_MAKER_INCLUDE}}
