@@ -5,6 +5,7 @@
 package io.strimzi.operator.common.model;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
