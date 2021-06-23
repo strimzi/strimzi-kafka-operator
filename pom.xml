@@ -108,7 +108,7 @@
         <!-- keep in-sync with dataformat-yaml -->
         <json-path.version>4.1.1</json-path.version>
         <zkclient.version>0.11</zkclient.version>
-        <scala-library.version>2.12.12</scala-library.version>
+        <scala-library.version>2.13.5</scala-library.version>
         <zookeeper.version>3.5.9</zookeeper.version>
         <mockito.version>2.28.2</mockito.version>
         <jayway-jsonpath.version>2.6.0</jayway-jsonpath.version>
@@ -350,7 +350,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
-                <artifactId>kafka_2.12</artifactId>
+                <artifactId>kafka_2.13</artifactId>
                 <version>${kafka.version}</version>
             </dependency>
             <dependency>
@@ -447,7 +447,7 @@
             <dependency>
                 <!-- transitive dep; override here to avoid buggy version -->
                 <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-scala_2.12</artifactId>
+                <artifactId>jackson-module-scala_2.13</artifactId>
                 <version>${fasterxml.jackson-core.version}</version>
             </dependency>
             <dependency>
@@ -620,7 +620,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
-                <artifactId>kafka_2.12</artifactId>
+                <artifactId>kafka_2.13</artifactId>
                 <version>${kafka.version}</version>
                 <classifier>test</classifier>
                 <scope>test</scope>
@@ -1081,7 +1081,7 @@
                                 <ignoredUnusedDeclaredDependency>org.projectlombok:lombok</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.slf4j:slf4j-api:jar</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.glassfish:javax.json:jar</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka_2.12:jar</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka_2.13:jar</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>io.netty:netty-transport-native-epoll:jar</ignoredUnusedDeclaredDependency>
                                 <ignoredDependency>org.junit.platform</ignoredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.kafka:connect-file</ignoredUnusedDeclaredDependency>
