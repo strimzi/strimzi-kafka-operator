@@ -15,8 +15,10 @@
 //Latest Strimzi version
 :ProductVersion: 0.24.0
 //Strimzi versions used in upgrades sections for API conversions
-:ConvertAfterProductVersion: 0.22.0
-:ConvertBeforeProductVersion: 0.23.0
+:ConvertAfterProductVersion: 0.22
+:ConvertBeforeProductVersion: 0.23
+:LastReleaseWithCRDUpgrade: 0.24
+:UpgradeGuide: link:https://strimzi.io/docs/operators/0.24.0/deploying.html#assembly-upgrade-resources-str[Strimzi 0.24.0 documentation^]
 
 // Kubernetes and OpenShift versions
 :OpenShiftVersion: 4.3 and later
