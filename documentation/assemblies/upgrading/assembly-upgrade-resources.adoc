@@ -6,6 +6,6 @@
 = Strimzi custom resource upgrades
 
 When upgrading Strimzi to {ProductVersion} from {ConvertAfterProductVersion} or earlier, you must ensure that your custom resources are using API version `{ApiVersion}`.
-You have to upgrade the Custom Resource Definitions and the Custom Resources before upgrading to Strimzi {ConvertBeforeProductVersion} or newer.
-To do the upgrade, you can use the _API conversion tool_ from Strimzi {LastReleaseWithCRDUpgrade}.
+You must upgrade the Custom Resource Definitions and the custom resources *before* upgrading to Strimzi {ConvertBeforeProductVersion} or newer.
+To perform the upgrade, you can use the _API conversion tool_ provided with Strimzi {LastReleaseWithCRDUpgrade}.
 For more information, see the {UpgradeGuide}.
