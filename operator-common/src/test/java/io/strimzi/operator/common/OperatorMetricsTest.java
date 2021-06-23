@@ -67,8 +67,7 @@ public class OperatorMetricsTest {
         vertx.close();
     }
 
-
-    public void testSuccessfulReconcile(VertxTestContext context, Labels selectorLabels)  {
+    public void successfulReconcile(VertxTestContext context, Labels selectorLabels)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
         AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
@@ -121,17 +120,17 @@ public class OperatorMetricsTest {
 
     @Test
     public void testReconcileWithEmptySelectorLabels(VertxTestContext context) {
-        testSuccessfulReconcile(context, Labels.fromMap(emptyMap()));
+        successfulReconcile(context, Labels.fromMap(emptyMap()));
     }
 
     @Test
     public void testReconcileWithValuedSelectorLabel(VertxTestContext context) {
-        testSuccessfulReconcile(context, Labels.fromMap(Collections.singletonMap("io/my-test-label", "my-test-value")));
+        successfulReconcile(context, Labels.fromMap(Collections.singletonMap("io/my-test-label", "my-test-value")));
     }
 
     @Test
     public void testReconcileWithoutSelectorLabel(VertxTestContext context) {
-        testSuccessfulReconcile(context, null);
+        successfulReconcile(context, null);
     }
 
     @Test
@@ -188,7 +187,6 @@ public class OperatorMetricsTest {
                     async.flag();
                 })));
     }
-
 
     @Test
     public void testPauseReconcile(VertxTestContext context)  {
@@ -277,8 +275,8 @@ public class OperatorMetricsTest {
                 .onComplete(context.failing(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
 
-                    assertThat(registry.getMeters().get(0).getId().getTags().size(), is(2));
-                    assertThat(registry.getMeters().get(0).getId().getTags().get(1), is(Tag.of("selector", "")));
+                    assertThat(registry.find(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().size(), is(2));
+                    assertThat(registry.find(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(1), is(Tag.of("selector", "")));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(0.0));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
@@ -361,7 +359,6 @@ public class OperatorMetricsTest {
                     async.flag();
                 })));
     }
-
 
     @Test
     public void testReconcileAll(VertxTestContext context)  {
