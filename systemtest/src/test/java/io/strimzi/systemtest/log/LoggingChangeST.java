@@ -324,7 +324,6 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapUo);
 
         ExternalLogging elTo = new ExternalLoggingBuilder()
-            .withName("external-configmap-to")
             .withNewValueFrom()
                 .withConfigMapKeyRef(
                     new ConfigMapKeySelectorBuilder()
@@ -336,7 +335,6 @@ class LoggingChangeST extends AbstractST {
             .build();
 
         ExternalLogging elUo = new ExternalLoggingBuilder()
-            .withName("external-configmap-uo")
             .withNewValueFrom()
                 .withConfigMapKeyRef(
                     new ConfigMapKeySelectorBuilder()
@@ -515,7 +513,6 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapBridge);
 
         ExternalLogging bridgeXternalLogging = new ExternalLoggingBuilder()
-            .withName("external-configmap-bridge")
             .withNewValueFrom()
                 .withConfigMapKeyRef(
                     new ConfigMapKeySelectorBuilder()
@@ -714,7 +711,6 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(connectLoggingMap);
 
         ExternalLogging connectXternalLogging = new ExternalLoggingBuilder()
-            .withName(externalCmName)
             .withNewValueFrom()
                 .withConfigMapKeyRef(
                     new ConfigMapKeySelectorBuilder()
@@ -892,7 +888,6 @@ class LoggingChangeST extends AbstractST {
 
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMap);
         ExternalLogging el = new ExternalLoggingBuilder()
-            .withName("external-cm")
             .withNewValueFrom()
                 .withConfigMapKeyRef(
                     new ConfigMapKeySelectorBuilder()
@@ -1044,7 +1039,6 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(mm2LoggingMap);
 
         ExternalLogging mm2XternalLogging = new ExternalLoggingBuilder()
-            .withName(externalCmName)
             .withNewValueFrom()
                 .withConfigMapKeyRef(
                     new ConfigMapKeySelectorBuilder()

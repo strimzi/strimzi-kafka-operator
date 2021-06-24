@@ -58,6 +58,7 @@ import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBootstrap;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBootstrapBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
@@ -147,7 +148,7 @@ public class KafkaClusterTest {
             add(new SystemPropertyBuilder().withName("something.else").withValue("42").build());
         }};
 
-    private final Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, kafkaLog, zooLog))
+    private final Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, kafkaLog, zooLog))
             .editSpec()
                 .editKafka()
                     .withNewJvmOptions()
@@ -230,7 +231,7 @@ public class KafkaClusterTest {
         Kafka kafka = new KafkaBuilder(kafkaAssembly)
                 .editSpec()
                     .editKafka()
-                        .withMetrics(null)
+                        .withMetricsConfig(null)
                     .endKafka()
                 .endSpec()
                 .build();
@@ -339,7 +340,7 @@ public class KafkaClusterTest {
     public void testGenerateStatefulSetWithSetStorageSelector() {
         Map<String, String> selector = TestUtils.map("foo", "bar");
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
                 .withNewPersistentClaimStorage().withSelector(selector).withSize("100Gi").endPersistentClaimStorage()
@@ -354,7 +355,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGenerateStatefulSetWithEmptyStorageSelector() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
                 .withNewPersistentClaimStorage().withSelector(emptyMap()).withSize("100Gi").endPersistentClaimStorage()
@@ -370,7 +371,7 @@ public class KafkaClusterTest {
     public void testGenerateStatefulSetWithSetSizeLimit() {
         String sizeLimit = "1Gi";
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewEphemeralStorage().withSizeLimit(sizeLimit).endEphemeralStorage()
@@ -385,7 +386,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGenerateStatefulSetWithEmptySizeLimit() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewEphemeralStorage().endEphemeralStorage()
@@ -529,7 +530,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testPvcNames() {
         Kafka assembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withStorage(new PersistentClaimStorageBuilder().withDeleteClaim(false).withSize("100Gi").build())
@@ -546,7 +547,7 @@ public class KafkaClusterTest {
         }
 
         assembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withStorage(new JbodStorageBuilder().withVolumes(
@@ -607,19 +608,17 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testExternalRoutes() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
-                .withNewListeners()
-                    .addNewGenericKafkaListener()
+                .withListeners(new GenericKafkaListenerBuilder()
                         .withName("external")
                         .withPort(9094)
                         .withType(KafkaListenerType.ROUTE)
                         .withTls(true)
                         .withNewKafkaListenerAuthenticationTlsAuth()
                         .endKafkaListenerAuthenticationTlsAuth()
-                    .endGenericKafkaListener()
-                .endListeners()
+                        .build())
                 .endKafka()
                 .endSpec()
                 .build();
@@ -686,11 +685,10 @@ public class KafkaClusterTest {
         routeListenerBrokerConfig2.setHost("my-host-2.cz");
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.ROUTE)
@@ -703,8 +701,7 @@ public class KafkaClusterTest {
                                     .endBootstrap()
                                     .withBrokers(routeListenerBrokerConfig0, routeListenerBrokerConfig1, routeListenerBrokerConfig2)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -742,11 +739,10 @@ public class KafkaClusterTest {
         routeListenerBrokerConfig2.setLabels(Collections.singletonMap("label", "label-value-2"));
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.ROUTE)
@@ -760,8 +756,7 @@ public class KafkaClusterTest {
                                     .endBootstrap()
                                     .withBrokers(routeListenerBrokerConfig0, routeListenerBrokerConfig1, routeListenerBrokerConfig2)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -786,19 +781,17 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testExternalLoadBalancers() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.LOADBALANCER)
                                 .withTls(true)
                                 .withNewKafkaListenerAuthenticationTlsAuth()
                                 .endKafkaListenerAuthenticationTlsAuth()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -840,11 +833,10 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testLoadBalancerExternalTrafficPolicyLocalFromListener() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.LOADBALANCER)
@@ -852,8 +844,7 @@ public class KafkaClusterTest {
                                 .withNewConfiguration()
                                     .withExternalTrafficPolicy(ExternalTrafficPolicy.LOCAL)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -873,11 +864,10 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testLoadBalancerExternalTrafficPolicyClusterFromListener() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.LOADBALANCER)
@@ -885,8 +875,7 @@ public class KafkaClusterTest {
                                 .withNewConfiguration()
                                     .withExternalTrafficPolicy(ExternalTrafficPolicy.CLUSTER)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -908,11 +897,10 @@ public class KafkaClusterTest {
         List<String> finalizers = List.of("service.kubernetes.io/load-balancer-cleanup", "mydomain.io/my-custom-finalizer");
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.LOADBALANCER)
@@ -920,8 +908,7 @@ public class KafkaClusterTest {
                                 .withNewConfiguration()
                                     .withFinalizers(finalizers)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -945,11 +932,10 @@ public class KafkaClusterTest {
         sourceRanges.add("130.211.204.1/32");
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.LOADBALANCER)
@@ -957,8 +943,7 @@ public class KafkaClusterTest {
                                 .withNewConfiguration()
                                     .withLoadBalancerSourceRanges(sourceRanges)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -995,11 +980,10 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.LOADBALANCER)
@@ -1008,8 +992,7 @@ public class KafkaClusterTest {
                                     .withBootstrap(bootstrapConfig)
                                     .withBrokers(brokerConfig0, brokerConfig2)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -1043,11 +1026,10 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.LOADBALANCER)
@@ -1056,8 +1038,7 @@ public class KafkaClusterTest {
                                     .withBootstrap(bootstrapConfig)
                                     .withBrokers(brokerConfig0, brokerConfig2)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -1090,11 +1071,10 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
@@ -1103,8 +1083,7 @@ public class KafkaClusterTest {
                                     .withBootstrap(bootstrapConfig)
                                     .withBrokers(brokerConfig0, brokerConfig2)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -1125,19 +1104,17 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testExternalNodePorts() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(true)
                                 .withNewKafkaListenerAuthenticationTlsAuth()
                                 .endKafkaListenerAuthenticationTlsAuth()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -1171,11 +1148,10 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testExternalNodePortsWithAddressType() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
@@ -1183,8 +1159,7 @@ public class KafkaClusterTest {
                                 .withNewConfiguration()
                                     .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -1206,11 +1181,10 @@ public class KafkaClusterTest {
         nodePortListenerBrokerConfig.setNodePort(32101);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-            image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+            image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName("external")
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
@@ -1221,8 +1195,7 @@ public class KafkaClusterTest {
                                 .endBootstrap()
                                 .withBrokers(nodePortListenerBrokerConfig)
                             .endConfiguration()
-                        .endGenericKafkaListener()
-                    .endListeners()
+                            .build())
                 .endKafka()
             .endSpec()
             .build();
@@ -1264,11 +1237,10 @@ public class KafkaClusterTest {
         nodePortListenerBrokerConfig.setNodePort(32101);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-            image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+            image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName("external")
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
@@ -1279,8 +1251,7 @@ public class KafkaClusterTest {
                                 .endBootstrap()
                                 .withBrokers(nodePortListenerBrokerConfig)
                             .endConfiguration()
-                        .endGenericKafkaListener()
-                    .endListeners()
+                            .build())
                 .endKafka()
             .endSpec()
             .build();
@@ -1300,11 +1271,10 @@ public class KafkaClusterTest {
         nodePortListenerBrokerConfig.setAdvertisedHost("advertised.host");
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-            image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+            image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName("external")
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
@@ -1315,8 +1285,7 @@ public class KafkaClusterTest {
                                 .endBootstrap()
                                 .withBrokers(nodePortListenerBrokerConfig)
                             .endConfiguration()
-                        .endGenericKafkaListener()
-                    .endListeners()
+                            .build())
                 .endKafka()
             .endSpec()
             .build();
@@ -1486,23 +1455,21 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.ROUTE)
-                                .withTls(true)
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withName("external2")
-                                .withPort(9095)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                            .endGenericKafkaListener()
-                        .endListeners()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                    .withName("external")
+                                    .withPort(9094)
+                                    .withType(KafkaListenerType.ROUTE)
+                                    .withTls(true)
+                                    .build(),
+                                new GenericKafkaListenerBuilder()
+                                    .withName("external2")
+                                    .withPort(9095)
+                                    .withType(KafkaListenerType.NODEPORT)
+                                    .withTls(true)
+                                    .build())
                         .withNewTemplate()
                             .withNewStatefulset()
                                 .withNewMetadata()
@@ -1658,7 +1625,7 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap());
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap());
         KafkaCluster k = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Network Policies => Different namespace
@@ -1721,7 +1688,7 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap());
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap());
         KafkaCluster k = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Network Policies => Different namespace
@@ -1782,32 +1749,30 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("plain")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withNetworkPolicyPeers(peer1)
-                                .withTls(false)
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withName("tls")
-                                .withPort(9093)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(true)
-                                .withNetworkPolicyPeers(peer2)
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.ROUTE)
-                                .withTls(true)
-                                .withNetworkPolicyPeers(peer1, peer2)
-                            .endGenericKafkaListener()
-                        .endListeners()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                    .withName("plain")
+                                    .withPort(9092)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withNetworkPolicyPeers(peer1)
+                                    .withTls(false)
+                                    .build(),
+                                new GenericKafkaListenerBuilder()
+                                    .withName("tls")
+                                    .withPort(9093)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(true)
+                                    .withNetworkPolicyPeers(peer2)
+                                    .build(),
+                                new GenericKafkaListenerBuilder()
+                                    .withName("external")
+                                    .withPort(9094)
+                                    .withType(KafkaListenerType.ROUTE)
+                                    .withTls(true)
+                                    .withNetworkPolicyPeers(peer1, peer2)
+                                    .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -1834,29 +1799,27 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testNoNetworkPolicyPeers() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("plain")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(false)
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withName("tls")
-                                .withPort(9093)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(true)
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.ROUTE)
-                                .withTls(true)
-                            .endGenericKafkaListener()
-                        .endListeners()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                    .withName("plain")
+                                    .withPort(9092)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(false)
+                                    .build(),
+                                new GenericKafkaListenerBuilder()
+                                    .withName("tls")
+                                    .withPort(9093)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(true)
+                                    .build(),
+                                new GenericKafkaListenerBuilder()
+                                    .withName("external")
+                                    .withPort(9094)
+                                    .withType(KafkaListenerType.ROUTE)
+                                    .withTls(true)
+                                    .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -1881,7 +1844,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGracePeriod() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
@@ -1901,7 +1864,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testDefaultGracePeriod() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
@@ -1915,7 +1878,7 @@ public class KafkaClusterTest {
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
@@ -1944,7 +1907,7 @@ public class KafkaClusterTest {
         secrets.add(secret2);
 
         Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap());
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap());
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = kc.generateStatefulSet(true, null, secrets);
@@ -1959,7 +1922,7 @@ public class KafkaClusterTest {
         LocalObjectReference secret2 = new LocalObjectReference("some-other-pull-secret");
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
@@ -1981,7 +1944,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testDefaultImagePullSecrets() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
@@ -1992,7 +1955,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testSecurityContext() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
@@ -2015,7 +1978,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testDefaultSecurityContext() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
@@ -2026,7 +1989,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testPodDisruptionBudget() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                     .withNewTemplate()
@@ -2046,7 +2009,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testDefaultPodDisruptionBudget() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
@@ -2057,7 +2020,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testImagePullPolicy() {
         Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap());
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap());
         kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
@@ -2073,31 +2036,29 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testExternalServiceWithDualStackNetworking() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("np")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .withNewConfiguration()
-                                    .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
-                                    .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
-                                .endConfiguration()
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withName("lb")
-                                .withPort(9095)
-                                .withType(KafkaListenerType.LOADBALANCER)
-                                .withTls(true)
-                                .withNewConfiguration()
-                                    .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
-                                    .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
-                                .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                    .withName("np")
+                                    .withPort(9094)
+                                    .withType(KafkaListenerType.NODEPORT)
+                                    .withTls(true)
+                                    .withNewConfiguration()
+                                        .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
+                                        .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
+                                    .endConfiguration()
+                                    .build(),
+                                new GenericKafkaListenerBuilder()
+                                    .withName("lb")
+                                    .withPort(9095)
+                                    .withType(KafkaListenerType.LOADBALANCER)
+                                    .withTls(true)
+                                    .withNewConfiguration()
+                                        .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
+                                        .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
+                                    .endConfiguration()
+                                    .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -2134,11 +2095,10 @@ public class KafkaClusterTest {
         nodePortListenerBrokerConfig2.setAdvertisedPort(10002);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
@@ -2146,8 +2106,7 @@ public class KafkaClusterTest {
                                 .withNewConfiguration()
                                     .withBrokers(nodePortListenerBrokerConfig0, nodePortListenerBrokerConfig1, nodePortListenerBrokerConfig2)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -2167,17 +2126,15 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGetExternalServiceWithoutAdvertisedHostAndPortOverride() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(true)
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -2202,11 +2159,10 @@ public class KafkaClusterTest {
         nodePortListenerBrokerConfig0.setAdvertisedPort(10000);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
@@ -2214,8 +2170,7 @@ public class KafkaClusterTest {
                                 .withNewConfiguration()
                                     .withBrokers(nodePortListenerBrokerConfig0)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -2236,17 +2191,15 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGetExternalAdvertisedUrlWithoutOverrides() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(true)
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -2263,7 +2216,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGeneratePersistentVolumeClaimsPersistentWithClaimDeletion() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewPersistentClaimStorage()
@@ -2297,7 +2250,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGeneratePersistentVolumeClaimsPersistentWithoutClaimDeletion() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
                 .withNewPersistentClaimStorage().withStorageClass("gp2-ssd").withDeleteClaim(false).withSize("100Gi").endPersistentClaimStorage()
@@ -2327,7 +2280,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGeneratePersistentVolumeClaimsPersistentWithOverride() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
                 .withNewPersistentClaimStorage()
@@ -2373,7 +2326,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGeneratePersistentVolumeClaimsJbod() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
                 .withStorage(new JbodStorageBuilder().withVolumes(
@@ -2439,7 +2392,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGeneratePersistentVolumeClaimsJbodWithTemplate() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
@@ -2485,7 +2438,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGeneratePersistentVolumeClaimsJbodWithOverrides() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
                 .withStorage(new JbodStorageBuilder().withVolumes(
@@ -2529,7 +2482,7 @@ public class KafkaClusterTest {
     public void testGeneratePersistentVolumeClaimsJbodWithoutVolumes() {
         assertThrows(InvalidResourceException.class, () -> {
             Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                    image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                    image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                     .editSpec()
                     .editKafka()
                     .withStorage(new JbodStorageBuilder().withVolumes(Collections.EMPTY_LIST)
@@ -2549,7 +2502,7 @@ public class KafkaClusterTest {
                     .build();
 
             Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                    image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                    image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                     .editSpec()
                     .editKafka()
                     .withStorage(new JbodStorageBuilder().withVolumes(Collections.EMPTY_LIST)
@@ -2564,7 +2517,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGeneratePersistentVolumeClaimsEphemeral()    {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewEphemeralStorage().endEphemeralStorage()
@@ -2597,7 +2550,7 @@ public class KafkaClusterTest {
         // Test Storage changes and how the are reverted
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
                 .withStorage(jbod)
@@ -2614,7 +2567,7 @@ public class KafkaClusterTest {
         assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
 
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
                 .withStorage(jbod)
@@ -2631,7 +2584,7 @@ public class KafkaClusterTest {
         assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
 
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
                 .withStorage(ephemeral)
@@ -2648,7 +2601,7 @@ public class KafkaClusterTest {
         assertThat(kc.getWarningConditions().get(0).getReason(), is("KafkaStorage"));
 
         kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
                 .withStorage(persistent)
@@ -2689,11 +2642,10 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.INGRESS)
@@ -2706,8 +2658,7 @@ public class KafkaClusterTest {
                                     .endBootstrap()
                                     .withBrokers(broker0, broker1, broker2)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -2827,11 +2778,10 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.INGRESS)
@@ -2844,8 +2794,7 @@ public class KafkaClusterTest {
                                     .endBootstrap()
                                     .withBrokers(broker0, broker1, broker2)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -2876,11 +2825,10 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.INGRESS)
@@ -2893,8 +2841,7 @@ public class KafkaClusterTest {
                                     .endBootstrap()
                                     .withBrokers(broker0)
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -2912,19 +2859,17 @@ public class KafkaClusterTest {
         String testNamespace = "other-namespace";
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(testNamespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(true)
                                 .withNewKafkaListenerAuthenticationTlsAuth()
                                 .endKafkaListenerAuthenticationTlsAuth()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -2943,7 +2888,7 @@ public class KafkaClusterTest {
         String testNamespace = "other-namespace";
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(testNamespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewRack("my-topology-label")
@@ -2965,7 +2910,7 @@ public class KafkaClusterTest {
         String testNamespace = "other-namespace";
 
         Kafka kafkaAssembly = ResourceUtils.createKafka(testNamespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap());
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap());
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
         ClusterRoleBinding crb = kc.generateClusterRoleBinding(testNamespace);
@@ -2993,7 +2938,7 @@ public class KafkaClusterTest {
         testEnvs.add(envVar2);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
@@ -3039,7 +2984,7 @@ public class KafkaClusterTest {
         kafkaContainer.setEnv(testEnvs);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
@@ -3088,7 +3033,7 @@ public class KafkaClusterTest {
         initContainer.setEnv(testEnvs);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()
                 .withNewTemplate()
@@ -3130,22 +3075,20 @@ public class KafkaClusterTest {
         initContainer.setEnv(testEnvs);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
                             .withInitContainer(initContainer)
                         .endTemplate()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(true)
                                 .withNewKafkaListenerAuthenticationTlsAuth()
                                 .endKafkaListenerAuthenticationTlsAuth()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -3175,7 +3118,7 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
@@ -3213,7 +3156,7 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         // Set a rack to force init-container to be templated
@@ -3242,11 +3185,10 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGenerateDeploymentWithOAuthWithClientSecret() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
@@ -3261,8 +3203,7 @@ public class KafkaClusterTest {
                                                 .withKey("my-secret-key")
                                                 .endClientSecret()
                                                 .build())
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -3293,11 +3234,10 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
@@ -3314,8 +3254,7 @@ public class KafkaClusterTest {
                                                 .withDisableTlsHostnameVerification(true)
                                                 .withTlsTrustedCertificates(cert1, cert2, cert3)
                                                 .build())
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -3364,65 +3303,63 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("plain")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(false)
-                                .withAuth(
-                                        new KafkaListenerAuthenticationOAuthBuilder()
-                                                .withClientId("my-client-id")
-                                                .withValidIssuerUri("http://valid-issuer")
-                                                .withIntrospectionEndpointUri("http://introspection")
-                                                .withNewClientSecret()
-                                                .withSecretName("my-secret-secret")
-                                                .withKey("my-secret-key")
-                                                .endClientSecret()
-                                                .withDisableTlsHostnameVerification(true)
-                                                .withTlsTrustedCertificates(cert1, cert2, cert3)
-                                                .build())
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withName("tls")
-                                .withPort(9093)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(true)
-                                .withAuth(
-                                        new KafkaListenerAuthenticationOAuthBuilder()
-                                                .withClientId("my-client-id")
-                                                .withValidIssuerUri("http://valid-issuer")
-                                                .withIntrospectionEndpointUri("http://introspection")
-                                                .withNewClientSecret()
-                                                .withSecretName("my-secret-secret")
-                                                .withKey("my-secret-key")
-                                                .endClientSecret()
-                                                .withDisableTlsHostnameVerification(true)
-                                                .withTlsTrustedCertificates(cert1, cert2, cert3)
-                                                .build())
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .withAuth(
-                                        new KafkaListenerAuthenticationOAuthBuilder()
-                                                .withClientId("my-client-id")
-                                                .withValidIssuerUri("http://valid-issuer")
-                                                .withIntrospectionEndpointUri("http://introspection")
-                                                .withNewClientSecret()
-                                                .withSecretName("my-secret-secret")
-                                                .withKey("my-secret-key")
-                                                .endClientSecret()
-                                                .withDisableTlsHostnameVerification(true)
-                                                .withTlsTrustedCertificates(cert1, cert2, cert3)
-                                                .build())
-                            .endGenericKafkaListener()
-                        .endListeners()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                    .withName("plain")
+                                    .withPort(9092)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(false)
+                                    .withAuth(
+                                            new KafkaListenerAuthenticationOAuthBuilder()
+                                                    .withClientId("my-client-id")
+                                                    .withValidIssuerUri("http://valid-issuer")
+                                                    .withIntrospectionEndpointUri("http://introspection")
+                                                    .withNewClientSecret()
+                                                    .withSecretName("my-secret-secret")
+                                                    .withKey("my-secret-key")
+                                                    .endClientSecret()
+                                                    .withDisableTlsHostnameVerification(true)
+                                                    .withTlsTrustedCertificates(cert1, cert2, cert3)
+                                                    .build())
+                                    .build(),
+                                new GenericKafkaListenerBuilder()
+                                    .withName("tls")
+                                    .withPort(9093)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(true)
+                                    .withAuth(
+                                            new KafkaListenerAuthenticationOAuthBuilder()
+                                                    .withClientId("my-client-id")
+                                                    .withValidIssuerUri("http://valid-issuer")
+                                                    .withIntrospectionEndpointUri("http://introspection")
+                                                    .withNewClientSecret()
+                                                    .withSecretName("my-secret-secret")
+                                                    .withKey("my-secret-key")
+                                                    .endClientSecret()
+                                                    .withDisableTlsHostnameVerification(true)
+                                                    .withTlsTrustedCertificates(cert1, cert2, cert3)
+                                                    .build())
+                                    .build(),
+                                new GenericKafkaListenerBuilder()
+                                    .withName("external")
+                                    .withPort(9094)
+                                    .withType(KafkaListenerType.NODEPORT)
+                                    .withTls(true)
+                                    .withAuth(
+                                            new KafkaListenerAuthenticationOAuthBuilder()
+                                                    .withClientId("my-client-id")
+                                                    .withValidIssuerUri("http://valid-issuer")
+                                                    .withIntrospectionEndpointUri("http://introspection")
+                                                    .withNewClientSecret()
+                                                    .withSecretName("my-secret-secret")
+                                                    .withKey("my-secret-key")
+                                                    .endClientSecret()
+                                                    .withDisableTlsHostnameVerification(true)
+                                                    .withTlsTrustedCertificates(cert1, cert2, cert3)
+                                                    .build())
+                                    .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -3492,11 +3429,10 @@ public class KafkaClusterTest {
         String secret = "my-secret";
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
@@ -3508,8 +3444,7 @@ public class KafkaClusterTest {
                                         .withSecretName(secret)
                                     .endBrokerCertChainAndKey()
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -3541,11 +3476,10 @@ public class KafkaClusterTest {
         String secret = "my-secret";
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("tls")
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
@@ -3557,8 +3491,7 @@ public class KafkaClusterTest {
                                         .withSecretName(secret)
                                     .endBrokerCertChainAndKey()
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
@@ -3586,7 +3519,7 @@ public class KafkaClusterTest {
     public void testGenerateDeploymentWithKeycloakAuthorizationMissingOAuthListeners() {
         assertThrows(InvalidResourceException.class, () -> {
             Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                    image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                    image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                     .editSpec()
                     .editKafka()
                     .withAuthorization(
@@ -3613,11 +3546,10 @@ public class KafkaClusterTest {
                 .build();
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
@@ -3635,8 +3567,7 @@ public class KafkaClusterTest {
                                                 .withDisableTlsHostnameVerification(true)
                                                 .withTlsTrustedCertificates(cert1, cert2)
                                                 .build())
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .withAuthorization(
                             new KafkaAuthorizationKeycloakBuilder()
                                     .withClientId("my-client-id")
@@ -3673,7 +3604,7 @@ public class KafkaClusterTest {
     public void testReplicasAndRelatedOptionsValidationNok() {
         String propertyName = "offsets.topic.replication.factor";
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withConfig(singletonMap(propertyName, replicas + 1))
@@ -3690,7 +3621,7 @@ public class KafkaClusterTest {
     public void testReplicasAndRelatedOptionsValidationOk() {
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withConfig(singletonMap("offsets.topic.replication.factor", replicas - 1))
@@ -3708,7 +3639,7 @@ public class KafkaClusterTest {
         config.put("transaction.state.log.min.isr", 1);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withReplicas(1)
@@ -3733,7 +3664,7 @@ public class KafkaClusterTest {
         config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue(), minInsyncReplicas);
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                     .editKafka()
                         .withConfig(config)

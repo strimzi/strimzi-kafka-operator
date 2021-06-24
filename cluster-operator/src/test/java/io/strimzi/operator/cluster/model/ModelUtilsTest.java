@@ -504,39 +504,20 @@ public class ModelUtilsTest {
                         .withReplicas(3)
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
-                        .withNewListeners()
-                            .withGenericKafkaListeners(new GenericKafkaListenerBuilder().withType(KafkaListenerType.INTERNAL).withPort(9092).withName("plain").withTls(false).build())
-                        .endListeners()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withPort(9092)
+                                .withName("plain")
+                                .withTls(false)
+                                .build())
                     .endKafka()
                 .endSpec()
                 .build();
 
         KafkaCluster model1 = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
-        /*AbstractModel model1 = new AbstractModel(kafka, "test") {
-            @Override
-            protected String getDefaultLogConfigFileName() {
-                return null;
-            }
-
-            @Override
-            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-                return null;
-            }
-        };*/
         ModelUtils.parsePodTemplate(model1, pt1);
 
         KafkaCluster model2 = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
-        /*AbstractModel model2 = new AbstractModel(kafka, "test") {
-            @Override
-            protected String getDefaultLogConfigFileName() {
-                return null;
-            }
-
-            @Override
-            protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-                return null;
-            }
-        };*/
         ModelUtils.parsePodTemplate(model2, pt2);
 
         assertThat(model1.getTolerations(), is(model2.getTolerations()));

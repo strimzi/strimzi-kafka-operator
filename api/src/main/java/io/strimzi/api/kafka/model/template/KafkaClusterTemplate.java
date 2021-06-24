@@ -6,11 +6,9 @@ package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -29,7 +27,7 @@ import java.util.Map;
 @JsonPropertyOrder({
         "statefulset", "pod", "bootstrapService", "brokersService", "externalBootstrapService", "perPodService",
         "externalBootstrapRoute", "perPodRoute", "externalBootstrapIngress", "perPodIngress", "persistentVolumeClaim",
-        "podDisruptionBudget", "kafkaContainer", "tlsSidecarContainer", "initContainer", "clusterCaCert", "serviceAccount"})
+        "podDisruptionBudget", "kafkaContainer", "initContainer", "clusterCaCert", "serviceAccount"})
 @EqualsAndHashCode
 public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -38,8 +36,8 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
     private PodTemplate pod;
     private InternalServiceTemplate bootstrapService;
     private InternalServiceTemplate brokersService;
-    private ExternalServiceTemplate externalBootstrapService;
-    private ExternalServiceTemplate perPodService;
+    private ResourceTemplate externalBootstrapService;
+    private ResourceTemplate perPodService;
     private ResourceTemplate externalBootstrapRoute;
     private ResourceTemplate perPodRoute;
     private ResourceTemplate externalBootstrapIngress;
@@ -48,7 +46,6 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
     private ResourceTemplate clusterCaCert;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate kafkaContainer;
-    private ContainerTemplate tlsSidecarContainer;
     private ContainerTemplate initContainer;
     private ResourceTemplate clusterRoleBinding;
     private ResourceTemplate serviceAccount;
@@ -96,21 +93,21 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
 
     @Description("Template for Kafka external bootstrap `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ExternalServiceTemplate getExternalBootstrapService() {
+    public ResourceTemplate getExternalBootstrapService() {
         return externalBootstrapService;
     }
 
-    public void setExternalBootstrapService(ExternalServiceTemplate externalBootstrapService) {
+    public void setExternalBootstrapService(ResourceTemplate externalBootstrapService) {
         this.externalBootstrapService = externalBootstrapService;
     }
 
     @Description("Template for Kafka per-pod `Services` used for access from outside of Kubernetes.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ExternalServiceTemplate getPerPodService() {
+    public ResourceTemplate getPerPodService() {
         return perPodService;
     }
 
-    public void setPerPodService(ExternalServiceTemplate perPodService) {
+    public void setPerPodService(ResourceTemplate perPodService) {
         this.perPodService = perPodService;
     }
 
@@ -182,19 +179,6 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
 
     public void setKafkaContainer(ContainerTemplate kafkaContainer) {
         this.kafkaContainer = kafkaContainer;
-    }
-
-    @PresentInVersions("v1alpha1-v1beta1")
-    @DeprecatedProperty(removalVersion = "v1beta2")
-    @Deprecated
-    @Description("Template for the Kafka broker TLS sidecar container")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ContainerTemplate getTlsSidecarContainer() {
-        return tlsSidecarContainer;
-    }
-
-    public void setTlsSidecarContainer(ContainerTemplate tlsSidecarContainer) {
-        this.tlsSidecarContainer = tlsSidecarContainer;
     }
 
     @Description("Template for the Kafka init container")

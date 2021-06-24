@@ -17,6 +17,8 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
@@ -98,6 +100,7 @@ import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCe
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -491,40 +494,39 @@ class CustomResourceStatusST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
+        GenericKafkaListener plain = new GenericKafkaListenerBuilder()
+                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                .withPort(9092)
+                .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
+                .build();
+        GenericKafkaListener tls = new GenericKafkaListenerBuilder()
+                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                .withPort(9093)
+                .withType(KafkaListenerType.INTERNAL)
+                .withTls(true)
+                .build();
+        GenericKafkaListener nodePort = new GenericKafkaListenerBuilder()
+                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                .withPort(9094)
+                .withType(KafkaListenerType.NODEPORT)
+                .withTls(false)
+                .build();
+
+        List<GenericKafkaListener> listeners;
+        if (Environment.isNamespaceRbacScope()) {
+            listeners = asList(plain, tls);
+        } else {
+            listeners = asList(plain, tls, nodePort);
+        }
+
+
         KafkaBuilder kafkaBuilder = KafkaTemplates.kafkaEphemeral(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 3, 3)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-                            .withPort(9092)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(false)
-                        .endGenericKafkaListener()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                        .endGenericKafkaListener()
-                    .endListeners()
+                    .withListeners(listeners)
                 .endKafka()
             .endSpec();
-
-        if (!Environment.isNamespaceRbacScope()) {
-            kafkaBuilder.editSpec()
-                    .editKafka()
-                        .editListeners()
-                            .addNewGenericKafkaListener()
-                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(false)
-                            .endGenericKafkaListener()
-                        .endListeners()
-                    .endKafka()
-                .endSpec();
-        }
 
         String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
 

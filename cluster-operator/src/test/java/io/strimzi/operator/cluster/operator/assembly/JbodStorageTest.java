@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
@@ -98,14 +99,12 @@ public class JbodStorageTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(3)
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                         .withNewJbodStorage()
                             .withVolumes(volumes)
                         .endJbodStorage()

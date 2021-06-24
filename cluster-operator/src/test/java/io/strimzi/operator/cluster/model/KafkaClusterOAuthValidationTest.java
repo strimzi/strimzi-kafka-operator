@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512Builder;
-import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
@@ -85,7 +84,7 @@ public class KafkaClusterOAuthValidationTest {
                     .withNewKafka()
                         .withReplicas(3)
                         .withStorage(new EphemeralStorage())
-                        .withListeners(new ArrayOrObjectKafkaListeners(listeners))
+                        .withListeners(listeners)
                         .withAuthorization(new KafkaAuthorizationKeycloakBuilder()
                                 .withTokenEndpointUri("http://token-endpoint")
                                 .withClientId("my-client-id")
@@ -126,7 +125,7 @@ public class KafkaClusterOAuthValidationTest {
                         .withNewKafka()
                             .withReplicas(3)
                             .withStorage(new EphemeralStorage())
-                            .withListeners(new ArrayOrObjectKafkaListeners(listeners))
+                            .withListeners(listeners)
                             .withAuthorization(new KafkaAuthorizationKeycloakBuilder()
                                     .withTokenEndpointUri("http://token-endpoint")
                                     .withClientId("my-client-id")

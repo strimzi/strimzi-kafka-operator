@@ -7,18 +7,15 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.Toleration;
-import io.strimzi.api.annotations.DeprecatedProperty;
-import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
+import io.strimzi.crdgenerator.annotations.MinimumItems;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -37,13 +34,8 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "version", "replicas", "image", "listeners",
-        "config", "storage", "authorization",
-        "rack", "brokerRackInitImage",
-        "affinity", "tolerations",
-        "livenessProbe", "readinessProbe",
-        "jvmOptions", "jmxOptions", "resources",
-        "metrics", "metricsConfig", "logging", "tlsSidecar", "template"})
+        "version", "replicas", "image", "listeners", "config", "storage", "authorization", "rack", "brokerRackInitImage",
+        "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources", "metricsConfig", "logging", "template"})
 @EqualsAndHashCode
 public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownPropertyPreserving, Serializable {
 
@@ -60,18 +52,11 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
             + "cruise.control.metrics.topic.min.insync.replicas";
 
     protected Storage storage;
-
     private String version;
-
     private Map<String, Object> config = new HashMap<>(0);
-
     private String brokerRackInitImage;
-
     private Rack rack;
-
     private Logging logging;
-
-    private TlsSidecar tlsSidecar;
     private int replicas;
     private String image;
     private ResourceRequirements resources;
@@ -80,10 +65,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
     private JvmOptions jvmOptions;
     private KafkaJmxOptions jmxOptions;
     private MetricsConfig metricsConfig;
-    private Map<String, Object> metrics;
-    private Affinity affinity;
-    private List<Toleration> tolerations;
-    private ArrayOrObjectKafkaListeners listeners;
+    private List<GenericKafkaListener> listeners;
     private KafkaAuthorization authorization;
     private KafkaClusterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -147,19 +129,6 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
 
     public void setLogging(Logging logging) {
         this.logging = logging;
-    }
-
-    @PresentInVersions("v1alpha1-v1beta1")
-    @DeprecatedProperty(removalVersion = "v1beta2")
-    @Deprecated
-    @Description("TLS sidecar configuration")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public TlsSidecar getTlsSidecar() {
-        return tlsSidecar;
-    }
-
-    public void setTlsSidecar(TlsSidecar tlsSidecar) {
-        this.tlsSidecar = tlsSidecar;
     }
 
     @Description("The number of pods in the cluster.")
@@ -235,22 +204,6 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
         this.jmxOptions = jmxOptions;
     }
 
-    @DeprecatedProperty(movedToPath = "spec.kafka.metricsConfig", removalVersion = "v1beta2")
-    @PresentInVersions("v1alpha1-v1beta1")
-    @Deprecated
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @Description("The Prometheus JMX Exporter configuration. " +
-            "See https://github.com/prometheus/jmx_exporter for details of the structure of this configuration.")
-    @Override
-    public Map<String, Object> getMetrics() {
-        return metrics;
-    }
-
-    @Override
-    public void setMetrics(Map<String, Object> metrics) {
-        this.metrics = metrics;
-    }
-
     @Description("Metrics configuration.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Override
@@ -263,43 +216,14 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
         this.metricsConfig = metricsConfig;
     }
 
-    @PresentInVersions("v1alpha1-v1beta1")
-    @Description("The pod's affinity rules.")
-    @KubeLink(group = "core", version = "v1", kind = "affinity")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @DeprecatedProperty(movedToPath = "spec.kafka.template.pod.affinity", removalVersion = "v1beta2")
-    @Deprecated
-    public Affinity getAffinity() {
-        return affinity;
-    }
-
-    @Deprecated
-    public void setAffinity(Affinity affinity) {
-        this.affinity = affinity;
-    }
-
-    @PresentInVersions("v1alpha1-v1beta1")
-    @Description("The pod's tolerations.")
-    @KubeLink(group = "core", version = "v1", kind = "toleration")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @DeprecatedProperty(movedToPath = "spec.kafka.template.pod.tolerations", removalVersion = "v1beta2")
-    @Deprecated
-    public List<Toleration> getTolerations() {
-        return tolerations;
-    }
-
-    @Deprecated
-    public void setTolerations(List<Toleration> tolerations) {
-        this.tolerations = tolerations;
-    }
-
     @Description("Configures listeners of Kafka brokers")
+    @MinimumItems(1)
     @JsonProperty(required = true)
-    public ArrayOrObjectKafkaListeners getListeners() {
+    public List<GenericKafkaListener> getListeners() {
         return listeners;
     }
 
-    public void setListeners(ArrayOrObjectKafkaListeners listeners) {
+    public void setListeners(List<GenericKafkaListener> listeners) {
         this.listeners = listeners;
     }
 

@@ -136,7 +136,6 @@ public class KafkaConnectS2IClusterTest {
             healthDelay,
             healthTimeout,
             null,
-            null,
             configurationJson,
             insecureSourceRepo,
             bootstrapServers,
@@ -245,7 +244,7 @@ public class KafkaConnectS2IClusterTest {
     public void testGenerateServiceWithoutMetrics()   {
         KafkaConnectS2I resource = new KafkaConnectS2IBuilder(this.resource)
                 .editSpec()
-                    .withMetrics(null)
+                    .withMetricsConfig(null)
                 .endSpec()
                 .build();
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
@@ -352,7 +351,7 @@ public class KafkaConnectS2IClusterTest {
     @ParallelTest
     public void testInsecureSourceRepo() {
         KafkaConnectS2ICluster kc = KafkaConnectS2ICluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createKafkaConnectS2I(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, jmxMetricsConfig, metricsCmJson, configurationJson, true, bootstrapServers, buildResourceRequirements), VERSIONS);
+                healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, true, bootstrapServers, buildResourceRequirements), VERSIONS);
 
         assertThat(kc.isInsecureSourceRepository(), is(true));
 

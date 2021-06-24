@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -67,14 +68,12 @@ public class KafkaUpgradeDowngradeMockTest {
                         .withReplicas(3)
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("plain")
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(3)

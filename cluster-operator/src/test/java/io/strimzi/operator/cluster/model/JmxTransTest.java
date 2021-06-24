@@ -85,7 +85,7 @@ public class JmxTransTest {
                     .build())
             .build();
 
-    private final Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, configuration, kafkaLog, zooLog))
+    private final Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, kafkaLog, zooLog))
             .editSpec()
                 .withJmxTrans(jmxTransSpec)
                 .editKafka().withJmxOptions(new KafkaJmxOptionsBuilder()

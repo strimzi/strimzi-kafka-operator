@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.certs.CertManager;
@@ -78,8 +79,8 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
     public static final String NAMESPACE = "test";
     public static final String NAME = "my-kafka";
     private static Vertx vertx;
-    private OpenSslCertManager certManager = new OpenSslCertManager();
-    private PasswordGenerator passwordGenerator = new PasswordGenerator(12,
+    private final OpenSslCertManager certManager = new OpenSslCertManager();
+    private final PasswordGenerator passwordGenerator = new PasswordGenerator(12,
             "abcdefghijklmnopqrstuvwxyz" +
                     "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
             "abcdefghijklmnopqrstuvwxyz" +
@@ -483,8 +484,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(3)
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("ingress")
                                 .withPort(9094)
                                 .withTls(true)
@@ -497,8 +497,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                                             new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(1).withHost("broker-1.mydomain.tld").build(),
                                             new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(2).withHost("broker-2.mydomain.tld").build())
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
                     .endKafka()
@@ -574,8 +573,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(3)
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
+                        .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("ingress")
                                 .withPort(9094)
                                 .withTls(true)
@@ -588,8 +586,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                                             new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(1).withHost("broker-1.mydomain.tld").build(),
                                             new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(2).withHost("broker-2.mydomain.tld").build())
                                 .endConfiguration()
-                            .endGenericKafkaListener()
-                        .endListeners()
+                                .build())
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
                     .endKafka()

@@ -38,73 +38,23 @@ public class StructuralCrdIT extends AbstractCrdIT {
     );
     
     @Test
-    public void v1Beta2IsStructuralWithCrdV1Beta1() {
-        assumeKube1_16Plus();
-
-        for (Map.Entry<String, String> crd : crdFiles.entrySet()) {
-            assertApiVersionsAreStructural(crd.getKey(),
-                    ApiVersion.V1BETA1,
-                    TestUtils.USER_PATH + "/./src/test/resources/io/strimzi/api/kafka/model/" + crd.getValue(),
-                    ApiVersion.parseRange("v1beta2+"));
-        }
-    }
-
-    @Test
     public void v1Beta2IsStructuralWithCrdV1() {
         assumeKube1_16Plus();
 
         for (Map.Entry<String, String> crd : crdFiles.entrySet()) {
             assertApiVersionsAreStructural(crd.getKey(),
-                    ApiVersion.V1,
                     TestUtils.USER_PATH + "/../packaging/install/cluster-operator/" + crd.getValue(),
                     ApiVersion.parseRange("v1beta2+"));
         }
     }
 
-    private void assertApiVersionsAreStructural(String api, ApiVersion crdApiVersion, String crdYaml, VersionRange<ApiVersion> shouldBeStructural) {
+    private void assertApiVersionsAreStructural(String api, String crdYaml, VersionRange<ApiVersion> shouldBeStructural) {
         cluster.createCustomResources(crdYaml);
         try {
             cluster.waitForCustomResourceDefinition(api);
-
-            if (ApiVersion.V1.equals(crdApiVersion))    {
-                assertApiVersionsAreStructuralInApiextensionsV1(api, shouldBeStructural);
-            } else {
-                assertApiVersionsAreStructuralInApiextensionsV1beta1(api, shouldBeStructural);
-            }
+            assertApiVersionsAreStructuralInApiextensionsV1(api, shouldBeStructural);
         } finally {
             cluster.deleteCustomResources(crdYaml);
-        }
-    }
-
-    private void assertApiVersionsAreStructuralInApiextensionsV1beta1(String api, VersionRange<ApiVersion> shouldBeStructural) {
-        Pattern pattern = Pattern.compile("[^.]spec\\.versions\\[([0-9]+)\\]\\.[^,]*?");
-        io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinition crd = cluster.client().getClient().apiextensions().v1beta1().customResourceDefinitions().withName(api).get();
-        // We can't make the following assertion because the current version of fabric8 always requests
-        // the CRD using v1beta1 api version, so the apiserver just replaces it and serves it.
-        //assertEquals(crdApiVersion, ApiVersion.parse(crd.getApiVersion().replace("apiextensions.k8s.io/", "")));
-        Set<ApiVersion> presentCrdApiVersions = crd.getSpec().getVersions().stream().map(v -> ApiVersion.parse(v.getName())).collect(Collectors.toSet());
-        assertTrue(presentCrdApiVersions.contains(shouldBeStructural.lower()),
-                "CRD has versions " + presentCrdApiVersions + " which doesn't include " + shouldBeStructural.lower() + " which should be structural");
-        Map<Integer, ApiVersion> indexedVersions = new HashMap<>();
-        int i = 0;
-        for (io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionVersion version : crd.getSpec().getVersions()) {
-            indexedVersions.put(i, ApiVersion.parse(version.getName()));
-        }
-        Optional<io.fabric8.kubernetes.api.model.apiextensions.v1beta1.CustomResourceDefinitionCondition> first = crd.getStatus().getConditions().stream()
-                .filter(cond ->
-                        "NonStructuralSchema".equals(cond.getType())
-                                && "True".equals(cond.getStatus()))
-                .findFirst();
-        if (first.isPresent()) {
-
-            Matcher matcher = pattern.matcher(first.get().getMessage());
-            while (matcher.find()) {
-                Integer index = Integer.valueOf(matcher.group(1));
-                ApiVersion nonStructuralVersion = indexedVersions.get(index);
-                if (shouldBeStructural.contains(nonStructuralVersion)) {
-                    fail(api + "/ " + nonStructuralVersion + " should be structural but there's a complaint about " + matcher.group());
-                }
-            }
         }
     }
 

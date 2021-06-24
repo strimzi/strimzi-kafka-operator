@@ -6,19 +6,13 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.fabric8.kubernetes.api.model.Affinity;
-import io.fabric8.kubernetes.api.model.Toleration;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.KubeLink;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -30,8 +24,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "topicOperator", "userOperator", "affinity",
-        "tolerations", "tlsSidecar", "template"})
+        "topicOperator", "userOperator", "tlsSidecar", "template"})
 @EqualsAndHashCode
 public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializable {
 
@@ -42,8 +35,6 @@ public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializab
 
     private EntityTopicOperatorSpec topicOperator;
     private EntityUserOperatorSpec userOperator;
-    private Affinity affinity;
-    private List<Toleration> tolerations;
     private TlsSidecar tlsSidecar;
     private EntityOperatorTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -66,36 +57,6 @@ public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializab
 
     public void setUserOperator(EntityUserOperatorSpec userOperator) {
         this.userOperator = userOperator;
-    }
-
-    @Description("The pod's affinity rules.")
-    @KubeLink(group = "core", version = "v1", kind = "affinity")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @DeprecatedProperty(movedToPath = "spec.entityOperator.template.pod.affinity", removalVersion = "v1beta2")
-    @PresentInVersions("v1alpha1-v1beta1")
-    @Deprecated
-    public Affinity getAffinity() {
-        return affinity;
-    }
-
-    @Deprecated
-    public void setAffinity(Affinity affinity) {
-        this.affinity = affinity;
-    }
-
-    @Description("The pod's tolerations.")
-    @KubeLink(group = "core", version = "v1", kind = "toleration")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @DeprecatedProperty(movedToPath = "spec.entityOperator.template.pod.tolerations", removalVersion = "v1beta2")
-    @PresentInVersions("v1alpha1-v1beta1")
-    @Deprecated
-    public List<Toleration> getTolerations() {
-        return tolerations;
-    }
-
-    @Deprecated
-    public void setTolerations(List<Toleration> tolerations) {
-        this.tolerations = tolerations;
     }
 
     @Description("TLS sidecar configuration")

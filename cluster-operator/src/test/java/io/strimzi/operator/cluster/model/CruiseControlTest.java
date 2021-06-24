@@ -390,7 +390,7 @@ public class CruiseControlTest {
                 .build();
 
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
         CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
@@ -424,7 +424,7 @@ public class CruiseControlTest {
                 .build();
 
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, cruiseControlSpec);
         CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
@@ -437,7 +437,7 @@ public class CruiseControlTest {
     @ParallelTest
     public void testCruiseControlNotDeployed() {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null,  null);
         CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
@@ -470,7 +470,7 @@ public class CruiseControlTest {
     @ParallelTest
     public void testGenerateServiceWhenDisabled()   {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, metricsCm, jmxMetricsConfig, kafkaConfig, zooConfig,
+                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, null);
         CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 

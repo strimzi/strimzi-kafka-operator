@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.api.model.storage.StorageClassBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -74,20 +75,18 @@ public class VolumeResizingTest {
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(3)
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("plain")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(false)
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withName("tls")
-                                .withPort(9093)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(true)
-                            .endGenericKafkaListener()
-                        .endListeners()
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                    .withName("plain")
+                                    .withPort(9092)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(false)
+                                    .build(),
+                                new GenericKafkaListenerBuilder()
+                                    .withName("tls")
+                                    .withPort(9093)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(true)
+                                    .build())
                         .withNewPersistentClaimStorage()
                             .withStorageClass("mysc")
                             .withSize("20Gi")
@@ -113,11 +112,7 @@ public class VolumeResizingTest {
         // Mock the PVC Operator
         PvcOperator mockPvcOps = supplier.pvcOperations;
 
-        when(mockPvcOps.getAsync(eq(namespace), ArgumentMatchers.startsWith("data-")))
-                .thenAnswer(invocation -> {
-                    String pvcName = invocation.getArgument(1);
-                    return Future.succeededFuture();
-                });
+        when(mockPvcOps.getAsync(eq(namespace), ArgumentMatchers.startsWith("data-"))).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
         when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());

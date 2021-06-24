@@ -36,7 +36,7 @@ public class ValidationVisitorTest {
                     .withName("testname")
                     .withNamespace("testnamespace")
                 .endMetadata()
-                .withApiVersion("v1alpha1")
+                .withApiVersion("v1beta2")
             .build();
 
         Set<Condition> warningConditions = new HashSet<>();
@@ -46,89 +46,19 @@ public class ValidationVisitorTest {
         List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
 
         assertThat(warningMessages, hasItem("Contains object at path spec.kafka with an unknown property: foo"));
-        assertThat(warningMessages, hasItem("In API version v1alpha1 the topicOperator property at path spec.topicOperator has been deprecated, " +
-                "and should now be configured using spec.entityOperator.topicOperator. This property is removed in API version v1beta2."));
-        assertThat(warningMessages, hasItem("In API version v1alpha1 the object kafkaListeners at path spec.kafka.listeners.kafkaListeners has been deprecated. " +
-                "This object has been replaced with GenericKafkaListener and is removed in API version v1beta2."));
-        assertThat(warningMessages, hasItem("In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
-                "This object has been replaced with EntityTopicOperatorSpec and is removed in API version v1beta2."));
+        assertThat(warningMessages, hasItem("In API version v1beta2 the enableECDSA property at path spec.kafka.listeners.auth.enableECDSA has been deprecated."));
+        assertThat(warningMessages, hasItem("In API version v1beta2 the service property at path spec.kafkaExporter.template.service has been deprecated. " +
+                "The Kafka Exporter service has been removed."));
 
-        logger.assertLoggedAtLeastOnce(lm ->
-                lm.level() == Level.WARN
-            && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
+        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
                 "Contains object at path spec.kafka with an unknown property: foo"));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
-                "In API version v1alpha1 the topicOperator property at path spec.topicOperator has been deprecated, " +
-                "and should now be configured using spec.entityOperator.topicOperator. This property is removed in API version v1beta2."));
-        logger.assertNotLogged(lm -> lm.level() == Level.WARN
-                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
-                "In API version v1alpha1 the tolerations property at path spec.zookeeper.tolerations has been deprecated, " +
-                "and should now be configured using spec.zookeeper.template.pod.tolerations. This property is removed in API version v1beta2."));
+                "In API version v1beta2 the enableECDSA property at path spec.kafka.listeners.auth.enableECDSA has been deprecated."));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
                 && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
-                "In API version v1alpha1 the object kafkaListeners at path spec.kafka.listeners.kafkaListeners has been deprecated. " +
-                "This object has been replaced with GenericKafkaListener and is removed in API version v1beta2."));
-        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
-                "In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
-                "This object has been replaced with EntityTopicOperatorSpec and is removed in API version v1beta2."));
+                "In API version v1beta2 the service property at path spec.kafkaExporter.template.service has been deprecated. " +
+                "The Kafka Exporter service has been removed."));
     }
-
-    @Test
-    public void testV1Beta1Deprecations() {
-        Kafka k = TestUtils.fromYaml("/v1beta1Deprecations.yaml", Kafka.class, true);
-        assertThat(k, is(notNullValue()));
-        TestLogger logger = TestLogger.create(ValidationVisitorTest.class);
-        HasMetadata resource = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName("testname")
-                    .withNamespace("testnamespace")
-                .endMetadata()
-                .withApiVersion("v1alpha1")
-                .build();
-
-        Set<Condition> warningConditions = new HashSet<>();
-
-        ResourceVisitor.visit(Reconciliation.DUMMY_RECONCILIATION, k, new ValidationVisitor(resource, logger, warningConditions));
-
-        List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
-
-        assertThat(warningMessages, hasItem("In API version v1alpha1 the topicOperator property at path spec.topicOperator has been deprecated, " +
-                "and should now be configured using spec.entityOperator.topicOperator. This property is removed in API version v1beta2."));
-        assertThat(warningMessages, hasItem("In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
-                "This object has been replaced with EntityTopicOperatorSpec and is removed in API version v1beta2."));
-
-        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
-                "In API version v1alpha1 the affinity property at path spec.zookeeper.affinity has been deprecated, and " +
-                "should now be configured using spec.zookeeper.template.pod.affinity. " +
-                "This property is removed in API version v1beta2."));
-        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
-                "In API version v1alpha1 the tolerations property at path spec.zookeeper.tolerations has been deprecated, " +
-                "and should now be configured using spec.zookeeper.template.pod.tolerations. " +
-                "This property is removed in API version v1beta2."));
-        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
-                "In API version v1alpha1 the affinity property at path spec.kafka.affinity has been deprecated, " +
-                "and should now be configured using spec.kafka.template.pod.affinity. " +
-                "This property is removed in API version v1beta2."));
-        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
-                "In API version v1alpha1 the tolerations property at path spec.kafka.tolerations has been deprecated, " +
-                "and should now be configured using spec.kafka.template.pod.tolerations. " +
-                "This property is removed in API version v1beta2."));
-        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
-                "In API version v1alpha1 the topicOperator property at path spec.topicOperator has been deprecated, " +
-                "and should now be configured using spec.entityOperator.topicOperator. " +
-                "This property is removed in API version v1beta2."));
-        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
-                "In API version v1alpha1 the object topicOperator at path spec.topicOperator has been deprecated. " +
-                "This object has been replaced with EntityTopicOperatorSpec and is removed in API version v1beta2."));
-    }
-
-
 }

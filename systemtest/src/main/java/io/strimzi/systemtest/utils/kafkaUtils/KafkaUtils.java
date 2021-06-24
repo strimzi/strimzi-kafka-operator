@@ -418,7 +418,7 @@ public class KafkaUtils {
     }
 
     public static String getKafkaTlsListenerCaCertName(String namespace, String clusterName, String listenerName) {
-        List<GenericKafkaListener> listeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().getGenericKafkaListeners();
+        List<GenericKafkaListener> listeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners();
 
         GenericKafkaListener tlsListener = listenerName == null || listenerName.isEmpty() ?
             listeners.stream().filter(listener -> Constants.TLS_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
@@ -428,7 +428,7 @@ public class KafkaUtils {
     }
 
     public static String getKafkaExternalListenerCaCertName(String namespace, String clusterName, String listenerName) {
-        List<GenericKafkaListener> listeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners().getGenericKafkaListeners();
+        List<GenericKafkaListener> listeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners();
 
         GenericKafkaListener external = listenerName == null || listenerName.isEmpty() ?
             listeners.stream().filter(listener -> Constants.EXTERNAL_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :

@@ -407,6 +407,7 @@ spec:
                           - port
                           - type
                           - tls
+                      description: Configures listeners of Kafka brokers.
                     config:
                       x-kubernetes-preserve-unknown-fields: true
                       type: object

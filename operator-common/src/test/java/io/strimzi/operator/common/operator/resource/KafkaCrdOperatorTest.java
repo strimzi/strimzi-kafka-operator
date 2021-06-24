@@ -11,8 +11,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.listener.KafkaListenersBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
@@ -50,10 +50,12 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
                 .withNewSpec()
                     .withNewKafka()
                         .withReplicas(1)
-                        .withListeners(new ArrayOrObjectKafkaListeners(new KafkaListenersBuilder()
-                                .withNewPlain()
-                                .endPlain()
-                                .build()))
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                .withName("plain")
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .build())
                         .withNewEphemeralStorage()
                         .endEphemeralStorage()
                     .endKafka()

@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -240,27 +241,23 @@ public class KafkaAssemblyOperatorMockTest {
                     .withNewKafka()
                         .withReplicas(kafkaReplicas)
                         .withStorage(kafkaStorage)
-                        .withNewListeners()
-                            .addNewGenericKafkaListener()
-                                .withName("plain")
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(false)
-                            .endGenericKafkaListener()
-                            .addNewGenericKafkaListener()
-                                .withName("tls")
-                                .withPort(9093)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(true)
-                            .endGenericKafkaListener()
-                        .endListeners()
-                        .withMetrics(singletonMap("foo", "bar"))
+                        .withListeners(new GenericKafkaListenerBuilder()
+                                    .withName("plain")
+                                    .withPort(9092)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(false)
+                                    .build(),
+                                new GenericKafkaListenerBuilder()
+                                    .withName("tls")
+                                    .withPort(9093)
+                                    .withType(KafkaListenerType.INTERNAL)
+                                    .withTls(true)
+                                    .build())
                         .withResources(resources)
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(zkReplicas)
                         .withStorage(zkStorage)
-                        .withMetrics(singletonMap("foo", "bar"))
                     .endZookeeper()
                     .withNewEntityOperator()
                         .withNewTopicOperator()

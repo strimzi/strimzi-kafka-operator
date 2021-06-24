@@ -364,7 +364,7 @@ public class KafkaCluster extends AbstractModel {
         return fromCrd(reconciliation, kafkaAssembly, versions, null, 0);
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS", "deprecation"})
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
     public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
         KafkaCluster result = new KafkaCluster(reconciliation, kafkaAssembly);
 
@@ -458,11 +458,11 @@ public class KafkaCluster extends AbstractModel {
         result.setResources(kafkaClusterSpec.getResources());
 
         // Configure listeners
-        if (kafkaClusterSpec.getListeners() == null || kafkaClusterSpec.getListeners().getGenericKafkaListeners() == null) {
+        if (kafkaClusterSpec.getListeners() == null || kafkaClusterSpec.getListeners().isEmpty()) {
             LOGGER.errorCr(reconciliation, "The required field .spec.kafka.listeners is missing");
             throw new InvalidResourceException("The required field .spec.kafka.listeners is missing");
         }
-        List<GenericKafkaListener> listeners = kafkaClusterSpec.getListeners().getGenericKafkaListeners();
+        List<GenericKafkaListener> listeners = kafkaClusterSpec.getListeners();
         ListenersValidator.validate(reconciliation, kafkaClusterSpec.getReplicas(), listeners);
         result.setListeners(listeners);
 

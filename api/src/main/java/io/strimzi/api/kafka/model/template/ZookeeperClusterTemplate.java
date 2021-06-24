@@ -6,11 +6,9 @@ package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
-import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -28,7 +26,7 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
         "statefulset", "pod", "clientService", "nodesService", "persistentVolumeClaim",
-        "podDisruptionBudget", "zookeeperContainer", "tlsSidecarContainer", "serviceAccount"})
+        "podDisruptionBudget", "zookeeperContainer", "serviceAccount"})
 @EqualsAndHashCode
 public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -40,7 +38,6 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
     private ResourceTemplate persistentVolumeClaim;
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate zookeeperContainer;
-    private ContainerTemplate tlsSidecarContainer;
     private ResourceTemplate serviceAccount;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -112,20 +109,6 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
 
     public void setZookeeperContainer(ContainerTemplate zookeeperContainer) {
         this.zookeeperContainer = zookeeperContainer;
-    }
-
-    @PresentInVersions("v1alpha1-v1beta1")
-    @DeprecatedProperty(removalVersion = "v1beta2")
-    @Deprecated
-    @Description("Template for the Zookeeper server TLS sidecar container. " +
-            "The TLS sidecar is not used anymore and this option will be ignored.")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ContainerTemplate getTlsSidecarContainer() {
-        return tlsSidecarContainer;
-    }
-
-    public void setTlsSidecarContainer(ContainerTemplate tlsSidecarContainer) {
-        this.tlsSidecarContainer = tlsSidecarContainer;
     }
 
     @Description("Template for the ZooKeeper service account.")

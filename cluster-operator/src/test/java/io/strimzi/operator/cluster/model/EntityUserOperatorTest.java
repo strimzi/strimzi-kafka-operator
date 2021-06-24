@@ -285,7 +285,7 @@ public class EntityUserOperatorTest {
         int renewal = 42;
 
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, singletonMap("animal", "wombat"), jmxMetricsConfig, singletonMap("foo", "bar"), emptyMap()))
+                image, healthDelay, healthTimeout, jmxMetricsConfig, singletonMap("foo", "bar"), emptyMap()))
                 .editSpec()
                 .withNewClientsCa()
                 .withRenewalDays(renewal)

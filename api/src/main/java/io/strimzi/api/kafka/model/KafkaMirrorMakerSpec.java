@@ -7,9 +7,7 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.Toleration;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
@@ -22,9 +20,6 @@ import io.strimzi.crdgenerator.annotations.PresentInVersions;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
-import java.util.List;
-import java.util.Map;
-
 @DescriptionFile
 @Buildable(
         editableEnabled = false,
@@ -32,10 +27,8 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "version", "replicas", "image", "consumer",
-        "producer", "resources", "whitelist", "include",
-        "affinity", "tolerations", "jvmOptions",
-        "logging", "metrics", "metricsConfig", "tracing", "template"})
+        "version", "replicas", "image", "consumer", "producer", "resources", "whitelist", "include", "jvmOptions",
+        "logging", "metricsConfig", "tracing", "template"})
 @OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("whitelist")), @OneOf.Alternative(@OneOf.Alternative.Property("include"))})
 @EqualsAndHashCode
 public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics {
@@ -54,11 +47,8 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
     private ResourceRequirements resources;
     private Probe livenessProbe;
     private Probe readinessProbe;
-    private Affinity affinity;
-    private List<Toleration> tolerations;
     private JvmOptions jvmOptions;
     private Logging logging;
-    private Map<String, Object> metrics;
     private MetricsConfig metricsConfig;
     private Tracing tracing;
     private KafkaMirrorMakerTemplate template;
@@ -139,22 +129,6 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
         this.producer = producer;
     }
 
-    @DeprecatedProperty(movedToPath = "spec.metricsConfig", removalVersion = "v1beta2")
-    @PresentInVersions("v1alpha1-v1beta1")
-    @Deprecated
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("The Prometheus JMX Exporter configuration. " +
-            "See {JMXExporter} for details of the structure of this configuration.")
-    @Override
-    public Map<String, Object> getMetrics() {
-        return metrics;
-    }
-
-    @Override
-    public void setMetrics(Map<String, Object> metrics) {
-        this.metrics = metrics;
-    }
-
     @Description("Metrics configuration.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Override
@@ -195,36 +169,6 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
 
     public void setJvmOptions(JvmOptions jvmOptions) {
         this.jvmOptions = jvmOptions;
-    }
-
-    @Description("The pod's affinity rules.")
-    @KubeLink(group = "core", version = "v1", kind = "affinity")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @DeprecatedProperty(movedToPath = "spec.template.pod.affinity", removalVersion = "v1beta2")
-    @PresentInVersions("v1alpha1-v1beta1")
-    @Deprecated
-    public Affinity getAffinity() {
-        return affinity;
-    }
-
-    @Deprecated
-    public void setAffinity(Affinity affinity) {
-        this.affinity = affinity;
-    }
-
-    @Description("The pod's tolerations.")
-    @KubeLink(group = "core", version = "v1", kind = "toleration")
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    @DeprecatedProperty(movedToPath = "spec.template.pod.tolerations", removalVersion = "v1beta2")
-    @PresentInVersions("v1alpha1-v1beta1")
-    @Deprecated
-    public List<Toleration> getTolerations() {
-        return tolerations;
-    }
-
-    @Deprecated
-    public void setTolerations(List<Toleration> tolerations) {
-        this.tolerations = tolerations;
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)

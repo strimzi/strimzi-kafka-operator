@@ -6,7 +6,6 @@ package io.strimzi.systemtest.kafka.dynamicconfiguration;
 
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.listener.arraylistener.ArrayOrObjectKafkaListeners;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
@@ -112,14 +111,24 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
-                    .editListeners()
-                        .addNewGenericKafkaListener()
-                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
-                            .withType(KafkaListenerType.NODEPORT)
-                            .withTls(false)
-                        .endGenericKafkaListener()
-                    .endListeners()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .build(),
+                            new GenericKafkaListenerBuilder()
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .build(),
+                            new GenericKafkaListenerBuilder()
+                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(false)
+                                .build())
                     .withConfig(deepCopyOfShardKafkaConfig)
                 .endKafka()
             .endSpec()
@@ -140,7 +149,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         LOGGER.info("Updating listeners of Kafka cluster");
 
         KafkaResource.replaceKafkaResource(clusterName, k -> {
-            k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Arrays.asList(
+            k.getSpec().getKafka().setListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
                     .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                     .withPort(9092)
@@ -159,7 +168,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(true)
                     .build()
-            )));
+            ));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), KAFKA_REPLICAS, kafkaPods);
@@ -191,7 +200,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         LOGGER.info("Updating listeners of Kafka cluster");
 
         KafkaResource.replaceKafkaResource(clusterName, k -> {
-            k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Arrays.asList(
+            k.getSpec().getKafka().setListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
                     .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                     .withPort(9092)
@@ -204,7 +213,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(true)
                     .build()
-            )));
+            ));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), KAFKA_REPLICAS, kafkaPods);
@@ -235,14 +244,12 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
-                        .endGenericKafkaListener()
-                    .endListeners()
+                        .build())
                     .withConfig(deepCopyOfShardKafkaConfig)
                 .endKafka()
             .endSpec()
@@ -285,7 +292,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
         LOGGER.info("Updating listeners of Kafka cluster");
         KafkaResource.replaceKafkaResource(clusterName, k -> {
-            k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Arrays.asList(
+            k.getSpec().getKafka().setListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
                     .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                     .withPort(9093)
@@ -300,7 +307,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
                     .withNewKafkaListenerAuthenticationTlsAuth()
                     .endKafkaListenerAuthenticationTlsAuth()
                     .build()
-            )));
+            ));
         });
 
         // TODO: remove it ?
@@ -319,14 +326,14 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
         LOGGER.info("Updating listeners of Kafka cluster");
         KafkaResource.replaceKafkaResource(clusterName, k -> {
-            k.getSpec().getKafka().setListeners(new ArrayOrObjectKafkaListeners(Collections.singletonList(
+            k.getSpec().getKafka().setListeners(Collections.singletonList(
                 new GenericKafkaListenerBuilder()
                     .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
                     .withPort(9094)
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(false)
                     .build()
-            )));
+            ));
         });
 
         StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), KAFKA_REPLICAS, kafkaPods);

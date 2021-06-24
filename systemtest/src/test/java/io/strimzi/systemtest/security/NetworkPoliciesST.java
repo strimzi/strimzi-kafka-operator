@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -75,8 +76,7 @@ public class NetworkPoliciesST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
@@ -89,8 +89,7 @@ public class NetworkPoliciesST extends AbstractST {
                                     .withMatchLabels(matchLabelForPlain)
                                     .endPodSelector()
                                     .build())
-                        .endGenericKafkaListener()
-                    .endListeners()
+                            .build())
                 .endKafka()
                 .withNewKafkaExporter()
                 .endKafkaExporter()
@@ -177,8 +176,7 @@ public class NetworkPoliciesST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .withNewListeners()
-                        .addNewGenericKafkaListener()
+                    .withListeners(new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
@@ -191,8 +189,7 @@ public class NetworkPoliciesST extends AbstractST {
                                     .withMatchLabels(matchLabelsForTls)
                                     .endPodSelector()
                                     .build())
-                        .endGenericKafkaListener()
-                    .endListeners()
+                            .build())
                 .endKafka()
             .endSpec()
             .build());
