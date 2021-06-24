@@ -106,6 +106,9 @@ spec:
                     accessTokenIsJwt:
                       type: boolean
                       description: Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
+                    audience:
+                      type: string
+                      description: OAuth audience to use when authenticating against the authorization server. Some authorization servers require the audience to be explicitly set. The possible values depend on how the authorization server is configured. By default, `audience` is not specified when performing the token endpoint request.
                     certificateAndKey:
                       type: object
                       properties:
@@ -567,6 +570,25 @@ spec:
                                               matchLabels:
                                                 x-kubernetes-preserve-unknown-fields: true
                                                 type: object
+                                          namespaceSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                              matchLabels:
+                                                x-kubernetes-preserve-unknown-fields: true
+                                                type: object
                                           namespaces:
                                             type: array
                                             items:
@@ -581,6 +603,25 @@ spec:
                                     type: object
                                     properties:
                                       labelSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                          matchLabels:
+                                            x-kubernetes-preserve-unknown-fields: true
+                                            type: object
+                                      namespaceSelector:
                                         type: object
                                         properties:
                                           matchExpressions:
@@ -635,6 +676,25 @@ spec:
                                               matchLabels:
                                                 x-kubernetes-preserve-unknown-fields: true
                                                 type: object
+                                          namespaceSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                              matchLabels:
+                                                x-kubernetes-preserve-unknown-fields: true
+                                                type: object
                                           namespaces:
                                             type: array
                                             items:
@@ -649,6 +709,25 @@ spec:
                                     type: object
                                     properties:
                                       labelSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                          matchLabels:
+                                            x-kubernetes-preserve-unknown-fields: true
+                                            type: object
+                                      namespaceSelector:
                                         type: object
                                         properties:
                                           matchExpressions:
@@ -774,23 +853,7 @@ spec:
                               - IPv6
                           description: Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. Available on Kubernetes 1.20 and newer.
                       description: Template for Kafka Connect API `Service`.
-                    buildConfig:
-                      type: object
-                      properties:
-                        metadata:
-                          type: object
-                          properties:
-                            labels:
-                              x-kubernetes-preserve-unknown-fields: true
-                              type: object
-                              description: Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
-                            annotations:
-                              x-kubernetes-preserve-unknown-fields: true
-                              type: object
-                              description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
-                          description: Metadata applied to the resource.
-                      description: Template for the Kafka Connect BuildConfig used to build new container images. The BuildConfig is used only on OpenShift.
-                    buildContainer:
+                    connectContainer:
                       type: object
                       properties:
                         env:
@@ -861,7 +924,131 @@ spec:
                                 runAsUserName:
                                   type: string
                           description: Security context for the container.
-                      description: Template for the Kafka Connect Build container. The build container is used only on Kubernetes.
+                      description: Template for the Kafka Connect container.
+                    initContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                                description: The environment variable key.
+                              value:
+                                type: string
+                                description: The environment variable value.
+                          description: Environment variables which should be applied to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            seccompProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
+                                  type: string
+                          description: Security context for the container.
+                      description: Template for the Kafka init container.
+                    podDisruptionBudget:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                              description: Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                            annotations:
+                              x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                              description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Metadata to apply to the `PodDistruptionBugetTemplate` resource.
+                        maxUnavailable:
+                          type: integer
+                          minimum: 0
+                          description: Maximum number of unavailable pods to allow automatic Pod eviction. A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. Defaults to 1.
+                      description: Template for Kafka Connect `PodDisruptionBudget`.
+                    serviceAccount:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                              description: Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                            annotations:
+                              x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                              description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Metadata applied to the resource.
+                      description: Template for the Kafka Connect service account.
+                    clusterRoleBinding:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                              description: Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                            annotations:
+                              x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                              description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
+                          description: Metadata applied to the resource.
+                      description: Template for the Kafka Connect ClusterRoleBinding.
                     buildPod:
                       type: object
                       properties:
@@ -1049,6 +1236,25 @@ spec:
                                               matchLabels:
                                                 x-kubernetes-preserve-unknown-fields: true
                                                 type: object
+                                          namespaceSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                              matchLabels:
+                                                x-kubernetes-preserve-unknown-fields: true
+                                                type: object
                                           namespaces:
                                             type: array
                                             items:
@@ -1063,6 +1269,25 @@ spec:
                                     type: object
                                     properties:
                                       labelSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                          matchLabels:
+                                            x-kubernetes-preserve-unknown-fields: true
+                                            type: object
+                                      namespaceSelector:
                                         type: object
                                         properties:
                                           matchExpressions:
@@ -1117,6 +1342,25 @@ spec:
                                               matchLabels:
                                                 x-kubernetes-preserve-unknown-fields: true
                                                 type: object
+                                          namespaceSelector:
+                                            type: object
+                                            properties:
+                                              matchExpressions:
+                                                type: array
+                                                items:
+                                                  type: object
+                                                  properties:
+                                                    key:
+                                                      type: string
+                                                    operator:
+                                                      type: string
+                                                    values:
+                                                      type: array
+                                                      items:
+                                                        type: string
+                                              matchLabels:
+                                                x-kubernetes-preserve-unknown-fields: true
+                                                type: object
                                           namespaces:
                                             type: array
                                             items:
@@ -1131,6 +1375,25 @@ spec:
                                     type: object
                                     properties:
                                       labelSelector:
+                                        type: object
+                                        properties:
+                                          matchExpressions:
+                                            type: array
+                                            items:
+                                              type: object
+                                              properties:
+                                                key:
+                                                  type: string
+                                                operator:
+                                                  type: string
+                                                values:
+                                                  type: array
+                                                  items:
+                                                    type: string
+                                          matchLabels:
+                                            x-kubernetes-preserve-unknown-fields: true
+                                            type: object
+                                      namespaceSelector:
                                         type: object
                                         properties:
                                           matchExpressions:
@@ -1225,7 +1488,79 @@ spec:
                                 type: string
                           description: The pod's topology spread constraints.
                       description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
-                    clusterRoleBinding:
+                    buildContainer:
+                      type: object
+                      properties:
+                        env:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                                description: The environment variable key.
+                              value:
+                                type: string
+                                description: The environment variable value.
+                          description: Environment variables which should be applied to the container.
+                        securityContext:
+                          type: object
+                          properties:
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            privileged:
+                              type: boolean
+                            procMount:
+                              type: string
+                            readOnlyRootFilesystem:
+                              type: boolean
+                            runAsGroup:
+                              type: integer
+                            runAsNonRoot:
+                              type: boolean
+                            runAsUser:
+                              type: integer
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                level:
+                                  type: string
+                                role:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            seccompProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                                runAsUserName:
+                                  type: string
+                          description: Security context for the container.
+                      description: Template for the Kafka Connect Build container. The build container is used only on Kubernetes.
+                    buildConfig:
                       type: object
                       properties:
                         metadata:
@@ -1240,152 +1575,8 @@ spec:
                               type: object
                               description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
                           description: Metadata applied to the resource.
-                      description: Template for the Kafka Connect ClusterRoleBinding.
-                    connectContainer:
-                      type: object
-                      properties:
-                        env:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              name:
-                                type: string
-                                description: The environment variable key.
-                              value:
-                                type: string
-                                description: The environment variable value.
-                          description: Environment variables which should be applied to the container.
-                        securityContext:
-                          type: object
-                          properties:
-                            allowPrivilegeEscalation:
-                              type: boolean
-                            capabilities:
-                              type: object
-                              properties:
-                                add:
-                                  type: array
-                                  items:
-                                    type: string
-                                drop:
-                                  type: array
-                                  items:
-                                    type: string
-                            privileged:
-                              type: boolean
-                            procMount:
-                              type: string
-                            readOnlyRootFilesystem:
-                              type: boolean
-                            runAsGroup:
-                              type: integer
-                            runAsNonRoot:
-                              type: boolean
-                            runAsUser:
-                              type: integer
-                            seLinuxOptions:
-                              type: object
-                              properties:
-                                level:
-                                  type: string
-                                role:
-                                  type: string
-                                type:
-                                  type: string
-                                user:
-                                  type: string
-                            seccompProfile:
-                              type: object
-                              properties:
-                                localhostProfile:
-                                  type: string
-                                type:
-                                  type: string
-                            windowsOptions:
-                              type: object
-                              properties:
-                                gmsaCredentialSpec:
-                                  type: string
-                                gmsaCredentialSpecName:
-                                  type: string
-                                runAsUserName:
-                                  type: string
-                          description: Security context for the container.
-                      description: Template for the Kafka Connect container.
-                    initContainer:
-                      type: object
-                      properties:
-                        env:
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              name:
-                                type: string
-                                description: The environment variable key.
-                              value:
-                                type: string
-                                description: The environment variable value.
-                          description: Environment variables which should be applied to the container.
-                        securityContext:
-                          type: object
-                          properties:
-                            allowPrivilegeEscalation:
-                              type: boolean
-                            capabilities:
-                              type: object
-                              properties:
-                                add:
-                                  type: array
-                                  items:
-                                    type: string
-                                drop:
-                                  type: array
-                                  items:
-                                    type: string
-                            privileged:
-                              type: boolean
-                            procMount:
-                              type: string
-                            readOnlyRootFilesystem:
-                              type: boolean
-                            runAsGroup:
-                              type: integer
-                            runAsNonRoot:
-                              type: boolean
-                            runAsUser:
-                              type: integer
-                            seLinuxOptions:
-                              type: object
-                              properties:
-                                level:
-                                  type: string
-                                role:
-                                  type: string
-                                type:
-                                  type: string
-                                user:
-                                  type: string
-                            seccompProfile:
-                              type: object
-                              properties:
-                                localhostProfile:
-                                  type: string
-                                type:
-                                  type: string
-                            windowsOptions:
-                              type: object
-                              properties:
-                                gmsaCredentialSpec:
-                                  type: string
-                                gmsaCredentialSpecName:
-                                  type: string
-                                runAsUserName:
-                                  type: string
-                          description: Security context for the container.
-                      description: Template for the Kafka init container.
-                    podDisruptionBudget:
+                      description: Template for the Kafka Connect BuildConfig used to build new container images. The BuildConfig is used only on OpenShift.
+                    buildServiceAccount:
                       type: object
                       properties:
                         metadata:
@@ -1399,12 +1590,8 @@ spec:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
                               description: Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.
-                          description: Metadata to apply to the `PodDistruptionBugetTemplate` resource.
-                        maxUnavailable:
-                          type: integer
-                          minimum: 0
-                          description: Maximum number of unavailable pods to allow automatic Pod eviction. A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. Defaults to 1.
-                      description: Template for Kafka Connect `PodDisruptionBudget`.
+                          description: Metadata applied to the resource.
+                      description: Template for the Kafka Connect Build service account.
                   description: Template for Kafka Connect and Kafka Connect S2I resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
                 externalConfiguration:
                   type: object
@@ -1444,7 +1631,7 @@ spec:
                         required:
                           - name
                           - valueFrom
-                      description: Allows to pass data from Secret or ConfigMap to the Kafka Connect pods as environment variables.
+                      description: Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.
                     volumes:
                       type: array
                       items:
@@ -1497,7 +1684,7 @@ spec:
                             description: Reference to a key in a Secret. Exactly one Secret or ConfigMap has to be specified.
                         required:
                           - name
-                      description: Allows to pass data from Secret or ConfigMap to the Kafka Connect pods as volumes.
+                      description: Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.
                   description: Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
                 build:
                   type: object
@@ -1550,6 +1737,9 @@ spec:
                             items:
                               type: object
                               properties:
+                                fileName:
+                                  type: string
+                                  description: Name under which the artifact will be stored.
                                 sha512sum:
                                   type: string
                                   description: SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
@@ -1559,6 +1749,7 @@ spec:
                                     - jar
                                     - tgz
                                     - zip
+                                    - other
                                   description: Artifact type. Currently, the supported artifact types are `tgz`, `jar`, and `zip`.
                                 url:
                                   type: string
