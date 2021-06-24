@@ -28,7 +28,6 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
-import jdk.jfr.Label;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -538,15 +537,15 @@ public class OperatorMetricsTest {
         };
     }
 
-    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResourceWithoutSelectorLabel(){
+    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResourceWithoutSelectorLabel() {
         return resourceOperatorWithExistingResource(null);
     }
 
-    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResourceWithSelectorLabel(Labels selectorLabel){
+    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResourceWithSelectorLabel(Labels selectorLabel) {
         return resourceOperatorWithExistingResource(selectorLabel);
     }
 
-    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingPausedResource()    {
+    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingPausedResource() {
         return new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
             @Override
             public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
