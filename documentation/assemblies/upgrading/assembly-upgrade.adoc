@@ -26,7 +26,7 @@ For example, upgrading from Strimzi 0.20.0 directly to Strimzi {ConvertAfterProd
 
 .Upgrading from a version earlier than {ConvertAfterProductVersion}
 The `v1beta2` API version for all custom resources was introduced with Strimzi {ConvertAfterProductVersion}.
-For Strimzi {ConvertBeforeProductVersion}, the `v1alpha1` and `v1beta1` API versions were removed from all Strimzi custom resources apart from `KafkaTopic` and `KafkaUser`.
+For Strimzi {ConvertBeforeProductVersion} and newer, the `v1alpha1` and `v1beta1` API versions were removed from all Strimzi custom resources apart from `KafkaTopic` and `KafkaUser`.
 
 If you are upgrading from a Strimzi version prior to version {ConvertAfterProductVersion}:
 

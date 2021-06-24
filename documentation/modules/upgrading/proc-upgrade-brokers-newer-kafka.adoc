@@ -151,6 +151,4 @@ spec:
 
 Following the Kafka upgrade, if required, you can:
 
-* xref:con-upgrade-listeners-{context}[Update listeners to the `GenericKafkaListener` schema]
 * xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[Upgrade consumers to use the incremental cooperative rebalance protocol]
-* xref:assembly-upgrade-resources-{context}[Update existing custom resources]
