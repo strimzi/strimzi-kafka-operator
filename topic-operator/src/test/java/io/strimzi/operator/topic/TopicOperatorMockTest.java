@@ -89,6 +89,9 @@ public class TopicOperatorMockTest {
 
     @BeforeEach
     public void setup(VertxTestContext context) throws Exception {
+        //Create cluster in @BeforeEach instead of @BeforeAll as once the checkpoints causing premature success were fixed,
+        //tests were failing due to topic "my-topic" already existing, and trying to delete the topics at the end of the test was timing out occasionally.
+        //So works best when the cluster is recreated for each test to avoid shared state
         cluster = new EmbeddedKafkaCluster(1);
         cluster.start();
 
@@ -273,12 +276,13 @@ public class TopicOperatorMockTest {
         return ref.get();
     }
 
-    void reconcile(VertxTestContext context) throws InterruptedException {
+    void reconcile(VertxTestContext context) throws InterruptedException, ExecutionException {
+        //Block on Java future.get() to ensure blocking behaviour that appears required
         session.topicOperator.reconcileAllTopics("test").onComplete(ar -> {
             if (!ar.succeeded()) {
                 context.failNow(ar.cause());
             }
-        });
+        }).toCompletionStage().toCompletableFuture().get();
     }
 
 
