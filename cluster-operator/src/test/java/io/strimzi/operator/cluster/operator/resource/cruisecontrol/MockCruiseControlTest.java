@@ -53,8 +53,8 @@ public class MockCruiseControlTest {
 
         Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, PORT, userTaskID);
 
-        Checkpoint pendingCallsCheckpoint = pendingCalls == 0 ? null : context.checkpoint();
-        Checkpoint completeTest = context.checkpoint();
+        // One interaction is always expected at the end of the test, hence the +1
+        Checkpoint expectedInteractions = context.checkpoint(pendingCalls + 1);
 
         for (int i = 1; i <= pendingCalls; i++) {
             statusFuture = statusFuture.compose(response -> {
@@ -62,7 +62,7 @@ public class MockCruiseControlTest {
                         response.getJson().getString("Status"),
                         is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
-                pendingCallsCheckpoint.flag();
+                expectedInteractions.flag();
                 return client.getUserTaskStatus(HOST, PORT, userTaskID);
             });
         }
@@ -72,7 +72,7 @@ public class MockCruiseControlTest {
                     response.getJson().getString("Status"),
                     is(CruiseControlUserTaskStatus.COMPLETED.toString()))
             );
-            completeTest.flag();
+            expectedInteractions.flag();
             return Future.succeededFuture(response);
         });
     }
