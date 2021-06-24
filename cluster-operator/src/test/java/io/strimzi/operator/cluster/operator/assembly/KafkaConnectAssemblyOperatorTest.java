@@ -742,6 +742,8 @@ public class KafkaConnectAssemblyOperatorTest {
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
         Checkpoint asyncCreated = context.checkpoint(2);
+        //Must create all needed checkpoints before flagging anyway, to avoid premature test success
+        Checkpoint async = context.checkpoint();
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
 
@@ -754,7 +756,7 @@ public class KafkaConnectAssemblyOperatorTest {
         };
 
 
-        Checkpoint async = context.checkpoint();
+
         Promise reconciled = Promise.promise();
         // Now try to reconcile all the Kafka Connect clusters
         ops.reconcileAll("test", kcNamespace, ignored -> reconciled.complete());

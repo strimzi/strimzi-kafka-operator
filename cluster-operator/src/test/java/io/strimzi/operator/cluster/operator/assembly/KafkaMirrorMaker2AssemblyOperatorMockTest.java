@@ -130,7 +130,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
         LOGGER.info("Reconciling initially -> create");
         Promise created = Promise.promise();
-        Checkpoint async = context.checkpoint();
+
         kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
             .onComplete(context.succeeding(ar -> context.verify(() -> {
                 if (!reconciliationPaused) {
@@ -143,7 +143,6 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                     verify(mockClient, never()).customResources(KafkaMirrorMaker2.class);
                 }
 
-                async.flag();
                 created.complete();
             })));
         return created.future();

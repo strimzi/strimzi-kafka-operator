@@ -603,6 +603,9 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
         Checkpoint createOrUpdateAsync = context.checkpoint(2);
+        //Must create all checkpoints used before flagging any to avoid premature test success
+        Checkpoint async = context.checkpoint();
+
         KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS)) {
 
@@ -614,7 +617,6 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
             }
         };
 
-        Checkpoint async = context.checkpoint();
         // Now try to reconcile all the Kafka MirrorMaker 2.0 clusters
         ops.reconcileAll("test", kmm2Namespace,
             context.succeeding(v -> context.verify(() -> {

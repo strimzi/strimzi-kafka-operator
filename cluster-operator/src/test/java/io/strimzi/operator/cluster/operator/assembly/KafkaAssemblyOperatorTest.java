@@ -1385,6 +1385,7 @@ public class KafkaAssemblyOperatorTest {
 
         Checkpoint fooAsync = context.checkpoint();
         Checkpoint barAsync = context.checkpoint();
+        Checkpoint completeTest = context.checkpoint();
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
@@ -1405,9 +1406,9 @@ public class KafkaAssemblyOperatorTest {
             }
         };
 
-        Checkpoint async = context.checkpoint();
+
         // Now try to reconcile all the Kafka clusters
-        ops.reconcileAll("test", kafkaNamespace, context.succeeding(v -> async.flag()));
+        ops.reconcileAll("test", kafkaNamespace, context.succeeding(v -> completeTest.flag()));
     }
 
     @ParameterizedTest

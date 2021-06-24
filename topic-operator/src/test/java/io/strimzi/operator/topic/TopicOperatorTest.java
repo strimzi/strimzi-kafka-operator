@@ -536,6 +536,9 @@ public class TopicOperatorTest {
         Topic privateTopic = null;
 
         Checkpoint async0 = context.checkpoint();
+        //Must create all checkpoints used before flagging any to prevent premature test success
+        Checkpoint async = context.checkpoint(1);
+
         mockKafka.setCreateTopicResponse(topicName.toString(), null);
         //mockKafka.setTopicMetadataResponse(topicName, null, null);
         mockKafka.setTopicMetadataResponse(
@@ -548,7 +551,7 @@ public class TopicOperatorTest {
         mockK8s.createResource(topicResource).onComplete(ar -> async0.flag());
 
         CountDownLatch latch = new CountDownLatch(1);
-        Checkpoint async = context.checkpoint(1);
+
         topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockKafka.assertExists(context, kubeTopic.getTopicName());
@@ -577,6 +580,9 @@ public class TopicOperatorTest {
         Topic privateTopic = kubeTopic;
 
         Checkpoint async0 = context.checkpoint(2);
+        //Must create all checkpoints used before flagging any to prevent premature test success
+        Checkpoint async = context.checkpoint();
+
         KafkaTopic topicResource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.DELETED, topicResource);
         mockK8s.setCreateResponse(resourceName, null)
@@ -586,15 +592,13 @@ public class TopicOperatorTest {
                 .create(privateTopic).onComplete(ar -> async0.flag());
         mockTopicStore.setDeleteTopicResponse(topicName, null);
 
-        Checkpoint async = context.checkpoint();
-
         topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic).onComplete(reconcileResult -> {
             assertSucceeded(context, reconcileResult);
             mockKafka.assertNotExists(context, kubeTopic.getTopicName());
             mockTopicStore.assertNotExists(context, kubeTopic.getTopicName());
             mockK8s.assertNotExists(context, kubeTopic.getResourceName());
             mockK8s.assertNoEvents(context);
-            context.completeNow();
+            async.flag();
         });
     }
 
