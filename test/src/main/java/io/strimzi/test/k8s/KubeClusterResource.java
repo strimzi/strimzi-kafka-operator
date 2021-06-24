@@ -163,7 +163,9 @@ public class KubeClusterResource {
             deploymentNamespaces.add(namespace);
             kubeClient().createNamespace(namespace);
             cmdKubeClient().waitForResourceCreation("Namespace", namespace);
-            if (extensionContext != null) addNamespaceToSet(extensionContext, namespace);
+            if (extensionContext != null) {
+                addNamespaceToSet(extensionContext, namespace);
+            }
         }
         testNamespace = useNamespace;
         LOGGER.info("Using Namespace {}", useNamespace);
@@ -209,7 +211,9 @@ public class KubeClusterResource {
     public void deleteNamespace(ExtensionContext extensionContext, String namespaceName) {
         kubeClient().deleteNamespace(namespaceName);
         cmdKubeClient().waitForResourceDeletion("Namespace", namespaceName);
-        if (extensionContext != null) deleteNamespaceFromSet(extensionContext, testNamespace);
+        if (extensionContext != null) {
+            deleteNamespaceFromSet(extensionContext, testNamespace);
+        }
     }
 
     /**

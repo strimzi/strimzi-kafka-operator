@@ -55,7 +55,6 @@ public class LogCollector implements LogCollect {
     private final String testSuiteName;
     private final File testCase;
     private final File logDir;
-    private final Pod clusterOperatorPod;
     private final String clusterOperatorNamespace;
     private File namespaceFile;
 
@@ -68,22 +67,32 @@ public class LogCollector implements LogCollect {
 
         this.testSuite = new File(logSuiteDir);
 
-        // @BeforeAll in AbstractST always pass, and I ensure that we always deploy CO and after that some error can occur
-        this.clusterOperatorPod = kubeClient.getClient().pods().inAnyNamespace().list().getItems().stream()
-            .filter(pod -> pod.getMetadata().getName().contains(Constants.STRIMZI_DEPLOYMENT_NAME))
-            // contract only one Cluster Operator deployment inside all namespaces
-            .findFirst()
-            .orElseThrow();
-        this.clusterOperatorNamespace = this.clusterOperatorPod.getMetadata().getNamespace();
+        // contract only one Cluster Operator deployment inside all namespaces
+        Pod clusterOperatorPod = kubeClient.getClient().pods().inAnyNamespace().list().getItems().stream()
+                .filter(pod -> pod.getMetadata().getName().contains(Constants.STRIMZI_DEPLOYMENT_NAME))
+                // contract only one Cluster Operator deployment inside all namespaces
+                .findFirst()
+                .orElseGet(Pod::new);
+
+        this.clusterOperatorNamespace = clusterOperatorPod.getMetadata() != null ?
+                clusterOperatorPod.getMetadata().getNamespace() :
+                kubeClient.getNamespace();
+
         this.testCase = new File(logSuiteDir + "/" + testCaseName);
 
         boolean logDirExist = this.logDir.exists() || this.logDir.mkdirs();
         boolean logTestSuiteDirExist = this.testSuite.exists() || this.testSuite.mkdirs();
         boolean logTestCaseDirExist = this.testCase.exists() || this.testCase.mkdirs();
 
-        if (!logDirExist) throw new IOException("Unable to create path");
-        if (!logTestSuiteDirExist) throw new IOException("Unable to create path");
-        if (!logTestCaseDirExist) throw new IOException("Unable to create path");
+        if (!logDirExist) {
+            throw new IOException("Unable to create path");
+        }
+        if (!logTestSuiteDirExist) {
+            throw new IOException("Unable to create path");
+        }
+        if (!logTestCaseDirExist) {
+            throw new IOException("Unable to create path");
+        }
     }
 
     /**
