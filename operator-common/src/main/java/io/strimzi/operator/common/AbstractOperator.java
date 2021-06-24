@@ -198,13 +198,18 @@ public abstract class AbstractOperator<
         Future<Void> handler = withLock(reconciliation, LOCK_TIMEOUT_MS, () -> {
             T cr = resourceOperator.get(namespace, name);
 
+            System.out.println(cr);
             if (cr != null) {
                 if (!Util.matchesSelector(selector(), cr))  {
+                    System.out.println(selector.get().getMatchLabels());
+                    System.out.println();
                     // When the labels matching the selector are removed from the custom resource, a DELETE event is
                     // triggered by the watch even through the custom resource might not match the watch labels anymore
                     // and might not be really deleted. We have to filter these situations out and ignore the
                     // reconciliation because such resource might be already operated by another instance (where the
                     // same change triggered ADDED event).
+
+                    System.out.println("a");
                     LOGGER.debugCr(reconciliation, "{} {} in namespace {} does not match label selector {} and will be ignored", kind(), name, namespace, selector().get().getMatchLabels());
                     return Future.succeededFuture();
                 }
