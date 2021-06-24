@@ -39,9 +39,14 @@ public class HelmResource implements SpecificResourceType {
     public static final String LIMITS_CPU = "1000m";
 
     private String namespaceToWatch;
+    private String namespaceInstallTo;
 
-    public HelmResource() { }
-    public HelmResource(String namespaceToWatch) {
+    public HelmResource(String namespace) {
+        this.namespaceInstallTo = namespace;
+        this.namespaceToWatch = namespace;
+    }
+    public HelmResource(String namespaceInstallTo, String namespaceToWatch) {
+        this.namespaceInstallTo = namespaceInstallTo;
         this.namespaceToWatch = namespaceToWatch;
     }
 
@@ -123,12 +128,9 @@ public class HelmResource implements SpecificResourceType {
                 entry("logLevelOverride", Environment.STRIMZI_LOG_LEVEL),
                 entry("fullReconciliationIntervalMs", Long.toString(reconciliationInterval)),
                 entry("operationTimeoutMs", Long.toString(operationTimeout)),
-                entry("featureGates", Environment.STRIMZI_FEATURE_GATES))
+                entry("featureGates", Environment.STRIMZI_FEATURE_GATES),
+                entry("watchAnyNamespace", this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES) ? "true" : "false"))
                 .collect(TestUtils.entriesToMap()));
-
-        if (this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
-            values.put("watchAnyNamespace", "true");
-        }
 
         Path pathToChart = new File(HELM_CHART).toPath();
         String oldNamespace = KubeClusterResource.getInstance().setNamespace("kube-system");
@@ -144,12 +146,11 @@ public class HelmResource implements SpecificResourceType {
      * Delete CO deployed via helm chart.
      */
     private void deleteClusterOperator() {
-        ResourceManager.helmClient().delete(HELM_RELEASE_NAME);
+        ResourceManager.helmClient().delete(namespaceInstallTo, HELM_RELEASE_NAME);
         DeploymentUtils.waitForDeploymentDeletion(ResourceManager.getCoDeploymentName());
-        cmdKubeClient().delete(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
     }
 
-    public String getNamespaceEnv() {
+    public String getNamespaceToWatch() {
         return this.namespaceToWatch;
     }
 }

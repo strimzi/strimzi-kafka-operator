@@ -16,7 +16,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
-import io.strimzi.systemtest.resources.specific.HelmResource;
 import io.strimzi.systemtest.resources.specific.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.StUtils;
@@ -45,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -75,14 +73,12 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
-    protected final HelmResource helmResource = new HelmResource();
     protected SetupClusterOperator install = new SetupClusterOperator();
     protected OlmResource olmResource;
     protected KubeClusterResource cluster;
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
     private final Object lock = new Object();
-    private final Object lockForTimeMeasuringSystem = new Object();
 
     // maps for local variables {thread safe}
     protected static Map<String, String> mapWithClusterNames = new HashMap<>();
@@ -100,10 +96,6 @@ public abstract class AbstractST implements TestSeparator {
     protected static final String UO_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
     protected static final String KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
     protected static final String TLS_SIDECAR_EO_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
-    protected static final String TEST_TOPIC_NAME = "test-topic";
-
-    private Stack<String> clusterOperatorConfigs = new Stack<>();
-    public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../packaging/install/cluster-operator";
 
     public static Random rng = new Random();
 
@@ -153,10 +145,6 @@ public abstract class AbstractST implements TestSeparator {
             result.add(asList(cmdLine.split("\0")));
         }
         return result;
-    }
-
-    protected void assertExpectedJavaOpts(String podName, String containerName, String expectedXmx, String expectedXms, String expectedXx) {
-        assertExpectedJavaOpts(kubeClient().getNamespace(), podName, containerName, expectedXmx, expectedXms, expectedXx);
     }
 
     protected void assertExpectedJavaOpts(String namespaceName, String podName, String containerName, String expectedXmx, String expectedXms, String expectedXx) {
@@ -297,10 +285,6 @@ public abstract class AbstractST implements TestSeparator {
             timeoutSeconds, periodSeconds, successThreshold, failureThreshold);
     }
 
-    protected void verifyLabelsForKafkaCluster(String clusterName, String appName) {
-        verifyLabelsForKafkaCluster(kubeClient().getNamespace(), kubeClient().getNamespace(), clusterName, appName);
-    }
-
     protected void verifyLabelsForKafkaCluster(String clusterOperatorNamespaceName, String componentsNamespaceName, String clusterName, String appName) {
         verifyLabelsOnPods(componentsNamespaceName, clusterName, "zookeeper", appName, Kafka.RESOURCE_KIND);
         verifyLabelsOnPods(componentsNamespaceName, clusterName, "kafka", appName, Kafka.RESOURCE_KIND);
@@ -371,10 +355,6 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    protected void verifyLabelsForService(String clusterName, String serviceToTest, String kind) {
-        verifyLabelsForConfigMaps(kubeClient().getNamespace(), clusterName, serviceToTest, kind);
-    }
-
     protected void verifyLabelsForService(String namespaceName, String clusterName, String serviceToTest, String kind) {
         LOGGER.info("Verifying labels for Kafka Connect Services");
 
@@ -401,10 +381,6 @@ public abstract class AbstractST implements TestSeparator {
                 assertThat(p.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
             }
         );
-    }
-
-    protected void verifyLabelsForConfigMaps(String clusterName, String appName, String additionalClusterName) {
-        verifyLabelsForConfigMaps(kubeClient().getNamespace(), clusterName, appName, additionalClusterName);
     }
 
     protected void verifyLabelsForConfigMaps(String namespaceName, String clusterName, String appName, String additionalClusterName) {
@@ -435,10 +411,6 @@ public abstract class AbstractST implements TestSeparator {
                 }
             }
         );
-    }
-
-    protected void verifyLabelsForServiceAccounts(String clusterName, String appName) {
-        verifyLabelsForServiceAccounts(kubeClient().getNamespace(), clusterName, appName);
     }
 
     protected void verifyLabelsForServiceAccounts(String namespaceName, String clusterName, String appName) {
@@ -556,11 +528,6 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.info("Docker images verified");
     }
 
-    protected void testDockerImagesForKafkaCluster(String clusterName, String namespaceName,
-                                                   int kafkaPods, int zkPods, boolean rackAwareEnabled) {
-        testDockerImagesForKafkaCluster(clusterName, namespaceName, namespaceName, kafkaPods, zkPods, rackAwareEnabled);
-    }
-
     protected void afterEachMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(extensionContext);
@@ -578,8 +545,8 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
-            teardownEnvForOperator();
             ResourceManager.getInstance().deleteResources(extensionContext);
+            teardownEnvForOperator();
         }
     }
 
@@ -593,11 +560,11 @@ public abstract class AbstractST implements TestSeparator {
         // this is because we need to have different clusterName and kafkaClientsName in each test case without
         // synchronization it can produce `data-race`
         String testName = null;
-        String testClass = null;
 
         synchronized (lock) {
-            if (extensionContext.getTestClass().isPresent()) testClass = extensionContext.getTestClass().get().getName();
-            if (extensionContext.getTestMethod().isPresent()) testName = extensionContext.getTestMethod().get().getName();
+            if (extensionContext.getTestMethod().isPresent()) {
+                testName = extensionContext.getTestMethod().get().getName();
+            }
 
             LOGGER.info("Not first test we are gonna generate cluster name");
             String clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
@@ -620,7 +587,7 @@ public abstract class AbstractST implements TestSeparator {
                 // create namespace by
                 LOGGER.info("Creating namespace:{} for test case:{}", namespaceTestCase, testName);
 
-                cluster.createNamespace(namespaceTestCase);
+                cluster.createNamespace(extensionContext, namespaceTestCase);
                 NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
             }
         }
@@ -634,11 +601,6 @@ public abstract class AbstractST implements TestSeparator {
      */
     protected void beforeAllMayOverride(ExtensionContext extensionContext) {
         cluster = KubeClusterResource.getInstance();
-        String testClass = null;
-
-        if (extensionContext.getTestClass().isPresent()) {
-            testClass = extensionContext.getTestClass().get().getName();
-        }
     }
 
     @BeforeEach

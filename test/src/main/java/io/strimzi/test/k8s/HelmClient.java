@@ -55,7 +55,19 @@ public class HelmClient {
     /** Delete a chart given its release name */
     public HelmClient delete(String releaseName) {
         LOGGER.info("Deleting helm-chart {}", releaseName);
-        Exec.exec(null, namespace(command("delete", releaseName)), 0, false, false);
+        delete(namespace, releaseName);
+        return this;
+    }
+
+    /**
+     * Delete a Helm chart in specific namespace by given release name
+     * @param namespace namespace where chart is installed
+     * @param releaseName helm chart release name
+     * @return this
+     */
+    public HelmClient delete(String namespace, String releaseName) {
+        LOGGER.info("Deleting helm-chart:{} in namespace:{}", releaseName, namespace);
+        Exec.exec(null, command("delete", releaseName, "--namespace", namespace), 0, false, false);
         return this;
     }
 
