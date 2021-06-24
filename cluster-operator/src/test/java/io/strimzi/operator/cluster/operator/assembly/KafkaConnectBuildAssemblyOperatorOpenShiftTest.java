@@ -259,7 +259,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                     .withNewBuild()
                         .withNewDockerOutput()
                             .withImage("my-connect-build:latest")
-                            .withNewPushSecret("my-docker-credentials")
+                            .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(plugin1)
                     .endBuild()
@@ -330,6 +330,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .build();
 
         ArgumentCaptor<BuildRequest> buildRequestCaptor = ArgumentCaptor.forClass(BuildRequest.class);
+        when(mockBcOps.getAsync(eq(NAMESPACE), anyString())).thenReturn(Future.succeededFuture());
         when(mockBcOps.startBuild(eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), buildRequestCaptor.capture())).thenReturn(Future.succeededFuture(builder));
 
         // Mock and capture Build ops
@@ -356,6 +357,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
             .onComplete(context.failing(v -> context.verify(() -> {
+                assertThat(v.getMessage(), is("The Kafka Connect build failed."));
                 async.flag();
             })));
     }
