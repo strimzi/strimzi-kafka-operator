@@ -503,7 +503,6 @@ public class OperatorMetricsTest {
             public CustomResource get(String namespace, String name) {
                 @Group("strimzi")
                 @Version("v1")
-
                 class Foo extends MyResource {
                     @Override
                     public ObjectMeta getMetadata() {
