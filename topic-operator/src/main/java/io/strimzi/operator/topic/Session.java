@@ -185,8 +185,12 @@ public class Session extends AbstractVerticle {
                 jaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + username + "\" password=\"" + password + "\";";
             }
 
-            kafkaClientProps.setProperty(SaslConfigs.SASL_JAAS_CONFIG, jaasConfig);
-            kafkaClientProps.setProperty(SaslConfigs.SASL_MECHANISM, saslMechanism);
+            if (saslMechanism != null) {
+                kafkaClientProps.setProperty(SaslConfigs.SASL_MECHANISM, saslMechanism);
+            }
+            if (jaasConfig != null) {
+                kafkaClientProps.setProperty(SaslConfigs.SASL_JAAS_CONFIG, jaasConfig);
+            }
         }
 
         this.adminClient = AdminClient.create(kafkaClientProps);
