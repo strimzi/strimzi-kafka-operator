@@ -205,7 +205,6 @@ public abstract class AbstractOperator<
                     // and might not be really deleted. We have to filter these situations out and ignore the
                     // reconciliation because such resource might be already operated by another instance (where the
                     // same change triggered ADDED event).
-
                     LOGGER.debugCr(reconciliation, "{} {} in namespace {} does not match label selector {} and will be ignored", kind(), name, namespace, selector().get().getMatchLabels());
                     return Future.succeededFuture();
                 }
@@ -463,6 +462,7 @@ public abstract class AbstractOperator<
     public Optional<LabelSelector> selector() {
         return selector;
     }
+
     /**
      * Create Kubernetes watch.
      *
