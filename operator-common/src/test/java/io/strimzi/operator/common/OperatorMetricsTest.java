@@ -71,7 +71,6 @@ public class OperatorMetricsTest {
         MetricsProvider metrics = createCleanMetricsProvider();
 
         AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithSelectorLabel(selectorLabels);
-        System.out.println(resourceOperator);
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, selectorLabels) {
             @Override
