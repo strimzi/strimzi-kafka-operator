@@ -156,8 +156,6 @@ public class CertificateRenewalTest {
                 supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
-        Checkpoint async = context.checkpoint();
-
         Promise reconcileCasComplete = Promise.promise();
         op.new ReconciliationState(reconciliation, kafka).reconcileCas(dateSupplier)
             .onComplete(ar -> {
@@ -169,7 +167,6 @@ public class CertificateRenewalTest {
                 } else {
                     reconcileCasComplete.fail(ar.cause());
                 }
-                async.flag();
             });
         return reconcileCasComplete.future();
     }

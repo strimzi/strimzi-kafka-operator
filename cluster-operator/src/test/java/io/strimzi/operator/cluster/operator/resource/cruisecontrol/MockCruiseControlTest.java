@@ -53,7 +53,8 @@ public class MockCruiseControlTest {
 
         Future<CruiseControlResponse> statusFuture = client.getUserTaskStatus(HOST, PORT, userTaskID);
 
-        Checkpoint checkpoint = context.checkpoint(pendingCalls + 1);
+        // One interaction is always expected at the end of the test, hence the +1
+        Checkpoint expectedInteractions = context.checkpoint(pendingCalls + 1);
 
         for (int i = 1; i <= pendingCalls; i++) {
             statusFuture = statusFuture.compose(response -> {
@@ -61,7 +62,7 @@ public class MockCruiseControlTest {
                         response.getJson().getString("Status"),
                         is(CruiseControlUserTaskStatus.IN_EXECUTION.toString()))
                 );
-                checkpoint.flag();
+                expectedInteractions.flag();
                 return client.getUserTaskStatus(HOST, PORT, userTaskID);
             });
         }
@@ -71,7 +72,7 @@ public class MockCruiseControlTest {
                     response.getJson().getString("Status"),
                     is(CruiseControlUserTaskStatus.COMPLETED.toString()))
             );
-            checkpoint.flag();
+            expectedInteractions.flag();
             return Future.succeededFuture(response);
         });
     }
@@ -106,6 +107,10 @@ public class MockCruiseControlTest {
         Checkpoint firstPending = context.checkpoint(pendingCalls1);
         int pendingCalls2 = 4;
         Checkpoint secondPending = context.checkpoint(pendingCalls2);
+
+        //When last checkpoint is flagged, then test is marked as completed, so create another checkpoint
+        //for test end to prevent premature test success
+        Checkpoint completeTest = context.checkpoint();
 
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls1);
 
@@ -157,12 +162,12 @@ public class MockCruiseControlTest {
 
         statusFuture.compose(response -> {
             context.verify(() -> assertThat(
-                    response.getJson().getJsonArray("userTasks").getJsonObject(0).getString("Status"),
+                    response.getJson().getString("Status"),
                     is(CruiseControlUserTaskStatus.COMPLETED.toString()))
             );
             return Future.succeededFuture(response);
         }).onComplete(context.succeeding(result -> {
-            context.completeNow();
+            completeTest.flag();
         }));
     }
 

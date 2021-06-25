@@ -611,6 +611,9 @@ public class KafkaBridgeAssemblyOperatorTest {
         // Should be called twice, once for foo and once for bar
         Checkpoint asyncCreatedOrUpdated = context.checkpoint(2);
 
+        //Must create all checkpoints before flag()ing any to avoid premature test success
+        Checkpoint async = context.checkpoint();
+
         KafkaBridgeAssemblyOperator ops = new KafkaBridgeAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
@@ -625,7 +628,7 @@ public class KafkaBridgeAssemblyOperatorTest {
             }
         };
 
-        Checkpoint async = context.checkpoint();
+
         Promise reconciled = Promise.promise();
         // Now try to reconcile all the Kafka Bridge clusters
         ops.reconcileAll("test", kbNamespace, v -> reconciled.complete());
