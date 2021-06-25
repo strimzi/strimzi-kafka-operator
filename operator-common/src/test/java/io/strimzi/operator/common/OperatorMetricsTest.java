@@ -50,8 +50,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Group("strimzi")
 @Version("v1")
 public class OperatorMetricsTest {
-
     private static Vertx vertx;
+
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx(new VertxOptions().setMetricsOptions(
