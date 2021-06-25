@@ -60,7 +60,6 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -130,7 +129,7 @@ public class CertificateRenewalTest {
         when(secretOps.list(eq(NAMESPACE), any())).thenAnswer(invocation -> {
             Map<String, String> requiredLabels = ((Labels) invocation.getArgument(1)).toMap();
             return secrets.stream().filter(s -> {
-                Map<String, String> labels = new HashMap<>(s.getMetadata().getLabels());
+                Map<String, String> labels = s.getMetadata().getLabels();
                 labels.keySet().retainAll(requiredLabels.keySet());
                 return labels.equals(requiredLabels);
             }).collect(Collectors.toList());
@@ -162,6 +161,8 @@ public class CertificateRenewalTest {
 
     private CertAndKey generateCa(OpenSslCertManager certManager, CertificateAuthority certificateAuthority, String commonName)
             throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+        String clusterCaStorePassword = "123456";
+
         File clusterCaKeyFile = File.createTempFile("tls", "cluster-ca-key");
         File clusterCaCertFile = File.createTempFile("tls", "cluster-ca-cert");
         File clusterCaStoreFile = File.createTempFile("tls", "cluster-ca-store");
@@ -170,7 +171,7 @@ public class CertificateRenewalTest {
             .withCommonName(commonName).build();
 
         certManager.generateSelfSignedCert(clusterCaKeyFile, clusterCaCertFile, sbj, ModelUtils.getCertificateValidity(certificateAuthority));
-        String clusterCaStorePassword = "123456";
+
         certManager.addCertToTrustStore(clusterCaCertFile, CA_CRT, clusterCaStoreFile, clusterCaStorePassword);
         return new CertAndKey(
                 Files.readAllBytes(clusterCaKeyFile.toPath()),
@@ -333,9 +334,8 @@ public class CertificateRenewalTest {
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues().get(0).getData().keySet(), is(set(CA_CRT, CA_STORE, CA_STORE_PASSWORD)));
                 assertThat(c.getAllValues().get(0).getData().get(CA_CRT), is(initialClusterCaCertSecret.getData().get(CA_CRT)));
-                assertDoesNotThrow(() ->
-                    assertThat(x509Certificate(initialClusterCaCertSecret.getData().get(CA_CRT)),
-                            is(getCertificateFromTrustStore(CA_CRT, c.getAllValues().get(0).getData()))));
+                assertThat(x509Certificate(initialClusterCaCertSecret.getData().get(CA_CRT)),
+                            is(getCertificateFromTrustStore(CA_CRT, c.getAllValues().get(0).getData())));
 
                 assertThat(c.getAllValues().get(1).getData().keySet(), is(set(CA_KEY)));
                 assertThat(c.getAllValues().get(1).getData().get(CA_KEY), is(initialClusterCaKeySecret.getData().get(CA_KEY)));
