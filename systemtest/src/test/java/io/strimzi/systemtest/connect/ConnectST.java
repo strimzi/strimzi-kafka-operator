@@ -19,7 +19,6 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -36,25 +35,20 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.SetupClusterOperator;
-import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaConnectS2ITemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentConfigUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -671,94 +665,6 @@ class ConnectST extends AbstractST {
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         checkSpecificVariablesInContainer(namespaceName, KafkaConnectResources.deploymentName(clusterName), KafkaConnectResources.deploymentName(clusterName), envVarUpdated);
         checkComponentConfiguration(namespaceName, KafkaConnectResources.deploymentName(clusterName), KafkaConnectResources.deploymentName(clusterName), "KAFKA_CONNECT_CONFIGURATION", connectConfig);
-    }
-
-    @ParallelNamespaceTest
-    @Tag(CONNECTOR_OPERATOR)
-    @OpenShiftOnly
-    void testKafkaConnectorWithConnectAndConnectS2IWithSameName(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final String connectClusterName = "connect-cluster-1";
-        final String connectS2IClusterName = "connect-s2i-cluster-1";
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-        // Crate connect cluster with default connect image
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
-            .editMetadata()
-                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-            .endMetadata()
-            .editSpec()
-                .addToConfig("group.id", connectClusterName)
-                .addToConfig("offset.storage.topic", connectClusterName + "-offsets")
-                .addToConfig("config.storage.topic", connectClusterName + "-config")
-                .addToConfig("status.storage.topic", connectClusterName + "-status")
-            .endSpec()
-            .build());
-
-        // Create different connect cluster via S2I resources
-        resourceManager.createResource(extensionContext, false, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, clusterName, clusterName, 1)
-            .editMetadata()
-                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-            .endMetadata()
-            .editSpec()
-                .addToConfig("group.id", connectS2IClusterName)
-                .addToConfig("offset.storage.topic", connectS2IClusterName + "-offsets")
-                .addToConfig("config.storage.topic", connectS2IClusterName + "-config")
-                .addToConfig("status.storage.topic", connectS2IClusterName + "-status")
-            .endSpec()
-            .build());
-
-        KafkaConnectS2IUtils.waitForConnectS2INotReady(namespaceName, clusterName);
-
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
-            .editSpec()
-                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
-                .addToConfig("topics", topicName)
-                .addToConfig("file", "/tmp/test-file-sink.txt")
-                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-            .endSpec()
-            .build());
-
-        // Check that KafkaConnect contains created connector
-        String connectPodName = kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
-        KafkaConnectorUtils.waitForConnectorCreation(namespaceName, connectPodName, clusterName);
-
-        KafkaConnectS2IUtils.waitForConnectS2INotReady(namespaceName, clusterName);
-
-        String newTopic = "new-topic";
-        String connectorConfig = KafkaConnectorUtils.getConnectorConfig(namespaceName, connectPodName, clusterName, "localhost");
-
-        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(clusterName, kc -> {
-            kc.getSpec().getConfig().put("topics", newTopic);
-            kc.getSpec().setTasksMax(8);
-        }, namespaceName);
-
-        connectorConfig = KafkaConnectorUtils.waitForConnectorConfigUpdate(namespaceName, connectPodName, clusterName, connectorConfig, "localhost");
-        assertThat(connectorConfig.contains("tasks.max\":\"8"), is(true));
-        assertThat(connectorConfig.contains("topics\":\"" + newTopic), is(true));
-
-        // Now delete KafkaConnector resource and create connector manually
-        KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(clusterName).delete();
-
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kc -> {
-            kc.getMetadata().getAnnotations().remove(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES);
-        }, namespaceName);
-
-        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
-
-        KafkaConnectorUtils.createFileSinkConnector(namespaceName, kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, namespaceName, 8083));
-        final String connectorName = "sink-test";
-        KafkaConnectorUtils.waitForConnectorCreation(namespaceName, connectPodName, connectorName);
-        KafkaConnectorUtils.waitForConnectorStability(namespaceName, connectorName, connectPodName);
-        KafkaConnectS2IUtils.waitForConnectS2INotReady(namespaceName, clusterName);
-
-        KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(namespaceName).withName(clusterName).delete();
-        DeploymentConfigUtils.waitForDeploymentConfigDeletion(namespaceName, KafkaConnectS2IResources.deploymentName(clusterName));
     }
 
     @ParallelNamespaceTest

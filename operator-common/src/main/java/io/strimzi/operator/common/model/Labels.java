@@ -33,7 +33,6 @@ public class Labels {
      * <ul>
      *   <li>Kafka</li>
      *   <li>KafkaConnect</li>
-     *   <li>KafkaConnectS2I</li>
      *   <li>KafkaMirrorMaker</li>
      *   <li>KafkaBridge</li>
      *   <li>KafkaUser</li>

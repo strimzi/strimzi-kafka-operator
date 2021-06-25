@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.LoadBalancerIngressBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
@@ -32,8 +31,6 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
-import io.strimzi.api.kafka.model.KafkaConnectS2IBuilder;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
@@ -419,48 +416,6 @@ public class ResourceUtils {
         return result;
     }
 
-
-    /**
-     * Create a Kafka Connect S2I custom resource
-     */
-    public static KafkaConnectS2I createKafkaConnectS2I(String namespace, String name, int replicas,
-                                                        String image, int healthDelay, int healthTimeout, MetricsConfig metrics,
-                                                        String connectConfig, boolean insecureSourceRepo, String bootstrapServers,
-                                                        ResourceRequirements builResourceRequirements) {
-
-
-        return new KafkaConnectS2IBuilder(createEmptyKafkaConnectS2I(namespace, name))
-                .editOrNewSpec()
-                    .withImage(image)
-                    .withReplicas(replicas)
-                    .withBootstrapServers(bootstrapServers)
-                    .withLivenessProbe(new Probe(healthDelay, healthTimeout))
-                    .withReadinessProbe(new Probe(healthDelay, healthTimeout))
-                    .withMetricsConfig(metrics)
-                    .withConfig((Map<String, Object>) TestUtils.fromJson(connectConfig, Map.class))
-                    .withInsecureSourceRepository(insecureSourceRepo)
-                    .withBuildResources(builResourceRequirements)
-                .endSpec()
-                .build();
-    }
-
-    /**
-     * Create an empty Kafka Connect S2I custom resource
-     */
-    public static KafkaConnectS2I createEmptyKafkaConnectS2I(String namespace, String name) {
-        return new KafkaConnectS2IBuilder()
-                .withMetadata(new ObjectMetaBuilder()
-                    .withName(name)
-                    .withNamespace(namespace)
-                    .withLabels(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests",
-                            "my-user-label", "cromulent"))
-                    .withAnnotations(emptyMap())
-                .build())
-                .withNewSpec()
-                .endSpec()
-                .build();
-    }
-
     /**
      * Create an empty Kafka Connect custom resource
      */
@@ -748,7 +703,6 @@ public class ResourceUtils {
                 mock(CrdOperator.class),
                 mock(CrdOperator.class),
                 mock(CrdOperator.class),
-                mock(CrdOperator.class),
                 mock(StorageClassOperator.class),
                 mock(NodeOperator.class),
                 zookeeperScalerProvider(),
@@ -832,11 +786,11 @@ public class ResourceUtils {
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(long operationTimeoutMs) {
-        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap()), operationTimeoutMs);
+        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), operationTimeoutMs);
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig() {
-        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap(), emptyMap()));
+        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()));
     }
 
     /**

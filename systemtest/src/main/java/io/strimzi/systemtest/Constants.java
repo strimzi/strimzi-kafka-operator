@@ -135,7 +135,6 @@ public interface Constants {
     String PATH_TO_KAFKA_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-metrics.yaml";
     String PATH_TO_KAFKA_CRUISE_CONTROL_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-cruise-control-metrics.yaml";
     String PATH_TO_KAFKA_CONNECT_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-connect-metrics.yaml";
-    String PATH_TO_KAFKA_CONNECT_S2I_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/connect/kafka-connect-s2i.yaml";
     String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-mirror-maker-2-metrics.yaml";
 
     String METRICS_CONFIG_YAML_NAME = "metrics-config.yml";
@@ -236,11 +235,6 @@ public interface Constants {
     String CONNECT = "connect";
 
     /**
-     * Tag for tests which deploys KafkaConnectS2I resource
-     */
-    String CONNECT_S2I = "connects2i";
-
-    /**
      * Tag for tests which deploys KafkaMirrorMaker resource
      */
     String MIRROR_MAKER = "mirrormaker";
@@ -251,7 +245,7 @@ public interface Constants {
     String MIRROR_MAKER2 = "mirrormaker2";
 
     /**
-     * Tag for tests which deploys any of KafkaConnect, KafkaConnects2i, KafkaConnector, KafkaMirrorMaker2
+     * Tag for tests which deploys any of KafkaConnect, KafkaConnector, KafkaMirrorMaker2
      */
     String CONNECT_COMPONENTS = "connectcomponents";
 

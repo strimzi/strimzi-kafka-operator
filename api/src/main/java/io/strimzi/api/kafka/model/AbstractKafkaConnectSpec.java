@@ -158,7 +158,7 @@ public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfig
         this.tracing = tracing;
     }
 
-    @Description("Template for Kafka Connect and Kafka Connect S2I resources. " +
+    @Description("Template for Kafka Connect and Kafka Mirror Maker 2 resources. " +
             "The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public KafkaConnectTemplate getTemplate() {

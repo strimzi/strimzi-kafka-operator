@@ -45,7 +45,6 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.KafkaConnectTls;
 import io.strimzi.api.kafka.model.Probe;
@@ -176,7 +175,6 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     public static KafkaConnectCluster fromCrd(Reconciliation reconciliation, KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
-
         KafkaConnectCluster cluster = fromSpec(reconciliation, kafkaConnect.getSpec(), versions,
                 new KafkaConnectCluster(reconciliation, kafkaConnect));
 
@@ -190,7 +188,6 @@ public class KafkaConnectCluster extends AbstractModel {
      * from the instantiation of the (subclass of) KafkaConnectCluster,
      * thus permitting reuse of the setter-calling code for subclasses.
      */
-    @SuppressWarnings("deprecation")
     protected static <C extends KafkaConnectCluster> C fromSpec(Reconciliation reconciliation,
                                                                 KafkaConnectSpec spec,
                                                                 KafkaVersion.Lookup versions,
@@ -209,10 +206,7 @@ public class KafkaConnectCluster extends AbstractModel {
         }
 
         if (kafkaConnect.getImage() == null) {
-            String image = spec instanceof KafkaConnectS2ISpec ?
-                    versions.kafkaConnectS2IVersion(spec.getImage(), spec.getVersion())
-                    : versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
-            kafkaConnect.setImage(image);
+            kafkaConnect.setImage(versions.kafkaConnectVersion(spec.getImage(), spec.getVersion()));
         }
 
         kafkaConnect.setResources(spec.getResources());
@@ -332,13 +326,9 @@ public class KafkaConnectCluster extends AbstractModel {
         return portList;
     }
 
-    protected List<Volume> getVolumes(boolean isOpenShift, boolean isS2I) {
+    protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
-
-        if (!isS2I) {
-            volumeList.add(createTempDirVolume());
-        }
-
+        volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
         if (rack != null) {
@@ -408,13 +398,9 @@ public class KafkaConnectCluster extends AbstractModel {
         return volumeList;
     }
 
-    protected List<VolumeMount> getVolumeMounts(boolean isS2I) {
+    protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
-
-        if (!isS2I) {
-            volumeMountList.add(createTempDirVolumeMount());
-        }
-
+        volumeMountList.add(createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
         if (rack != null) {
@@ -486,7 +472,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
-                getVolumes(isOpenShift, false),
+                getVolumes(isOpenShift),
                 imagePullSecrets);
     }
 
@@ -503,7 +489,7 @@ public class KafkaConnectCluster extends AbstractModel {
                 .withPorts(getContainerPortList())
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME))
-                .withVolumeMounts(getVolumeMounts(false))
+                .withVolumeMounts(getVolumeMounts())
                 .withResources(getResources())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
                 .withSecurityContext(templateContainerSecurityContext)

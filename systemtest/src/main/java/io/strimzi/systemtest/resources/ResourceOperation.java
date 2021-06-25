@@ -7,7 +7,6 @@ package io.strimzi.systemtest.resources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
@@ -21,8 +20,6 @@ public class ResourceOperation {
         return getTimeoutForResourceReadiness("default");
     }
 
-    // Deprecation is suppressed because of KafkaConnectS2I
-    @SuppressWarnings("deprecation")
     public static long getTimeoutForResourceReadiness(String kind) {
         long timeout;
 
@@ -31,7 +28,6 @@ public class ResourceOperation {
                 timeout = Duration.ofMinutes(14).toMillis();
                 break;
             case KafkaConnect.RESOURCE_KIND:
-            case KafkaConnectS2I.RESOURCE_KIND:
             case KafkaMirrorMaker2.RESOURCE_KIND:
             case Constants.DEPLOYMENT_CONFIG:
                 timeout = Duration.ofMinutes(10).toMillis();
@@ -81,15 +77,12 @@ public class ResourceOperation {
         return getTimeoutForResourceDeletion("default");
     }
 
-    // Deprecation is suppressed because of KafkaConnectS2I
-    @SuppressWarnings("deprecation")
     public static long getTimeoutForResourceDeletion(String kind) {
         long timeout;
 
         switch (kind) {
             case Kafka.RESOURCE_KIND:
             case KafkaConnect.RESOURCE_KIND:
-            case KafkaConnectS2I.RESOURCE_KIND:
             case KafkaMirrorMaker2.RESOURCE_KIND:
             case KafkaMirrorMaker.RESOURCE_KIND:
             case KafkaBridge.RESOURCE_KIND:

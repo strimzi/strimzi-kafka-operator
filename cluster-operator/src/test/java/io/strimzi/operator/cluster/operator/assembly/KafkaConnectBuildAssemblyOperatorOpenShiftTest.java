@@ -122,7 +122,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -140,9 +139,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-
-        // Mock KafkaConnectS2I ops
-        when(mockConnectS2IOps.getAsync(NAMESPACE, NAME)).thenReturn(Future.succeededFuture(null));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -271,7 +267,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -289,9 +284,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-
-        // Mock KafkaConnectS2I ops
-        when(mockConnectS2IOps.getAsync(NAMESPACE, NAME)).thenReturn(Future.succeededFuture(null));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -409,7 +401,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -427,9 +418,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-
-        // Mock KafkaConnectS2I ops
-        when(mockConnectS2IOps.getAsync(NAMESPACE, NAME)).thenReturn(Future.succeededFuture(null));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -564,7 +552,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -582,9 +569,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-
-        // Mock KafkaConnectS2I ops
-        when(mockConnectS2IOps.getAsync(NAMESPACE, NAME)).thenReturn(Future.succeededFuture(null));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -689,7 +673,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -707,9 +690,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-
-        // Mock KafkaConnectS2I ops
-        when(mockConnectS2IOps.getAsync(NAMESPACE, NAME)).thenReturn(Future.succeededFuture(null));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -857,7 +837,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -875,9 +854,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-
-        // Mock KafkaConnectS2I ops
-        when(mockConnectS2IOps.getAsync(NAMESPACE, NAME)).thenReturn(Future.succeededFuture(null));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -1049,7 +1025,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1067,9 +1042,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-
-        // Mock KafkaConnectS2I ops
-        when(mockConnectS2IOps.getAsync(NAMESPACE, NAME)).thenReturn(Future.succeededFuture(null));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -1243,7 +1215,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         CrdOperator mockConnectOps = supplier.connectOperator;
-        CrdOperator mockConnectS2IOps = supplier.connectS2IOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1261,9 +1232,6 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-
-        // Mock KafkaConnectS2I ops
-        when(mockConnectS2IOps.getAsync(NAMESPACE, NAME)).thenReturn(Future.succeededFuture(null));
 
         // Mock and capture service ops
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);

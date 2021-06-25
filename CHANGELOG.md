@@ -4,6 +4,9 @@
 
 ### Changes, deprecations and removals
 
+* The `KafkaConnectS2I` resource has been removed and is no longer supported by the operator.
+  Please use the [migration guide](https://strimzi.io/docs/operators/latest/full/using.html#proc-migrating-kafka-connect-s2i-str) to migrate your `KafkaConnectS2I` deployments to [`KafkaConnect` Build](https://strimzi.io/docs/operators/latest/full/deploying.html#creating-new-image-using-kafka-connect-build-str) instead.
+
 ## 0.24.0
 
 * Add support for [Kubernetes Configuration Provider for Apache Kafka](https://github.com/strimzi/kafka-kubernetes-config-provider)

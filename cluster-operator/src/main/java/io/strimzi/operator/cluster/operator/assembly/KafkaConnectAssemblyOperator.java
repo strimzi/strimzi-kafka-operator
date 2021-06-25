@@ -13,12 +13,9 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Build;
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -37,7 +34,6 @@ import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.BuildOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -58,8 +54,6 @@ import java.util.function.Function;
  *     <li>A Kafka Connect Deployment and related Services</li>
  * </ul>
  */
-// Deprecation is suppressed because of KafkaConnectS2I
-@SuppressWarnings("deprecation")
 public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaConnectAssemblyOperator.class.getName());
     private final DeploymentOperator deploymentOperations;
@@ -68,7 +62,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private final BuildConfigOperator buildConfigOperator;
     private final BuildOperator buildOperator;
     private final KafkaVersion.Lookup versions;
-    private final CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> connectS2IOperations;
     protected final long connectBuildTimeoutMs;
 
     /**
@@ -95,7 +88,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                         Function<Vertx, KafkaConnectApi> connectClientProvider, int port) {
         super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.connectOperator, supplier, config, connectClientProvider, port);
         this.deploymentOperations = supplier.deploymentOperations;
-        this.connectS2IOperations = supplier.connectS2IOperator;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.podOperator = supplier.podOperations;
         this.buildConfigOperator = supplier.buildConfigOperations;
@@ -127,28 +119,10 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         LOGGER.debugCr(reconciliation, "Updating Kafka Connect cluster");
 
-        Future<KafkaConnectS2I> connectS2ICheck;
-        if (connectS2IOperations != null)   {
-            connectS2ICheck = connectS2IOperations.getAsync(kafkaConnect.getMetadata().getNamespace(), kafkaConnect.getMetadata().getName());
-        } else {
-            connectS2ICheck = Future.succeededFuture(null);
-        }
-
         boolean connectHasZeroReplicas = connect.getReplicas() == 0;
 
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
-        connectS2ICheck
-                .compose(otherConnect -> {
-                    if (otherConnect != null
-                            // There is a KafkaConnectS2I with the same name which is older than this KafkaConnect
-                            && kafkaConnect.getMetadata().getCreationTimestamp().compareTo(otherConnect.getMetadata().getCreationTimestamp()) > 0)    {
-                        return Future.failedFuture("Both KafkaConnect and KafkaConnectS2I exist with the same name. " +
-                                "KafkaConnectS2I is older and will be used while this custom resource will be ignored.");
-                    } else {
-                        return Future.succeededFuture();
-                    }
-                })
-                .compose(i -> connectServiceAccount(reconciliation, namespace, connect))
+        connectServiceAccount(reconciliation, namespace, connect)
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
                 .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generateNetworkPolicy(isUseResources(kafkaConnect), operatorNamespace, operatorNamespaceLabels)))
                 .compose(i -> deploymentOperations.getAsync(namespace, connect.getName()))

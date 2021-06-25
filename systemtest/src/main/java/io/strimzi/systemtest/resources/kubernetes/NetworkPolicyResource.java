@@ -162,8 +162,8 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
     }
 
     /**
-     * Method for allowing network policies for Connect or ConnectS2I
-     * @param resource mean Connect or ConnectS2I resource
+     * Method for allowing network policies for Connect
+     * @param resource mean Connect resource
      * @param deploymentName name of resource deployment - for setting strimzi.io/name
      */
     public static void allowNetworkPolicySettingsForResource(ExtensionContext extensionContext, HasMetadata resource, String deploymentName) {

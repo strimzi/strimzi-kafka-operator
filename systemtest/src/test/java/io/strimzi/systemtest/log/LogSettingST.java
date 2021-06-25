@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.JvmOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -21,17 +20,14 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaConnectS2ITemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
@@ -40,7 +36,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentConfigUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -67,7 +62,6 @@ import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CC_LOG_CONFIG_RELOAD;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_MEDIUM;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
@@ -87,7 +81,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(MIRROR_MAKER)
 @Tag(MIRROR_MAKER2)
 @Tag(BRIDGE)
-@Tag(CONNECT_S2I)
 @Tag(CONNECT_COMPONENTS)
 @TestMethodOrder(OrderAnnotation.class)
 class LogSettingST extends AbstractST {
@@ -108,7 +101,6 @@ class LogSettingST extends AbstractST {
     private static final String MM_NAME = "my-mirror-maker";
     private static final String MM2_NAME = "my-mirror-maker-2";
     private static final String CONNECT_NAME = "my-connect";
-    private static final String CONNECTS2I_NAME = "my-connect-s2i";
 
     private static final JvmOptions JVM_OPTIONS = new JvmOptionsBuilder()
         .withGcLoggingEnabled(false)
@@ -297,39 +289,6 @@ class LogSettingST extends AbstractST {
 
         kubectlGetStrimziUntilOperationIsSuccessful(NAMESPACE, connectClusterName);
         checkContainersHaveProcessOneAsTini(NAMESPACE, connectClusterName);
-    }
-
-    @ParallelTest
-    @OpenShiftOnly
-    void testConnectS2ILogSetting(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String connectS2IClusterName = clusterName + "-connect-s2i";
-
-        resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, connectS2IClusterName, LOG_SETTING_CLUSTER_NAME, 1)
-            .editSpec()
-                .withNewInlineLogging()
-                    .withLoggers(CONNECT_LOGGERS)
-                .endInlineLogging()
-                .withNewJvmOptions()
-                    .withGcLoggingEnabled(true)
-                .endJvmOptions()
-            .endSpec()
-            .build());
-
-        String connectS2IDepName = KafkaConnectS2IResources.deploymentName(connectS2IClusterName);
-        Map<String, String> connectS2IPods = DeploymentConfigUtils.depConfigSnapshot(NAMESPACE, connectS2IDepName);
-        String connectS2IMap = KafkaConnectS2IResources.metricsAndLogConfigMapName(connectS2IClusterName);
-
-        LOGGER.info("Checking if ConnectS2I has log level set properly");
-        assertThat("KafkaConnectS2I's log level is set properly", checkLoggersLevel(NAMESPACE, CONNECT_LOGGERS, connectS2IMap), is(true));
-        assertThat("ConnectS2I GC logging is enabled", checkGcLoggingDeploymentConfig(NAMESPACE, connectS2IDepName), is(true));
-
-        KafkaConnectS2IResource.replaceConnectS2IResourceInSpecificNamespace(connectS2IClusterName, cs2i -> cs2i.getSpec().setJvmOptions(JVM_OPTIONS), NAMESPACE);
-        DeploymentConfigUtils.waitTillDepConfigHasRolled(NAMESPACE, connectS2IDepName, connectS2IPods);
-        assertThat("ConnectS2I GC logging is disabled", checkGcLoggingDeploymentConfig(NAMESPACE, connectS2IDepName), is(false));
-
-        kubectlGetStrimziUntilOperationIsSuccessful(NAMESPACE, connectS2IClusterName);
-        checkContainersHaveProcessOneAsTini(NAMESPACE, connectS2IClusterName);
     }
 
     @ParallelTest

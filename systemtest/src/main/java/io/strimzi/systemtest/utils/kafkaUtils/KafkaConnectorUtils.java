@@ -29,7 +29,7 @@ public class KafkaConnectorUtils {
      * WaitForStabilityConnector method, verifying stability of connector
      * @param namespaceName Namespace name
      * @param connectorName connector name
-     * @param connectPodName connects2i or connect pod name
+     * @param connectPodName Connect pod name
      */
     public static void waitForConnectorStability(String namespaceName, String connectorName, String connectPodName) {
         // alternative to sync hassling AtomicInteger one could use an integer array instead
@@ -89,17 +89,6 @@ public class KafkaConnectorUtils {
 
     public static String getCreatedConnectors(String connectPodName) {
         return getCreatedConnectors(kubeClient().getNamespace(), connectPodName);
-    }
-
-    public static void waitForConnectorCreation(String namespaceName, String connectS2IPodName, String connectorName) {
-        TestUtils.waitFor(connectorName + " connector creation", Constants.GLOBAL_POLL_INTERVAL, READINESS_TIMEOUT, () -> {
-            String availableConnectors = getCreatedConnectors(namespaceName, connectS2IPodName);
-            return availableConnectors.contains(connectorName);
-        }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get()));
-    }
-
-    public static void waitForConnectorCreation(String connectS2IPodName, String connectorName) {
-        waitForConnectorCreation(kubeClient().getNamespace(), connectS2IPodName, connectorName);
     }
 
     public static void waitForConnectorDeletion(String connectorName) {

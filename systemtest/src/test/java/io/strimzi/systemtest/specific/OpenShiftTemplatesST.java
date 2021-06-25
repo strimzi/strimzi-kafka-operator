@@ -4,18 +4,16 @@
  */
 package io.strimzi.systemtest.specific;
 
-import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.test.TestUtils;
@@ -28,7 +26,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -57,10 +54,6 @@ public class OpenShiftTemplatesST extends AbstractST {
 
     public KafkaConnect getKafkaConnect(String clusterName) {
         return KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).get();
-    }
-
-    public KafkaConnectS2I getKafkaConnectS2I(String clusterName) {
-        return KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(clusterName).get();
     }
 
     @ParallelTest
@@ -173,19 +166,6 @@ public class OpenShiftTemplatesST extends AbstractST {
     }
 
     @ParallelTest
-    @Tag(CONNECT_S2I)
-    void testConnectS2I(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        oc.createResourceAndApply("strimzi-connect-s2i", map("CLUSTER_NAME", clusterName,
-                "INSTANCES", "1"));
-
-        KafkaConnectS2I cm = getKafkaConnectS2I(clusterName);
-        assertThat(cm, is(notNullValue()));
-        assertThat(cm.getSpec().getReplicas(), is(1));
-    }
-
-    @ParallelTest
     void testTopicOperator(ExtensionContext extensionContext) {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         oc.createResourceAndApply("strimzi-topic", map(
@@ -209,7 +189,6 @@ public class OpenShiftTemplatesST extends AbstractST {
             Constants.PATH_TO_PACKAGING_EXAMPLES + "/templates/topic-operator",
             TestUtils.CRD_KAFKA,
             TestUtils.CRD_KAFKA_CONNECT,
-            TestUtils.CRD_KAFKA_CONNECT_S2I,
             TestUtils.CRD_TOPIC,
             TestUtils.USER_PATH + "/src/rbac/role-edit-kafka.yaml");
     }

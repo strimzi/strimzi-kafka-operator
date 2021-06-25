@@ -15,11 +15,10 @@ import java.util.stream.Collectors;
 public class KafkaVersionTestUtils {
     private static final String KAFKA_IMAGE_STR = "strimzi/kafka:latest-kafka-";
     private static final String KAFKA_CONNECT_IMAGE_STR = "strimzi/kafka-connect:latest-kafka-";
-    private static final String KAFKA_CONNECT_S2I_IMAGE_STR = "strimzi/kafka-connect-s2i:latest-kafka-";
     private static final String KAFKA_MIRROR_MAKER_IMAGE_STR = "strimzi/kafka-mirror-maker:latest-kafka-";
     private static final String KAFKA_MIRROR_MAKER_2_IMAGE_STR = "strimzi/kafka-connect:latest-kafka-";
 
-    private static final Set<String> SUPPORTED_VERSIONS = new KafkaVersion.Lookup(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap()).supportedVersions();
+    private static final Set<String> SUPPORTED_VERSIONS = new KafkaVersion.Lookup(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap()).supportedVersions();
 
     public static final String LATEST_KAFKA_VERSION = "2.8.0";
     public static final String LATEST_FORMAT_VERSION = "2.8";
@@ -29,7 +28,6 @@ public class KafkaVersionTestUtils {
     public static final String LATEST_THIRD_PARTY_VERSION = "2.8.x";
     public static final String LATEST_KAFKA_IMAGE = KAFKA_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + LATEST_KAFKA_VERSION;
-    public static final String LATEST_KAFKA_CONNECT_S2I_IMAGE = KAFKA_CONNECT_S2I_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_MIRROR_MAKER_IMAGE = KAFKA_MIRROR_MAKER_IMAGE_STR + LATEST_KAFKA_VERSION;
     public static final String LATEST_KAFKA_MIRROR_MAKER_2_IMAGE = KAFKA_MIRROR_MAKER_2_IMAGE_STR + LATEST_KAFKA_VERSION;
 
@@ -41,14 +39,12 @@ public class KafkaVersionTestUtils {
     public static final String PREVIOUS_THIRD_PARTY_VERSION = "2.7.x";
     public static final String PREVIOUS_KAFKA_IMAGE = KAFKA_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
     public static final String PREVIOUS_KAFKA_CONNECT_IMAGE = KAFKA_CONNECT_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
-    public static final String PREVIOUS_KAFKA_CONNECT_S2I_IMAGE = KAFKA_CONNECT_S2I_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
     public static final String PREVIOUS_KAFKA_MIRROR_MAKER_IMAGE = KAFKA_MIRROR_MAKER_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
     public static final String PREVIOUS_KAFKA_MIRROR_MAKER_2_IMAGE = KAFKA_MIRROR_MAKER_2_IMAGE_STR + PREVIOUS_KAFKA_VERSION;
 
     public static final String DEFAULT_KAFKA_VERSION = LATEST_KAFKA_VERSION;
     public static final String DEFAULT_KAFKA_IMAGE = LATEST_KAFKA_IMAGE;
     public static final String DEFAULT_KAFKA_CONNECT_IMAGE = LATEST_KAFKA_CONNECT_IMAGE;
-    public static final String DEFAULT_KAFKA_CONNECT_S2I_IMAGE = LATEST_KAFKA_CONNECT_S2I_IMAGE;
     public static final String DEFAULT_KAFKA_MIRROR_MAKER_IMAGE = LATEST_KAFKA_MIRROR_MAKER_IMAGE;
 
     private static Map<String, String> getKafkaImageMap() {
@@ -57,10 +53,6 @@ public class KafkaVersionTestUtils {
 
     private static Map<String, String> getKafkaConnectImageMap() {
         return getImageMap(KAFKA_CONNECT_IMAGE_STR);
-    }
-
-    private static Map<String, String> getKafkaConnectS2iImageMap() {
-        return getImageMap(KAFKA_CONNECT_S2I_IMAGE_STR);
     }
 
     private static Map<String, String> getKafkaMirrorMakerImageMap() {
@@ -81,10 +73,6 @@ public class KafkaVersionTestUtils {
 
     public static String getKafkaConnectImagesEnvVarString() {
         return envVarFromMap(getKafkaConnectImageMap());
-    }
-
-    public static String getKafkaConnectS2iImagesEnvVarString() {
-        return envVarFromMap(getKafkaConnectS2iImageMap());
     }
 
     public static String getKafkaMirrorMakerImagesEnvVarString() {
@@ -109,7 +97,6 @@ public class KafkaVersionTestUtils {
         return new KafkaVersion.Lookup(
                 getKafkaImageMap(),
                 getKafkaConnectImageMap(),
-                getKafkaConnectS2iImageMap(),
                 getKafkaMirrorMakerImageMap(),
                 getKafkaMirrorMaker2ImageMap());
     }

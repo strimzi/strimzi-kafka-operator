@@ -12,7 +12,6 @@ rules:
   resources:
   - kafkas
   - kafkaconnects
-  - kafkaconnects2is
   - kafkamirrormakers
   - kafkausers
   - kafkatopics

@@ -31,7 +31,7 @@ a|
 Strimzi image for running Kafka, including:
 
 * Kafka Broker
-* Kafka Connect / S2I
+* Kafka Connect
 * Kafka MirrorMaker
 * ZooKeeper
 * TLS Sidecars

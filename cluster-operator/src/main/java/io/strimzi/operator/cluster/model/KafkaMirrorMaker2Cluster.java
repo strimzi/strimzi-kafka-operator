@@ -148,8 +148,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     @Override
-    protected List<Volume> getVolumes(boolean isOpenShift, boolean isS2I) {
-        List<Volume> volumeList = super.getVolumes(isOpenShift, isS2I);
+    protected List<Volume> getVolumes(boolean isOpenShift) {
+        List<Volume> volumeList = super.getVolumes(isOpenShift);
 
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
             KafkaMirrorMaker2Tls tls = mirrorMaker2Cluster.getTls();
@@ -174,8 +174,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     @Override
-    protected List<VolumeMount> getVolumeMounts(boolean isS2I) {
-        List<VolumeMount> volumeMountList = super.getVolumeMounts(isS2I);
+    protected List<VolumeMount> getVolumeMounts() {
+        List<VolumeMount> volumeMountList = super.getVolumeMounts();
 
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
             String alias = mirrorMaker2Cluster.getAlias();
