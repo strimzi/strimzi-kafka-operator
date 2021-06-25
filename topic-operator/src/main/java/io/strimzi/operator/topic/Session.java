@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.client.Watch;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.topic.zk.Zk;
@@ -22,6 +24,7 @@ import io.vertx.micrometer.backends.BackendRegistries;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.logging.log4j.LogManager;
@@ -142,6 +145,7 @@ public class Session extends AbstractVerticle {
         }, stop);
     }
 
+    @SuppressWarnings({"JavaNCSS", "MethodLength"})
     @Override
     public void start(Promise<Void> start) {
         LOGGER.info("Starting");
@@ -153,12 +157,36 @@ public class Session extends AbstractVerticle {
         kafkaClientProps.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, config.get(Config.APPLICATION_ID));
 
         if (Boolean.parseBoolean(config.get(Config.TLS_ENABLED))) {
-            kafkaClientProps.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
-            kafkaClientProps.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, config.get(Config.TLS_TRUSTSTORE_LOCATION));
-            kafkaClientProps.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, config.get(Config.TLS_TRUSTSTORE_PASSWORD));
-            kafkaClientProps.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, config.get(Config.TLS_KEYSTORE_LOCATION));
-            kafkaClientProps.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, config.get(Config.TLS_KEYSTORE_PASSWORD));
+            kafkaClientProps.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, config.get(config.SECURITY_PROTOCOL));
             kafkaClientProps.setProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, config.get(Config.TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM));
+
+            if (!config.get(Config.TLS_TRUSTSTORE_LOCATION).isEmpty() && !config.get(Config.TLS_TRUSTSTORE_PASSWORD).isEmpty()) {
+                kafkaClientProps.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, config.get(Config.TLS_TRUSTSTORE_LOCATION));
+                kafkaClientProps.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, config.get(Config.TLS_TRUSTSTORE_PASSWORD));
+            }
+
+            if (Boolean.parseBoolean(config.get(Config.TLS_AUTH_ENABLED))) {
+                kafkaClientProps.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, config.get(Config.TLS_KEYSTORE_LOCATION));
+                kafkaClientProps.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, config.get(Config.TLS_KEYSTORE_PASSWORD));
+            }
+        }
+
+        if (Boolean.parseBoolean(config.get(Config.SASL_ENABLED))) {
+            String saslMechanism = null;
+            String jaasConfig = null;
+            String username = config.get(Config.SASL_USERNAME);
+            String password = config.get(Config.SASL_PASSWORD);
+
+            if (KafkaClientAuthenticationPlain.TYPE_PLAIN.equals(config.get(Config.SASL_MECHANISM))) {
+                saslMechanism = "PLAIN";
+                jaasConfig = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + username + "\" password=\"" + password + "\";";
+            } else if (KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512.equals(config.get(Config.SASL_MECHANISM))) {
+                saslMechanism = "SCRAM-SHA-512";
+                jaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + username + "\" password=\"" + password + "\";";
+            }
+
+            kafkaClientProps.setProperty(SaslConfigs.SASL_JAAS_CONFIG, jaasConfig);
+            kafkaClientProps.setProperty(SaslConfigs.SASL_MECHANISM, saslMechanism);
         }
 
         this.adminClient = AdminClient.create(kafkaClientProps);
