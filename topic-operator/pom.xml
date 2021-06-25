@@ -80,7 +80,7 @@
             <exclusions>
                 <exclusion>
                     <groupId>io.grpc</groupId>
-                    <artifactId>grpc-api</artifactId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
