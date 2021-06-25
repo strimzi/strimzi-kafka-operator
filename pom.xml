@@ -109,7 +109,7 @@
         <json-path.version>4.1.1</json-path.version>
         <zkclient.version>0.11</zkclient.version>
         <scala-library.version>2.12.12</scala-library.version>
-        <zookeeper.version>3.5.8</zookeeper.version>
+        <zookeeper.version>3.5.9</zookeeper.version>
         <mockito.version>2.28.2</mockito.version>
         <jayway-jsonpath.version>2.6.0</jayway-jsonpath.version>
         <slf4j.version>1.7.25</slf4j.version>
