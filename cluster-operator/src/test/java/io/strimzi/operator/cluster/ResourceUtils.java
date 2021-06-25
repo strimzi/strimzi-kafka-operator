@@ -74,9 +74,7 @@ import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
@@ -692,10 +690,8 @@ public class ResourceUtils {
                 mock(PodOperator.class),
                 mock(IngressOperator.class),
                 mock(IngressV1Beta1Operator.class),
-                mock(ImageStreamOperator.class),
                 mock(BuildConfigOperator.class),
                 mock(BuildOperator.class),
-                mock(DeploymentConfigOperator.class),
                 mock(CrdOperator.class),
                 mock(CrdOperator.class),
                 mock(CrdOperator.class),

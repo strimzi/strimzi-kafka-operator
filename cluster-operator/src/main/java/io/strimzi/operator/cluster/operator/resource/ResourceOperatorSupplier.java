@@ -31,9 +31,7 @@ import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
@@ -78,10 +76,8 @@ public class ResourceOperatorSupplier {
     public final PodOperator podOperations;
     public final IngressOperator ingressOperations;
     public final IngressV1Beta1Operator ingressV1Beta1Operations;
-    public final ImageStreamOperator imagesStreamOperations;
     public final BuildConfigOperator buildConfigOperations;
     public final BuildOperator buildOperations;
-    public final DeploymentConfigOperator deploymentConfigOperations;
     public final StorageClassOperator storageClassOperations;
     public final NodeOperator nodeOperator;
     public final ZookeeperScalerProvider zkScalerProvider;
@@ -119,10 +115,8 @@ public class ResourceOperatorSupplier {
                 new PodOperator(vertx, client),
                 new IngressOperator(vertx, client),
                 new IngressV1Beta1Operator(vertx, client),
-                pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                pfa.hasApps() ? new DeploymentConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),
                 new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND),
                 new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND),
@@ -154,10 +148,8 @@ public class ResourceOperatorSupplier {
                                     PodOperator podOperations,
                                     IngressOperator ingressOperations,
                                     IngressV1Beta1Operator ingressV1Beta1Operations,
-                                    ImageStreamOperator imagesStreamOperations,
                                     BuildConfigOperator buildConfigOperations,
                                     BuildOperator buildOperations,
-                                    DeploymentConfigOperator deploymentConfigOperations,
                                     CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator,
                                     CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> connectOperator,
                                     CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList> mirrorMakerOperator,
@@ -188,10 +180,8 @@ public class ResourceOperatorSupplier {
         this.podOperations = podOperations;
         this.ingressOperations = ingressOperations;
         this.ingressV1Beta1Operations = ingressV1Beta1Operations;
-        this.imagesStreamOperations = imagesStreamOperations;
         this.buildConfigOperations = buildConfigOperations;
         this.buildOperations = buildOperations;
-        this.deploymentConfigOperations = deploymentConfigOperations;
         this.connectOperator = connectOperator;
         this.mirrorMakerOperator = mirrorMakerOperator;
         this.kafkaBridgeOperator = kafkaBridgeOperator;
