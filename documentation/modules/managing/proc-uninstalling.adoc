@@ -16,7 +16,7 @@ Such resources include:
 * Secrets (Custom CAs and certificates, Kafka Connect secrets, and other Kafka secrets)
 * Logging `ConfigMaps` (of type `external`)
 
-These are resources referenced by `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, `KafkaMirrorMaker`, or `KafkaBridge` configuration.
+These are resources referenced by `Kafka`, `KafkaConnect`, `KafkaMirrorMaker`, or `KafkaBridge` configuration.
 
 .Procedure
 
@@ -27,6 +27,6 @@ These are resources referenced by `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, `K
 kubectl delete -f install/cluster-operator
 ----
 +
-WARNING: Deleting `CustomResourceDefinitions` results in the garbage collection of the corresponding custom resources (`Kafka`, `KafkaConnect`, `KafkaConnectS2I`, `KafkaMirrorMaker`, or `KafkaBridge`) and the resources dependent on them (Deployments, StatefulSets, and other dependent resources).
+WARNING: Deleting `CustomResourceDefinitions` results in the garbage collection of the corresponding custom resources (`Kafka`, `KafkaConnect`, `KafkaMirrorMaker`, or `KafkaBridge`) and the resources dependent on them (Deployments, StatefulSets, and other dependent resources).
 
 . Delete the resources you identified in the prerequisites.

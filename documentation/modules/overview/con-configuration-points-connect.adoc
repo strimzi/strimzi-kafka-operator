@@ -55,8 +55,7 @@ You create a custom Kafka Connect image that uses new connector plugins.
 To create the image, you can use:
 
 * Kafka Connect configuration so that Strimzi creates the new image automatically.
-* A Kafka container image on {DockerRepository} as a base image.
-* OpenShift {docs-okd} and the {docs-okd-s2i} framework to create new container images.
+* A Kafka container image from {DockerRepository} as a base image.
 
 For Strimzi to create the new image automatically, a `build` configuration requires `output` properties to reference a container registry that stores the container image,
 and `plugins` properties to list the connector plugins and their artifacts to add to the image.

@@ -25,7 +25,6 @@ The API reference provides more details about the customizable fields.
 `Kafka.spec.cruiseControl`:: See xref:type-CruiseControlTemplate-reference[]
 `Kafka.spec.jmxTrans`:: See xref:type-JmxTransTemplate-reference[]
 `KafkaConnect.spec`:: See xref:type-KafkaConnectTemplate-reference[]
-`KafkaConnectS2I.spec`:: See xref:type-KafkaConnectTemplate-reference[]
 `KafkaMirrorMaker.spec`:: See xref:type-KafkaMirrorMakerTemplate-reference[]
 `KafkaMirrorMaker2.spec`:: See xref:type-KafkaConnectTemplate-reference[]
 `KafkaBridge.spec`:: See xref:type-KafkaBridgeTemplate-reference[]

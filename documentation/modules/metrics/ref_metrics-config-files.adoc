@@ -95,7 +95,7 @@ When deploying Prometheus metrics configuration, you can can deploy the example 
 |`kafka-metrics.yaml`
 
 |Kafka Connect
-|`KafkaConnect` and `KafkaConnectS2I`
+|`KafkaConnect`
 |`kafka-connect-metrics.yaml`
 
 |Kafka MirrorMaker 2.0

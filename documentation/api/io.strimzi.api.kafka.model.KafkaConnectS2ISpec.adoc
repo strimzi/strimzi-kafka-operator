@@ -1,6 +1,0 @@
-Configures a Kafka Connect cluster with Source-to-Image (S2I) support.
-
-When extending Kafka Connect with connector plugins on OpenShift (only),
-you can use OpenShift builds and S2I to create a container image that is used by the Kafka Connect deployment.
-
-The configuration options are similar to Kafka Connect configuration using the xref:type-KafkaConnectSpec-reference[`KafkaConnectSpec` schema].

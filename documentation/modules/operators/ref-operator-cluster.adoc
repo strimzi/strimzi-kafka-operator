@@ -62,7 +62,7 @@ env:
 Specifies label selector used to filter the custom resources handled by the operator.
 The operator will operate only on those custom resources which will have the specified labels set.
 Resources without these labels will not be seen by the operator.
-The label selector applies to `Kafka`, `KafkaConnect`, `KafkaConnectS2I`, `KafkaBridge`, `KafkaMirrorMaker`, and `KafkaMirrorMaker2` resources.
+The label selector applies to `Kafka`, `KafkaConnect`, `KafkaBridge`, `KafkaMirrorMaker`, and `KafkaMirrorMaker2` resources.
 `KafkaRebalance` and `KafkaConnector` resources will be operated only when their corresponding Kafka and Kafka Connect clusters have the matching labels.
 +
 [source,yaml,options="nowrap"]
@@ -97,12 +97,6 @@ This provides a mapping from the Kafka version to the corresponding Docker image
 The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
 For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
 This is used when a `KafkaConnect.spec.version` property is specified but not the `KafkaConnect.spec.image`.
-
-`STRIMZI_KAFKA_CONNECT_S2I_IMAGES`:: Required.
-This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka connect of that version.
-The required syntax is whitespace or comma separated `_<version>_=_<image>_` pairs.
-For example `{KafkaVersionLower}={DockerKafkaImagePrevious}, {KafkaVersionHigher}={DockerKafkaImageCurrent}`.
-This is used when a `KafkaConnectS2I.spec.version` property is specified but not the `KafkaConnectS2I.spec.image`.
 
 `STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`:: Required.
 This provides a mapping from the Kafka version to the corresponding Docker image containing a Kafka mirror maker of that version.
@@ -360,7 +354,7 @@ When the Cluster Operator deploys resources for a desired `Kafka` resource it al
 * The ZooKeeper pods use a `ServiceAccount` called `_cluster-name_-zookeeper`
 * The Entity Operator pod uses a `ServiceAccount` called `_cluster-name_-entity-operator`
     - The Topic Operator produces Kubernetes events with status information, so the `ServiceAccount` is bound to a `ClusterRole` called `strimzi-entity-operator` which grants this access via the `strimzi-entity-operator` `RoleBinding`
-* The pods for `KafkaConnect` and `KafkaConnectS2I` resources use a `ServiceAccount` called `_cluster-name_-cluster-connect`
+* The pods for `KafkaConnect` resource uses a `ServiceAccount` called `_cluster-name_-cluster-connect`
 * The pods for `KafkaMirrorMaker` use a `ServiceAccount` called `_cluster-name_-mirror-maker`
 * The pods for `KafkaMirrorMaker2` use a `ServiceAccount` called `_cluster-name_-mirrormaker2`
 * The pods for `KafkaBridge` use a `ServiceAccount` called `_cluster-name_-bridge`

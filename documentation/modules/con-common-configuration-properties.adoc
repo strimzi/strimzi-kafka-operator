@@ -226,20 +226,18 @@ You can specify which container image to use for a component using the `image` p
 * `Kafka.spec.entityOperator.tlsSidecar`
 * `Kafka.spec.jmxTrans`
 * `KafkaConnect.spec`
-* `KafkaConnectS2I.spec`
 * `KafkaMirrorMaker.spec`
 * `KafkaMirrorMaker2.spec`
 * `KafkaBridge.spec`
 
 *Configuring the `image` property for Kafka, Kafka Connect, and Kafka MirrorMaker*
 
-Kafka, Kafka Connect (including Kafka Connect with S2I support), and Kafka MirrorMaker support multiple versions of Kafka.
+Kafka, Kafka Connect, and Kafka MirrorMaker support multiple versions of Kafka.
 Each component requires its own image.
 The default images for the different Kafka versions are configured in the following environment variables:
 
 * `STRIMZI_KAFKA_IMAGES`
 * `STRIMZI_KAFKA_CONNECT_IMAGES`
-* `STRIMZI_KAFKA_CONNECT_S2I_IMAGES`
 * `STRIMZI_KAFKA_MIRROR_MAKER_IMAGES`
 
 These environment variables contain mappings between the Kafka versions and their corresponding images.
@@ -256,7 +254,7 @@ The mappings are used together with the `image` and `version` properties:
 The `image` and `version` for the different components can be configured in the following properties:
 
 * For Kafka in `spec.kafka.image` and `spec.kafka.version`.
-* For Kafka Connect, Kafka Connect S2I, and Kafka MirrorMaker in `spec.image` and `spec.version`.
+* For Kafka Connect and Kafka MirrorMaker in `spec.image` and `spec.version`.
 
 WARNING: It is recommended to provide only the `version` and leave the `image` property unspecified.
 This reduces the chance of making a mistake when configuring the custom resource.
@@ -415,7 +413,6 @@ To optimize their performance on different platforms and architectures, you conf
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`
 * `KafkaConnect.spec`
-* `KafkaConnectS2I.spec`
 * `KafkaMirrorMaker.spec`
 * `KafkaMirrorMaker2.spec`
 * `KafkaBridge.spec`

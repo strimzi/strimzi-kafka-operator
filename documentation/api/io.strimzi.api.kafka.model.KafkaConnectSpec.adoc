@@ -35,7 +35,7 @@ All other options are passed to Kafka Connect.
 
 IMPORTANT: The Cluster Operator does not validate keys or values in the `config` object provided.
 When an invalid configuration is provided, the Kafka Connect cluster might not start or might become unstable.
-In this circumstance, fix the configuration in the `KafkaConnect.spec.config` or `KafkaConnectS2I.spec.config` object, then the Cluster Operator can roll out the new configuration to all Kafka Connect nodes.
+In this circumstance, fix the configuration in the `KafkaConnect.spec.config` object, then the Cluster Operator can roll out the new configuration to all Kafka Connect nodes.
 
 Certain options have default values:
 
@@ -46,7 +46,7 @@ Certain options have default values:
 * `key.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
 * `value.converter` with default value `org.apache.kafka.connect.json.JsonConverter`
 
-These options are automatically configured in case they are not present in the `KafkaConnect.spec.config` or `KafkaConnectS2I.spec.config` properties.
+These options are automatically configured in case they are not present in the `KafkaConnect.spec.config` properties.
 
 There are exceptions to the forbidden options.
 You can use three allowed `ssl` configuration options for client connection using a specific _cipher suite_ for a TLS version.

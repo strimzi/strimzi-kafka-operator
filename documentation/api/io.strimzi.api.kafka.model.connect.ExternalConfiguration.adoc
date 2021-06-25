@@ -1,7 +1,7 @@
 Configures external storage properties that define configuration options for Kafka Connect connectors.
 
 You can mount ConfigMaps or Secrets into a Kafka Connect pod as environment variables or volumes.
-Volumes and environment variables are configured in the `externalConfiguration` property in `KafkaConnect.spec` and `KafkaConnectS2I.spec`.
+Volumes and environment variables are configured in the `externalConfiguration` property in `KafkaConnect.spec`.
 
 When applied, the environment variables and volumes are available for use when developing your connectors.
 
