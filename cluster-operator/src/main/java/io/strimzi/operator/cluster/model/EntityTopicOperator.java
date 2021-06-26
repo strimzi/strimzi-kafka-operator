@@ -55,7 +55,11 @@ public class EntityTopicOperator extends AbstractModel {
     public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
+    public static final String ENV_VAR_SECURITY_PROTOCOL = "STRIMZI_SECURITY_PROTOCOL";
+
     public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
+    public static final String ENV_VAR_TLS_AUTH_ENABLED = "STRIMZI_TLS_AUTH_ENABLED";
+
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withInitialDelaySeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY)
             .withTimeoutSeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT).build();
@@ -75,6 +79,7 @@ public class EntityTopicOperator extends AbstractModel {
     private int topicMetadataMaxAttempts;
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+    private String securityProtocol;
 
     /**
      * @param reconciliation   The reconciliation
@@ -102,6 +107,7 @@ public class EntityTopicOperator extends AbstractModel {
         this.zookeeperSessionTimeoutMs = EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
         this.topicMetadataMaxAttempts = EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
+        this.securityProtocol = EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL;
 
         this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-topic-operator-metrics-and-logging";
@@ -277,7 +283,9 @@ public class EntityTopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(reconciliationIntervalMs)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Integer.toString(zookeeperSessionTimeoutMs)));
         varList.add(buildEnvVar(ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS, String.valueOf(topicMetadataMaxAttempts)));
+        varList.add(buildEnvVar(ENV_VAR_SECURITY_PROTOCOL, securityProtocol));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
+        varList.add(buildEnvVar(ENV_VAR_TLS_AUTH_ENABLED, Boolean.toString(true)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         EntityOperator.javaOptions(varList, getJvmOptions(), javaSystemProperties);
 

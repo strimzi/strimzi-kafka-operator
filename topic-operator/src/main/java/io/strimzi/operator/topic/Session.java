@@ -10,8 +10,6 @@ import io.fabric8.kubernetes.client.Watch;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.topic.zk.Zk;
@@ -39,6 +37,9 @@ import java.util.concurrent.CompletionStage;
 public class Session extends AbstractVerticle {
 
     private final static Logger LOGGER = LogManager.getLogger(Session.class);
+
+    private final static String SASL_TYPE_PLAIN = "PLAIN";
+    private final static String SASL_TYPE_SCRAM_SHA_512 = "PLAIN";
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
@@ -155,9 +156,9 @@ public class Session extends AbstractVerticle {
         Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
         kafkaClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         kafkaClientProps.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, config.get(Config.APPLICATION_ID));
+        kafkaClientProps.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, config.get(config.SECURITY_PROTOCOL));
 
         if (Boolean.parseBoolean(config.get(Config.TLS_ENABLED))) {
-            kafkaClientProps.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, config.get(config.SECURITY_PROTOCOL));
             kafkaClientProps.setProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, config.get(Config.TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM));
 
             if (!config.get(Config.TLS_TRUSTSTORE_LOCATION).isEmpty() && !config.get(Config.TLS_TRUSTSTORE_PASSWORD).isEmpty()) {
@@ -177,10 +178,10 @@ public class Session extends AbstractVerticle {
             String username = config.get(Config.SASL_USERNAME);
             String password = config.get(Config.SASL_PASSWORD);
 
-            if (KafkaClientAuthenticationPlain.TYPE_PLAIN.equals(config.get(Config.SASL_MECHANISM))) {
+            if (SASL_TYPE_PLAIN.equals(config.get(Config.SASL_MECHANISM))) {
                 saslMechanism = "PLAIN";
                 jaasConfig = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + username + "\" password=\"" + password + "\";";
-            } else if (KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512.equals(config.get(Config.SASL_MECHANISM))) {
+            } else if (SASL_TYPE_SCRAM_SHA_512.equals(config.get(Config.SASL_MECHANISM))) {
                 saslMechanism = "SCRAM-SHA-512";
                 jaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + username + "\" password=\"" + password + "\";";
             }

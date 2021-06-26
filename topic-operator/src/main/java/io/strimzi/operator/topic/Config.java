@@ -198,7 +198,7 @@ public class Config {
     /** The SASL password to be used for authentication */
     public static final Value<String> SASL_PASSWORD = new Value<>(TC_SASL_PASSWORD, STRING, "");
     /** The security protocol to be used */
-    public static final Value<String> SECURITY_PROTOCOL = new Value<>(TC_SECURITY_PROTOCOL, STRING, "SSL");
+    public static final Value<String> SECURITY_PROTOCOL = new Value<>(TC_SECURITY_PROTOCOL, STRING, "PLAINTEXT");
 
     /**
      * The store topic for the Kafka Streams based TopicStore
