@@ -55,8 +55,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
@@ -563,7 +562,7 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCa(vertx, kafka, () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 0, 0).atZone(ZoneId.of("GMT")).toInstant()))
+        reconcileCa(vertx, kafka, () -> Date.from(Instant.parse("2018-11-26T09:00:00Z")))
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
 
@@ -664,7 +663,7 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCa(vertx, kafka, () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 12, 0).atZone(ZoneId.of("GMT")).toInstant()))
+        reconcileCa(vertx, kafka, () -> Date.from(Instant.parse("2018-11-26T09:12:00Z")))
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues().size(), is(4));
 
@@ -868,7 +867,7 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCa(vertx, kafka, () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 0, 0).atZone(ZoneId.of("GMT")).toInstant()))
+        reconcileCa(vertx, kafka, () -> Date.from(Instant.parse("2018-11-26T09:00:00Z")))
             .onComplete(context.succeeding(c -> context.verify(() -> {
                 assertThat(c.getAllValues(), hasSize(4));
 
@@ -968,7 +967,7 @@ public class CertificateRenewalTest {
         secrets.add(initialClientsCaKeySecret);
 
         Checkpoint async = context.checkpoint();
-        reconcileCa(vertx, kafka, () -> Date.from(LocalDateTime.of(2018, 11, 26, 9, 12, 0).atZone(ZoneId.of("GMT")).toInstant()))
+        reconcileCa(vertx, kafka, () -> Date.from(Instant.parse("2018-11-26T09:12:00Z")))
             .onComplete(context.succeeding(c -> context.verify(() -> {
 
                 assertThat(c.getAllValues(), hasSize(4));
