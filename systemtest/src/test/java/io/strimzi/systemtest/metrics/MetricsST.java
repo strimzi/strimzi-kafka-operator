@@ -25,7 +25,6 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -88,7 +87,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @Tag(METRICS)
@@ -591,8 +589,6 @@ public class MetricsST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
-        assumeFalse(Environment.isNamespaceRbacScope());
-
         LOGGER.info("Setting up Environment for MetricsST");
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
