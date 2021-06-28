@@ -168,8 +168,8 @@ public class KafkaAssemblyOperatorTest {
     private static Storage kafkaStorage;
     private static SingleVolumeStorage zkStorage;
     private static EntityOperatorSpec eoConfig;
-    private static final MockCertManager certManager = new MockCertManager();
-    private static final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
+    private final MockCertManager certManager = new MockCertManager();
+    private final PasswordGenerator passwordGenerator = new PasswordGenerator(10, "a", "a");
 
     public static class Params {
         private final boolean openShift;
@@ -1439,11 +1439,11 @@ public class KafkaAssemblyOperatorTest {
                 singletonList(barCluster.generateStatefulSet(openShift, null, null))
         );
         when(mockSecretOps.list(eq(kafkaNamespace), eq(barLabels))).thenAnswer(
-                invocation -> new ArrayList<>(asList(
-                        barClientsCa.caKeySecret(),
-                        barClientsCa.caCertSecret(),
-                        barCluster.generateBrokersSecret(),
-                        barClusterCa.caCertSecret()))
+            invocation -> new ArrayList<>(asList(
+                    barClientsCa.caKeySecret(),
+                    barClientsCa.caCertSecret(),
+                    barCluster.generateBrokersSecret(),
+                    barClusterCa.caCertSecret()))
         );
         when(mockSecretOps.get(eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())))).thenReturn(barSecrets.get(0));
         when(mockSecretOps.reconcile(any(), eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
