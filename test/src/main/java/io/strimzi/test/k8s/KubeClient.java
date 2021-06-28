@@ -656,7 +656,7 @@ public class KubeClient {
     }
 
     public Secret getSecret(String secretName) {
-        return getSecret(kubeClient().getNamespace(), secretName);
+        return getSecret(getNamespace(), secretName);
     }
 
     public boolean deleteSecret(String namespaceName, String secretName) {
@@ -664,7 +664,7 @@ public class KubeClient {
     }
 
     public boolean deleteSecret(String secretName) {
-        return deleteSecret(kubeClient().getNamespace(), secretName);
+        return deleteSecret(getNamespace(), secretName);
     }
 
     public List<Secret> listSecrets(String namespaceName) {
