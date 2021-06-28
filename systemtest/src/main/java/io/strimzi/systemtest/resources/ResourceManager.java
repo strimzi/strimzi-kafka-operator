@@ -377,14 +377,11 @@ public class ResourceManager {
 
             switch (deploymentTypes) {
                 case BundleClusterOperator:
-                    // new BundleResource()
-                    return (ResourceType<T>) resourceTypes[10];
+                    return (ResourceType<T>) new BundleResource();
                 case KafkaClients:
-                   // new KafkaClientsResource(),
-                    return (ResourceType<T>) resourceTypes[1];
+                    return (ResourceType<T>) new KafkaClientsResource();
                 default:
-                    // new DeploymentResource()
-                    return (ResourceType<T>) resourceTypes[12];
+                    return (ResourceType<T>) new DeploymentResource();
             }
         }
 
