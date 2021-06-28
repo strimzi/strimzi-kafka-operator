@@ -140,7 +140,6 @@ public interface Constants {
     String METRICS_CONFIG_YAML_NAME = "metrics-config.yml";
     String METRICS_CONFIG_JSON_NAME = "metrics-config.json";
 
-
     /**
      * Default value which allows execution of tests with any tags
      */
