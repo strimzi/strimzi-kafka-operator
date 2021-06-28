@@ -229,7 +229,7 @@ pipeline {
                             sh(script: "cat ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml")
                         }
 
-                        sh(script:" sleep 13600")
+                        //sh(script:" sleep 13600")
                         lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.EXCLUDE_GROUPS)
                     }
                 }
