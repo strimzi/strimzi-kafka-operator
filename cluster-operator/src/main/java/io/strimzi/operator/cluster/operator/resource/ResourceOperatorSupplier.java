@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
 import io.strimzi.api.kafka.KafkaMirrorMaker2List;
@@ -16,7 +15,6 @@ import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
@@ -33,9 +31,7 @@ import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.DeploymentConfigOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.ImageStreamOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
@@ -54,8 +50,7 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.Vertx;
 
-// Deprecation is suppressed because of KafkaConnectS2I
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "deprecation"})
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 public class ResourceOperatorSupplier {
     public final SecretOperator secretOperations;
     public final ServiceOperator serviceOperations;
@@ -71,7 +66,6 @@ public class ResourceOperatorSupplier {
     public final ClusterRoleBindingOperator clusterRoleBindingOperator;
     public final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
     public final CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> connectOperator;
-    public final CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> connectS2IOperator;
     public final CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList> mirrorMakerOperator;
     public final CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList> kafkaBridgeOperator;
     public final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> kafkaConnectorOperator;
@@ -82,10 +76,8 @@ public class ResourceOperatorSupplier {
     public final PodOperator podOperations;
     public final IngressOperator ingressOperations;
     public final IngressV1Beta1Operator ingressV1Beta1Operations;
-    public final ImageStreamOperator imagesStreamOperations;
     public final BuildConfigOperator buildConfigOperations;
     public final BuildOperator buildOperations;
-    public final DeploymentConfigOperator deploymentConfigOperations;
     public final StorageClassOperator storageClassOperations;
     public final NodeOperator nodeOperator;
     public final ZookeeperScalerProvider zkScalerProvider;
@@ -123,13 +115,10 @@ public class ResourceOperatorSupplier {
                 new PodOperator(vertx, client),
                 new IngressOperator(vertx, client),
                 new IngressV1Beta1Operator(vertx, client),
-                pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                pfa.hasApps() ? new DeploymentConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),
                 new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND),
-                pfa.hasBuilds() && pfa.hasApps() && pfa.hasImages() ? new CrdOperator<>(vertx, client.adapt(OpenShiftClient.class), KafkaConnectS2I.class, KafkaConnectS2IList.class, KafkaConnectS2I.RESOURCE_KIND) : null,
                 new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND),
                 new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND),
                 new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, KafkaConnector.RESOURCE_KIND),
@@ -159,13 +148,10 @@ public class ResourceOperatorSupplier {
                                     PodOperator podOperations,
                                     IngressOperator ingressOperations,
                                     IngressV1Beta1Operator ingressV1Beta1Operations,
-                                    ImageStreamOperator imagesStreamOperations,
                                     BuildConfigOperator buildConfigOperations,
                                     BuildOperator buildOperations,
-                                    DeploymentConfigOperator deploymentConfigOperations,
                                     CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator,
                                     CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> connectOperator,
-                                    CrdOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList> connectS2IOperator,
                                     CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList> mirrorMakerOperator,
                                     CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList> kafkaBridgeOperator,
                                     CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> kafkaConnectorOperator,
@@ -194,12 +180,9 @@ public class ResourceOperatorSupplier {
         this.podOperations = podOperations;
         this.ingressOperations = ingressOperations;
         this.ingressV1Beta1Operations = ingressV1Beta1Operations;
-        this.imagesStreamOperations = imagesStreamOperations;
         this.buildConfigOperations = buildConfigOperations;
         this.buildOperations = buildOperations;
-        this.deploymentConfigOperations = deploymentConfigOperations;
         this.connectOperator = connectOperator;
-        this.connectS2IOperator = connectS2IOperator;
         this.mirrorMakerOperator = mirrorMakerOperator;
         this.kafkaBridgeOperator = kafkaBridgeOperator;
         this.storageClassOperations = storageClassOperator;

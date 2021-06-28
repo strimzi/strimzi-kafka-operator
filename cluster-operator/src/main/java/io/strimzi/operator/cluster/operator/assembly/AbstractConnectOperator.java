@@ -16,20 +16,16 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.AbstractKafkaConnectSpec;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
-import io.strimzi.api.kafka.model.KafkaConnectS2ISpec;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
@@ -37,7 +33,6 @@ import io.strimzi.api.kafka.model.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.status.Status;
@@ -186,23 +181,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Create a watch on {@code KafkaConnector} in the given {@code namespace}.
      * The watcher will:
      * <ul>
-     * <li>{@linkplain #reconcileConnectors(Reconciliation, CustomResource, KafkaConnectStatus, boolean, String, OrderedProperties)} on the KafkaConnect or KafkaConnectS2I
+     * <li>{@linkplain #reconcileConnectors(Reconciliation, CustomResource, KafkaConnectStatus, boolean, String, OrderedProperties)} on the KafkaConnect
      * identified by {@code KafkaConnector.metadata.labels[strimzi.io/cluster]}.</li>
-     * <li>If there is a Connect and ConnectS2I cluster with the given name then the plain Connect one is used
-     * (and an error is logged about the ambiguity).</li>
      * <li>The {@code KafkaConnector} status is updated with the result.</li>
      * </ul>
      * @param connectOperator The operator for {@code KafkaConnect}.
-     * @param connectS2IOperator The operator for {@code KafkaConnectS2I}.
      * @param watchNamespaceOrWildcard The namespace to watch.
      * @param selectorLabels Selector labels for filtering the custom resources
      *
      * @return A future which completes when the watch has been set up.
      */
-    // Deprecation is suppressed because of KafkaConnectS2I
-    @SuppressWarnings("deprecation")
     public static Future<Void> createConnectorWatch(AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> connectOperator,
-                                                    AbstractConnectOperator<OpenShiftClient, KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>, KafkaConnectS2ISpec, KafkaConnectS2IStatus> connectS2IOperator,
                                                     String watchNamespaceOrWildcard, Labels selectorLabels) {
         Optional<LabelSelector> selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
 
@@ -222,22 +211,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         case MODIFIED:
                             Future<Void> f;
                             if (connectName != null) {
-                                // Check whether a KafkaConnect/S2I exists
-                                CompositeFuture.join(connectOperator.resourceOperator.getAsync(connectNamespace, connectName),
-                                        connectOperator.pfa.supportsS2I() ?
-                                                connectS2IOperator.resourceOperator.getAsync(connectNamespace, connectName) :
-                                                Future.succeededFuture())
-                                        .compose(cf -> {
-                                            KafkaConnect connect = cf.resultAt(0);
-                                            KafkaConnectS2I connectS2i = cf.resultAt(1);
+                                // Check whether a KafkaConnect exists
+                                connectOperator.resourceOperator.getAsync(connectNamespace, connectName)
+                                        .compose(connect -> {
                                             KafkaConnectApi apiClient = connectOperator.connectClientProvider.apply(connectOperator.vertx);
-                                            if (connect == null && connectS2i == null) {
+                                            if (connect == null) {
                                                 Reconciliation r = new Reconciliation("connector-watch", connectOperator.kind(),
                                                         kafkaConnector.getMetadata().getNamespace(), connectName);
                                                 updateStatus(r, noConnectCluster(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
                                                 LOGGER.infoCr(r, "{} {} in namespace {} was {}, but Connect cluster {} does not exist", connectorKind, connectorName, connectorNamespace, action, connectName);
                                                 return Future.succeededFuture();
-                                            } else if (connect != null && isOlderOrAlone(connect.getMetadata().getCreationTimestamp(), connectS2i)) {
+                                            } else {
                                                 // grab the lock and call reconcileConnectors()
                                                 // (i.e. short circuit doing a whole KafkaConnect reconciliation).
                                                 Reconciliation reconciliation = new Reconciliation("connector-watch", connectOperator.kind(),
@@ -257,32 +241,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                         () -> connectOperator.reconcileConnectorAndHandleResult(reconciliation,
                                                                     KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
                                                                     isUseResources(connect),
-                                                                    kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
-                                                                    .compose(reconcileResult -> {
-                                                                        LOGGER.infoCr(reconciliation, "reconciled");
-                                                                        return Future.succeededFuture(reconcileResult);
-                                                                    }));
-                                                }
-                                            } else {
-                                                // grab the lock and call reconcileConnectors()
-                                                // (i.e. short circuit doing a whole KafkaConnect reconciliation).
-                                                Reconciliation reconciliation = new Reconciliation("connector-watch", connectS2IOperator.kind(),
-                                                        kafkaConnector.getMetadata().getNamespace(), connectName);
-
-                                                if (!Util.matchesSelector(selector, connectS2i)) {
-                                                    LOGGER.debugCr(reconciliation, "{} {} in namespace {} was {}, but Connect cluster {} does not match label selector {} and will be ignored", connectorKind, connectorName, connectorNamespace, action, connectName, selectorLabels);
-                                                    return Future.succeededFuture();
-                                                } else if (connectS2i.getSpec() != null && connectS2i.getSpec().getReplicas() == 0)    {
-                                                    LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", connectorKind, connectorName, connectorNamespace, action, connectName);
-                                                    updateStatus(reconciliation, zeroReplicas(connectNamespace, connectName), kafkaConnector, connectOperator.connectorOperator);
-                                                    return Future.succeededFuture();
-                                                } else {
-                                                    LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", connectorKind, connectorName, connectorNamespace, action);
-
-                                                    return connectS2IOperator.withLock(reconciliation, LOCK_TIMEOUT_MS,
-                                                        () -> connectS2IOperator.reconcileConnectorAndHandleResult(reconciliation,
-                                                                    KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
-                                                                    isUseResources(connectS2i),
                                                                     kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
                                                                     .compose(reconcileResult -> {
                                                                         LOGGER.infoCr(reconciliation, "reconciled");
@@ -320,19 +278,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         });
     }
 
-    /**
-     * Returns true if the resource is null or if the creationDate of the resource is newer than the creationDate. If
-     * the dates are the same, it returns true. This is used to determine whether Connect and ConnectS2I both exist and
-     * when yes which of them should get the connectors (the older one).
-     *
-     * @param creationDate  creation date of the initial resource
-     * @param resource  resource to compare it with
-     * @return
-     */
-    /*test*/ static boolean isOlderOrAlone(String creationDate, HasMetadata resource)  {
-        return resource == null || creationDate.compareTo(resource.getMetadata().getCreationTimestamp()) <= 0;
-    }
-
     public static boolean isUseResources(HasMetadata connect) {
         return Annotations.booleanAnnotation(connect, Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, false);
     }
@@ -351,7 +296,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Reconcile all the connectors selected by the given connect instance, updated each connectors status with the result.
      * @param reconciliation The reconciliation
      * @param connect The connector
-     * @param connectStatus Status of the KafkaConnect or KafkaConnectS2I resource (will be used to set the available
+     * @param connectStatus Status of the KafkaConnect  resource (will be used to set the available
      *                      connector plugins)
      * @param scaledToZero  Indicated whether the related Connect cluster is currently scaled to 0 replicas
      * @return A future, failed if any of the connectors' statuses could not be updated.
@@ -639,7 +584,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * Whether the provided resource instance is a KafkaConnector and has the strimzi.io/restart annotation
      *
      * @param resource resource instance to check
-     * @param resource connectorName name of the connector to check
+     * @param connectorName connectorName name of the connector to check
      * @return true if the provided resource instance has the strimzi.io/restart annotation; false otherwise
      */
     protected boolean hasRestartAnnotation(CustomResource resource, String connectorName) {

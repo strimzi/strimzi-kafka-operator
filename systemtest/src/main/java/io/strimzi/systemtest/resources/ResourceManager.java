@@ -29,7 +29,6 @@ import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
@@ -107,7 +106,6 @@ public class ResourceManager {
         new KafkaClientsResource(),
         new KafkaConnectorResource(),
         new KafkaConnectResource(),
-        new KafkaConnectS2IResource(),
         new KafkaMirrorMaker2Resource(),
         new KafkaMirrorMakerResource(),
         new KafkaRebalanceResource(),
@@ -380,13 +378,13 @@ public class ResourceManager {
             switch (deploymentTypes) {
                 case BundleClusterOperator:
                     // new BundleResource()
-                    return (ResourceType<T>) resourceTypes[11];
+                    return (ResourceType<T>) resourceTypes[10];
                 case KafkaClients:
                    // new KafkaClientsResource(),
                     return (ResourceType<T>) resourceTypes[1];
                 default:
                     // new DeploymentResource()
-                    return (ResourceType<T>) resourceTypes[13];
+                    return (ResourceType<T>) resourceTypes[12];
             }
         }
 

@@ -233,7 +233,7 @@ $platform logs $co_pod -p -n $namespace 2>/dev/null > $direct/reports/podLogs/pr
 co_rs=$($platform get replicaset -l strimzi.io/kind=cluster-operator -o name -n $namespace)
 $platform describe $co_rs -n $namespace > $direct/reports/replicasets/cluster-operator-replicaset.yaml
 
-#Kafka, KafkaConnect, KafkaConnectS2i, KafkaTopic, KafkaUser, KafkaMirrorMaker
+#Kafka, KafkaConnect, KafkaTopic, KafkaUser, KafkaMirrorMaker
 echo "CRs:"
 mkdir -p $direct/reports/crs
 crs=$($platform get crd -o name)

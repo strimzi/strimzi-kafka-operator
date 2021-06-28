@@ -10,7 +10,6 @@ docker-images/kafka/scripts/*.sh
 docker-images/kafka/cruise-control-scripts/*.sh
 docker-images/kafka/stunnel-scripts/*.sh
 docker-images/kafka/exporter-scripts/*.sh
-docker-images/kafka/s2i-scripts/*
 docker-images/jmxtrans/*.sh"
 
 for SCRIPTS in $SCRIPT_DIRS; do

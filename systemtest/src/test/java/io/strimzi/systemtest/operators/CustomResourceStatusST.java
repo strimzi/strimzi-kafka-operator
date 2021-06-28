@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnectS2IResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -22,7 +21,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
-import io.strimzi.api.kafka.model.status.KafkaConnectS2IStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
@@ -38,11 +36,9 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
-import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
-import io.strimzi.systemtest.resources.crd.KafkaConnectS2IResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
@@ -51,7 +47,6 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaConnectS2ITemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
@@ -61,7 +56,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
@@ -88,7 +82,6 @@ import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
@@ -314,34 +307,6 @@ class CustomResourceStatusST extends AbstractST {
 
         KafkaConnectorUtils.waitForConnectorReady(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         assertKafkaConnectorStatus(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 3, "RUNNING|UNASSIGNED", 0, "RUNNING", "source", List.of(EXAMPLE_TOPIC_NAME));
-    }
-
-    @ParallelTest
-    @OpenShiftOnly
-    @Tag(CONNECT_S2I)
-    @Tag(CONNECT_COMPONENTS)
-    void testKafkaConnectS2IStatus(ExtensionContext extensionContext) {
-        String connectS2IDeploymentConfigName = KafkaConnectS2IResources.deploymentName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
-        String connectS2IUrl = KafkaConnectS2IResources.url(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, NAMESPACE, 8083);
-
-        resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1)
-            .editMetadata()
-                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-            .endMetadata()
-            .build());
-
-        assertKafkaConnectS2IStatus(1, connectS2IUrl, connectS2IDeploymentConfigName);
-
-        KafkaConnectS2IResource.replaceConnectS2IResource(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
-                .addToRequests("cpu", new Quantity("100000000m"))
-                .build()));
-        KafkaConnectS2IUtils.waitForConnectS2INotReady(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
-
-        KafkaConnectS2IResource.replaceConnectS2IResource(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
-                .addToRequests("cpu", new Quantity("100m"))
-                .build()));
-        KafkaConnectS2IUtils.waitForConnectS2IReady(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
-        assertKafkaConnectS2IStatus(3, connectS2IUrl, connectS2IDeploymentConfigName);
     }
 
     @ParallelTest
@@ -590,15 +555,6 @@ class CustomResourceStatusST extends AbstractST {
         assertThat("Kafka Connect cluster status has incorrect URL", kafkaConnectStatus.getUrl(), is(expectedUrl));
 
         validateConnectPlugins(kafkaConnectStatus.getConnectorPlugins());
-    }
-
-    void assertKafkaConnectS2IStatus(long expectedObservedGeneration, String expectedUrl, String expectedConfigName) {
-        KafkaConnectS2IStatus kafkaConnectS2IStatus = KafkaConnectS2IResource.kafkaConnectS2IClient().inNamespace(NAMESPACE).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
-        assertThat("Kafka ConnectS2I cluster status has incorrect Observed Generation", kafkaConnectS2IStatus.getObservedGeneration(), is(expectedObservedGeneration));
-        assertThat("Kafka ConnectS2I cluster status has incorrect URL", kafkaConnectS2IStatus.getUrl(), is(expectedUrl));
-        assertThat("Kafka ConnectS2I cluster status has incorrect BuildConfigName", kafkaConnectS2IStatus.getBuildConfigName(), is(expectedConfigName));
-
-        validateConnectPlugins(kafkaConnectS2IStatus.getConnectorPlugins());
     }
 
     void validateConnectPlugins(List<ConnectorPlugin> pluginsList) {

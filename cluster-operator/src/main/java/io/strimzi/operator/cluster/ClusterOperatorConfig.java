@@ -57,7 +57,6 @@ public class ClusterOperatorConfig {
     // Env vars for configuring images
     public static final String STRIMZI_KAFKA_IMAGES = "STRIMZI_KAFKA_IMAGES";
     public static final String STRIMZI_KAFKA_CONNECT_IMAGES = "STRIMZI_KAFKA_CONNECT_IMAGES";
-    public static final String STRIMZI_KAFKA_CONNECT_S2I_IMAGES = "STRIMZI_KAFKA_CONNECT_S2I_IMAGES";
     public static final String STRIMZI_KAFKA_MIRROR_MAKER_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_IMAGES";
     public static final String STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
     public static final String STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
@@ -149,7 +148,7 @@ public class ClusterOperatorConfig {
      */
     public static ClusterOperatorConfig fromMap(Map<String, String> map) {
         warningsForRemovedEndVars(map);
-        KafkaVersion.Lookup lookup = parseKafkaVersions(map.get(STRIMZI_KAFKA_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_S2I_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES));
+        KafkaVersion.Lookup lookup = parseKafkaVersions(map.get(STRIMZI_KAFKA_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES));
         return fromMap(map, lookup);
     }
 
@@ -319,11 +318,10 @@ public class ClusterOperatorConfig {
         return imagePullPolicy;
     }
 
-    private static KafkaVersion.Lookup parseKafkaVersions(String kafkaImages, String connectImages, String connectS2IImages, String mirrorMakerImages, String mirrorMaker2Images) {
+    private static KafkaVersion.Lookup parseKafkaVersions(String kafkaImages, String connectImages, String mirrorMakerImages, String mirrorMaker2Images) {
         KafkaVersion.Lookup lookup = new KafkaVersion.Lookup(
                 Util.parseMap(kafkaImages),
                 Util.parseMap(connectImages),
-                Util.parseMap(connectS2IImages),
                 Util.parseMap(mirrorMakerImages),
                 Util.parseMap(mirrorMaker2Images));
 
@@ -338,10 +336,6 @@ public class ClusterOperatorConfig {
             image = "Kafka Connect";
             envVar = STRIMZI_KAFKA_CONNECT_IMAGES;
             lookup.validateKafkaConnectImages(lookup.supportedVersions());
-
-            image = "Kafka Connect S2I";
-            envVar = STRIMZI_KAFKA_CONNECT_S2I_IMAGES;
-            lookup.validateKafkaConnectS2IImages(lookup.supportedVersions());
 
             image = "Kafka Mirror Maker";
             envVar = STRIMZI_KAFKA_MIRROR_MAKER_IMAGES;

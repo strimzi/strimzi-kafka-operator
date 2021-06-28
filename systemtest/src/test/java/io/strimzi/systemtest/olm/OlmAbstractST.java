@@ -7,7 +7,6 @@ package io.strimzi.systemtest.olm;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaRebalance;
@@ -19,7 +18,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.specific.OlmResource;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectS2IUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
@@ -33,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
@@ -75,17 +72,6 @@ public class OlmAbstractST extends AbstractST {
         KafkaConnectUtils.waitForConnectReady(kafkaConnectResource.getJsonObject("metadata").getString("name"));
     }
 
-    void doTestDeployExampleKafkaConnectS2I() {
-        Map<String, JsonObject> examples = OlmResource.getExampleResources();
-        JsonObject kafkaConnectS2IResource = examples.get(KafkaConnectS2I.RESOURCE_KIND);
-        kafkaConnectS2IResource.getJsonObject("metadata").put("name", "my-connect-s2i-cluster");
-        kafkaConnectS2IResource.getJsonObject("spec").put("insecureSourceRepository", true);
-        examples.put(KafkaConnectS2I.RESOURCE_KIND, kafkaConnectS2IResource);
-        OlmResource.setExampleResources(examples);
-        cmdKubeClient().applyContent(kafkaConnectS2IResource.toString());
-        KafkaConnectS2IUtils.waitForConnectS2IReady(kafkaConnectS2IResource.getJsonObject("metadata").getString("name"));
-    }
-
     void doTestDeployExampleKafkaBridge() {
         JsonObject kafkaBridgeResource = OlmResource.getExampleResources().get(KafkaBridge.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaBridgeResource.toString());
@@ -123,7 +109,6 @@ public class OlmAbstractST extends AbstractST {
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaMirrorMaker2.RESOURCE_KIND).toString());
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaMirrorMaker.RESOURCE_KIND).toString());
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaBridge.RESOURCE_KIND).toString());
-        cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaConnectS2I.RESOURCE_KIND).toString());
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaConnect.RESOURCE_KIND).toString());
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaTopic.RESOURCE_KIND).toString());
         cmdKubeClient().deleteContent(OlmResource.getExampleResources().get(KafkaUser.RESOURCE_KIND).toString());

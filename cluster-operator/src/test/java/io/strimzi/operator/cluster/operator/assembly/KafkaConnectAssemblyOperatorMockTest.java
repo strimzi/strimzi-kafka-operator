@@ -9,12 +9,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.KubernetesVersion;
@@ -100,8 +98,6 @@ public class KafkaConnectAssemblyOperatorMockTest {
         mockClient = mockKube
                 .withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class, KafkaConnect::getStatus, KafkaConnect::setStatus)
                     .withInitialInstances(Collections.singleton(connectResource))
-                .end()
-                .withCustomResourceDefinition(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IList.class, KafkaConnectS2I::getStatus, KafkaConnectS2I::setStatus)
                 .end()
                 .withCustomResourceDefinition(Crds.kafkaConnector(), KafkaConnector.class, KafkaConnectorList.class, KafkaConnector::getStatus, KafkaConnector::setStatus)
                 .end()

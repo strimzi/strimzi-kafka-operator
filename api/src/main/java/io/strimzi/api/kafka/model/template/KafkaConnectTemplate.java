@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of a template for Kafka Connect and Kafka Connect S2I resources.
+ * Representation of a template for Kafka Connect resources.
  */
 @Buildable(
         editableEnabled = false,

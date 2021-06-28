@@ -48,12 +48,6 @@ kafkaConnect:
     repository: strimzi
     name: kafka
     tagPrefix: latest
-kafkaConnects2i:
-  image:
-    registry: quay.io
-    repository: strimzi
-    name: kafka
-    tagPrefix: latest
 topicOperator:
   image:
     registry: quay.io

@@ -7,23 +7,19 @@ package io.strimzi.systemtest.tracing;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaTracingExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaConnectS2ITemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
@@ -31,7 +27,6 @@ import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.TracingUtils;
@@ -56,7 +51,6 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.CONNECT_S2I;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
@@ -86,7 +80,6 @@ public class TracingST extends AbstractST {
     private static final String JAEGER_MIRROR_MAKER_SERVICE = "my-mirror-maker";
     private static final String JAEGER_MIRROR_MAKER2_SERVICE = "my-mirror-maker2";
     private static final String JAEGER_KAFKA_CONNECT_SERVICE = "my-connect";
-    private static final String JAEGER_KAFKA_CONNECT_S2I_SERVICE = "my-connect-s2i";
     private static final String JAEGER_KAFKA_BRIDGE_SERVICE = "my-kafka-bridge";
 
     protected static final String PRODUCER_JOB_NAME = "hello-world-producer";
@@ -621,76 +614,6 @@ public class TracingST extends AbstractST {
         TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "To_" + topicName, JAEGER_QUERY_SERVICE);
         TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "From_" + streamsTopicTargetName, JAEGER_QUERY_SERVICE);
         TracingUtils.verify(JAEGER_MIRROR_MAKER_SERVICE, kafkaClientsPodName, "To_" + streamsTopicTargetName, JAEGER_QUERY_SERVICE);
-    }
-
-    @IsolatedTest
-    @OpenShiftOnly
-    @Tag(CONNECT_S2I)
-    @Tag(CONNECT_COMPONENTS)
-    void testConnectS2IService(ExtensionContext extensionContext) {
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
-        assumeFalse(Environment.isNamespaceRbacScope());
-
-        final String kafkaConnectS2IName = "kafka-connect-s2i-name-1";
-
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-
-        Map<String, Object> configOfKafkaConnectS2I = new HashMap<>();
-        configOfKafkaConnectS2I.put("key.converter.schemas.enable", "false");
-        configOfKafkaConnectS2I.put("value.converter.schemas.enable", "false");
-        configOfKafkaConnectS2I.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
-        configOfKafkaConnectS2I.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
-
-        resourceManager.createResource(extensionContext, KafkaConnectS2ITemplates.kafkaConnectS2I(extensionContext, kafkaConnectS2IName, CLUSTER_NAME, 1)
-            .editMetadata()
-                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-            .endMetadata()
-            .editSpec()
-                .withConfig(configOfKafkaConnectS2I)
-                .withNewJaegerTracing()
-                .endJaegerTracing()
-                .withNewTemplate()
-                    .withNewConnectContainer()
-                        .addNewEnv()
-                            .withName("JAEGER_SERVICE_NAME")
-                            .withValue(JAEGER_KAFKA_CONNECT_S2I_SERVICE)
-                        .endEnv()
-                        .addNewEnv()
-                            .withName("JAEGER_AGENT_HOST")
-                            .withValue(JAEGER_AGENT_NAME)
-                        .endEnv()
-                        .addNewEnv()
-                            .withName("JAEGER_SAMPLER_TYPE")
-                            .withValue(JAEGER_SAMPLER_TYPE)
-                        .endEnv()
-                        .addNewEnv()
-                            .withName("JAEGER_SAMPLER_PARAM")
-                            .withValue(JAEGER_SAMPLER_PARAM)
-                        .endEnv()
-                    .endConnectContainer()
-                .endTemplate()
-            .endSpec()
-            .build());
-
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(kafkaConnectS2IName)
-            .editSpec()
-                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
-                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
-                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .addToConfig("topics", topicName)
-            .endSpec()
-            .build());
-
-        resourceManager.createResource(extensionContext, kafkaTracingClient.producerWithTracing().build());
-        resourceManager.createResource(extensionContext, kafkaTracingClient.consumerWithTracing().build());
-
-        String kafkaConnectS2IPodName = kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaConnectS2I.RESOURCE_KIND).get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectS2IPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
-
-        TracingUtils.verify(JAEGER_PRODUCER_SERVICE, kafkaClientsPodName, JAEGER_QUERY_SERVICE);
-        TracingUtils.verify(JAEGER_CONSUMER_SERVICE, kafkaClientsPodName, JAEGER_QUERY_SERVICE);
-        TracingUtils.verify(JAEGER_KAFKA_CONNECT_S2I_SERVICE, kafkaClientsPodName, JAEGER_QUERY_SERVICE);
     }
 
     @Tag(NODEPORT_SUPPORTED)

@@ -4,18 +4,12 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.vertx.core.Vertx;
@@ -25,8 +19,8 @@ import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import okhttp3.OkHttpClient;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -62,7 +56,6 @@ public class ClusterOperatorTest {
         env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
-        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, KafkaVersionTestUtils.getKafkaConnectS2iImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
         return env;
@@ -138,14 +131,6 @@ public class ClusterOperatorTest {
             throw new RuntimeException(e);
         }
         MixedOperation mockCms = mock(MixedOperation.class);
-        NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, Resource<CustomResourceDefinition>> mockCrds = mock(NonNamespaceOperation.class);
-        Resource<CustomResourceDefinition> mockResource = mock(Resource.class);
-        if (openShift) {
-            when(mockResource.get()).thenReturn(Crds.kafkaConnectS2I());
-        } else {
-            when(mockResource.get()).thenReturn(null);
-        }
-        when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(mockResource);
         when(client.customResources(any(), any())).thenReturn(mockCms);
 
         List<String> namespaceList = asList(namespaces.split(" *,+ *"));
@@ -184,7 +169,7 @@ public class ClusterOperatorTest {
                     });
                 }
 
-                int maximumExpectedNumberOfWatchers = (openShift ? 9 : 7) * namespaceList.size(); // we do not have connectS2I on k8s
+                int maximumExpectedNumberOfWatchers = 7 * namespaceList.size();
                 assertThat("Looks like there were more watchers than namespaces",
                         numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
                 latch.countDown();
@@ -219,15 +204,6 @@ public class ClusterOperatorTest {
         }
 
         MixedOperation mockCms = mock(MixedOperation.class);
-        NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList,
-                Resource<CustomResourceDefinition>> mockCrds = mock(NonNamespaceOperation.class);
-        Resource<CustomResourceDefinition> mockResource = mock(Resource.class);
-        if (openShift) {
-            when(mockResource.get()).thenReturn(Crds.kafkaConnectS2I());
-        } else {
-            when(mockResource.get()).thenReturn(null);
-        }
-        when(mockCrds.withName(KafkaConnectS2I.CRD_NAME)).thenReturn(mockResource);
         when(client.customResources(any(), any())).thenReturn(mockCms);
 
         FilterWatchListMultiDeletable mockFilteredCms = mock(FilterWatchListMultiDeletable.class);
@@ -260,7 +236,7 @@ public class ClusterOperatorTest {
                     });
                 }
 
-                int maximumExpectedNumberOfWatchers = openShift ? 9 : 7; // we do not have connectS2I on k8s
+                int maximumExpectedNumberOfWatchers = 7;
                 assertThat("Looks like there were more watchers than namespaces", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
                 latch.countDown();
             })));

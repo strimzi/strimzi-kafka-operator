@@ -122,10 +122,6 @@ the documentation for more details.
 | `kafkaConnect.image.repository`      | Kafka Connect image repository            | `strimzi`                                            |
 | `kafkaConnect.image.name`            | Kafka Connect image name                  | `kafka`                                              |
 | `kafkaConnect.image.tagPrefix`       | Kafka Connect image tag prefix            | `0.24.0`                                             |
-| `kafkaConnects2i.image.registry`     | Kafka Connect s2i image registry          | `quay.io`                                            |
-| `kafkaConnects2i.image.repository`   | Kafka Connect s2i image repository        | `strimzi`                                            |
-| `kafkaConnects2i.image.name`         | Kafka Connect s2i image name              | `kafka`                                              |
-| `kafkaConnects2i.image.tagPrefix`    | Kafka Connect s2i image tag prefix        | `0.24.0`                                             |
 | `kafkaMirrorMaker.image.registry`    | Kafka Mirror Maker image registry         | `quay.io`                                            |
 | `kafkaMirrorMaker.image.repository`  | Kafka Mirror Maker image repository       | `strimzi`                                            |
 | `kafkaMirrorMaker.image.name`        | Kafka Mirror Maker image name             | `kafka`                                              |

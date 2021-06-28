@@ -85,12 +85,6 @@ ENV STUNNEL_HOME=/opt/stunnel
 RUN mkdir $STUNNEL_HOME && mkdir -p -m g+rw /usr/local/var/run/
 COPY ./stunnel-scripts/ $STUNNEL_HOME
 
-#####
-# Add Kafka Connect S2I feature
-#####
-ENV S2I_HOME=/opt/kafka/s2i
-COPY ./s2i-scripts $S2I_HOME
-
 WORKDIR $KAFKA_HOME
 
 USER 1001

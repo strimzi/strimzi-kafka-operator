@@ -14,7 +14,6 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
@@ -116,13 +115,6 @@ public class Main {
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa,
                 resourceOperatorSupplier, config);
 
-        KafkaConnectS2IAssemblyOperator kafkaConnectS2IClusterOperations = null;
-        if (pfa.supportsS2I()) {
-            kafkaConnectS2IClusterOperations = new KafkaConnectS2IAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
-        } else {
-            LOGGER.info("The KafkaConnectS2I custom resource definition can only be used in environment which supports OpenShift build, image and apps APIs. These APIs do not seem to be supported in this environment.");
-        }
-
         KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator =
                 new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
 
@@ -144,7 +136,6 @@ public class Main {
                     client,
                     kafkaClusterOperations,
                     kafkaConnectClusterOperations,
-                    kafkaConnectS2IClusterOperations,
                     kafkaMirrorMakerAssemblyOperator,
                     kafkaMirrorMaker2AssemblyOperator,
                     kafkaBridgeAssemblyOperator,

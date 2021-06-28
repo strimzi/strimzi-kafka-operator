@@ -10,7 +10,6 @@ import io.strimzi.operator.cluster.operator.assembly.AbstractConnectOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
-import io.strimzi.operator.cluster.operator.assembly.KafkaConnectS2IAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.common.AbstractOperator;
@@ -61,7 +60,6 @@ public class ClusterOperator extends AbstractVerticle {
     private long reconcileTimer;
     private final KafkaAssemblyOperator kafkaAssemblyOperator;
     private final KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator;
-    private final KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator;
     private final KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator;
     private final KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator;
     private final KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator;
@@ -72,7 +70,6 @@ public class ClusterOperator extends AbstractVerticle {
                            KubernetesClient client,
                            KafkaAssemblyOperator kafkaAssemblyOperator,
                            KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator,
-                           KafkaConnectS2IAssemblyOperator kafkaConnectS2IAssemblyOperator,
                            KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator,
                            KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator,
                            KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator,
@@ -84,7 +81,6 @@ public class ClusterOperator extends AbstractVerticle {
         this.client = client;
         this.kafkaAssemblyOperator = kafkaAssemblyOperator;
         this.kafkaConnectAssemblyOperator = kafkaConnectAssemblyOperator;
-        this.kafkaConnectS2IAssemblyOperator = kafkaConnectS2IAssemblyOperator;
         this.kafkaMirrorMakerAssemblyOperator = kafkaMirrorMakerAssemblyOperator;
         this.kafkaMirrorMaker2AssemblyOperator = kafkaMirrorMaker2AssemblyOperator;
         this.kafkaBridgeAssemblyOperator = kafkaBridgeAssemblyOperator;
@@ -104,9 +100,6 @@ public class ClusterOperator extends AbstractVerticle {
         List<AbstractOperator<?, ?, ?, ?>> operators = new ArrayList<>(asList(
                 kafkaAssemblyOperator, kafkaMirrorMakerAssemblyOperator,
                 kafkaConnectAssemblyOperator, kafkaBridgeAssemblyOperator, kafkaMirrorMaker2AssemblyOperator));
-        if (kafkaConnectS2IAssemblyOperator != null) {
-            operators.add(kafkaConnectS2IAssemblyOperator);
-        }
         for (AbstractOperator<?, ?, ?, ?> operator : operators) {
             watchFutures.add(operator.createWatch(namespace, operator.recreateWatch(namespace)).compose(w -> {
                 LOGGER.info("Opened watch for {} operator", operator.kind());
@@ -115,7 +108,7 @@ public class ClusterOperator extends AbstractVerticle {
             }));
         }
 
-        watchFutures.add(AbstractConnectOperator.createConnectorWatch(kafkaConnectAssemblyOperator, kafkaConnectS2IAssemblyOperator, namespace, config.getCustomResourceSelector()));
+        watchFutures.add(AbstractConnectOperator.createConnectorWatch(kafkaConnectAssemblyOperator, namespace, config.getCustomResourceSelector()));
         watchFutures.add(kafkaRebalanceAssemblyOperator.createRebalanceWatch(namespace));
 
         CompositeFuture.join(watchFutures)
@@ -156,10 +149,6 @@ public class ClusterOperator extends AbstractVerticle {
         kafkaMirrorMaker2AssemblyOperator.reconcileAll(trigger, namespace, ignore);
         kafkaBridgeAssemblyOperator.reconcileAll(trigger, namespace, ignore);
         kafkaRebalanceAssemblyOperator.reconcileAll(trigger, namespace, ignore);
-
-        if (kafkaConnectS2IAssemblyOperator != null) {
-            kafkaConnectS2IAssemblyOperator.reconcileAll(trigger, namespace, ignore);
-        }
     }
 
     /**

@@ -18,7 +18,6 @@ import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
@@ -40,7 +39,6 @@ public class Crds {
     private static final Class<? extends CustomResource>[] CRDS = new Class[] {
         Kafka.class,
         KafkaConnect.class,
-        KafkaConnectS2I.class,
         KafkaTopic.class,
         KafkaUser.class,
         KafkaMirrorMaker.class,
@@ -87,15 +85,6 @@ public class Crds {
             kind = KafkaConnect.RESOURCE_KIND;
             listKind = KafkaConnect.RESOURCE_LIST_KIND;
             versions = KafkaConnect.VERSIONS;
-            status = new CustomResourceSubresourceStatus();
-        } else if (cls.equals(KafkaConnectS2I.class)) {
-            scope = KafkaConnectS2I.SCOPE;
-            plural = KafkaConnectS2I.RESOURCE_PLURAL;
-            singular = KafkaConnectS2I.RESOURCE_SINGULAR;
-            group = KafkaConnectS2I.RESOURCE_GROUP;
-            kind = KafkaConnectS2I.RESOURCE_KIND;
-            listKind = KafkaConnectS2I.RESOURCE_LIST_KIND;
-            versions = KafkaConnectS2I.VERSIONS;
             status = new CustomResourceSubresourceStatus();
         } else if (cls.equals(KafkaTopic.class)) {
             scope = KafkaTopic.SCOPE;
@@ -221,14 +210,6 @@ public class Crds {
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorOperation(KubernetesClient client) {
         return client.customResources(KafkaConnector.class, KafkaConnectorList.class);
-    }
-
-    public static CustomResourceDefinition kafkaConnectS2I() {
-        return crd(KafkaConnectS2I.class);
-    }
-
-    public static MixedOperation<KafkaConnectS2I, KafkaConnectS2IList, Resource<KafkaConnectS2I>> kafkaConnectS2iOperation(KubernetesClient client) {
-        return client.customResources(KafkaConnectS2I.class, KafkaConnectS2IList.class);
     }
 
     public static CustomResourceDefinition kafkaTopic() {

@@ -48,30 +48,24 @@ public class AllNamespacesST extends OlmAbstractST {
 
     @Test
     @Order(5)
-    void testDeployExampleKafkaConnectS2I() {
-        doTestDeployExampleKafkaConnectS2I();
-    }
-
-    @Test
-    @Order(6)
     void testDeployExampleKafkaBridge() {
         doTestDeployExampleKafkaBridge();
     }
 
     @Test
-    @Order(7)
+    @Order(6)
     void testDeployExampleKafkaMirrorMaker() {
         doTestDeployExampleKafkaMirrorMaker();
     }
 
     @Test
-    @Order(8)
+    @Order(7)
     void testDeployExampleKafkaMirrorMaker2() {
         doTestDeployExampleKafkaMirrorMaker2();
     }
 
     @Test
-    @Order(9)
+    @Order(8)
     void testDeployExampleKafkaRebalance(ExtensionContext extensionContext) {
         doTestDeployExampleKafkaRebalance(extensionContext);
     }

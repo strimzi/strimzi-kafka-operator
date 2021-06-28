@@ -27,7 +27,6 @@ public class StructuralCrdIT extends AbstractCrdIT {
     Map<String, String> crdFiles = Map.of(
             "kafkas.kafka.strimzi.io", "040-Crd-kafka.yaml",
             "kafkaconnects.kafka.strimzi.io", "041-Crd-kafkaconnect.yaml",
-            "kafkaconnects2is.kafka.strimzi.io", "042-Crd-kafkaconnects2i.yaml",
             "kafkatopics.kafka.strimzi.io", "043-Crd-kafkatopic.yaml",
             "kafkausers.kafka.strimzi.io", "044-Crd-kafkauser.yaml",
             "kafkamirrormakers.kafka.strimzi.io", "045-Crd-kafkamirrormaker.yaml",

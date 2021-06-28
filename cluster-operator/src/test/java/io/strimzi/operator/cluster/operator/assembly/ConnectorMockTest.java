@@ -10,12 +10,10 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectList;
-import io.strimzi.api.kafka.KafkaConnectS2IList;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnectS2I;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
@@ -105,7 +103,6 @@ public class ConnectorMockTest {
     private KubernetesClient client;
     private KafkaConnectApi api;
     private HashMap<String, ConnectorState> runningConnectors;
-    private KafkaConnectS2IAssemblyOperator kafkaConnectS2iOperator;
     private KafkaConnectAssemblyOperator kafkaConnectOperator;
 
     String key(String host, String connectorName) {
@@ -138,8 +135,6 @@ public class ConnectorMockTest {
         client = new MockKube()
                 .withCustomResourceDefinition(Crds.kafkaConnect(), KafkaConnect.class, KafkaConnectList.class,
                         KafkaConnect::getStatus, KafkaConnect::setStatus).end()
-                .withCustomResourceDefinition(Crds.kafkaConnectS2I(), KafkaConnectS2I.class, KafkaConnectS2IList.class,
-                        KafkaConnectS2I::getStatus, KafkaConnectS2I::setStatus).end()
                 .withCustomResourceDefinition(Crds.kafkaConnector(), KafkaConnector.class, KafkaConnectorList.class,
                         KafkaConnector::getStatus, KafkaConnector::setStatus).end()
                 .build();
@@ -159,7 +154,6 @@ public class ConnectorMockTest {
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(map(
             ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString(),
             ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString(),
-            ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_S2I_IMAGES, KafkaVersionTestUtils.getKafkaConnectS2iImagesEnvVarString(),
             ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString(),
             ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(Long.MAX_VALUE)),
                 KafkaVersionTestUtils.getKafkaVersionLookup());
@@ -173,17 +167,7 @@ public class ConnectorMockTest {
         // Fail test if watcher closes for any reason
         kafkaConnectOperator.createWatch(NAMESPACE, e -> testContext.failNow(e))
             .onComplete(testContext.succeeding())
-            .compose(watch -> {
-                kafkaConnectS2iOperator = new KafkaConnectS2IAssemblyOperator(vertx,
-                    pfa,
-                    ros,
-                    config,
-                    x -> api);
-                // Fail test if watcher closes for any reason
-                return kafkaConnectS2iOperator.createWatch(NAMESPACE, e -> testContext.failNow(e));
-            })
-            .onComplete(testContext.succeeding())
-            .compose(watch -> AbstractConnectOperator.createConnectorWatch(kafkaConnectOperator, kafkaConnectS2iOperator, NAMESPACE, null))
+            .compose(watch -> AbstractConnectOperator.createConnectorWatch(kafkaConnectOperator, NAMESPACE, null))
             .onComplete(testContext.succeeding(v -> async.flag()));
     }
 
