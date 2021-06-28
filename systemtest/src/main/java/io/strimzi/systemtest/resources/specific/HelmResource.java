@@ -126,7 +126,8 @@ public class HelmResource implements SpecificResourceType {
                 entry("logLevelOverride", Environment.STRIMZI_LOG_LEVEL),
                 entry("fullReconciliationIntervalMs", Long.toString(reconciliationInterval)),
                 entry("operationTimeoutMs", Long.toString(operationTimeout)),
-                entry("featureGates", Environment.STRIMZI_FEATURE_GATES),
+                // As FG is CSV, we need to escape commas for interpretation of helm installation string
+                entry("featureGates", Environment.STRIMZI_FEATURE_GATES.replaceAll(",", "\\\\,")),
                 entry("watchAnyNamespace", this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES) ? "true" : "false"))
                 .collect(TestUtils.entriesToMap()));
 
