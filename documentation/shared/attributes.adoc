@@ -59,7 +59,6 @@
 // External links
 :aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
 :docs-okd: link:https://docs.okd.io/3.11/dev_guide/builds/index.html[builds^]
-:docs-okd-s2i: link:https://docs.okd.io/3.11/creating_images/s2i.html[Source-to-Image (S2I)^]
 :kafkaDoc: link:https://kafka.apache.org/documentation/[Apache Kafka documentation^]
 :KafkaRacks: link:https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
 :K8sAffinity: link:https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]
@@ -125,7 +124,6 @@
 :DockerKafkaImagePrevious: quay.io/strimzi/kafka:{DockerTag}-kafka-{KafkaVersionLower}
 :DockerKafka: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaConnect: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
-:DockerKafkaConnectS2I: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerClusterOperator: quay.io/strimzi/operator:{DockerTag}
 :DockerKafkaInit: quay.io/strimzi/operator:{DockerTag}
 :DockerJmxtrans: quay.io/strimzi/jmxtrans:{DockerTag}
@@ -139,7 +137,6 @@
 :ApiVersion: v1beta2
 :KafkaApiVersion: kafka.strimzi.io/v1beta2
 :KafkaConnectApiVersion: kafka.strimzi.io/v1beta2
-:KafkaConnectS2IApiVersion: kafka.strimzi.io/v1beta2
 :KafkaConnectorApiVersion: kafka.strimzi.io/v1beta2
 :KafkaTopicApiVersion: kafka.strimzi.io/v1beta2
 :KafkaUserApiVersion: kafka.strimzi.io/v1beta2
@@ -151,7 +148,6 @@
 // API Versions previous
 :KafkaApiVersionPrev: kafka.strimzi.io/v1beta1
 :KafkaConnectApiVersionPrev: kafka.strimzi.io/v1beta1
-:KafkaConnectS2IApiVersionPrev: kafka.strimzi.io/v1beta1
 :KafkaTopicApiVersionPrev: kafka.strimzi.io/v1beta1
 :KafkaUserApiVersionPrev: kafka.strimzi.io/v1beta1
 :KafkaMirrorMakerApiVersionPrev: kafka.strimzi.io/v1beta1

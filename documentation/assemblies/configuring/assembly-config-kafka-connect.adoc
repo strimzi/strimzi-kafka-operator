@@ -3,22 +3,14 @@
 // assembly-deployment-configuration.adoc
 
 [id='assembly-kafka-connect-{context}']
-= Kafka Connect/S2I cluster configuration
+= Kafka Connect cluster configuration
 
-This section describes how to configure a Kafka Connect or Kafka Connect with Source-to-Image (S2I) deployment in your Strimzi cluster.
+This section describes how to configure a Kafka Connect deployment in your Strimzi cluster.
 
 Kafka Connect is an integration toolkit for streaming data between Kafka brokers and other systems using connector plugins.
 Kafka Connect provides a framework for integrating Kafka with an external data source or target, such as a database, for import or export of data using connectors.
 Connectors are plugins that provide the connection configuration needed.
-
-If you are using Kafka Connect, you configure either the `KafkaConnect` or the `KafkaConnectS2I` resource.
-Use the `KafkaConnectS2I` resource if you are using the {docs-okd-s2i} framework to deploy Kafka Connect.
-
-* The full schema of the `KafkaConnect` resource is described in xref:type-KafkaConnect-reference[].
-* The full schema of the `KafkaConnectS2I` resource is described in xref:type-KafkaConnectS2I-reference[].
-
-IMPORTANT: With the introduction of `build` configuration to the `KafkaConnect` resource, Strimzi can now automatically build a container image with the connector plugins you require for your data connections.
-As a result, support for Kafka Connect with Source-to-Image (S2I) is deprecated and will be removed after Strimzi {ProductVersion}. To prepare for this change, you can xref:proc-migrating-kafka-connect-s2i-{context}[migrate Kafka Connect S2I instances to Kafka Connect instances].
+The full schema of the `KafkaConnect` resource is described in xref:type-KafkaConnect-reference[].
 
 .Additional resources
 
@@ -38,9 +30,5 @@ include::../../modules/configuring/proc-config-kafka-connect-user-authorization.
 include::../../modules/configuring/proc-manual-restart-connector.adoc[leveloffset=+1]
 //Procedure to restart a Kafka connector task
 include::../../modules/configuring/proc-manual-restart-connector-task.adoc[leveloffset=+1]
-//Procedure to migrate from S2I config
-include::../../modules/configuring/proc-config-kafka-connect-s2i-migration.adoc[leveloffset=+1]
 //Resources created for Kafka Connect
 include::../../modules/configuring/ref-config-list-of-kafka-connect-resources.adoc[leveloffset=+1]
-//Resources created for Kafka Connect S2I
-include::../../modules/configuring/ref-config-list-of-kafka-connect-s2i-resources.adoc[leveloffset=+1]

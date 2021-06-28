@@ -12,7 +12,6 @@ Affinity, tolerations and topology spread constraints are configured using the `
 * `Kafka.spec.zookeeper.template.pod`
 * `Kafka.spec.entityOperator.template.pod`
 * `KafkaConnect.spec.template.pod`
-* `KafkaConnectS2I.spec.template.pod`
 * `KafkaBridge.spec.template.pod`
 * `KafkaMirrorMaker.spec.template.pod`
 * `KafkaMirrorMaker2.spec.template.pod`

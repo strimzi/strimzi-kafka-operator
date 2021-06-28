@@ -80,7 +80,7 @@ If the rack ID is not specified, or if it cannot find a replica with the same ra
 image::rack-config-availability-zones.png[consuming from replicas in the same availability zone]
 
 Consuming messages from the closest replicas can be used also in Kafka Connect for sink connectors which are consuming messages.
-When deploying Kafka Connect using Strimzi, you can use the `rack` section in the `KafkaConnect` or `KafkaConnectS2I` custom resources to automatically configure the `client.rack` option.
+When deploying Kafka Connect using Strimzi, you can use the `rack` section in the `KafkaConnect` custom resource to automatically configure the `client.rack` option.
 
 .Example `rack` configuration for Kafka Connect
 [source,yaml,subs=attributes+]
@@ -96,5 +96,5 @@ spec:
     # ...
 ----
 
-Enabling rack awareness in the `KafkaConnect` or `KafkaConnectS2I` custom resource will not set any affinity rules, but you can also configure `affinity` or `topologySpreadConstraints`.
+Enabling rack awareness in the `KafkaConnect` custom resource will not set any affinity rules, but you can also configure `affinity` or `topologySpreadConstraints`.
 For more information see xref:assembly-scheduling-str[].

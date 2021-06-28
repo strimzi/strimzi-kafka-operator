@@ -6,9 +6,7 @@
 = Configuring Kafka Connect
 
 Use Kafka Connect to set up external data connections to your Kafka cluster.
-
-Use the properties of the `KafkaConnect` or `KafkaConnectS2I` resource to configure your Kafka Connect deployment.
-The example shown in this procedure is for the `KafkaConnect` resource, but the properties are the same for the `KafkaConnectS2I` resource.
+Use the properties of the `KafkaConnect` resource to configure your Kafka Connect deployment.
 
 .Kafka connector configuration
 KafkaConnector resources allow you to create and manage connector instances for Kafka Connect in a Kubernetes-native way.
@@ -39,7 +37,7 @@ See the _Deploying and Upgrading Strimzi_ guide for instructions on running a:
 
 .Procedure
 
-. Edit the `spec` properties for the `KafkaConnect` or `KafkaConnectS2I` resource.
+. Edit the `spec` properties of the `KafkaConnect` resource.
 +
 The properties you can configure are shown in this example configuration:
 +
@@ -157,7 +155,7 @@ spec:
         - name: JAEGER_AGENT_PORT
           value: "6831"
 ----
-<1> Use `KafkaConnect` or `KafkaConnectS2I`, as required.
+<1> Use `KafkaConnect`.
 <2> Enables KafkaConnectors for the Kafka Connect cluster.
 <3> xref:con-common-configuration-replicas-reference[The number of replica nodes].
 <4> Authentication for the Kafka Connect cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.

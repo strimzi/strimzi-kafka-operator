@@ -11,7 +11,7 @@ When any type of authorization is being used in Kafka, a Kafka Connect user requ
 and the internal topics of Kafka Connect.
 
 The properties for the consumer group and internal topics are automatically configured by Strimzi,
-or they can be specified explicitly in the `spec` of the `KafkaConnect` or `KafkaConnectS2I` resource.
+or they can be specified explicitly in the `spec` of the `KafkaConnect` resource.
 
 .Example configuration properties in the `KafkaConnect` resource
 [source,yaml,subs=attributes+]
