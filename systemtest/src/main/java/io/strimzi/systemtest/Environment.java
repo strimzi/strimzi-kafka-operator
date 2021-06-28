@@ -242,7 +242,7 @@ public class Environment {
             File jsonFile = new File(config).getAbsoluteFile();
             return mapper.readTree(jsonFile);
         } catch (IOException ex) {
-            LOGGER.info("Json configuration not provider or not exists");
+            LOGGER.info("Json configuration not provided or not exists");
             return mapper.createObjectNode();
         }
     }

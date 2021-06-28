@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.status.Status;
-import io.strimzi.operator.cluster.model.AbstractModel;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -35,12 +34,12 @@ public class TestUtils {
         return metricsConfig;
     }
 
-    public static ConfigMap getJmxMetricsCm(String data, String metricsCMName) {
+    public static ConfigMap getJmxMetricsCm(String data, String metricsCMName, String metricsConfigYaml) {
         ConfigMap metricsCM = new ConfigMapBuilder()
                 .withNewMetadata()
                 .withName(metricsCMName)
                 .endMetadata()
-                .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, data))
+                .withData(singletonMap(metricsConfigYaml, data))
                 .build();
         return metricsCM;
     }
