@@ -218,8 +218,11 @@ pipeline {
                                 docker pull strimzi/java-kafka-consumer:latest
                                 docker tag strimzi/java-kafka-consumer:latest quay.io/strimzi-examples/java-kafka-consumer:latest
                                 minikube image load quay.io/strimzi-examples/java-kafka-consumer:latest
-                                docker pull pverbist/postgresql-10-rhel7
-                                docker tag pverbist/postgresql-10-rhel7 registry.access.redhat.com/rhscl/postgresql-10-rhel7:1
+                                #docker pull pverbist/postgresql-10-rhel7
+                                #docker tag pverbist/postgresql-10-rhel7 registry.access.redhat.com/rhscl/postgresql-10-rhel7:1
+                                #minikube image load registry.access.redhat.com/rhscl/postgresql-10-rhel7:1
+                                docker pull eu.gcr.io/vg1np-pf-phenix-caas-1a/3rdparty/registry.access.redhat.com/rhscl/postgresql-10-rhel7:1
+                                docker tag eu.gcr.io/vg1np-pf-phenix-caas-1a/3rdparty/registry.access.redhat.com/rhscl/postgresql-10-rhel7:1 registry.access.redhat.com/rhscl/postgresql-10-rhel7:1
                                 minikube image load registry.access.redhat.com/rhscl/postgresql-10-rhel7:1
                             """)
                             sh(script: "cat ${env.WORKSPACE}/systemtest/src/main/resources/StrimziUpgradeST.json")
