@@ -154,7 +154,7 @@ class KafkaST extends AbstractST {
         Pod pod = kubeClient(namespaceName).listPods(namespaceName).stream()
                 .filter(p -> p.getMetadata().getName().startsWith(KafkaResources.entityOperatorDeploymentName(clusterName)))
                 .findAny()
-                .get();
+                .orElseThrow();
 
         assertThat("Entity operator pod does not exist", pod, notNullValue());
 
