@@ -34,11 +34,13 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -1140,6 +1142,78 @@ class LoggingChangeST extends AbstractST {
         Condition condition = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getConditions().get(0);
         assertThat(condition.getType(), is(CustomResourceStatus.NotReady.toString()));
         assertTrue(condition.getMessage().matches("ConfigMap " + nonExistingCmName + " with external logging configuration does not exist .*"));
+    }
+
+    @ParallelNamespaceTest
+    void testLoggingHierarchy(ExtensionContext extensionContext) {
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+
+        resourceManager.createResource(extensionContext,
+                KafkaTemplates.kafkaEphemeral(clusterName, 3).build(),
+                KafkaClientsTemplates.kafkaClients(kafkaClientsName).build());
+
+        resourceManager.createResource(extensionContext,
+                KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, true)
+                    .editMetadata()
+                        .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .endMetadata()
+                    .editOrNewSpec()
+                        .addToConfig("key.converter.schemas.enable", false)
+                        .addToConfig("value.converter.schemas.enable", false)
+                        .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                        .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .endSpec()
+                    .build(),
+                    KafkaConnectorTemplates.defaultKafkaConnector(clusterName, clusterName, 1).build()
+        );
+
+        String connectorClassName = "org.apache.kafka.connect.file.FileStreamSourceConnector";
+        final String kafkaClientsPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
+
+        LOGGER.info("Changing rootLogger level in KafkaConnector to ERROR with inline logging");
+        InlineLogging inlineError = new InlineLogging();
+        inlineError.setLoggers(Collections.singletonMap("log4j.logger." + connectorClassName, "ERROR"));
+
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, connect -> connect.getSpec().setLogging(inlineError), namespaceName);
+
+        LOGGER.info("Waiting for Connect API loggers will contain desired settings");
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().namespace(namespaceName).execInPod(kafkaClientsPodName, "curl",
+                "http://" + KafkaConnectResources.serviceName(clusterName) + ":8083/admin/loggers/" + connectorClassName).out().contains("ERROR")
+        );
+
+        LOGGER.info("Restarting KafkaConnector");
+        cmdKubeClient().namespace(namespaceName).execInPod(kafkaClientsPodName,
+                "curl", "-X", "POST",
+                "http://" + KafkaConnectResources.serviceName(clusterName) + ":8083/connectors/" + clusterName + "/restart");
+
+        KafkaConnectorUtils.waitForConnectorWorkerStatus(namespaceName, kafkaClientsPodName, clusterName, clusterName, "RUNNING");
+
+        LOGGER.info("Checking that logger is same for connector with class name {}", connectorClassName);
+        String connectorLogger = cmdKubeClient().namespace(namespaceName).execInPod(kafkaClientsPodName, "curl",
+            "http://" + KafkaConnectResources.serviceName(clusterName) + ":8083/admin/loggers/" + connectorClassName).out();
+
+        assertTrue(connectorLogger.contains("ERROR"));
+
+        LOGGER.info("Changing KafkaConnect's root logger to WARN, KafkaConnector shouldn't inherit it");
+
+        InlineLogging inlineWarn = new InlineLogging();
+        inlineWarn.setLoggers(Collections.singletonMap("connect.root.logger.level", "WARN"));
+
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, connect -> connect.getSpec().setLogging(inlineWarn), namespaceName);
+
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().namespace(namespaceName).execInPod(kafkaClientsPodName, "curl",
+                "http://" + KafkaConnectResources.serviceName(clusterName) + ":8083/admin/loggers/root").out().contains("WARN")
+        );
+
+        LOGGER.info("Checking if KafkaConnector {} doesn't inherit logger from KafkaConnect", connectorClassName);
+        connectorLogger = cmdKubeClient().namespace(namespaceName).execInPod(kafkaClientsPodName, "curl",
+            "http://" + KafkaConnectResources.serviceName(clusterName) + ":8083/admin/loggers/" + connectorClassName).out();
+
+        assertTrue(connectorLogger.contains("ERROR"));
     }
 
     @BeforeAll
