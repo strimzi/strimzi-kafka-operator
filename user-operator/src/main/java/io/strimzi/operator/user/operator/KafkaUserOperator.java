@@ -216,8 +216,8 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
      * @return                  Future describing the result
      */
     private Future<Void> maybeGenerateTlsCredentials(Reconciliation reconciliation, KafkaUserModel user, Secret userSecret)   {
-        Future<Secret> caCertFuture = secretOperations.getAsync(config.getNamespace(), config.getCaCertSecretName());
-        Future<Secret> caKeyFuture = secretOperations.getAsync(config.getNamespace(), config.getCaKeySecretName());
+        Future<Secret> caCertFuture = secretOperations.getAsync(config.getCaNamespace(), config.getCaCertSecretName());
+        Future<Secret> caKeyFuture = secretOperations.getAsync(config.getCaNamespace(), config.getCaKeySecretName());
 
         return CompositeFuture.join(caCertFuture, caKeyFuture)
                 .compose(caSecrets -> {
