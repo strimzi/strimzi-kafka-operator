@@ -36,7 +36,6 @@ import org.apache.logging.log4j.Logger;
 import java.security.Security;
 
 @SuppressFBWarnings("DM_EXIT")
-@SuppressWarnings("deprecation")
 public class Main {
     private final static Logger LOGGER = LogManager.getLogger(Main.class);
 
@@ -82,15 +81,12 @@ public class Main {
         return createAdminClient(adminClientProvider, config, secretOperations)
                 .compose(adminClient -> {
                     SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, adminClient);
-                    ScramShaCredentials scramShaCredentials = new ScramShaCredentials(config.getZookeperConnect(), (int) config.getZookeeperSessionTimeoutMs());
+                    ScramShaCredentials scramShaCredentials = new ScramShaCredentials(config.getZookeeperConnect(), (int) config.getZookeeperSessionTimeoutMs());
                     ScramShaCredentialsOperator scramShaCredentialsOperator = new ScramShaCredentialsOperator(vertx, scramShaCredentials);
                     KafkaUserQuotasOperator quotasOperator = new KafkaUserQuotasOperator(vertx, adminClient);
 
-                    KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx,
-                            certManager, crdOperations,
-                            config.getLabels(),
-                            secretOperations, scramShaCredentialsOperator, quotasOperator, aclOperations, config.getCaCertSecretName(), config.getCaKeySecretName(), config.getCaNamespace(),
-                            config.getSecretPrefix());
+                    KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx, certManager, crdOperations,
+                            secretOperations, scramShaCredentialsOperator, quotasOperator, aclOperations, config);
 
                     Promise<String> promise = Promise.promise();
                     UserOperator operator = new UserOperator(config.getNamespace(),

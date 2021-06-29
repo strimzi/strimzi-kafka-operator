@@ -23,9 +23,11 @@ import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ResourceUtils {
     public static final Map LABELS = Collections.singletonMap("foo", "bar");
@@ -34,6 +36,26 @@ public class ResourceUtils {
     public static final String CA_CERT_NAME = NAME + "-cert";
     public static final String CA_KEY_NAME = NAME + "-key";
     public static final String PASSWORD = "my-password";
+
+    public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels) {
+        Map<String, String> envVars = new HashMap<>(4);
+        envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE);
+        envVars.put(UserOperatorConfig.STRIMZI_LABELS, labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));
+        envVars.put(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, CA_CERT_NAME);
+        envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
+
+        return UserOperatorConfig.fromMap(envVars);
+    }
+
+    public static UserOperatorConfig createUserOperatorConfig() {
+        Map<String, String> envVars = new HashMap<>(4);
+        envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE);
+        envVars.put(UserOperatorConfig.STRIMZI_LABELS, "");
+        envVars.put(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, CA_CERT_NAME);
+        envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
+
+        return UserOperatorConfig.fromMap(envVars);
+    }
 
     public static KafkaUser createKafkaUser(KafkaUserAuthentication authentication) {
         return new KafkaUserBuilder()

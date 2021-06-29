@@ -2,6 +2,8 @@
 
 ## 0.25.0
 
+* Allow providing custom password for SCRAM-SHA-512 users by referencing a secret in the `KafkaUser` resource
+
 ### Changes, deprecations and removals
 
 * The `KafkaConnectS2I` resource has been removed and is no longer supported by the operator.
