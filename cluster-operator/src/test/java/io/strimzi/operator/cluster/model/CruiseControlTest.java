@@ -107,7 +107,7 @@ public class CruiseControlTest {
     private final String minInsyncReplicas = "2";
     private final Map<String, Object> metricsCm = singletonMap("animal", "wombat");
     private final String metricsCMName = "metrics-cm";
-    private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
+    private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics("metrics-config.yml", metricsCMName);
 
     private final Map<String, Object> kafkaConfig = singletonMap(CruiseControl.MIN_INSYNC_REPLICAS, minInsyncReplicas);
     private final Map<String, Object> zooConfig = singletonMap("foo", "bar");

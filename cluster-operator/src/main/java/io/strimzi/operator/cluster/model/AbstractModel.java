@@ -126,7 +126,7 @@ public abstract class AbstractModel {
 
     private static final Long DEFAULT_FS_GROUPID = 0L;
 
-    public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.yml";
+    public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.json";
     public static final String ANCILLARY_CM_KEY_LOG_CONFIG = "log4j.properties";
 
     public static final String NETWORK_POLICY_KEY_SUFFIX = "-network-policy";

@@ -50,7 +50,7 @@ fi
 
 # enabling Prometheus JMX exporter as Java agent
 if [ "$ZOOKEEPER_METRICS_ENABLED" = "true" ]; then
-  KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.yml"
+  KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.json"
   export KAFKA_OPTS
 fi
 
