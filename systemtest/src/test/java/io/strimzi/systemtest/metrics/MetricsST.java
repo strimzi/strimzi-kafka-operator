@@ -590,17 +590,23 @@ public class MetricsST extends AbstractST {
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
         LOGGER.info("Setting up Environment for MetricsST");
+
+        cluster.createNamespace(SECOND_NAMESPACE);
+        cluster.setNamespace(SECOND_NAMESPACE);
+
+        NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(SECOND_NAMESPACE));
+        SetupClusterOperator.applyRoleBindings(extensionContext, FIRST_NAMESPACE, SECOND_NAMESPACE);
+        install.applyClusterOperatorInstallFiles(SECOND_NAMESPACE);
+
+        cluster.setNamespace(FIRST_NAMESPACE);
+
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(FIRST_NAMESPACE)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .withWatchingNamespaces(FIRST_NAMESPACE + "," + SECOND_NAMESPACE)
+            .withBindingsNamespaces(Collections.singletonList(FIRST_NAMESPACE))
             .createInstallation()
             .runInstallation();
-
-        cluster.createNamespace(SECOND_NAMESPACE);
-        NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(SECOND_NAMESPACE));
-
-        cluster.setNamespace(FIRST_NAMESPACE);
 
         final String firstKafkaClientsName = FIRST_NAMESPACE + "-" + Constants.KAFKA_CLIENTS;
         final String secondKafkaClientsName = SECOND_NAMESPACE + "-" + Constants.KAFKA_CLIENTS;

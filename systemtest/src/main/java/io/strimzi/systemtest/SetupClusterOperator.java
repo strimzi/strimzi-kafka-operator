@@ -110,9 +110,15 @@ public class SetupClusterOperator {
                 applyBindings(extensionContext, namespaceInstallTo, bindingsNamespaces);
             }
             // cluster-wide installation
-            if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES) && !Environment.isNamespaceRbacScope()) {
-                // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
-                createClusterRoleBindings();
+            if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
+                if (Environment.isNamespaceRbacScope()) {
+                    // we override namespaceToWatch to where cluster operator is installed because RBAC is
+                    // enabled and we have use only single namespace
+                    namespaceToWatch = namespaceInstallTo;
+                } else {
+                    // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
+                    createClusterRoleBindings();
+                }
             }
             // 060-Deployment
             ResourceManager.setCoDeploymentName(clusterOperatorName);

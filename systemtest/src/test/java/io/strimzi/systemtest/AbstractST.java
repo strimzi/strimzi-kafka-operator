@@ -581,7 +581,7 @@ public abstract class AbstractST implements TestSeparator {
             LOGGER.debug("TOPIC_NAMES_MAP: \n{}", mapWithTestTopics);
             LOGGER.debug("============THIS IS CLIENTS MAP:\n{}", mapWithKafkaClientNames);
 
-            // if 'parallel namespace test' we are gonna create
+            // if 'parallel namespace test' we are gonna create namespace
             if (StUtils.isParallelNamespaceTest(extensionContext)) {
                 // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
                 if (!Environment.isNamespaceRbacScope()) {
