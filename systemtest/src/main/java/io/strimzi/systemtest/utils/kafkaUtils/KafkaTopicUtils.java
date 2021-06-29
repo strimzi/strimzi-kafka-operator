@@ -79,7 +79,7 @@ public class KafkaTopicUtils {
         TestUtils.waitFor("KafkaTopic creation " + topicNamePrefix, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).list().getItems().stream()
                     .filter(topic -> topic.getMetadata().getName().contains(topicNamePrefix))
-                    .findFirst().get().getStatus().getConditions().get(0).getType().equals(Ready.toString())
+                    .findFirst().orElseThrow().getStatus().getConditions().get(0).getType().equals(Ready.toString())
         );
     }
 

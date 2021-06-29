@@ -2027,17 +2027,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                                 if (broker.getStatus() != null && broker.getStatus().getHostIP() != null) {
                                     String hostIP = broker.getStatus().getHostIP();
-                                    Node podNode = allNodes.stream().filter(node -> {
-                                        if (node.getStatus() != null && node.getStatus().getAddresses() != null)    {
+                                    allNodes.stream().filter(node -> {
+                                        if (node.getStatus() != null && node.getStatus().getAddresses() != null) {
                                             return null != node.getStatus().getAddresses().stream().filter(address -> hostIP.equals(address.getAddress())).findFirst().orElse(null);
                                         } else {
                                             return false;
                                         }
-                                    }).findFirst().orElse(null);
-
-                                    if (podNode != null) {
-                                        brokerNodes.put(podIndex, podNode);
-                                    }
+                                    }).findFirst().ifPresent(podNode -> brokerNodes.put(podIndex, podNode));
                                 }
                             }
 
@@ -2490,11 +2486,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             // * The PVC doesn't exist yet, we should create it
                             // * The PVC is not Bound and we should reconcile it
                             reconcilePvc(desiredPvc).onComplete(resultPromise);
-                        } else if (currentPvc.getStatus().getConditions().stream().filter(cond -> "Resizing".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))).findFirst().orElse(null) != null)  {
+                        } else if (currentPvc.getStatus().getConditions().stream().anyMatch(cond -> "Resizing".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))))  {
                             // The PVC is Bound but it is already resizing => Nothing to do, we should let it resize
                             LOGGER.debugCr(reconciliation, "The PVC {} is resizing, nothing to do", desiredPvc.getMetadata().getName());
                             resultPromise.complete();
-                        } else if (currentPvc.getStatus().getConditions().stream().filter(cond -> "FileSystemResizePending".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))).findFirst().orElse(null) != null)  {
+                        } else if (currentPvc.getStatus().getConditions().stream().anyMatch(cond -> "FileSystemResizePending".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))))  {
                             // The PVC is Bound and resized but waiting for FS resizing => We need to restart the pod which is using it
                             String podName = cluster.getPodName(getPodIndexFromPvcName(desiredPvc.getMetadata().getName()));
                             fsResizingRestartRequest.add(podName);

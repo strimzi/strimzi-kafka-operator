@@ -90,10 +90,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
      */
     boolean isDesiredPropertyDefaultValue(String key, Config config) {
         Optional<ConfigEntry> entry = config.entries().stream().filter(configEntry -> configEntry.name().equals(key)).findFirst();
-        if (entry.isPresent()) {
-            return entry.get().isDefault();
-        }
-        return false;
+        return entry.map(ConfigEntry::isDefault).orElse(false);
     }
 
     public boolean canBeUpdatedDynamically() {

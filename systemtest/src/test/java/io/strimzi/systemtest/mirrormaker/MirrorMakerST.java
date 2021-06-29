@@ -145,7 +145,7 @@ public class MirrorMakerST extends AbstractST {
         assertThat(kafkaMirrorMakerLogs,
             not(containsString("keytool error: java.io.FileNotFoundException: /opt/kafka/consumer-oauth-certs/**/* (No such file or directory)")));
 
-        String podName = kubeClient(namespaceName).listPodsByNamespace(namespaceName, clusterName).stream().filter(n -> n.getMetadata().getName().startsWith(KafkaMirrorMakerResources.deploymentName(clusterName))).findFirst().get().getMetadata().getName();
+        String podName = kubeClient(namespaceName).listPodsByNamespace(namespaceName, clusterName).stream().filter(n -> n.getMetadata().getName().startsWith(KafkaMirrorMakerResources.deploymentName(clusterName))).findFirst().orElseThrow().getMetadata().getName();
         assertResources(namespaceName, podName, clusterName.concat("-mirror-maker"),
                 "400M", "2", "300M", "1");
         assertExpectedJavaOpts(namespaceName, podName, KafkaMirrorMakerResources.deploymentName(clusterName),

@@ -565,9 +565,9 @@ class KafkaST extends AbstractST {
                 LOGGER.info("Check if -D java options are present in {}", container.getName());
 
                 String javaSystemProp = container.getEnv().stream().filter(envVar ->
-                    envVar.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findFirst().get().getValue();
+                    envVar.getName().equals("STRIMZI_JAVA_SYSTEM_PROPERTIES")).findFirst().orElseThrow().getValue();
                 String javaOpts = container.getEnv().stream().filter(envVar ->
-                    envVar.getName().equals("STRIMZI_JAVA_OPTS")).findFirst().get().getValue();
+                    envVar.getName().equals("STRIMZI_JAVA_OPTS")).findFirst().orElseThrow().getValue();
 
                 assertThat(javaSystemProp, is("-Djavax.net.debug=verbose"));
 

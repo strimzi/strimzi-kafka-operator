@@ -33,7 +33,7 @@ public class HasNoneOfReasons extends BaseMatcher<List<Event>> {
     @Override
     @SuppressWarnings("unchecked")
     public boolean matches(Object actualValue) {
-        return !filtered((List<Event>) actualValue).findFirst().isPresent();
+        return filtered((List<Event>) actualValue).findFirst().isEmpty();
     }
 
     private Stream<Event> filtered(List<Event> actualValue) {
