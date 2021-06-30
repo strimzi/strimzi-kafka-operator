@@ -34,7 +34,7 @@ master.html
 helm-charts/helm3/strimzi-kafka-operator-*.*.*.tgz
 packaging/helm-charts/helm3/strimzi-kafka-operator-*.*.*.tgz
 
-packaging/olm-manifests/manifests
+tools/olm-manifests/manifests
 
 docker-images/kafka/.*.tmp
 docker-images/kafka/tmp/**
