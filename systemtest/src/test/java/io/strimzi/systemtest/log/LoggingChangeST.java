@@ -1184,7 +1184,7 @@ class LoggingChangeST extends AbstractST {
                 "http://" + KafkaConnectResources.serviceName(clusterName) + ":8083/admin/loggers/" + connectorClassName).out().contains("ERROR")
         );
 
-        LOGGER.info("Restarting KafkaConnector");
+        LOGGER.info("Restarting Kafka connector {} with class name {}", clusterName, connectorClassName);
         cmdKubeClient().namespace(namespaceName).execInPod(kafkaClientsPodName,
                 "curl", "-X", "POST",
                 "http://" + KafkaConnectResources.serviceName(clusterName) + ":8083/connectors/" + clusterName + "/restart");
@@ -1197,7 +1197,7 @@ class LoggingChangeST extends AbstractST {
 
         assertTrue(connectorLogger.contains("ERROR"));
 
-        LOGGER.info("Changing KafkaConnect's root logger to WARN, KafkaConnector shouldn't inherit it");
+        LOGGER.info("Changing KafkaConnect's root logger to WARN, KafkaConnector: {} shouldn't inherit it", clusterName);
 
         InlineLogging inlineWarn = new InlineLogging();
         inlineWarn.setLoggers(Collections.singletonMap("connect.root.logger.level", "WARN"));

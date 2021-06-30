@@ -184,8 +184,8 @@ public class KafkaConnectorUtils {
     }
 
     public static void waitForConnectorWorkerStatus(String namespaceName, String podName, String connectName, String connectorName, String state) {
-        LOGGER.info("Waiting for KafkaConnector {}'s worker will be in {} state", connectorName, state);
-        TestUtils.waitFor(String.format("Wait for KafkaConnector {}'s worker will be in {} state", connectorName, state), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
+        LOGGER.info("Wait until KafkaConnector {}'s worker will be in {} state", connectorName, state);
+        TestUtils.waitFor(String.format("KafkaConnector %s's worker will be in %s state", connectorName, state), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
             () -> {
                 JsonObject connectorStatus = new JsonObject(
                         cmdKubeClient().namespace(namespaceName).execInPod(podName,
