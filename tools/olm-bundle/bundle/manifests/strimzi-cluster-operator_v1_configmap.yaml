@@ -1,9 +1,4 @@
-kind: ConfigMap
 apiVersion: v1
-metadata:
-  name: strimzi-cluster-operator
-  labels:
-    app: strimzi
 data:
   log4j2.properties: |
     name = COConfig
@@ -33,3 +28,8 @@ data:
     logger.netty.name = io.netty
     logger.netty.level = INFO
     logger.netty.additivity = false
+kind: ConfigMap
+metadata:
+  labels:
+    app: strimzi
+  name: strimzi-cluster-operator

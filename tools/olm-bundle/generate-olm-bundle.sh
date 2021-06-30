@@ -1,65 +1,70 @@
 #!/usr/bin/env bash
 #
-# Generates OLM manifests using existing CRDs
+# Generates OLM bundle using existing CRDs
 #
 #
 PACKAGE_NAME=strimzi-cluster-operator
 VERSION=$1
+CHANNELS=latest
 PREVIOUS_BUNDLE_VERSION=$(curl -s https://raw.githubusercontent.com/operator-framework/community-operators/master/community-operators/strimzi-kafka-operator/strimzi-kafka-operator.package.yaml | yq e '.channels[0].currentCSV' -)
-BUNDLE_NAME="${PACKAGE_NAME}-v${VERSION}"
 
-CSV_TEMPLATE=templates/bundle.clusterserviceversion.yaml
+CSV_TEMPLATE_DIR=./csv-template
+CSV_TEMPLATE=${CSV_TEMPLATE_DIR}/bases/${PACKAGE_NAME}.clusterserviceversion.yaml
 
 CRD_DIR=../../packaging/install/cluster-operator
-MANIFESTS=./manifests
-CSV_FILE=${MANIFESTS}/bundle.clusterserviceversion.yaml
+MANIFESTS=./bundle/manifests
+CSV_FILE=${MANIFESTS}/${PACKAGE_NAME}.clusterserviceversion.yaml
 
-# Generates manifests files using existing CRDs
-generate_manifests() {
-  rm -rf ${MANIFESTS}
-  mkdir -p ${MANIFESTS}
+if [ -z "$1" ]; 
+then
+    echo "No <BUNDLE_VERSION> argument supplied"
+    echo "Try running:"
+    echo "   ./generate-olm-bundle.sh <BUNDLE_VERSION>"
+    echo "e.g:"
+    echo "   ./generate-olm-bundle.sh 2.3.0"
+    exit 1
+fi
+
+# Generates bundle from existing CRDs
+generate_olm_bundle() {
+  # To generate a bundle from existing CRDs using the operator-sdk we must:
+  #   1.) Specify package name "--package" and bundle version "--version"
+  #   2.) Set `--input-dir` to the directory containing CRDs
+  #   3.) Place our template CSV file in a directory in the kustomize format: 
+  #       "<some-dir>/bases/<package-name>.clusterserviceversion.yaml"
+  # *Note* the package name must match the name used in the CSV template
+  operator-sdk generate bundle \
+	  --input-dir=$CRD_DIR \
+	  --kustomize-dir=$CSV_TEMPLATE_DIR \
+	  --package=$PACKAGE_NAME \
+	  --version=$VERSION \
+	  --channels=$CHANNELS
   
-  # Copy Custom Resource Definitions (CRDs)
-  for file in $CRD_DIR/*; do
-    name=$(yq ea '.metadata.name' ${file})
-    kind=$(yq ea '.kind' ${file})
-    if [ "$kind" = "CustomResourceDefinition" ] || [ "$kind" = "ConfigMap" ] ||  [ "$kind" = "ClusterRole" ]; then
-      if [ "$name" != "strimzi-cluster-operator-namespaced" ] && [ "$name" != "strimzi-cluster-operator-global" ]; then
-        if [ "$kind" = "CustomResourceDefinition" ]; then
-          kind="crd"
-        else
-          kind=$(echo "$kind" | tr '[:upper:]' '[:lower:]')
-        fi
-        dest="${MANIFESTS}/${name}.${kind}.yaml"
-        echo "Copying CRD file $file to $dest"
-        cp $file $dest
-      fi
-    fi  
-  done
-  
-  # Copy template
-  cp ${CSV_TEMPLATE} ${CSV_FILE}
-  # Update bundle name
-  yq ea -i ".metadata.name = \"${BUNDLE_NAME}\"" ${CSV_FILE}
-  # Update bundle version
-  yq ea -i ".spec.version = \"${VERSION}\"" ${CSV_FILE}
-  yq ea -i ".spec.replaces = \"${PREVIOUS_BUNDLE_VERSION}\" | .spec.replaces style=\"\"" ${CSV_FILE}
-  # Update deployment
-  yq ea -i 'select(fi==0).spec.install.spec.deployments[0].spec = select(fi==1).spec | select(fi==0)' ${CSV_FILE} ${CRD_DIR}/060-Deployment-strimzi-cluster-operator.yaml
-  yq ea -i ".spec.install.spec.deployments[0].name = \"${BUNDLE_NAME}\"" ${CSV_FILE}
-  
-  # Update namespaced RBAC rules with Cluster Operator roles
-  yq ea -i 'select(fi==0).spec.install.spec.permissions[0].rules = select(fi==1).rules | select(fi==0)' ${CSV_FILE} ${CRD_DIR}/020-ClusterRole-strimzi-cluster-operator-role.yaml
-  # Update namespaced RBAC rules with Entity Operator roles
-  yq ea -i 'select(fi==0).spec.install.spec.permissions[0].rules + select(fi==1).rules | select(fi==0)' ${CSV_FILE} ${CRD_DIR}/031-ClusterRole-strimzi-entity-operator.yaml
-   
-  # Update global RBAC rules with Cluster Operator roles
-  yq ea -i 'select(fi==0).spec.install.spec.clusterPermissions[0].rules = select(fi==1).rules | select(fi==0)' ${CSV_FILE} ${CRD_DIR}/021-ClusterRole-strimzi-cluster-operator-role.yaml
+  # Update annotations
+  yq ea -i 'select(fi==0).metadata.annotations = select(fi==1).metadata.annotations | select(fi==0)' ${CSV_FILE} ${CSV_TEMPLATE}
   # Update creation timestamp
   yq ea -i ".metadata.annotations.createdAt = \"$(date +'%Y-%m-%d %H:%M:%S')\"" ${CSV_FILE}
+
+  # Update namespaced RBAC rules with Cluster Operator roles + Entity Operator roles
+  yq ea -i 'select(fi==0).spec.install.spec.permissions[0].rules = select(fi==1).rules + select(fi==2).rules | select(fi==0)' \
+	  ${CSV_FILE} \
+	  ${CRD_DIR}/020-ClusterRole-strimzi-cluster-operator-role.yaml \
+	  ${CRD_DIR}/031-ClusterRole-strimzi-entity-operator.yaml
+   
+  yq ea -i ".spec.replaces = \"${PREVIOUS_BUNDLE_VERSION}\" | .spec.replaces style=\"\"" ${CSV_FILE}
+  
+  # Copy Strimzi client roles
+  cp ${CRD_DIR}/033-ClusterRole-strimzi-kafka-client.yaml ${MANIFESTS}/strimzi-kafka-client_rbac.authorization.k8s.io_v1_clusterrole.yaml
   
   generate_related_images
   generate_image_digests
+
+  rm bundle.Dockerfile
+  rm ${MANIFESTS}/strimzi-cluster-operator_v1_serviceaccount.yaml
+}
+
+validate_olm_bundle() {
+  operator-sdk bundle validate ./bundle/ --select-optional name=operatorhub
 }
 
 generate_related_images() {
@@ -72,6 +77,8 @@ generate_related_images() {
     if [ -z "$image" ]; then
       # Find operator image
       image=$(yq ea ".. | select(has(\"image\")) | (select (.name == \"$env\")).image" ${CSV_FILE} | head -n 1) 
+      # Set operator image in annotations
+      yq ea -i ".metadata.annotations.containerImage = \"$image\"" ${CSV_FILE}
     fi
     name="strimzi-$(echo $image | cut -d':' -f1 | cut -d'@' -f1 | rev | cut -d'/' -f1 | rev)";
     yq ea -i ".spec.relatedImages += [{\"name\": \"$name\", \"image\": \"$image\"}]" ${CSV_FILE};
@@ -109,4 +116,5 @@ generate_image_digests() {
   done
 }
 
-generate_manifests
+generate_olm_bundle
+validate_olm_bundle

@@ -345,7 +345,7 @@ metadata:
     capabilities: Deep Insights
     categories: Streaming & Messaging
     certified: 'false'
-    containerImage: quay.io/strimzi/operator@sha256:0e37f671e6d489c3e56ffb8f51f19a2a014b2cb3f57eafcc5e2931090932e725
+    containerImage: placeholder
     createdAt: placeholder
     description: Strimzi provides a way to run an Apache Kafka cluster on Kubernetes
       or OpenShift in various deployment configurations.
@@ -353,7 +353,7 @@ metadata:
     support: Strimzi
     operators.openshift.io/infrastructure-features: |-
       ["Disconnected", "Proxy"]
-  name: placeholder
+  name: strimzi-cluster-operator.v # placeholder
   namespace: placeholder
 spec:
   MinKubeVersion: 1.16.0
@@ -897,14 +897,12 @@ spec:
   install:
     spec:
       permissions:
-      - rules: placeholder
+      - rules: [] # placeholder
         serviceAccountName: strimzi-cluster-operator
       clusterPermissions:
-      - rules: placeholder
+      - rules: [] # placeholder
         serviceAccountName: strimzi-cluster-operator
-      deployments:
-      - name: placeholder
-        spec: placeholder
+      deployments: [] # placeholder
     strategy: deployment
   installModes:
     - supported: true
@@ -915,7 +913,9 @@ spec:
       type: MultiNamespace
     - supported: true
       type: AllNamespaces
-  relatedImages: placeholder
+  relatedImages:
+    - name:  placeholder
+      image: placeholder
   keywords:
     - kafka
     - messaging
@@ -944,8 +944,7 @@ spec:
   maturity: stable
   provider:
     name: Strimzi
-  replaces: placeholder
   selector:
     matchLabels:
       name: strimzi-cluster-operator
-  version: placeholder
+  version: 0.0.0 # placeholder
