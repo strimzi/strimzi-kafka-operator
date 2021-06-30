@@ -5,9 +5,11 @@
 [id='deploying-the-user-operator-using-the-cluster-operator-{context}']
 = Deploying the User Operator using the Cluster Operator
 
+[role="_abstract"]
 This procedure describes how to deploy the User Operator using the Cluster Operator.
 
 You configure the `entityOperator` property of the `Kafka` resource to include the `userOperator`.
+By default, the User Operator watches for `KafkaUsers` in the namespace of the Kafka cluster deployment.
 
 If you want to use the User Operator with a Kafka cluster that is not managed by Strimzi,
 you must xref:deploying-the-user-operator-standalone-{context}[deploy the User Operator as a standalone component].
