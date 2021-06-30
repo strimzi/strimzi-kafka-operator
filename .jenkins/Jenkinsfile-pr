@@ -3,6 +3,7 @@
 def lib
 // Currently the loadbalancer service is not working on minikube, same for network policies
 def DEFAULT_EXCLUDED_GROUPS = "loadbalancer,networkpolicies"
+ghprbPullId = ""
 
 pipeline {
     agent {
@@ -16,7 +17,7 @@ pipeline {
         string(name: 'EXCLUDE', defaultValue: "${DEFAULT_EXCLUDED_GROUPS}", description: 'maven parameter for exclude specific test tag')
         string(name: 'ENV_VARS', defaultValue: "", description: 'maven parameter for setting values of environment variables used in STs')
         string(name: 'ghprbCommentBody', defaultValue: "", description: 'PR comment test')
-        string(name: 'ghprbPullId', defaultValue: "7", description: 'PR ID')
+        //string(name: 'ghprbPullId', defaultValue: "7", description: 'PR ID')
     }
     options {
         timeout(time: 24, unit: 'HOURS')
@@ -49,6 +50,23 @@ pipeline {
                 checkout scm
             }
         }
+
+        stage('TEST PR NUMBER') {
+            steps {
+                script {
+                    if (env.BRANCH_NAME.startsWith('PR-')) {
+                        //ghprbPullId = env.BRANCH_NAME.replace(/^PR-/, '')
+                        ghprbPullId = (env.BRANCH_NAME.tokenize( '-' ))[1]
+                        println("PRNb= ${ghprbPullId}")
+                    } else {
+                        currentBuild.result = 'ABORTED'
+                        println("Not a PR, so nothing to do")
+                        break
+                    }
+                }
+            }
+        }
+        
         stage('load jenkins.groovy') {
             steps {
                 script {
