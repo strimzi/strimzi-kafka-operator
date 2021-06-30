@@ -66,14 +66,14 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     private final String strimziReleaseWithOlderKafka = String.format("https://github.com/strimzi/strimzi-kafka-operator/releases/download/%s/strimzi-%s.zip",
             strimziReleaseWithOlderKafkaVersion, strimziReleaseWithOlderKafkaVersion);
 
-    @ParameterizedTest(name = "testUpgradeStrimziVersion->{0}->{1}->{2}")
+    @ParameterizedTest(name = "testUpgradeStrimziVersion->{0}")
     @MethodSource("loadJsonUpgradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testUpgradeStrimziVersion(String from, String midStep, String to, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
+    void testUpgradeStrimziVersion(String upgradePath, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
 
-        LOGGER.debug("Running upgrade test from version {} through version {} to {}", from, midStep, to);
+        LOGGER.debug("Running upgrade test - {}", upgradePath);
         performUpgrade(parameters, extensionContext);
     }
 

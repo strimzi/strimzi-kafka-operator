@@ -38,6 +38,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -114,7 +115,15 @@ public class AbstractUpgradeST extends AbstractST {
             data.put("proceduresAfterOperatorUpgrade", procedures);
 
             // fromVersion is the mid step here, for CO upgrade we'll use this: 'prevVersion' -> 'fromVersion' -> HEAD
-            parameters.add(Arguments.of(data.getString("prevVersion"), data.getString("fromVersion"), "HEAD", data));
+
+            List<String> upgradeVersions = new ArrayList<>();
+            upgradeVersions.add(data.getString("fromVersion"));
+            upgradeVersions.add("HEAD");
+
+            if (!data.getString("prevVersion").isEmpty()) {
+                upgradeVersions.add(0, data.getString("prevVersion"));
+            }
+            parameters.add(Arguments.of(String.join("->", upgradeVersions), data));
         });
 
         return parameters.stream();
