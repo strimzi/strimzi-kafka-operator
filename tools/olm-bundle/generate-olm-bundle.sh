@@ -3,6 +3,7 @@
 # Generates OLM bundle using existing CRDs
 #
 #
+set -euo pipefail
 
 # shellcheck source=/dev/null
 source "$(dirname "$(realpath "$0")")/../multi-platform-support.sh"
@@ -91,8 +92,7 @@ generate_olm_bundle() {
   
   # Remove extra files added by operator-sdk
   rm "${MANIFESTS}/strimzi-cluster-operator_v1_serviceaccount.yaml"
-  rm "${MANIFESTS}/strimzi-cluster-operator-namespaced_rbac.authorization.k8s.io_v1_clusterrole.yaml"
-  
+
   # Update CSV filename to name traditionally used for OperatorHub
   mv "${MANIFESTS}"/*.clusterserviceversion.yaml "${CSV_FILE}"
   
@@ -115,6 +115,7 @@ generate_olm_bundle() {
   
   # Copy missing files not added by operator-sdk
   $CP "${CRD_DIR}/030-ClusterRole-strimzi-kafka-broker.yaml" "${MANIFESTS}/strimzikafkabroker.clusterrole.yaml"
+  $CP "${CRD_DIR}/031-ClusterRole-strimzi-entity-operator.yaml" "${MANIFESTS}/strimzientityoperator.clusterrole.yaml"
   $CP "${CRD_DIR}/033-ClusterRole-strimzi-kafka-client.yaml" "${MANIFESTS}/strimzikafkaclient.clusterrole.yaml" 
  
   # Update annotations
@@ -208,18 +209,8 @@ generate_image_digests() {
     org=$DOCKER_ORG;
 
     echo "Get digest from remote registry for image: ${registry}/${org}/${repo}:${tag}"
-    resp="$(curl -s -w '\n%{http_code}' -H "Accept: application/vnd.docker.distribution.manifest.v2+json" "https://${registry}/v2/${org}/${repo}/manifests/${tag}")"
-
-    code=$(tail -1 <<< "$resp")
-    body=$($SED '$ d' <<< "$resp")
-
-    if [ "$code" != "200" ]; then
-      echo "ERROR: Could not find image in remote registry: '$registry/$org/$repo:$tag'"
-      exit 1;
-    fi
-    digest=$(echo -n "$body" | sha256sum | $HEAD -c 64);
-    
-    image_digest="${image}@sha256:${digest}"
+    digest=$(skopeo inspect --format "{{ .Digest }}" "docker://$registry/$org/$repo:$tag")
+    image_digest="${image}@${digest}"
     echo "Replacing $image_tag with $image_digest"
     $SED -i.bak "s|${image_tag}|${image_digest}|g" "${CSV_FILE}";
 		rm "${CSV_FILE}.bak"

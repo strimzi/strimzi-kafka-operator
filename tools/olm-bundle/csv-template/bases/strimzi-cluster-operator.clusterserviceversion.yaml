@@ -108,26 +108,6 @@ metadata:
         },
         {
           "apiVersion":"kafka.strimzi.io/v1beta2",
-          "kind":"KafkaConnectS2I",
-          "metadata":{
-            "name":"my-connect-s2i-cluster"
-          },
-          "spec":{
-            "version":"2.8.0",
-            "replicas":1,
-            "bootstrapServers":"my-cluster-kafka-bootstrap:9093",
-            "tls":{
-                "trustedCertificates":[
-                  {
-                      "secretName":"my-cluster-cluster-ca-cert",
-                      "certificate":"ca.crt"
-                  }
-                ]
-            }
-          }
-        },
-        {
-          "apiVersion":"kafka.strimzi.io/v1beta2",
           "kind":"KafkaMirrorMaker",
           "metadata":{
             "name":"my-mirror-maker"
@@ -480,58 +460,6 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes.conditions
       version: v1beta2
-    - description: Represents a Kafka Connect cluster with Source 2 Image support
-      displayName: Kafka Connect Source to Image
-      kind: KafkaConnectS2I
-      name: kafkaconnects2is.kafka.strimzi.io
-      resources:
-      - kind: Service
-        name: ''
-        version: v1
-      - kind: DeploymentConfig
-        name: ''
-        version: apps.openshift.io/v1
-      - kind: ReplicationController
-        name: ''
-        version: v1
-      - kind: Pod
-        name: ''
-        version: v1
-      - kind: BuildConfig
-        name: ''
-        version: build.openshift.io/v1
-      - kind: ImageStream
-        name: ''
-        version: image.openshift.io/v1
-      specDescriptors:
-      - description: The desired number of Kafka Connect nodes.
-        displayName: Connect nodes
-        path: replicas
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:podCount
-      - description: Kafka Connect version
-        displayName: Version
-        path: version
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: The address of the bootstrap server
-        displayName: Bootstrap server
-        path: bootstrapServers
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Limits describes the minimum/maximum amount of compute resources
-          required/allowed
-        displayName: Resource Requirements
-        path: resources
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      statusDescriptors:
-      - description: Kafka Connect conditions
-        displayName: Conditions
-        path: conditions
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes.conditions
-      version: v1beta2
     - description: Represents a Kafka MirrorMaker cluster
       displayName: Kafka Mirror Maker
       kind: KafkaMirrorMaker
@@ -767,46 +695,6 @@ spec:
     Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) cluster on 
     [Kubernetes](https://kubernetes.io/) or [OpenShift](https://www.openshift.com/) in various deployment configurations.
     See our [website](https://strimzi.io) for more details about the project.
-
-    ### CRD Upgrades
-
-    **!!! IMPORTANT !!!** 
-    Starting with Strimzi 0.23, we support only the `v1beta2` API version of all Strimzi custom resources. 
-    This is a required for migration to `apiextensions/v1` which is needed because Kubernetes 1.22 will remove support for `apiextensions/v1beta1`. 
-    Migration to `v1beta2` needs to be completed for all Strimzi CRDs and CRs **before upgrading to Strimzi 0.23**.
-    For more details about the CRD upgrades, see the [documentation](https://strimzi.io/docs/operators/0.23.0/deploying.html#assembly-upgrade-resources-str).
-
-    ### New in 0.23
-
-    * Migrate to CRD v1 (required by Kubernetes 1.22+)
-
-    * Strimzi API versions `v1alpha1` and `v1beta1` were removed from all Strimzi custom resources apart from `KafkaTopic` and `KafkaUser` (use `v1beta2` versions instead)
-
-    * Add support for Kafka 2.8.0 and 2.6.2, remove support for Kafka 2.5.x
-
-    * Make it possible to configure maximum number of connections and maximum connection creation rate in listener configuration
-
-    * Add support for configuring finalizers for `loadbalancer` type listeners
-
-    * Use dedicated Service Account for Kafka Connect Build on Kubernetes
-
-    * Remove direct ZooKeeper access for handling user quotas in the User Operator. Add usage of Admin Client API instead.
-
-    * Support for configuring custom Authorizer implementation
-
-    * Changed Reconciliation interval for Topic Operator from 90 to 120 seconds (to keep it the same as for other operators)
-
-    * Changed Zookeeper session timeout default value to 18 seconds for Topic and User Operators (for improved resiliency)
-
-    * Removed requirement for replicas and partitions KafkaTopic spec making these parameters optional
-
-    * Support to configure a custom filter for parent CR's labels propagation into subresources
-
-    * Allow disabling service links (environment variables describing Kubernetes services) in Pod template
-
-    * Add support for separate control plane listener (disabled by default, available via the `ControlPlaneListener` feature gate)
-
-    * Support for Dual Stack networking
 
     ### Supported Features
 

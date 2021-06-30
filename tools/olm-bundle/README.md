@@ -20,6 +20,7 @@ All other CSV fields must be updated manually in the template CSV file, `./csv-t
 - bash 5+ (GNU)
 - yq 4.6+ (YAML processor)
 - operator-sdk 1.6.2+
+- skopeo 1.3.0
 
 ## Usage
 ```
