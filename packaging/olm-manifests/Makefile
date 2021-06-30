@@ -1,4 +1,4 @@
-PROJECT_NAME=olm-bundle
+PROJECT_NAME=olm-manifests
 
 include ../../Makefile.os
 
@@ -7,10 +7,10 @@ RELEASE_VERSION ?= latest
 manifests_clean:
 	rm -rf manifests
 
-update_bundle:
-	./update-bundle.sh
+generate_manifests:
+	./generate-manifests.sh $(RELEASE_VERSION)
 
-docker_build: update_bundle
+docker_build: generate_manifests
 docker_tag:
 docker_push:
 
