@@ -2,7 +2,7 @@
 
 ## 0.25.0
 
-* Allow providing custom password for SCRAM-SHA-512 users by referencing a secret in the `KafkaUser` resource
+* Allow a custom password to be set for SCRAM-SHA-512 users by referencing a secret in the `KafkaUser` resource
 
 ### Changes, deprecations and removals
 
