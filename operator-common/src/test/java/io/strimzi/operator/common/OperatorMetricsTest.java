@@ -11,10 +11,12 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.search.MeterNotFoundException;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
 import io.vertx.core.Future;
@@ -31,11 +33,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Collections.emptySet;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -62,13 +66,12 @@ public class OperatorMetricsTest {
         vertx.close();
     }
 
-    @Test
-    public void testSuccessfulReconcile(VertxTestContext context)  {
+    public void successfulReconcile(VertxTestContext context, Labels selectorLabels)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithSelectorLabel(selectorLabels);
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, selectorLabels) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.succeededFuture();
@@ -94,12 +97,18 @@ public class OperatorMetricsTest {
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
+                    Tag selectorTag = Tag.of("selector", selectorLabels != null ? selectorLabels.toSelectorString() : "");
 
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
 
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
@@ -114,12 +123,26 @@ public class OperatorMetricsTest {
     }
 
     @Test
-    public void testFailingReconcile(VertxTestContext context)  {
+    public void testReconcileWithEmptySelectorLabels(VertxTestContext context) {
+        successfulReconcile(context, Labels.fromMap(emptyMap()));
+    }
+
+    @Test
+    public void testReconcileWithValuedSelectorLabel(VertxTestContext context) {
+        successfulReconcile(context, Labels.fromMap(Collections.singletonMap("io/my-test-label", "my-test-value")));
+    }
+
+    @Test
+    public void testReconcileWithoutSelectorLabel(VertxTestContext context) {
+        successfulReconcile(context, null);
+    }
+
+    public void failingReconcile(VertxTestContext context, Labels selectorLabels)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithSelectorLabel(selectorLabels);
 
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
+        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, selectorLabels) {
             @Override
             protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
                 return Future.failedFuture(new RuntimeException("Test error"));
@@ -146,12 +169,18 @@ public class OperatorMetricsTest {
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.failing(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
+                    Tag selectorTag = Tag.of("selector", selectorLabels != null ? selectorLabels.toSelectorString() : "");
 
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
 
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
@@ -164,6 +193,21 @@ public class OperatorMetricsTest {
 
                     async.flag();
                 })));
+    }
+
+    @Test
+    public void testFailingReconcileWithEmptySelectorLabels(VertxTestContext context) {
+        failingReconcile(context, Labels.fromMap(emptyMap()));
+    }
+
+    @Test
+    public void testFailingReconcileWithValuedSelectorLabel(VertxTestContext context) {
+        failingReconcile(context, Labels.fromMap(Collections.singletonMap("io/my-test-label", "my-test-value")));
+    }
+
+    @Test
+    public void testFailingReconcileWithoutSelectorLabel(VertxTestContext context) {
+        failingReconcile(context, null);
     }
 
     @Test
@@ -198,13 +242,20 @@ public class OperatorMetricsTest {
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
+                    Tag selectorTag = Tag.of("selector", "");
 
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources.paused").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources.paused").tag("kind", "TestResource").gauge().value(), is(1.0));
 
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
@@ -222,7 +273,7 @@ public class OperatorMetricsTest {
     public void testFailingWithLockReconcile(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
             @Override
@@ -251,12 +302,18 @@ public class OperatorMetricsTest {
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.failing(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
+                    Tag selectorTag = Tag.of("selector", "");
 
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(1.0));
 
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(0L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), is(0.0));
 
@@ -312,12 +369,18 @@ public class OperatorMetricsTest {
         operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     MeterRegistry registry = metrics.meterRegistry();
+                    Tag selectorTag = Tag.of("selector", "");
 
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
 
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags().get(1), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(1L));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
@@ -342,7 +405,7 @@ public class OperatorMetricsTest {
         resources.add(new NamespaceAndName("my-namespace", "vtid"));
         resources.add(new NamespaceAndName("my-namespace", "utv"));
 
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResource();
+        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
 
         AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
             @Override
@@ -382,13 +445,20 @@ public class OperatorMetricsTest {
         Checkpoint async = context.checkpoint();
         reconcileAllPromise.future().onComplete(context.succeeding(v -> context.verify(() -> {
             MeterRegistry registry = metrics.meterRegistry();
+            Tag selectorTag = Tag.of("selector", "");
 
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.periodical").meter().getId().getTags().get(1), is(selectorTag));
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.periodical").tag("kind", "TestResource").counter().count(), is(1.0));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(1), is(selectorTag));
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(3.0));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").meter().getId().getTags().get(1), is(selectorTag));
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").counter().count(), is(3.0));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").meter().getId().getTags().get(1), is(selectorTag));
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.failed").tag("kind", "TestResource").counter().count(), is(0.0));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").meter().getId().getTags().get(1), is(selectorTag));
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(0.0));
 
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").meter().getId().getTags().get(1), is(selectorTag));
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(3L));
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
@@ -423,7 +493,7 @@ public class OperatorMetricsTest {
     protected abstract static class MyResource extends CustomResource {
     }
 
-    protected AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResource()    {
+    protected AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResource(Labels selectorLabels)    {
         return new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
             @Override
             public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
@@ -442,7 +512,11 @@ public class OperatorMetricsTest {
                 class Foo extends MyResource {
                     @Override
                     public ObjectMeta getMetadata() {
-                        return new ObjectMeta();
+                        ObjectMeta md = new ObjectMeta();
+                        if (selectorLabels != null) {
+                            md.setLabels(selectorLabels.toMap());
+                        }
+                        return md;
                     }
 
                     @Override
@@ -489,7 +563,15 @@ public class OperatorMetricsTest {
         };
     }
 
-    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingPausedResource()    {
+    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResourceWithoutSelectorLabel() {
+        return resourceOperatorWithExistingResource(null);
+    }
+
+    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingResourceWithSelectorLabel(Labels selectorLabel) {
+        return resourceOperatorWithExistingResource(selectorLabel);
+    }
+
+    private AbstractWatchableStatusedResourceOperator resourceOperatorWithExistingPausedResource() {
         return new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
             @Override
             public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
