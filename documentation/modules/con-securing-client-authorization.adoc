@@ -36,7 +36,9 @@ For more information on configuring super user access to brokers, see xref:con-s
 
 == User quotas
 
-You can configure the `spec` for the `KafkaUser` resource to enforce quotas so that a user does not exceed access to Kafka brokers based on a byte threshold or a time limit of CPU utilization.
+You can configure the `spec` for the `KafkaUser` resource to enforce quotas so that a user does not exceed access to Kafka brokers.
+You can set size-based network usage and time-based CPU utilization thresholds.
+You can also control the rate at which requests to change partitions are accepted for user requests.
 
 .An example `KafkaUser` with user quotas
 [source,yaml,subs="attributes+"]
@@ -53,9 +55,11 @@ spec:
     producerByteRate: 1048576 <1>
     consumerByteRate: 2097152 <2>
     requestPercentage: 55 <3>
+    controllerMutationRate: 10 <4>
 ----
 <1> Byte-per-second quota on the amount of data the user can push to a Kafka broker
 <2> Byte-per-second quota on the amount of data the user can fetch from a Kafka broker
 <3> CPU utilization limit as a percentage of time for a client group
+<4> Number of concurrent partition creation and deletion operations allowed per second
 
 For more information on these properties, see the xref:type-KafkaUserQuotas-reference[`KafkaUserQuotas` schema reference].
