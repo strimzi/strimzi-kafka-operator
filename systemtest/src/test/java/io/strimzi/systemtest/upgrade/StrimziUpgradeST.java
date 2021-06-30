@@ -268,10 +268,11 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         // Setup env
         setupEnvAndUpgradeClusterOperator(extensionContext, parameters.get("midStep"), producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
 
-        // Upgrade CRDs and upgrade CO to 0.23
         logPodImages(clusterName);
-        convertCRDs(parameters.get("midStep"), NAMESPACE);
+
+        // Upgrade CRDs and upgrade CO to 0.24
         if (!testParameters.getString("prevVersion").isEmpty()) {
+            convertCRDs(parameters.get("midStep"), NAMESPACE);
             changeClusterOperator(parameters.get("midStep"), NAMESPACE);
         }
 
