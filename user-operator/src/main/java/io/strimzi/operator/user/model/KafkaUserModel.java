@@ -25,7 +25,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.common.PasswordGenerator;
 
@@ -55,10 +54,7 @@ public class KafkaUserModel {
     protected String caCert;
     protected CertAndKey userCertAndKey;
     protected String scramSha512Password;
-
     protected Set<SimpleAclRule> simpleAclRules = null;
-    public static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
-    public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
 
     public static final String KAFKA_USER_OPERATOR_NAME = "strimzi-user-operator";
 
@@ -93,45 +89,28 @@ public class KafkaUserModel {
     /**
      * Creates instance of KafkaUserModel from CRD definition.
      *
-     * @param reconciliation The reconciliation
-     * @param certManager CertManager instance for work with certificates.
-     * @param passwordGenerator A password generator.
      * @param kafkaUser The Custom Resource based on which the model should be created.
-     * @param clientsCaCert The clients CA certificate Secret.
-     * @param clientsCaKey The clients CA key Secret.
-     * @param userSecret Kubernetes secret with existing user certificate.
      * @param secretPrefix The prefix used to add to the name of the Secret generated from the KafkaUser resource.
      * @return The user model.
      */
-    public static KafkaUserModel fromCrd(Reconciliation reconciliation,
-                                         CertManager certManager,
-                                         PasswordGenerator passwordGenerator,
-                                         KafkaUser kafkaUser,
-                                         Secret clientsCaCert,
-                                         Secret clientsCaKey,
-                                         Secret userSecret, String secretPrefix) {
+    public static KafkaUserModel fromCrd(KafkaUser kafkaUser,
+                                         String secretPrefix) {
         KafkaUserModel result = new KafkaUserModel(kafkaUser.getMetadata().getNamespace(),
                 kafkaUser.getMetadata().getName(),
                 Labels.fromResource(kafkaUser).withStrimziKind(kafkaUser.getKind()),
                 secretPrefix);
+
+        validateTlsUsername(kafkaUser);
+        validateDesiredPassword(kafkaUser);
+
         result.setOwnerReference(kafkaUser);
         result.setAuthentication(kafkaUser.getSpec().getAuthentication());
-
-        if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication) {
-            if (kafkaUser.getMetadata().getName().length() > OpenSslCertManager.MAXIMUM_CN_LENGTH)    {
-                throw new InvalidResourceException("Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.");
-            }
-
-            result.maybeGenerateCertificates(reconciliation, certManager, passwordGenerator, clientsCaCert, clientsCaKey, userSecret,
-                    UserOperatorConfig.getClientsCaValidityDays(), UserOperatorConfig.getClientsCaRenewalDays());
-        } else if (kafkaUser.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication) {
-            result.maybeGeneratePassword(reconciliation, passwordGenerator, userSecret);
-        }
 
         if (kafkaUser.getSpec().getAuthorization() != null && kafkaUser.getSpec().getAuthorization().getType().equals(KafkaUserAuthorizationSimple.TYPE_SIMPLE)) {
             KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) kafkaUser.getSpec().getAuthorization();
             result.setSimpleAclRules(simple.getAcls());
         }
+
         result.setQuotas(kafkaUser.getSpec().getQuotas());
 
         if (kafkaUser.getSpec().getTemplate() != null
@@ -142,6 +121,40 @@ public class KafkaUserModel {
         }
 
         return result;
+    }
+
+    /**
+     * Validates if a user with TLS authentication doesn't have too long name. This has to be done because OpenSSL has
+     * a limit how long the CN of a certificate can be.
+     *
+     * @param user  The KafkaUser which should be validated
+     */
+    private static void validateTlsUsername(KafkaUser user)  {
+        if (user.getSpec().getAuthentication() instanceof KafkaUserTlsClientAuthentication) {
+            if (user.getMetadata().getName().length() > OpenSslCertManager.MAXIMUM_CN_LENGTH)    {
+                throw new InvalidResourceException("Users with TLS client authentication can have a username (name of the KafkaUser custom resource) only up to 64 characters long.");
+            }
+        }
+    }
+
+    /**
+     * Validates if a user with desired password contains a full specification to the password
+     *
+     * @param user  The KafkaUser which should be validated
+     */
+    private static void validateDesiredPassword(KafkaUser user)  {
+        if (user.getSpec().getAuthentication() instanceof KafkaUserScramSha512ClientAuthentication) {
+            KafkaUserScramSha512ClientAuthentication scramAuth = (KafkaUserScramSha512ClientAuthentication) user.getSpec().getAuthentication();
+
+            if (scramAuth.getPassword() != null)    {
+                if (scramAuth.getPassword().getValueFrom() == null
+                        || scramAuth.getPassword().getValueFrom().getSecretKeyRef() == null
+                        || scramAuth.getPassword().getValueFrom().getSecretKeyRef().getName() == null
+                        || scramAuth.getPassword().getValueFrom().getSecretKeyRef().getKey() == null) {
+                    throw new InvalidResourceException("Resource requests custom SCRAM-SHA-512 password but doesn't specify the secret name and/or key");
+                }
+            }
+        }
     }
 
     /**
@@ -251,22 +264,44 @@ public class KafkaUserModel {
     }
 
     /**
+     * Prepares password for further use. It either takes the password specified by the user, re-uses the existing
+     * password or generates a new one.
+     *
      * @param reconciliation The reconciliation.
      * @param generator The password generator.
      * @param userSecret The Secret containing any existing password.
+     * @param desiredPasswordSecret The Secret with the desired password specified by the user
      */
-    public void maybeGeneratePassword(Reconciliation reconciliation, PasswordGenerator generator, Secret userSecret) {
-        if (userSecret != null) {
+    public void maybeGeneratePassword(Reconciliation reconciliation, PasswordGenerator generator, Secret userSecret, Secret desiredPasswordSecret) {
+        if (isUserWithDesiredPassword())  {
+            // User requested custom secret
+            if (desiredPasswordSecret == null)  {
+                throw new InvalidResourceException("Secret " + desiredPasswordSecretName() + " with requested user password does not exist.");
+            }
+
+            String password = desiredPasswordSecret.getData().get(desiredPasswordSecretKey());
+
+            if (password == null) {
+                throw new InvalidResourceException("Secret " + desiredPasswordSecretName() + " does not contain the key " + desiredPasswordSecretKey() + " with requested user password.");
+            } else if (password.isEmpty()) {
+                throw new InvalidResourceException("The requested user password is empty.");
+            }
+
+            LOGGER.debugCr(reconciliation, "Loading request password from Kubernetes Secret {}", desiredPasswordSecretName());
+            this.scramSha512Password = new String(Base64.getDecoder().decode(password), StandardCharsets.US_ASCII);
+            return;
+        } else if (userSecret != null) {
             // Secret already exists -> lets verify if it has a password
             String password = userSecret.getData().get(KEY_PASSWORD);
             if (password != null && !password.isEmpty()) {
+                LOGGER.debugCr(reconciliation, "Re-using password which already exists");
                 this.scramSha512Password = new String(Base64.getDecoder().decode(password), StandardCharsets.US_ASCII);
                 return;
             }
         }
+
         LOGGER.debugCr(reconciliation, "Generating user password");
         this.scramSha512Password = generator.generate();
-
     }
 
     /**
@@ -287,7 +322,7 @@ public class KafkaUserModel {
      * @return The secret.
      */
     protected Secret createSecret(Map<String, String> data) {
-        Secret s = new SecretBuilder()
+        return new SecretBuilder()
                 .withNewMetadata()
                     .withName(getSecretName())
                     .withNamespace(namespace)
@@ -298,8 +333,6 @@ public class KafkaUserModel {
                 .withType("Opaque")
                 .withData(data)
                 .build();
-
-        return s;
     }
 
     /**
@@ -464,7 +497,7 @@ public class KafkaUserModel {
      * @param rules List of ACL rules which should be applied to this user.
      */
     public void setSimpleAclRules(List<AclRule> rules) {
-        Set<SimpleAclRule> simpleAclRules = new HashSet<SimpleAclRule>();
+        Set<SimpleAclRule> simpleAclRules = new HashSet<>();
 
         for (AclRule rule : rules)  {
             simpleAclRules.add(SimpleAclRule.fromCrd(rule));
@@ -489,6 +522,60 @@ public class KafkaUserModel {
      */
     public boolean isScramUser()  {
         return authentication instanceof KafkaUserScramSha512ClientAuthentication;
+    }
+
+    /**
+     * Returns true if the user is using SCRAM-SHA-512 authentication and requested some specific password.
+     *
+     * @return true if the user is using SCRAM-SHA-512 authentication  and requested some specific password.
+     */
+    public boolean isUserWithDesiredPassword()  {
+        return desiredPasswordSecretName() != null;
+    }
+
+    /**
+     * Returns the name of the secret with provided password for SCRAM-SHA-512 users.
+     *
+     * @return Name of the Kubernetes Secret with the password or null if not set
+     */
+    public String desiredPasswordSecretName()  {
+        if (isScramUser()) {
+            KafkaUserScramSha512ClientAuthentication scramAuth = (KafkaUserScramSha512ClientAuthentication) authentication;
+            if (scramAuth.getPassword() != null
+                    && scramAuth.getPassword().getValueFrom() != null
+                    && scramAuth.getPassword().getValueFrom().getSecretKeyRef() != null
+                    && scramAuth.getPassword().getValueFrom().getSecretKeyRef().getName() != null) {
+                return scramAuth.getPassword().getValueFrom().getSecretKeyRef().getName();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the name of the secret with provided password for SCRAM-SHA-512 users.
+     *
+     * @return Name of the Kubernetes Secret with the password or null if not set
+     */
+    public String desiredPasswordSecretKey()  {
+        if (isScramUser()) {
+            KafkaUserScramSha512ClientAuthentication scramAuth = (KafkaUserScramSha512ClientAuthentication) authentication;
+            if (scramAuth.getPassword() != null
+                    && scramAuth.getPassword().getValueFrom() != null
+                    && scramAuth.getPassword().getValueFrom().getSecretKeyRef() != null
+                    && scramAuth.getPassword().getValueFrom().getSecretKeyRef().getKey() != null) {
+                return scramAuth.getPassword().getValueFrom().getSecretKeyRef().getKey();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return  Returns the SCRAM-SHA-512 user password
+     */
+    public String getScramSha512Password() {
+        return scramSha512Password;
     }
 
     /**

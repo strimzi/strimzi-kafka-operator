@@ -39,15 +39,17 @@ public class UserOperatorConfig {
     private final String namespace;
     private final long reconciliationIntervalMs;
     private final String kafkaBootstrapServers;
-    private final String zookeperConnect;
+    private final String zookeeperConnect;
     private final long zookeeperSessionTimeoutMs;
-    private Labels labels;
+    private final Labels labels;
     private final String caCertSecretName;
     private final String caKeySecretName;
     private final String clusterCaCertSecretName;
     private final String eoKeySecretName;
     private final String caNamespace;
     private final String secretPrefix;
+    private final int clientsCaValidityDays;
+    private final int clientsCaRenewalDays;
 
     /**
      * Constructor
@@ -55,7 +57,7 @@ public class UserOperatorConfig {
      * @param namespace namespace in which the operator will run and create resources.
      * @param reconciliationIntervalMs How many milliseconds between reconciliation runs.
      * @param kafkaBootstrapServers Kafka bootstrap servers list
-     * @param zookeperConnect Connecton URL for Zookeeper.
+     * @param zookeeperConnect Connection URL for Zookeeper.
      * @param zookeeperSessionTimeoutMs Session timeout for Zookeeper connections.
      * @param labels Map with labels which should be used to find the KafkaUser resources.
      * @param caCertSecretName Name of the secret containing the clients Certification Authority certificate.
@@ -64,23 +66,28 @@ public class UserOperatorConfig {
      * @param eoKeySecretName The name of the secret containing the Entity Operator key and certificate
      * @param caNamespace Namespace with the CA secret.
      * @param secretPrefix Prefix used for the Secret names
+     * @param clientsCaValidityDays Number of days for which the certificate should be valid
+     * @param clientsCaRenewalDays How long before the certificate expiration should the user certificate be renewed
      */
-    @SuppressWarnings({"checkstyle:ParameterNumber"}) //TODO: to remove when removing the zookeeper related parameters
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
     public UserOperatorConfig(String namespace,
                               long reconciliationIntervalMs,
                               String kafkaBootstrapServers,
-                              String zookeperConnect,
+                              String zookeeperConnect,
                               long zookeeperSessionTimeoutMs,
-                              Labels labels, String caCertSecretName,
+                              Labels labels,
+                              String caCertSecretName,
                               String caKeySecretName,
                               String clusterCaCertSecretName,
                               String eoKeySecretName,
                               String caNamespace,
-                              String secretPrefix) {
+                              String secretPrefix,
+                              int clientsCaValidityDays,
+                              int clientsCaRenewalDays) {
         this.namespace = namespace;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.kafkaBootstrapServers = kafkaBootstrapServers;
-        this.zookeperConnect = zookeperConnect;
+        this.zookeeperConnect = zookeeperConnect;
         this.zookeeperSessionTimeoutMs = zookeeperSessionTimeoutMs;
         this.labels = labels;
         this.caCertSecretName = caCertSecretName;
@@ -89,6 +96,8 @@ public class UserOperatorConfig {
         this.eoKeySecretName = eoKeySecretName;
         this.caNamespace = caNamespace;
         this.secretPrefix = secretPrefix;
+        this.clientsCaValidityDays = clientsCaValidityDays;
+        this.clientsCaRenewalDays = clientsCaRenewalDays;
     }
 
     /**
@@ -99,12 +108,10 @@ public class UserOperatorConfig {
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public static UserOperatorConfig fromMap(Map<String, String> map) {
-
         String namespace = map.get(UserOperatorConfig.STRIMZI_NAMESPACE);
         if (namespace == null || namespace.isEmpty()) {
             throw new InvalidConfigurationException(UserOperatorConfig.STRIMZI_NAMESPACE + " cannot be null");
         }
-
 
         long reconciliationInterval = DEFAULT_FULL_RECONCILIATION_INTERVAL_MS;
         String reconciliationIntervalEnvVar = map.get(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
@@ -161,22 +168,33 @@ public class UserOperatorConfig {
             secretPrefix = DEFAULT_SECRET_PREFIX;
         }
 
-        return new UserOperatorConfig(namespace, reconciliationInterval, kafkaBootstrapServers, zookeeperConnect, zookeeperSessionTimeoutMs, labels,
-                caCertSecretName, caKeySecretName, clusterCaCertSecretName, eoKeySecretName, caNamespace, secretPrefix);
+        int clientsCaValidityDays = getIntProperty(map, UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS);
+
+        int clientsCaRenewalDays = getIntProperty(map, UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS);
+
+        return new UserOperatorConfig(namespace, reconciliationInterval, kafkaBootstrapServers, zookeeperConnect,
+                zookeeperSessionTimeoutMs, labels, caCertSecretName, caKeySecretName, clusterCaCertSecretName,
+                eoKeySecretName, caNamespace, secretPrefix, clientsCaValidityDays, clientsCaRenewalDays);
     }
 
-    public static int getClientsCaValidityDays() {
-        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS);
+    /**
+     * @return  Clients CA validity in days
+     */
+    public int getClientsCaValidityDays() {
+        return clientsCaValidityDays;
     }
 
-    public static int getClientsCaRenewalDays() {
-        return getIntProperty(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS);
+    /**
+     * @return  Clients CA renewal period in days
+     */
+    public int getClientsCaRenewalDays() {
+        return clientsCaRenewalDays;
     }
 
-    private static int getIntProperty(String name, int defaultVal) {
-        String env = System.getenv(name);
-        if (env != null) {
-            return Integer.parseInt(env);
+    private static int getIntProperty(Map<String, String> map, String name, int defaultVal) {
+        String value = map.get(name);
+        if (value != null) {
+            return Integer.parseInt(value);
         } else {
             return defaultVal;
         }
@@ -197,7 +215,7 @@ public class UserOperatorConfig {
     }
 
     /**
-     * @return  The labels which should be used as selecter
+     * @return  The labels which should be used as selector
      */
     public Labels getLabels() {
         return labels;
@@ -248,12 +266,12 @@ public class UserOperatorConfig {
     /**
      * @return  Zookeeper connection URL
      */
-    public String getZookeperConnect() {
-        return zookeperConnect;
+    public String getZookeeperConnect() {
+        return zookeeperConnect;
     }
 
     /**
-     * @return  Zookeeepr connection and session timeout
+     * @return  Zookeeper connection and session timeout
      */
     public long getZookeeperSessionTimeoutMs() {
         return zookeeperSessionTimeoutMs;
@@ -272,13 +290,16 @@ public class UserOperatorConfig {
                 "namespace=" + namespace +
                 ",reconciliationIntervalMs=" + reconciliationIntervalMs +
                 ",kafkaBootstrapServers=" + kafkaBootstrapServers +
-                ",zookeperConnect=" + zookeperConnect +
+                ",zookeeperConnect=" + zookeeperConnect +
                 ",zookeeperSessionTimeoutMs=" + zookeeperSessionTimeoutMs +
                 ",labels=" + labels +
                 ",caName=" + caCertSecretName +
                 ",clusterCaCertSecretName=" + clusterCaCertSecretName +
                 ",eoKeySecretName=" + eoKeySecretName +
                 ",caNamespace=" + caNamespace +
+                ",secretPrefix=" + secretPrefix +
+                ",clientsCaValidityDays=" + clientsCaValidityDays +
+                ",clientsCaRenewalDays=" + clientsCaRenewalDays +
                 ")";
     }
 }
