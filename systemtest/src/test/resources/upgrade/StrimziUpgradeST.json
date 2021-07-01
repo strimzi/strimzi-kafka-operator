@@ -1,11 +1,9 @@
 [
   {
-    "fromVersion":"0.24.0",
-    "fromExamples":"strimzi-0.24.0",
-    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.24.0/strimzi-0.24.0.zip",
-    "prevVersion": "0.22.1",
-    "prevVersionExamples": "strimzi-0.22.1",
-    "urlPrevVersion": "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.1/strimzi-0.22.1.zip",
+    "fromVersion":"0.22.1",
+    "fromExamples":"strimzi-0.22.1",
+    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.1/strimzi-0.22.1.zip",
+    "convertCRDs": true,
     "conversionTool": {
       "urlToConversionTool": "https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.22.0/api-conversion-0.22.0.zip",
       "toConversionTool": "api-conversion-0.22.0"
@@ -36,12 +34,44 @@
     }
   },
   {
+    "fromVersion":"0.23.0",
+    "fromExamples":"strimzi-0.23.0",
+    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.23.0/strimzi-0.23.0.zip",
+    "convertCRDs": false,
+    "conversionTool": {
+      "urlToConversionTool": "",
+      "toConversionTool": ""
+    },
+    "generateTopics": true,
+    "additionalTopics": 2,
+    "oldestKafka": "2.6.0",
+    "imagesBeforeKafkaUpgrade": {
+      "zookeeper": "strimzi/kafka:latest-kafka-2.7.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.7.0",
+      "topicOperator": "strimzi/operator:latest",
+      "userOperator": "strimzi/operator:latest"
+    },
+    "imagesAfterKafkaUpgrade": {
+      "zookeeper": "strimzi/kafka:latest-kafka-2.8.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.8.0",
+      "topicOperator": "strimzi/operator:latest",
+      "userOperator": "strimzi/operator:latest"
+    },
+    "client": {
+      "continuousClientsMessages": 500
+    },
+    "environmentInfo": {
+      "maxK8sVersion": "latest",
+      "status": "stable",
+      "flakyEnvVariable": "none",
+      "reason" : "Test is working on all environment used by QE."
+    }
+  },
+  {
     "fromVersion":"0.24.0",
     "fromExamples":"strimzi-0.24.0",
     "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.24.0/strimzi-0.24.0.zip",
-    "prevVersion": "",
-    "prevVersionExamples": "",
-    "urlPrevVersion": "",
+    "convertCRDs": false,
     "conversionTool": {
       "urlToConversionTool": "",
       "toConversionTool": ""

@@ -66,14 +66,14 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     private final String strimziReleaseWithOlderKafka = String.format("https://github.com/strimzi/strimzi-kafka-operator/releases/download/%s/strimzi-%s.zip",
             strimziReleaseWithOlderKafkaVersion, strimziReleaseWithOlderKafkaVersion);
 
-    @ParameterizedTest(name = "testUpgradeStrimziVersion->{0}")
+    @ParameterizedTest(name = "testUpgradeStrimziVersion->{0}->{1}")
     @MethodSource("loadJsonUpgradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testUpgradeStrimziVersion(String upgradePath, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
+    void testUpgradeStrimziVersion(String fromVersion, String toVersion, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
 
-        LOGGER.debug("Running upgrade test - {}", upgradePath);
+        LOGGER.debug("Running upgrade test from version {} to {}", fromVersion, toVersion);
         performUpgrade(parameters, extensionContext);
     }
 
@@ -259,41 +259,39 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     }
 
     private void performUpgrade(JsonObject testParameters, ExtensionContext extensionContext) throws IOException {
-        Map<String, JsonObject> parameters = buildMidStepUpgradeData(testParameters);
         String continuousTopicName = "continuous-topic";
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
         String continuousConsumerGroup = "continuous-consumer-group";
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, parameters.get("midStep"), producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, "", NAMESPACE);
 
         logPodImages(clusterName);
 
         // Upgrade CRDs and upgrade CO to 0.24
-        if (!testParameters.getString("prevVersion").isEmpty()) {
-            convertCRDs(parameters.get("midStep"), NAMESPACE);
-            changeClusterOperator(parameters.get("midStep"), NAMESPACE);
+        if (testParameters.getBoolean("convertCRDs")) {
+            convertCRDs(testParameters.getJsonObject("conversionTool"), NAMESPACE);
         }
 
         // Upgrade CO to HEAD
         logPodImages(clusterName);
-        changeClusterOperator(parameters.get("toHEAD"), NAMESPACE);
+        changeClusterOperator(testParameters, NAMESPACE);
 
-        if (TestKafkaVersion.containsVersion(getDefaultKafkaVersionPerStrimzi(parameters.get("toHEAD").getString("fromVersion")).version())) {
+        if (TestKafkaVersion.containsVersion(getDefaultKafkaVersionPerStrimzi(testParameters.getString("fromVersion")).version())) {
             waitForKafkaClusterRollingUpdate();
         }
 
         logPodImages(clusterName);
         // Upgrade kafka
-        changeKafkaAndLogFormatVersion(parameters.get("toHEAD").getJsonObject("proceduresAfterOperatorUpgrade"), parameters.get("toHEAD"), clusterName, extensionContext);
+        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresAfterOperatorUpgrade"), testParameters, clusterName, extensionContext);
         logPodImages(clusterName);
-        checkAllImages(parameters.get("toHEAD").getJsonObject("imagesAfterKafkaUpgrade"));
+        checkAllImages(testParameters.getJsonObject("imagesAfterKafkaUpgrade"));
 
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterName);
         // Verify upgrade
-        verifyProcedure(parameters.get("toHEAD"), producerName, consumerName, NAMESPACE);
+        verifyProcedure(testParameters, producerName, consumerName, NAMESPACE);
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);
