@@ -260,13 +260,13 @@ public class KafkaUserModel {
 
     private void validateCACertificates(Secret clientsCaCertSecret, Secret clientsCaKeySecret)   {
         if (clientsCaCertSecret == null) {
-            // CA certificate secret does nto exist
+            // CA certificate secret does not exist
             throw new InvalidCertificateException("The Clients CA Cert Secret is missing");
         } else if (clientsCaCertSecret.getData() == null || clientsCaCertSecret.getData().get("ca.crt") == null)    {
             // CA certificate secret exists, but does not have the ca.crt key
             throw new InvalidCertificateException("The Clients CA Cert Secret is missing the ca.crt file");
         } else if (clientsCaKeySecret == null) {
-            // CA certificate secret does nto exist
+            // CA certificate secret does not exist
             throw new InvalidCertificateException("The Clients CA Key Secret is missing");
         } else if (clientsCaKeySecret.getData() == null || clientsCaKeySecret.getData().get("ca.key") == null)    {
             // CA private key secret exists, but does not have the ca.crt key
