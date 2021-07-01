@@ -7,9 +7,9 @@ package io.strimzi.operator.user.model;
 /**
  * Represents an exception raised when a certificate Secret is missing
  */
-public class NoCertificateSecretException extends RuntimeException {
+public class InvalidCertificateException extends RuntimeException {
 
-    public NoCertificateSecretException(String message) {
+    public InvalidCertificateException(String message) {
         super(message);
     }
 }

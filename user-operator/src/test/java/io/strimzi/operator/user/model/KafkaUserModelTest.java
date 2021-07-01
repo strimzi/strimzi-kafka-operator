@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashSet;
+import java.util.Map;
 
 import static io.strimzi.test.TestUtils.set;
 import static java.util.Collections.emptyMap;
@@ -212,6 +213,38 @@ public class KafkaUserModelTest {
 
         // Check owner reference
         checkOwnerReference(model.createOwnerReference(), generated);
+    }
+
+    @Test
+    public void testMissingOrWrongCaSecrets()    {
+        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.DEFAULT_SECRET_PREFIX);
+
+        Secret emptySecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName("dummy-ca-secret")
+                .endMetadata()
+                .withData(Map.of())
+                .build();
+
+        InvalidCertificateException e = assertThrows(InvalidCertificateException.class, () -> {
+            model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, null, clientsCaKey, null, 365, 30);
+        });
+        assertThat(e.getMessage(), is("The Clients CA Cert Secret is missing"));
+
+        e = assertThrows(InvalidCertificateException.class, () -> {
+            model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, null, null, 365, 30);
+        });
+        assertThat(e.getMessage(), is("The Clients CA Key Secret is missing"));
+
+        e = assertThrows(InvalidCertificateException.class, () -> {
+            model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, emptySecret, clientsCaKey, null, 365, 30);
+        });
+        assertThat(e.getMessage(), is("The Clients CA Cert Secret is missing the ca.crt file"));
+
+        e = assertThrows(InvalidCertificateException.class, () -> {
+            model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, emptySecret, null, 365, 30);
+        });
+        assertThat(e.getMessage(), is("The Clients CA Key Secret is missing the ca.key file"));
     }
 
     @Test
