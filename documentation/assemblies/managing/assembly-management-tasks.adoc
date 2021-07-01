@@ -22,6 +22,9 @@ include::modules/con-service-discovery.adoc[leveloffset=+1]
 //Recover a cluster from a PV
 include::assembly-cluster-recovery-volume.adoc[leveloffset=+1]
 
+//Setting static broker limits
+include::modules/proc-setting-broker-limits.adoc[leveloffset=+1]
+
 //tuning for clients
 include::assembly-tuning-config.adoc[leveloffset=+1]
 
