@@ -1292,6 +1292,10 @@ public class KafkaAssemblyOperatorTest {
     @MethodSource("data")
     @Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
     public void testReconcile(Params params, Vertx vertx, VertxTestContext context) {
+        Checkpoint fooAsync = context.checkpoint();
+        Checkpoint barAsync = context.checkpoint();
+        Checkpoint completeTest = context.checkpoint();
+
         setFields(params);
 
         // create CM, Service, headless service, statefulset
@@ -1303,21 +1307,21 @@ public class KafkaAssemblyOperatorTest {
         String kafkaNamespace = "test";
 
         Kafka foo = getKafkaAssembly("foo");
-        foo.getMetadata().setNamespace("namespace1");
         Kafka bar = getKafkaAssembly("bar");
-        bar.getMetadata().setNamespace("namespace2");
         when(mockKafkaOps.listAsync(eq(kafkaNamespace), any(Optional.class))).thenReturn(
                 Future.succeededFuture(asList(foo, bar))
         );
         // when requested Custom Resource for a specific Kafka cluster
-        when(mockKafkaOps.get(eq("namespace1"), eq("foo"))).thenReturn(foo);
-        when(mockKafkaOps.get(eq("namespace2"), eq("bar"))).thenReturn(bar);
-        when(mockKafkaOps.getAsync(eq("namespace1"), eq("foo"))).thenReturn(Future.succeededFuture(foo));
-        when(mockKafkaOps.getAsync(eq("namespace2"), eq("bar"))).thenReturn(Future.succeededFuture(bar));
+        when(mockKafkaOps.get(eq(kafkaNamespace), eq("foo"))).thenReturn(foo);
+        when(mockKafkaOps.get(eq(kafkaNamespace), eq("bar"))).thenReturn(bar);
+        when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
+        when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // providing certificates Secrets for existing clusters
-        List<Secret> barSecrets = ResourceUtils.createKafkaSecretsWithReplicas("namespace2", "bar",
+        List<Secret> fooSecrets = ResourceUtils.createKafkaInitialSecrets(kafkaNamespace, "foo");
+        //ClusterCa fooCerts = ResourceUtils.createInitialClusterCa("foo", ModelUtils.findSecretWithName(fooSecrets, AbstractModel.clusterCaCertSecretName("foo")));
+        List<Secret> barSecrets = ResourceUtils.createKafkaSecretsWithReplicas(kafkaNamespace, "bar",
                 bar.getSpec().getKafka().getReplicas(),
                 bar.getSpec().getZookeeper().getReplicas());
         ClusterCa barClusterCa = ResourceUtils.createInitialClusterCa(Reconciliation.DUMMY_RECONCILIATION,
@@ -1347,8 +1351,7 @@ public class KafkaAssemblyOperatorTest {
                     barClusterCa.caCertSecret()))
         );
 
-        Checkpoint fooAsync = context.checkpoint();
-        Checkpoint barAsync = context.checkpoint();
+
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
                 passwordGenerator,
@@ -1368,9 +1371,9 @@ public class KafkaAssemblyOperatorTest {
             }
         };
 
-        Checkpoint async = context.checkpoint();
+
         // Now try to reconcile all the Kafka clusters
-        ops.reconcileAll("test", "*", context.succeeding(v -> async.flag()));
+        ops.reconcileAll("test", kafkaNamespace, context.succeeding(v -> completeTest.flag()));
     }
 
 
