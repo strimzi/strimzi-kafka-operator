@@ -113,8 +113,7 @@ public class AbstractUpgradeST extends AbstractST {
             procedures.put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
             data.put("proceduresAfterOperatorUpgrade", procedures);
 
-            // fromVersion is the mid step here, for CO upgrade we'll use this: 'prevVersion' -> 'fromVersion' -> HEAD
-            parameters.add(Arguments.of(data.getString("prevVersion"), data.getString("fromVersion"), "HEAD", data));
+            parameters.add(Arguments.of(data.getString("fromVersion"), "HEAD", data));
         });
 
         return parameters.stream();
