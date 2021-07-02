@@ -15,6 +15,7 @@ import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.specific.JmxUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,7 +39,7 @@ public class JmxST extends AbstractST {
     void testKafkaAndKafkaConnectWithJMX(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-        final String namespace = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editOrNewSpec()
@@ -61,8 +62,8 @@ public class JmxST extends AbstractST {
             .endSpec()
             .build());
 
-        String kafkaResults = JmxUtils.execJmxTermAndGetResult(namespace, KafkaResources.brokersServiceName(clusterName), clusterName + "-kafka-jmx", clientsPodName, "bean kafka.server:type=app-info\nget -i *");
-        String kafkaConnectResults = JmxUtils.execJmxTermAndGetResult(namespace, KafkaConnectResources.serviceName(clusterName), clusterName + "-kafka-connect-jmx", clientsPodName, "bean kafka.connect:type=app-info\nget -i *");
+        String kafkaResults = JmxUtils.execJmxTermAndGetResult(namespaceName, KafkaResources.brokersServiceName(clusterName), clusterName + "-kafka-jmx", clientsPodName, "bean kafka.server:type=app-info\nget -i *");
+        String kafkaConnectResults = JmxUtils.execJmxTermAndGetResult(namespaceName, KafkaConnectResources.serviceName(clusterName), clusterName + "-kafka-connect-jmx", clientsPodName, "bean kafka.connect:type=app-info\nget -i *");
 
         assertThat("Result from Kafka JMX doesn't contain right version of Kafka, result: " + kafkaResults, kafkaResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
         assertThat("Result from KafkaConnect JMX doesn't contain right version of Kafka, result: " + kafkaConnectResults, kafkaConnectResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
