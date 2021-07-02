@@ -14,7 +14,7 @@ if [ -n "$STRIMZI_JAVA_OPTS" ]; then
     export JAVA_OPTS="${JAVA_OPTS} ${STRIMZI_JAVA_OPTS}"
 fi
 
-if [ "$STRIMZI_TLS_ENABLED" = "true" ]; then
+if [ "$STRIMZI_TLS_ENABLED" = "true" ] || [ "$STRIMZI_SECURITY_PROTOCOL" = "SSL" ] || [ "$STRIMZI_SECURITY_PROTOCOL" = "SASL_SSL" ]; then
     # Generate temporary keystore password
     CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
     export CERTS_STORE_PASSWORD
