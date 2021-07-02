@@ -93,7 +93,7 @@ class MirrorMaker2ST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelNamespaceTest
     void testMirrorMaker2(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
@@ -239,7 +239,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     void testMirrorMaker2TlsAndTlsClientAuth(ExtensionContext extensionContext) throws Exception {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
@@ -441,7 +441,7 @@ class MirrorMaker2ST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelNamespaceTest
     void testMirrorMaker2TlsAndScramSha512Auth(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
@@ -656,7 +656,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(SCALABILITY)
     void testScaleMirrorMaker2Subresource(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
@@ -695,7 +695,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testMirrorMaker2CorrectlyMirrorsHeaders(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
@@ -761,7 +761,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(SCALABILITY)
     void testScaleMirrorMaker2ToZero(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
@@ -799,7 +799,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testIdentityReplicationPolicy(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
@@ -862,7 +862,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
@@ -915,7 +915,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testRestoreOffsetsInConsumerGroup(ExtensionContext extensionContext) {
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClusterSourceName = clusterName + "-source";
         final String kafkaClusterTargetName = clusterName + "-target";

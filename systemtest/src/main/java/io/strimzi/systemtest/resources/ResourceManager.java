@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -137,9 +138,11 @@ public class ResourceManager {
 
             // if it is parallel namespace test we are gonna replace resource a namespace
             if (StUtils.isParallelNamespaceTest(testContext)) {
-                final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-                LOGGER.info("Using namespace: {}", namespace);
-                resource.getMetadata().setNamespace(namespace);
+                if (!Environment.isNamespaceRbacScope()) {
+                    final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+                    LOGGER.info("Using namespace: {}", namespace);
+                    resource.getMetadata().setNamespace(namespace);
+                }
             }
 
             type.create(resource);
