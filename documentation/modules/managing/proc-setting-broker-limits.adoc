@@ -17,10 +17,14 @@ For example, you can set a byte-rate threshold of 40 MBps for producers.
 If you have two producers running, they are each limited to a throughput of 20 MBps.
 
 Storage quotas throttle Kafka disk storage limits between a soft limit and hard limit.
+The limits apply to all available disk space.
 Producers are slowed gradually between the soft and hard limit.
 The limits prevent disks filling up too quickly and exceeding disk capacity.
 Full disks can lead to issues that are hard to rectify.
 The hard limit is the maximum storage limit.
+
+NOTE: For JBOD storage, the limit applies across all disks. 
+If a broker is using two 1 TB disks and the quota is 1.1 TB, one disk might fill and the other disk will be almost empty.
 
 .Prerequisites
 
