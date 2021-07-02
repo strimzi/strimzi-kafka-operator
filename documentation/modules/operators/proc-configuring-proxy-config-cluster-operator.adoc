@@ -14,8 +14,8 @@ Configure the Cluster Operator deployment to specify the proxy environment varia
 The Cluster Operator accepts standard proxy configuration (`HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY`) as environment variables.
 The proxy settings are applied to all Strimzi containers.
 
-The format for a proxy address takes the form _\http://IP-ADDRESS:PORT-NUMBER_.
-To set up a proxy with a name and password, the address takes the form _\http://USERNAME:PASSWORD@IP-ADDRESS:PORT-NUMBER_.
+The format for a proxy address is _\http://IP-ADDRESS:PORT-NUMBER_.
+To set up a proxy with a name and password, the format is _\http://USERNAME:PASSWORD@IP-ADDRESS:PORT-NUMBER_.
 
 .Prerequisites
 
@@ -53,7 +53,6 @@ spec:
 <1> Address of the proxy server.
 <2> Secure address of the proxy server.
 <3> Addresses for servers that are accessed directly as exceptions to the proxy server. The URLs are comma-separated.
-Wildcards such as _*.internal.com_ aren't accepted, but you can use a single asterisk (`*`) to match all hosts to disable the proxy.
 --
 +
 Alternatively, edit the `Deployment` directly:
@@ -63,7 +62,7 @@ Alternatively, edit the `Deployment` directly:
 kubectl edit deployment strimzi-cluster-operator
 ----
 
-. If you updated the YAML file instead of editing the `Deployment` directly, apply the changes by deploying the configuration:
+. If you updated the YAML file instead of editing the `Deployment` directly, apply the changes:
 +
 [source,shell,subs=+quotes]
 ----
