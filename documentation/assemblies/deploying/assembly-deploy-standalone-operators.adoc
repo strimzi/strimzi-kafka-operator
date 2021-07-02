@@ -6,7 +6,7 @@
 = Alternative standalone deployment options for Strimzi Operators
 
 [role="_abstract"]
-As an alternative to deploying the Topic Operator and User Operator with the Cluster Operator, you can perform a standalone deployment.
+You can perform a standalone deployment of the Topic Operator and User Operator.
 Consider a standalone deployment of these operators if you are using a Kafka cluster that is not managed by the Cluster Operator.
 
 You deploy the operators to Kubernetes.

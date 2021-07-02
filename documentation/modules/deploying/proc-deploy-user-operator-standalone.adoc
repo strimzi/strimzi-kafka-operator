@@ -9,15 +9,14 @@
 This procedure shows how to deploy the User Operator as a standalone component to manage users.
 You can use a standalone User Operator with a Kafka cluster that is not managed by the Cluster Operator.
 
-A standalone deployment is more complicated than xref:deploying-the-user-operator-using-the-cluster-operator-str[deploying the User Operator using the Cluster Operator].
-However, a standalone deployment is more flexible as the User Operator can operate with any Kafka cluster, not necessarily one deployed by the Cluster Operator.
+A standalone deployment can operate with any Kafka cluster.
 
-A standalone deployment file is provided.
-Configure the deployment file to add the environment variables that enable the User Operator to connect to a Kafka cluster.
+Standalone deployment files are provided.
+Edit the `05-Deployment-strimzi-user-operator.yaml` deployment file to add the environment variables that enable the User Operator to connect to a Kafka cluster.
 
 .Prerequisites
 
-* You are running a Kafka cluster for the User Operator to make its connection.
+* You are running a Kafka cluster for the User Operator to connect to.
 
 .Procedure
 
@@ -47,7 +46,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS <2>
-              value: my-cluster-kafka-bootstrap:9092
+              value: my-kafka-bootstrap-address:9092
             - name: STRIMZI_CA_CERT_NAME <3>
               value: my-cluster-clients-ca-cert
             - name: STRIMZI_CA_KEY_NAME <4>
@@ -88,7 +87,7 @@ The default is `120000` (2 minutes).
 <8> The host and port pair of the address to connect to the ZooKeeper cluster.
 This must be the same ZooKeeper cluster that your Kafka cluster is using.
 <9> The ZooKeeper session timeout, in milliseconds.
-The default is `20000` (18 seconds).
+The default is `18000` (18 seconds).
 <10> The level for printing logging messages.
 You can set the level to `ERROR`, `WARNING`, `INFO`, `DEBUG`, or `TRACE`.
 <11> Enables garbage collection (GC) logging.

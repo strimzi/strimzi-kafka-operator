@@ -9,15 +9,14 @@
 This procedure shows how to deploy the Topic Operator as a standalone component to manage topics.
 You can use a standalone Topic Operator with a Kafka cluster that is not managed by the Cluster Operator.
 
-A standalone deployment is more complicated than xref:deploying-the-topic-operator-using-the-cluster-operator-str[deploying the Topic Operator using the Cluster Operator].
-However, a standalone deployment is more flexible as the Topic Operator can operate with any Kafka cluster, not necessarily one deployed by the Cluster Operator.
+A standalone deployment can operate with any Kafka cluster.
 
-A standalone deployment file is provided.
-Configure the deployment file to add the environment variables that enable the Topic Operator to connect to a Kafka cluster.
+Standalone deployment files are provided.
+Configure the `05-Deployment-strimzi-topic-operator.yaml` deployment file to add the environment variables that enable the Topic Operator to connect to a Kafka cluster.
 
 .Prerequisites
 
-* You are running a Kafka cluster for the Topic Operator to make its connection.
+* You are running a Kafka cluster for the Topic Operator to connect to.
 
 .Procedure
 
@@ -47,21 +46,21 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS <2>
-              value: my-cluster-kafka-bootstrap:9092
+              value: my-kafka-bootstrap-address:9092
             - name: STRIMZI_RESOURCE_LABELS <3>
               value: "strimzi.io/cluster=my-cluster"
             - name: STRIMZI_ZOOKEEPER_CONNECT <4>
               value: my-cluster-zookeeper-client:2181
             - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS <5>
-              value: "20000"
+              value: "18000"
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS <6>
-              value: "900000"
+              value: "120000"
             - name: STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS <7>
               value: "6"
             - name: STRIMZI_LOG_LEVEL <8>
               value: INFO
             - name: STRIMZI_TLS_ENABLED <9>
-              value: "true"
+              value: "false"
             - name: STRIMZI_JAVA_OPTS <10>
               value: "-Xmx=512M -Xms=256M"
             - name: STRIMZI_JAVA_SYSTEM_PROPERTIES <11>
@@ -74,9 +73,9 @@ Use a comma-separated list to specify two or three broker addresses in case a se
 <4> The host and port pair of the address to connect to the ZooKeeper cluster.
 This must be the same ZooKeeper cluster that your Kafka cluster is using.
 <5> The ZooKeeper session timeout, in milliseconds.
-The default is `20000` (20 seconds).
+The default is `18000` (18 seconds).
 <6> The interval between periodic reconciliations, in milliseconds.
-The default is `900000` (15 minutes).
+The default is `120000` (2 minutes).
 <7> The number of attempts at getting topic metadata from Kafka.
 The time between each attempt is defined as an exponential backoff.
 Consider increasing this value when topic creation takes more time due to the number of partitions or replicas.
