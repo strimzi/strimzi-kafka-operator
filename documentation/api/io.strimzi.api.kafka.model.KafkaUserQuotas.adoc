@@ -5,7 +5,7 @@ Kafka allows a user to set `quotas` to control the use of resources by clients.
 You can configure your clients to use the following types of quotas:
 
 * _Network usage_ quotas specify the byte rate threshold for each group of clients sharing a quota.
-* _CPU utilization_ quotas specify the percentage of time a client can utilize on request handler I/O threads and network threads of each broker within a quota window
+* _CPU utilization_ quotas specify a window for broker requests. The window is the percentage of time for clients to make requests. Client make requests on the I/O threads and network threads of each broker.
 * _Partition mutation_ quotas limit the number of partition mutations allowed per second.
 
 The partition mutation quota prevents Kafka clusters from being overwhelmed by concurrent topic operations.
