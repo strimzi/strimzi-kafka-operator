@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
+import io.strimzi.api.kafka.model.KafkaUserTlsNoopClientAuthentication;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.OpenSslCertManager;
@@ -419,7 +420,7 @@ public class KafkaUserModel {
      * @return The user name.
      */
     public String getUserName()    {
-        if (isTlsUser()) {
+        if (isTlsUser() || isTlsNoopUser()) {
             return getTlsUserName(name);
         } else if (isScramUser()) {
             return getScramUserName(name);
@@ -524,6 +525,15 @@ public class KafkaUserModel {
      */
     public boolean isTlsUser()  {
         return authentication instanceof KafkaUserTlsClientAuthentication;
+    }
+
+    /**
+     * Returns true if the user is using TLS-NOOP authentication.
+     *
+     * @return true if the user is using TLS-NOOP authentication.
+     */
+    public boolean isTlsNoopUser()  {
+        return authentication instanceof KafkaUserTlsNoopClientAuthentication;
     }
 
     /**

@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.common.Reconciliation;
@@ -46,6 +47,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -1007,6 +1009,98 @@ public class KafkaUserOperatorTest {
 
                 assertThat(scramUserCaptor.getAllValues(), is(singletonList(ResourceUtils.NAME)));
                 assertThat(scramPasswordCaptor.getAllValues(), is(singletonList(null)));
+
+                async.flag();
+            })));
+    }
+
+    @Test
+    public void testReconcileTlsNoopUser(VertxTestContext context)    {
+        KafkaUser user = new KafkaUserBuilder(ResourceUtils.createKafkaUserQuotas(1000000, 2000000, 55, 10.0))
+            .editSpec()
+                .withNewKafkaUserTlsNoopClientAuthentication()
+                .endKafkaUserTlsNoopClientAuthentication()
+            .endSpec()
+            .build();
+
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
+        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig());
+        Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
+        Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
+
+        ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
+        when(mockSecretOps.reconcile(any(), secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
+        when(aclOps.reconcile(any(), aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> scramUserCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> scramPasswordCaptor = ArgumentCaptor.forClass(String.class);
+        when(scramOps.reconcile(any(), scramUserCaptor.capture(), scramPasswordCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        when(mockSecretOps.getAsync(anyString(), eq(clientsCa.getMetadata().getName()))).thenReturn(Future.succeededFuture(clientsCa));
+        when(mockSecretOps.getAsync(anyString(), eq(clientsCaKey.getMetadata().getName()))).thenReturn(Future.succeededFuture(clientsCaKey));
+        when(mockSecretOps.getAsync(anyString(), eq(user.getMetadata().getName()))).thenReturn(Future.succeededFuture(null));
+
+        when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(user);
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> quotasUserNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<KafkaUserQuotas> quotasCaptor = ArgumentCaptor.forClass(KafkaUserQuotas.class);
+        when(quotasOps.reconcile(any(), quotasUserNameCaptor.capture(), quotasCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        Checkpoint async = context.checkpoint();
+        op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+
+                List<String> capturedNames = secretNameCaptor.getAllValues();
+                assertThat(capturedNames, hasSize(1));
+                assertThat(capturedNames.get(0), is(ResourceUtils.NAME));
+
+                List<String> capturedNamespaces = secretNamespaceCaptor.getAllValues();
+                assertThat(capturedNamespaces, hasSize(1));
+                assertThat(capturedNamespaces.get(0), is(ResourceUtils.NAMESPACE));
+
+                List<Secret> capturedSecrets = secretCaptor.getAllValues();
+                assertThat(capturedSecrets, hasSize(1));
+                assertThat(capturedSecrets.get(0), is(nullValue()));
+
+                assertThat(scramUserCaptor.getValue(), is(KafkaUserModel.getScramUserName(ResourceUtils.NAME)));
+                assertThat(scramPasswordCaptor.getValue(), is(nullValue()));
+
+                List<String> capturedAclNames = aclNameCaptor.getAllValues();
+                assertThat(capturedAclNames, hasSize(2));
+                assertThat(capturedAclNames.get(0), is(KafkaUserModel.getTlsUserName(ResourceUtils.NAME)));
+                assertThat(capturedAclNames.get(1), is(KafkaUserModel.getScramUserName(ResourceUtils.NAME)));
+
+                List<Set<SimpleAclRule>> capturedAcls = aclRulesCaptor.getAllValues();
+                assertThat(capturedAcls, hasSize(2));
+                assertThat(capturedAcls.get(0), hasSize(ResourceUtils.createExpectedSimpleAclRules(user).size()));
+                assertThat(capturedAcls.get(0), is(ResourceUtils.createExpectedSimpleAclRules(user)));
+                assertThat(capturedAcls.get(1), is(nullValue()));
+
+                List<String> capturedQuotasNames = quotasUserNameCaptor.getAllValues();
+                assertThat(capturedQuotasNames, hasSize(2));
+                assertThat(capturedQuotasNames.get(0), is(KafkaUserModel.getTlsUserName(ResourceUtils.NAME)));
+                assertThat(capturedQuotasNames.get(1), is(KafkaUserModel.getScramUserName(ResourceUtils.NAME)));
+
+                List<KafkaUserQuotas> capturedQuotas = quotasCaptor.getAllValues();
+                assertThat(capturedQuotas, hasSize(2));
+                assertThat(capturedQuotas.get(0), is(notNullValue()));
+                assertThat(capturedQuotas.get(0).getConsumerByteRate(), is(1000000));
+                assertThat(capturedQuotas.get(0).getProducerByteRate(), is(2000000));
+                assertThat(capturedQuotas.get(0).getRequestPercentage(), is(55));
+                assertThat(capturedQuotas.get(0).getControllerMutationRate(), is(10.0));
+                assertThat(capturedQuotas.get(1), is(nullValue()));
 
                 async.flag();
             })));

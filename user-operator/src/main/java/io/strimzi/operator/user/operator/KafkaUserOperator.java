@@ -254,7 +254,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         KafkaUserQuotas tlsQuotas = null;
         KafkaUserQuotas scramOrNoneQuotas = null;
 
-        if (user.isTlsUser())   {
+        if (user.isTlsUser() || user.isTlsNoopUser())   {
             tlsAcls = user.getSimpleAclRules();
             tlsQuotas = user.getQuotas();
         } else if (user.isScramUser() || user.isNoneUser())  {
