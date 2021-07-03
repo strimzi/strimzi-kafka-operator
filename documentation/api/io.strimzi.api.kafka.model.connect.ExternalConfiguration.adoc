@@ -242,6 +242,6 @@ spec:
     ssl.truststore.type: PEM
     ssl.truststore.location: "${directory:/opt/kafka/external-configuration/connector-config:ca.crt}"
     ssl.keystore.type: PEM
-    ssl.keystore.location: ${directory:/opt/kafka/external-configuration/connector-config:user.key}"
+    ssl.keystore.location: "${directory:/opt/kafka/external-configuration/connector-config:user.key}"
     #...
 ----
