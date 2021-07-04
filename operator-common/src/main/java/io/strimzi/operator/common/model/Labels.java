@@ -97,7 +97,7 @@ public class Labels {
      * Used to exclude parent CR's labels from being assigned to provisioned subresources
      */
     public static final Pattern STRIMZI_LABELS_EXCLUSION_PATTERN = Pattern.compile(System.getenv()
-            .getOrDefault("STRIMZI_LABELS_EXCLUSION_PATTERN", "^app.kubernetes.io/(?!part-of).*"));
+            .getOrDefault("STRIMZI_LABELS_EXCLUSION_PATTERN", "(^app.kubernetes.io/(?!part-of).*|^kustomize.toolkit.fluxcd.io.*)"));
 
     /**
      * The empty set of labels.
