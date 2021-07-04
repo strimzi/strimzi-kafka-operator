@@ -8,7 +8,6 @@
 * Add support for `tls-external` authentication to User Operator to allow management of ACLs and Quotas for TLS users with user certificates generated externally (#5249) 
 * Support for disabling the automatic generation of network policies by the Cluster Operator. Set the Cluster Operator's `STRIMZI_NETWORK_POLICY_GENERATION` environment variable to `false` to disable network policies. (#5258)
 * Update User Operator to use Admin API for managing SCRAM-SHA-512 users 
-* Annotate Cluster Operator resource metrics by a namespace label
 
 ### Changes, deprecations and removals
 
@@ -20,6 +19,7 @@
 * User Operator now uses Kafka Admin API to manage SCRAM-SHA-512 credentials.
   All operations done by the User Operator now use Kafka Admin API and connect directly to Kafka instead of ZooKeeper.
   As a result, the environment variables `STRIMZI_ZOOKEEPER_CONNECT` and `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS` were removed from the User Operator configuration.
+ * Annotate Cluster Operator resource metrics by a namespace label
 
 ## 0.24.0
 
