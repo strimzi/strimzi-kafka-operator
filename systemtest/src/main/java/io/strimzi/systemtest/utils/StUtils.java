@@ -39,7 +39,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.Constants.PARALLEL_NAMESPACE;
-import static io.strimzi.systemtest.Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -393,16 +392,16 @@ public class StUtils {
      * @param namespace the target namespace
      */
     public static void copyImagePullSecret(String namespace) {
-        LOGGER.info("Checking if secret {} is in the default namespace", SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
-        if (kubeClient("default").getSecret(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET) == null) {
-            throw new RuntimeException(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET + " is not in the default namespace!");
+        LOGGER.info("Checking if secret {} is in the default namespace", Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+        if (kubeClient("default").getSecret(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET) == null) {
+            throw new RuntimeException(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET + " is not in the default namespace!");
         }
-        Secret pullSecret = kubeClient("default").getSecret(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+        Secret pullSecret = kubeClient("default").getSecret(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
         kubeClient(namespace).createSecret(new SecretBuilder()
                 .withApiVersion("v1")
                 .withKind("Secret")
                 .withNewMetadata()
-                .withName(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET)
+                .withName(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET)
                 .endMetadata()
                 .withType("kubernetes.io/dockerconfigjson")
                 .withData(Collections.singletonMap(".dockerconfigjson", pullSecret.getData().get(".dockerconfigjson")))

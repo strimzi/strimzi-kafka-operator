@@ -47,7 +47,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -594,7 +593,7 @@ public abstract class AbstractST implements TestSeparator {
 
                     cluster.createNamespace(extensionContext, namespaceTestCase);
                     NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
-                    if (SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+                    if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
                         StUtils.copyImagePullSecret(namespaceTestCase);
                     }
                 }

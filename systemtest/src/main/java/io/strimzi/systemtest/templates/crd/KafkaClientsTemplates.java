@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET;
 import static io.strimzi.test.TestUtils.toYamlString;
 
 public class KafkaClientsTemplates {
@@ -107,8 +106,8 @@ public class KafkaClientsTemplates {
     private static PodSpec createClientSpec(String namespaceName, boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
                                             String listenerName, String secretPrefix, KafkaUser... kafkaUsers) {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
-        if (SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
-            List<LocalObjectReference> imagePullSecrets = Collections.singletonList(new LocalObjectReference(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET));
+        if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+            List<LocalObjectReference> imagePullSecrets = Collections.singletonList(new LocalObjectReference(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET));
             podSpecBuilder.withImagePullSecrets(imagePullSecrets);
         }
         ContainerBuilder containerBuilder = new ContainerBuilder()

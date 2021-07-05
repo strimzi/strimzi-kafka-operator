@@ -24,8 +24,6 @@ import org.apache.logging.log4j.Logger;
 import java.util.Collections;
 import java.util.List;
 
-import static io.strimzi.systemtest.Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET;
-
 public class BundleResource implements ResourceType<Deployment> {
     private static final Logger LOGGER = LogManager.getLogger(BundleResource.class);
 
@@ -200,8 +198,8 @@ public class BundleResource implements ResourceType<Deployment> {
         // Apply updated env variables
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
-        if (SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
-            List<LocalObjectReference> imagePullSecrets = Collections.singletonList(new LocalObjectReference(SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET));
+        if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+            List<LocalObjectReference> imagePullSecrets = Collections.singletonList(new LocalObjectReference(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET));
             clusterOperator.getSpec().getTemplate().getSpec().setImagePullSecrets(imagePullSecrets);
         }
 
