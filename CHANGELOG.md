@@ -2,12 +2,17 @@
 
 ## 0.25.0
 
+* Move from Scala 2.12 to Scala 2.13
+* Update Open Policy Agent Authorizer to new version supporting Scala 2.13. See the _Changes, deprecations and removals_ sections for more details.
 * Allow a custom password to be set for SCRAM-SHA-512 users by referencing a secret in the `KafkaUser` resource
 
 ### Changes, deprecations and removals
 
 * The `KafkaConnectS2I` resource has been removed and is no longer supported by the operator.
   Please use the [migration guide](https://strimzi.io/docs/operators/0.24.0/full/using.html#proc-migrating-kafka-connect-s2i-str) to migrate your `KafkaConnectS2I` deployments to [`KafkaConnect` Build](https://strimzi.io/docs/operators/latest/full/deploying.html#creating-new-image-using-kafka-connect-build-str) instead.
+* The Open Policy Agent Authorizer has been updated to a new version which supports Scala 2.13.
+  The new release introduces a new format of the input data sent to Open Policy Agent.
+  For more information about the new format and about the migration from the old version, please see https://github.com/Bisnode/opa-kafka-plugin/releases/tag/v1.0.0
 
 ## 0.24.0
 
