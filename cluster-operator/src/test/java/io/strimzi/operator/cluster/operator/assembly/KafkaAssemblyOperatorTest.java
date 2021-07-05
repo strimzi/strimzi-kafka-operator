@@ -92,6 +92,7 @@ import io.vertx.junit5.Timeout;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -119,7 +120,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
-import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -319,40 +319,50 @@ public class KafkaAssemblyOperatorTest {
         eoConfig = params.eoConfig;
     }
 
+    protected static Vertx vertx;
+
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
+
     @AfterAll
     public static void after() {
+        vertx.close();
         ResourceUtils.cleanUpTemporaryTLSFiles();
+
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testCreateCluster(Params params, Vertx vertx, VertxTestContext context) {
+    public void testCreateCluster(Params params, VertxTestContext context) {
         setFields(params);
-        createCluster(vertx, context, getKafkaAssembly("foo"), emptyList());
+        createCluster(context, getKafkaAssembly("foo"),
+                emptyList());
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testCreateClusterWithJmxEnabled(Params params, Vertx vertx, VertxTestContext context) {
+    public void testCreateClusterWithJmxEnabled(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafka = getKafkaAssembly("foo");
         kafka.getSpec().getKafka().setJmxOptions(new KafkaJmxOptionsBuilder()
             .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder().build())
             .build());
-        createCluster(vertx, context, kafka,
-                singletonList(new SecretBuilder()
+        createCluster(context, kafka,
+                Collections.singletonList(new SecretBuilder()
                         .withNewMetadata()
                             .withName(KafkaCluster.jmxSecretName("foo"))
                             .withNamespace("test")
                         .endMetadata()
                         .withData(Collections.singletonMap("foo", "bar"))
                         .build()
-                ));
+                )); //getInitialCertificates(getKafkaAssembly("foo").getMetadata().getName()));
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testCreateClusterWithJmxTrans(Params params, Vertx vertx, VertxTestContext context) {
+    public void testCreateClusterWithJmxTrans(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafka = getKafkaAssembly("foo");
         kafka.getSpec()
@@ -372,7 +382,7 @@ public class KafkaAssemblyOperatorTest {
                         .build())
                 .build());
 
-        createCluster(vertx, context, kafka, singletonList(new SecretBuilder()
+        createCluster(context, kafka, Collections.singletonList(new SecretBuilder()
                 .withNewMetadata()
                 .withName(KafkaCluster.jmxSecretName("foo"))
                 .withNamespace("test")
@@ -406,7 +416,7 @@ public class KafkaAssemblyOperatorTest {
     }
 
     @SuppressWarnings("unchecked")
-    private void createCluster(Vertx vertx, VertxTestContext context, Kafka kafka, List<Secret> secrets) {
+    private void createCluster(VertxTestContext context, Kafka kafka, List<Secret> secrets) {
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         EntityOperator entityOperator = EntityOperator.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
@@ -620,11 +630,14 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.list(anyString(), any())).thenAnswer(i ->
                 new ArrayList<>(secretsMap.values())
         );
-        when(mockSecretOps.getAsync(anyString(), any())).thenAnswer(i -> Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
+        when(mockSecretOps.getAsync(anyString(), any())).thenAnswer(i ->
+                Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
         );
-        when(mockSecretOps.getAsync(kafkaNamespace, KafkaResources.clusterCaCertificateSecretName(kafkaName))).thenAnswer(i -> Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
+        when(mockSecretOps.getAsync(kafkaNamespace, KafkaResources.clusterCaCertificateSecretName(kafkaName))).thenAnswer(i ->
+                Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
         );
-        when(mockSecretOps.getAsync(kafkaNamespace, ClusterOperator.secretName(kafkaName))).thenAnswer(i -> Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
+        when(mockSecretOps.getAsync(kafkaNamespace, ClusterOperator.secretName(kafkaName))).thenAnswer(i ->
+                Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
         );
 
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(invocation -> {
@@ -759,14 +772,13 @@ public class KafkaAssemblyOperatorTest {
         Kafka resource = ResourceUtils.createKafka(clusterNamespace, clusterName, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig, kafkaStorage, zkStorage, LOG_KAFKA_CONFIG, LOG_ZOOKEEPER_CONFIG, exporter, null);
 
         return new KafkaBuilder(resource)
-                    .editSpec()
-                        .editKafka()
-                            .withListeners(kafkaListeners)
-                        .endKafka()
-                        .withEntityOperator(eoConfig)
-                    .endSpec()
-                    .build();
-
+                .editSpec()
+                    .editKafka()
+                        .withListeners(kafkaListeners)
+                    .endKafka()
+                    .withEntityOperator(eoConfig)
+                .endSpec()
+                .build();
     }
 
     private static <T> Set<T> captured(ArgumentCaptor<T> captor) {
@@ -775,112 +787,112 @@ public class KafkaAssemblyOperatorTest {
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testUpdateClusterNoop(Params params, Vertx vertx, VertxTestContext context) {
+    public void testUpdateClusterNoop(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
-        updateCluster(vertx, context, getKafkaAssembly("bar"), kafkaAssembly);
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testUpdateKafkaClusterChangeImage(Params params, Vertx vertx, VertxTestContext context) {
+    public void testUpdateKafkaClusterChangeImage(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setImage("a-changed-image");
-        updateCluster(vertx, context, getKafkaAssembly("bar"), kafkaAssembly);
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testUpdateZookeeperClusterChangeImage(Params params, Vertx vertx, VertxTestContext context) {
+    public void testUpdateZookeeperClusterChangeImage(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setImage("a-changed-image");
-        updateCluster(vertx, context, getKafkaAssembly("bar"), kafkaAssembly);
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testUpdateKafkaClusterScaleUp(Params params, Vertx vertx, VertxTestContext context) {
+    public void testUpdateKafkaClusterScaleUp(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setReplicas(4);
-        updateCluster(vertx, context, getKafkaAssembly("bar"), kafkaAssembly);
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testUpdateKafkaClusterScaleDown(Params params, Vertx vertx, VertxTestContext context) {
+    public void testUpdateKafkaClusterScaleDown(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getKafka().setReplicas(2);
-        updateCluster(vertx, context, getKafkaAssembly("bar"), kafkaAssembly);
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testUpdateZookeeperClusterScaleUp(Params params, Vertx vertx, VertxTestContext context) {
+    public void testUpdateZookeeperClusterScaleUp(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setReplicas(4);
-        updateCluster(vertx, context, getKafkaAssembly("bar"), kafkaAssembly);
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testUpdateZookeeperClusterScaleDown(Params params, Vertx vertx, VertxTestContext context) {
+    public void testUpdateZookeeperClusterScaleDown(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         kafkaAssembly.getSpec().getZookeeper().setReplicas(2);
-        updateCluster(vertx, context, getKafkaAssembly("bar"), kafkaAssembly);
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testUpdateClusterAuthenticationTrue(Params params, Vertx vertx, VertxTestContext context) {
+    public void testUpdateClusterAuthenticationTrue(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         KafkaJmxOptions kafkaJmxOptions = new KafkaJmxOptionsBuilder().withAuthentication(
                  new KafkaJmxAuthenticationPasswordBuilder().build())
                 .build();
         kafkaAssembly.getSpec().getKafka().setJmxOptions(kafkaJmxOptions);
-        updateCluster(vertx, context, getKafkaAssembly("bar"), kafkaAssembly);
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testUpdateClusterLogConfig(Params params, Vertx vertx, VertxTestContext context) {
+    public void testUpdateClusterLogConfig(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         InlineLogging logger = new InlineLogging();
         logger.setLoggers(singletonMap("kafka.root.logger.level", "DEBUG"));
         kafkaAssembly.getSpec().getKafka().setLogging(logger);
-        updateCluster(vertx, context, getKafkaAssembly("bar"), kafkaAssembly);
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testUpdateZkClusterMetricsConfig(Params params, Vertx vertx, VertxTestContext context) {
+    public void testUpdateZkClusterMetricsConfig(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics("metrics-config.yml", differentMetricsCMName);
         kafkaAssembly.getSpec().getKafka().setMetricsConfig(jmxMetricsConfig);
-        updateCluster(vertx, context, getKafkaAssembly("bar"), kafkaAssembly);
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testUpdateZkClusterLogConfig(Params params, Vertx vertx, VertxTestContext context) {
+    public void testUpdateZkClusterLogConfig(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
         InlineLogging logger = new InlineLogging();
         logger.setLoggers(singletonMap("zookeeper.root.logger", "DEBUG"));
         kafkaAssembly.getSpec().getZookeeper().setLogging(logger);
-        updateCluster(vertx, context, getKafkaAssembly("bar"), kafkaAssembly);
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
     @SuppressWarnings("unchecked")
-    private void updateCluster(Vertx vertx, VertxTestContext context, Kafka originalAssembly, Kafka updatedAssembly) {
+    private void updateCluster(VertxTestContext context, Kafka originalAssembly, Kafka updatedAssembly) {
         KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, originalAssembly, VERSIONS);
         KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, updatedAssembly, VERSIONS);
         ZookeeperCluster originalZookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, originalAssembly, VERSIONS);
@@ -1028,9 +1040,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockServiceOps.endpointReadiness(any(), eq(clusterNamespace), any(), anyLong(), anyLong())).thenReturn(
                 Future.succeededFuture()
         );
-        when(mockServiceOps.get(eq(clusterNamespace), anyString())).thenAnswer(i -> Future.succeededFuture(expectedServicesMap.get(i.getArgument(1, String.class))));
+        when(mockServiceOps.get(eq(clusterNamespace), anyString())).thenAnswer(i -> Future.succeededFuture(expectedServicesMap.get(i.<String>getArgument(1))));
         when(mockServiceOps.getAsync(eq(clusterNamespace), anyString())).thenAnswer(i -> {
-            Service svc = expectedServicesMap.get(i.getArgument(1, String.class));
+            Service svc = expectedServicesMap.get(i.<String>getArgument(1));
 
             if (svc != null && "NodePort".equals(svc.getSpec().getType()))    {
                 svc.getSpec().getPorts().get(0).setNodePort(32000);
@@ -1064,7 +1076,7 @@ public class KafkaAssemblyOperatorTest {
 
             when(mockRouteOps.get(eq(clusterNamespace), anyString())).thenAnswer(i -> Future.succeededFuture(expectedRoutesMap.get(i.<String>getArgument(1))));
             when(mockRouteOps.getAsync(eq(clusterNamespace), anyString())).thenAnswer(i -> {
-                Route rt = expectedRoutesMap.get(i.getArgument(1, String.class));
+                Route rt = expectedRoutesMap.get(i.<String>getArgument(1));
 
                 if (rt != null)    {
                     RouteStatus st = new RouteStatusBuilder()
@@ -1133,10 +1145,10 @@ public class KafkaAssemblyOperatorTest {
         // Mock Deployment get
         if (originalEntityOperator != null) {
             when(mockDepOps.get(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
-                    originalEntityOperator.generateDeployment(true, Collections.emptyMap(), null, null)
+                    originalEntityOperator.generateDeployment(true, Map.of(), null, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
-                    Future.succeededFuture(originalEntityOperator.generateDeployment(true, Collections.emptyMap(), null, null))
+                    Future.succeededFuture(originalEntityOperator.generateDeployment(true, Map.of(), null, null))
             );
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
                     Future.succeededFuture()
@@ -1148,10 +1160,10 @@ public class KafkaAssemblyOperatorTest {
 
         if (originalCruiseControl != null) {
             when(mockDepOps.get(clusterNamespace, CruiseControl.cruiseControlName(clusterName))).thenReturn(
-                    originalCruiseControl.generateDeployment(true, Collections.emptyMap(), null, null)
+                    originalCruiseControl.generateDeployment(true, Map.of(), null, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
-                    Future.succeededFuture(originalCruiseControl.generateDeployment(true, Collections.emptyMap(), null, null))
+                    Future.succeededFuture(originalCruiseControl.generateDeployment(true, Map.of(), null, null))
             );
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
                     Future.succeededFuture()
@@ -1291,7 +1303,8 @@ public class KafkaAssemblyOperatorTest {
     @ParameterizedTest
     @MethodSource("data")
     @Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
-    public void testReconcile(Params params, Vertx vertx, VertxTestContext context) {
+    public void testReconcile(Params params, VertxTestContext context) {
+        //Must create all checkpoints before flagging any, as not doing so can lead to premature test success
         Checkpoint fooAsync = context.checkpoint();
         Checkpoint barAsync = context.checkpoint();
         Checkpoint completeTest = context.checkpoint();
@@ -1309,7 +1322,7 @@ public class KafkaAssemblyOperatorTest {
         Kafka foo = getKafkaAssembly("foo");
         Kafka bar = getKafkaAssembly("bar");
         when(mockKafkaOps.listAsync(eq(kafkaNamespace), any(Optional.class))).thenReturn(
-                Future.succeededFuture(asList(foo, bar))
+            Future.succeededFuture(asList(foo, bar))
         );
         // when requested Custom Resource for a specific Kafka cluster
         when(mockKafkaOps.get(eq(kafkaNamespace), eq("foo"))).thenReturn(foo);
@@ -1334,14 +1347,19 @@ public class KafkaAssemblyOperatorTest {
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND);
         when(mockKsOps.list(eq(kafkaNamespace), eq(newLabels))).thenReturn(
-                singletonList(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null))
+                List.of(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null))
         );
+
+        when(mockSecretOps.get(eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName()))))
+                .thenReturn(
+                        fooSecrets.get(0));
+        when(mockSecretOps.reconcile(any(), eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS);
         when(mockKsOps.list(eq(kafkaNamespace), eq(barLabels))).thenReturn(
-                singletonList(barCluster.generateStatefulSet(openShift, null, null))
+                List.of(barCluster.generateStatefulSet(openShift, null, null))
         );
         when(mockSecretOps.list(eq(kafkaNamespace), eq(barLabels))).thenAnswer(
             invocation -> new ArrayList<>(asList(
@@ -1350,7 +1368,8 @@ public class KafkaAssemblyOperatorTest {
                     barCluster.generateBrokersSecret(),
                     barClusterCa.caCertSecret()))
         );
-
+        when(mockSecretOps.get(eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())))).thenReturn(barSecrets.get(0));
+        when(mockSecretOps.reconcile(any(), eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
@@ -1376,12 +1395,11 @@ public class KafkaAssemblyOperatorTest {
         ops.reconcileAll("test", kafkaNamespace, context.succeeding(v -> completeTest.flag()));
     }
 
-
+    @SuppressWarnings("unchecked")
     @ParameterizedTest
     @MethodSource("data")
     @Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
-    @SuppressWarnings("unchecked")
-    public void testReconcileAllNamespaces(Params params, Vertx vertx, VertxTestContext context) {
+    public void testReconcileAllNamespaces(Params params, VertxTestContext context) {
         setFields(params);
 
         // create CM, Service, headless service, statefulset
@@ -1390,24 +1408,23 @@ public class KafkaAssemblyOperatorTest {
         var mockKafkaOps = supplier.kafkaOperator;
         KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
-        String kafkaNamespace = "test";
 
         Kafka foo = getKafkaAssembly("foo");
+        foo.getMetadata().setNamespace("namespace1");
         Kafka bar = getKafkaAssembly("bar");
-        when(mockKafkaOps.listAsync(eq(kafkaNamespace), any(Optional.class))).thenReturn(
+        bar.getMetadata().setNamespace("namespace2");
+        when(mockKafkaOps.listAsync(eq("*"), any(Optional.class))).thenReturn(
                 Future.succeededFuture(asList(foo, bar))
         );
         // when requested Custom Resource for a specific Kafka cluster
-        when(mockKafkaOps.get(eq(kafkaNamespace), eq("foo"))).thenReturn(foo);
-        when(mockKafkaOps.get(eq(kafkaNamespace), eq("bar"))).thenReturn(bar);
-        when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
-        when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));
+        when(mockKafkaOps.get(eq("namespace1"), eq("foo"))).thenReturn(foo);
+        when(mockKafkaOps.get(eq("namespace2"), eq("bar"))).thenReturn(bar);
+        when(mockKafkaOps.getAsync(eq("namespace1"), eq("foo"))).thenReturn(Future.succeededFuture(foo));
+        when(mockKafkaOps.getAsync(eq("namespace2"), eq("bar"))).thenReturn(Future.succeededFuture(bar));
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // providing certificates Secrets for existing clusters
-        List<Secret> fooSecrets = ResourceUtils.createKafkaInitialSecrets(kafkaNamespace, "foo");
-        //ClusterCa fooCerts = ResourceUtils.createInitialClusterCa("foo", ModelUtils.findSecretWithName(fooSecrets, AbstractModel.clusterCaCertSecretName("foo")));
-        List<Secret> barSecrets = ResourceUtils.createKafkaSecretsWithReplicas(kafkaNamespace, "bar",
+        List<Secret> barSecrets = ResourceUtils.createKafkaSecretsWithReplicas("namespace2", "bar",
                 bar.getSpec().getKafka().getReplicas(),
                 bar.getSpec().getZookeeper().getReplicas());
         ClusterCa barClusterCa = ResourceUtils.createInitialClusterCa(Reconciliation.DUMMY_RECONCILIATION,
@@ -1419,35 +1436,26 @@ public class KafkaAssemblyOperatorTest {
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND);
-        when(mockKsOps.list(eq(kafkaNamespace), eq(newLabels))).thenReturn(
-                singletonList(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null))
+        when(mockKsOps.list(eq("*"), eq(newLabels))).thenReturn(
+                List.of(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null))
         );
-
-        when(mockSecretOps.get(eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName()))))
-                .thenReturn(
-                        fooSecrets.get(0));
-        when(mockSecretOps.reconcile(any(), eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS);
-        when(mockKsOps.list(eq(kafkaNamespace), eq(barLabels))).thenReturn(
-                singletonList(barCluster.generateStatefulSet(openShift, null, null))
+        when(mockKsOps.list(eq("*"), eq(barLabels))).thenReturn(
+                List.of(barCluster.generateStatefulSet(openShift, null, null))
         );
-        when(mockSecretOps.list(eq(kafkaNamespace), eq(barLabels))).thenAnswer(
+        when(mockSecretOps.list(eq("*"), eq(barLabels))).thenAnswer(
             invocation -> new ArrayList<>(asList(
                     barClientsCa.caKeySecret(),
                     barClientsCa.caCertSecret(),
                     barCluster.generateBrokersSecret(),
                     barClusterCa.caCertSecret()))
         );
-        when(mockSecretOps.get(eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())))).thenReturn(barSecrets.get(0));
-        when(mockSecretOps.reconcile(any(), eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())), any(Secret.class))).thenReturn(Future.succeededFuture());
 
         Checkpoint fooAsync = context.checkpoint();
         Checkpoint barAsync = context.checkpoint();
-        Checkpoint completeTest = context.checkpoint();
-
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
                 passwordGenerator,
@@ -1467,9 +1475,9 @@ public class KafkaAssemblyOperatorTest {
             }
         };
 
-
+        Checkpoint async = context.checkpoint();
         // Now try to reconcile all the Kafka clusters
-        ops.reconcileAll("test", kafkaNamespace, context.succeeding(v -> completeTest.flag()));
+        ops.reconcileAll("test", "*", context.succeeding(v -> async.flag()));
     }
 
 }
