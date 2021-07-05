@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -73,7 +74,8 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
                 .endSpec()
                 .build();
 
-        assertThat(TestUtils.toYamlString(kafka), is(TestUtils.getFileAsString(this.getClass().getResource("Kafka-ca-ints.yaml").toURI().getPath())));
+        String path = Objects.requireNonNull(this.getClass().getResource("Kafka-ca-ints.yaml")).toURI().getPath();
+        assertThat(TestUtils.toYamlString(kafka), is(TestUtils.getFileAsString(path)));
     }
 
     @Test
@@ -113,7 +115,8 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
                 .endSpec()
                 .build();
 
-        assertThat(TestUtils.toYamlString(kafka), is(TestUtils.getFileAsString(this.getClass().getResource("Kafka-new-listener-serialization.yaml").toURI().getPath())));
+        String path = Objects.requireNonNull(this.getClass().getResource("Kafka-new-listener-serialization.yaml")).toURI().getPath();
+        assertThat(TestUtils.toYamlString(kafka), is(TestUtils.getFileAsString(path)));
     }
 
     @Test

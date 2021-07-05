@@ -31,7 +31,7 @@ public class MockCruiseControlTest {
     private static ClientAndServer ccServer;
 
     @BeforeAll
-    public static void startUp() throws IOException, URISyntaxException {
+    public static void startUp() throws IOException {
         ccServer = MockCruiseControl.server(PORT);
     }
 
@@ -139,9 +139,7 @@ public class MockCruiseControlTest {
             try {
                 ccServer.reset();
                 MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, pendingCalls2);
-            } catch (IOException e) {
-                return Future.failedFuture(e);
-            } catch (URISyntaxException e) {
+            } catch (IOException | URISyntaxException e) {
                 return Future.failedFuture(e);
             }
             return Future.succeededFuture();
@@ -166,9 +164,7 @@ public class MockCruiseControlTest {
                     is(CruiseControlUserTaskStatus.COMPLETED.toString()))
             );
             return Future.succeededFuture(response);
-        }).onComplete(context.succeeding(result -> {
-            completeTest.flag();
-        }));
+        }).onComplete(context.succeeding(result -> completeTest.flag()));
     }
 
 }

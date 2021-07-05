@@ -78,7 +78,6 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
     private KubernetesClient mockClient;
 
     private static Vertx vertx;
-    private MockKube mockKube;
     private KafkaMirrorMaker2AssemblyOperator kco;
 
     @BeforeAll
@@ -95,7 +94,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
         if (mockClient != null) {
             mockClient.close();
         }
-        mockKube = new MockKube();
+        MockKube mockKube = new MockKube();
         mockClient = mockKube
                 .withCustomResourceDefinition(Crds.kafkaMirrorMaker2(), KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2::getStatus, KafkaMirrorMaker2::setStatus)
                     .withInitialInstances(Collections.singleton(mirrorMaker2Resource))
@@ -129,7 +128,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
             foo -> kafkaConnectApi);
 
         LOGGER.info("Reconciling initially -> create");
-        Promise created = Promise.promise();
+        Promise<Void> created = Promise.promise();
 
         kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
             .onComplete(context.succeeding(ar -> context.verify(() -> {
@@ -166,11 +165,10 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         createMirrorMaker2Cluster(context, mock, false)
-            .onComplete(context.succeeding())
-            .compose(v -> {
+            .onComplete(context.succeeding(v -> {
                 LOGGER.info("Reconciling again -> update");
-                return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
-            })
+                kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
+            }))
             .onComplete(context.succeeding(v -> async.flag()));
     }
 
@@ -193,11 +191,10 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         createMirrorMaker2Cluster(context, mock, true)
-                .onComplete(context.succeeding())
-                .compose(v -> {
+                .onComplete(context.succeeding(v -> {
                     LOGGER.info("Reconciling again -> update");
-                    return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
-                })
+                    kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
+                }))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     Resource<KafkaMirrorMaker2> resource = Crds.kafkaMirrorMaker2Operation(mockClient).inNamespace(NAMESPACE).withName(CLUSTER_NAME);
 
