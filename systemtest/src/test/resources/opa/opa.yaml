@@ -132,20 +132,19 @@ data:
     ###############################################################################
 
     is_write_operation {
-      input.operation.name == "Write"
+      input.action.operation == "WRITE"
     }
 
     is_read_operation {
-      input.operation.name == "Read"
+      input.action.operation == "READ"
     }
 
     is_topic_resource {
-      input.resource.resourceType.name == "Topic"
+      input.action.resourcePattern.resourceType == "TOPIC"
     }
 
-    principal = {"fqn": parsed.CN, "name": cn_parts[0]} {
-      parsed := parse_user(urlquery.decode(input.session.sanitizedUser))
-      cn_parts := split(parsed.CN, ".")
+    principal = {"name": parsed.CN} {
+      parsed := parse_user(urlquery.decode(input.requestContext.principal.name))
     }
 
     parse_user(user) = {key: value |
