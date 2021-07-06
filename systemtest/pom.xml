@@ -216,6 +216,11 @@
             <artifactId>bcprov-jdk15on</artifactId>
             <version>${bouncycastle.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>crd-generator</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
