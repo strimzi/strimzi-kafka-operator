@@ -108,7 +108,7 @@
         <!-- keep in-sync with dataformat-yaml -->
         <json-path.version>4.1.1</json-path.version>
         <zkclient.version>0.11</zkclient.version>
-        <scala-library.version>2.13.5</scala-library.version>
+        <scala-library.version>2.13.6</scala-library.version>
         <zookeeper.version>3.5.9</zookeeper.version>
         <mockito.version>2.28.2</mockito.version>
         <jayway-jsonpath.version>2.6.0</jayway-jsonpath.version>
