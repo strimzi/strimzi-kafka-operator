@@ -19,3 +19,5 @@ NOTE: On OpenShift, a Kafka Connect deployment can incorporate a Source2Image fe
 * xref:assembly-config-kafka-str[Kafka Cluster configuration].
 
 include::../../modules/operators/ref-operator-cluster.adoc[leveloffset=+1]
+//Passing proxy configuration variables from Cluster Operator
+include::../../modules/operators/proc-configuring-proxy-config-cluster-operator.adoc[leveloffset=+1]
