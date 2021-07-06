@@ -1015,11 +1015,11 @@ public class KafkaUserOperatorTest {
     }
 
     @Test
-    public void testReconcileTlsNoopUser(VertxTestContext context)    {
+    public void testReconcileTlsExternalUser(VertxTestContext context)    {
         KafkaUser user = new KafkaUserBuilder(ResourceUtils.createKafkaUserQuotas(1000000, 2000000, 55, 10.0))
             .editSpec()
-                .withNewKafkaUserTlsNoopClientAuthentication()
-                .endKafkaUserTlsNoopClientAuthentication()
+                .withNewKafkaUserTlsExternalClientAuthentication()
+                .endKafkaUserTlsExternalClientAuthentication()
             .endSpec()
             .build();
 

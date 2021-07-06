@@ -15,16 +15,16 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class KafkaUserTlsNoopClientAuthentication extends KafkaUserAuthentication {
+public class KafkaUserTlsExternalClientAuthentication extends KafkaUserAuthentication {
     private static final long serialVersionUID = 1L;
 
-    public static final String TYPE_TLS_NOOP = "tls-noop";
+    public static final String TYPE_TLS_EXTERNAL = "tls-external";
 
-    @Description("Must be `" + TYPE_TLS_NOOP + "`")
+    @Description("Must be `" + TYPE_TLS_EXTERNAL + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
-        return TYPE_TLS_NOOP;
+        return TYPE_TLS_EXTERNAL;
     }
 
 

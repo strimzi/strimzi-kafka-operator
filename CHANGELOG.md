@@ -3,7 +3,7 @@
 ## 0.25.0
 
 * Allow a custom password to be set for SCRAM-SHA-512 users by referencing a secret in the `KafkaUser` resource
-* Add support for `tls-noop` authentication to User Operator to allow management of ACLs and Quotas for TLS users with user certificates generated externally 
+* Add support for `tls-external` authentication to User Operator to allow management of ACLs and Quotas for TLS users with user certificates generated externally (#5249) 
 
 ### Changes, deprecations and removals
 
