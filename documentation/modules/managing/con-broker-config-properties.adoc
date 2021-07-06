@@ -586,3 +586,7 @@ group.initial.rebalance.delay.ms=3000
 The delay is the amount of time that the coordinator waits for members to join. The longer the delay,
 the more likely it is that all the members will join in time and avoid a rebalance.
 But the delay also prevents the group from consuming until the period has ended.
+
+[role="_additional-resources"]
+.Additional resources
+* xref:proc-setting-broker-limits-str[Setting limits on brokers using the Kafka Static Quota plugin]
