@@ -18,7 +18,7 @@
     <properties>
         <strimzi-oauth.version>0.8.1</strimzi-oauth.version>
         <cruise-control.version>2.5.57</cruise-control.version>
-        <opa-authorizer.version>0.4.2</opa-authorizer.version>
+        <opa-authorizer.version>1.0.0</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.1.0</kafka-quotas-plugin.version>
         <kafka-mirror-maker-2-extensions.version>0.1.0</kafka-mirror-maker-2-extensions.version>
         <kafka-kubernetes-config-provider.version>0.1.0</kafka-kubernetes-config-provider.version>
@@ -273,11 +273,11 @@
             <exclusions>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.module</groupId>
-                    <artifactId>jackson-module-scala_2.12</artifactId>
+                    <artifactId>jackson-module-scala_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka_2.12</artifactId>
+                    <artifactId>kafka_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.google.code.findbugs</groupId>
