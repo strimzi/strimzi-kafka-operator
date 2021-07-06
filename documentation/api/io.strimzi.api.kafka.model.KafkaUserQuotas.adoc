@@ -5,17 +5,17 @@ Kafka allows a user to set `quotas` to control the use of resources by clients.
 You can configure your clients to use the following types of quotas:
 
 * _Network usage_ quotas specify the byte rate threshold for each group of clients sharing a quota.
-* _CPU utilization_ quotas specify a window for broker requests. The window is the percentage of time for clients to make requests. Client make requests on the I/O threads and network threads of each broker.
-* _Partition mutation_ quotas limit the number of partition mutations allowed per second.
+* _CPU utilization_ quotas specify a window for broker requests from clients. The window is the percentage of time for clients to make requests. A client makes requests on the I/O threads and network threads of the broker.
+* _Partition mutation_ quotas limit the number of partition mutations which clients are allowed to make per second.
 
-The partition mutation quota prevents Kafka clusters from being overwhelmed by concurrent topic operations.
-The number of partition mutations includes the following types of user requests:
+A partition mutation quota prevents Kafka clusters from being overwhelmed by concurrent topic operations.
+Partition mutations occur in response to the following types of user requests:
 
 * Creating partitions for a new topic
 * Adding partitions to an existing topic
 * Deleting partitions from a topic
 
-You can configure a mutation rate quota to control the rate at which mutations are accepted for user requests.
+You can configure a partition mutation quota to control the rate at which mutations are accepted for user requests.
 
 Using quotas for Kafka clients might be useful in a number of situations.
 Consider a wrongly configured Kafka producer which is sending requests at too high a rate.
@@ -35,4 +35,4 @@ spec:
     controllerMutationRate: 10
 ----
 
-For more info about Kafka user quotas, refer to the http://kafka.apache.org/documentation/#design_quotas[Apache Kafka documentation^].
+For more information about Kafka user quotas, refer to the http://kafka.apache.org/documentation/#design_quotas[Apache Kafka documentation^].
