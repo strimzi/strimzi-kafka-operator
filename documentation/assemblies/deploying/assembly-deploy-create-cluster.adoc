@@ -6,10 +6,17 @@
 [id="deploy-create-cluster_{context}"]
 = Create the Kafka cluster
 
-In order to create your Kafka cluster, you deploy the Cluster Operator to manage the Kafka cluster, then deploy the Kafka cluster.
+[role="_abstract"]
+To be able to manage a Kafka cluster with the Cluster Operator, you must deploy it as a `Kafka` resource.
+Strimzi provides example deployment files to do this.
+You can use these files to deploy the Topic Operator and User Operator at the same time.
 
-When deploying the Kafka cluster using the `Kafka` resource, you can deploy the Topic Operator and User Operator at the same time.
-Alternatively, if you are using a non-Strimzi Kafka cluster, you can deploy the Topic Operator and User Operator as standalone components.
+If you haven't deployed a Kafka cluster as a `Kafka` resource, you can't use the Cluster Operator to manage it.
+This applies, for example, to a Kafka cluster running outside of Kubernetes.
+But you can deploy and use the Topic Operator and User Operator as standalone components.
+
+NOTE: The Cluster Operator can watch one, multiple, or all namespaces in a Kubernetes cluster.
+The Topic Operator and User Operator watch for `KafkaTopics` and `KafkaUsers` in the single namespace of the Kafka cluster deployment.
 
 [discrete]
 == Deploying a Kafka cluster with the Topic Operator and User Operator
