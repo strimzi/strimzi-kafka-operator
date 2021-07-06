@@ -5,9 +5,11 @@
 [id='deploying-the-topic-operator-using-the-cluster-operator-{context}']
 = Deploying the Topic Operator using the Cluster Operator
 
+[role="_abstract"]
 This procedure describes how to deploy the Topic Operator using the Cluster Operator.
 
 You configure the `entityOperator` property of the `Kafka` resource to include the `topicOperator`.
+By default, the Topic Operator watches for `KafkaTopics` in the namespace of the Kafka cluster deployment.
 
 If you want to use the Topic Operator with a Kafka cluster that is not managed by Strimzi,
 you must xref:deploying-the-topic-operator-standalone-{context}[deploy the Topic Operator as a standalone component].

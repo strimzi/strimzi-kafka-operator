@@ -5,59 +5,129 @@
 [id='deploying-the-user-operator-standalone-{context}']
 = Deploying the standalone User Operator
 
-This procedure shows how to deploy the User Operator as a standalone component.
+[role="_abstract"]
+This procedure shows how to deploy the User Operator as a standalone component for user management.
+You can use a standalone User Operator with a Kafka cluster that is not managed by the Cluster Operator.
 
-A standalone deployment requires configuration of environment variables, and is more complicated than xref:deploying-the-user-operator-using-the-cluster-operator-str[deploying the User Operator using the Cluster Operator].
-However, a standalone deployment is more flexible as the User Operator can operate with _any_ Kafka cluster, not necessarily one deployed by the Cluster Operator.
+A standalone deployment can operate with any Kafka cluster.
+
+Standalone deployment files are provided.
+Edit the `05-Deployment-strimzi-user-operator.yaml` deployment file to add the environment variables that enable the User Operator to connect to a Kafka cluster.
 
 .Prerequisites
 
-* You need an existing Kafka cluster for the User Operator to connect to.
+* You are running a Kafka cluster for the User Operator to connect to.
 
 .Procedure
 
-. Edit the following `Deployment.spec.template.spec.containers[0].env` properties in the `install/user-operator/05-Deployment-strimzi-user-operator.yaml` file by setting:
+. Edit the following `env` properties in the `install/user-operator/05-Deployment-strimzi-user-operator.yaml` standalone deployment file.
 +
-.. `STRIMZI_KAFKA_BOOTSTRAP_SERVERS` to list the Kafka brokers, given as a comma-separated list of `_hostname_:‍_port_` pairs.
-.. `STRIMZI_ZOOKEEPER_CONNECT` to list the ZooKeeper nodes, given as a comma-separated list of `_hostname_:‍_port_` pairs. This must be the same ZooKeeper cluster that your Kafka cluster is using. Connecting to ZooKeeper nodes with TLS encryption is not supported.
-.. `STRIMZI_NAMESPACE` to the Kubernetes namespace in which you want the operator to watch for `KafkaUser` resources.
-.. `STRIMZI_LABELS` to the label selector used to identify the `KafkaUser` resources managed by the operator.
-.. `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS` to specify the interval between periodic reconciliations, in milliseconds.
-.. `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS` to the ZooKeeper session timeout, in milliseconds.
-For example, `10000`.
-Default `20000` (20 seconds).
-.. `STRIMZI_CA_CERT_NAME` to point to a Kubernetes `Secret` that contains the public key of the Certificate Authority for signing new user certificates for TLS client authentication.
-The `Secret` must contain the public key of the Certificate Authority under the key `ca.crt`.
-.. `STRIMZI_CA_KEY_NAME` to point to a Kubernetes `Secret` that contains the private key of the Certificate Authority for signing new user certificates for TLS client authentication.
-The `Secret` must contain the private key of the Certificate Authority under the key `ca.key`.
-.. `STRIMZI_CLUSTER_CA_CERT_SECRET_NAME` to point to a Kubernetes `Secret` containing the public key of the Certificate Authority used for signing Kafka brokers certificates for enabling TLS-based communication.
-The `Secret` must contain the public key of the Certificate Authority under the key `ca.crt`.
-This environment variable is optional and should be set only if the communication with the Kafka cluster is TLS based.
-.. `STRIMZI_EO_KEY_SECRET_NAME` to point to a Kubernetes `Secret` containing the private key and related certificate for TLS client authentication against the Kafka cluster.
-The `Secret` must contain the keystore with the private key and certificate under the key `entity-operator.p12`, and the related password under the key `entity-operator.password`.
-This environment variable is optional and should be set only if TLS client authentication is needed when the communication with the Kafka cluster is TLS based.
-.. `STRIMZI_CA_VALIDITY` the validity period for the Certificate Authority.
-Default is `365` days.
-.. `STRIMZI_CA_RENEWAL` the renewal period for the Certificate Authority.
-.. `STRIMZI_LOG_LEVEL` to the level for printing logging messages.
-The value can be set to: `ERROR`, `WARNING`, `INFO`, `DEBUG`, and `TRACE`.
-Default `INFO`.
-.. `STRIMZI_GC_LOG_ENABLED` to enable garbage collection (GC) logging.
-Default `true`.
-Default is `30` days to initiate certificate renewal before the old certificates expire.
-.. `STRIMZI_JAVA_OPTS` _(optional)_ to the Java options used for the JVM running User Operator. An example is `-Xmx=512M -Xms=256M`.
-.. `STRIMZI_JAVA_SYSTEM_PROPERTIES` _(optional)_ to list the `-D` options which are set to the User Operator. An example is `-Djavax.net.debug=verbose -DpropertyName=value`.
+.Example standalone User Operator deployment configuration
+[source,shell,subs=+quotes]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-user-operator
+  labels:
+    app: strimzi
+spec:
+  # ...
+  template:
+    # ...
+    spec:
+      # ...
+      containers:
+        - name: strimzi-user-operator
+          # ...
+          env:
+            - name: STRIMZI_NAMESPACE <1>
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS <2>
+              value: my-kafka-bootstrap-address:9092
+            - name: STRIMZI_CA_CERT_NAME <3>
+              value: my-cluster-clients-ca-cert
+            - name: STRIMZI_CA_KEY_NAME <4>
+              value: my-cluster-clients-ca
+            - name: STRIMZI_ZOOKEEPER_CONNECT <5>
+              value: my-cluster-zookeeper-client:2181
+            - name: STRIMZI_LABELS <6>
+              value: "strimzi.io/cluster=my-cluster"
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS <7>
+              value: "120000"
+            - name: STRIMZI_ZOOKEEPER_CONNECT <8>
+              value: my-cluster-zookeeper-client:2181
+            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS <9>
+              value: "18000"
+            - name: STRIMZI_LOG_LEVEL <10>
+              value: INFO
+            - name: STRIMZI_GC_LOG_ENABLED <11>
+              value: "true"
+            - name: STRIMZI_CA_VALIDITY <12>
+              value: "365"
+            - name: STRIMZI_CA_RENEWAL <13>
+              value: "30"
+            - name: STRIMZI_JAVA_OPTS <14>
+              value: "-Xmx=512M -Xms=256M"
+            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES <15>
+              value: "-Djavax.net.debug=verbose -DpropertyName=value"
+----
+<1> The Kubernetes namespace for the User Operator to watch for `KafkaUser` resources. Only one namespace can be specified.
+<2>  The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
+Use a comma-separated list to specify two or three broker addresses in case a server is down.
+<3> The Kubernetes `Secret` that contains the public key (`ca.crt`) value of the Certificate Authority that signs new user certificates for TLS client authentication.
+<4> The Kubernetes `Secret` that contains the private key (`ca.key`) value of the Certificate Authority that signs new user certificates for TLS client authentication.
+<5> The host and port pair of the address to connect to the ZooKeeper cluster.
+This must be the same ZooKeeper cluster that your Kafka cluster is using.
+<6> The label selector used to identify the `KafkaUser` resources managed by the User Operator.
+<7> The interval between periodic reconciliations, in milliseconds.
+The default is `120000` (2 minutes).
+<8> The host and port pair of the address to connect to the ZooKeeper cluster.
+This must be the same ZooKeeper cluster that your Kafka cluster is using.
+<9> The ZooKeeper session timeout, in milliseconds.
+The default is `18000` (18 seconds).
+<10> The level for printing logging messages.
+You can set the level to `ERROR`, `WARNING`, `INFO`, `DEBUG`, or `TRACE`.
+<11> Enables garbage collection (GC) logging.
+The default is `true`.
+<12> The validity period for the Certificate Authority.
+The default is `365` days.
+<13> The renewal period for the Certificate Authority. The renewal period is measured backwards from the expiry date of the current certificate.
+The default is `30` days to initiate certificate renewal before the old certificates expire.
+<14> (Optional) The Java options used by the JVM running the User Operator
+<15> (Optional) The debugging (`-D`) options set for the User Operator
 
-. Deploy the User Operator:
+
+. If you are using TLS to connect to the Kafka cluster, specify the secrets used to authenticate connection.
+Otherwise, go to the next step.
++
+.Example TLS configuration
+[source,shell,subs=+quotes]
+----
+# ....
+env:
+  - name: STRIMZI_CLUSTER_CA_CERT_SECRET_NAME <1>
+    value: my-cluster-cluster-cert
+  - name: STRIMZI_EO_KEY_SECRET_NAME <2>
+    value: my-cluster-cluster-ca
+# ..."
+----
+<1> The Kubernetes `Secret` that contains the public key (`ca.crt`) value of the Certificate Authority that signs Kafka broker certificates for TLS client authentication.
+<2> The Kubernetes `Secret` that contains the keystore (`entity-operator_.p12`) with the private key and certificate for TLS authentication against the Kafka cluster.
+The `Secret` must also contain the password (`entity-operator_.password`) for accessing the keystore.
+
+. Deploy the User Operator.
 +
 [source,shell,subs=+quotes]
 kubectl create -f install/user-operator
 
-. Verify that the User Operator has been deployed successfully:
+. Verify that the User Operator has been deployed successfully.
 +
 [source,shell,subs=+quotes]
 kubectl describe deployment strimzi-user-operator
 +
-The User Operator is deployed when the `Replicas:` entry shows `1 available`.
+The User Operator is deployed when the `Replicas` entry shows `1 available`.
 +
-NOTE: You may experience a delay with the deployment if you have a slow connection to the Kubernetes cluster and the images have not been downloaded before.
+NOTE: You might experience a delay with the deployment if you have a slow connection to the Kubernetes cluster and the User Operator images have not been downloaded before.
