@@ -1,6 +1,6 @@
 To use link:https://www.openpolicyagent.org/[Open Policy Agent^] authorization, set the `type` property in the `authorization` section to the value `opa`,
 and configure OPA properties as required.
-Strimzi uses the Kafka authorization plugin from Bisnode as the Open Policy Agent authroizer.
+Strimzi uses Bisnode's Kafka authorization plugin as the Open Policy Agent authorizer.
 For more information about the format of the input data and policy examples, see {BisnodeOPAAuthorizer}.
 
 === `url`
