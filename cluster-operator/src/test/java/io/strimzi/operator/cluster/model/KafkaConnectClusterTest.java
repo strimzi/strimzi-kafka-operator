@@ -1468,7 +1468,7 @@ public class KafkaConnectClusterTest {
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", null);
+        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", null, true);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1490,7 +1490,7 @@ public class KafkaConnectClusterTest {
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, namespace, null);
+        NetworkPolicy np = kc.generateNetworkPolicy(true, namespace, null, true);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1512,7 +1512,7 @@ public class KafkaConnectClusterTest {
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")), true);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1534,7 +1534,18 @@ public class KafkaConnectClusterTest {
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
 
-        assertThat(kc.generateNetworkPolicy(false, null, null), is(nullValue()));
+        assertThat(kc.generateNetworkPolicy(false, null, null, true), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testNetworkPolicyDisabled() {
+        KafkaConnect resource = new KafkaConnectBuilder(this.resource)
+            .build();
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+
+        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", null, false);
+
+        assertThat(np, is(nullValue()));
     }
 
     @ParallelTest

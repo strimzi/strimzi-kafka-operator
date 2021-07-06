@@ -80,6 +80,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CON
  */
 public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>, KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaMirrorMaker2AssemblyOperator.class.getName());
+    private final boolean isNetworkPolicyGeneration;
     private final DeploymentOperator deploymentOperations;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final KafkaVersion.Lookup versions;
@@ -121,6 +122,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider) {
         super(vertx, pfa, KafkaMirrorMaker2.RESOURCE_KIND, supplier.mirrorMaker2Operator, supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT);
+        this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.deploymentOperations = supplier.deploymentOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.versions = config.versions();
@@ -148,7 +150,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
         LOGGER.debugCr(reconciliation, "Updating Kafka MirrorMaker 2.0 cluster");
         mirrorMaker2ServiceAccount(reconciliation, namespace, mirrorMaker2Cluster)
-                .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateNetworkPolicy(true, operatorNamespace, operatorNamespaceLabels)))
+                .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateNetworkPolicy(true, operatorNamespace, operatorNamespaceLabels, isNetworkPolicyGeneration)))
                 .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
                 .compose(i -> Util.metricsAndLogging(reconciliation, configMapOperations, namespace, mirrorMaker2Cluster.getLogging(), mirrorMaker2Cluster.getMetricsConfigInCm()))

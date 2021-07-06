@@ -1555,7 +1555,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
         kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", null);
+        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", null, true);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1579,7 +1579,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
         kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, namespace, null);
+        NetworkPolicy np = kc.generateNetworkPolicy(true, namespace, null, true);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1602,7 +1602,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
         kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
 
-        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")), true);
 
         assertThat(np.getMetadata().getName(), is(kc.getName()));
         assertThat(np.getSpec().getPodSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -1616,6 +1616,18 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector().getMatchLabels(), is(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
         assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
         assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
+    }
+
+    @ParallelTest
+    public void testNetworkPolicyDisabled() {
+        KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resourceWithMetrics)
+            .build();
+        KafkaMirrorMaker2Cluster kc = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        kc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCM, null));
+
+        NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", null, false);
+
+        assertThat(np, is(nullValue()));
     }
 
     @ParallelTest

@@ -756,12 +756,13 @@ public class KafkaConnectCluster extends AbstractModel {
      * @param connectorOperatorEnabled Whether the ConnectorOperator is enabled or not
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     * @param networkPolicyGenerationEnabled                Activates the generation of Network Policies.
      *
      * @return The network policy.
      */
     public NetworkPolicy generateNetworkPolicy(boolean connectorOperatorEnabled,
-                                               String operatorNamespace, Labels operatorNamespaceLabels) {
-        if (connectorOperatorEnabled) {
+                                               String operatorNamespace, Labels operatorNamespaceLabels, boolean networkPolicyGenerationEnabled) {
+        if (networkPolicyGenerationEnabled && connectorOperatorEnabled) {
             List<NetworkPolicyIngressRule> rules = new ArrayList<>(2);
 
             // Give CO access to the REST API

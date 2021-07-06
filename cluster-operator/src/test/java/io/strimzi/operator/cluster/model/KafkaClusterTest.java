@@ -1629,7 +1629,7 @@ public class KafkaClusterTest {
         KafkaCluster k = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Network Policies => Different namespace
-        NetworkPolicy np = k.generateNetworkPolicy("operator-namespace", null);
+        NetworkPolicy np = k.generateNetworkPolicy("operator-namespace", null, true);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.CONTROLPLANE_PORT))).findFirst().orElse(null), is(notNullValue()));
 
@@ -1692,7 +1692,7 @@ public class KafkaClusterTest {
         KafkaCluster k = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Network Policies => Different namespace
-        NetworkPolicy np = k.generateNetworkPolicy("operator-namespace", null);
+        NetworkPolicy np = k.generateNetworkPolicy("operator-namespace", null, true);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).findFirst().orElse(null), is(notNullValue()));
 
@@ -1706,7 +1706,7 @@ public class KafkaClusterTest {
         assertThat(rules.contains(clusterOperatorPeer), is(true));
 
         // Check Network Policies => Same namespace
-        np = k.generateNetworkPolicy(namespace, null);
+        np = k.generateNetworkPolicy(namespace, null, true);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).findFirst().orElse(null), is(notNullValue()));
 
@@ -1720,7 +1720,7 @@ public class KafkaClusterTest {
         assertThat(rules.contains(clusterOperatorPeerSameNamespace), is(true));
 
         // Check Network Policies => Namespace with Labels
-        np = k.generateNetworkPolicy("operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
+        np = k.generateNetworkPolicy("operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")), true);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(KafkaCluster.REPLICATION_PORT))).findFirst().orElse(null), is(notNullValue()));
 
@@ -1732,6 +1732,10 @@ public class KafkaClusterTest {
         assertThat(rules.contains(kafkaExporterPeer), is(true));
         assertThat(rules.contains(cruiseControlPeer), is(true));
         assertThat(rules.contains(clusterOperatorPeerNamespaceWithLabels), is(true));
+
+        // Check Network Policies => Disabled
+        np = k.generateNetworkPolicy("operator-namespace", null, false);
+        assertThat(np, is(nullValue()));
     }
 
     @ParallelTest
@@ -1779,7 +1783,7 @@ public class KafkaClusterTest {
         KafkaCluster k = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Network Policies
-        NetworkPolicy np = k.generateNetworkPolicy(null, null);
+        NetworkPolicy np = k.generateNetworkPolicy(null, null, true);
 
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(9092))).collect(Collectors.toList());
         assertThat(rules.size(), is(1));
@@ -1826,7 +1830,7 @@ public class KafkaClusterTest {
         KafkaCluster k = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Network Policies
-        NetworkPolicy np = k.generateNetworkPolicy(null, null);
+        NetworkPolicy np = k.generateNetworkPolicy(null, null, true);
 
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(9092))).collect(Collectors.toList());
         assertThat(rules.size(), is(1));
