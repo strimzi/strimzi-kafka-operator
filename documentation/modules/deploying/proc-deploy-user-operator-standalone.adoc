@@ -6,7 +6,7 @@
 = Deploying the standalone User Operator
 
 [role="_abstract"]
-This procedure shows how to deploy the User Operator as a standalone component to manage users.
+This procedure shows how to deploy the User Operator as a standalone component for user management.
 You can use a standalone User Operator with a Kafka cluster that is not managed by the Cluster Operator.
 
 A standalone deployment can operate with any Kafka cluster.

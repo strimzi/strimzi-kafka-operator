@@ -6,7 +6,7 @@
 = Deploying the standalone Topic Operator
 
 [role="_abstract"]
-This procedure shows how to deploy the Topic Operator as a standalone component to manage topics.
+This procedure shows how to deploy the Topic Operator as a standalone component for topic management.
 You can use a standalone Topic Operator with a Kafka cluster that is not managed by the Cluster Operator.
 
 A standalone deployment can operate with any Kafka cluster.
