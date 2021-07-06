@@ -7,10 +7,10 @@
 
 [role="_abstract"]
 If you are running a Kafka cluster behind a HTTP proxy, you can still pass data in and out of the cluster.
-For example, you can run Kafka Connect with connectors that push and pull data outside the proxy.
+For example, you can run Kafka Connect with connectors that push and pull data from outside the proxy.
 Or you can use a proxy to connect with an authorization server.
-Configure the Cluster Operator deployment to specify the proxy environment variables.
 
+Configure the Cluster Operator deployment to specify the proxy environment variables.
 The Cluster Operator accepts standard proxy configuration (`HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY`) as environment variables.
 The proxy settings are applied to all Strimzi containers.
 
