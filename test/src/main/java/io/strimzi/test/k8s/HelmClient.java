@@ -45,6 +45,7 @@ public class HelmClient {
                 .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
                 .collect(Collectors.joining(","));
         Exec.exec(null, wait(namespace(command("install",
+                "--replace",
                 releaseName,
                 "--set-string", values,
                 "--timeout", INSTALL_TIMEOUT_SECONDS,
