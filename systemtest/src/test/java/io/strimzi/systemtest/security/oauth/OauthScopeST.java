@@ -29,7 +29,6 @@ import java.rmi.UnexpectedException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
