@@ -57,6 +57,8 @@ public class OauthAbstractST extends AbstractST {
     protected static final String OAUTH_TEAM_B_SECRET = "team-b-client-secret";
     protected static final String OAUTH_KEY = "clientSecret";
 
+    protected final String audienceListenerPort = "9098";
+
     protected KeycloakInstance keycloakInstance;
 
     public static Map<String, Object> connectorConfig;

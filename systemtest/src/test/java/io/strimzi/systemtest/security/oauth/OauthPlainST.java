@@ -33,6 +33,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
@@ -46,11 +47,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.rmi.UnexpectedException;
 import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
@@ -72,7 +69,6 @@ public class OauthPlainST extends OauthAbstractST {
     private KafkaOauthExampleClients oauthInternalClientJob;
     private KafkaOauthExampleClients oauthInternalClientChecksJob;
     private final String oauthClusterName = "oauth-cluster-plain-name";
-    private final String audienceListenerPort = "9098";
     private final String customClaimListenerPort = "9099";
     private static final String NAMESPACE = "oauth2-plain-cluster-test";
 
@@ -640,32 +636,76 @@ public class OauthPlainST extends OauthAbstractST {
         JobUtils.deleteJobWithWait(NAMESPACE, bridgeProducerName);
     }
 
-    @ParallelTest
-    @Tag(BRIDGE)
-    void testClientSideScope(ExtensionContext extensionContext) throws UnexpectedException {
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
-        final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final String audienceListener = "audienlist";
+    @BeforeAll
+    void setUp(ExtensionContext extensionContext) {
+        super.beforeAllMayOverride(extensionContext);
+        // for namespace
+        super.setupCoAndKeycloak(extensionContext, NAMESPACE);
 
-        KafkaOauthExampleClients oauthInternalClientChecksJob = new KafkaOauthExampleClients.Builder()
-            .withProducerName(producerName)
-            .withConsumerName(consumerName)
-            .withBootstrapAddress(KafkaResources.bootstrapServiceName(clusterName) + ":" + audienceListenerPort)
-            .withTopicName(topicName)
+        final String customClaimListener = "cclistener";
+        final String audienceListener = "audlistnr";
+
+        keycloakInstance.setRealm("internal", false);
+
+        LOGGER.info("Setting producer and consumer properties");
+
+        oauthInternalClientJob = new KafkaOauthExampleClients.Builder()
+            .withProducerName(OAUTH_PRODUCER_NAME)
+            .withConsumerName(OAUTH_CONSUMER_NAME)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
+            .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withOAuthProducerClientId(OAUTH_CLIENT_AUDIENCE_PRODUCER)
-            .withOAuthConsumerClientId(OAUTH_CLIENT_AUDIENCE_CONSUMER)
-            .withOAuthClientSecret(OAUTH_CLIENT_AUDIENCE_SECRET)
+            .withOAuthClientId(OAUTH_CLIENT_NAME)
+            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
+        oauthInternalClientChecksJob = new KafkaOauthExampleClients.Builder()
+                .withProducerName(OAUTH_CLIENT_AUDIENCE_PRODUCER)
+                .withConsumerName(OAUTH_CLIENT_AUDIENCE_CONSUMER)
+                .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + audienceListenerPort)
+                .withTopicName(TOPIC_NAME)
+                .withMessageCount(MESSAGE_COUNT)
+                .withOAuthProducerClientId(OAUTH_CLIENT_AUDIENCE_PRODUCER)
+                .withOAuthConsumerClientId(OAUTH_CLIENT_AUDIENCE_CONSUMER)
+                .withOAuthClientSecret(OAUTH_CLIENT_AUDIENCE_SECRET)
+                .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                .build();
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 1, 1)
             .editSpec()
                 .editKafka()
-                    .withListeners(
+                    .withListeners(new GenericKafkaListenerBuilder()
+                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                                .withPort(9092)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .withNewKafkaListenerAuthenticationOAuth()
+                                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                                    .withEnablePlain(true)
+                                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                                .endKafkaListenerAuthenticationOAuth()
+                                .build(),
+                            new GenericKafkaListenerBuilder()
+                                .withName(customClaimListener)
+                                .withPort(Integer.parseInt(customClaimListenerPort))
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(false)
+                                .withNewKafkaListenerAuthenticationOAuth()
+                                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                                    .withEnablePlain(true)
+                                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                                    .withCustomClaimCheck("@.clientId && @.clientId =~ /.*hello-world.*/")
+                                .endKafkaListenerAuthenticationOAuth()
+                                .build(),
                             new GenericKafkaListenerBuilder()
                                 .withName(audienceListener)
                                 .withPort(Integer.parseInt(audienceListenerPort))
@@ -680,139 +720,12 @@ public class OauthPlainST extends OauthAbstractST {
                                     .withEnablePlain(true)
                                     .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                                     .withCheckAudience(true)
-                                    .withCustomClaimCheck("@.scope == 'test'")
-                                    .withClientScope("test")
                                     .withClientId("kafka-component")
                                 .endKafkaListenerAuthenticationOAuth()
                                 .build())
                 .endKafka()
             .endSpec()
             .build());
-
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-
-        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimziOauthPlain().build());
-        // client should fail because we do not specify client-audience but only scope
-        ClientUtils.waitForClientTimeout(producerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
-
-        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.consumerStrimziOauthPlain().build());
-        ClientUtils.waitForClientTimeout(consumerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
-
-        // re-configuring Kafka listener to have client scope assigned to null
-        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
-            List<GenericKafkaListener> audieListener = kafka.getSpec().getKafka().getListeners()
-                .stream()
-                .filter(listener -> listener.getName().equals(audienceListener))
-                .collect(Collectors.toList());
-
-            ((KafkaListenerAuthenticationOAuth) audieListener.get(0).getAuth()).setClientScope(null);
-            kafka.getSpec().getKafka().getListeners().set(0, audieListener.get(0));
-        });
-
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(NAMESPACE, KafkaResources.kafkaStatefulSetName(clusterName), 1, ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET));
-
-        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimziOauthPlain().build());
-        // client should fail because we do not specify client-audience and also not scope
-        ClientUtils.waitForClientTimeout(producerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
-
-        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.consumerStrimziOauthPlain().build());
-        ClientUtils.waitForClientTimeout(consumerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
-    }
-
-    @BeforeAll
-    void setUp(ExtensionContext extensionContext) {
-        super.beforeAllMayOverride(extensionContext);
-        // for namespace
-        super.setupCoAndKeycloak(extensionContext, NAMESPACE);
-
-        final String customClaimListener = "cclistener";
-        final String audienceListener = "audlistnr";
-
-        keycloakInstance.setRealm("internal", false);
-
-        LOGGER.info("Setting producer and consumer properties");
-
-//        oauthInternalClientJob = new KafkaOauthExampleClients.Builder()
-//            .withProducerName(OAUTH_PRODUCER_NAME)
-//            .withConsumerName(OAUTH_CONSUMER_NAME)
-//            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(oauthClusterName))
-//            .withTopicName(TOPIC_NAME)
-//            .withMessageCount(MESSAGE_COUNT)
-//            .withOAuthClientId(OAUTH_CLIENT_NAME)
-//            .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
-//            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-//            .build();
-//
-//        oauthInternalClientChecksJob = new KafkaOauthExampleClients.Builder()
-//                .withProducerName(OAUTH_CLIENT_AUDIENCE_PRODUCER)
-//                .withConsumerName(OAUTH_CLIENT_AUDIENCE_CONSUMER)
-//                .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + audienceListenerPort)
-//                .withTopicName(TOPIC_NAME)
-//                .withMessageCount(MESSAGE_COUNT)
-//                .withOAuthProducerClientId(OAUTH_CLIENT_AUDIENCE_PRODUCER)
-//                .withOAuthConsumerClientId(OAUTH_CLIENT_AUDIENCE_CONSUMER)
-//                .withOAuthClientSecret(OAUTH_CLIENT_AUDIENCE_SECRET)
-//                .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-//                .build();
-//
-//        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 1, 1)
-//            .editSpec()
-//                .editKafka()
-//                    .withListeners(new GenericKafkaListenerBuilder()
-//                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-//                                .withPort(9092)
-//                                .withType(KafkaListenerType.INTERNAL)
-//                                .withTls(false)
-//                                .withNewKafkaListenerAuthenticationOAuth()
-//                                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-//                                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-//                                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-//                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-//                                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
-//                                    .withEnablePlain(true)
-//                                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-//                                .endKafkaListenerAuthenticationOAuth()
-//                                .build(),
-//                            new GenericKafkaListenerBuilder()
-//                                .withName(customClaimListener)
-//                                .withPort(Integer.parseInt(customClaimListenerPort))
-//                                .withType(KafkaListenerType.INTERNAL)
-//                                .withTls(false)
-//                                .withNewKafkaListenerAuthenticationOAuth()
-//                                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-//                                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-//                                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-//                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-//                                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
-//                                    .withEnablePlain(true)
-//                                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-//                                    .withCustomClaimCheck("@.clientId && @.clientId =~ /.*hello-world.*/")
-//                                .endKafkaListenerAuthenticationOAuth()
-//                                .build(),
-//                            new GenericKafkaListenerBuilder()
-//                                .withName(audienceListener)
-//                                .withPort(Integer.parseInt(audienceListenerPort))
-//                                .withType(KafkaListenerType.INTERNAL)
-//                                .withTls(false)
-//                                .withNewKafkaListenerAuthenticationOAuth()
-//                                    .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-//                                    .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-//                                    .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-//                                    .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-//                                    .withUserNameClaim(keycloakInstance.getUserNameClaim())
-//                                    .withEnablePlain(true)
-//                                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-//                                    .withCheckAudience(true)
-//                                    .withClientId("kafka-component")
-//                                .endKafkaListenerAuthenticationOAuth()
-//                                .build())
-//                .endKafka()
-//            .endSpec()
-//            .build());
     }
 
     @AfterAll
