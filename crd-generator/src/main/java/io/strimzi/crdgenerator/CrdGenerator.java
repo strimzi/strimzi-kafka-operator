@@ -413,7 +413,9 @@ public class CrdGenerator {
             result.put("version", Arrays.stream(crd.versions())
                     .map(v -> ApiVersion.parse(v.name()))
                     .filter(this::shouldIncludeVersion)
-                    .findFirst().map(v -> v.toString()).orElseThrow());
+                    .findFirst()
+                    .map(ApiVersion::toString)
+                    .orElseThrow());
         }
 
         if (!perVersionSchemas) {

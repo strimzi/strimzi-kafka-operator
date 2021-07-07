@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
 public class FeatureGatesTest {
+
     @ParallelTest
     public void testIndividualFeatureGates() {
         for (FeatureGates.FeatureGate gate : FeatureGates.NONE.allFeatureGates()) {

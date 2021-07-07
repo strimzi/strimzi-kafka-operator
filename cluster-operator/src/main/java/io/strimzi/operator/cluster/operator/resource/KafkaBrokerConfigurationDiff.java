@@ -42,11 +42,11 @@ import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
 public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaBrokerConfigurationDiff.class);
+    private static final String PLACE_HOLDER = Pattern.quote("STRIMZI_BROKER_ID");
 
     private final Reconciliation reconciliation;
     private final Collection<AlterConfigOp> diff;
-    private int brokerId;
-    private Map<String, ConfigModel> configModel;
+    private final Map<String, ConfigModel> configModel;
 
     /**
      * These options are skipped because they contain placeholders
@@ -72,25 +72,14 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
     public KafkaBrokerConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, KafkaVersion kafkaVersion, int brokerId) {
         this.reconciliation = reconciliation;
         this.configModel = KafkaConfiguration.readConfigModel(kafkaVersion);
-        this.brokerId = brokerId;
         this.diff = diff(brokerId, desired, brokerConfigs, configModel);
     }
 
-    private static void fillPlaceholderValue(Map<String, String> orderedProperties, String placeholder, String value) {
+    private static void fillPlaceholderValue(Map<String, String> orderedProperties, String value) {
         orderedProperties.entrySet().forEach(entry -> {
-            entry.setValue(entry.getValue().replaceAll("\\$\\{" + Pattern.quote(placeholder) + "\\}", value));
+            String v = entry.getValue().replaceAll("\\$\\{" + PLACE_HOLDER + "}", value);
+            entry.setValue(v);
         });
-    }
-
-    /**
-     * Returns true if property in desired map has a default value
-     * @param key name of the property
-     * @param config Config which contains property
-     * @return true if property in desired map has a default value
-     */
-    boolean isDesiredPropertyDefaultValue(String key, Config config) {
-        Optional<ConfigEntry> entry = config.entries().stream().filter(configEntry -> configEntry.name().equals(key)).findFirst();
-        return entry.map(ConfigEntry::isDefault).orElse(false);
     }
 
     public boolean canBeUpdatedDynamically() {
@@ -159,7 +148,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         orderedProperties.addStringPairs(desired);
         Map<String, String> desiredMap = orderedProperties.asMap();
 
-        fillPlaceholderValue(desiredMap, "STRIMZI_BROKER_ID", Integer.toString(brokerId));
+        fillPlaceholderValue(desiredMap, Integer.toString(brokerId));
 
         JsonNode source = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(currentMap);
         JsonNode target = patchMapper().configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true).valueToTree(desiredMap);
@@ -254,7 +243,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
      * @return true if entry is custom (not default)
      */
     private static boolean isCustomEntry(String entryName, Map<String, ConfigModel> configModel) {
-        return !configModel.keySet().contains(entryName);
+        return !configModel.containsKey(entryName);
     }
 
 }

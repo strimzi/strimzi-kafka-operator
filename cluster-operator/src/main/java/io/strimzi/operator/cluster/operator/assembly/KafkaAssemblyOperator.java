@@ -2027,13 +2027,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                                 if (broker.getStatus() != null && broker.getStatus().getHostIP() != null) {
                                     String hostIP = broker.getStatus().getHostIP();
-                                    allNodes.stream().filter(node -> {
-                                        if (node.getStatus() != null && node.getStatus().getAddresses() != null) {
-                                            return null != node.getStatus().getAddresses().stream().filter(address -> hostIP.equals(address.getAddress())).findFirst().orElse(null);
-                                        } else {
-                                            return false;
-                                        }
-                                    }).findFirst().ifPresent(podNode -> brokerNodes.put(podIndex, podNode));
+                                    allNodes.stream()
+                                            .filter(node -> {
+                                                if (node.getStatus() != null && node.getStatus().getAddresses() != null) {
+                                                    return node.getStatus().getAddresses().stream().anyMatch(address -> hostIP.equals(address.getAddress()));
+                                                } else {
+                                                    return false;
+                                                }
+                                            })
+                                            .findFirst()
+                                            .ifPresent(podNode -> brokerNodes.put(podIndex, podNode));
                                 }
                             }
 
