@@ -2159,8 +2159,15 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 [options="header"]
 |====
 |Property               |Description
-|authentication  1.2+<.<a|Authentication mechanism enabled for this Kafka user. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512].
-|xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`]
+|authentication  1.2+<.<a|Authentication mechanism enabled for this Kafka user. The supported authentication mechanisms are `scram-sha-512`, `tls`, and `tls-external`. 
+
+* `scram-sha-512` generates a secret with SASL SCRAM-SHA-512 credentials.
+* `tls` generates a secret with user certificate for mutual TLS authentication.
+* `tls-external` does not generate a user certificate.   But prepares the user for using mutual TLS authentication using a user certificate generated outside the User Operator.
+  ACLs and quotas set for this user are configured in the `CN=<username>` format.
+
+Authentication is optional. If authentication is not configured, no credentials are generated. ACLs and quotas set for the user are configured in the `<username>` format suitable for SASL authentication. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, tls-external, scram-sha-512].
+|xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserTlsExternalClientAuthentication-{context}[`KafkaUserTlsExternalClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`]
 |authorization   1.2+<.<a|Authorization rules for this Kafka user. The type depends on the value of the `authorization.type` property within the given object, which must be one of [simple].
 |xref:type-KafkaUserAuthorizationSimple-{context}[`KafkaUserAuthorizationSimple`]
 |quotas          1.2+<.<a|Quotas on requests to control the broker resources used by clients. Network bandwidth and request rate quotas can be enforced.Kafka documentation for Kafka User quotas can be found at http://kafka.apache.org/documentation/#design_quotas.
@@ -2175,12 +2182,27 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaUserTlsClientAuthentication` type from xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`].
+The `type` property is a discriminator that distinguishes use of the `KafkaUserTlsClientAuthentication` type from xref:type-KafkaUserTlsExternalClientAuthentication-{context}[`KafkaUserTlsExternalClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`].
 It must have the value `tls` for the type `KafkaUserTlsClientAuthentication`.
 [options="header"]
 |====
 |Property     |Description
 |type  1.2+<.<a|Must be `tls`.
+|string
+|====
+
+[id='type-KafkaUserTlsExternalClientAuthentication-{context}']
+### `KafkaUserTlsExternalClientAuthentication` schema reference
+
+Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
+
+
+The `type` property is a discriminator that distinguishes use of the `KafkaUserTlsExternalClientAuthentication` type from xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserScramSha512ClientAuthentication-{context}[`KafkaUserScramSha512ClientAuthentication`].
+It must have the value `tls-external` for the type `KafkaUserTlsExternalClientAuthentication`.
+[options="header"]
+|====
+|Property     |Description
+|type  1.2+<.<a|Must be `tls-external`.
 |string
 |====
 
@@ -2190,7 +2212,7 @@ It must have the value `tls` for the type `KafkaUserTlsClientAuthentication`.
 Used in: xref:type-KafkaUserSpec-{context}[`KafkaUserSpec`]
 
 
-The `type` property is a discriminator that distinguishes use of the `KafkaUserScramSha512ClientAuthentication` type from xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`].
+The `type` property is a discriminator that distinguishes use of the `KafkaUserScramSha512ClientAuthentication` type from xref:type-KafkaUserTlsClientAuthentication-{context}[`KafkaUserTlsClientAuthentication`], xref:type-KafkaUserTlsExternalClientAuthentication-{context}[`KafkaUserTlsExternalClientAuthentication`].
 It must have the value `scram-sha-512` for the type `KafkaUserScramSha512ClientAuthentication`.
 [options="header"]
 |====

@@ -26,7 +26,16 @@ public class KafkaUserSpec extends Spec {
     private KafkaUserQuotas quotas;
     private KafkaUserTemplate template;
 
-    @Description("Authentication mechanism enabled for this Kafka user.")
+    @Description("Authentication mechanism enabled for this Kafka user. " +
+            "The supported authentication mechanisms are `scram-sha-512`, `tls`, and `tls-external`. \n\n" +
+            "* `scram-sha-512` generates a secret with SASL SCRAM-SHA-512 credentials.\n" +
+            "* `tls` generates a secret with user certificate for mutual TLS authentication.\n" +
+            "* `tls-external` does not generate a user certificate. " +
+            "  But prepares the user for using mutual TLS authentication using a user certificate generated outside the User Operator.\n" +
+            "  ACLs and quotas set for this user are configured in the `CN=<username>` format.\n\n" +
+            "Authentication is optional. " +
+            "If authentication is not configured, no credentials are generated. " +
+            "ACLs and quotas set for the user are configured in the `<username>` format suitable for SASL authentication.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public KafkaUserAuthentication getAuthentication() {
         return authentication;

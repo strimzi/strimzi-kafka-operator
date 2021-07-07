@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
+import io.strimzi.api.kafka.model.KafkaUserTlsExternalClientAuthentication;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -73,6 +74,24 @@ public class KafkaUserModelTest {
 
         assertThat(model.getSimpleAclRules(), hasSize(ResourceUtils.createExpectedSimpleAclRules(tlsUser).size()));
         assertThat(model.getSimpleAclRules(), is(ResourceUtils.createExpectedSimpleAclRules(tlsUser)));
+    }
+
+    @Test
+    public void testFromCrdTlsExternalUser()   {
+        KafkaUserModel model = KafkaUserModel.fromCrd(ResourceUtils.createKafkaUser(new KafkaUserTlsExternalClientAuthentication()), UserOperatorConfig.DEFAULT_SECRET_PREFIX);
+
+        assertThat(model.namespace, is(ResourceUtils.NAMESPACE));
+        assertThat(model.name, is(ResourceUtils.NAME));
+        assertThat(model.labels, is(Labels.fromMap(ResourceUtils.LABELS)
+                        .withStrimziKind(KafkaUser.RESOURCE_KIND)
+                        .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                        .withKubernetesInstance(ResourceUtils.NAME)
+                        .withKubernetesPartOf(ResourceUtils.NAME)
+                        .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)));
+        assertThat(model.authentication.getType(), is(KafkaUserTlsExternalClientAuthentication.TYPE_TLS_EXTERNAL));
+        assertThat(model.isTlsExternalUser(), is(true));
+        assertThat(model.getUserName(), is("CN=" + ResourceUtils.NAME));
+        assertThat(model.generateSecret(), is(nullValue()));
     }
 
     @Test
