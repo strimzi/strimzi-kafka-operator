@@ -126,7 +126,13 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
         connectServiceAccount(reconciliation, namespace, connect)
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
-                .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generateNetworkPolicy(isUseResources(kafkaConnect), operatorNamespace, operatorNamespaceLabels, isNetworkPolicyGeneration)))
+                .compose(i -> {
+                    if (isNetworkPolicyGeneration) {
+                        return networkPolicyOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generateNetworkPolicy(isUseResources(kafkaConnect), operatorNamespace, operatorNamespaceLabels));
+                    } else {
+                        return Future.succeededFuture();
+                    }
+                })
                 .compose(i -> deploymentOperations.getAsync(namespace, connect.getName()))
                 .compose(deployment -> {
                     if (deployment != null) {

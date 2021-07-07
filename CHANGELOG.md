@@ -6,7 +6,7 @@
 * Open Policy Agent authorizer updated to a new version supporting Scala 2.13. See the _Changes, deprecations and removals_ sections for more details. (#5192)
 * Allow a custom password to be set for SCRAM-SHA-512 users by referencing a secret in the `KafkaUser` resource
 * Add support for `tls-external` authentication to User Operator to allow management of ACLs and Quotas for TLS users with user certificates generated externally (#5249) 
-* Add support for disabling generation of network policies (Available via the `STRIMZI_NETWORK_POLICY_GENERATION` environment variable, disabling this will disable network policies)
+* Support for disabling the automatic generation of network policies by the Cluster Operator. Set the Cluster Operator's `STRIMZI_NETWORK_POLICY_GENERATION` environment variable to `false` to disable network policies. (#5258)
 
 ### Changes, deprecations and removals
 

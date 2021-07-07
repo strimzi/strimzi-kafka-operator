@@ -1128,8 +1128,8 @@ public class KafkaAssemblyOperatorTest {
         );
 
         // Mock NetworkPolicy get
-        when(mockPolicyOps.get(clusterNamespace, KafkaCluster.networkPolicyName(clusterName))).thenReturn(originalKafkaCluster.generateNetworkPolicy(null, null, true));
-        when(mockPolicyOps.get(clusterNamespace, ZookeeperCluster.policyName(clusterName))).thenReturn(originalZookeeperCluster.generateNetworkPolicy(null, null, true));
+        when(mockPolicyOps.get(clusterNamespace, KafkaCluster.networkPolicyName(clusterName))).thenReturn(originalKafkaCluster.generateNetworkPolicy(null, null));
+        when(mockPolicyOps.get(clusterNamespace, ZookeeperCluster.policyName(clusterName))).thenReturn(originalZookeeperCluster.generateNetworkPolicy(null, null));
 
         // Mock PodDisruptionBudget get
         when(mockPdbOps.get(clusterNamespace, KafkaCluster.kafkaClusterName(clusterName))).thenReturn(originalKafkaCluster.generatePodDisruptionBudget());

@@ -1229,7 +1229,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels, isNetworkPolicyGeneration)));
+            if (isNetworkPolicyGeneration) {
+                return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
+            } else {
+                return withVoid(Future.succeededFuture());
+            }
         }
 
         Future<ReconciliationState> zkPodDisruptionBudget() {
@@ -2461,7 +2465,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, KafkaCluster.networkPolicyName(name), kafkaCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels, isNetworkPolicyGeneration)));
+            if (isNetworkPolicyGeneration) {
+                return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, KafkaCluster.networkPolicyName(name), kafkaCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
+            } else {
+                return withVoid(Future.succeededFuture());
+            }
         }
 
         Future<ReconciliationState> kafkaPodDisruptionBudget() {
@@ -3432,8 +3440,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, CruiseControl.policyName(name),
-                    cruiseControl != null ? cruiseControl.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels, isNetworkPolicyGeneration) : null));
+            if (isNetworkPolicyGeneration) {
+                return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, CruiseControl.policyName(name),
+                        cruiseControl != null ? cruiseControl.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels) : null));
+            } else {
+                return withVoid(Future.succeededFuture());
+            }
         }
 
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {

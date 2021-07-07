@@ -150,7 +150,13 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
         LOGGER.debugCr(reconciliation, "Updating Kafka MirrorMaker 2.0 cluster");
         mirrorMaker2ServiceAccount(reconciliation, namespace, mirrorMaker2Cluster)
-                .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateNetworkPolicy(true, operatorNamespace, operatorNamespaceLabels, isNetworkPolicyGeneration)))
+                .compose(i -> {
+                    if (isNetworkPolicyGeneration) {
+                        return networkPolicyOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateNetworkPolicy(true, operatorNamespace, operatorNamespaceLabels));
+                    } else {
+                        return Future.succeededFuture();
+                    }
+                })
                 .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
                 .compose(i -> Util.metricsAndLogging(reconciliation, configMapOperations, namespace, mirrorMaker2Cluster.getLogging(), mirrorMaker2Cluster.getMetricsConfigInCm()))

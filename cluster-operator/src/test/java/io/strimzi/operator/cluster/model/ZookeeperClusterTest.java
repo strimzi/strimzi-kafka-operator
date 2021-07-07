@@ -713,7 +713,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Network Policies => Other namespace
-        NetworkPolicy np = zc.generateNetworkPolicy("operator-namespace", null, true);
+        NetworkPolicy np = zc.generateNetworkPolicy("operator-namespace", null);
 
         LabelSelector podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
@@ -767,28 +767,24 @@ public class ZookeeperClusterTest {
         assertThat(metricsRule.getFrom().size(), is(0));
 
         // Check Network Policies => The same namespace
-        np = zc.generateNetworkPolicy(namespace, null, true);
+        np = zc.generateNetworkPolicy(namespace, null);
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         assertThat(np.getSpec().getIngress().get(1).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Check Network Policies => The same namespace with namespace labels
-        np = zc.generateNetworkPolicy(namespace, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")), true);
+        np = zc.generateNetworkPolicy(namespace, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         assertThat(np.getSpec().getIngress().get(1).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Check Network Policies => Other namespace with namespace labels
-        np = zc.generateNetworkPolicy("operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")), true);
+        np = zc.generateNetworkPolicy("operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
         podSelector = new LabelSelector();
         podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator"));
         LabelSelector namespaceSelector = new LabelSelector();
         namespaceSelector.setMatchLabels(Collections.singletonMap("nsLabelKey", "nsLabelValue"));
         assertThat(np.getSpec().getIngress().get(1).getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).withNamespaceSelector(namespaceSelector).build()));
-
-        // Check Network Policies => Disabled
-        np = zc.generateNetworkPolicy("operator-namespace", null, false);
-        assertThat(np, is(nullValue()));
     }
 
     @ParallelTest

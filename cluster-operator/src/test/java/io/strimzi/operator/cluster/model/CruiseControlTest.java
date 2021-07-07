@@ -820,13 +820,6 @@ public class CruiseControlTest {
     }
 
     @ParallelTest
-    public void testRestApiPortNetworkPolicyDisabled() {
-        NetworkPolicy np = cc.generateNetworkPolicy("operator-namespace", null, false);
-
-        assertThat(np, is(nullValue()));
-    }
-
-    @ParallelTest
     public void testRestApiPortNetworkPolicy() {
         NetworkPolicyPeer clusterOperatorPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
@@ -835,7 +828,7 @@ public class CruiseControlTest {
                 .withNewNamespaceSelector().endNamespaceSelector()
                 .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy("operator-namespace", null, true);
+        NetworkPolicy np = cc.generateNetworkPolicy("operator-namespace", null);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
@@ -853,7 +846,7 @@ public class CruiseControlTest {
                 .endPodSelector()
                 .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy(namespace, null, true);
+        NetworkPolicy np = cc.generateNetworkPolicy(namespace, null);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
@@ -874,7 +867,7 @@ public class CruiseControlTest {
                 .endNamespaceSelector()
                 .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy(null, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")), true);
+        NetworkPolicy np = cc.generateNetworkPolicy(null, Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
