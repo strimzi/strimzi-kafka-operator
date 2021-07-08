@@ -101,8 +101,8 @@ You can set the level to `ERROR`, `WARNING`, `INFO`, `DEBUG`, or `TRACE`.
 <11> (Optional) The debugging (`-D`) options set for the Topic Operator.
 <12> (Optional) Skip generating trust store certificates if TLS is enabled. If this setting is enabled then the brokers have to use a public trusted certificate authority for their TLS certificates.
 The default is "false".
-<13> (Optional) Skip generating key store certificates for mutual TLS authentication. This will disable client authentication with TLS to the Kafka brokers.
-The default is "false".
+<13> (Optional) Generate key store certificates for mutual TLS authentication. Setting this to false will disable client authentication with TLS to the Kafka brokers.
+The default is "true".
 <14> (Optional) Enable SASL support for client authentication when connecting to Kafka brokers.
 The default is "false".
 <15> (Optional) The SASL username for client authentication.

@@ -31,7 +31,7 @@ if [ "$STRIMZI_TLS_ENABLED" = "true" ] || [ "$STRIMZI_SECURITY_PROTOCOL" = "SSL"
         fi
     fi
 
-    if [ "$STRIMZI_TLS_AUTH_ENABLED" = "true" ]; then
+    if [ "$STRIMZI_TLS_AUTH_ENABLED" != "false" ]; then
         if [ -z "$STRIMZI_KEYSTORE_LOCATION" ]; then
             export STRIMZI_KEYSTORE_LOCATION=/tmp/topic-operator/replication.keystore.p12
             export STRIMZI_KEYSTORE_PASSWORD="$CERTS_STORE_PASSWORD"

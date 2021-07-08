@@ -34,7 +34,7 @@ if [ "$STRIMZI_PUBLIC_CA" != "true" ]; then
     echo "Preparing trust store certificates for internal communication is completed"
 fi
 
-if [ "$STRIMZI_TLS_AUTH_ENABLED" = "true" ]; then
+if [ "$STRIMZI_TLS_AUTH_ENABLED" != "false" ]; then
   echo "Preparing key store certificates for internal communication"
   STORE=/tmp/topic-operator/replication.keystore.p12
   rm -f "$STORE"
