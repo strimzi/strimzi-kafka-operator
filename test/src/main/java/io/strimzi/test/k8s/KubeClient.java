@@ -844,6 +844,18 @@ public class KubeClient {
         client.rbac().roleBindings().inNamespace(getNamespace()).withName(name).delete();
     }
 
+    public Role createOrReplaceRole(Role role) {
+        return client.rbac().roles().inNamespace(getNamespace()).createOrReplace(role);
+    }
+
+    public Role getRole(String name) {
+        return client.rbac().roles().inNamespace(getNamespace()).withName(name).get();
+    }
+
+    public void deleteRole(String name) {
+        client.rbac().roles().inNamespace(getNamespace()).withName(name).delete();
+    }
+
     public <T extends CustomResource, L extends CustomResourceList<T>> MixedOperation<T, L, Resource<T>> customResources(CustomResourceDefinitionContext crdContext, Class<T> resourceType, Class<L> listClass) {
         return client.customResources(resourceType, listClass); //TODO namespace here
     }

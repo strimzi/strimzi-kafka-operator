@@ -45,7 +45,7 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
         RoleBinding roleBinding = getRoleBindingFromYaml(yamlPath);
         if (Environment.isNamespaceRbacScope()) {
             LOGGER.info("Replacing ClusterRole RoleRef for Role RoleRef");
-            roleBinding.getRoleRef().setKind("Role");
+            roleBinding.getRoleRef().setKind(Constants.ROLE);
         }
 
         return createRoleBinding(
