@@ -21,10 +21,12 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -39,16 +41,17 @@ import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
 public class OauthScopeST extends OauthAbstractST {
 
-    public static final String NAMESPACE = "oauth2-cluster-scope-audience-test";
+    public static final String NAMESPACE = "oauth2-cluster-scope-test";
 
     private final String oauthClusterName = "oauth-cluster-scope-name";
-    private final String audienceListener = "audielist";
+    private final String scopeListener = "scopelist";
+    private final String scopeListenerPort = "9098";
     private final String additionalOauthConfig =
         "sasl.mechanism = PLAIN\n" +
         "security.protocol = SASL_PLAINTEXT\n" +
@@ -68,7 +71,7 @@ public class OauthScopeST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
             .withNewSpec()
                 .withReplicas(1)
-                .withBootstrapServers(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + audienceListenerPort)
+                .withBootstrapServers(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
                 .withConfig(connectorConfig)
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
@@ -81,6 +84,7 @@ public class OauthScopeST extends OauthAbstractST {
                         .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
                         .withKey(OAUTH_KEY)
                     .endClientSecret()
+                    // scope set in-correctly regarding to the scope-test realm
                     .withScope(null)
                 .endKafkaClientAuthenticationOAuth()
                 .withTls(null)
@@ -88,8 +92,9 @@ public class OauthScopeST extends OauthAbstractST {
             .build());
 
         String kafkaConnectPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(NAMESPACE, KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+
         // we except that "Token validation failed: Custom claim check failed because we specify scope='null'"
-        PodUtils.waitUntilPodIsInCrashLoopBackOff(NAMESPACE, kafkaConnectPodName);
+        StUtils.waitUntilLogFromPodContainsString(NAMESPACE, kafkaConnectPodName, KafkaConnectResources.deploymentName(clusterName), "30s", "Token validation failed: Custom claim check failed");
     }
 
     @ParallelTest
@@ -106,7 +111,7 @@ public class OauthScopeST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
             .withNewSpec()
                 .withReplicas(1)
-                .withBootstrapServers(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + audienceListenerPort)
+                .withBootstrapServers(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
                 .withConfig(connectorConfig)
                     .addToConfig("key.converter.schemas.enable", false)
                     .addToConfig("value.converter.schemas.enable", false)
@@ -119,6 +124,7 @@ public class OauthScopeST extends OauthAbstractST {
                         .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
                         .withKey(OAUTH_KEY)
                     .endClientSecret()
+                    // scope set correctly regarding to the scope-test realm
                     .withScope("test")
                 .endKafkaClientAuthenticationOAuth()
                 .withTls(null)
@@ -129,12 +135,12 @@ public class OauthScopeST extends OauthAbstractST {
         // explicitly verifying also logs
         String kafkaPodName = kubeClient().listPodsByPrefixInName(NAMESPACE, KafkaResources.kafkaPodName(oauthClusterName, 0)).get(0).getMetadata().getName();
 
-        String log = cmdKubeClient().execInCurrentNamespace(false, "logs", kafkaPodName, "--tail", "50").out();
-        assertTrue(log.contains("Access token expires at"));
-        assertTrue(log.contains("Evaluating path: $[*][?]"));
-        assertTrue(log.contains("Evaluating path: @['scope']"));
-        assertTrue(log.contains("User validated"));
-        assertTrue(log.contains("Set validated token on callback"));
+        String kafkaLog = cmdKubeClient().execInCurrentNamespace(false, "logs", kafkaPodName, "--tail", "50").out();
+        assertThat(kafkaLog, CoreMatchers.containsString("Access token expires at"));
+        assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: $[*][?]"));
+        assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: @['scope']"));
+        assertThat(kafkaLog, CoreMatchers.containsString("User validated"));
+        assertThat(kafkaLog, CoreMatchers.containsString("Set validated token on callback"));
     }
 
     @ParallelTest
@@ -148,9 +154,10 @@ public class OauthScopeST extends OauthAbstractST {
         KafkaBasicExampleClients oauthInternalClientChecksJob = new KafkaBasicExampleClients.Builder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
-            .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + audienceListenerPort)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
+            // configures SASL/PLAIN to be used
             .withAdditionalConfig(additionalOauthConfig)
             .build();
 
@@ -176,21 +183,22 @@ public class OauthScopeST extends OauthAbstractST {
         KafkaBasicExampleClients oauthInternalClientChecksJob = new KafkaBasicExampleClients.Builder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
-            .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + audienceListenerPort)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
+            // configures SASL/PLAIN to be used
             .withAdditionalConfig(additionalOauthConfig)
             .build();
 
         // re-configuring Kafka listener to have client scope assigned to null
         KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
-            List<GenericKafkaListener> audienceListeners = kafka.getSpec().getKafka().getListeners()
+            List<GenericKafkaListener> scopeListeners = kafka.getSpec().getKafka().getListeners()
                 .stream()
-                .filter(listener -> listener.getName().equals(audienceListener))
+                .filter(listener -> listener.getName().equals(scopeListener))
                 .collect(Collectors.toList());
 
-            ((KafkaListenerAuthenticationOAuth) audienceListeners.get(0).getAuth()).setClientScope(null);
-            kafka.getSpec().getKafka().getListeners().set(0, audienceListeners.get(0));
+            ((KafkaListenerAuthenticationOAuth) scopeListeners.get(0).getAuth()).setClientScope(null);
+            kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
         }, NAMESPACE);
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(NAMESPACE, KafkaResources.kafkaStatefulSetName(oauthClusterName), 1, ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET));
@@ -199,20 +207,22 @@ public class OauthScopeST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
 
         resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi().build());
-        // client should fail because we do not specify client-audience but only scope
+        // client should fail because the listener requires scope: 'test' in JWT token but was (the listener) temporarily
+        // configured without clientScope resulting in a JWT token without the scope claim when using the clientId and
+        // secret passed via SASL/PLAIN to obtain an access token in client's name.
         ClientUtils.waitForClientTimeout(producerName, NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(NAMESPACE, producerName);
 
         // rollback previous configuration
         // re-configuring Kafka listener to have client scope assigned to 'test'
         KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
-            List<GenericKafkaListener> audienceListeners = kafka.getSpec().getKafka().getListeners()
+            List<GenericKafkaListener> scopeListeners = kafka.getSpec().getKafka().getListeners()
                 .stream()
-                .filter(listener -> listener.getName().equals(audienceListener))
+                .filter(listener -> listener.getName().equals(scopeListener))
                 .collect(Collectors.toList());
 
-            ((KafkaListenerAuthenticationOAuth) audienceListeners.get(0).getAuth()).setClientScope("test");
-            kafka.getSpec().getKafka().getListeners().set(0, audienceListeners.get(0));
+            ((KafkaListenerAuthenticationOAuth) scopeListeners.get(0).getAuth()).setClientScope("test");
+            kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
         }, NAMESPACE);
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(NAMESPACE, KafkaResources.kafkaStatefulSetName(oauthClusterName), 1, ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET));
@@ -231,8 +241,8 @@ public class OauthScopeST extends OauthAbstractST {
                 .editKafka()
                 .withListeners(
                     new GenericKafkaListenerBuilder()
-                        .withName(audienceListener)
-                        .withPort(Integer.parseInt(audienceListenerPort))
+                        .withName(scopeListener)
+                        .withPort(Integer.parseInt(scopeListenerPort))
                         .withType(KafkaListenerType.INTERNAL)
                         .withTls(false)
                         .withNewKafkaListenerAuthenticationOAuth()

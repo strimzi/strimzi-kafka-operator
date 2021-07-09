@@ -22,6 +22,7 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import scala.collection.immutable.Stream;
 
 import java.io.File;
 import java.io.IOException;
@@ -312,6 +313,20 @@ public class StUtils {
      */
     public static String getLogFromPodByTime(String namespaceName, String podName, String containerName, String timeSince) {
         return cmdKubeClient().namespace(namespaceName).execInCurrentNamespace("logs", podName, "-c", containerName, "--since=" + timeSince).out();
+    }
+
+    /**
+     * Dynamic waiting for specific string inside pod's log. In case pod's log doesn't contains {@code exceptedString}
+     * it will caused WaitException.
+     * @param namespaceName name of the Namespace where the logs are checked
+     * @param podName name of the Pod
+     * @param containerName name of container
+     * @param timeSince time from which the log should be taken - 3s, 5m, 2h -- back
+     * @param exceptedString log message to be checked
+     */
+    public static void waitUntilLogFromPodContainsString(String namespaceName, String podName, String containerName, String timeSince, String exceptedString) {
+        TestUtils.waitFor("log from pod contains excepted string:" + exceptedString, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> getLogFromPodByTime(namespaceName, podName, containerName, timeSince).contains(exceptedString));
     }
 
     /**
