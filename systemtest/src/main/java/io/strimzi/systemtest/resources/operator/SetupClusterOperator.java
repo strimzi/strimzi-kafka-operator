@@ -273,16 +273,6 @@ public class SetupClusterOperator {
      * Prepare environment for cluster operator which includes creation of namespaces, custom resources and operator
      * specific config files such as ServiceAccount, Roles and CRDs.
      * @param clientNamespace namespace which will be created and used as default by kube client
-     * @param resources list of path to yaml files with resources specifications
-     */
-    public void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace, String... resources) {
-        prepareEnvForOperator(extensionContext, clientNamespace, Collections.singletonList(clientNamespace), resources);
-    }
-
-    /**
-     * Prepare environment for cluster operator which includes creation of namespaces, custom resources and operator
-     * specific config files such as ServiceAccount, Roles and CRDs.
-     * @param clientNamespace namespace which will be created and used as default by kube client
      */
     public void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace) {
         prepareEnvForOperator(extensionContext, clientNamespace, Collections.singletonList(clientNamespace));
@@ -387,6 +377,14 @@ public class SetupClusterOperator {
                 createClusterRoleBindings();
             }
         }
+    }
+
+    /**
+     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
+     * @param namespace namespace where CO will be deployed to
+     */
+    public static void applyBindings(ExtensionContext extensionContext, String namespace) {
+        applyBindings(extensionContext, namespace, Collections.singletonList(namespace));
     }
 
     private static void applyClusterRoleBindings(ExtensionContext extensionContext, String namespace) {

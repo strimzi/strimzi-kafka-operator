@@ -43,13 +43,12 @@ public class JobUtils {
     /**
      * Wait for specific Job failure
      * @param jobName job name
-     * @param namespace namespace
      * @param timeout timeout in ms after which we assume that job failed
      */
     public static void waitForJobFailure(String jobName, String namespace, long timeout) {
         LOGGER.info("Waiting for job: {} will be in error state", jobName);
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeout,
-            () -> !kubeClient().checkSucceededJobStatus(jobName));
+            () -> !kubeClient().checkSucceededJobStatus(namespace, jobName, 1));
     }
 
     /**

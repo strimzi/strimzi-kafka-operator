@@ -11,12 +11,14 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -117,5 +119,17 @@ public class ClusterOperatorRbacST extends AbstractST {
         Condition kafkaConnectStatusCondition = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getConditions().get(0);
         assertTrue(kafkaConnectStatusCondition.getMessage().contains("Configured service account doesn't have access."));
         assertThat(kafkaConnectStatusCondition.getType(), is(NotReady.toString()));
+    }
+
+    private void applyRoleBindingsWithoutCRBs() {
+        // 020-RoleBinding
+        RoleBindingResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", NAMESPACE, NAMESPACE);
+        // 031-RoleBinding
+        RoleBindingResource.roleBinding(TestUtils.USER_PATH + "/../packaging/install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", NAMESPACE, NAMESPACE);
+    }
+
+    @BeforeAll
+    void setup(ExtensionContext extensionContext) {
+        install.prepareEnvForOperator(extensionContext, NAMESPACE);
     }
 }

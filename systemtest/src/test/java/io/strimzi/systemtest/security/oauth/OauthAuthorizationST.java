@@ -61,9 +61,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
     private final String oauthClusterName = "oauth-cluster-authz-name";
     private static final String NAMESPACE = "oauth2-authz-cluster-test";
 
-    private KafkaOauthExampleClients teamAOauthClientJob;
-    private KafkaOauthExampleClients teamBOauthClientJob;
-
     private static final String TEAM_A_CLIENT = "team-a-client";
     private static final String TEAM_B_CLIENT = "team-b-client";
     private static final String KAFKA_CLIENT_ID = "kafka";
@@ -231,8 +228,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @Order(4)
     void testTeamBWriteToTopic(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String teamBProducerName = TEAM_B_PRODUCER_NAME + "-" + clusterName;
-        String teamBConsumerName = TEAM_B_CONSUMER_NAME + "-" + clusterName;
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String consumerGroup = "x-" + clusterName;
 
@@ -332,7 +327,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
         String teamBConsumerName = TEAM_B_CONSUMER_NAME + "-" + clusterName;
         // only write means that Team A can not create new topic 'x-.*'
         String topicXName = TOPIC_X + mapWithTestTopics.get(extensionContext.getDisplayName());
-        String consumerGroup = "x-" + clusterName;
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName).build());
 
