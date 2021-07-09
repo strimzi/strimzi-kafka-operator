@@ -604,7 +604,7 @@ public class MetricsST extends AbstractST {
             .withExtensionContext(extensionContext)
             .withNamespace(FIRST_NAMESPACE)
             .withWatchingNamespaces(FIRST_NAMESPACE + "," + SECOND_NAMESPACE)
-            .withBindingsNamespaces(Arrays.asList(FIRST_NAMESPACE, SECOND_NAMESPACE))
+            .withBindingsNamespaces(List.of(FIRST_NAMESPACE, SECOND_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
