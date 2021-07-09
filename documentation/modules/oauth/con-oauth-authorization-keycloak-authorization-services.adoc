@@ -5,19 +5,25 @@
 [id='con-oauth-authorization-keycloak-authorization-services_{context}']
 = Managing policies and permissions in Keycloak Authorization Services
 
-This section describes the mappings between the Kafka authorization model and Keycloak Authorization Services model.
-The mappings are used in granting permissions to access Kafka.
+This section describes the mappings between Kafka's authorization model and the Keycloak Authorization Services model.
+Keycloak Authorization Services is part of Keycloak.
+The mappings are used when granting permissions to access Kafka.
 
-== Kafka authorization model for resources
+//new module
+== Kafka and Keycloak authorization models
 
-The link:https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model] defines resource types, and the permissions available for each type.
-When an action is performed by a Kafka client on a broker, the broker uses a configured authorizer to check permissions, depending on the action performed and the resource type.
+It's useful to understand the differences between Kafka's authorization model and the model used in Keycloak Authorization Services.
 
-Kafka has five resource types for controlling access: `Topic`, `Group`, `Cluster`, `TransactionalId`, `DelegationToken`.
+[discrete]
+=== Kafka authorization
 
-Each resource type has different permissions:
+Kafka's authorization model defines resource types and the available permissions for each type.
+When a Kafka client performs an action on a broker, the broker uses a configured authorizer to check the client's permissions based on the action and the resource type.
 
-Topic:
+Kafka has five resource types for controlling access: `Topic`, `Group`, `Cluster`, `TransactionalId`, and `DelegationToken`.
+Each resource type has different permissions.
+
+*Topic*
 
 * `Create`
 * `Write`
@@ -28,13 +34,13 @@ Topic:
 * `Alter`
 * `AlterConfigs`
 
-Group:
+*Group*
 
 * `Read`
 * `Describe`
 * `Delete`
 
-Cluster:
+*Cluster*
 
 *  `Create`
 *  `Describe`
@@ -44,48 +50,58 @@ Cluster:
 *  `IdempotentWrite`
 *  `ClusterAction`
 
-TransactionalId:
+*TransactionalId*
 
 *  `Describe`
 *  `Write`
 
-DelegationToken:
+*DelegationToken*
 
 * `Describe`
 
-[id='con-oauth-authorization-services-model-{context}']
-== Keycloak Authorization Services model for managing permissions
+[discrete]
+=== Keycloak Authorization Services model
 
-Keycloak Authorization Services use four concepts to define and grant permissions: _resources_, _authorization scopes_, _policies_, and _permissions_.
+Keycloak Authorization Services has four concepts for defining and granting permissions: _resources_, _authorization scopes_, _policies_, and _permissions_.
 
-Resources:: Resources are a set of resource definitions that are used to match permitted actions.
-For example, a resource can be an individual topic, or it can be a set of all topics with names that start with the same prefix.
-The resource definition has a set of available authorization scopes associated with it, which represent a set of all actions available on the particular resource.
+Resources:: Sets of resource definitions used to match resources with permitted actions.
+A resource might be an individual topic, for example, or all topics with names starting with the same prefix.
+A resource definition is associated with a set of available authorization scopes, which represent a set of all actions available on the resource.
 Often, only a subset of these actions is actually permitted.
 
-Authorization scopes:: Authorization scopes is simply a set of all available actions on all the different resource types. When defining a new resource,  scopes are added from the set of all scopes.
+Authorization scopes:: Authorization scopes are sets of all the available actions on specific resource types.
+When you define a new resource, you add scopes from the set of all scopes.
 
-Policies:: Policies are rules that use criteria to match a list of accounts. Policies can match service accounts based on client id or roles, or user accounts based on username, groups, or roles.
+Policies:: Policies are rules that use criteria to match a list of accounts.
+Policies can match service accounts based on client ID or roles, or user accounts based on username, groups, or roles.
 
 Permissions:: Permissions grant a subset of authorization scopes on a specific resource definition to a set of users.
 
+.Additional resources
+
+* link:https://kafka.apache.org/documentation/#security_authz_primitives[Kafka authorization model]
+
+//new module
 == Mapping Keycloak Authorization Services to the Kafka authorization model
 
-Use Keycloak Authorization Services rules on the OAuth client that represents the Kafka Broker to grant Kafka permissions to users or service accounts. Typically, the OAuth client has `kafka` as its client id.
+Use Keycloak Authorization Services rules on the OAuth client that represents the Kafka Broker to grant Kafka permissions to user accounts or service accounts.
+Typically, the OAuth client has `kafka` as its client id.
 
-The OAuth 2.0 client definition must have the _Authorization Enabled_ option activated.
+Your OAuth 2.0 client definition for the Kafka Broker must have the *Authorization Enabled* option enabled.
 
-All permissions exist within the scope of this OAuth 2.0 client, which means that if you have different Kafka clusters configured with different OAuth 2.0 client IDs they would each have a separate set of permissions even though they are part of the same realm.
+All permissions exist within the scope of this OAuth 2.0 client, so if you have different Kafka clusters configured with different OAuth 2.0 client IDs they would each have a separate set of permissions even though they're part of the same realm.
 
-When the Kafka client use the _SASL OAUTHBEARER_ mechanism, the Keycloak authorizer (`KeycloakRBACAuthorizer`) retrieves the list of grants for the current session from the Keycloak server using the access token of the current session.
-This list of grants is the result of evaluating the Keycloak Authorization Services policies and permissions.
+When the Kafka client uses OAUTHBEARER authentication, the Keycloak authorizer (`KeycloakRBACAuthorizer`) uses the access token of the current session to retrieve a list of grants for the current session from the Keycloak server.
+The authorizer evaluates the Keycloak Authorization Services policies and permissions in order to retrieve the list of grants.
 
-.Introducing authorization scopes
+//is this a prerequisite for the later procedures?
+.About authorization scopes
 
-Typically, an initial configuration involves uploading the authorization scopes to create a list of all the possible actions that can be performed on all the Kafka resource types.
-This step is performed only once, before defining any permissions. Alternatively, you can add authorization scopes manually.
+An initial Keycloak configuration usually involves uploading authorization scopes to create a list of all possible actions that can be performed on each Kafka resource types.
+This step is performed once only, before defining any permissions.
+Alternatively, you can add authorization scopes manually.
 
-The authorization scopes should contain all the possible Kafka permissions regardless of the resource type:
+Authorization scopes should contain all the possible Kafka permissions regardless of the resource type:
 
 * `Create`
 * `Write`
@@ -98,14 +114,18 @@ The authorization scopes should contain all the possible Kafka permissions regar
 * `ClusterAction`
 * `IdempotentWrite`
 
-.Defining resource patterns for permission checks
+//stopped here
+.Defining resource patterns for permissions checks
 
 The resources use pattern names for pattern matching against the targeted resources when performing permission checks.
 
 The general pattern is `__RESOURCE-TYPE:PATTERN-NAME__`.
 
 The resource types mirror the Kafka authorization model.
-The pattern allows for the two matching options: exact matching (when the pattern does not end with `\*`), and prefix matching (when the pattern ends with `*`).
+The pattern allows for two matching options:
+
+* Exact matching (when the pattern does not end with `\*`)
+* Prefix matching (when the pattern ends with `*`)
 
 .Example patterns for resources
     Topic:my-topic
