@@ -195,14 +195,16 @@ public class BundleResource implements ResourceType<Deployment> {
             );
         }
 
-        // Apply updated env variables
-        clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
-
         if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+            // for strimzi-operator
             List<LocalObjectReference> imagePullSecrets = Collections.singletonList(new LocalObjectReference(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET));
             clusterOperator.getSpec().getTemplate().getSpec().setImagePullSecrets(imagePullSecrets);
+            // for kafka
+            envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_SECRETS", Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET, null));
         }
 
+        // Apply updated env variables
+        clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
         return new DeploymentBuilder(clusterOperator)
             .editMetadata()
                 .withName(name)

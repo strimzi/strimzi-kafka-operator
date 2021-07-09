@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -21,13 +20,6 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
-import io.strimzi.api.kafka.model.template.EntityOperatorTemplateBuilder;
-import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
-import io.strimzi.api.kafka.model.template.KafkaClusterTemplateBuilder;
-import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
-import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplateBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -37,7 +29,6 @@ import io.strimzi.test.k8s.KubeClusterResource;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.List;
 
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
@@ -187,7 +178,7 @@ public class KafkaTemplates {
     }
 
     private static KafkaBuilder defaultKafka(Kafka kafka, String name, int kafkaReplicas, int zookeeperReplicas) {
-        KafkaBuilder builder = new KafkaBuilder(kafka)
+        return new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(name)
                 .withNamespace(kubeClient().getNamespace())
@@ -236,10 +227,6 @@ public class KafkaTemplates {
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec();
-        if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
-            addImagePullSecret(builder);
-        }
-        return builder;
     }
 
     public static KafkaBuilder kafkaFromYaml(File yamlFile, String clusterName, int kafkaReplicas, int zookeeperReplicas) {
@@ -257,28 +244,6 @@ public class KafkaTemplates {
                     .withReplicas(zookeeperReplicas)
                 .endZookeeper()
             .endSpec();
-    }
-
-    private static KafkaBuilder addImagePullSecret(KafkaBuilder builder) {
-        List<LocalObjectReference> imagePullSecrets = Collections.singletonList(new LocalObjectReference(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET));
-        PodTemplate podTemplate = new PodTemplate();
-        podTemplate.setImagePullSecrets(imagePullSecrets);
-        KafkaClusterTemplate kafkaClusterTemplate = new KafkaClusterTemplateBuilder().withPod(podTemplate).build();
-        ZookeeperClusterTemplate zookeeperClusterTemplate = new ZookeeperClusterTemplateBuilder().withPod(podTemplate).build();
-        EntityOperatorTemplate entityOperatorTemplate = new EntityOperatorTemplateBuilder().withPod(podTemplate).build();
-
-        builder.editSpec()
-            .editKafka()
-                .withTemplate(kafkaClusterTemplate)
-            .endKafka()
-            .editZookeeper()
-                .withTemplate(zookeeperClusterTemplate)
-            .endZookeeper()
-            .editEntityOperator()
-                .withTemplate(entityOperatorTemplate)
-            .endEntityOperator()
-            .endSpec();
-        return builder;
     }
 
     /**
