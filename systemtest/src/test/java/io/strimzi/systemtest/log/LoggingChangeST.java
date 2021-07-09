@@ -1210,10 +1210,8 @@ class LoggingChangeST extends AbstractST {
         );
 
         LOGGER.info("Checking if KafkaConnector {} doesn't inherit logger from KafkaConnect", connectorClassName);
-        connectorLogger = cmdKubeClient().namespace(namespaceName).execInPod(kafkaClientsPodName, "curl",
-            "http://" + KafkaConnectResources.serviceName(clusterName) + ":8083/admin/loggers/" + connectorClassName).out();
 
-        assertTrue(connectorLogger.contains("ERROR"));
+        KafkaConnectorUtils.loggerStabilityWait(namespaceName, clusterName, kafkaClientsPodName, "ERROR", connectorClassName);
     }
 
     @BeforeAll

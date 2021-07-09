@@ -15,6 +15,7 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static io.strimzi.systemtest.Constants.GLOBAL_RECONCILIATION_COUNT;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -193,6 +194,29 @@ public class KafkaConnectorUtils {
                         "http://" + KafkaConnectResources.serviceName(connectName) + ":8083/connectors/" + connectorName + "/status").out().trim()
                 );
                 return connectorStatus.getJsonObject("connector").getString("state").equals(state);
+            }
+        );
+    }
+
+    public static void loggerStabilityWait(String namespaceName, String connectClusterName, String podName, String desiredLogger, String connectorName) {
+        int[] counter = {0};
+        TestUtils.waitFor("Connector logger will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () ->  {
+                String logger = cmdKubeClient().namespace(namespaceName).execInPod(podName, "curl",
+                    "http://" + KafkaConnectResources.serviceName(connectClusterName) + ":8083/admin/loggers/" + connectorName).out();
+                if (logger.contains(desiredLogger)) {
+                    counter[0]++;
+                    LOGGER.info("Logger level is {}. Remaining seconds for logger to be stable: {}", desiredLogger, GLOBAL_RECONCILIATION_COUNT - counter[0]);
+                } else {
+                    LOGGER.warn("Logger level has changed: {}. Reseting counter from {} to 0", logger, counter[0]);
+                    counter[0] = 0;
+                }
+
+                if (counter[0] == GLOBAL_RECONCILIATION_COUNT) {
+                    LOGGER.info("Logger for connector {} is stable", connectorName);
+                    return true;
+                }
+                return false;
             }
         );
     }
