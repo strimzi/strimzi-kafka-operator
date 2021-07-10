@@ -98,7 +98,7 @@ public class LogCollector implements LogCollect {
     /**
      * Core method which collects all logs from events, configs-maps, pods, deployment, statefulset, replicaset...in case test fails.
      */
-    public void collect() {
+    public synchronized void collect() {
         final Set<String> namespaces = KubeClusterResource.getInstance().getMapWithSuiteNamespaces().get(this.testSuiteName);
 
         if (namespaces != null) {
