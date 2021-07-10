@@ -597,8 +597,6 @@ public class MetricsST extends AbstractST {
         cluster.setNamespace(SECOND_NAMESPACE);
 
         NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(SECOND_NAMESPACE));
-        SetupClusterOperator.applyRoleBindings(extensionContext, FIRST_NAMESPACE, SECOND_NAMESPACE);
-        install.applyClusterOperatorInstallFiles(SECOND_NAMESPACE);
 
         cluster.setNamespace(FIRST_NAMESPACE);
 
@@ -606,7 +604,7 @@ public class MetricsST extends AbstractST {
             .withExtensionContext(extensionContext)
             .withNamespace(FIRST_NAMESPACE)
             .withWatchingNamespaces(FIRST_NAMESPACE + "," + SECOND_NAMESPACE)
-            .withBindingsNamespaces(Collections.singletonList(FIRST_NAMESPACE))
+            .withBindingsNamespaces(List.of(FIRST_NAMESPACE, SECOND_NAMESPACE))
             .createInstallation()
             .runInstallation();
 

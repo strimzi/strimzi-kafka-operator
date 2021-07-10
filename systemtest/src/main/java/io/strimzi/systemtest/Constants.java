@@ -97,6 +97,7 @@ public interface Constants {
     String INGRESS = "Ingress";
     String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
     String ROLE_BINDING = "RoleBinding";
+    String ROLE = "Role";
     String DEPLOYMENT_CONFIG = "DeploymentConfig";
     String SECRET = "Secret";
     String KAFKA_EXPORTER_DEPLOYMENT = "KafkaWithExporter";
