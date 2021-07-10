@@ -42,7 +42,8 @@ public class OauthAbstractST extends AbstractST {
     protected static final String OAUTH_CLIENT_AUDIENCE_CONSUMER = "kafka-audience-consumer";
     protected static final String OAUTH_CLIENT_AUDIENCE_SECRET = "kafka-audience-secret";
 
-    protected static final String OAUTH_KAFKA_CLIENT_NAME = "kafka-broker";
+    protected static final String OAUTH_KAFKA_BROKER_NAME = "kafka-broker";
+    protected static final String OAUTH_KAFKA_CLIENT_NAME = "kafka-client";
     protected static final String OAUTH_PRODUCER_NAME = "oauth-producer";
     protected static final String OAUTH_CONSUMER_NAME = "oauth-consumer";
 
@@ -50,12 +51,15 @@ public class OauthAbstractST extends AbstractST {
     protected static final String MIRROR_MAKER_OAUTH_SECRET = "my-mirror-maker-oauth";
     protected static final String MIRROR_MAKER_2_OAUTH_SECRET = "my-mirror-maker-2-oauth";
     protected static final String BRIDGE_OAUTH_SECRET = "my-bridge-oauth";
-    protected static final String OAUTH_KAFKA_CLIENT_SECRET = "kafka-broker-secret";
+    protected static final String OAUTH_KAFKA_BROKER_SECRET = "kafka-broker-secret";
     protected static final String OAUTH_KAFKA_PRODUCER_SECRET = "hello-world-producer-secret";
     protected static final String OAUTH_KAFKA_CONSUMER_SECRET = "hello-world-consumer-secret";
     protected static final String OAUTH_TEAM_A_SECRET = "team-a-client-secret";
     protected static final String OAUTH_TEAM_B_SECRET = "team-b-client-secret";
+    protected static final String OAUTH_KAFKA_CLIENT_SECRET = "kafka-client-secret";
     protected static final String OAUTH_KEY = "clientSecret";
+
+    protected final String audienceListenerPort = "9098";
 
     protected KeycloakInstance keycloakInstance;
 
@@ -114,12 +118,13 @@ public class OauthAbstractST extends AbstractST {
         SecretUtils.createSecret(OAUTH_KAFKA_CONSUMER_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtc3RyZWFtcy1zZWNyZXQ=");
         SecretUtils.createSecret(OAUTH_TEAM_A_SECRET, OAUTH_KEY, "dGVhbS1hLWNsaWVudC1zZWNyZXQ=");
         SecretUtils.createSecret(OAUTH_TEAM_B_SECRET, OAUTH_KEY, "dGVhbS1iLWNsaWVudC1zZWNyZXQ=");
-        SecretUtils.createSecret(OAUTH_KAFKA_CLIENT_SECRET, OAUTH_KEY, "a2Fma2EtYnJva2VyLXNlY3JldA==");
+        SecretUtils.createSecret(OAUTH_KAFKA_BROKER_SECRET, OAUTH_KEY, "a2Fma2EtYnJva2VyLXNlY3JldA==");
         SecretUtils.createSecret(CONNECT_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtY29ubmVjdC1zZWNyZXQ=");
         SecretUtils.createSecret(MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLXNlY3JldA==");
         SecretUtils.createSecret(MIRROR_MAKER_2_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLTItc2VjcmV0");
         SecretUtils.createSecret(BRIDGE_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtYnJpZGdlLXNlY3JldA==");
         SecretUtils.createSecret(OAUTH_CLIENT_AUDIENCE_SECRET, OAUTH_KEY, "a2Fma2EtYXVkaWVuY2Utc2VjcmV0");
+        SecretUtils.createSecret(OAUTH_KAFKA_CLIENT_SECRET, OAUTH_KEY, "a2Fma2EtY2xpZW50LXNlY3JldA==");
     }
 }
 
