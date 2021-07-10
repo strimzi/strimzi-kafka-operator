@@ -106,7 +106,7 @@ class UserST extends AbstractST {
     @ParallelTest
     @Tag(ACCEPTANCE)
     void testUpdateUser(ExtensionContext extensionContext) {
-        String userName = "jozo";
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userName)
             .editMetadata()
@@ -140,10 +140,6 @@ class UserST extends AbstractST {
 
         String anotherKafkaUserSecret = TestUtils.toJsonString(kubeClient(NAMESPACE).getSecret(NAMESPACE, userName));
 
-        LOGGER.info("=========================== ");
-        LOGGER.info("=========================== ");
-        LOGGER.info("=========================== ");
-        LOGGER.info("This is kafka user secret data.password:\n{}", anotherKafkaUserSecret);
         assertThat(anotherKafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
 
         kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(userName).get();
