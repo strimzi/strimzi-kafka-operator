@@ -583,13 +583,15 @@ The `type` property is a discriminator that distinguishes use of the `KafkaAutho
 It must have the value `custom` for the type `KafkaAuthorizationCustom`.
 [options="header"]
 |====
-|Property                |Description
-|type             1.2+<.<a|Must be `custom`.
+|Property                 |Description
+|type              1.2+<.<a|Must be `custom`.
 |string
-|authorizerClass  1.2+<.<a|Authorization implementation class, which must be available in classpath.
+|authorizerClass   1.2+<.<a|Authorization implementation class, which must be available in classpath.
 |string
-|superUsers       1.2+<.<a|List of super users, which are user principals with unlimited access rights.
+|superUsers        1.2+<.<a|List of super users, which are user principals with unlimited access rights.
 |string array
+|supportsAdminApi  1.2+<.<a|Indicates whether the custom authorizer supports the APIs for managing ACLs using the Kafka Admin API. Defaults to `false`.
+|boolean
 |====
 
 [id='type-Rack-{context}']

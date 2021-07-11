@@ -92,10 +92,12 @@ public class KafkaUserModel {
      *
      * @param kafkaUser The Custom Resource based on which the model should be created.
      * @param secretPrefix The prefix used to add to the name of the Secret generated from the KafkaUser resource.
+     * @param aclsAdminApiSupported Indicates whether Kafka Admin API can be used to manage ACL rights
      * @return The user model.
      */
     public static KafkaUserModel fromCrd(KafkaUser kafkaUser,
-                                         String secretPrefix) {
+                                         String secretPrefix,
+                                         boolean aclsAdminApiSupported) {
         KafkaUserModel result = new KafkaUserModel(kafkaUser.getMetadata().getNamespace(),
                 kafkaUser.getMetadata().getName(),
                 Labels.fromResource(kafkaUser).withStrimziKind(kafkaUser.getKind()),
@@ -108,8 +110,12 @@ public class KafkaUserModel {
         result.setAuthentication(kafkaUser.getSpec().getAuthentication());
 
         if (kafkaUser.getSpec().getAuthorization() != null && kafkaUser.getSpec().getAuthorization().getType().equals(KafkaUserAuthorizationSimple.TYPE_SIMPLE)) {
-            KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) kafkaUser.getSpec().getAuthorization();
-            result.setSimpleAclRules(simple.getAcls());
+            if (aclsAdminApiSupported) {
+                KafkaUserAuthorizationSimple simple = (KafkaUserAuthorizationSimple) kafkaUser.getSpec().getAuthorization();
+                result.setSimpleAclRules(simple.getAcls());
+            } else {
+                throw new InvalidResourceException("Simple authorization ACL rules are configured but not supported in the Kafka cluster configuration.");
+            }
         }
 
         result.setQuotas(kafkaUser.getSpec().getQuotas());

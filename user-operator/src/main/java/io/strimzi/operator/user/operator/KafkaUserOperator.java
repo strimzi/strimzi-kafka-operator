@@ -128,7 +128,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         KafkaUserStatus userStatus = new KafkaUserStatus();
 
         try {
-            user = KafkaUserModel.fromCrd(resource, config.getSecretPrefix());
+            user = KafkaUserModel.fromCrd(resource, config.getSecretPrefix(), config.isAclsAdminApiSupported());
             LOGGER.debugCr(reconciliation, "Updating User {} in namespace {}", reconciliation.name(), reconciliation.namespace());
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);

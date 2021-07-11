@@ -73,6 +73,10 @@ spec:
               value: "-Xmx=512M -Xms=256M"
             - name: STRIMZI_JAVA_SYSTEM_PROPERTIES <15>
               value: "-Djavax.net.debug=verbose -DpropertyName=value"
+            - name: STRIMZI_SECRET_PREFIX <16>
+              value: "kafka-"
+            - name: STRIMZI_ACLS_ADMIN_API_SUPPORTED <17>
+              value: "true"
 ----
 <1> The Kubernetes namespace for the User Operator to watch for `KafkaUser` resources. Only one namespace can be specified.
 <2>  The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
@@ -98,6 +102,11 @@ The default is `365` days.
 The default is `30` days to initiate certificate renewal before the old certificates expire.
 <14> (Optional) The Java options used by the JVM running the User Operator
 <15> (Optional) The debugging (`-D`) options set for the User Operator
+<16> (Optional) Prefix which will be used in the names of Kubernetes secrets created by the User Operator
+<17> (Optional) Indicates whether the Kafka cluster supports management of authorization ACL rules using the Kafka Admin API.
+When set to `false`, the User Operator will reject all resources with `simple` authorization ACL rules.
+This helps to avoid unnecessary exceptions in the Kafka cluster logs.
+The default is `true`.
 
 
 . If you are using TLS to connect to the Kafka cluster, specify the secrets used to authenticate connection.
