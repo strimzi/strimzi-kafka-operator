@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.jayway.jsonpath.JsonPath;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Constants;
@@ -28,6 +30,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -396,5 +399,26 @@ public class StUtils {
      */
     public static String getNamespaceBasedOnRbac(String namespace, ExtensionContext extensionContext) {
         return Environment.isNamespaceRbacScope() ? namespace : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+    }
+
+    /**
+     * Copies the image pull secret from the default namespace to the specified target namespace.
+     * @param namespace the target namespace
+     */
+    public static void copyImagePullSecret(String namespace) {
+        LOGGER.info("Checking if secret {} is in the default namespace", Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+        if (kubeClient("default").getSecret(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET) == null) {
+            throw new RuntimeException(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET + " is not in the default namespace!");
+        }
+        Secret pullSecret = kubeClient("default").getSecret(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET);
+        kubeClient(namespace).createSecret(new SecretBuilder()
+                .withApiVersion("v1")
+                .withKind("Secret")
+                .withNewMetadata()
+                    .withName(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET)
+                .endMetadata()
+                .withType("kubernetes.io/dockerconfigjson")
+                .withData(Collections.singletonMap(".dockerconfigjson", pullSecret.getData().get(".dockerconfigjson")))
+                .build());
     }
 }

@@ -593,6 +593,9 @@ public abstract class AbstractST implements TestSeparator {
 
                     cluster.createNamespace(extensionContext, namespaceTestCase);
                     NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
+                    if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+                        StUtils.copyImagePullSecret(namespaceTestCase);
+                    }
                 }
             }
         }

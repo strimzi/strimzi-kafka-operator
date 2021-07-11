@@ -14,6 +14,7 @@ import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.resources.specific.HelmResource;
 import io.strimzi.systemtest.resources.specific.OlmResource;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -124,6 +125,11 @@ public class SetupClusterOperator {
                     // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
                     createClusterRoleBindings();
                 }
+            }
+
+            // copy image-pull secret
+            if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+                StUtils.copyImagePullSecret(namespaceInstallTo);
             }
             // 060-Deployment
             ResourceManager.setCoDeploymentName(clusterOperatorName);
