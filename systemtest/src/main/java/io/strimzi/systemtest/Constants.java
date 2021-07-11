@@ -326,4 +326,13 @@ public interface Constants {
      * Auxiliary variable for cluster operator deployment
      */
     String WATCH_ALL_NAMESPACES = "*";
+
+    String CLUSTER_KEY = "CLUSTER_NAME";
+    String TOPIC_KEY = "TOPIC_NAME";
+    String STREAM_TOPIC_KEY = "STREAM_TOPIC_NAME";
+    String KAFKA_CLIENTS_KEY = "KAFKA_CLIENTS_NAME";
+    String PRODUCER_KEY = "PRODUCER_NAME";
+    String CONSUMER_KEY = "CONSUMER_NAME";
+    String KAFKA_CLIENTS_POD_KEY = "KAFKA_CLIENTS_POD_NAME";
+    String KAFKA_TRACING_CLIENT_KEY = "KAFKA_TRACING_CLIENT";
 }
