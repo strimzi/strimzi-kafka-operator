@@ -112,23 +112,7 @@ public class TracingST extends AbstractST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .build());
-
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(),
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TOPIC_KEY).toString())
             .editSpec()
@@ -154,22 +138,7 @@ public class TracingST extends AbstractST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), 3, 1).build());
 
 
         Map<String, Object> configOfKafkaConnect = new HashMap<>();
@@ -240,23 +209,9 @@ public class TracingST extends AbstractST {
         assumeFalse(Environment.isNamespaceRbacScope());
         String targetTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .build());
-
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(
+                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), 3, 1).build());
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(),
                 extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TOPIC_KEY).toString())
@@ -293,23 +248,9 @@ public class TracingST extends AbstractST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .build());
-
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(
+                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), 3, 1).build());
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(),
                 extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TOPIC_KEY).toString())
@@ -340,22 +281,9 @@ public class TracingST extends AbstractST {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .build());
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(
+                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), 3, 1).build());
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(),
@@ -406,23 +334,7 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString();
         final String kafkaClusterTargetName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString() + "-target";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .build());
-
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1)
             .editSpec()
                 .editKafka()
@@ -526,39 +438,8 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString();
         final String kafkaClusterTargetName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString() + "-target";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .build());
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
 
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TOPIC_KEY).toString())
@@ -641,23 +522,7 @@ public class TracingST extends AbstractST {
         final String kafkaClusterSourceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString();
         final String kafkaClusterTargetName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString() + "-target";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .build());
-
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
 
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
@@ -815,24 +680,8 @@ public class TracingST extends AbstractST {
     @Tag(BRIDGE)
     @ParallelNamespaceTest
     void testKafkaBridgeService(ExtensionContext extensionContext) {
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("10")
-                        .withDeleteClaim(true)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .build());
-
-            // Deploy http bridge
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), 3, 1).build());
+        // Deploy http bridge
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), KafkaResources.plainBootstrapAddress(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString()), 1)
             .editSpec()
                 .withNewJaegerTracing()
@@ -901,7 +750,7 @@ public class TracingST extends AbstractST {
                     .replace("namespace: \"observability\"", "namespace: \"" + NAMESPACE + "\"");
                 jaegerConfigs.push(yamlContent);
                 LOGGER.info("Creating {} from {}", file.getName(), file.getAbsolutePath());
-                cmdKubeClient().applyContent(yamlContent);
+                cmdKubeClient(NAMESPACE).applyContent(yamlContent);
             }
         } else {
             throw new FileNotFoundException("Folder with Jaeger files is empty or doesn't exist");
@@ -915,7 +764,7 @@ public class TracingST extends AbstractST {
 
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(() -> this.deleteJaeger()));
-        DeploymentUtils.waitForDeploymentAndPodsReady(JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(NAMESPACE, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withApiVersion("networking.k8s.io/v1")
