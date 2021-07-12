@@ -361,7 +361,10 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.enablePlain = enablePlain;
     }
 
-    @Description("URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with clientId and a secret. ")
+    @Description("URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with `clientId` and a `secret`. " +
+            "If set, the client can authenticate over SASL_PLAIN by either setting `username` to `clientId`, and setting `password` to client `secret`, " +
+            "or by setting `username` to account username, and `password` to access token prefixed with `$accessToken:`. If this option is not set, " +
+            "the `password` is always interpreted as an access token (without a prefix), and `username` as the account username (a so called 'no-client-credentials' mode).")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getTokenEndpointUri() {
         return tokenEndpointUri;
