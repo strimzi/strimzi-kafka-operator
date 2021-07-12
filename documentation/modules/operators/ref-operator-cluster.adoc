@@ -168,6 +168,12 @@ If you are using a different DNS domain name suffix in your cluster, change the 
 The timeout for building new Kafka Connect images with additional connectots, in milliseconds.
 This value should be increased when using Strimzi to build container images containing many connectors or using a slow container registry.
 
+`STRIMZI_NETWORK_POLICY_GENERATION` :: Optional, default `true`.
+Controls whether Strimzi generates network policy resources.
+Network policies allow connections between Kafka components.
+
+Set this environment variable to `false` to disable network policy generation. You might do this, for example, if you want to use custom network policies. Custom network policies allow more control over maintaining the connections between components.
+
 `STRIMZI_FEATURE_GATES`:: Optional.
 Enables or disables features and functionality controlled by feature gates.
 For more information about each feature gate, see xref:ref-operator-cluster-feature-gates-{context}[].

@@ -908,6 +908,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 120_000,
                 300_000,
                 false,
+                true,
                 KafkaVersionTestUtils.getKafkaVersionLookup(),
                 null,
                 null,
