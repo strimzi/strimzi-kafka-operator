@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.MetricsProvider;
 import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.mock;
@@ -68,6 +67,6 @@ public class DeploymentOperatorTest extends
 
     @Override
     protected DeploymentOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new DeploymentOperator(vertx, mockClient, mock(MetricsProvider.class));
+        return new DeploymentOperator(vertx, mockClient, mock(PodOperator.class));
     }
 }

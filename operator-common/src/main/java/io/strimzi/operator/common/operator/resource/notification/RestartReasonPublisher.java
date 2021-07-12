@@ -13,7 +13,6 @@ import io.strimzi.operator.common.model.RestartReason;
 import io.strimzi.operator.common.model.RestartReasons;
 
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 /**
