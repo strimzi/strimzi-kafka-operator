@@ -19,6 +19,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -27,7 +28,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -147,7 +147,14 @@ public class NetworkPoliciesST extends AbstractST {
         });
 
         LOGGER.info("Check metrics exported by Kafka Exporter");
-        Map<String, String> kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(allowedKafkaClientsPodName, clusterName);
+
+        MetricsCollector metricsCollector = new MetricsCollector.Builder()
+            .withScraperPodName(allowedKafkaClientsPodName)
+            .withComponentName(clusterName)
+            .withComponentType("KafkaExporter")
+            .build();
+
+        Map<String, String> kafkaExporterMetricsData = metricsCollector.collectMetricsFromPodsWithWait();
         assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
         for (Map.Entry<String, String> entry : kafkaExporterMetricsData.entrySet()) {
             assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());

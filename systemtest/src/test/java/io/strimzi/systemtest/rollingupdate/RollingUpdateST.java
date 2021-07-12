@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.ProbeBuilder;
@@ -26,6 +27,7 @@ import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -39,7 +41,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
@@ -729,10 +730,19 @@ class RollingUpdateST extends AbstractST {
         resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
 
         String metricsScraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
+        MetricsCollector metricsCollector = new MetricsCollector.Builder()
+            .withNamespaceName(NAMESPACE)
+            .withScraperPodName(metricsScraperPodName)
+            .withComponentName(clusterName)
+            .withComponentType(Kafka.RESOURCE_KIND)
+            .build();
 
         LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
-        HashMap<String, String> kafkaMetricsOutput = MetricsUtils.collectKafkaPodsMetrics(NAMESPACE, metricsScraperPodName, clusterName);
-        HashMap<String, String> zkMetricsOutput = MetricsUtils.collectZookeeperPodsMetrics(NAMESPACE, metricsScraperPodName, clusterName);
+        HashMap<String, String> kafkaMetricsOutput = metricsCollector.collectMetricsFromPodsWithWait();
+        HashMap<String, String> zkMetricsOutput = metricsCollector.toBuilder()
+            .withComponentType("Zookeeper")
+            .build()
+            .collectMetricsFromPodsWithWait();
 
         assertThat(kafkaMetricsOutput.values().toString().contains("kafka_"), is(true));
         assertThat(zkMetricsOutput.values().toString().contains("replicaId"), is(true));
@@ -788,8 +798,11 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
 
-        kafkaMetricsOutput = MetricsUtils.collectKafkaPodsMetrics(NAMESPACE, metricsScraperPodName, clusterName);
-        zkMetricsOutput = MetricsUtils.collectZookeeperPodsMetrics(NAMESPACE, metricsScraperPodName, clusterName);
+        kafkaMetricsOutput = metricsCollector.collectMetricsFromPodsWithWait();
+        zkMetricsOutput = metricsCollector.toBuilder()
+            .withComponentType("Zookeeper")
+            .build()
+            .collectMetricsFromPodsWithWait();
 
         assertThat(kafkaMetricsOutput.values().toString().contains("kafka_"), is(true));
         assertThat(zkMetricsOutput.values().toString().contains("replicaId"), is(true));
@@ -807,8 +820,11 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if metrics are not existing in pods");
 
-        kafkaMetricsOutput = MetricsUtils.collectKafkaPodsMetrics(NAMESPACE, metricsScraperPodName, clusterName);
-        zkMetricsOutput = MetricsUtils.collectZookeeperPodsMetrics(NAMESPACE, metricsScraperPodName, clusterName);
+        kafkaMetricsOutput = metricsCollector.collectMetricsFromPods();
+        zkMetricsOutput = metricsCollector.toBuilder()
+            .withComponentType("Zookeeper")
+            .build()
+            .collectMetricsFromPods();
 
         kafkaMetricsOutput.values().forEach(value -> assertThat(value, is("")));
         zkMetricsOutput.values().forEach(value -> assertThat(value, is("")));

@@ -46,7 +46,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
-import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
@@ -72,8 +71,6 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.Constants.GLOBAL_POLL_INTERVAL;
-import static io.strimzi.systemtest.Constants.GLOBAL_TIMEOUT;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
@@ -118,32 +115,34 @@ public class MetricsST extends AbstractST {
     private String bridgeTopic = KafkaTopicUtils.generateRandomNameOfTopic();
     private String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
+    private MetricsCollector collector;
+
     @ParallelTest
     @Tag(ACCEPTANCE)
     void testKafkaBrokersCount() {
         Pattern brokerOnlineCount = Pattern.compile("kafka_server_replicamanager_leadercount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(brokerOnlineCount, kafkaMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(brokerOnlineCount, kafkaMetricsData);
         assertThat("Broker count doesn't match expected value", values.size(), is(3));
     }
 
     @ParallelTest
     void testKafkaTopicPartitions() {
         Pattern topicPartitions = Pattern.compile("kafka_server_replicamanager_partitioncount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(topicPartitions, kafkaMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(topicPartitions, kafkaMetricsData);
         assertThat("Topic partitions count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is(423.0));
     }
 
     @ParallelTest
     void testKafkaTopicUnderReplicatedPartitions() {
         Pattern underReplicatedPartitions = Pattern.compile("kafka_server_replicamanager_underreplicatedpartitions ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(underReplicatedPartitions, kafkaMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(underReplicatedPartitions, kafkaMetricsData);
         assertThat("Topic under-replicated partitions doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is((double) 0));
     }
 
     @ParallelTest
     void testKafkaActiveControllers() {
         Pattern activeControllers = Pattern.compile("kafka_controller_kafkacontroller_activecontrollercount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(activeControllers, kafkaMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(activeControllers, kafkaMetricsData);
         assertThat("Kafka active controllers count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
 
@@ -151,21 +150,21 @@ public class MetricsST extends AbstractST {
     @Tag(ACCEPTANCE)
     void testZookeeperQuorumSize() {
         Pattern quorumSize = Pattern.compile("zookeeper_quorumsize ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(quorumSize, zookeeperMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(quorumSize, zookeeperMetricsData);
         assertThat("Zookeeper quorum size doesn't match expected value", values.stream().mapToDouble(i -> i).max(), is(OptionalDouble.of(3.0)));
     }
 
     @ParallelTest
     void testZookeeperAliveConnections() {
         Pattern numAliveConnections = Pattern.compile("zookeeper_numaliveconnections ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(numAliveConnections, zookeeperMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(numAliveConnections, zookeeperMetricsData);
         assertThat("Zookeeper alive connections count doesn't match expected value", values.stream().mapToDouble(i -> i).count(), is(0L));
     }
 
     @ParallelTest
     void testZookeeperWatchersCount() {
         Pattern watchersCount = Pattern.compile("zookeeper_inmemorydatatree_watchcount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(watchersCount, zookeeperMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(watchersCount, zookeeperMetricsData);
         assertThat("Zookeeper watchers count doesn't match expected value", values.stream().mapToDouble(i -> i).count(), is(0L));
     }
 
@@ -173,27 +172,36 @@ public class MetricsST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(CONNECT)
     void testKafkaConnectRequests() {
-        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(kafkaClientsPodName, metricsClusterName);
+        kafkaConnectMetricsData = collector.toBuilder()
+            .withComponentType(KafkaConnect.RESOURCE_KIND)
+            .build()
+            .collectMetricsFromPodsWithWait();
         Pattern connectRequests = Pattern.compile("kafka_connect_node_request_total\\{clientid=\".*\",} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectRequests, kafkaConnectMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(connectRequests, kafkaConnectMetricsData);
         assertThat("KafkaConnect requests count doesn't match expected value", values.stream().mapToDouble(i -> i).sum() > 0);
     }
 
     @ParallelTest
     @Tag(CONNECT)
     void testKafkaConnectResponse() {
-        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(kafkaClientsPodName, metricsClusterName);
+        kafkaConnectMetricsData = collector.toBuilder()
+            .withComponentType(KafkaConnect.RESOURCE_KIND)
+            .build()
+            .collectMetricsFromPodsWithWait();
         Pattern connectResponse = Pattern.compile("kafka_connect_node_response_total\\{clientid=\".*\",.*} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectResponse, kafkaConnectMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(connectResponse, kafkaConnectMetricsData);
         assertThat("KafkaConnect response count doesn't match expected value", values.stream().mapToDouble(i -> i).sum() > 0);
     }
 
     @ParallelTest
     @Tag(CONNECT)
     void testKafkaConnectIoNetwork() {
-        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(kafkaClientsPodName, metricsClusterName);
+        kafkaConnectMetricsData = collector.toBuilder()
+            .withComponentType(KafkaConnect.RESOURCE_KIND)
+            .build()
+            .collectMetricsFromPodsWithWait();
         Pattern connectIoNetwork = Pattern.compile("kafka_connect_network_io_total\\{clientid=\".*\",} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectIoNetwork, kafkaConnectMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(connectIoNetwork, kafkaConnectMetricsData);
         assertThat("KafkaConnect IO network count doesn't match expected value", values.stream().mapToDouble(i -> i).sum() > 0);
     }
 
@@ -215,24 +223,18 @@ public class MetricsST extends AbstractST {
             internalKafkaClient.receiveMessagesPlain()
         );
 
-        kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(kafkaClientsPodName, metricsClusterName);
+        kafkaExporterMetricsData = collector.toBuilder()
+            .withComponentType("KafkaExporter")
+            .build()
+            .collectMetricsFromPodsWithWait();
 
-        TestUtils.waitFor(" metrics has all data", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-            () -> {
-                kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(kafkaClientsPodName, metricsClusterName);
-
-                // Kafka Exporter metrics should be non-empty
-                if (!(kafkaExporterMetricsData.size() > 0)) {
-                    return false;
-                }
-
-                for (Map.Entry<String, String> item : kafkaExporterMetricsData.entrySet()) {
-                    if (item.getValue().isEmpty()) {
-                        return false;
-                    }
-                }
-                return true;
-            });
+        assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
+        kafkaExporterMetricsData.forEach((key, value) -> {
+            assertThat("Value from collected metric should be non-empty", !value.isEmpty());
+            assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_current_offset"));
+            assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_lag"));
+            assertThat("Metrics doesn't contain specific values", value.contains("kafka_topic_partitions{topic=\"" + TOPIC_NAME + "\"} 7"));
+        });
     }
 
     @ParallelTest
@@ -260,7 +262,12 @@ public class MetricsST extends AbstractST {
     @Disabled("Because of this PR https://github.com/strimzi/strimzi-kafka-operator/pull/5137.")
     @Tag(ACCEPTANCE)
     void testClusterOperatorMetrics(ExtensionContext extensionContext) {
-        clusterOperatorMetricsData = MetricsUtils.collectClusterOperatorPodMetrics(kafkaClientsPodName);
+        clusterOperatorMetricsData = collector.toBuilder()
+            .withComponentType("ClusterOperator")
+            .withComponentName("")
+            .build()
+            .collectMetricsFromPodsWithWait();
+
         List<String> resourcesList = Arrays.asList("Kafka", "KafkaBridge", "KafkaConnect", "KafkaConnector", "KafkaMirrorMaker", "KafkaMirrorMaker2", "KafkaRebalance");
 
         for (String resource : resourcesList) {
@@ -300,7 +307,11 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     @Tag(ACCEPTANCE)
     void testUserOperatorMetrics() {
-        userOperatorMetricsData = MetricsUtils.collectUserOperatorPodMetrics(kafkaClientsPodName, metricsClusterName);
+        userOperatorMetricsData = collector.toBuilder()
+            .withComponentType("UserOperator")
+            .build()
+            .collectMetricsFromPodsWithWait();
+
         assertCoMetricNotNull("strimzi_reconciliations_locked_total", "KafkaUser", userOperatorMetricsData);
         assertCoMetricNotNull("strimzi_reconciliations_successful_total", "KafkaUser", userOperatorMetricsData);
         assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", "KafkaUser", userOperatorMetricsData);
@@ -311,14 +322,18 @@ public class MetricsST extends AbstractST {
         assertCoMetricNotNull("strimzi_reconciliations_total", "KafkaUser", userOperatorMetricsData);
 
         Pattern userPattern = Pattern.compile("strimzi_resources\\{kind=\"KafkaUser\",.*} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(userPattern, userOperatorMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(userPattern, userOperatorMetricsData);
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 2));
     }
 
     @ParallelTest
     @Tag(ACCEPTANCE)
     void testTopicOperatorMetrics() {
-        topicOperatorMetricsData = MetricsUtils.collectTopicOperatorPodMetrics(kafkaClientsPodName, metricsClusterName);
+        topicOperatorMetricsData = collector.toBuilder()
+            .withComponentType("TopicOperator")
+            .build()
+            .collectMetricsFromPodsWithWait();
+
         assertCoMetricNotNull("strimzi_reconciliations_locked_total", "KafkaTopic", topicOperatorMetricsData);
         assertCoMetricNotNull("strimzi_reconciliations_successful_total", "KafkaTopic", topicOperatorMetricsData);
         assertCoMetricNotNull("strimzi_reconciliations_duration_seconds_count", "KafkaTopic", topicOperatorMetricsData);
@@ -329,7 +344,7 @@ public class MetricsST extends AbstractST {
         assertCoMetricNotNull("strimzi_reconciliations_total", "KafkaTopic", topicOperatorMetricsData);
 
         Pattern topicPattern = Pattern.compile("strimzi_resources\\{kind=\"KafkaTopic\",.*} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(topicPattern, topicOperatorMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(topicPattern, topicOperatorMetricsData);
         cmdKubeClient().list("KafkaTopic").forEach(topicName -> {
             LOGGER.info("KafkaTopic: {}", topicName);
         });
@@ -340,13 +355,18 @@ public class MetricsST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     @Tag(ACCEPTANCE)
     void testMirrorMaker2Metrics() {
-        kafkaMirrorMaker2MetricsData = MetricsUtils.collectKafkaMirrorMaker2PodsMetrics(kafkaClientsPodName, MIRROR_MAKER_CLUSTER);
+        kafkaMirrorMaker2MetricsData = collector.toBuilder()
+            .withComponentName(MIRROR_MAKER_CLUSTER)
+            .withComponentType(KafkaBridge.RESOURCE_KIND)
+            .build()
+            .collectMetricsFromPodsWithWait();
+
         Pattern connectResponse = Pattern.compile("kafka_connect_worker_connector_count ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectResponse, kafkaMirrorMaker2MetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(connectResponse, kafkaMirrorMaker2MetricsData);
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 3));
 
         connectResponse = Pattern.compile("kafka_connect_worker_task_count ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        values = MetricsUtils.collectSpecificMetric(connectResponse, kafkaMirrorMaker2MetricsData);
+        values = MetricsCollector.collectSpecificMetric(connectResponse, kafkaMirrorMaker2MetricsData);
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
 
@@ -356,6 +376,11 @@ public class MetricsST extends AbstractST {
     void testKafkaBridgeMetrics(ExtensionContext extensionContext) {
         String producerName = "bridge-producer";
         String consumerName = "bridge-consumer";
+
+        MetricsCollector bridgeCollector = collector.toBuilder()
+            .withComponentName(BRIDGE_CLUSTER)
+            .withComponentType(KafkaBridge.RESOURCE_KIND)
+            .build();
 
         // Attach consumer before producer
         KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
@@ -374,17 +399,17 @@ public class MetricsST extends AbstractST {
 
         TestUtils.waitFor("KafkaProducer metrics will be available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             LOGGER.info("Looking for 'strimzi_bridge_kafka_producer_count' in bridge metrics");
-            kafkaBridgeMetricsData = MetricsUtils.collectKafkaBridgePodMetrics(kafkaClientsPodName, BRIDGE_CLUSTER);
+            kafkaBridgeMetricsData = bridgeCollector.collectMetricsFromPodsWithWait();
             Pattern producerCountPattern = Pattern.compile("strimzi_bridge_kafka_producer_count\\{.*,} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-            ArrayList<Double> producerCountValues = MetricsUtils.collectSpecificMetric(producerCountPattern, kafkaBridgeMetricsData);
+            ArrayList<Double> producerCountValues = MetricsCollector.collectSpecificMetric(producerCountPattern, kafkaBridgeMetricsData);
             return producerCountValues.stream().mapToDouble(i -> i).count() == (double) 1;
         });
 
         TestUtils.waitFor("KafkaConsumer metrics will be available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             LOGGER.info("Looking for 'strimzi_bridge_kafka_consumer_connection_count' in bridge metrics");
-            kafkaBridgeMetricsData = MetricsUtils.collectKafkaBridgePodMetrics(kafkaClientsPodName, BRIDGE_CLUSTER);
+            kafkaBridgeMetricsData = bridgeCollector.collectMetricsFromPodsWithWait();
             Pattern consumerConnectionsPattern = Pattern.compile("strimzi_bridge_kafka_consumer_connection_count\\{.*,} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-            ArrayList<Double> consumerConnectionsValues = MetricsUtils.collectSpecificMetric(consumerConnectionsPattern, kafkaBridgeMetricsData);
+            ArrayList<Double> consumerConnectionsValues = MetricsCollector.collectSpecificMetric(consumerConnectionsPattern, kafkaBridgeMetricsData);
             return consumerConnectionsValues.stream().mapToDouble(i -> i).count() > 0;
         });
 
@@ -392,7 +417,7 @@ public class MetricsST extends AbstractST {
         assertThat("Collected KafkaBridge metrics doesn't contains HTTP metrics", kafkaBridgeMetricsData.values().toString().contains("strimzi_bridge_http_server"));
 
         Pattern bridgeResponse = Pattern.compile("system_cpu_count ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(bridgeResponse, kafkaBridgeMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(bridgeResponse, kafkaBridgeMetricsData);
         assertThat(values.stream().mapToDouble(i -> i).sum(), is((double) 1));
     }
 
@@ -492,7 +517,14 @@ public class MetricsST extends AbstractST {
 
         String secondClientsPodName = kubeClient(SECOND_NAMESPACE).listPodsByPrefixInName(SECOND_NAMESPACE + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        HashMap<String, String> toMetrics = MetricsUtils.collectTopicOperatorPodMetrics(secondClientsPodName, SECOND_CLUSTER);
+        MetricsCollector secondNamespaceCollector = new MetricsCollector.Builder()
+            .withNamespaceName(SECOND_NAMESPACE)
+            .withScraperPodName(secondClientsPodName)
+            .withComponentName(SECOND_CLUSTER)
+            .withComponentType("TopicOperator")
+            .build();
+
+        HashMap<String, String> toMetrics = secondNamespaceCollector.collectMetricsFromPodsWithWait();
         String reasonMessage = "none";
 
         LOGGER.info("Checking if resource state metric reason message is \"none\" and KafkaTopic is ready");
@@ -502,7 +534,7 @@ public class MetricsST extends AbstractST {
         KafkaTopicResource.replaceTopicResource(topicName, kafkaTopic -> kafkaTopic.getSpec().setTopicName("some-other-name"));
         KafkaTopicUtils.waitForKafkaTopicNotReady(topicName);
 
-        toMetrics = MetricsUtils.collectTopicOperatorPodMetrics(secondClientsPodName, SECOND_CLUSTER);
+        toMetrics = secondNamespaceCollector.collectMetricsFromPodsWithWait();
         reasonMessage = "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.";
         assertResourceStateMetricInTopicOperator(topicName, reasonMessage, 0.0, toMetrics);
 
@@ -514,7 +546,7 @@ public class MetricsST extends AbstractST {
 
         KafkaTopicUtils.waitForKafkaTopicReplicasChange(SECOND_NAMESPACE, topicName, 12);
 
-        toMetrics = MetricsUtils.collectTopicOperatorPodMetrics(secondClientsPodName, SECOND_CLUSTER);
+        toMetrics = secondNamespaceCollector.collectMetricsFromPodsWithWait();
         reasonMessage = "Changing 'spec.replicas' is not supported. .*";
         assertResourceStateMetricInTopicOperator(topicName, reasonMessage, 0.0, toMetrics);
 
@@ -523,14 +555,14 @@ public class MetricsST extends AbstractST {
 
         KafkaTopicUtils.waitForKafkaTopicReplicasChange(SECOND_NAMESPACE, topicName, 24);
 
-        toMetrics = MetricsUtils.collectTopicOperatorPodMetrics(secondClientsPodName, SECOND_CLUSTER);
+        toMetrics = secondNamespaceCollector.collectMetricsFromPodsWithWait();
         assertResourceStateMetricInTopicOperator(topicName, reasonMessage, 0.0, toMetrics);
 
         LOGGER.info("Changing KafkaTopic's spec to correct state");
         KafkaTopicResource.replaceTopicResource(topicName, kafkaTopic -> kafkaTopic.getSpec().setReplicas(initialReplicas));
         KafkaTopicUtils.waitForKafkaTopicReady(topicName);
 
-        toMetrics = MetricsUtils.collectTopicOperatorPodMetrics(secondClientsPodName, SECOND_CLUSTER);
+        toMetrics = secondNamespaceCollector.collectMetricsFromPodsWithWait();
         reasonMessage = "none";
         assertResourceStateMetricInTopicOperator(topicName, reasonMessage, 1.0, toMetrics);
 
@@ -560,32 +592,32 @@ public class MetricsST extends AbstractST {
     private void assertResourceStateMetricInTopicOperator(String topicName, String reasonMessage, Double resultValue, HashMap<String, String> data) {
         Pattern reconcileStateMetric =
             Pattern.compile("strimzi_resource_state\\{kind=\"KafkaTopic\",name=\"" + topicName + "\",reason=\"" + reasonMessage + "\",resource_namespace=\"" + SECOND_NAMESPACE + "\",} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(reconcileStateMetric, data);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(reconcileStateMetric, data);
         assertEquals(1, values.size());
         assertEquals(values.get(0), resultValue);
     }
 
     private void assertCoMetricNotNull(String metric, String kind, HashMap<String, String> data) {
         Pattern connectResponse = Pattern.compile(metric + "\\{kind=\"" + kind + "\",} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(connectResponse, data);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(connectResponse, data);
         assertThat(values.stream().mapToDouble(i -> i).count(), notNullValue());
     }
 
     private void assertCoMetricResourceStateNotExists(String kind, String name, String namespace) {
         Pattern pattern = Pattern.compile("strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",resource_namespace=\"" + namespace + "\",} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(pattern, clusterOperatorMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(pattern, clusterOperatorMetricsData);
         assertThat(values.isEmpty(), is(true));
     }
 
     private void assertCoMetricResourceState(String kind, String name, String namespace, int value, String reason) {
         Pattern pattern = Pattern.compile("strimzi_resource_state\\{kind=\"" + kind + "\",name=\"" + name + "\",reason=\"" + reason + "\",resource_namespace=\"" + namespace + "\",} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(pattern, clusterOperatorMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(pattern, clusterOperatorMetricsData);
         assertThat("strimzi_resource_state for " + kind + " is not " + value, values.stream().mapToDouble(i -> i).sum(), is((double) value));
     }
 
     private void assertCoMetricResources(String kind, int value) {
         Pattern pattern = Pattern.compile("strimzi_resources\\{kind=\"" + kind + "\",.*} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
-        ArrayList<Double> values = MetricsUtils.collectSpecificMetric(pattern, clusterOperatorMetricsData);
+        ArrayList<Double> values = MetricsCollector.collectSpecificMetric(pattern, clusterOperatorMetricsData);
         assertThat("strimzi_resources for " + kind + " is not " + value, values.stream().mapToDouble(i -> i).sum(), is((double) value));
     }
 
@@ -651,14 +683,34 @@ public class MetricsST extends AbstractST {
         NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, metricsClusterName);
         NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, SECOND_CLUSTER, SECOND_NAMESPACE);
 
-        // Wait for Metrics refresh/values change
-        Thread.sleep(100_000);
-        kafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(kafkaClientsPodName, metricsClusterName);
-        deprecatedKafkaMetricsData = MetricsUtils.collectKafkaPodsMetrics(kafkaClientsPodName, metricsClusterName);
-        zookeeperMetricsData = MetricsUtils.collectZookeeperPodsMetrics(kafkaClientsPodName, metricsClusterName);
-        kafkaConnectMetricsData = MetricsUtils.collectKafkaConnectPodsMetrics(kafkaClientsPodName, metricsClusterName);
-        kafkaExporterMetricsData = MetricsUtils.collectKafkaExporterPodsMetrics(kafkaClientsPodName, metricsClusterName);
-        kafkaBridgeMetricsData = MetricsUtils.collectKafkaBridgePodMetrics(kafkaClientsPodName, BRIDGE_CLUSTER);
+        collector = new MetricsCollector.Builder()
+            .withScraperPodName(kafkaClientsPodName)
+            .withComponentType(Kafka.RESOURCE_KIND)
+            .withComponentName(metricsClusterName)
+            .build();
+
+        kafkaMetricsData = collector.collectMetricsFromPodsWithWait();
+
+        zookeeperMetricsData = collector.toBuilder()
+            .withComponentType("Zookeeper")
+            .build()
+            .collectMetricsFromPodsWithWait();
+
+        kafkaConnectMetricsData = collector.toBuilder()
+            .withComponentType(KafkaConnect.RESOURCE_KIND)
+            .build()
+            .collectMetricsFromPodsWithWait();
+
+        kafkaExporterMetricsData = collector.toBuilder()
+            .withComponentType("KafkaExporter")
+            .build()
+            .collectMetricsFromPodsWithWait();
+
+        kafkaBridgeMetricsData = collector.toBuilder()
+            .withComponentName(BRIDGE_CLUSTER)
+            .withComponentType(KafkaBridge.RESOURCE_KIND)
+            .build()
+            .collectMetricsFromPodsWithWait();
     }
     
     private List<String> getExpectedTopics() {
