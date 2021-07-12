@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,7 +40,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class MetricsCollector {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsCollector.class);
-    private static final Object LOCK = new Object();
 
     private String namespaceName;
     private String scraperPodName;
@@ -126,8 +124,6 @@ public class MetricsCollector {
         return builder
             .withNamespaceName(getNamespaceName())
             .withComponentName(getComponentName())
-            .withMetricsPath(getMetricsPath())
-            .withMetricsPort(getMetricsPort())
             .withComponentType(getComponentType())
             .withScraperPodName(getScraperPodName());
     }
@@ -217,7 +213,7 @@ public class MetricsCollector {
      * @param data all metrics data
      * @return list of parsed values
      */
-    public static ArrayList<Double> collectSpecificMetric(Pattern pattern, HashMap<String, String> data) {
+    public static ArrayList<Double> collectSpecificMetric(Pattern pattern, Map<String, String> data) {
         ArrayList<Double> values = new ArrayList<>();
 
         for (Map.Entry<String, String> entry : data.entrySet()) {
@@ -242,18 +238,40 @@ public class MetricsCollector {
         // 20 seconds should be enough for collect data from the pod
         int ret = exec.execute(null, executableCommand, 20_000);
 
-        synchronized (LOCK) {
-            LOGGER.info("Metrics collection for PodIp {} from Pod {} finished with return code: {}", metricsPodIp, scraperPodName, ret);
-        }
+        LOGGER.info("Metrics collection for PodIp {} from Pod {} finished with return code: {}", metricsPodIp, scraperPodName, ret);
+
         return exec.out();
     }
 
     /**
-     * Collect metrics from all pods with specific selector
+     * Collect metrics from all pods with specific selector with wait
      * @return map with metrics {podName, metrics}
      */
-    public HashMap<String, String> collectMetricsFromPods() {
-        HashMap<String, String> map = new HashMap<>();
+    @SuppressWarnings("unchecked")
+    public Map<String, String> collectMetricsFromPods() {
+        Map<String, String>[] metricsData = (Map<String, String>[]) new HashMap[1];
+        TestUtils.waitFor("metrics has data", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+            () -> {
+                metricsData[0] = collectMetricsFromPodsWithoutWait();
+
+                // Kafka Exporter metrics should be non-empty
+                if (!(metricsData[0].size() > 0)) {
+                    return false;
+                }
+
+                for (Map.Entry<String, String> item : metricsData[0].entrySet()) {
+                    if (item.getValue().isEmpty()) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
+        return metricsData[0];
+    }
+
+    public Map<String, String> collectMetricsFromPodsWithoutWait() {
+        Map<String, String> map = new HashMap<>();
         kubeClient(namespaceName).listPods(namespaceName, componentLabelSelector).forEach(p -> {
             try {
                 map.put(p.getMetadata().getName(), collectMetrics(p.getStatus().getPodIP()));
@@ -262,27 +280,5 @@ public class MetricsCollector {
             }
         });
         return  map;
-    }
-
-    public HashMap<String, String> collectMetricsFromPodsWithWait() {
-        AtomicReference<HashMap<String, String>> metricsData = new AtomicReference<>();
-        TestUtils.waitFor(" metrics has data", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-            () -> {
-                metricsData.set(collectMetricsFromPods());
-
-                // Kafka Exporter metrics should be non-empty
-                if (!(metricsData.get().size() > 0)) {
-                    return false;
-                }
-
-                for (Map.Entry<String, String> item : metricsData.get().entrySet()) {
-                    if (item.getValue().isEmpty()) {
-                        return false;
-                    }
-                }
-                return true;
-            });
-
-        return metricsData.get();
     }
 }

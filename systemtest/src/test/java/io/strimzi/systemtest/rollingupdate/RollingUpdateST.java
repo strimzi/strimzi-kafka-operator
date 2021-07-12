@@ -738,11 +738,11 @@ class RollingUpdateST extends AbstractST {
             .build();
 
         LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
-        HashMap<String, String> kafkaMetricsOutput = metricsCollector.collectMetricsFromPodsWithWait();
-        HashMap<String, String> zkMetricsOutput = metricsCollector.toBuilder()
+        Map<String, String> kafkaMetricsOutput = metricsCollector.collectMetricsFromPods();
+        Map<String, String> zkMetricsOutput = metricsCollector.toBuilder()
             .withComponentType("Zookeeper")
             .build()
-            .collectMetricsFromPodsWithWait();
+            .collectMetricsFromPods();
 
         assertThat(kafkaMetricsOutput.values().toString().contains("kafka_"), is(true));
         assertThat(zkMetricsOutput.values().toString().contains("replicaId"), is(true));
@@ -798,11 +798,11 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
 
-        kafkaMetricsOutput = metricsCollector.collectMetricsFromPodsWithWait();
+        kafkaMetricsOutput = metricsCollector.collectMetricsFromPods();
         zkMetricsOutput = metricsCollector.toBuilder()
             .withComponentType("Zookeeper")
             .build()
-            .collectMetricsFromPodsWithWait();
+            .collectMetricsFromPods();
 
         assertThat(kafkaMetricsOutput.values().toString().contains("kafka_"), is(true));
         assertThat(zkMetricsOutput.values().toString().contains("replicaId"), is(true));
@@ -820,11 +820,11 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Check if metrics are not existing in pods");
 
-        kafkaMetricsOutput = metricsCollector.collectMetricsFromPods();
+        kafkaMetricsOutput = metricsCollector.collectMetricsFromPodsWithoutWait();
         zkMetricsOutput = metricsCollector.toBuilder()
             .withComponentType("Zookeeper")
             .build()
-            .collectMetricsFromPods();
+            .collectMetricsFromPodsWithoutWait();
 
         kafkaMetricsOutput.values().forEach(value -> assertThat(value, is("")));
         zkMetricsOutput.values().forEach(value -> assertThat(value, is("")));
