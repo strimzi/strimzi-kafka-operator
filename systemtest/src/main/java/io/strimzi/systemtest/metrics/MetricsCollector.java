@@ -135,12 +135,12 @@ public class MetricsCollector {
     protected MetricsCollector(Builder builder) {
         if (builder.namespaceName == null || builder.namespaceName.isEmpty()) builder.namespaceName = kubeClient().getNamespace();
         if (builder.scraperPodName == null || builder.scraperPodName.isEmpty()) throw new InvalidParameterException("Scraper pod name is not set");
+        if (builder.componentType == null || builder.componentType.isEmpty()) throw new InvalidParameterException("Component type is not set");
         if (builder.componentName == null || builder.componentName.isEmpty()) {
             if (!builder.componentType.equals("ClusterOperator")) {
                 throw new InvalidParameterException("Component name is not set");
             }
         }
-        if (builder.componentType == null || builder.componentType.isEmpty()) throw new InvalidParameterException("Component type is not set");
 
         componentType = builder.componentType;
 
