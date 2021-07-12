@@ -67,6 +67,32 @@
                         <argument>${config-model-file}</argument>
                     </arguments>
                 </configuration>
+                <executions>
+                    <execution>
+                        <!-- This execution is included here to generate the required files as part of the regular
+                             Maven build so that a successful `mvn clean install` isn't contingent on running make first.
+                             This helps with two scenarios:
+                                1) Tests failing in cluster-operator because no Kafka configuration existed
+                                2) Tests failing in cluster-operator because config files for now unsupported Kafka versions still exist -->
+                        <id>generate-config-models</id>
+
+                        <!-- Need a phase after compile (so that the class exists), but before test -->
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+
+                        <!-- Use the shell script instead of executing directly, as we need to execute KafkaConfigModelGenerator
+                             once for every supported version, and the existing shell scripts already handle determing what those versions are -->
+                        <configuration>
+                            <executable>${project.basedir}${file.separator}build-config-models.sh</executable>
+                            <arguments>
+                                <argument>build</argument>
+                            </arguments>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

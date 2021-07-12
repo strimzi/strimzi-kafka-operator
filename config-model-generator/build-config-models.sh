@@ -15,7 +15,7 @@ then
 
     for version in "${versions[@]}"
     do
-        mvn ${MVN_ARGS} verify exec:java \
+        mvn ${MVN_ARGS} exec:java \
         "-Dkafka-metadata-version=$version" \
         "-Dconfig-model-file=../cluster-operator/src/main/resources/kafka-${version}-config-model.json"
     done
