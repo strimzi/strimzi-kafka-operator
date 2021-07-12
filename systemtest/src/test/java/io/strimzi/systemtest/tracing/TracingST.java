@@ -942,16 +942,14 @@ public class TracingST extends AbstractST {
     /**
      * Install of Jaeger instance
      */
-    void deployJaegerInstance(ExtensionContext extensionContext) {
+    void deployJaegerInstance(ExtensionContext extensionContext, String namespaceName) {
         LOGGER.info("=== Applying jaeger instance install file ===");
 
         String instanceYamlContent = TestUtils.getContent(new File(JAEGER_INSTANCE_PATH), TestUtils::toYamlString);
-        cmdKubeClient(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(NAMESPACE_KEY).toString()).applyContent(instanceYamlContent.replaceAll("image: 'jaegertracing/all-in-one:*'", "image: 'jaegertracing/all-in-one:" + JAEGER_VERSION.substring(0, 4) + "'"));
+        cmdKubeClient(namespaceName).applyContent(instanceYamlContent.replaceAll("image: 'jaegertracing/all-in-one:*'", "image: 'jaegertracing/all-in-one:" + JAEGER_VERSION.substring(0, 4) + "'"));
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
-        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(() -> cmdKubeClient(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(NAMESPACE_KEY).toString()).deleteContent(instanceYamlContent)));
-        DeploymentUtils.waitForDeploymentAndPodsReady(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(NAMESPACE_KEY).toString(),
-            JAEGER_INSTANCE_NAME,
-            1);
+        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
+        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, JAEGER_INSTANCE_NAME, 1);
     }
 
     @BeforeEach
@@ -964,7 +962,7 @@ public class TracingST extends AbstractST {
         final String producerName = clusterName + PRODUCER_JOB_NAME;
         final String consumerName = clusterName + CONSUMER_JOB_NAME;
 
-        deployJaegerInstance(extensionContext);
+        deployJaegerInstance(extensionContext, namespaceName);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, false, kafkaClientsName).build());
 
