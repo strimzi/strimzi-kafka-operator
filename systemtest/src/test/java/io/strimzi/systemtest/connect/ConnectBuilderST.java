@@ -169,7 +169,7 @@ class ConnectBuilderST extends AbstractST {
         LOGGER.info("Deploying network policies for KafkaConnect");
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, kafkaConnect, KafkaConnectResources.deploymentName(connectClusterName));
 
-        Condition connectCondition = kafkaConnect.getStatus().getConditions().stream().findFirst().get();
+        Condition connectCondition = kafkaConnect.getStatus().getConditions().stream().findFirst().orElseThrow();
 
         assertTrue(connectCondition.getMessage().matches("The Kafka Connect build failed(.*)?"));
         assertThat(connectCondition.getType(), is(NotReady.toString()));
@@ -483,7 +483,7 @@ class ConnectBuilderST extends AbstractST {
         } else {
             LOGGER.warn("For running these tests on K8s you have to have internal registry deployed using `minikube start --insecure-registry '10.0.0.0/24'` and `minikube addons enable registry`");
             Service service = kubeClient("kube-system").getService("registry");
-            outputRegistry = service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().get().getPort();
+            outputRegistry = service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().orElseThrow().getPort();
         }
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(SHARED_KAFKA_CLUSTER_NAME, 3).build());
     }

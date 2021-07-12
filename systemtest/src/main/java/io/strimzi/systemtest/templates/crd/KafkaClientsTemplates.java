@@ -198,7 +198,7 @@ public class KafkaClientsTemplates {
 
                 if (tlsListener) {
                     String clusterName = kafkaUser.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-                    String clusterNamespace = KafkaResource.kafkaClient().inAnyNamespace().list().getItems().stream().filter(kafka -> kafka.getMetadata().getName().equals(clusterName)).findFirst().get().getMetadata().getNamespace();
+                    String clusterNamespace = KafkaResource.kafkaClient().inAnyNamespace().list().getItems().stream().filter(kafka -> kafka.getMetadata().getName().equals(clusterName)).findFirst().orElseThrow().getMetadata().getNamespace();
                     String clusterCaSecretName = KafkaUtils.getKafkaTlsListenerCaCertName(clusterNamespace, clusterName, listenerName);
                     String clusterCaSecretVolumeName = "ca-cert-" + kafkaUserName;
                     String caSecretMountPoint = "/opt/kafka/cluster-ca-" + kafkaUserName;
