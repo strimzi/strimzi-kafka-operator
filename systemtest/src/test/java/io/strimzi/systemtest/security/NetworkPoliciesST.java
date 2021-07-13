@@ -20,6 +20,7 @@ import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.metrics.MetricsCollector;
+import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -151,7 +152,7 @@ public class NetworkPoliciesST extends AbstractST {
         MetricsCollector metricsCollector = new MetricsCollector.Builder()
             .withScraperPodName(allowedKafkaClientsPodName)
             .withComponentName(clusterName)
-            .withComponentType("KafkaExporter")
+            .withComponentType(ComponentType.KafkaExporter)
             .build();
 
         Map<String, String> kafkaExporterMetricsData = metricsCollector.collectMetricsFromPods();

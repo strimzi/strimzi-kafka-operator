@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
-import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.ProbeBuilder;
@@ -28,6 +27,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.metrics.MetricsCollector;
+import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -734,13 +734,13 @@ class RollingUpdateST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withScraperPodName(metricsScraperPodName)
             .withComponentName(clusterName)
-            .withComponentType(Kafka.RESOURCE_KIND)
+            .withComponentType(ComponentType.Kafka)
             .build();
 
         LOGGER.info("Check if metrics are present in pod of Kafka and Zookeeper");
         Map<String, String> kafkaMetricsOutput = metricsCollector.collectMetricsFromPods();
         Map<String, String> zkMetricsOutput = metricsCollector.toBuilder()
-            .withComponentType("Zookeeper")
+            .withComponentType(ComponentType.Zookeeper)
             .build()
             .collectMetricsFromPods();
 
@@ -800,7 +800,7 @@ class RollingUpdateST extends AbstractST {
 
         kafkaMetricsOutput = metricsCollector.collectMetricsFromPods();
         zkMetricsOutput = metricsCollector.toBuilder()
-            .withComponentType("Zookeeper")
+            .withComponentType(ComponentType.Zookeeper)
             .build()
             .collectMetricsFromPods();
 
@@ -822,7 +822,7 @@ class RollingUpdateST extends AbstractST {
 
         kafkaMetricsOutput = metricsCollector.collectMetricsFromPodsWithoutWait();
         zkMetricsOutput = metricsCollector.toBuilder()
-            .withComponentType("Zookeeper")
+            .withComponentType(ComponentType.Zookeeper)
             .build()
             .collectMetricsFromPodsWithoutWait();
 

@@ -5,16 +5,13 @@
 package io.strimzi.systemtest.metrics;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
-import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
@@ -43,7 +40,7 @@ public class MetricsCollector {
 
     private String namespaceName;
     private String scraperPodName;
-    private String componentType;
+    private ComponentType componentType;
     private String componentName;
     private int metricsPort;
     private String metricsPath;
@@ -52,7 +49,7 @@ public class MetricsCollector {
     public static class Builder {
         private String namespaceName;
         private String scraperPodName;
-        private String componentType;
+        private ComponentType componentType;
         private String componentName;
         private int metricsPort;
         private String metricsPath;
@@ -67,7 +64,7 @@ public class MetricsCollector {
             return this;
         }
 
-        public Builder withComponentType(String componentType) {
+        public Builder withComponentType(ComponentType componentType) {
             this.componentType = componentType;
             return this;
         }
@@ -100,7 +97,7 @@ public class MetricsCollector {
         return scraperPodName;
     }
 
-    public String getComponentType() {
+    public ComponentType getComponentType() {
         return componentType;
     }
 
@@ -135,9 +132,9 @@ public class MetricsCollector {
     protected MetricsCollector(Builder builder) {
         if (builder.namespaceName == null || builder.namespaceName.isEmpty()) builder.namespaceName = kubeClient().getNamespace();
         if (builder.scraperPodName == null || builder.scraperPodName.isEmpty()) throw new InvalidParameterException("Scraper pod name is not set");
-        if (builder.componentType == null || builder.componentType.isEmpty()) throw new InvalidParameterException("Component type is not set");
+        if (builder.componentType == null) throw new InvalidParameterException("Component type is not set");
         if (builder.componentName == null || builder.componentName.isEmpty()) {
-            if (!builder.componentType.equals("ClusterOperator")) {
+            if (!builder.componentType.equals(ComponentType.ClusterOperator)) {
                 throw new InvalidParameterException("Component name is not set");
             }
         }
@@ -157,22 +154,22 @@ public class MetricsCollector {
 
     private LabelSelector getLabelSelectorForResource() {
         switch (this.componentType) {
-            case Kafka.RESOURCE_KIND:
+            case Kafka:
                 return kubeClient(namespaceName).getStatefulSetSelectors(KafkaResources.kafkaStatefulSetName(componentName));
-            case "Zookeeper":
+            case Zookeeper:
                 return kubeClient(namespaceName).getStatefulSetSelectors(KafkaResources.zookeeperStatefulSetName(componentName));
-            case KafkaConnect.RESOURCE_KIND:
+            case KafkaConnect:
                 return kubeClient(namespaceName).getDeploymentSelectors(KafkaConnectResources.deploymentName(componentName));
-            case "KafkaExporter":
+            case KafkaExporter:
                 return kubeClient(namespaceName).getDeploymentSelectors(KafkaExporterResources.deploymentName(componentName));
-            case KafkaMirrorMaker2.RESOURCE_KIND:
+            case KafkaMirrorMaker2:
                 return kubeClient(namespaceName).getDeploymentSelectors(KafkaMirrorMaker2Resources.deploymentName(componentName));
-            case "UserOperator":
-            case "TopicOperator":
+            case UserOperator:
+            case TopicOperator:
                 return kubeClient(namespaceName).getDeploymentSelectors(KafkaResources.entityOperatorDeploymentName(componentName));
-            case "ClusterOperator":
+            case ClusterOperator:
                 return kubeClient(namespaceName).getDeploymentSelectors(ResourceManager.getCoDeploymentName());
-            case KafkaBridge.RESOURCE_KIND:
+            case KafkaBridge:
                 return kubeClient(namespaceName).getDeploymentSelectors(KafkaBridgeResources.deploymentName(componentName));
             default:
                 return new LabelSelector();
@@ -181,11 +178,11 @@ public class MetricsCollector {
 
     private String getDefaultMetricsPathForComponent() {
         switch (this.componentType) {
-            case "KafkaExporter":
-            case "UserOperator":
-            case "TopicOperator":
-            case "ClusterOperator":
-            case KafkaBridge.RESOURCE_KIND:
+            case KafkaExporter:
+            case UserOperator:
+            case TopicOperator:
+            case ClusterOperator:
+            case KafkaBridge:
                 return "/metrics";
             default:
                 return "";
@@ -194,13 +191,13 @@ public class MetricsCollector {
 
     private int getDefaultMetricsPortForComponent() {
         switch (this.componentType) {
-            case "UserOperator":
+            case UserOperator:
                 return Constants.USER_OPERATOR_METRICS_PORT;
-            case "TopicOperator":
+            case TopicOperator:
                 return Constants.TOPIC_OPERATOR_METRICS_PORT;
-            case "ClusterOperator":
+            case ClusterOperator:
                 return Constants.CLUSTER_OPERATOR_METRICS_PORT;
-            case KafkaBridge.RESOURCE_KIND:
+            case KafkaBridge:
                 return Constants.KAFKA_BRIDGE_METRICS_PORT;
             default:
                 return Constants.COMPONENTS_METRICS_PORT;

@@ -29,6 +29,7 @@ import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -170,7 +171,7 @@ public class MetricsST extends AbstractST {
     @Tag(CONNECT)
     void testKafkaConnectRequests() {
         kafkaConnectMetricsData = collector.toBuilder()
-            .withComponentType(KafkaConnect.RESOURCE_KIND)
+            .withComponentType(ComponentType.KafkaConnect)
             .build()
             .collectMetricsFromPods();
         Pattern connectRequests = Pattern.compile("kafka_connect_node_request_total\\{clientid=\".*\",} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
@@ -182,7 +183,7 @@ public class MetricsST extends AbstractST {
     @Tag(CONNECT)
     void testKafkaConnectResponse() {
         kafkaConnectMetricsData = collector.toBuilder()
-            .withComponentType(KafkaConnect.RESOURCE_KIND)
+            .withComponentType(ComponentType.KafkaConnect)
             .build()
             .collectMetricsFromPods();
         Pattern connectResponse = Pattern.compile("kafka_connect_node_response_total\\{clientid=\".*\",.*} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
@@ -194,7 +195,7 @@ public class MetricsST extends AbstractST {
     @Tag(CONNECT)
     void testKafkaConnectIoNetwork() {
         kafkaConnectMetricsData = collector.toBuilder()
-            .withComponentType(KafkaConnect.RESOURCE_KIND)
+            .withComponentType(ComponentType.KafkaConnect)
             .build()
             .collectMetricsFromPods();
         Pattern connectIoNetwork = Pattern.compile("kafka_connect_network_io_total\\{clientid=\".*\",} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
@@ -221,7 +222,7 @@ public class MetricsST extends AbstractST {
         );
 
         kafkaExporterMetricsData = collector.toBuilder()
-            .withComponentType("KafkaExporter")
+            .withComponentType(ComponentType.KafkaExporter)
             .build()
             .collectMetricsFromPods();
 
@@ -260,7 +261,7 @@ public class MetricsST extends AbstractST {
     @Tag(ACCEPTANCE)
     void testClusterOperatorMetrics(ExtensionContext extensionContext) {
         clusterOperatorMetricsData = collector.toBuilder()
-            .withComponentType("ClusterOperator")
+            .withComponentType(ComponentType.ClusterOperator)
             .withComponentName("")
             .build()
             .collectMetricsFromPods();
@@ -305,7 +306,7 @@ public class MetricsST extends AbstractST {
     @Tag(ACCEPTANCE)
     void testUserOperatorMetrics() {
         userOperatorMetricsData = collector.toBuilder()
-            .withComponentType("UserOperator")
+            .withComponentType(ComponentType.UserOperator)
             .build()
             .collectMetricsFromPods();
 
@@ -327,7 +328,7 @@ public class MetricsST extends AbstractST {
     @Tag(ACCEPTANCE)
     void testTopicOperatorMetrics() {
         topicOperatorMetricsData = collector.toBuilder()
-            .withComponentType("TopicOperator")
+            .withComponentType(ComponentType.TopicOperator)
             .build()
             .collectMetricsFromPods();
 
@@ -354,7 +355,7 @@ public class MetricsST extends AbstractST {
     void testMirrorMaker2Metrics() {
         kafkaMirrorMaker2MetricsData = collector.toBuilder()
             .withComponentName(MIRROR_MAKER_CLUSTER)
-            .withComponentType(KafkaMirrorMaker2.RESOURCE_KIND)
+            .withComponentType(ComponentType.KafkaMirrorMaker2)
             .build()
             .collectMetricsFromPods();
 
@@ -376,7 +377,7 @@ public class MetricsST extends AbstractST {
 
         MetricsCollector bridgeCollector = collector.toBuilder()
             .withComponentName(BRIDGE_CLUSTER)
-            .withComponentType(KafkaBridge.RESOURCE_KIND)
+            .withComponentType(ComponentType.KafkaBridge)
             .build();
 
         // Attach consumer before producer
@@ -518,7 +519,7 @@ public class MetricsST extends AbstractST {
             .withNamespaceName(SECOND_NAMESPACE)
             .withScraperPodName(secondClientsPodName)
             .withComponentName(SECOND_CLUSTER)
-            .withComponentType("TopicOperator")
+            .withComponentType(ComponentType.TopicOperator)
             .build();
 
         Map<String, String> toMetrics = secondNamespaceCollector.collectMetricsFromPods();
@@ -682,24 +683,24 @@ public class MetricsST extends AbstractST {
 
         collector = new MetricsCollector.Builder()
             .withScraperPodName(kafkaClientsPodName)
-            .withComponentType(Kafka.RESOURCE_KIND)
+            .withComponentType(ComponentType.Kafka)
             .withComponentName(metricsClusterName)
             .build();
 
         kafkaMetricsData = collector.collectMetricsFromPods();
 
         zookeeperMetricsData = collector.toBuilder()
-            .withComponentType("Zookeeper")
+            .withComponentType(ComponentType.Zookeeper)
             .build()
             .collectMetricsFromPods();
 
         kafkaConnectMetricsData = collector.toBuilder()
-            .withComponentType(KafkaConnect.RESOURCE_KIND)
+            .withComponentType(ComponentType.KafkaConnect)
             .build()
             .collectMetricsFromPods();
 
         kafkaExporterMetricsData = collector.toBuilder()
-            .withComponentType("KafkaExporter")
+            .withComponentType(ComponentType.KafkaExporter)
             .build()
             .collectMetricsFromPods();
     }
