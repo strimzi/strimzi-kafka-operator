@@ -24,7 +24,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"type", "authorizerClass", "superUsers"})
+@JsonPropertyOrder({"type", "authorizerClass", "superUsers", "supportsAdminApi"})
 @EqualsAndHashCode
 public class KafkaAuthorizationCustom extends KafkaAuthorization {
     private static final long serialVersionUID = 1L;
@@ -33,12 +33,22 @@ public class KafkaAuthorizationCustom extends KafkaAuthorization {
 
     private String authorizerClass;
     private List<String> superUsers;
+    private boolean supportsAdminApi = false;
 
     @Description("Must be `" + TYPE_CUSTOM + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
         return TYPE_CUSTOM;
+    }
+
+    /**
+     * Custom Authorizer might or might not support the APIs for managing ACLs.
+     *
+     * @return Returns true if the custom authorizer supports APIs for ACL management. False otherwise.
+     */
+    public boolean supportsAdminApi()   {
+        return supportsAdminApi;
     }
 
     @Description("List of super users, which are user principals with unlimited access rights.")
@@ -60,5 +70,16 @@ public class KafkaAuthorizationCustom extends KafkaAuthorization {
 
     public void setAuthorizerClass(String clazz) {
         this.authorizerClass = clazz;
+    }
+
+    @Description("Indicates whether the custom authorizer supports the APIs for managing ACLs using the Kafka Admin API. " +
+            "Defaults to `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isSupportsAdminApi() {
+        return supportsAdminApi;
+    }
+
+    public void setSupportsAdminApi(boolean supportsAdminApi) {
+        this.supportsAdminApi = supportsAdminApi;
     }
 }

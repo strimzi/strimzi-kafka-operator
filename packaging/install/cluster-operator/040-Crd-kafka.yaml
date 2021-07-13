@@ -834,6 +834,11 @@ spec:
                           type: string
                         description: List of super users, which are user principals
                           with unlimited access rights.
+                      supportsAdminApi:
+                        type: boolean
+                        description: Indicates whether the custom authorizer supports
+                          the APIs for managing ACLs using the Kafka Admin API. Defaults
+                          to `false`.
                       tlsTrustedCertificates:
                         type: array
                         items:

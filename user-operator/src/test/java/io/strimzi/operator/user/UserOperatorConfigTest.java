@@ -31,6 +31,7 @@ public class UserOperatorConfigTest {
         envVars.put(UserOperatorConfig.STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS, "6000");
         envVars.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, "1000");
         envVars.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, "10");
+        envVars.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, "false");
 
         Map<String, String> labels = new HashMap<>(2);
         labels.put("label1", "value1");
@@ -52,6 +53,7 @@ public class UserOperatorConfigTest {
         assertThat(config.getZookeeperSessionTimeoutMs(), is(Long.parseLong(envVars.get(UserOperatorConfig.STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS))));
         assertThat(config.getClientsCaValidityDays(), is(1000));
         assertThat(config.getClientsCaRenewalDays(), is(10));
+        assertThat(config.isAclsAdminApiSupported(), is(false));
     }
 
     @Test
@@ -122,5 +124,14 @@ public class UserOperatorConfigTest {
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
         assertThat(config.getClientsCaValidityDays(), is(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS));
         assertThat(config.getClientsCaRenewalDays(), is(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS));
+    }
+
+    @Test
+    public void testFromMapAclsAdminApiSupportedDefaults()  {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+        envVars.remove(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED);
+
+        UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+        assertThat(config.isAclsAdminApiSupported(), is(UserOperatorConfig.DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED));
     }
 }

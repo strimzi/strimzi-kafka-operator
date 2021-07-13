@@ -49,6 +49,16 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
         return TYPE_KEYCLOAK;
     }
 
+    /**
+     * When delegation to Kafka Simple Authorizer is enabled, the Kafka Admin API can be used to manage the Kafka ACLs.
+     * If it is disabled, using the Admin API is not possible.
+     *
+     * @return True when delegation to Kafka Simple Authorizer is enabled and the Kafka Admin API can be used to manage Simple ACLs.
+     */
+    public boolean supportsAdminApi()   {
+        return delegateToKafkaAcls;
+    }
+
     @Description("OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.")
     public String getClientId() {
         return clientId;

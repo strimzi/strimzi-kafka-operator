@@ -63,6 +63,7 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
     public static final String ENV_VAR_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
     public static final String ENV_VAR_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
+    public static final String ENV_VAR_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
 
@@ -81,6 +82,7 @@ public class EntityUserOperator extends AbstractModel {
     private int clientsCaRenewalDays;
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+    private boolean aclsAdminApiSupported = false;
 
     /**
      * @param reconciliation   The reconciliation
@@ -260,6 +262,12 @@ public class EntityUserOperator extends AbstractModel {
                         result.setClientsCaRenewalDays(kafkaAssembly.getSpec().getClientsCa().getRenewalDays());
                     }
                 }
+
+                if (kafkaAssembly.getSpec().getKafka().getAuthorization() != null) {
+                    // Indicates whether the Kafka Admin API for ACL management are supported by the configured authorizer
+                    // plugin. This information is passed to the User Operator.
+                    result.aclsAdminApiSupported = kafkaAssembly.getSpec().getKafka().getAuthorization().supportsAdminApi();
+                }
             }
         }
         return result;
@@ -301,6 +309,7 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_EO_KEY_SECRET_NAME, EntityOperator.secretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(buildEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
+        varList.add(buildEnvVar(ENV_VAR_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported)));
         EntityOperator.javaOptions(varList, getJvmOptions(), javaSystemProperties);
 
         // Add shared environment variables used for all containers

@@ -17,6 +17,11 @@ import io.strimzi.api.kafka.model.EntityUserOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaAuthorization;
+import io.strimzi.api.kafka.model.KafkaAuthorizationCustomBuilder;
+import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
+import io.strimzi.api.kafka.model.KafkaAuthorizationOpa;
+import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.SystemProperty;
@@ -130,6 +135,7 @@ public class EntityUserOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_JAVA_OPTS).withValue("-Xmx256m").build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES).withValue("-Djavax.net.debug=verbose -Dsomething.else=42").build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_SECRET_PREFIX).withValue(secretPrefix).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_ACLS_ADMIN_API_SUPPORTED).withValue(String.valueOf(false)).build());
 
         return expected;
     }
@@ -328,4 +334,37 @@ public class EntityUserOperatorTest {
         assertThat(binding.getRoleRef().getName(), is("foo-entity-operator"));
     }
 
+    @ParallelTest
+    public void testAclsAdminApiSupported() {
+        testAclsAdminApiSupported(new KafkaAuthorizationSimple());
+        testAclsAdminApiSupported(new KafkaAuthorizationOpa());
+        testAclsAdminApiSupported(new KafkaAuthorizationKeycloakBuilder().withDelegateToKafkaAcls(true).build());
+        testAclsAdminApiSupported(new KafkaAuthorizationKeycloakBuilder().withDelegateToKafkaAcls(false).build());
+        testAclsAdminApiSupported(new KafkaAuthorizationCustomBuilder().withSupportsAdminApi(true).build());
+        testAclsAdminApiSupported(new KafkaAuthorizationCustomBuilder().withSupportsAdminApi(false).build());
+    }
+
+    private void testAclsAdminApiSupported(KafkaAuthorization authorizer) {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, jmxMetricsConfig, singletonMap("foo", "bar"), emptyMap()))
+                .editSpec()
+                    .editKafka()
+                        .withAuthorization(authorizer)
+                    .endKafka()
+                    .withNewEntityOperator()
+                        .withNewUserOperator()
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        EntityUserOperator f = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kafkaAssembly);
+        assertThat(f.getEnvVars()
+                    .stream()
+                    .filter(a -> a.getName().equals(EntityUserOperator.ENV_VAR_ACLS_ADMIN_API_SUPPORTED))
+                    .findFirst()
+                    .orElseThrow()
+                    .getValue(),
+                is(String.valueOf(authorizer.supportsAdminApi())));
+    }
 }

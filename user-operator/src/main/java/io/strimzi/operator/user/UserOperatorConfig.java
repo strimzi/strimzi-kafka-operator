@@ -29,12 +29,15 @@ public class UserOperatorConfig {
     public static final String STRIMZI_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
     public static final String STRIMZI_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
     public static final String STRIMZI_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
+    public static final String STRIMZI_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final String DEFAULT_KAFKA_BOOTSTRAP_SERVERS = "localhost:9091";
     public static final String DEFAULT_ZOOKEEPER_CONNECT = "localhost:2181";
     public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_MS = 18_000;
     public static final String DEFAULT_SECRET_PREFIX = "";
+    // Defaults to true for backwards compatibility in standalone UO deployments
+    public static final boolean DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED = true;
 
     private final String namespace;
     private final long reconciliationIntervalMs;
@@ -50,6 +53,7 @@ public class UserOperatorConfig {
     private final String secretPrefix;
     private final int clientsCaValidityDays;
     private final int clientsCaRenewalDays;
+    private final boolean aclsAdminApiSupported;
 
     /**
      * Constructor
@@ -66,6 +70,7 @@ public class UserOperatorConfig {
      * @param eoKeySecretName The name of the secret containing the Entity Operator key and certificate
      * @param caNamespace Namespace with the CA secret.
      * @param secretPrefix Prefix used for the Secret names
+     * @param aclsAdminApiSupported Indicates whether Kafka Admin API can be used to manage ACL rights
      * @param clientsCaValidityDays Number of days for which the certificate should be valid
      * @param clientsCaRenewalDays How long before the certificate expiration should the user certificate be renewed
      */
@@ -82,6 +87,7 @@ public class UserOperatorConfig {
                               String eoKeySecretName,
                               String caNamespace,
                               String secretPrefix,
+                              boolean aclsAdminApiSupported,
                               int clientsCaValidityDays,
                               int clientsCaRenewalDays) {
         this.namespace = namespace;
@@ -96,6 +102,7 @@ public class UserOperatorConfig {
         this.eoKeySecretName = eoKeySecretName;
         this.caNamespace = caNamespace;
         this.secretPrefix = secretPrefix;
+        this.aclsAdminApiSupported = aclsAdminApiSupported;
         this.clientsCaValidityDays = clientsCaValidityDays;
         this.clientsCaRenewalDays = clientsCaRenewalDays;
     }
@@ -168,13 +175,15 @@ public class UserOperatorConfig {
             secretPrefix = DEFAULT_SECRET_PREFIX;
         }
 
+        boolean aclsAdminApiSupported = getBooleanProperty(map, UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, UserOperatorConfig.DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED);
+
         int clientsCaValidityDays = getIntProperty(map, UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS);
 
         int clientsCaRenewalDays = getIntProperty(map, UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS);
 
         return new UserOperatorConfig(namespace, reconciliationInterval, kafkaBootstrapServers, zookeeperConnect,
                 zookeeperSessionTimeoutMs, labels, caCertSecretName, caKeySecretName, clusterCaCertSecretName,
-                eoKeySecretName, caNamespace, secretPrefix, clientsCaValidityDays, clientsCaRenewalDays);
+                eoKeySecretName, caNamespace, secretPrefix, aclsAdminApiSupported, clientsCaValidityDays, clientsCaRenewalDays);
     }
 
     /**
@@ -191,10 +200,37 @@ public class UserOperatorConfig {
         return clientsCaRenewalDays;
     }
 
+    /**
+     * Extracts the int type environment variable from the Map.
+     *
+     * @param map           Map with environment variables
+     * @param name          Name of the environment variable which should be extracted
+     * @param defaultVal    Default value which should be used when the environment variable is not set
+     *
+     * @return              The int value for the environment variable
+     */
     private static int getIntProperty(Map<String, String> map, String name, int defaultVal) {
         String value = map.get(name);
         if (value != null) {
             return Integer.parseInt(value);
+        } else {
+            return defaultVal;
+        }
+    }
+
+    /**
+     * Extracts the boolean type environment variable from the Map.
+     *
+     * @param map           Map with environment variables
+     * @param name          Name of the environment variable which should be extracted
+     * @param defaultVal    Default value which should be used when the environment variable is not set
+     *
+     * @return              The boolean value for the environment variable
+     */
+    private static boolean getBooleanProperty(Map<String, String> map, String name, boolean defaultVal) {
+        String value = map.get(name);
+        if (value != null) {
+            return Boolean.parseBoolean(value);
         } else {
             return defaultVal;
         }
@@ -284,6 +320,13 @@ public class UserOperatorConfig {
         return secretPrefix;
     }
 
+    /**
+     * @return  Indicates whether the Kafka Admin API for managing ACLs is supported by the Kafka cluster or not
+     */
+    public boolean isAclsAdminApiSupported() {
+        return aclsAdminApiSupported;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -298,6 +341,7 @@ public class UserOperatorConfig {
                 ",eoKeySecretName=" + eoKeySecretName +
                 ",caNamespace=" + caNamespace +
                 ",secretPrefix=" + secretPrefix +
+                ",aclsAdminApiSupported=" + aclsAdminApiSupported +
                 ",clientsCaValidityDays=" + clientsCaValidityDays +
                 ",clientsCaRenewalDays=" + clientsCaRenewalDays +
                 ")";

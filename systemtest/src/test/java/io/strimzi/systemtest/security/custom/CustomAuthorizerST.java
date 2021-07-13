@@ -201,6 +201,7 @@ public class CustomAuthorizerST extends AbstractST {
                 .editKafka()
                     .withNewKafkaAuthorizationCustom()
                         .withAuthorizerClass(KafkaAuthorizationSimple.AUTHORIZER_CLASS_NAME)
+                        .withSupportsAdminApi(true)
                         .withSuperUsers("CN=" + ADMIN)
                     .endKafkaAuthorizationCustom()
                     .withListeners(new GenericKafkaListenerBuilder()
