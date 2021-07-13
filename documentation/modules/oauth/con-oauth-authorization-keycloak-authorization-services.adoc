@@ -6,23 +6,25 @@
 [id='con-oauth-authorization-keycloak-authorization-services_{context}']
 = Managing policies and permissions in Keycloak Authorization Services
 
-This section describes the mappings between Kafka's authorization model and the Keycloak Authorization Services model.
+This section describes the relationship between Kafka's authorization model and the authorization model used in Keycloak Authorization Services.
 Keycloak Authorization Services is part of Keycloak.
 The mappings are used when granting permissions to access Kafka.
+
+ACTION: Add another sentence summarising the chapter?
 
 //ACTION: Create new concept module
 == Kafka and Keycloak authorization models
 
-It's useful to understand the differences between Kafka's authorization model and the model used in Keycloak Authorization Services.
+Kafka and Keycloak Authorization Services use different authorization models.
 
 [discrete]
 === Kafka authorization
 
-Kafka's authorization model defines _resource types_ and the available permissions for each type.
+Kafka's authorization model defines several _resource types_ and their available permissions.
 When a Kafka client performs an action on a broker, the broker uses a configured authorizer to check the client's permissions based on the action and the resource type.
 
-Kafka has five resource types for controlling access: `Topic`, `Group`, `Cluster`, `TransactionalId`, and `DelegationToken`.
-Each resource type has different permissions.
+Kafka has five resource types for the purposes of controlling access: `Topic`, `Group`, `Cluster`, `TransactionalId`, and `DelegationToken`.
+Each resource type has different available permissions.
 
 *Topic*
 
@@ -63,9 +65,9 @@ Each resource type has different permissions.
 [discrete]
 === Keycloak Authorization Services model
 
-Keycloak Authorization Services has four concepts for defining and granting permissions: _resources_, _authorization scopes_, _policies_, and _permissions_.
+The Keycloak Authorization Services model has four concepts for defining and granting permissions: _resources_, _authorization scopes_, _policies_, and _permissions_.
 
-Resources:: Sets of resource definitions used to match resources with permitted actions.
+Resource definitions and resources:: Sets of resource definitions used to match resources with permitted actions.
 A resource might be an individual topic, for example, or all topics with names starting with the same prefix.
 A resource definition is associated with a set of available authorization scopes, which represent a set of all actions available on the resource.
 Often, only a subset of these actions is actually permitted.
@@ -74,7 +76,9 @@ Authorization scopes:: Authorization scopes are sets of all the available action
 When you define a new resource, you add scopes from the set of all scopes.
 
 Policies:: Policies are rules that use criteria to match against a list of accounts.
-Policies can match _service accounts_ based on client ID or roles, or _user accounts_ based on username, groups, or roles.
+Policies can match:
+* _Service accounts_ based on client ID or roles
+* _User accounts_ based on username, groups, or roles.
 
 Permissions:: Permissions grant a subset of authorization scopes on a specific resource definition to a set of users.
 
@@ -86,20 +90,20 @@ Permissions:: Permissions grant a subset of authorization scopes on a specific r
 == Mapping Keycloak Authorization Services to the Kafka authorization model
 
 To grant Kafka permissions to user accounts or service accounts, use Keycloak Authorization Services rules on the OAuth client that represents the Kafka Broker.
-Typically, the client id of the OAuth client is `kafka`.
+Typically, the client id of the broker OAuth client is `kafka`.
 
 Your OAuth 2.0 client definition for the Kafka Broker must have the *Authorization Enabled* option enabled.
 
-All permissions exist within the scope of this OAuth 2.0 client, so if you have different Kafka clusters configured with different OAuth 2.0 client IDs they would each have a separate set of permissions even though they're part of the same realm.
+All permissions exist within the scope of this OAuth 2.0 client. If you have different Kafka clusters configured with different OAuth 2.0 client IDs, they each need a separate set of permissions even though they're part of the same Keycloak realm.
 
-When the Kafka client uses OAUTHBEARER authentication, the Keycloak authorizer (`KeycloakRBACAuthorizer`) uses the access token of the current session to retrieve a list of grants for the current session from the Keycloak server.
-The authorizer evaluates the Keycloak Authorization Services policies and permissions in order to retrieve the list of grants.
+When the Kafka client uses OAUTHBEARER authentication, the Keycloak authorizer (`KeycloakRBACAuthorizer`) uses the access token of the current session to retrieve a list of grants from the Keycloak server.
+To retrieve the grants, the authorizer evaluates the Keycloak Authorization Services policies and permissions.
 
 .About authorization scopes
 
 An initial Keycloak configuration usually involves uploading authorization scopes to create a list of all possible actions that can be performed on each Kafka resource type.
 This step is performed once only, before defining any permissions.
-Alternatively, you can add authorization scopes manually.
+You can add authorization scopes manually instead of uploading them.
 
 Authorization scopes should contain all the possible Kafka permissions regardless of the resource type:
 
@@ -117,7 +121,6 @@ Authorization scopes should contain all the possible Kafka permissions regardles
 .Defining resource patterns for permissions checks
 
 The resources use pattern names for pattern matching against the targeted resources when performing permission checks.
-
 The general pattern is `__RESOURCE-TYPE:PATTERN-NAME__`.
 
 The resource types mirror the Kafka authorization model.
@@ -146,7 +149,7 @@ kafka-cluster:*,Group:b_*
 
 When the `kafka-cluster` prefix is missing, it is assumed to be `kafka-cluster:*`.
 
-When defining a resource, you can associate a list of possible authorization scopes which are relevant to the resource.
+When defining a resource, you can associate it with a list of possible authorization scopes which are relevant to the resource.
 Set whatever actions make sense for the targeted resource type.
 
 Though you may add any authorization scope to any resource, only the scopes supported by the resource type are considered for access control.
@@ -167,9 +170,11 @@ A policy is given a unique name and can be reused to target multiple permissions
 
 Use fine-grained permissions to pull together the policies, resources, and authorization scopes that grant access to users.
 
-The name of each permission should clearly define what permissions it grants to which users.
+The name of each permission should clearly define which permissions it grants to which users.
 
-For more information about how to configure permissions through Keycloak Authorization Services, see xref:con-oauth-authorization-keycloak-example_str[].
+.Additional resources
+
+* For more information about how to configure permissions through Keycloak Authorization Services, see xref:con-oauth-authorization-keycloak-example_str[].
 
 // ACTION: Create new reference module
 == Example permissions required for Kafka operations
