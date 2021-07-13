@@ -93,6 +93,7 @@ public class ResourceOperatorSupplier {
                  () -> new BackOff(5_000, 2, 4)),
              new DefaultAdminClientProvider(),
              new DefaultZookeeperScalerProvider(),
+             new PodOperator(vertx, client, new PodRestartReasonPublisher(client, metricsProvider, operatorName)),
              metricsProvider,
              new RestartReasonPublisher(client, metricsProvider),
              pfa,
