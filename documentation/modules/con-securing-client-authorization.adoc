@@ -10,18 +10,19 @@ The authorization type enabled for a user is specified using the `type` field.
 
 To use simple authorization, you set the `type` property to `simple` in `KafkaUser.spec.authorization`.
 The simple authorization will use the Kafka Admin API to manage the ACL rules inside your Kafka cluster.
-Whether the ACL management in the User Operator is enabled or not depends on your authorization configuration in the Kafka cluster.
+Whether ACL management in the User Operator is enabled or not depends on your authorization configuration in the Kafka cluster.
 
 * For simple authorization, ACL management is always enabled.
-* For OPA authorization, ACL management is always disabled and authorization rules have to be configured in the OPA server.
+* For OPA authorization, ACL management is always disabled.
+  Authorization rules are configured in the OPA server.
 * For Keycloak authorization, you can manage the ACL rules directly in Keycloak.
   You can also delegate authorization to the simple authorizer as a fallback option in the configuration.
-  When the delegation to the simple authorizer is enabled, User Operator will enable management of ACL rules as well.
-* When using custom authorization plugin, use the `supportsAdminApi` field in `.spec.kafka.authorization` in the `Kafka` custom resource to enable or disable the support.
+  When delegation to the simple authorizer is enabled, the User Operator will enable management of ACL rules as well.
+* For custom authorization using a custom authorization plugin, use the `supportsAdminApi` property in the `.spec.kafka.authorization` configuration of the `Kafka` custom resource to enable or disable the support.
 
-If ACL managment is not enabled, Strimzi rejects the resource in case it contains any ACL rules.
+If ACL managment is not enabled, Strimzi rejects a resource if it contains any ACL rules.
 
-If you're using a standalone deployment of the User Operator, the ACL management is enabled by default.
+If you're using a standalone deployment of the User Operator, ACL management is enabled by default.
 You can disable it using the `STRIMZI_ACLS_ADMIN_API_SUPPORTED` environment variable.
 
 If no authorization is specified, the User Operator does not provision any access rights for the user.
