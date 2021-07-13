@@ -714,9 +714,6 @@ class RollingUpdateST extends AbstractST {
         kubeClient(NAMESPACE).getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(metricsCMZk);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withMetricsConfig(kafkaMetricsConfig)
