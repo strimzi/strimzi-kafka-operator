@@ -6,7 +6,7 @@
 Kafka and Keycloak Authorization Services use different authorization models.
 
 [discrete]
-=== Kafka authorization
+== Kafka authorization model
 
 Kafka's authorization model defines several _resource types_ and their available permissions.
 When a Kafka client performs an action on a broker, the broker uses a configured authorizer to check the client's permissions based on the action and the resource type.
@@ -51,7 +51,7 @@ Each resource type has different available permissions.
 * `Describe`
 
 [discrete]
-=== Keycloak Authorization Services model
+== Keycloak Authorization Services model
 
 The Keycloak Authorization Services model has four concepts for defining and granting permissions: _resources_, _authorization scopes_, _policies_, and _permissions_.
 

@@ -1,28 +1,23 @@
 ifdef::context[:parent-context: {context}]
 
-[id="assembly-my-user-story_{context}"]
+[id="assembly-managing-policies-permissions-keycloak_{context}"]
 = Managing policies and permissions in Keycloak Authorization Services
 
 :context: assembly-keyword
 
 [role="_abstract"]
 This section describes the relationship between Kafka's authorization model and the authorization model used in Keycloak Authorization Services.
+It explains how to grant Kafka permissions to user accounts or service accounts using Keycloak Authorization Services rules.
 Keycloak Authorization Services is part of Keycloak.
 The mappings are used when granting permissions to access Kafka.
 
-ACTION: Add another sentence summarising the chapter.
+Examples are given showing the different user permissions required to perform common Kafka operations, such as creating and listing topics.
 
-include::modules/oauth/con-kafka-keycloak-authz-models.adoc[leveloffset=+1]
+include::modules/con-kafka-keycloak-authz-models.adoc[leveloffset=+1]
 
-include::modules/oauth/con-mapping-keycloak-authz-services-to-kafka-model.adoc[leveloffset=+1]
+include::modules/con-mapping-keycloak-authz-services-to-kafka-model.adoc[leveloffset=+1]
 
-include::modules/oauth/ref-example-permissions-for-kafka-operations.adoc[leveloffset=+1]
-
-[role="_additional-resources"]
-== Additional resources (or Next steps)
-* A bulleted list of links to other closely-related material. These links can include `link:` and `xref:` macros.
-* For more details on writing assemblies, see the link:https://github.com/redhat-documentation/modular-docs#modular-documentation-reference-guide[Modular Documentation Reference Guide].
-* Use a consistent system for file names, IDs, and titles. For tips, see _Anchor Names and File Names_ in link:https://github.com/redhat-documentation/modular-docs#modular-documentation-reference-guide[Modular Documentation Reference Guide].
+include::modules/ref-example-permissions-for-kafka-operations.adoc[leveloffset=+1]
 
 ifdef::parent-context[:context: {parent-context}]
 ifndef::parent-context[:!context:]

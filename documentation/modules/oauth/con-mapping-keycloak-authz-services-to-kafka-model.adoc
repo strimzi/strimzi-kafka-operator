@@ -89,4 +89,4 @@ The name of each permission should clearly define which permissions it grants to
 [role="_additional-resources"]
 .Additional resources
 
-* For more information about how to configure permissions through Keycloak Authorization Services, see xref:con-oauth-authorization-keycloak-example_str[].
+* For more information about how to configure permissions through Keycloak Authorization Services, see xref:proc-oauth-authorization-keycloak-example_{context}[]. 
