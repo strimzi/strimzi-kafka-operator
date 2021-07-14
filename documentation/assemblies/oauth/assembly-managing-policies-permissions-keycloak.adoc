@@ -1,0 +1,28 @@
+ifdef::context[:parent-context: {context}]
+
+[id="assembly-my-user-story_{context}"]
+= Managing policies and permissions in Keycloak Authorization Services
+
+:context: assembly-keyword
+
+[role="_abstract"]
+This section describes the relationship between Kafka's authorization model and the authorization model used in Keycloak Authorization Services.
+Keycloak Authorization Services is part of Keycloak.
+The mappings are used when granting permissions to access Kafka.
+
+ACTION: Add another sentence summarising the chapter.
+
+include::modules/oauth/con-kafka-keycloak-authz-models.adoc[leveloffset=+1]
+
+include::modules/oauth/con-mapping-keycloak-authz-services-to-kafka-model.adoc[leveloffset=+1]
+
+include::modules/oauth/ref-example-permissions-for-kafka-operations.adoc[leveloffset=+1]
+
+[role="_additional-resources"]
+== Additional resources (or Next steps)
+* A bulleted list of links to other closely-related material. These links can include `link:` and `xref:` macros.
+* For more details on writing assemblies, see the link:https://github.com/redhat-documentation/modular-docs#modular-documentation-reference-guide[Modular Documentation Reference Guide].
+* Use a consistent system for file names, IDs, and titles. For tips, see _Anchor Names and File Names_ in link:https://github.com/redhat-documentation/modular-docs#modular-documentation-reference-guide[Modular Documentation Reference Guide].
+
+ifdef::parent-context[:context: {parent-context}]
+ifndef::parent-context[:!context:]

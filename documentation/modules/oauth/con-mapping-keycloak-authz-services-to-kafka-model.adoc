@@ -1,0 +1,92 @@
+[id="con-mapping-keycloak-authz-services-to-kafka-model_{context}"]
+= Mapping Keycloak Authorization Services to the Kafka authorization model
+
+[role="_abstract"]
+
+To grant Kafka permissions to user accounts or service accounts, use Keycloak Authorization Services rules on the OAuth client that represents the Kafka Broker.
+Typically, the client id of the broker OAuth client is `kafka`.
+
+Your OAuth 2.0 client definition for the Kafka Broker must have the *Authorization Enabled* option enabled.
+
+All permissions exist within the scope of this OAuth 2.0 client. If you have different Kafka clusters configured with different OAuth 2.0 client IDs, they each need a separate set of permissions even though they're part of the same Keycloak realm.
+
+When the Kafka client uses OAUTHBEARER authentication, the Keycloak authorizer (`KeycloakRBACAuthorizer`) uses the access token of the current session to retrieve a list of grants from the Keycloak server.
+To retrieve the grants, the authorizer evaluates the Keycloak Authorization Services policies and permissions.
+
+.About authorization scopes
+
+An initial Keycloak configuration usually involves uploading authorization scopes to create a list of all possible actions that can be performed on each Kafka resource type.
+This step is performed once only, before defining any permissions.
+You can add authorization scopes manually instead of uploading them.
+
+Authorization scopes should contain all the possible Kafka permissions regardless of the resource type:
+
+* `Create`
+* `Write`
+* `Read`
+* `Delete`
+* `Describe`
+* `Alter`
+* `DescribeConfig`
+* `AlterConfig`
+* `ClusterAction`
+* `IdempotentWrite`
+
+.Defining resource patterns for permissions checks
+
+The resources use pattern names for pattern matching against the targeted resources when performing permission checks.
+The general pattern is `__RESOURCE-TYPE:PATTERN-NAME__`.
+
+The resource types mirror the Kafka authorization model.
+The pattern allows for two matching options:
+
+* Exact matching (when the pattern does not end with `\*`)
+* Prefix matching (when the pattern ends with `*`)
+
+.Example patterns for resources
+[source]
+----
+Topic:my-topic
+Topic:orders-*
+Group:orders-*
+Cluster:*
+----
+
+Additionally, the general pattern can be prefixed by `kafka-cluster:__CLUSTER-NAME__` followed by a comma, where _CLUSTER-NAME_ refers to the `metadata.name` in the Kafka custom resource.
+
+.Example patterns for resources with cluster prefix
+[source]
+----
+kafka-cluster:my-cluster,Topic:*
+kafka-cluster:*,Group:b_*
+----
+
+When the `kafka-cluster` prefix is missing, it is assumed to be `kafka-cluster:*`.
+
+When defining a resource, you can associate it with a list of possible authorization scopes which are relevant to the resource.
+Set whatever actions make sense for the targeted resource type.
+
+Though you may add any authorization scope to any resource, only the scopes supported by the resource type are considered for access control.
+
+.About policies
+
+Policies are used to target permissions to one or more user accounts or service accounts.
+Targeting can refer to:
+
+* Specific user or service accounts
+* Realm roles or client roles
+* User groups
+* JavaScript rules to match a client IP address
+
+A policy is given a unique name and can be reused to target multiple permissions to multiple resources.
+
+.Defining permissions based on scopes, resources, and policies
+
+Use fine-grained permissions to pull together the policies, resources, and authorization scopes that grant access to users.
+
+The name of each permission should clearly define which permissions it grants to which users.
+
+[role="_additional-resources"]
+.Additional resources
+
+* For more information about how to configure permissions through Keycloak Authorization Services, see xref:con-oauth-authorization-keycloak-example_str[].

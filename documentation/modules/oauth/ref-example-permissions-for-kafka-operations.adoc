@@ -1,0 +1,183 @@
+[id="ref-example-permissions-for-kafka-operations_{context}"]
+= Example permissions required for Kafka operations
+
+[role="_abstract"]
+
+The following examples demonstrate the user permissions required for performing common operations on Kafka.
+
+.Creating a topic
+
+To create a topic, the `Create` permission is required for the specific topic, or for `Cluster:kafka-cluster`.
+
+[source,shell]
+----
+bin/kafka-topics.sh --create --topic my-topic \
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config=/tmp/config.properties
+----
+
+.Listing the topic
+
+If a user has the `Describe` permission on the topic, the topic is listed.
+
+[source,shell]
+----
+bin/kafka-topics.sh --list \
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config=/tmp/config.properties
+----
+
+.Displaying the topic details
+
+To display the topic details, `Describe` and `DescribeConfigs` permissions are required on the topic.
+
+[source,shell]
+----
+bin/kafka-topics.sh --describe --topic my-topic \
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config=/tmp/config.properties
+----
+
+.Producing to the topic
+
+To produce messages to the topic, `Describe` and `Write` permissions are required on the topic.
+
+If the topic hasn't been created yet, and topic auto-creation is enabled, the permissions to create the topic are required.
+
+[source,shell]
+----
+bin/kafka-console-producer.sh  --topic my-topic \
+  --broker-list my-cluster-kafka-bootstrap:9092 --producer.config=/tmp/config.properties
+----
+
+.Consuming from the topic
+
+To consume messages from the topic, `Describe` and `Read` permissions are required on the topic.
+Consuming from the topic normally relies on storing the consumer offsets in a consumer group, which requires additional `Describe` and `Read` permissions on the consumer group.
+
+Two `resources` are needed for matching. For example:
+[source]
+----
+Topic:my-topic
+Group:my-group-*
+----
+
+[source,shell]
+----
+bin/kafka-console-consumer.sh --topic my-topic --group my-group-1 --from-beginning \
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --consumer.config /tmp/config.properties
+----
+
+.Producing to the topic using an idempotent producer
+
+As well as the permissions for standard producing to the topic, an additional `IdempotentWrite` permission is required on the 
+`Cluster` resource.
+
+Two `resources` are needed for matching. For example:
+
+----
+Topic:my-topic
+Cluster:kafka-cluster
+----
+
+.Listing consumer groups
+
+When listing consumer groups, only the groups on which the user has the `Describe` permissions are returned.
+Alternatively, if the user has the `Describe` permission on the `Cluster:kafka-cluster`, all the consumer groups are returned.
+
+[source,shell]
+----
+bin/kafka-consumer-groups.sh --list \
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config=/tmp/config.properties
+----
+
+.Displaying the consumer group details
+
+To display the consumer group details, the `Describe` permission is required on the group the topic associated with the group.
+
+[source,shell]
+----
+bin/kafka-consumer-groups.sh --describe --group my-group-1 \
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config=/tmp/config.properties
+----
+
+.Changing the topic configuration
+
+To change the topic configuration, the `Describe` and `Alter` permissions are required on the topic.
+
+[source,shell]
+----
+bin/kafka-topics.sh --alter --topic my-topic --partitions 2 \
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config=/tmp/config.properties
+----
+
+.Displaying the Kafka broker configuration
+
+In order to use `kafka-configs.sh` to get the broker configuration, the `DescribeConfigs` permission is required on the 
+`Cluster:kafka-cluster`.
+
+[source,shell]
+----
+bin/kafka-configs.sh --entity-type brokers --entity-name 0 --describe --all \
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config=/tmp/config.properties
+----
+
+.Changing the Kafka broker configuration
+
+To change the Kafka broker configuration, `DescribeConfigs` and `AlterConfigs` permissions are required on `Cluster:kafka-cluster`.
+
+[source,shell]
+----
+bin/kafka-configs --entity-type brokers --entity-name 0 --alter --add-config log.cleaner.threads=2 \
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config=/tmp/config.properties
+----
+
+.Deleting a topic
+
+To delete the topic, the `Describe` and `Delete` permissions are required on the topic.
+
+[source,shell]
+----
+bin/kafka-topics.sh --delete --topic my-topic \
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config=/tmp/config.properties
+----
+
+.Selecting a leader partition
+
+To run leader selection for topic partitions, the `Alter` permission is required on the `Cluster:kafka-cluster`.
+
+[source,shell]
+----
+bin/kafka-leader-election.sh --topic my-topic --partition 0 --election-type PREFERRED  /
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --admin.config /tmp/config.properties
+----
+
+.Reassigning partitions
+
+To generate a partition reassignment file, `Describe` permissions are required on the topics involved.
+
+[source,shell]
+----
+bin/kafka-reassign-partitions.sh --topics-to-move-json-file /tmp/topics-to-move.json --broker-list "0,1" --generate \
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/config.properties > /tmp/partition-reassignment.json
+----
+
+To execute the partition reassignment, `Describe` and `Alter` permissions are required on `Cluster:kafka-cluster`. Also, 
+`Describe` permissions are required on the topics involved.
+
+[source,shell]
+----
+bin/kafka-reassign-partitions.sh --reassignment-json-file /tmp/partition-reassignment.json --execute \
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/config.properties
+----
+
+To verify partition reassignment, `Describe`, and `AlterConfigs` permissions are required on `Cluster:kafka-cluster`, and on each 
+of the topics involved.
+
+[source,shell]
+----
+bin/kafka-reassign-partitions.sh --reassignment-json-file /tmp/partition-reassignment.json --verify \
+  --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/config.properties
+----
+
+[role="_additional-resources"]
+.Additional resources
+
+* xref:proc-oauth-authorization-keycloak-example_{context}[]
