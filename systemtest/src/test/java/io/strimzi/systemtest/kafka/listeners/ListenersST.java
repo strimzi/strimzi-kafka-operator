@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.kafka.listeners;
 
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -22,6 +24,7 @@ import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClie
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.systemtest.security.SystemTestCertAndKey;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -45,6 +48,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -2006,6 +2011,77 @@ public class ListenersST extends AbstractST {
         KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).delete();
     }
 
+    @ParallelNamespaceTest
+    void testMessagesTlsScramShaWithPredefinedPassword(ExtensionContext extensionContext) {
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+
+        final String secretName = clusterName + "-secret";
+        final String encodedPassword = Base64.getEncoder().encodeToString("asdasd".getBytes(StandardCharsets.UTF_8));
+
+        Secret password = new SecretBuilder()
+            .withNewMetadata()
+                .withName(secretName)
+            .endMetadata()
+            .addToData("password", encodedPassword)
+            .build();
+
+        kubeClient().namespace(namespaceName).createSecret(password);
+
+        KafkaUser kafkaUser = KafkaUserTemplates.scramShaUser(clusterName, userName)
+            .editSpec()
+                .withNewKafkaUserScramSha512ClientAuthentication()
+                    .withNewPassword()
+                        .withNewValueFrom()
+                            .withNewSecretKeyRef("password", secretName, false)
+                        .endValueFrom()
+                    .endPassword()
+                .endKafkaUserScramSha512ClientAuthentication()
+            .endSpec()
+            .build();
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+            .editSpec()
+                .editKafka()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                        .withPort(9096)
+                        .withTls(true)
+                        .withNewKafkaListenerAuthenticationScramSha512Auth()
+                        .endKafkaListenerAuthenticationScramSha512Auth()
+                        .build())
+                .endKafka()
+            .endSpec()
+            .build(),
+            kafkaUser,
+            KafkaTopicTemplates.topic(clusterName, topicName).build()
+        );
+
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, kafkaClientsName, kafkaUser).build());
+
+        final String kafkaClientsPodName =
+            kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(namespaceName)
+            .withClusterName(clusterName)
+            .withKafkaUsername(userName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .build();
+
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
+        );
+    }
+
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
@@ -2018,7 +2094,7 @@ public class ListenersST extends AbstractST {
     }
 
     @AfterEach
-    void afterEach(ExtensionContext extensionContext) throws Exception {
+    void afterEach(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         kubeClient(namespaceName).getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
     }
