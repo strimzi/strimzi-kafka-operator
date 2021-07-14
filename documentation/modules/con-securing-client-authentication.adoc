@@ -84,7 +84,7 @@ data:
 To use TLS client authentication using a certificate issued outside the User Operator, you set the `type` field in the `KafkaUser` resource to `tls-external`.
 A secret and credentials are not created for the user.
 
-.Example user with TLS client authentication enabled
+.Example user with TLS client authentication using external certificates enabled
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
