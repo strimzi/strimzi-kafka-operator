@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -465,12 +466,57 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.failing(e -> {
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
             verify(mockResource).delete();
             context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
             async.flag();
         }));
     }
 
+    // This tests the pre-check which should stop the self-closing-watch in case the resource is deleted before the
+    // watch is opened.
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(VertxTestContext context) {
+        T resource = resource();
+        AtomicBoolean watchWasClosed = new AtomicBoolean(false);
+        Resource mockResource = mock(resourceType());
+
+        AtomicInteger getInvocations = new AtomicInteger(0);
+        when(mockResource.get()).thenAnswer(invocation -> {
+            // First get needs to return the resource to trigger deletion
+            // Next gets return null since the resource was already deleted
+            if (getInvocations.getAndIncrement() < 1) {
+                return resource;
+            } else {
+                return null;
+            }
+        });
+        when(mockResource.withGracePeriod(anyLong())).thenReturn(mockResource);
+        when(mockResource.delete()).thenReturn(Boolean.FALSE);
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            return (Watch) () -> {
+                watchWasClosed.set(true);
+            };
+        });
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+
+        Checkpoint async = context.checkpoint();
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
+            verify(mockResource).delete();
+            context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
+            async.flag();
+        }));
+    }
 }
 

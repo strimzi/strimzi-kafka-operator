@@ -16,6 +16,7 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.Mockito.when;
 
 public class BuildConfigOperatorTest extends AbstractResourceOperatorTest<OpenShiftClient, BuildConfig,
@@ -66,5 +67,11 @@ public class BuildConfigOperatorTest extends AbstractResourceOperatorTest<OpenSh
     @Test
     public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
         testCreateWhenExistsWithChangeIsAPatch(context, false);
+    }
+
+    @Override
+    @Test
+    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(VertxTestContext context) {
+        assumeTrue(false, "BuildConfigOperator does not use self-closing watch so this test should be skipped");
     }
 }

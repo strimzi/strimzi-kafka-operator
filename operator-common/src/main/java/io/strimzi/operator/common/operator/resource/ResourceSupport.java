@@ -166,18 +166,14 @@ public class ResourceSupport {
 
                     // Pre-check is done after the watch is open to make sure we did not missed the event. In the worst
                     // case, both pre-check and watch complete the future. But at least one should always complete it.
-                    vertx.executeBlocking(f -> {
-                        U apply = preCheckFn.apply(gettable.get());
-                        if (apply != null) {
-                            LOGGER.debugCr(reconciliation, "Pre-check is already complete, no need to wait for the watch: {}", watchFnDescription);
-                            donePromise.tryComplete(apply);
-                            vertx.cancelTimer(timerId);
-                        } else {
-                            LOGGER.debugCr(reconciliation, "Pre-check is not complete yet, let's wait for the watch: {}", watchFnDescription);
-                        }
-
-                        f.complete();
-                    });
+                    U apply = preCheckFn.apply(gettable.get());
+                    if (apply != null) {
+                        LOGGER.debugCr(reconciliation, "Pre-check is already complete, no need to wait for the watch: {}", watchFnDescription);
+                        donePromise.tryComplete(apply);
+                        vertx.cancelTimer(timerId);
+                    } else {
+                        LOGGER.debugCr(reconciliation, "Pre-check is not complete yet, let's wait for the watch: {}", watchFnDescription);
+                    }
 
                     watchPromise.complete(watch);
                 } catch (Throwable t) {
@@ -196,11 +192,11 @@ public class ResourceSupport {
                                 f.tryComplete(apply);
                                 vertx.cancelTimer(timerId);
                             } else {
-                                LOGGER.debugOp("Not yet satisfied: {}", watchFnDescription);
+                                LOGGER.debugCr(reconciliation, "Not yet satisfied: {}", watchFnDescription);
                             }
                         } catch (Throwable t) {
                             if (!f.tryFail(t)) {
-                                LOGGER.infoCr(reconciliation, "Ignoring exception thrown while " +
+                                LOGGER.debugCr(reconciliation, "Ignoring exception thrown while " +
                                         "evaluating watch {} because the future was already completed", watchFnDescription, t);
                             }
                         }
