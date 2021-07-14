@@ -137,8 +137,12 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      */
     private Future<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String name) {
         R resourceOp = operation().withName(name);
-        Future<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(resourceOp,
-                deleteTimeoutMs(),
+
+        Future<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(
+            reconciliation,
+            resourceOp,
+            resourceOp,
+            deleteTimeoutMs(),
             "observe deletion of " + resourceKind + " " + name,
             (action, resource) -> {
                 if (action == Watcher.Action.DELETED) {
@@ -147,8 +151,18 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
                 } else {
                     return null;
                 }
+            },
+            resource -> {
+                if (resource == null) {
+                    log.debugCr(reconciliation, "{} {} has been already deleted in pre-check", resourceKind, name);
+                    return ReconcileResult.deleted();
+                } else {
+                    return null;
+                }
             });
+
         Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp);
+
         return CompositeFuture.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
     }
 
