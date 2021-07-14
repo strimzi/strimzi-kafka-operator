@@ -21,7 +21,7 @@ When no authentication type is specified, the User Operator does not create the 
 
 Use `tls-external` to authenticate with TLS using a certificate issued outside the User Operator.
 The User Operator creates a TLS user, but it does not generate a TLS certificate or a secret.
-You can still manage user authorization through the User Operator as a TLS user.
+You can still manage user authorization through the User Operator  in the same way as with the `tls` mechanism.
 This means that you use the `CN=__USER-NAME__` format when specifying ACL rules and quotas.
 _USER-NAME_ is the common name given in a TLS certificate.
 
@@ -33,9 +33,9 @@ _USER-NAME_ is the common name given in a TLS certificate.
 
 == TLS client authentication
 
-To use TLS client authentication, you set the `type` field to `tls`.
+To use TLS client authentication, you set the `type` field in the `KafkaUser` resource to `tls`.
 
-.An example `KafkaUser` with TLS client authentication enabled
+.Example user with TLS client authentication enabled
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -81,10 +81,10 @@ data:
 
 == TLS client authentication using an external certificate
 
-To use TLS client authentication using a certificate issued outside the User Operator, you set the `type` field to `tls-external`.
+To use TLS client authentication using a certificate issued outside the User Operator, you set the `type` field in the `KafkaUser` resource to `tls-external`.
 A secret and credentials are not created for the user.
 
-.An example `KafkaUser` with TLS client authentication enabled
+.Example user with TLS client authentication enabled
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -99,14 +99,11 @@ spec:
   # ...
 ----
 
-
-.Additional resources
-
 == SCRAM-SHA-512 authentication
 
-To use the SCRAM-SHA-512 authentication mechanism, you set the `type` field to `scram-sha-512`.
+To use the SCRAM-SHA-512 authentication mechanism, you set the `type` field in the `KafkaUser` resource to `scram-sha-512`.
 
-.An example `KafkaUser` with SCRAM-SHA-512 authentication enabled
+.Example user with SCRAM-SHA-512 authentication enabled
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
