@@ -11,7 +11,7 @@ Use Keycloak Authorization Services to enforce access restrictions on Kafka clie
 Keycloak Authorization Services use authorization scopes, policies and permissions to define and apply access control to resources.
 
 Keycloak Authorization Services REST endpoints provide a list of granted permissions on resources for authenticated users.
-The list of grants (permissions) is fetched from the Keycloak server as the first action after an authenticated session is established by the Kafka client
+The list of grants (permissions) is fetched from the Keycloak server as the first action after an authenticated session is established by the Kafka client.
 The list is refreshed in the background so that changes to the grants are detected.
 Grants are cached and enforced locally on the Kafka broker for each user session to provide fast authorization decisions.
 
@@ -23,16 +23,15 @@ You can use the custom resource to deploy a Kafka cluster that uses `keycloak` a
 `kafka-authz-realm.json`:: An example Keycloak realm configured with sample groups, users, roles and clients.
 You can import the realm into a Keycloak instance to set up fine-grained permissions to access Kafka.
 
-If you want to try Keycloak, use these files to perform the tasks  outlined in this section in the order shown.
+If you want to try the example with Keycloak, use these files to perform the tasks outlined in this section in the order shown.
 
-. xref:proc-oauth-authorization-keycloak-example-setup_{context}[Setting up the Keycloak Admin Console]
+. xref:proc-oauth-authorization-keycloak-example-setup_{context}[Accessing the Keycloak Admin Console]
 . xref:proc-oauth-authorization-keycloak-example-deploy-kafka_{context}[Deploying a Kafka cluster with Keycloak authorization]
-. xref:proc-oauth-authorization-keycloak-example-authentication_{context}[Authenticating Keycloak access to Kafka brokers]
-. xref:proc-oauth-authorization-keycloak-example-check_{context}[Checking authorized access to Kafka using permissions]
+. xref:proc-oauth-authorization-keycloak-example-authentication_{context}[Preparing TLS connectivity for a CLI Kafka client session]
+. xref:proc-oauth-authorization-keycloak-example-check_{context}[Checking authorized access to Kafka using a CLI Kafka client session]
 
-.Security considerations
-Keycloak authorization uses TLS connectivity where necessary. The server certificates are auto-generated. TLS termination for the Keycloak server is on a reverse proxy server using a Kubernetes ingress, not the Keycloak server pod. Take care when creating and reviewing any production configuration.
-Keycloak requires Kafka clients to use the same hostname and port as the Kafka brokers. This example assumes that the ingress hostname is visible to the pods inside the Kubernetes cluster. In your cluster, the ingress might be visible to external Kafka clients, but not to the pods. You can deploy the Keycloak server to a different Kubernetes cluster than the Cluster Operator.
+.Connection to Keycloak
+Kafka and Kafka clients must connect to Keycloak for authorization to work. Connection to Keycloak is indirect. The connection routes through an ingress HTTP gateway using a hostname on port 443. Kafka clients use the same hostname and port as the Kafka brokers. The gateway is part of the Kubernetes infrastructure. This example assumes that Keycloak is deployed using the Keycloak Operator. The operator makes the gateway hostname visible to pods in the same Kubernetes cluster. The hostname must be visible for the example to work. If it's not visible, try deploying Keycloak to a separate Kubernetes cluster. The pods can then access Keycloak using the external hostname to make the connection.
 
 .Targeted permissions with group or role policies
 In Keycloak, confidential clients with service accounts enabled can authenticate to the server in their own name using a client ID and a secret.
@@ -40,19 +39,19 @@ This is convenient for microservices that typically act in their own name, and n
 Service accounts can have roles assigned like regular users.
 They cannot, however, have groups assigned.
 As a consequence, if you want to target permissions to microservices using service accounts, you cannot use group policies, and should instead use role policies.
-Conversely, if you want to limit certain permissions only to regular user accounts where authentication with a username and password is required, you can achieve that as a side effect of using the group policies, rather than the role policies.
-That is what is used for permissions that start with `ClusterManager`.
+Conversely, if you want to limit certain permissions only to regular user accounts where authentication with a username and password is required, you can achieve that as a side effect of using the group policies rather than the role policies.
+This is what is used in this example for permissions that start with `ClusterManager`.
 Performing cluster management is usually done interactively using CLI tools.
 It makes sense to require the user to log in before using the resulting access token to authenticate to the Kafka broker.
 In this case, the access token represents the specific user, rather than the client application.
 
 [id='proc-oauth-authorization-keycloak-example-setup_{context}']
-== Setting up the Keycloak Admin Console
+== Accessing the Keycloak Admin Console
 
-Set up the Keycloak Admin Console and add the preconfigured realm.
+Set up Keycloak, then connect to its Admin Console and add the preconfigured realm.
 Use the example `kafka-authz-realm.json` file to import the realm.
-You can check the authorization rules defined for the realm in the Keycloak Admin Console.
-The rules manage access to the Kafka cluster connected to Keycloak.
+You can check the authorization rules defined for the realm in the Admin Console.
+The rules grant access to the resources on the Kafka cluster configured to use the example Keycloak realm.
 
 .Prerequisites
 
@@ -71,7 +70,7 @@ NS=sso
 kubectl get ingress keycloak -n $NS
 ----
 +
-In this example, the Keycloak server is running in the `sso` namespace.
+In this example, we assume the Keycloak server is running in the `sso` namespace.
 
 . Get the password for the `admin` user.
 +
@@ -90,9 +89,9 @@ SECRET_NAME=credential-keycloak
 kubectl get -n $NS secret $SECRET_NAME -o yaml | grep PASSWORD | awk '{print $2}' | base64 -D
 ----
 +
-In this example, the name of the secret is `credential-keycloak`.
+In this example, we assume the name of the secret is `credential-keycloak`.
 
-. Log in to the Admin Console with the username `admin` and the password you obtained earlier.
+. Log in to the Admin Console with the username `admin` and the password you obtained.
 +
 Use `https://__HOSTNAME__` to access the Kubernetes ingress.
 +
@@ -106,20 +105,24 @@ You now have `kafka-authz` as your current realm in the Admin Console.
 +
 The default view displays the *Master* realm.
 
-. In the Keycloak Admin Console, go to *Groups*, *Roles*, *Clients* and *Users* to view the realm configuration.
+. In the Keycloak Admin Console, go to *Clients* > *kafka* > *Authorization* > *Settings* and check that *Decision Strategy* is set to *Affirmative*.
 +
-Groups:: Groups create user groups and set user permissions. Groups are sets of users with a name assigned. They are used to compartmentalize users into geographical, organizational or departmental units.
-Groups can store an LDAP identity provider. You can make a user a member of a group through a custom LDAP server admin user interface, for example, to grant permissions on Kafka resources.
+An affirmative policy means that at least one policy must be satisfied for a client to access the Kafka cluster.
 
-Users:: Users create users. For this example, `alice` and `bob` are defined. `alice` is a member of the `ClusterManager` group and `bob` is a member of `ClusterManager-my-cluster` group.
+. In the Keycloak Admin Console, go to *Groups*, *Users*, *Roles* and *Clients* to view the realm configuration.
++
+Groups:: `Groups` are used to create user groups and set user permissions. Groups are sets of users with a name assigned. They are used to compartmentalize users into geographical, organizational or departmental units.
+Groups can be linked to an LDAP identity provider. You can make a user a member of a group through a custom LDAP server admin user interface, for example, to grant permissions on Kafka resources.
+
+Users:: `Users` are used to create users. For this example, `alice` and `bob` are defined. `alice` is a member of the `ClusterManager` group and `bob` is a member of `ClusterManager-my-cluster` group.
 Users can be stored in an LDAP identity provider.
 
-Roles:: Roles mark users or clients as having certain permissions.
+Roles:: `Roles` mark users or clients as having certain permissions.
 Roles are a concept analogous to groups. They are usually used to _tag_ users with organizational roles and have the requisite permissions.
 Roles cannot be stored in an LDAP identity provider.
 If LDAP is a requirement, you can use groups instead, and add Keycloak roles to the groups so that when users are assigned a group they also get a corresponding role.
 
-Clients:: Clients can have specific configurations. For this example, `kafka`, `kafka-cli`, `team-a-client`, and `team-b-client` clients are configured.
+Clients:: `Clients` can have specific configurations. For this example, `kafka`, `kafka-cli`, `team-a-client`, and `team-b-client` clients are configured.
 +
 * The `kafka` client is used by Kafka brokers to perform the necessary OAuth 2.0 communication for access token validation.
 This client also contains the authorization services resource definitions, policies, and authorization scopes used to perform authorization on the Kafka brokers.
@@ -183,21 +186,21 @@ kubectl create secret generic oauth-server-cert --from-file=/tmp/sso.crt -n $NS
 [source,shell,subs="+quotes"]
 ----
 SSO_HOST=_SSO-HOSTNAME_
-EXAMPLES_DIR=examples
-cat $EXAMPLES_DIR/security/keycloak-authorization/kafka-ephemeral-oauth-single-keycloak-authz.yaml | sed -E 's#\${SSO_HOST}'"#$SSO_HOST#" | kubectl create -n $NS -f -
 ----
 
 . Create and deploy the example Kafka cluster.
 +
 [source,shell]
 ----
-kubectl apply -f examples/security/keycloak-authorization/kafka-ephemeral-oauth-single-keycloak-authz.yaml
+cat examples/security/keycloak-authorization/kafka-ephemeral-oauth-single-keycloak-authz.yaml | sed -E 's#\${SSO_HOST}'"#$SSO_HOST#" | kubectl create -n $NS -f -
 ----
 
 [id='proc-oauth-authorization-keycloak-example-authentication_{context}']
-== Authenticating Keycloak access to Kafka brokers
+== Preparing TLS connectivity for a CLI Kafka client session
 
-Set up authenticated Keycloak access to the Kafka brokers.
+Create a new pod for an interactive CLI session.
+Set up a truststore with a Keycloak certificate for TLS connectivity.
+The truststore is to connect to Keycloak and the Kafka broker.
 
 .Prerequisites
 
@@ -207,9 +210,6 @@ In the Keycloak Admin Console, check the roles assigned to the clients are displ
 * The Kafka cluster configured to connect with Keycloak is deployed to your Kubernetes cluster.
 
 .Procedure
-. In the Keycloak Admin Console, go to *Clients* > *kafka* > *Authorization* > *Settings* and check that *Decision Strategy* is set to *Affirmative*.
-+
-An affirmative policy means that at least one policy must be satisfied for a client to access the Kafka cluster.
 
 . Run a new interactive pod container using the Strimzi Kafka image to connect to a running Kafka broker.
 +
@@ -262,21 +262,24 @@ echo "Q" | openssl s_client -showcerts -connect $KAFKA_HOST_PORT 2>/dev/null | a
 ----
 keytool -keystore /tmp/truststore.p12 -storetype pkcs12 -alias my-cluster-kafka -storepass $STOREPASS -import -file /tmp/my-cluster-kafka.crt -noprompt
 ----
++
+Keep the session open to check authorized access.
 
 [id='proc-oauth-authorization-keycloak-example-check_{context}']
-== Checking authorized access to Kafka using permissions
+== Checking authorized access to Kafka using a CLI Kafka client session
 
-Check the authorization rules applied through the Keycloak realm.
+Check the authorization rules applied through the Keycloak realm using an interactive CLI session.
 Apply the checks using Kafka's example producer and consumer clients to create topics with user and service accounts that have different levels of access.
 
 Use the `team-a-client` and `team-b-client` clients to check the authorization rules.
 Use the `alice` admin user to perform additional administrative tasks on Kafka.
 
+The Strimzi Kafka image used in this example contains Kafka producer and consumer binaries.
+
 .Prerequisites
 
 * ZooKeeper and Kafka are running in the Kubernetes cluster to be able to send and receive messages.
-* Access between the Kafka brokers and Keycloak is authenticated.
-* The latest Kafka producer and consumer binaries are installed on your local machine.
+* The xref:proc-oauth-authorization-keycloak-example-authentication_{context}[interactive CLI Kafka client session] is started.
 +
 {ApacheKafkaDownload}.
 
