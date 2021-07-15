@@ -32,7 +32,7 @@ Authorization scopes must contain all the possible Kafka permissions regardless 
 * `ClusterAction`
 * `IdempotentWrite`
 
-.Defining resource patterns for permissions checks
+.Resource patterns for permissions checks
 
 The resources use pattern names for pattern matching against the targeted resources when performing permission checks.
 The general pattern format is `__RESOURCE-TYPE:PATTERN-NAME__`.
