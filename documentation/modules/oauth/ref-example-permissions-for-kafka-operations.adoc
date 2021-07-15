@@ -100,7 +100,7 @@ bin/kafka-consumer-groups.sh --describe --group my-group-1 \
 
 .Changing the topic configuration
 
-To change the topic configuration, the `Describe` and `Alter` permissions are required on the topic.
+To change a topic's configuration, the `Describe` and `Alter` permissions are required on the topic.
 
 [source,shell]
 ----
