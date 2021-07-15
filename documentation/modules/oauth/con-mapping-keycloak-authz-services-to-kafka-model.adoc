@@ -19,7 +19,7 @@ An initial Keycloak configuration usually involves uploading authorization scope
 This step is performed once only, before defining any permissions.
 You can add authorization scopes manually instead of uploading them.
 
-Authorization scopes should contain all the possible Kafka permissions regardless of the resource type:
+Authorization scopes must contain all the possible Kafka permissions regardless of the resource type:
 
 * `Create`
 * `Write`
