@@ -90,7 +90,7 @@ bin/kafka-consumer-groups.sh --list \
 
 .Displaying the consumer group details
 
-To display the consumer group details, the `Describe` permission is required on the group the topic associated with the group.
+To display a consumer group's details, the `Describe` permission is required on the group and the topics associated with the group.
 
 [source,shell]
 ----
