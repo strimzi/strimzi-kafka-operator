@@ -80,7 +80,7 @@ Targeting can refer to:
 
 A policy is given a unique name and can be reused to target multiple permissions to multiple resources.
 
-.Defining permissions based on scopes, resources, and policies
+.Permissions to grant access
 
 Use fine-grained permissions to pull together the policies, resources, and authorization scopes that grant access to users.
 
