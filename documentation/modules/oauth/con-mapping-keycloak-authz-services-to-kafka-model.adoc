@@ -34,7 +34,7 @@ Authorization scopes must contain all the possible Kafka permissions regardless 
 
 .Resource patterns for permissions checks
 
-The resources use pattern names for pattern matching against the targeted resources when performing permission checks.
+Resource patterns are used for pattern matching against the targeted resources when performing permission checks.
 The general pattern format is `__RESOURCE-TYPE:PATTERN-NAME__`.
 
 The resource types mirror the Kafka authorization model.
