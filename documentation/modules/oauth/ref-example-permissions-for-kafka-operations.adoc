@@ -37,7 +37,7 @@ bin/kafka-topics.sh --describe --topic my-topic \
 
 .Producing to the topic
 
-To produce messages to the topic, `Describe` and `Write` permissions are required on the topic.
+To produce messages to a topic, `Describe` and `Write` permissions are required on the topic.
 
 If the topic hasn't been created yet, and topic auto-creation is enabled, the permissions to create the topic are required.
 
