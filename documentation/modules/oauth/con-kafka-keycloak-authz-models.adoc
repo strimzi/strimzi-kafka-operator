@@ -63,7 +63,7 @@ Often, only a subset of these actions is actually permitted.
 Authorization scopes:: Authorization scopes are sets of all the available actions on specific resource types.
 When you define a new resource, you add scopes from the set of all scopes.
 
-Policies:: Policies are rules that use criteria to match against a list of accounts.
+Policies:: A policy is an authorization rule that uses criteria to match against a list of accounts.
 Policies can match:
 * _Service accounts_ based on client ID or roles
 * _User accounts_ based on username, groups, or roles.
