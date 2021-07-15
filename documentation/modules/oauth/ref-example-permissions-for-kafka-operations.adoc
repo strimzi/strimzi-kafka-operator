@@ -131,7 +131,7 @@ bin/kafka-configs --entity-type brokers --entity-name 0 --alter --add-config log
 
 .Deleting a topic
 
-To delete the topic, the `Describe` and `Delete` permissions are required on the topic.
+To delete a topic, the `Describe` and `Delete` permissions are required on the topic.
 
 [source,shell]
 ----
