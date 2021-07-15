@@ -2081,8 +2081,9 @@ public class ListenersST extends AbstractST {
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
+        int sentMessages = internalKafkaClient.sendMessagesTls();
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
+            sentMessages,
             internalKafkaClient.receiveMessagesTls()
         );
 
@@ -2099,17 +2100,18 @@ public class ListenersST extends AbstractST {
         resourceManager.deleteResource(kubeClient().getDeployment(kafkaClientsName));
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, kafkaClientsName, kafkaUser).build());
 
-        LOGGER.info("Sending/receiving messages with new password");
+        LOGGER.info("Receiving messages with new password");
 
         kafkaClientsPodName =
             kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withUsingPodName(kafkaClientsPodName)
+            .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
+            sentMessages,
             internalKafkaClient.receiveMessagesTls()
         );
     }
