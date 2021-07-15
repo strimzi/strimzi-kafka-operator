@@ -3,7 +3,7 @@
 
 [role="_abstract"]
 
-To grant Kafka permissions to user accounts or service accounts, use Keycloak Authorization Services rules on the OAuth client that represents the Kafka Broker.
+To grant Kafka permissions to user accounts or service accounts, you first create an OAuth _client_ specification for the Kafka broker in Keycloak. You then specify Keycloak Authorization Services rules on the client.
 Typically, the client id of the broker OAuth client is `kafka`.
 
 Your OAuth 2.0 client definition for the Kafka Broker must have the *Authorization Enabled* option enabled.
