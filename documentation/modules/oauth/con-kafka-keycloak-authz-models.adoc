@@ -55,7 +55,7 @@ Each resource type has different available permissions.
 
 The Keycloak Authorization Services model has four concepts for defining and granting permissions: _resources_, _authorization scopes_, _policies_, and _permissions_.
 
-Resource definitions and resources:: Sets of resource definitions used to match resources with permitted actions.
+Resources:: A resource is a set of resource definitions that are used to match resources with permitted actions.
 A resource might be an individual topic, for example, or all topics with names starting with the same prefix.
 A resource definition is associated with a set of available authorization scopes, which represent a set of all actions available on the resource.
 Often, only a subset of these actions is actually permitted.
