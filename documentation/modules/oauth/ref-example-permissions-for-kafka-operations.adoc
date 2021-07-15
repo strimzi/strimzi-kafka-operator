@@ -110,7 +110,7 @@ bin/kafka-topics.sh --alter --topic my-topic --partitions 2 \
 
 .Displaying the Kafka broker configuration
 
-In order to use `kafka-configs.sh` to get the broker configuration, the `DescribeConfigs` permission is required on the 
+In order to use `kafka-configs.sh` to get a broker's configuration, the `DescribeConfigs` permission is required on the 
 `Cluster:kafka-cluster`.
 
 [source,shell]
