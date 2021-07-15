@@ -25,7 +25,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -480,21 +479,22 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
     public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(VertxTestContext context) {
         T resource = resource();
         AtomicBoolean watchWasClosed = new AtomicBoolean(false);
+        AtomicBoolean watchCreated = new AtomicBoolean(false);
         Resource mockResource = mock(resourceType());
 
-        AtomicInteger getInvocations = new AtomicInteger(0);
         when(mockResource.get()).thenAnswer(invocation -> {
             // First get needs to return the resource to trigger deletion
             // Next gets return null since the resource was already deleted
-            if (getInvocations.getAndIncrement() < 1) {
-                return resource;
-            } else {
+            if (watchCreated.get()) {
                 return null;
+            } else {
+                return resource;
             }
         });
         when(mockResource.withGracePeriod(anyLong())).thenReturn(mockResource);
         when(mockResource.delete()).thenReturn(Boolean.FALSE);
         when(mockResource.watch(any())).thenAnswer(invocation -> {
+            watchCreated.set(true);
             return (Watch) () -> {
                 watchWasClosed.set(true);
             };

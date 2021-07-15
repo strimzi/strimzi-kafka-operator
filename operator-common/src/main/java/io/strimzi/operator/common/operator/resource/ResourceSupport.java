@@ -93,17 +93,18 @@ public class ResourceSupport {
      * returning a Future which completes when {@code watchFn} returns non-null
      * to some event on the watchable, or after a timeout.
      *
-     * The given {@code watchFn} will be invoked on a worked thread when the
+     * The given {@code watchFn} will be invoked on a worker thread when the
      * Kubernetes resources changes, so may block.
      * When the {@code watchFn} returns non-null the watch will be closed and then
      * the future returned from this method will be completed on the context thread.
      *
      * In some cases such as resource deletion, it might happen that the resource is deleted already before the watch is
-     * started and as a result the watch never completes. The {@code preCheckFn} will be invoked on a worked thread
+     * started and as a result the watch never completes. The {@code preCheckFn} will be invoked on a worker thread
      * after the watch has been created. It is expected to double check if we still need to wait for the watch to fire.
      * When the {@code preCheckFn} returns non-null the watch will be closed and the future returned from this method
-     * will be completed on the context thread. In the deletion example described above, the {@code preCheckFn} can
-     * check if the resource still exists and close the watch in case it was already deleted.
+     * will be completed with the result of the {@code preCheckFn} on the context thread. In the deletion example
+     * described above, the {@code preCheckFn} can check if the resource still exists and close the watch in case it was
+     * already deleted.
      *
      * @param reconciliation Reconciliation marker used for logging
      * @param watchable The watchable - used to watch the resource.
