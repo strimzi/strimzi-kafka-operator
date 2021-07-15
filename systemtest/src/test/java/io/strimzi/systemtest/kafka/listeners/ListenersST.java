@@ -24,7 +24,6 @@ import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClie
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.systemtest.security.SystemTestCertAndKey;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -2019,17 +2018,23 @@ public class ListenersST extends AbstractST {
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
+        final String firstUnencodedPassword = "completely_secret_password";
+        final String secondUnencodedPassword = "completely_different_secret_password";
+
+        final String firstEncodedPassword = Base64.getEncoder().encodeToString(firstUnencodedPassword.getBytes(StandardCharsets.UTF_8));
+        final String secondEncodedPassword = Base64.getEncoder().encodeToString(secondUnencodedPassword.getBytes(StandardCharsets.UTF_8));
+
         final String secretName = clusterName + "-secret";
-        final String encodedPassword = Base64.getEncoder().encodeToString("asdasd".getBytes(StandardCharsets.UTF_8));
 
         Secret password = new SecretBuilder()
             .withNewMetadata()
                 .withName(secretName)
             .endMetadata()
-            .addToData("password", encodedPassword)
+            .addToData("password", firstEncodedPassword)
             .build();
 
         kubeClient().namespace(namespaceName).createSecret(password);
+        assertThat("Password in secret is not correct", kubeClient().namespace(namespaceName).getSecret(secretName).getData().get("password"), is(firstEncodedPassword));
 
         KafkaUser kafkaUser = KafkaUserTemplates.scramShaUser(clusterName, userName)
             .editSpec()
@@ -2063,7 +2068,7 @@ public class ListenersST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, kafkaClientsName, kafkaUser).build());
 
-        final String kafkaClientsPodName =
+        String kafkaClientsPodName =
             kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -2074,6 +2079,33 @@ public class ListenersST extends AbstractST {
             .withKafkaUsername(userName)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .build();
+
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesTls(),
+            internalKafkaClient.receiveMessagesTls()
+        );
+
+        LOGGER.info("Changing password in secret: {}, we should be able to send/receive messages", secretName);
+
+        password = new SecretBuilder(password)
+            .addToData("password", secondEncodedPassword)
+            .build();
+
+        kubeClient().namespace(namespaceName).createSecret(password);
+        assertThat("Password in secret is not correct", kubeClient().namespace(namespaceName).getSecret(secretName).getData().get("password"), is(secondEncodedPassword));
+
+        LOGGER.info("We need to recreate Kafka Clients deployment, so the correct password from secret will be taken");
+        resourceManager.deleteResource(kubeClient().getDeployment(kafkaClientsName));
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, kafkaClientsName, kafkaUser).build());
+
+        LOGGER.info("Sending/receiving messages with new password");
+
+        kafkaClientsPodName =
+            kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withUsingPodName(kafkaClientsPodName)
             .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
