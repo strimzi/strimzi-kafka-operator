@@ -6,7 +6,7 @@
 To grant Kafka permissions to user accounts or service accounts, you first create an OAuth _client_ specification for the Kafka broker in Keycloak. You then specify Keycloak Authorization Services rules on the client.
 Typically, the client id of the broker OAuth client is `kafka`.
 
-Your OAuth 2.0 client definition for the Kafka Broker must have the *Authorization Enabled* option enabled.
+The `kafka` client definition must have the *Authorization Enabled* option enabled in the Keycloak Admin Console.
 
 All permissions exist within the scope of this OAuth 2.0 client. If you have different Kafka clusters configured with different OAuth 2.0 client IDs, they each need a separate set of permissions even though they're part of the same Keycloak realm.
 
