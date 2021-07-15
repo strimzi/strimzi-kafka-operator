@@ -52,7 +52,7 @@ Group:orders-*
 Cluster:*
 ----
 
-Additionally, the general pattern can be prefixed by `kafka-cluster:__CLUSTER-NAME__` followed by a comma, where _CLUSTER-NAME_ refers to the `metadata.name` in the Kafka custom resource.
+Additionally, the general pattern format can be prefixed by `kafka-cluster:__CLUSTER-NAME__` followed by a comma, where _CLUSTER-NAME_ refers to the `metadata.name` in the Kafka custom resource.
 
 .Example patterns for resources with cluster prefix
 [source]
