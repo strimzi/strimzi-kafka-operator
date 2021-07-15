@@ -83,8 +83,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -160,8 +160,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -239,8 +239,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -303,8 +303,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -368,8 +368,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -410,8 +410,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig());
         KafkaUser user = ResourceUtils.createKafkaUserTls();
@@ -493,8 +493,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig());
         KafkaUser user = ResourceUtils.createKafkaUserTls();
@@ -577,8 +577,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig());
         KafkaUser user = ResourceUtils.createKafkaUserTls();
@@ -623,12 +623,12 @@ public class KafkaUserOperatorTest {
     }
 
     @Test
-    public void testReconcileAll(VertxTestContext context) throws InterruptedException {
+    public void testReconcileAll(VertxTestContext context) {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         KafkaUser newTlsUser = ResourceUtils.createKafkaUserTls();
         newTlsUser.getMetadata().setName("new-tls-user");
@@ -647,8 +647,9 @@ public class KafkaUserOperatorTest {
         when(mockCrdOps.listAsync(eq(ResourceUtils.NAMESPACE), eq(Optional.of(new LabelSelector(null, Labels.fromMap(ResourceUtils.LABELS).toMap()))))).thenReturn(
                 Future.succeededFuture(Arrays.asList(newTlsUser, newScramShaUser, existingTlsUser, existingScramShaUser)));
         when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.fromMap(ResourceUtils.LABELS).withStrimziKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingTlsUserSecret, existingScramShaUserSecret));
-        when(aclOps.getUsersWithAcls()).thenReturn(new HashSet<String>(Arrays.asList("existing-tls-user", "second-deleted-user")));
-        when(scramOps.list()).thenReturn(asList("existing-tls-user", "deleted-scram-sha-user"));
+        when(aclOps.getAllUsers()).thenReturn(Future.succeededFuture(new HashSet<String>(Arrays.asList("existing-tls-user", "second-deleted-user"))));
+        when(scramOps.getAllUsers()).thenReturn(Future.succeededFuture(List.of("existing-tls-user", "deleted-scram-sha-user")));
+        when(quotasOps.getAllUsers()).thenReturn(Future.succeededFuture(Set.of("existing-tls-user", "quota-user")));
 
         when(mockCrdOps.get(eq(newTlsUser.getMetadata().getNamespace()), eq(newTlsUser.getMetadata().getName()))).thenReturn(newTlsUser);
         when(mockCrdOps.get(eq(newScramShaUser.getMetadata().getNamespace()), eq(newScramShaUser.getMetadata().getName()))).thenReturn(newScramShaUser);
@@ -692,7 +693,7 @@ public class KafkaUserOperatorTest {
         reconcileAllCompleted.future().compose(v -> context.verify(() -> {
             assertThat(createdOrUpdated, is(new HashSet(asList("new-tls-user", "existing-tls-user",
                     "new-scram-sha-user", "existing-scram-sha-user"))));
-            assertThat(deleted, is(new HashSet(asList("second-deleted-user", "deleted-scram-sha-user"))));
+            assertThat(deleted, is(new HashSet(asList("quota-user", "second-deleted-user", "deleted-scram-sha-user"))));
             async.flag();
         }));
     }
@@ -702,8 +703,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig());
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
@@ -804,8 +805,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig());
 
@@ -884,8 +885,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig());
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
@@ -966,8 +967,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig());
         KafkaUser user = ResourceUtils.createKafkaUserScramSha();
@@ -1026,8 +1027,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig());
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
@@ -1112,8 +1113,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
@@ -1150,8 +1151,8 @@ public class KafkaUserOperatorTest {
         CrdOperator mockCrdOps = mock(CrdOperator.class);
         SecretOperator mockSecretOps = mock(SecretOperator.class);
         SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
-        ScramShaCredentialsOperator scramOps = mock(ScramShaCredentialsOperator.class);
-        KafkaUserQuotasOperator quotasOps = mock(KafkaUserQuotasOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
 
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         Secret clientsCa = ResourceUtils.createClientsCaCertSecret();

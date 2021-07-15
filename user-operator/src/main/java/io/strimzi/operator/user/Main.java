@@ -18,9 +18,8 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
-import io.strimzi.operator.user.operator.KafkaUserQuotasOperator;
-import io.strimzi.operator.user.operator.ScramShaCredentials;
-import io.strimzi.operator.user.operator.ScramShaCredentialsOperator;
+import io.strimzi.operator.user.operator.QuotasOperator;
+import io.strimzi.operator.user.operator.ScramCredentialsOperator;
 import io.strimzi.operator.user.operator.SimpleAclOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -81,12 +80,11 @@ public class Main {
         return createAdminClient(adminClientProvider, config, secretOperations)
                 .compose(adminClient -> {
                     SimpleAclOperator aclOperations = new SimpleAclOperator(vertx, adminClient);
-                    ScramShaCredentials scramShaCredentials = new ScramShaCredentials(config.getZookeeperConnect(), (int) config.getZookeeperSessionTimeoutMs());
-                    ScramShaCredentialsOperator scramShaCredentialsOperator = new ScramShaCredentialsOperator(vertx, scramShaCredentials);
-                    KafkaUserQuotasOperator quotasOperator = new KafkaUserQuotasOperator(vertx, adminClient);
+                    ScramCredentialsOperator scramCredentialsOperator = new ScramCredentialsOperator(vertx, adminClient);
+                    QuotasOperator quotasOperator = new QuotasOperator(vertx, adminClient);
 
                     KafkaUserOperator kafkaUserOperations = new KafkaUserOperator(vertx, certManager, crdOperations,
-                            secretOperations, scramShaCredentialsOperator, quotasOperator, aclOperations, config);
+                            secretOperations, scramCredentialsOperator, quotasOperator, aclOperations, config);
 
                     Promise<String> promise = Promise.promise();
                     UserOperator operator = new UserOperator(config.getNamespace(),
