@@ -60,7 +60,7 @@ A resource might be an individual topic, for example, or all topics with names s
 A resource definition is associated with a set of available authorization scopes, which represent a set of all actions available on the resource.
 Often, only a subset of these actions is actually permitted.
 
-Authorization scopes:: Authorization scopes are sets of all the available actions on specific resource types.
+Authorization scopes:: An authorization scope is a set of all the available actions on a specific resource definition.
 When you define a new resource, you add scopes from the set of all scopes.
 
 Policies:: A policy is an authorization rule that uses criteria to match against a list of accounts.
