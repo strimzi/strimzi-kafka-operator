@@ -27,7 +27,7 @@ bin/kafka-topics.sh --list \
 
 .Displaying the topic details
 
-To display the topic details, `Describe` and `DescribeConfigs` permissions are required on the topic.
+To display a topic's details, `Describe` and `DescribeConfigs` permissions are required on the topic.
 
 [source,shell]
 ----
