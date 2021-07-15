@@ -13,7 +13,7 @@ All permissions exist within the scope of the `kafka` client. If you have differ
 When the Kafka client uses OAUTHBEARER authentication, the Keycloak authorizer (`KeycloakRBACAuthorizer`) uses the access token of the current session to retrieve a list of grants from the Keycloak server.
 To retrieve the grants, the authorizer evaluates the Keycloak Authorization Services policies and permissions.
 
-.About authorization scopes
+.Authorization scopes for Kafka permissions
 
 An initial Keycloak configuration usually involves uploading authorization scopes to create a list of all possible actions that can be performed on each Kafka resource type.
 This step is performed once only, before defining any permissions.
