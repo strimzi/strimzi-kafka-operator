@@ -12,7 +12,7 @@ Kafka's authorization model uses _resource types_.
 When a Kafka client performs an action on a broker, the broker uses a configured authorizer to check the client's permissions based on the action and the resource type.
 
 Kafka uses five resource types to control access: `Topic`, `Group`, `Cluster`, `TransactionalId`, and `DelegationToken`.
-Each resource type has different available permissions.
+Each resource type has a set of available permissions.
 
 *Topic*
 
