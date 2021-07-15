@@ -121,7 +121,7 @@ bin/kafka-configs.sh --entity-type brokers --entity-name 0 --describe --all \
 
 .Changing the Kafka broker configuration
 
-To change the Kafka broker configuration, `DescribeConfigs` and `AlterConfigs` permissions are required on `Cluster:kafka-cluster`.
+To change a Kafka broker's configuration, `DescribeConfigs` and `AlterConfigs` permissions are required on `Cluster:kafka-cluster`.
 
 [source,shell]
 ----
