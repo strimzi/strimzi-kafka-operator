@@ -68,7 +68,7 @@ Policies can match:
 * _Service accounts_ based on client ID or roles
 * _User accounts_ based on username, groups, or roles.
 
-Permissions:: Permissions grant a subset of authorization scopes on a specific resource definition to a set of users.
+Permissions:: A permission grants a subset of authorization scopes on a specific resource definition to a set of users.
 
 [role="_additional-resources"]
 .Additional resources
