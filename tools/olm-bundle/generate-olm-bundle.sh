@@ -208,9 +208,11 @@ generate_image_digests() {
     registry=$DOCKER_REGISTRY;
     org=$DOCKER_ORG;
 
-    echo "Get digest from remote registry for image: ${registry}/${org}/${repo}:${tag}"
-    digest=$(skopeo inspect --format "{{ .Digest }}" "docker://$registry/$org/$repo:$tag")
+    image="${registry}/${org}/${repo}"
+    echo "Get digest from remote registry for image: ${image}:${tag}"
+    digest=$(skopeo inspect --format "{{ .Digest }}" "docker://${image}:$tag")
     image_digest="${image}@${digest}"
+
     echo "Replacing $image_tag with $image_digest"
     $SED -i.bak "s|${image_tag}|${image_digest}|g" "${CSV_FILE}";
 		rm "${CSV_FILE}.bak"
