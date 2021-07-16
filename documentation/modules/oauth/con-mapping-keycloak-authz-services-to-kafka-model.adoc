@@ -1,10 +1,20 @@
 [id="con-mapping-keycloak-authz-services-to-kafka-model_{context}"]
-= Mapping Keycloak Authorization Services to the Kafka authorization model
+= Map Keycloak Authorization Services to the Kafka authorization model
 
 [role="_abstract"]
 
-To grant Kafka permissions to user accounts or service accounts, you first create an OAuth _client_ specification for the Kafka broker in Keycloak. You then specify Keycloak Authorization Services rules on the client.
-Typically, the client id of the broker OAuth client is `kafka`.
+The Kafka authorization model is used as a basis for defining the Keycloak roles and resources that will control access to Kafka.
+
+To grant Kafka permissions to user accounts or service accounts, you first create an _OAuth client specification_ in Keycloak for the Kafka broker.
+You then specify Keycloak Authorization Services rules on the client.
+Typically, the client id of the OAuth client that represents the broker is `kafka` (the xref:proc-oauth-authorization-keycloak-example_-{context}[example files] provided with Strimzi use `kafka` as the OAuth client id).
+
+[NOTE]
+====
+If you have multiple Kafka clusters, you can use a single OAuth client (`kafka`) for all of them.
+This gives you a single, unified space in which to define and manage authorization rules.
+However, you can also use different OAuth client ids (for example, `my-cluster-kafka` or `cluster-dev-kafka`) and define authorization rules for each cluster within each client configuration.
+====
 
 The `kafka` client definition must have the *Authorization Enabled* option enabled in the Keycloak Admin Console.
 
@@ -40,7 +50,7 @@ The general pattern format is `__RESOURCE-TYPE:PATTERN-NAME__`.
 The resource types mirror the Kafka authorization model.
 The pattern allows for two matching options:
 
-* Exact matching (when the pattern does not end with `\*`)
+* Exact matching (when the pattern does not end with `*`)
 * Prefix matching (when the pattern ends with `*`)
 
 .Example patterns for resources
@@ -68,7 +78,7 @@ Set whatever actions make sense for the targeted resource type.
 
 Though you may add any authorization scope to any resource, only the scopes supported by the resource type are considered for access control.
 
-.About policies
+.Policies for applying access permission
 
 Policies are used to target permissions to one or more user accounts or service accounts.
 Targeting can refer to:
@@ -85,6 +95,7 @@ A policy is given a unique name and can be reused to target multiple permissions
 Use fine-grained permissions to pull together the policies, resources, and authorization scopes that grant access to users.
 
 The name of each permission should clearly define which permissions it grants to which users.
+For example, `Dev Team B can read from topics starting with x`.
 
 [role="_additional-resources"]
 .Additional resources
