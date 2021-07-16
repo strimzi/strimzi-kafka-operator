@@ -20,7 +20,7 @@
         <cruise-control.version>2.5.57</cruise-control.version>
         <opa-authorizer.version>1.0.0</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.1.0</kafka-quotas-plugin.version>
-        <kafka-mirror-maker-2-extensions.version>0.1.0</kafka-mirror-maker-2-extensions.version>
+        <kafka-mirror-maker-2-extensions.version>1.0.0</kafka-mirror-maker-2-extensions.version>
         <kafka-kubernetes-config-provider.version>0.1.0</kafka-kubernetes-config-provider.version>
         <jmx-prometheus-javaagent.version>0.15.0</jmx-prometheus-javaagent.version>
         <json-smart.version>2.4.7</json-smart.version>
@@ -34,6 +34,10 @@
         <repository>
             <id>cruise-control</id>
             <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
+        </repository>
+        <repository>
+            <id>mirror-maker-2-extensions-staging</id>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1111/</url>
         </repository>
     </repositories>
 
