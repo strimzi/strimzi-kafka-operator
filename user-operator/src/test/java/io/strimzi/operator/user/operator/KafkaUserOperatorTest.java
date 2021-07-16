@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -56,6 +57,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -150,6 +153,82 @@ public class KafkaUserOperatorTest {
                 assertThat(aclRules, is(ResourceUtils.createExpectedSimpleAclRules(user)));
 
                 assertThat(capturedAcls.get(1), is(nullValue()));
+
+                async.flag();
+            })));
+    }
+
+    @Test
+    public void testCreateUserWithAclsDisabled(VertxTestContext context)    {
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
+
+        ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
+        when(mockSecretOps.reconcile(any(), secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        when(scramOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig(Map.of(), false));
+        KafkaUser user = new KafkaUserBuilder()
+                .withNewMetadata()
+                    .withName(ResourceUtils.NAME)
+                    .withNamespace(ResourceUtils.NAMESPACE)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewKafkaUserTlsClientAuthentication()
+                    .endKafkaUserTlsClientAuthentication()
+                    .withNewQuotas()
+                        .withConsumerByteRate(1024 * 1024)
+                        .withProducerByteRate(1024 * 1024)
+                    .endQuotas()
+                .endSpec()
+                .build();
+
+        Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
+        Secret clientsCaKey = ResourceUtils.createClientsCaKeySecret();
+        when(mockSecretOps.getAsync(anyString(), eq("user-cert"))).thenReturn(Future.succeededFuture(clientsCa));
+        when(mockSecretOps.getAsync(anyString(), eq("user-key"))).thenReturn(Future.succeededFuture(clientsCaKey));
+        when(mockSecretOps.getAsync(anyString(), eq(ResourceUtils.NAME))).thenReturn(Future.succeededFuture(null));
+
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
+
+        Checkpoint async = context.checkpoint();
+        op.createOrUpdate(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME), user)
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+
+                List<String> capturedNames = secretNameCaptor.getAllValues();
+                assertThat(capturedNames, hasSize(1));
+                assertThat(capturedNames.get(0), is(ResourceUtils.NAME));
+
+                List<String> capturedNamespaces = secretNamespaceCaptor.getAllValues();
+                assertThat(capturedNamespaces, hasSize(1));
+                assertThat(capturedNamespaces.get(0), is(ResourceUtils.NAMESPACE));
+
+                List<Secret> capturedSecrets = secretCaptor.getAllValues();
+                assertThat(capturedSecrets, hasSize(1));
+                Secret captured = capturedSecrets.get(0);
+                assertThat(captured.getMetadata().getName(), is(user.getMetadata().getName()));
+                assertThat(captured.getMetadata().getNamespace(), is(user.getMetadata().getNamespace()));
+                assertThat(captured.getMetadata().getLabels(),
+                        is(Labels.fromMap(user.getMetadata().getLabels())
+                                .withStrimziKind(KafkaUser.RESOURCE_KIND)
+                                .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                                .withKubernetesInstance(ResourceUtils.NAME)
+                                .withKubernetesPartOf(ResourceUtils.NAME)
+                                .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                                .toMap()));
+                assertThat(new String(Base64.getDecoder().decode(captured.getData().get("ca.crt"))), is("clients-ca-crt"));
+                assertThat(new String(Base64.getDecoder().decode(captured.getData().get("user.crt"))), is("crt file"));
+                assertThat(new String(Base64.getDecoder().decode(captured.getData().get("user.key"))), is("key file"));
+
+                verify(aclOps, never()).reconcile(any(), any(), any());
 
                 async.flag();
             })));
@@ -694,6 +773,82 @@ public class KafkaUserOperatorTest {
             assertThat(createdOrUpdated, is(new HashSet(asList("new-tls-user", "existing-tls-user",
                     "new-scram-sha-user", "existing-scram-sha-user"))));
             assertThat(deleted, is(new HashSet(asList("quota-user", "second-deleted-user", "deleted-scram-sha-user"))));
+            async.flag();
+        }));
+    }
+
+    @Test
+    public void testReconcileAllWithoutAcls(VertxTestContext context) {
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
+
+        KafkaUser newTlsUser = ResourceUtils.createKafkaUserTls();
+        newTlsUser.getMetadata().setName("new-tls-user");
+        KafkaUser newScramShaUser = ResourceUtils.createKafkaUserScramSha();
+        newScramShaUser.getMetadata().setName("new-scram-sha-user");
+        KafkaUser existingTlsUser = ResourceUtils.createKafkaUserTls();
+        existingTlsUser.getMetadata().setName("existing-tls-user");
+        Secret clientsCa = ResourceUtils.createClientsCaCertSecret();
+        Secret existingTlsUserSecret = ResourceUtils.createUserSecretTls();
+        existingTlsUserSecret.getMetadata().setName("existing-tls-user");
+        Secret existingScramShaUserSecret = ResourceUtils.createUserSecretScramSha();
+        existingScramShaUserSecret.getMetadata().setName("existing-scram-sha-user");
+        KafkaUser existingScramShaUser = ResourceUtils.createKafkaUserTls();
+        existingScramShaUser.getMetadata().setName("existing-scram-sha-user");
+
+        when(mockCrdOps.listAsync(eq(ResourceUtils.NAMESPACE), eq(Optional.of(new LabelSelector(null, Labels.fromMap(ResourceUtils.LABELS).toMap()))))).thenReturn(
+                Future.succeededFuture(Arrays.asList(newTlsUser, newScramShaUser, existingTlsUser, existingScramShaUser)));
+        when(mockSecretOps.list(eq(ResourceUtils.NAMESPACE), eq(Labels.fromMap(ResourceUtils.LABELS).withStrimziKind(KafkaUser.RESOURCE_KIND)))).thenReturn(Arrays.asList(existingTlsUserSecret, existingScramShaUserSecret));
+        when(scramOps.getAllUsers()).thenReturn(Future.succeededFuture(List.of("existing-tls-user", "deleted-scram-sha-user")));
+        when(quotasOps.getAllUsers()).thenReturn(Future.succeededFuture(Set.of("existing-tls-user", "quota-user")));
+
+        when(mockCrdOps.get(eq(newTlsUser.getMetadata().getNamespace()), eq(newTlsUser.getMetadata().getName()))).thenReturn(newTlsUser);
+        when(mockCrdOps.get(eq(newScramShaUser.getMetadata().getNamespace()), eq(newScramShaUser.getMetadata().getName()))).thenReturn(newScramShaUser);
+        when(mockCrdOps.get(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingTlsUser.getMetadata().getName()))).thenReturn(existingTlsUser);
+        when(mockCrdOps.get(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingScramShaUser.getMetadata().getName()))).thenReturn(existingScramShaUser);
+        when(mockCrdOps.getAsync(eq(newTlsUser.getMetadata().getNamespace()), eq(newTlsUser.getMetadata().getName()))).thenReturn(Future.succeededFuture(newTlsUser));
+        when(mockCrdOps.getAsync(eq(newScramShaUser.getMetadata().getNamespace()), eq(newScramShaUser.getMetadata().getName()))).thenReturn(Future.succeededFuture(newScramShaUser));
+        when(mockCrdOps.getAsync(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingTlsUser.getMetadata().getName()))).thenReturn(Future.succeededFuture(existingTlsUser));
+        when(mockCrdOps.getAsync(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingScramShaUser.getMetadata().getName()))).thenReturn(Future.succeededFuture(existingScramShaUser));
+        when(mockCrdOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
+
+        when(mockSecretOps.get(eq(clientsCa.getMetadata().getNamespace()), eq(clientsCa.getMetadata().getName()))).thenReturn(clientsCa);
+        when(mockSecretOps.get(eq(newTlsUser.getMetadata().getNamespace()), eq(newTlsUser.getMetadata().getName()))).thenReturn(null);
+        when(mockSecretOps.get(eq(newScramShaUser.getMetadata().getNamespace()), eq(newScramShaUser.getMetadata().getName()))).thenReturn(null);
+        when(mockSecretOps.get(eq(existingTlsUser.getMetadata().getNamespace()), eq(existingTlsUser.getMetadata().getName()))).thenReturn(existingTlsUserSecret);
+        when(mockSecretOps.get(eq(existingScramShaUser.getMetadata().getNamespace()), eq(existingScramShaUser.getMetadata().getName()))).thenReturn(existingScramShaUserSecret);
+
+        Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
+        Set<String> deleted = new CopyOnWriteArraySet<>();
+
+        Checkpoint async = context.checkpoint();
+
+        Promise reconcileAllCompleted = Promise.promise();
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig(ResourceUtils.LABELS, false)) {
+            @Override
+            public Future<KafkaUserStatus> createOrUpdate(Reconciliation reconciliation, KafkaUser resource) {
+                createdOrUpdated.add(resource.getMetadata().getName());
+                return Future.succeededFuture(new KafkaUserStatus());
+            }
+            @Override
+            public Future<Boolean> delete(Reconciliation reconciliation) {
+                deleted.add(reconciliation.name());
+                return Future.succeededFuture(Boolean.TRUE);
+            }
+        };
+
+        // call reconcileAll and pass in promise to the handler to run assertions on completion
+        op.reconcileAll("test", ResourceUtils.NAMESPACE, ar -> reconcileAllCompleted.complete());
+
+        reconcileAllCompleted.future().compose(v -> context.verify(() -> {
+            assertThat(createdOrUpdated, is(new HashSet(asList("new-tls-user", "existing-tls-user",
+                    "new-scram-sha-user", "existing-scram-sha-user"))));
+            assertThat(deleted, is(new HashSet(asList("quota-user", "deleted-scram-sha-user"))));
+            verify(aclOps, never()).getAllUsers();
             async.flag();
         }));
     }

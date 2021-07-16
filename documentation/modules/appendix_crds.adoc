@@ -1149,7 +1149,7 @@ include::../api/io.strimzi.api.kafka.model.EntityUserOperatorSpec.adoc[leveloffs
 |string
 |reconciliationIntervalSeconds   1.2+<.<a|Interval between periodic reconciliations.
 |integer
-|zookeeperSessionTimeoutSeconds  1.2+<.<a|Timeout for the ZooKeeper session.
+|zookeeperSessionTimeoutSeconds  1.2+<.<a|*The `zookeeperSessionTimeoutSeconds` property has been deprecated.* This property has been deprecated because ZooKeeper is not used anymore by the User Operator. Timeout for the ZooKeeper session.
 |integer
 |secretPrefix                    1.2+<.<a|The prefix that will be added to the KafkaUser name to be used as the Secret name.
 |string

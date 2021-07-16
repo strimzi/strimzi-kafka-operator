@@ -51,10 +51,8 @@ public class EntityUserOperator extends AbstractModel {
     // User Operator configuration keys
     public static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_LABELS";
     public static final String ENV_VAR_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
-    public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
-    public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME = "STRIMZI_CA_CERT_NAME";
     public static final String ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME = "STRIMZI_CA_KEY_NAME";
     public static final String ENV_VAR_CLIENTS_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
@@ -72,12 +70,10 @@ public class EntityUserOperator extends AbstractModel {
     /*test*/ static final String USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-uo-tmp";
 
     private String kafkaBootstrapServers;
-    private String zookeeperConnect;
     private String watchedNamespace;
     private String resourceLabels;
     private String secretPrefix;
     private long reconciliationIntervalMs;
-    private long zookeeperSessionTimeoutMs;
     private int clientsCaValidityDays;
     private int clientsCaRenewalDays;
     protected List<ContainerEnvVar> templateContainerEnvVars;
@@ -98,10 +94,8 @@ public class EntityUserOperator extends AbstractModel {
 
         // create a default configuration
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
-        this.zookeeperConnect = defaultZookeeperConnect(cluster);
         this.watchedNamespace = namespace;
         this.reconciliationIntervalMs = EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
-        this.zookeeperSessionTimeoutMs = EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
         this.secretPrefix = EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
 
@@ -142,26 +136,6 @@ public class EntityUserOperator extends AbstractModel {
 
     public long getClientsCaRenewalDays() {
         return this.clientsCaRenewalDays;
-    }
-
-    public void setZookeeperSessionTimeoutMs(long zookeeperSessionTimeoutMs) {
-        this.zookeeperSessionTimeoutMs = zookeeperSessionTimeoutMs;
-    }
-
-    public long getZookeeperSessionTimeoutMs() {
-        return zookeeperSessionTimeoutMs;
-    }
-
-    protected static String defaultZookeeperConnect(String cluster) {
-        return String.format("%s:%d", "localhost", EntityUserOperatorSpec.DEFAULT_ZOOKEEPER_PORT);
-    }
-
-    public void setZookeeperConnect(String zookeeperConnect) {
-        this.zookeeperConnect = zookeeperConnect;
-    }
-
-    public String getZookeeperConnect() {
-        return zookeeperConnect;
     }
 
     public void setKafkaBootstrapServers(String kafkaBootstrapServers) {
@@ -237,7 +211,6 @@ public class EntityUserOperator extends AbstractModel {
                 result.setImage(image);
                 result.setWatchedNamespace(userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : namespace);
                 result.setReconciliationIntervalMs(userOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
-                result.setZookeeperSessionTimeoutMs(userOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
                 result.setLogging(userOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setSecretPrefix(userOperatorSpec.getSecretPrefix() == null ? EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX : userOperatorSpec.getSecretPrefix());
@@ -294,12 +267,10 @@ public class EntityUserOperator extends AbstractModel {
     @Override
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
         varList.add(buildEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
         varList.add(buildEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(reconciliationIntervalMs)));
-        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS, Long.toString(zookeeperSessionTimeoutMs)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_KEY_SECRET_NAME, KafkaCluster.clientsCaKeySecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME, KafkaCluster.clientsCaCertSecretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_NAMESPACE, namespace));

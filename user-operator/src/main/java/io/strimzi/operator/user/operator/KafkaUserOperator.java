@@ -83,7 +83,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
     @Override
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
         return CompositeFuture.join(super.allResourceNames(namespace),
-                aclOperations.getAllUsers(),
+                config.isAclsAdminApiSupported() ? aclOperations.getAllUsers() : Future.succeededFuture(Set.of()),
                 quotasOperator.getAllUsers(),
                 scramCredentialsOperator.getAllUsers()).map(compositeFuture -> {
                     Set<NamespaceAndName> names = compositeFuture.resultAt(0);
@@ -260,8 +260,16 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         Future<ReconcileResult<Secret>> userSecretFuture = reconcileUserSecret(reconciliation, user, userStatus);
 
         // ACLs need to reconciled for both regular and TLS username. It will be (possibly) set for one user and deleted for the other
-        Future<ReconcileResult<Set<SimpleAclRule>>> aclsTlsUserFuture = aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsAcls);
-        Future<ReconcileResult<Set<SimpleAclRule>>> aclsScramUserFuture = aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneAcls);
+        Future<ReconcileResult<Set<SimpleAclRule>>> aclsTlsUserFuture;
+        Future<ReconcileResult<Set<SimpleAclRule>>> aclsScramUserFuture;
+
+        if (config.isAclsAdminApiSupported()) {
+            aclsTlsUserFuture = aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsAcls);
+            aclsScramUserFuture = aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneAcls);
+        } else {
+            aclsTlsUserFuture = Future.succeededFuture(ReconcileResult.noop(null));
+            aclsScramUserFuture = Future.succeededFuture(ReconcileResult.noop(null));
+        }
 
         return CompositeFuture.join(scramCredentialsFuture, tlsQuotasFuture, quotasFuture, aclsTlsUserFuture, aclsScramUserFuture, userSecretFuture);
     }
@@ -297,8 +305,8 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         String user = reconciliation.name();
         LOGGER.debugCr(reconciliation, "Deleting User {} from namespace {}", user, namespace);
         return CompositeFuture.join(secretOperations.reconcile(reconciliation, namespace, KafkaUserModel.getSecretName(config.getSecretPrefix(), user), null),
-                aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null),
-                aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null),
+                config.isAclsAdminApiSupported() ? aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null) : Future.succeededFuture(ReconcileResult.noop(null)),
+                config.isAclsAdminApiSupported() ? aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null) : Future.succeededFuture(ReconcileResult.noop(null)),
                 scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null)
                         .compose(ignore -> quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null))
                         .compose(ignore -> quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null)))
