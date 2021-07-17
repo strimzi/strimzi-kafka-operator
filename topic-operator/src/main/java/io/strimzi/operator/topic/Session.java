@@ -149,40 +149,6 @@ public class Session extends AbstractVerticle {
         }, stop);
     }
 
-    private void setSaslConfigs(Properties kafkaClientProps) {
-        String saslMechanism = null;
-        String jaasConfig = null;
-        String username = config.get(Config.SASL_USERNAME);
-        String password = config.get(Config.SASL_PASSWORD);
-        String configSaslMechanism = config.get(Config.SASL_MECHANISM);
-
-        if (username.isEmpty() || password.isEmpty()) {
-            throw new InvalidConfigurationException("SASL credentials are not set");
-        }
-
-        if (SASL_TYPE_PLAIN.equals(configSaslMechanism)) {
-            saslMechanism = "PLAIN";
-            jaasConfig = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + username + "\" password=\"" + password + "\";";
-        } else if (SASL_TYPE_SCRAM_SHA_256.equals(configSaslMechanism) || SASL_TYPE_SCRAM_SHA_512.equals(configSaslMechanism)) {
-            jaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + username + "\" password=\"" + password + "\";";
-
-            if (SASL_TYPE_SCRAM_SHA_256.equals(configSaslMechanism)) {
-                saslMechanism = "SCRAM-SHA-256";
-            } else if (SASL_TYPE_SCRAM_SHA_512.equals(configSaslMechanism)) {
-                saslMechanism = "SCRAM-SHA-512";
-            }
-        } else {
-            throw new IllegalArgumentException("Invalid SASL_MECHANISM type: " + config.get(config.SASL_MECHANISM));
-        }
-
-        if (saslMechanism != null) {
-            kafkaClientProps.setProperty(SaslConfigs.SASL_MECHANISM, saslMechanism);
-        }
-        if (jaasConfig != null) {
-            kafkaClientProps.setProperty(SaslConfigs.SASL_JAAS_CONFIG, jaasConfig);
-        }
-    }
-
     @SuppressWarnings({"JavaNCSS", "MethodLength", "CyclomaticComplexity"})
     @Override
     public void start(Promise<Void> start) {
@@ -297,7 +263,41 @@ public class Session extends AbstractVerticle {
             });
     }
 
-    private Properties adminClientProperties() {
+    private void setSaslConfigs(Properties kafkaClientProps) {
+        String saslMechanism = null;
+        String jaasConfig = null;
+        String username = config.get(Config.SASL_USERNAME);
+        String password = config.get(Config.SASL_PASSWORD);
+        String configSaslMechanism = config.get(Config.SASL_MECHANISM);
+
+        if (username.isEmpty() || password.isEmpty()) {
+            throw new InvalidConfigurationException("SASL credentials are not set");
+        }
+
+        if (SASL_TYPE_PLAIN.equals(configSaslMechanism)) {
+            saslMechanism = "PLAIN";
+            jaasConfig = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + username + "\" password=\"" + password + "\";";
+        } else if (SASL_TYPE_SCRAM_SHA_256.equals(configSaslMechanism) || SASL_TYPE_SCRAM_SHA_512.equals(configSaslMechanism)) {
+            jaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + username + "\" password=\"" + password + "\";";
+
+            if (SASL_TYPE_SCRAM_SHA_256.equals(configSaslMechanism)) {
+                saslMechanism = "SCRAM-SHA-256";
+            } else if (SASL_TYPE_SCRAM_SHA_512.equals(configSaslMechanism)) {
+                saslMechanism = "SCRAM-SHA-512";
+            }
+        } else {
+            throw new IllegalArgumentException("Invalid SASL_MECHANISM type: " + config.get(config.SASL_MECHANISM));
+        }
+
+        if (saslMechanism != null) {
+            kafkaClientProps.setProperty(SaslConfigs.SASL_MECHANISM, saslMechanism);
+        }
+        if (jaasConfig != null) {
+            kafkaClientProps.setProperty(SaslConfigs.SASL_JAAS_CONFIG, jaasConfig);
+        }
+    }
+
+    Properties adminClientProperties() {
         Properties kafkaClientProps = new Properties();
         kafkaClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         kafkaClientProps.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, config.get(Config.APPLICATION_ID));
@@ -306,7 +306,7 @@ public class Session extends AbstractVerticle {
         boolean tlsEnabled = Boolean.parseBoolean(config.get(Config.TLS_ENABLED));
 
         if (tlsEnabled && !securityProtocol.isEmpty()) {
-            if (!securityProtocol.equals("SASL_SSL") || !securityProtocol.equals("SSL")) {
+            if (!securityProtocol.equals("SSL") && !securityProtocol.equals("SASL_SSL")) {
                 throw new InvalidConfigurationException("TLS is enabled but the security protocol does not match SSL or SASL_SSL");
             }
         }

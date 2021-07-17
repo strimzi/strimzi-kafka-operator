@@ -99,24 +99,25 @@ You can set the level to `ERROR`, `WARNING`, `INFO`, `DEBUG`, or `TRACE`.
 <9> Enables TLS support for encrypted communication with the Kafka brokers.
 <10> (Optional) The Java options used by the JVM running the Topic Operator.
 <11> (Optional) The debugging (`-D`) options set for the Topic Operator.
-<12> (Optional) Skip generating trust store certificates if TLS is enabled. If this setting is enabled then the brokers have to use a public trusted certificate authority for their TLS certificates.
-The default is "false".
-<13> (Optional) Generate key store certificates for mutual TLS authentication. Setting this to false will disable client authentication with TLS to the Kafka brokers.
-The default is "true".
-<14> (Optional) Enable SASL support for client authentication when connecting to Kafka brokers.
-The default is "false".
+<12> (Optional) Skips the generation of trust store certificates if TLS is enabled through `STRIMZI_TLS_ENABLED`. If this environment variable is enabled, the brokers must use a public trusted certificate authority for their TLS certificates.
+The default is `false`.
+<13> (Optional) Generates key store certificates for mutual TLS authentication. Setting this to `false` disables client authentication with TLS to the Kafka brokers.
+The default is `true`.
+<14> (Optional) Enables SASL support for client authentication when connecting to Kafka brokers.
+The default is `false`.
 <15> (Optional) The SASL username for client authentication.
 Mandatory only if SASL is enabled through `STRIMZI_SASL_ENABLED`.
 <16> (Optional) The SASL password for client authentication.
 Mandatory only if SASL is enabled through `STRIMZI_SASL_ENABLED`.
 <17> (Optional) The SASL mechanism for client authentication.
 Mandatory only if SASL is enabled through `STRIMZI_SASL_ENABLED`.
-The value can be set to: `plain`, `scram-sha-256` and `scram-sha-512`.
+You can set the value to `plain`, `scram-sha-256`, or `scram-sha-512`.
 <18> (Optional) The security protocol used for communication with Kafka brokers.
 The default value is "PLAINTEXT".
-The value can be set to: `PLAINTEXT`, `SSL`, `SASL_PLAINTEXT` and `SASL_SSL`.
+You can set the value to `PLAINTEXT`, `SSL`, `SASL_PLAINTEXT`, or `SASL_SSL`.
 
 . If you enabled TLS with the `STRIMZI_TLS_ENABLED` environment variable, specify the keystore and truststore used to authenticate connection to the Kafka cluster.
+. If you want to connect to Kafka brokers which are using certificates from public CAs as for example AWS MSK then you'll need to set `STRIMZI_PUBLIC_CA` to `true`.
 +
 .Example TLS configuration
 [source,shell,subs=+quotes]
