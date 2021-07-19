@@ -66,10 +66,10 @@ public class QuotasOperator extends AbstractAdminApiOperator<KafkaUserQuotas, Se
                             LOGGER.debugCr(reconciliation, "{} expected quotas, but no existing quotas -> Adding quotas", desired);
                             return internalAlter(reconciliation, username, desired);
                         } else if (!QuotaUtils.quotasEquals(current, desired)) {
-                            LOGGER.debugCr(reconciliation, "{} expected quotas and {} existing quotas differ -> Reconciling qoutas", desired, current);
+                            LOGGER.debugCr(reconciliation, "{} expected quotas and {} existing quotas differ -> Reconciling quutas", desired, current);
                             return internalAlter(reconciliation, username, desired);
                         } else {
-                            LOGGER.debugCr(reconciliation, "{} expected quotasare the same as existing quotas -> NoOp", desired);
+                            LOGGER.debugCr(reconciliation, "{} expected quotas are the same as existing quotas -> NoOp", desired);
                             return Future.succeededFuture(ReconcileResult.noop(desired));
                         }
                     }
