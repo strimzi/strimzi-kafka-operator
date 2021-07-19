@@ -2094,7 +2094,7 @@ public class ListenersST extends AbstractST {
             .build();
 
         kubeClient().namespace(namespaceName).createSecret(password);
-        assertThat("Password in secret is not correct", kubeClient().namespace(namespaceName).getSecret(secretName).getData().get("password"), is(secondEncodedPassword));
+        SecretUtils.waitForUserPasswordChange(namespaceName, userName, secondEncodedPassword);
 
         LOGGER.info("We need to recreate Kafka Clients deployment, so the correct password from secret will be taken");
         resourceManager.deleteResource(kubeClient().getDeployment(kafkaClientsName));
