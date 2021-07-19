@@ -41,6 +41,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
+import io.strimzi.test.annotations.IsolatedSuite;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -78,6 +79,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(SPECIFIC)
+@IsolatedSuite
 public class SpecificST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(SpecificST.class);

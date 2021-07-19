@@ -621,9 +621,4 @@ class LogSettingST extends AbstractST {
         KafkaUtils.waitForKafkaReady(NAMESPACE, GC_LOGGING_SET_NAME);
         DeploymentUtils.waitForDeploymentReady(NAMESPACE, kafkaClientsName);
     }
-
-    @AfterAll
-    protected void tearDownEnvironmentAfterAll() {
-        teardownEnvForOperator();
-    }
 }

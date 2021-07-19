@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
@@ -31,6 +32,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.Random;
+
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -41,12 +44,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(INTERNAL_CLIENTS_USED)
 @Tag(BRIDGE)
 @Tag(REGRESSION)
+@ParallelSuite
 class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
-    private static final String NAMESPACE = "bridge-scram-sha-cluster-test";
+    private static final String NAMESPACE = "bridge-scram-sha-namespace";
     private final String httpBridgeScramShaClusterName = "http-bridge-scram-sha-cluster-name";
 
     private String kafkaClientsPodName;
+    private KafkaBridgeExampleClients kafkaBridgeClientJob;
 
     @ParallelTest
     void testSendSimpleMessageTlsScramSha(ExtensionContext extensionContext) {
@@ -54,8 +59,16 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         KafkaBridgeExampleClients kafkaBridgeClientJb = kafkaBridgeClientJob.toBuilder().withTopicName(topicName).build();
 
         // Create topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, topicName).build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.producerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, topicName)
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.producerStrimziBridge()
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .build());
 
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
 
@@ -78,8 +91,15 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaBridgeExampleClients kafkaBridgeClientJb = kafkaBridgeClientJob.toBuilder().withTopicName(topicName).build();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, TOPIC_NAME).build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.consumerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, TOPIC_NAME)
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata().build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.consumerStrimziBridge()
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .build());
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -100,37 +120,45 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(NAMESPACE)
-            .createInstallation()
-            .runInstallation();
+        cluster.createNamespace(extensionContext, NAMESPACE);
+
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         // Deploy kafka
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeScramShaClusterName, 1, 1)
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata()
             .editSpec()
-            .editKafka()
-                .withListeners(new GenericKafkaListenerBuilder()
-                        .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                        .withPort(9093)
-                        .withType(KafkaListenerType.INTERNAL)
-                        .withTls(true)
-                        .withNewKafkaListenerAuthenticationScramSha512Auth()
-                        .endKafkaListenerAuthenticationScramSha512Auth()
-                        .build())
-            .endKafka()
+                .editKafka()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewKafkaListenerAuthenticationScramSha512Auth()
+                            .endKafkaListenerAuthenticationScramSha512Auth()
+                            .build())
+                .endKafka()
             .endSpec().build());
 
         String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
 
         // Create Kafka user
-        KafkaUser scramShaUser = KafkaUserTemplates.scramShaUser(httpBridgeScramShaClusterName, USER_NAME).build();
+        KafkaUser scramShaUser = KafkaUserTemplates.scramShaUser(httpBridgeScramShaClusterName, USER_NAME)
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .build();
 
         resourceManager.createResource(extensionContext, scramShaUser);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName, scramShaUser).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName, scramShaUser)
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .build());
 
-        kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+        kafkaClientsPodName = kubeClient(NAMESPACE).listPodsByPrefixInName(NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
 
         // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
         PasswordSecretSource passwordSecret = new PasswordSecretSource();
@@ -145,7 +173,10 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         // Deploy http bridge
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(httpBridgeScramShaClusterName,
             KafkaResources.tlsBootstrapAddress(httpBridgeScramShaClusterName), 1)
-                .editSpec()
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .editSpec()
                     .withNewConsumer()
                         .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                     .endConsumer()
@@ -158,6 +189,16 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
                     .endTls()
                 .endSpec().build());
 
-        kafkaBridgeClientJob = kafkaBridgeClientJob.toBuilder().withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeScramShaClusterName)).build();
+        kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
+            .withProducerName(producerName + new Random().nextInt(Integer.MAX_VALUE))
+            .withConsumerName(consumerName + new Random().nextInt(Integer.MAX_VALUE))
+            .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeScramShaClusterName))
+            .withTopicName(TOPIC_NAME)
+            .withMessageCount(MESSAGE_COUNT)
+            .withPort(bridgePort)
+            .withDelayMs(1000)
+            .withPollInterval(1000)
+            .withNamespaceName(NAMESPACE)
+            .build();
     }
 }

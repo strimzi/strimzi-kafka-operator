@@ -15,6 +15,7 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.test.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -27,6 +28,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 
 @Tag(HELM)
 @Tag(REGRESSION)
+@IsolatedSuite
 class HelmChartST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);

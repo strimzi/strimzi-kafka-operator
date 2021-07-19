@@ -15,6 +15,7 @@ import java.util.Map;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.test.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
+@IsolatedSuite
 public class ColdBackupScriptST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ColdBackupScriptST.class);

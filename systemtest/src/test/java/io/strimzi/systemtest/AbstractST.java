@@ -61,7 +61,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@ExtendWith(TestExecutionWatcher.class)
+@ExtendWith({TestExecutionWatcher.class, BeforeAllOnce.class})
 @DisplayNameGeneration(IndicativeSentences.class)
 public abstract class AbstractST implements TestSeparator {
 
@@ -104,15 +104,6 @@ public abstract class AbstractST implements TestSeparator {
     public static final int MESSAGE_COUNT = 100;
     public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
     public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
-
-    /**
-     * Clear cluster from all created namespaces and configurations files for cluster operator.
-     */
-    protected void teardownEnvForOperator() {
-        install.deleteClusterOperatorInstallFiles();
-        cluster.deleteCustomResources();
-        cluster.deleteNamespaces();
-    }
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
         Pod po = kubeClient(namespace).getPod(namespace, podName);
@@ -546,7 +537,6 @@ public abstract class AbstractST implements TestSeparator {
     protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(extensionContext);
-            teardownEnvForOperator();
         }
     }
 

@@ -312,6 +312,8 @@ public interface Constants {
      */
     String LOAD_BALANCER_CLEANUP = "service.kubernetes.io/load-balancer-cleanup";
 
+    String INFRA_NAMESPACE = "infra-namespace";
+
     /**
      * Auxiliary variables for storing data across our tests
      */

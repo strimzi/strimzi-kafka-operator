@@ -20,6 +20,9 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.ParallelSuite;
+import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -47,10 +50,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(BRIDGE)
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
+@ParallelSuite
 class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeKafkaExternalListenersST.class);
     private static final String BRIDGE_EXTERNAL_SERVICE =  "shared-http-bridge-external-service";
+    private static final String NAMESPACE = "bridge-kafka-external-listener-namespace";
+
+    private KafkaBridgeExampleClients kafkaBridgeClientJob;
 
     @IsolatedTest
     void testScramShaAuthWithWeirdUsername(ExtensionContext extensionContext) {
@@ -116,6 +123,9 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -135,11 +145,16 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
                 .endKafka()
             .endSpec().build());
 
-        kafkaBridgeClientJob = kafkaBridgeClientJob.toBuilder()
+        kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
             .withBootstrapAddress(KafkaBridgeResources.serviceName(clusterName))
             .withProducerName(clusterName + "-" + producerName)
             .withConsumerName(clusterName + "-" + consumerName)
             .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withPort(bridgePort)
+            .withDelayMs(1000)
+            .withPollInterval(1000)
+            .withNamespaceName(NAMESPACE)
             .build();
 
         // Create topic
@@ -190,10 +205,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void createClassResources(ExtensionContext extensionContext) {
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(NAMESPACE)
-            .createInstallation()
-            .runInstallation();
+        LOGGER.debug("===============================================================");
+        LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
     }
 }

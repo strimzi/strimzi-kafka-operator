@@ -18,6 +18,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -30,6 +31,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@IsolatedSuite
 public abstract class AbstractNamespaceST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractNamespaceST.class);

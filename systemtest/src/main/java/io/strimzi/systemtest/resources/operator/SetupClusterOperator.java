@@ -46,6 +46,7 @@ public class SetupClusterOperator {
 
     private static final Logger LOGGER = LogManager.getLogger(SetupClusterOperator.class);
     public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../packaging/install/cluster-operator";
+    private static final String INFRA_NAMESPACE = "infra-namespace";
 
     private KubeClusterResource cluster = KubeClusterResource.getInstance();
     private Stack<String> clusterOperatorConfigs = new Stack<>();
@@ -78,6 +79,8 @@ public class SetupClusterOperator {
 
         // assign defaults is something is not specified
         if (this.clusterOperatorName == null || this.clusterOperatorName.isEmpty()) this.clusterOperatorName = Constants.STRIMZI_DEPLOYMENT_NAME;
+        // if namespace is not set we install operator to 'infra-namespace'
+        if (this.namespaceInstallTo == null | this.namespaceInstallTo.isEmpty()) this.namespaceInstallTo = INFRA_NAMESPACE;
         if (this.namespaceToWatch == null) this.namespaceToWatch = this.namespaceInstallTo;
         if (this.bindingsNamespaces == null) this.bindingsNamespaces = Collections.singletonList(this.namespaceInstallTo);
         if (this.operationTimeout == 0) this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;

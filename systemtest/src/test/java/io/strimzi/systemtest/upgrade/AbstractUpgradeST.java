@@ -25,6 +25,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.annotations.IsolatedSuite;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.executor.ExecResult;
 import io.vertx.core.json.JsonArray;
@@ -58,6 +59,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@IsolatedSuite
 public class AbstractUpgradeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractUpgradeST.class);

@@ -6,6 +6,7 @@ package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.annotations.IsolatedSuite;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +30,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Kafka upgrade is done as part of those tests as well, but the tests for Kafka upgrade/downgrade are in {@link KafkaUpgradeDowngradeST}.
  */
 @Tag(UPGRADE)
+@IsolatedSuite
 public class StrimziDowngradeST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziDowngradeST.class);
