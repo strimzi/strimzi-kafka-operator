@@ -31,7 +31,13 @@ If you want to try the example with Keycloak, use these files to perform the tas
 . xref:proc-oauth-authorization-keycloak-example-check_{context}[Checking authorized access to Kafka using a CLI Kafka client session]
 
 .Connection to Keycloak
-Kafka and Kafka clients must connect to Keycloak for authorization to work. Connection to Keycloak is indirect. The connection routes through an ingress HTTP gateway using a hostname on port 443. Kafka clients use the same hostname and port as the Kafka brokers. The gateway is part of the Kubernetes infrastructure. This example assumes that Keycloak is deployed using the Keycloak Operator. The operator makes the gateway hostname visible to pods in the same Kubernetes cluster. The hostname must be visible for the example to work. If it's not visible, try deploying Keycloak to a separate Kubernetes cluster. The pods can then access Keycloak using the external hostname to make the connection.
+Kafka and Kafka clients must connect to Keycloak for authorization to work. Connection to Keycloak is indirect.
+The connection routes through an ingress HTTP gateway using a hostname on port 443. Kafka clients use the same hostname and port as the Kafka brokers.
+The gateway is part of the Kubernetes infrastructure. This example assumes that Keycloak is deployed using the Keycloak Operator.
+The Keycloak Operator exposes Keycloak over TLS using the ingress HTTP gateway.
+The ingress hostname must be visible to the pods within the cluster for the example to work.
+If it's not visible, try deploying Keycloak to a separate Kubernetes cluster.
+The pods can then access Keycloak using the external hostname to make the connection.
 
 .Targeted permissions with group or role policies
 In Keycloak, confidential clients with service accounts enabled can authenticate to the server in their own name using a client ID and a secret.
@@ -61,7 +67,7 @@ The rules grant access to the resources on the Kafka cluster configured to use t
 .Procedure
 
 . Install the Keycloak server using the Keycloak Operator as described in {keycloak-server-install-doc} in the Keycloak documentation.
-. Wait until the Keycloak instance is running,
+. Wait until the Keycloak instance is running.
 . Get the external hostname to be able to access the Admin Console.
 +
 [source,shell,subs="attributes"]
@@ -144,7 +150,7 @@ ClusterManager of my-cluster Group has full access to topics on my-cluster
 ----
 +
 Dev Team A:: The Dev Team A realm role can write to topics that start with `x_` on any cluster. This combines a resource called `Topic:x_*`, `Describe` and `Write` scopes, and the `Dev Team A` policy. The `Dev Team A` policy matches all users that have a realm role called `Dev Team A`.
-Dev Team B:: Dev Team B realm role can read from topics that start with `x_` on any cluster. This combines `Topic:x_*`, `Group:x_*` resources, `Describe` and `Read` scopes, and the `Dev Team B` policy. The `Dev Team B` policy matches all users that have a realm role called `Dev Team B`. Matching users and clients have the ability to read from topics, and update the consumed offsets for topics and consumer groups that have names starting with `x_`.
+Dev Team B:: The Dev Team B realm role can read from topics that start with `x_` on any cluster. This combines `Topic:x_*`, `Group:x_*` resources, `Describe` and `Read` scopes, and the `Dev Team B` policy. The `Dev Team B` policy matches all users that have a realm role called `Dev Team B`. Matching users and clients have the ability to read from topics, and update the consumed offsets for topics and consumer groups that have names starting with `x_`.
 
 [id='proc-oauth-authorization-keycloak-example-deploy-kafka_{context}']
 == Deploying a Kafka cluster with Keycloak authorization
@@ -308,7 +314,7 @@ sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthL
 EOF
 ----
 +
-The SASL/OAUTHBEARER mechanism is used.
+The SASL OAUTHBEARER mechanism is used.
 This mechanism requires a client ID and client secret, which means the client first connects to the Keycloak server to obtain an access token.
 The client then connects to the Kafka broker and uses the access token to authenticate.
 
@@ -403,7 +409,7 @@ Second message
 +
 Messages are produced to Kafka successfully.
 
-. Press CTRL-C to exit the CLI application.
+. Press CTRL+C to exit the CLI application.
 
 . Check the Kafka container log for a debug log of `Authorization GRANTED` for the request.
 
@@ -424,7 +430,7 @@ bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9093
   --from-beginning --consumer.config /tmp/team-a-client.properties
 ----
 +
-The request returns an error as the `Dev Team A` role for `team-a-client` only has access to consumer groups that have names starting with `a_`.
+The request returns an error because the `Dev Team A` role for `team-a-client` only has access to consumer groups that have names starting with `a_`.
 
 . Update the `team-a-client` properties to specify the custom consumer group it is permitted to use.
 +
