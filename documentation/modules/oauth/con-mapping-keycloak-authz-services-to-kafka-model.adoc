@@ -42,6 +42,12 @@ Authorization scopes must contain all the possible Kafka permissions regardless 
 * `ClusterAction`
 * `IdempotentWrite`
 
+[NOTE]
+====
+If you're certain you won't need a permission (for example, `IdempotentWrite`), you can omit it from the list of authorization scopes.
+However, that permission won't be available to target on Kafka resources.
+====
+
 .Resource patterns for permissions checks
 
 Resource patterns are used for pattern matching against the targeted resources when performing permission checks.

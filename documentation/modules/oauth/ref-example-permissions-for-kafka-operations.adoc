@@ -72,9 +72,16 @@ As well as the permissions for producing to a topic, an additional `IdempotentWr
 
 Two `resources` are needed for matching. For example:
 
+[source]
 ----
 Topic:my-topic
 Cluster:kafka-cluster
+----
+
+[source,shell]
+----
+bin/kafka-console-producer.sh  --topic my-topic \
+  --broker-list my-cluster-kafka-bootstrap:9092 --producer.config=/tmp/config.properties --producer-property enable.idempotence=true --request-required-acks -1
 ----
 
 .List consumer groups
@@ -176,8 +183,3 @@ of the topics involved.
 bin/kafka-reassign-partitions.sh --reassignment-json-file /tmp/partition-reassignment.json --verify \
   --bootstrap-server my-cluster-kafka-bootstrap:9092 --command-config /tmp/config.properties
 ----
-
-[role="_additional-resources"]
-.Additional resources
-
-* xref:proc-oauth-authorization-keycloak-example_{context}[]

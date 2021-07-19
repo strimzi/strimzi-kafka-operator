@@ -7,10 +7,11 @@ ifdef::context[:parent-context: {context}]
 
 [role="_abstract"]
 This section describes the authorization models used by Keycloak Authorization Services and Kafka, and defines the important concepts in each model.
-To grant permissions to access Kafka, Keycloak Authorization Services objects are mapped to Kafka resources through an OAuth client specification in Keycloak.
+
+To grant permissions to access Kafka, you can map Keycloak Authorization Services objects to Kafka resources by creating an _OAuth client specification_ in Keycloak.
 Kafka permissions are granted to user accounts or service accounts using Keycloak Authorization Services rules.
 
-This section also gives xref:ref-example-permissions-for-kafka-operations_{context}[examples] of the different user permissions required for common Kafka operations, such as creating and listing topics.
+xref:ref-example-permissions-for-kafka-operations_{context}[Examples] are shown of the different user permissions required for common Kafka operations, such as creating and listing topics.
 
 include::modules/con-kafka-keycloak-authz-models.adoc[leveloffset=+1]
 
