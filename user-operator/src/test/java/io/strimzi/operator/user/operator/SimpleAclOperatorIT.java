@@ -7,215 +7,114 @@ package io.strimzi.operator.user.operator;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.AclResourcePatternType;
 import io.strimzi.api.kafka.model.AclRuleType;
-import io.strimzi.operator.common.DefaultAdminClientProvider;
-import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResource;
 import io.strimzi.operator.user.model.acl.SimpleAclRuleResourceType;
-import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
-import org.hamcrest.collection.IsEmptyCollection;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.apache.kafka.common.acl.AccessControlEntryFilter;
+import org.apache.kafka.common.acl.AclBinding;
+import org.apache.kafka.common.acl.AclBindingFilter;
+import org.apache.kafka.common.acl.AclPermissionType;
+import org.apache.kafka.common.resource.ResourcePatternFilter;
+import org.apache.kafka.common.security.auth.KafkaPrincipal;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.io.IOException;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutionException;
 
-import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 @ExtendWith(VertxExtension.class)
-public class SimpleAclOperatorIT {
-
-    private static final int TEST_TIMEOUT = 60;
-
-    private static Vertx vertx;
-
-    private static EmbeddedKafkaCluster kafkaCluster;
-
-    private static SimpleAclOperator simpleAclOperator;
-
-    private static Properties kafkaClusterConfig() {
-        Properties config = new Properties();
-        config.setProperty("authorizer.class.name", "kafka.security.authorizer.AclAuthorizer");
-        config.setProperty("super.users", "User:ANONYMOUS");
-        return config;
+public class SimpleAclOperatorIT extends AbstractAdminApiOperatorIT<Set<SimpleAclRule>, Set<String>> {
+    @Override
+    AbstractAdminApiOperator<Set<SimpleAclRule>, Set<String>> operator() {
+        return new SimpleAclOperator(vertx, adminClient);
     }
 
-    @BeforeAll
-    public static void beforeAll() {
-        vertx = Vertx.vertx();
+    @Override
+    Set<SimpleAclRule> getOriginal() {
+        Set<SimpleAclRule> acls = new HashSet<>();
 
+        acls.add(new SimpleAclRule(
+                AclRuleType.ALLOW,
+                new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
+                "*",
+                AclOperation.DESCRIBE)
+        );
+
+        acls.add(new SimpleAclRule(
+                AclRuleType.ALLOW,
+                new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
+                "*",
+                AclOperation.READ)
+        );
+
+        acls.add(new SimpleAclRule(
+                AclRuleType.ALLOW,
+                new SimpleAclRuleResource("my-group", SimpleAclRuleResourceType.GROUP, AclResourcePatternType.LITERAL),
+                "*",
+                AclOperation.READ)
+        );
+
+        return acls;
+    }
+
+    @Override
+    Set<SimpleAclRule> getModified() {
+        Set<SimpleAclRule> acls = new HashSet<>();
+
+        acls.add(new SimpleAclRule(
+                AclRuleType.ALLOW,
+                new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
+                "*",
+                AclOperation.DESCRIBE)
+        );
+
+        acls.add(new SimpleAclRule(
+                AclRuleType.ALLOW,
+                new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
+                "*",
+                AclOperation.WRITE)
+        );
+
+        acls.add(new SimpleAclRule(
+                AclRuleType.ALLOW,
+                new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
+                "*",
+                AclOperation.CREATE)
+        );
+
+        return acls;
+    }
+
+    @Override
+    Set<SimpleAclRule> get() {
+        KafkaPrincipal principal = new KafkaPrincipal("User", USERNAME);
+        AclBindingFilter aclBindingFilter = new AclBindingFilter(ResourcePatternFilter.ANY,
+                new AccessControlEntryFilter(principal.toString(), null, org.apache.kafka.common.acl.AclOperation.ANY, AclPermissionType.ANY));
+
+        Collection<AclBinding> aclBindings;
         try {
-            kafkaCluster = new EmbeddedKafkaCluster(1, kafkaClusterConfig());
-            kafkaCluster.start();
-        } catch (IOException e) {
-            assertThat(false, is(true));
+            aclBindings = adminClient.describeAcls(aclBindingFilter).values().get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Failed to get ACLs", e);
         }
 
-        simpleAclOperator = new SimpleAclOperator(vertx,
-                new DefaultAdminClientProvider().createAdminClient(kafkaCluster.bootstrapServers(), null, null, null));
-    }
+        Set<SimpleAclRule> result = new HashSet<>(aclBindings.size());
 
-    @Test
-    public void testNoAclRules(VertxTestContext context) {
-        Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "no-acls-user");
-        context.verify(() -> {
-            assertThat(acls, IsEmptyCollection.empty());
-        });
-        context.completeNow();
-    }
-
-    @Test
-    public void testCreateAclRule(VertxTestContext context) throws InterruptedException {
-        SimpleAclRule rule = new SimpleAclRule(
-                AclRuleType.ALLOW,
-                new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
-                "*",
-                AclOperation.READ);
-
-        CountDownLatch async = new CountDownLatch(1);
-        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user", Collections.singleton(rule))
-                .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user");
-                    assertThat(acls, hasSize(1));
-                    assertThat(acls, hasItem(rule));
-                    async.countDown();
-                }));
-
-        async.await(TEST_TIMEOUT, TimeUnit.SECONDS);
-        context.completeNow();
-    }
-
-    @Test
-    public void testCreateAndUpdateAclRule(VertxTestContext context) throws InterruptedException {
-        SimpleAclRule rule1 = new SimpleAclRule(
-                AclRuleType.ALLOW,
-                new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
-                "*",
-                AclOperation.READ);
-
-        CountDownLatch async1 = new CountDownLatch(1);
-        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user", Collections.singleton(rule1))
-                .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user");
-                    assertThat(acls, hasSize(1));
-                    assertThat(acls, hasItem(rule1));
-                    async1.countDown();
-                }));
-
-        async1.await(TEST_TIMEOUT, TimeUnit.SECONDS);
-
-        SimpleAclRule rule2 = new SimpleAclRule(
-                AclRuleType.ALLOW,
-                new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
-                "*",
-                AclOperation.WRITE);
-
-        CountDownLatch async2 = new CountDownLatch(1);
-        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user", new HashSet<>(asList(rule1, rule2)))
-                .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user");
-                    assertThat(acls, hasSize(2));
-                    assertThat(acls, hasItems(rule1, rule2));
-                    async2.countDown();
-                }));
-
-        async2.await(TEST_TIMEOUT, TimeUnit.SECONDS);
-        context.completeNow();
-    }
-
-    @Test
-    public void testCreateAndDeleteAclRule(VertxTestContext context) throws InterruptedException {
-        SimpleAclRule rule1 = new SimpleAclRule(
-                AclRuleType.ALLOW,
-                new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
-                "*",
-                AclOperation.READ);
-
-        CountDownLatch async1 = new CountDownLatch(1);
-        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user", Collections.singleton(rule1))
-                .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user");
-                    assertThat(acls, hasSize(1));
-                    assertThat(acls, hasItem(rule1));
-                    async1.countDown();
-                }));
-
-        async1.await(TEST_TIMEOUT, TimeUnit.SECONDS);
-
-        CountDownLatch async2 = new CountDownLatch(1);
-        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user", null)
-                .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user");
-                    assertThat(acls, IsEmptyCollection.empty());
-                    async2.countDown();
-                }));
-
-        async2.await(TEST_TIMEOUT, TimeUnit.SECONDS);
-        context.completeNow();
-    }
-
-    @Test
-    public void testUsersWithAcls(VertxTestContext context) throws InterruptedException {
-        SimpleAclRule rule1 = new SimpleAclRule(
-                AclRuleType.ALLOW,
-                new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
-                "*",
-                AclOperation.READ);
-
-        CountDownLatch async1 = new CountDownLatch(1);
-        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user", Collections.singleton(rule1))
-                .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user");
-                    assertThat(acls, hasSize(1));
-                    assertThat(acls, hasItem(rule1));
-                    async1.countDown();
-                }));
-
-        async1.await(TEST_TIMEOUT, TimeUnit.SECONDS);
-
-        SimpleAclRule rule2 = new SimpleAclRule(
-                AclRuleType.ALLOW,
-                new SimpleAclRuleResource("my-topic", SimpleAclRuleResourceType.TOPIC, AclResourcePatternType.LITERAL),
-                "*",
-                AclOperation.WRITE);
-
-        CountDownLatch async2 = new CountDownLatch(1);
-        simpleAclOperator.reconcile(Reconciliation.DUMMY_RECONCILIATION, "my-user-2", Collections.singleton(rule2))
-                .onComplete(ignore -> context.verify(() -> {
-                    Set<SimpleAclRule> acls = simpleAclOperator.getAcls(Reconciliation.DUMMY_RECONCILIATION, "my-user-2");
-                    assertThat(acls, hasSize(1));
-                    assertThat(acls, hasItem(rule2));
-                    async2.countDown();
-                }));
-
-        async2.await(TEST_TIMEOUT, TimeUnit.SECONDS);
-
-        Set<String> usersWithAcls = simpleAclOperator.getUsersWithAcls();
-        context.verify(() -> {
-            assertThat(usersWithAcls, hasItems("my-user", "my-user-2"));
-        });
-        context.completeNow();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        if (vertx != null) {
-            vertx.close();
+        for (AclBinding aclBinding : aclBindings) {
+            result.add(SimpleAclRule.fromAclBinding(aclBinding));
         }
+
+        return result.isEmpty() ? null : result;
+    }
+
+    @Override
+    void assertResources(VertxTestContext context, Set<SimpleAclRule> expected, Set<SimpleAclRule> actual) {
+        assertThat(actual, containsInAnyOrder(expected.toArray()));
     }
 }

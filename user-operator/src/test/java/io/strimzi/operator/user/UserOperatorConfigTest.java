@@ -27,8 +27,6 @@ public class UserOperatorConfigTest {
         envVars.put(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, "ca-secret-cert");
         envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, "ca-secret-key");
         envVars.put(UserOperatorConfig.STRIMZI_CA_NAMESPACE, "differentnamespace");
-        envVars.put(UserOperatorConfig.STRIMZI_ZOOKEEPER_CONNECT, "somehost:2181");
-        envVars.put(UserOperatorConfig.STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS, "6000");
         envVars.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, "1000");
         envVars.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, "10");
         envVars.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, "false");
@@ -49,8 +47,6 @@ public class UserOperatorConfigTest {
         assertThat(config.getLabels(), is(expectedLabels));
         assertThat(config.getCaCertSecretName(), is(envVars.get(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME)));
         assertThat(config.getCaNamespace(), is(envVars.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE)));
-        assertThat(config.getZookeeperConnect(), is(envVars.get(UserOperatorConfig.STRIMZI_ZOOKEEPER_CONNECT)));
-        assertThat(config.getZookeeperSessionTimeoutMs(), is(Long.parseLong(envVars.get(UserOperatorConfig.STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS))));
         assertThat(config.getClientsCaValidityDays(), is(1000));
         assertThat(config.getClientsCaRenewalDays(), is(10));
         assertThat(config.isAclsAdminApiSupported(), is(false));

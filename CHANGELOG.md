@@ -7,6 +7,7 @@
 * Allow a custom password to be set for SCRAM-SHA-512 users by referencing a secret in the `KafkaUser` resource
 * Add support for `tls-external` authentication to User Operator to allow management of ACLs and Quotas for TLS users with user certificates generated externally (#5249) 
 * Support for disabling the automatic generation of network policies by the Cluster Operator. Set the Cluster Operator's `STRIMZI_NETWORK_POLICY_GENERATION` environment variable to `false` to disable network policies. (#5258)
+* Update User Operator to use Admin API for managing SCRAM-SHA-512 users 
 
 ### Changes, deprecations and removals
 
@@ -15,6 +16,9 @@
 * The Open Policy Agent authorizer has been updated to a new version that supports Scala 2.13.
   The new release introduces a new format of the input data sent to the Open Policy Agent server.
   For more information about the new format and how to migrate from the old version, see the [OPA Kafka plugin v1.0.0 release notes](https://github.com/Bisnode/opa-kafka-plugin/releases/tag/v1.0.0).
+* User Operator now uses Kafka Admin API to manage SCRAM-SHA-512 credentials.
+  All operations done by the User Operator now use Kafka Admin API and connect directly to Kafka instead of ZooKeeper.
+  As a result, the environment variables `STRIMZI_ZOOKEEPER_CONNECT` and `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS` were removed from the User Operator configuration.
 
 ## 0.24.0
 
