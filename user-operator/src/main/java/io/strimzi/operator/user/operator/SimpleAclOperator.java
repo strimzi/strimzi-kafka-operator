@@ -64,18 +64,18 @@ public class SimpleAclOperator extends AbstractAdminApiOperator<Set<SimpleAclRul
                 .compose(current -> {
                     if (desired == null || desired.isEmpty()) {
                         if (current.size() == 0)    {
-                            LOGGER.debugCr(reconciliation, "No expected Acl rules and no existing Acl rules -> NoOp", username);
+                            LOGGER.debugCr(reconciliation, "No expected Acl rules and no existing Acl rules -> NoOp");
                             return Future.succeededFuture(ReconcileResult.noop(desired));
                         } else {
-                            LOGGER.debugCr(reconciliation, "No expected Acl rules, but {} existing Acl rules -> Deleting rules", username, current.size());
+                            LOGGER.debugCr(reconciliation, "No expected Acl rules, but {} existing Acl rules -> Deleting rules", current.size());
                             return internalDelete(reconciliation, username, current);
                         }
                     } else {
                         if (current.isEmpty())  {
-                            LOGGER.debugCr(reconciliation, "{} expected Acl rules, but no existing Acl rules -> Adding rules", username, desired.size());
+                            LOGGER.debugCr(reconciliation, "{} expected Acl rules, but no existing Acl rules -> Adding rules", desired.size());
                             return internalCreate(reconciliation, username, desired);
                         } else  {
-                            LOGGER.debugCr(reconciliation, "{} expected Acl rules and {} existing Acl rules -> Reconciling rules", username, desired.size(), current.size());
+                            LOGGER.debugCr(reconciliation, "{} expected Acl rules and {} existing Acl rules -> Reconciling rules", desired.size(), current.size());
                             return internalUpdate(reconciliation, username, desired, current);
                         }
                     }

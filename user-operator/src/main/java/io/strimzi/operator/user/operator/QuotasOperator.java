@@ -55,21 +55,21 @@ public class QuotasOperator extends AbstractAdminApiOperator<KafkaUserQuotas, Se
                 .compose(current -> {
                     if (desired == null) {
                         if (current == null)    {
-                            LOGGER.debugCr(reconciliation, "No expected quotas and no existing quotas -> NoOp", username);
+                            LOGGER.debugCr(reconciliation, "No expected quotas and no existing quotas -> NoOp");
                             return Future.succeededFuture(ReconcileResult.noop(null));
                         } else {
-                            LOGGER.debugCr(reconciliation, "No expected quotas, but {} existing quotas -> Deleting quotas", username, current);
+                            LOGGER.debugCr(reconciliation, "No expected quotas, but {} existing quotas -> Deleting quotas", current);
                             return internalDelete(reconciliation, username);
                         }
                     } else {
                         if (current == null)  {
-                            LOGGER.debugCr(reconciliation, "{} expected quotas, but no existing quotas -> Adding quotas", username, desired);
+                            LOGGER.debugCr(reconciliation, "{} expected quotas, but no existing quotas -> Adding quotas", desired);
                             return internalAlter(reconciliation, username, desired);
                         } else if (!QuotaUtils.quotasEquals(current, desired)) {
-                            LOGGER.debugCr(reconciliation, "{} expected quotas and {} existing quotas differ -> Reconciling qoutas", username, desired, current);
+                            LOGGER.debugCr(reconciliation, "{} expected quotas and {} existing quotas differ -> Reconciling qoutas", desired, current);
                             return internalAlter(reconciliation, username, desired);
                         } else {
-                            LOGGER.debugCr(reconciliation, "{} expected quotasare the same as existing quotas -> NoOp", username, desired);
+                            LOGGER.debugCr(reconciliation, "{} expected quotasare the same as existing quotas -> NoOp", desired);
                             return Future.succeededFuture(ReconcileResult.noop(desired));
                         }
                     }
