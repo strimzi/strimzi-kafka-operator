@@ -189,4 +189,11 @@ public class SecretUtils {
         }
         return cacert;
     }
+
+    public static void waitForUserPasswordChange(String namespaceName, String secretName, String expectedEncodedPassword) {
+        LOGGER.info("Waiting for user password will be changed to {} in secret: {}", expectedEncodedPassword, secretName);
+        TestUtils.waitFor(String.format("user password will be changed to: %s in secret: %s", expectedEncodedPassword, secretName),
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> kubeClient().namespace(namespaceName).getSecret(secretName).getData().get("password").equals(expectedEncodedPassword));
+    }
 }
