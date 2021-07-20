@@ -30,14 +30,10 @@ If you want to try the example with Keycloak, use these files to perform the tas
 . xref:proc-oauth-authorization-keycloak-example-authentication_{context}[Preparing TLS connectivity for a CLI Kafka client session]
 . xref:proc-oauth-authorization-keycloak-example-check_{context}[Checking authorized access to Kafka using a CLI Kafka client session]
 
-.Connection to Keycloak
-Kafka and Kafka clients must connect to Keycloak for authorization to work. Connection to Keycloak is indirect.
-The connection routes through an ingress HTTP gateway using a hostname on port 443. Kafka clients use the same hostname and port as the Kafka brokers.
-The gateway is part of the Kubernetes infrastructure. This example assumes that Keycloak is deployed using the Keycloak Operator.
-The Keycloak Operator exposes Keycloak over TLS using the ingress HTTP gateway.
-The ingress hostname must be visible to the pods within the cluster for the example to work.
-If it's not visible, try deploying Keycloak to a separate Kubernetes cluster.
-The pods can then access Keycloak using the external hostname to make the connection.
+.Authentication
+When you configure token-based `oauth` authentication, you specify a `jwksEndpointUri` as the URI for local JWT validation.
+When you configure `keycloak` authorization, you specify a `tokenEndpointUri` as the URI of the Keycloak token endpoint.
+The hostname for both URIs must be the same.
 
 .Targeted permissions with group or role policies
 In Keycloak, confidential clients with service accounts enabled can authenticate to the server in their own name using a client ID and a secret.
