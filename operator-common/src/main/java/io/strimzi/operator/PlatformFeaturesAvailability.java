@@ -30,6 +30,19 @@ public class PlatformFeaturesAvailability {
     private boolean images = false;
     private boolean apps = false;
     private KubernetesVersion kubernetesVersion;
+    private EventApiVersion eventApiVersion;
+
+    /**
+     * Identifies a supported event api version
+     * events.k8s.io/v1
+     * event.k8s.io/v1beta1
+     * core events
+     */
+    public enum EventApiVersion {
+        V1,
+        V1BETA1,
+        CORE
+    }
 
     public static Future<PlatformFeaturesAvailability> create(Vertx vertx, KubernetesClient client) {
         Promise<PlatformFeaturesAvailability> pfaPromise = Promise.promise();
@@ -56,11 +69,54 @@ public class PlatformFeaturesAvailability {
             return checkApiAvailability(vertx, httpClient, client.getMasterUrl().toString(), "image.openshift.io", "v1");
         }).compose(supported -> {
             pfa.setImages(supported);
+            return highestEventVersion(vertx, httpClient, client.getMasterUrl().toString());
+        }).compose(eventApiVersion -> {
+            pfa.setHighestEventApiVersion(eventApiVersion);
             return Future.succeededFuture(pfa);
         })
         .onComplete(pfaPromise);
 
         return pfaPromise.future();
+    }
+
+    /**
+     * Brief rundown - the various APIs and K8s versions
+     *   events.k8s.io/v1      - introduced in Kubernetes 1.19
+     *   events.k8s.io/v1beta1 - introduced in Kubernetes 1.8, deprecated in 1.19, will be removed in 1.19
+     *   core events           - Always around, but has significant performance issues, so a new event API was introduced.
+     *
+     * Preference is for v1 events.k8s.io if it exists, then v1beta1, then falling back to Core v1.Event API if necessary.
+     * It's preferable to use the new API to
+     *     a) avoid any performance hits and
+     *     b) conform with the best practices of the K8s community
+     *
+     * @see <a href="https://github.com/kubernetes/community/blob/master/contributors/design-proposals/instrumentation/events-redesign.md">Redesign</a>
+     * @see <a href="https://github.com/kubernetes/enhancements/tree/master/keps/sig-instrumentation/383-new-event-api-ga-graduation">KEP-383</a>
+     *
+     * Explicitly test for existence of APIs instead of assuming existence on basis of K8s version, as cluster managers can
+     * disable APIs, and K8s 1.18 introduced a "disable all beta APIs with one handy command line argument" feature.
+     * @param vertx - Vertx
+     * @param httpClient - used to hit APIs
+     * @param masterUrl - Cluster's root API url
+     * @return highest Event API version detected
+     */
+    private static Future<EventApiVersion> highestEventVersion(Vertx vertx, OkHttpClient httpClient, String masterUrl) {
+
+        return checkApiAvailability(vertx, httpClient, masterUrl, "events.k8s.io", "v1").compose(v1Supported -> {
+                    if (v1Supported) {
+                        return Future.succeededFuture(EventApiVersion.V1);
+                    }
+                    else {
+                        return checkApiAvailability(vertx, httpClient, masterUrl, "events.k8s.io", "v1beta1").compose(v1Beta1Supported -> {
+                            if (v1Beta1Supported) {
+                                return Future.succeededFuture(EventApiVersion.V1BETA1);
+                            }
+                            else {
+                                return Future.succeededFuture(EventApiVersion.CORE);
+                            }
+                        });
+                    }
+                });
     }
 
     private static OkHttpClient getOkHttpClient(KubernetesClient client)   {
@@ -246,6 +302,15 @@ public class PlatformFeaturesAvailability {
 
     public boolean supportsS2I() {
         return hasBuilds() && hasApps() && hasImages();
+    }
+
+
+    private void setHighestEventApiVersion(EventApiVersion eventApiVersion) {
+        this.eventApiVersion = eventApiVersion;
+    }
+
+    public EventApiVersion getHighestEventApiVersion() {
+        return eventApiVersion;
     }
 
     /**
