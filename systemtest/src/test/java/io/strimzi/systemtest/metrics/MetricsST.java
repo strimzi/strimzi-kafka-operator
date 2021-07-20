@@ -71,9 +71,11 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.Constants.GLOBAL_TIMEOUT;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.Constants.RECONCILIATION_INTERVAL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -226,12 +228,20 @@ public class MetricsST extends AbstractST {
             .build()
             .collectMetricsFromPods();
 
-        assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
-        kafkaExporterMetricsData.forEach((key, value) -> {
-            assertThat("Value from collected metric should be non-empty", !value.isEmpty());
-            assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_current_offset"));
-            assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_lag"));
-            assertThat("Metrics doesn't contain specific values", value.contains("kafka_topic_partitions{topic=\"" + topicName + "\"} 7"));
+        TestUtils.waitFor("Kafka Exporter will contain correct metrics", Constants.GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT, () -> {
+            try {
+                assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
+                kafkaExporterMetricsData.forEach((key, value) -> {
+                    assertThat("Value from collected metric should be non-empty", !value.isEmpty());
+                    assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_current_offset"));
+                    assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_lag"));
+                    assertThat("Metrics doesn't contain specific values", value.contains("kafka_topic_partitions{topic=\"" + topicName + "\"} 7"));
+                });
+
+                return true;
+            } catch (Exception e) {
+                return false;
+            }
         });
     }
 
@@ -647,6 +657,9 @@ public class MetricsST extends AbstractST {
             KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(metricsClusterName, 3, 3)
                 .editOrNewSpec()
                     .editEntityOperator()
+                        .editTopicOperator()
+                            .withReconciliationIntervalSeconds(30)
+                        .endTopicOperator()
                         .editUserOperator()
                             .withReconciliationIntervalSeconds(30)
                         .endUserOperator()
@@ -678,6 +691,9 @@ public class MetricsST extends AbstractST {
         // Allow connections from clients to KafkaExporter when NetworkPolicies are set to denied by default
         NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, metricsClusterName);
         NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, SECOND_CLUSTER, SECOND_NAMESPACE);
+
+        // wait some time for metrics to be stable - at least reconciliation interval + 10s
+        Thread.sleep(RECONCILIATION_INTERVAL + 10_000);
 
         collector = new MetricsCollector.Builder()
             .withScraperPodName(kafkaClientsPodName)
