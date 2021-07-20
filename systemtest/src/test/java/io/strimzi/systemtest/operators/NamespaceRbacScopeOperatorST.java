@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.operators;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -25,7 +26,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 class NamespaceRbacScopeOperatorST extends AbstractST {
@@ -36,13 +37,14 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
 
     @IsolatedTest("This test case needs own Cluster Operator")
     void testNamespacedRbacScopeDeploysRoles(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        assumeTrue(Environment.isNamespaceRbacScope());
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(NAMESPACE)
+            .withExtraEnvVars(Collections.singletonList(new EnvVar(Environment.STRIMZI_RBAC_SCOPE_ENV, Environment.STRIMZI_RBAC_SCOPE_NAMESPACE, null)))
             .createInstallation()
             .runInstallation();
 

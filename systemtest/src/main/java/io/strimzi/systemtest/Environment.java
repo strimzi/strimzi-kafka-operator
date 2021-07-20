@@ -93,10 +93,10 @@ public class Environment {
     /**
      * CO Roles only mode.
      */
-    private static final String STRIMZI_RBAC_SCOPE_ENV = "STRIMZI_RBAC_SCOPE";
-    private static final String STRIMZI_RBAC_SCOPE_CLUSTER = "CLUSTER";
-    private static final String STRIMZI_RBAC_SCOPE_NAMESPACE = "NAMESPACE";
-    private static final String STRIMZI_RBAC_SCOPE_DEFAULT = STRIMZI_RBAC_SCOPE_CLUSTER;
+    public static final String STRIMZI_RBAC_SCOPE_ENV = "STRIMZI_RBAC_SCOPE";
+    public static final String STRIMZI_RBAC_SCOPE_CLUSTER = "CLUSTER";
+    public static final String STRIMZI_RBAC_SCOPE_NAMESPACE = "NAMESPACE";
+    public static final String STRIMZI_RBAC_SCOPE_DEFAULT = STRIMZI_RBAC_SCOPE_CLUSTER;
 
     /**
      * OLM env variables

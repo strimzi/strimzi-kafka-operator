@@ -19,8 +19,8 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
-import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -87,7 +87,7 @@ public class ConfigProviderST extends AbstractST {
 
         LOGGER.info("Creating needed RoleBinding and Role for Kubernetes Config Provider");
 
-        RoleBindingResource.createRoleBinding(
+        ResourceManager.getInstance().createResource(extensionContext, 
             new RoleBindingBuilder()
                 .editOrNewMetadata()
                     .withName("connector-config-rb")
@@ -106,7 +106,7 @@ public class ConfigProviderST extends AbstractST {
                         .withName(configRoleName)
                         .withApiGroup("rbac.authorization.k8s.io")
                         .build())
-                .build(), namespaceName);
+                .build());
 
         // create a role
         Role configRole = new RoleBuilder()

@@ -15,7 +15,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -189,7 +188,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
             install.prepareEnvForOperator(extensionContext, coNamespace);
 
             // Apply rolebindings in CO namespace
-            SetupClusterOperator.applyBindings(extensionContext, coNamespace);
+            install.applyBindings(extensionContext, coNamespace);
 
             // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
             List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(coNamespace, coName);
@@ -231,6 +230,6 @@ public class MultipleClusterOperatorsST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
         install.prepareEnvForOperator(extensionContext, DEFAULT_NAMESPACE);
-        SetupClusterOperator.applyBindings(extensionContext, DEFAULT_NAMESPACE);
+        install.applyBindings(extensionContext, DEFAULT_NAMESPACE);
     }
 }
