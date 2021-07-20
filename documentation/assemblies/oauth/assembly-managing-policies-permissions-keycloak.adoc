@@ -3,7 +3,7 @@ ifdef::context[:parent-context: {context}]
 [id="assembly-managing-policies-permissions-keycloak_{context}"]
 = Managing policies and permissions in Keycloak Authorization Services
 
-:context: assembly-keyword
+:context: authz-model
 
 [role="_abstract"]
 This section describes the authorization models used by Keycloak Authorization Services and Kafka, and defines the important concepts in each model.

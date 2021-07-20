@@ -638,4 +638,4 @@ The cluster configuration for this example is empty.
 .Additional resources
 
 * {keycloak-server-install-doc}
-* xref:con-oauth-authorization-services-model-{context}[Keycloak Authorization Services model for managing permissions]
+* xref:con-mapping-keycloak-authz-services-to-kafka-model_authz-model[Map Keycloak Authorization Services to the Kafka authorization model]
