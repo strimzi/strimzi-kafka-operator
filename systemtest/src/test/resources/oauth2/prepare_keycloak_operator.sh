@@ -46,6 +46,7 @@ kubectl wait pod/keycloak-0 --for=condition=containersready --timeout=300s -n ${
 echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Copy realm scripts"
 kubectl cp  -n ${NAMESPACE} ${SCRIPT_PATH}/create_realm.sh keycloak-0:/tmp/create_realm.sh
 kubectl cp  -n ${NAMESPACE} ${SCRIPT_PATH}/create_realm_authorization.sh keycloak-0:/tmp/create_realm_authorization.sh
+kubectl cp  -n ${NAMESPACE} ${SCRIPT_PATH}/create_realm_scope_audience.sh keycloak-0:/tmp/create_realm_scope_audience.sh
 
 echo "[INFO] $(date -u +"%Y-%m-%d %H:%M:%S") Get Admin password"
 PASSWORD=$(kubectl get secret -n ${NAMESPACE} credential-example-keycloak -o=jsonpath='{.data.ADMIN_PASSWORD}' | base64 -d)
@@ -62,6 +63,12 @@ fi
 AUTHORIZATION_REALM_OUTPUT=$(kubectl exec keycloak-0 -n ${NAMESPACE} -- /tmp/create_realm_authorization.sh ${USERNAME} ${PASSWORD} localhost:8443)
 if [[ ${AUTHORIZATION_REALM_OUTPUT} == *"Realm wasn't imported!"* ]]; then
   echo "[ERROR] $(date -u +"%Y-%m-%d %H:%M:%S") Authorization realm wasn't imported!"
+  exit 1
+fi
+
+SCOPE_AUDIENCE_REALM_OUTPUT=$(kubectl exec keycloak-0 -n ${NAMESPACE} -- /tmp/create_realm_scope_audience.sh ${USERNAME} ${PASSWORD} localhost:8443)
+if [[ ${SCOPE_AUDIENCE_REALM_OUTPUT} == *"Realm wasn't imported!"* ]]; then
+  echo "[ERROR] $(date -u +"%Y-%m-%d %H:%M:%S") Scope & audience realm wasn't imported!"
   exit 1
 fi
 

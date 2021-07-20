@@ -46,6 +46,16 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
         return TYPE_OPA;
     }
 
+    /**
+     * OPA Authorizer does not support the APIs to manage ACLs using Kafka Admin API. This method returns always false
+     * for API.
+     *
+     * @return Returns always false for OPA authorizer
+     */
+    public boolean supportsAdminApi()   {
+        return false;
+    }
+
     @Description("List of super users, which is specifically a list of user principals that have unlimited access rights.")
     @Example("- CN=my-user\n" +
              "- CN=my-other-user")

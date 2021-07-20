@@ -41,6 +41,13 @@ public abstract class KafkaAuthorization implements UnknownPropertyPreserving, S
             "`custom` authorization type uses user-provided implementation for authorization.")
     public abstract String getType();
 
+    /**
+     * Indicates whether the Authorizer supports the Kafka Admin API to manage ACLs or not.
+     *
+     * @return True if ACLs can be managed using Kafka Admin API. False otherwise.
+     */
+    public abstract boolean supportsAdminApi();
+
     @Override
     public Map<String, Object> getAdditionalProperties() {
         return this.additionalProperties;

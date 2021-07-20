@@ -488,7 +488,7 @@ class LogSettingST extends AbstractST {
                 .stream()
                 .filter(key -> key.equals("log4j2.properties") || key.equals("log4j.properties"))
                 .findAny()
-                .get();
+                .orElseThrow();
         return configMapData.get(configMapKey);
     }
 

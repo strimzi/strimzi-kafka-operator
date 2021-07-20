@@ -4,6 +4,7 @@ GREP = grep
 CP = cp
 UNIQ = uniq
 SORT = sort
+SHA1SUM = sha1sum
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
@@ -13,4 +14,5 @@ ifeq ($(UNAME_S),Darwin)
 	CP = gcp
 	UNIQ = guniq
 	SORT = gsort
+	SHA1SUM = gsha1sum
 endif

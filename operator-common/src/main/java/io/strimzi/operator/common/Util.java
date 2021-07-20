@@ -348,6 +348,10 @@ public class Util {
         return merged;
     }
 
+    public static <T> Future<T> kafkaFutureToVertxFuture(Vertx vertx, KafkaFuture<T> kf) {
+        return kafkaFutureToVertxFuture(null, vertx, kf);
+    }
+
     public static <T> Future<T> kafkaFutureToVertxFuture(Reconciliation reconciliation, Vertx vertx, KafkaFuture<T> kf) {
         Promise<T> promise = Promise.promise();
         if (kf != null) {
@@ -362,7 +366,12 @@ public class Util {
             });
             return promise.future();
         } else {
-            LOGGER.traceCr(reconciliation, "KafkaFuture is null");
+            if (reconciliation != null) {
+                LOGGER.traceCr(reconciliation, "KafkaFuture is null");
+            } else {
+                LOGGER.traceOp("KafkaFuture is null");
+            }
+
             return Future.succeededFuture();
         }
     }

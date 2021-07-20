@@ -33,7 +33,7 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
     }
     @Override
     public void delete(RoleBinding resource) {
-        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteRoleBinding(resource.getMetadata().getName());
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteRoleBinding(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
     @Override
     public boolean waitForReadiness(RoleBinding resource) {
@@ -45,7 +45,7 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
         RoleBinding roleBinding = getRoleBindingFromYaml(yamlPath);
         if (Environment.isNamespaceRbacScope()) {
             LOGGER.info("Replacing ClusterRole RoleRef for Role RoleRef");
-            roleBinding.getRoleRef().setKind("Role");
+            roleBinding.getRoleRef().setKind(Constants.ROLE);
         }
 
         return createRoleBinding(

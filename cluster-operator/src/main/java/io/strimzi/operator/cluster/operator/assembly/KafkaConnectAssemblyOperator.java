@@ -56,6 +56,7 @@ import java.util.function.Function;
  */
 public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaConnectAssemblyOperator.class.getName());
+    private final boolean isNetworkPolicyGeneration;
     private final DeploymentOperator deploymentOperations;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final PodOperator podOperator;
@@ -87,6 +88,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider, int port) {
         super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.connectOperator, supplier, config, connectClientProvider, port);
+        this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.deploymentOperations = supplier.deploymentOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.podOperator = supplier.podOperations;
@@ -124,7 +126,13 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
         connectServiceAccount(reconciliation, namespace, connect)
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
-                .compose(i -> networkPolicyOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generateNetworkPolicy(isUseResources(kafkaConnect), operatorNamespace, operatorNamespaceLabels)))
+                .compose(i -> {
+                    if (isNetworkPolicyGeneration) {
+                        return networkPolicyOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generateNetworkPolicy(isUseResources(kafkaConnect), operatorNamespace, operatorNamespaceLabels));
+                    } else {
+                        return Future.succeededFuture();
+                    }
+                })
                 .compose(i -> deploymentOperations.getAsync(namespace, connect.getName()))
                 .compose(deployment -> {
                     if (deployment != null) {

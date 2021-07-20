@@ -34,7 +34,6 @@ import io.vertx.core.Vertx;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -47,8 +46,8 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
     private final SecretOperator secretOperations;
     private final SimpleAclOperator aclOperations;
     private final CertManager certManager;
-    private final ScramShaCredentialsOperator scramShaCredentialOperator;
-    private final KafkaUserQuotasOperator kafkaUserQuotasOperator;
+    private final ScramCredentialsOperator scramCredentialsOperator;
+    private final QuotasOperator quotasOperator;
     private final PasswordGenerator passwordGenerator = new PasswordGenerator(12);
     private final UserOperatorConfig config;
 
@@ -59,8 +58,8 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
      * @param certManager For managing certificates.
      * @param crdOperator For operating on Custom Resources.
      * @param secretOperations For operating on Secrets.
-     * @param scramShaCredentialOperator For operating on SCRAM SHA credentials.
-     * @param kafkaUserQuotasOperator For operating on Kafka User quotas.
+     * @param scramCredentialsOperator For operating on SCRAM SHA credentials.
+     * @param quotasOperator For operating on Kafka User quotas.
      * @param aclOperations For operating on ACLs.
      * @param config User operator configuration
      */
@@ -68,15 +67,15 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
                              CertManager certManager,
                              CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> crdOperator,
                              SecretOperator secretOperations,
-                             ScramShaCredentialsOperator scramShaCredentialOperator,
-                             KafkaUserQuotasOperator kafkaUserQuotasOperator,
+                             ScramCredentialsOperator scramCredentialsOperator,
+                             QuotasOperator quotasOperator,
                              SimpleAclOperator aclOperations,
                              UserOperatorConfig config) {
         super(vertx, "KafkaUser", crdOperator, new MicrometerMetricsProvider(), config.getLabels());
         this.certManager = certManager;
         this.secretOperations = secretOperations;
-        this.scramShaCredentialOperator = scramShaCredentialOperator;
-        this.kafkaUserQuotasOperator = kafkaUserQuotasOperator;
+        this.scramCredentialsOperator = scramCredentialsOperator;
+        this.quotasOperator = quotasOperator;
         this.aclOperations = aclOperations;
         this.config = config;
     }
@@ -84,11 +83,13 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
     @Override
     public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
         return CompositeFuture.join(super.allResourceNames(namespace),
-                invokeAsync(aclOperations::getUsersWithAcls),
-                invokeAsync(() -> scramShaCredentialOperator.list())).map(compositeFuture -> {
+                config.isAclsAdminApiSupported() ? aclOperations.getAllUsers() : Future.succeededFuture(Set.of()),
+                quotasOperator.getAllUsers(),
+                scramCredentialsOperator.getAllUsers()).map(compositeFuture -> {
                     Set<NamespaceAndName> names = compositeFuture.resultAt(0);
                     names.addAll(toResourceRef(namespace, compositeFuture.resultAt(1)));
                     names.addAll(toResourceRef(namespace, compositeFuture.resultAt(2)));
+                    names.addAll(toResourceRef(namespace, compositeFuture.resultAt(3)));
                     return names;
                 });
     }
@@ -97,20 +98,6 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         return names.stream()
                 .map(name -> new NamespaceAndName(namespace, name))
                 .collect(Collectors.toList());
-    }
-
-    private <T> Future<T> invokeAsync(Supplier<T> getter) {
-        Promise<T> result = Promise.promise();
-        vertx.createSharedWorkerExecutor("zookeeper-ops-pool").executeBlocking(future -> {
-            try {
-                future.complete(getter.get());
-            } catch (Throwable t) {
-                future.fail(t);
-            }
-        },
-            true,
-            result);
-        return result.future();
     }
 
     /**
@@ -128,7 +115,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         KafkaUserStatus userStatus = new KafkaUserStatus();
 
         try {
-            user = KafkaUserModel.fromCrd(resource, config.getSecretPrefix());
+            user = KafkaUserModel.fromCrd(resource, config.getSecretPrefix(), config.isAclsAdminApiSupported());
             LOGGER.debugCr(reconciliation, "Updating User {} in namespace {}", reconciliation.name(), reconciliation.namespace());
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);
@@ -262,35 +249,29 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
             scramOrNoneQuotas = user.getQuotas();
         }
 
-        // Reconciliation of Quotas and of SCRAM-SHA credentials changes the same fields and cannot be done in parallel
-        // because they would overwrite each other's data!
-        Future<CompositeFuture> scramShaQuotasFuture = reconcileQuotasAndScramCredentials(reconciliation, user, tlsQuotas, scramOrNoneQuotas);
+        // Reconcile the user SCRAM-SHA-512 credentials
+        Future<ReconcileResult<String>> scramCredentialsFuture = scramCredentialsOperator.reconcile(reconciliation, user.getName(), user.getScramSha512Password());
+
+        // Quotas need to reconciled for both regular and TLS username. It will be (possibly) set for one user and deleted for the other
+        Future<ReconcileResult<KafkaUserQuotas>> tlsQuotasFuture = quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsQuotas);
+        Future<ReconcileResult<KafkaUserQuotas>> quotasFuture = quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneQuotas);
 
         // Reconcile the user secret generated by the user operator with the credentials
         Future<ReconcileResult<Secret>> userSecretFuture = reconcileUserSecret(reconciliation, user, userStatus);
 
         // ACLs need to reconciled for both regular and TLS username. It will be (possibly) set for one user and deleted for the other
-        Future<ReconcileResult<Set<SimpleAclRule>>> aclsTlsUserFuture = aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsAcls);
-        Future<ReconcileResult<Set<SimpleAclRule>>> aclsScramUserFuture = aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneAcls);
+        Future<ReconcileResult<Set<SimpleAclRule>>> aclsTlsUserFuture;
+        Future<ReconcileResult<Set<SimpleAclRule>>> aclsScramUserFuture;
 
-        return CompositeFuture.join(scramShaQuotasFuture, aclsTlsUserFuture, aclsScramUserFuture, userSecretFuture);
-    }
+        if (config.isAclsAdminApiSupported()) {
+            aclsTlsUserFuture = aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsAcls);
+            aclsScramUserFuture = aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneAcls);
+        } else {
+            aclsTlsUserFuture = Future.succeededFuture(ReconcileResult.noop(null));
+            aclsScramUserFuture = Future.succeededFuture(ReconcileResult.noop(null));
+        }
 
-    /**
-     *
-     * @param reconciliation    Unique identification for the reconciliation
-     * @param user              Model describing the KafkaUser
-     * @param tlsQuotas         Quotas which should be set for the TLS user / TLS username
-     * @param scramOrNoneQuotas Quotas which should be set for the regular user / regular username
-     *
-     * @return                  Future describing the result
-     */
-    private Future<CompositeFuture> reconcileQuotasAndScramCredentials(Reconciliation reconciliation, KafkaUserModel user, KafkaUserQuotas tlsQuotas, KafkaUserQuotas scramOrNoneQuotas)    {
-        // Reconciliation of Quotas and of SCRAM-SHA credentials changes the same fields and cannot be done in parallel
-        // because they would overwrite each other's data!
-        return scramShaCredentialOperator.reconcile(reconciliation, user.getName(), user.getScramSha512Password())
-                .compose(ignore2 -> CompositeFuture.join(kafkaUserQuotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsQuotas),
-                        kafkaUserQuotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneQuotas)));
+        return CompositeFuture.join(scramCredentialsFuture, tlsQuotasFuture, quotasFuture, aclsTlsUserFuture, aclsScramUserFuture, userSecretFuture);
     }
 
     /**
@@ -324,11 +305,11 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         String user = reconciliation.name();
         LOGGER.debugCr(reconciliation, "Deleting User {} from namespace {}", user, namespace);
         return CompositeFuture.join(secretOperations.reconcile(reconciliation, namespace, KafkaUserModel.getSecretName(config.getSecretPrefix(), user), null),
-                aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null),
-                aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null),
-                scramShaCredentialOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null)
-                        .compose(ignore -> kafkaUserQuotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null))
-                        .compose(ignore -> kafkaUserQuotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null)))
+                config.isAclsAdminApiSupported() ? aclOperations.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null) : Future.succeededFuture(ReconcileResult.noop(null)),
+                config.isAclsAdminApiSupported() ? aclOperations.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null) : Future.succeededFuture(ReconcileResult.noop(null)),
+                scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null)
+                        .compose(ignore -> quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null))
+                        .compose(ignore -> quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null)))
             .map(Boolean.TRUE);
     }
 

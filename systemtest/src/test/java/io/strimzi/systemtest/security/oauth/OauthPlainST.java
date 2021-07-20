@@ -63,7 +63,6 @@ public class OauthPlainST extends OauthAbstractST {
     private KafkaOauthExampleClients oauthInternalClientJob;
     private KafkaOauthExampleClients oauthInternalClientChecksJob;
     private final String oauthClusterName = "oauth-cluster-plain-name";
-    private final String audienceListenerPort = "9098";
     private final String customClaimListenerPort = "9099";
     private static final String NAMESPACE = "oauth2-plain-cluster-test";
 

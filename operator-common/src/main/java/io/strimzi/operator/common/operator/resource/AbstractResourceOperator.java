@@ -162,12 +162,23 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     protected Future<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
         R resourceOp = operation().inNamespace(namespace).withName(name);
 
-        Future<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(resourceOp,
-                deleteTimeoutMs(),
+        Future<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(
+            reconciliation,
+            resourceOp,
+            resourceOp,
+            deleteTimeoutMs(),
             "observe deletion of " + resourceKind + " " + namespace + "/" + name,
             (action, resource) -> {
                 if (action == Watcher.Action.DELETED) {
                     LOGGER.debugCr(reconciliation, "{} {}/{} has been deleted", resourceKind, namespace, name);
+                    return ReconcileResult.deleted();
+                } else {
+                    return null;
+                }
+            },
+            resource -> {
+                if (resource == null) {
+                    LOGGER.debugCr(reconciliation, "{} {}/{} has been already deleted in pre-check", resourceKind, namespace, name);
                     return ReconcileResult.deleted();
                 } else {
                     return null;

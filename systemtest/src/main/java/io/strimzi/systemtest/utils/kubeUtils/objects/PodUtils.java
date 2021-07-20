@@ -59,13 +59,13 @@ public class PodUtils {
     public static String getContainerImageNameFromPod(String namespaceName, String podName, String containerName) {
         return kubeClient(namespaceName).getPod(podName).getSpec().getContainers().stream()
             .filter(c -> c.getName().equals(containerName))
-            .findFirst().get().getImage();
+            .findFirst().orElseThrow().getImage();
     }
 
     public static String getContainerImageNameFromPod(String podName, String containerName) {
         return kubeClient().getPod(podName).getSpec().getContainers().stream()
             .filter(c -> c.getName().equals(containerName))
-            .findFirst().get().getImage();
+            .findFirst().orElseThrow().getImage();
     }
 
     public static String getInitContainerImageName(String podName) {
@@ -146,7 +146,7 @@ public class PodUtils {
 
     public static String getPodNameByPrefix(String namespaceName, String prefix) {
         return kubeClient(namespaceName).listPods().stream().filter(pod -> pod.getMetadata().getName().startsWith(prefix))
-            .findFirst().get().getMetadata().getName();
+            .findFirst().orElseThrow().getMetadata().getName();
     }
 
     public static String getPodNameByPrefix(String prefix) {
@@ -171,7 +171,7 @@ public class PodUtils {
 
     public static String getFirstPodNameContaining(String searchTerm) {
         return kubeClient().listPods().stream().filter(pod -> pod.getMetadata().getName().contains(searchTerm))
-                .findFirst().get().getMetadata().getName();
+                .findFirst().orElseThrow().getMetadata().getName();
     }
 
     public static void waitForPod(String name) {
@@ -390,7 +390,7 @@ public class PodUtils {
     public static void waitForPodContainerReady(String namespaceName, String podName, String containerName) {
         LOGGER.info("Waiting for Pod {} container {} will be ready", podName, containerName);
         TestUtils.waitFor("Pod " + podName + " container " + containerName + "will be ready", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT, () ->
-            kubeClient(namespaceName).getPod(podName).getStatus().getContainerStatuses().stream().filter(container -> container.getName().equals(containerName)).findFirst().get().getReady()
+            kubeClient(namespaceName).getPod(podName).getStatus().getContainerStatuses().stream().filter(container -> container.getName().equals(containerName)).findFirst().orElseThrow().getReady()
         );
         LOGGER.info("Pod {} container {} is ready", podName, containerName);
     }

@@ -453,10 +453,10 @@ public class KafkaRoller {
         boolean podStuck = pod != null
                 && pod.getStatus() != null
                 && "Pending".equals(pod.getStatus().getPhase())
-                && pod.getStatus().getConditions().stream().filter(ps ->
+                && pod.getStatus().getConditions().stream().anyMatch(ps ->
                 "PodScheduled".equals(ps.getType())
                         && "Unschedulable".equals(ps.getReason())
-                        && "False".equals(ps.getStatus())).findFirst().isPresent();
+                        && "False".equals(ps.getStatus()));
         if (podStuck && !reasonToRestartPod.contains("Pod has old generation")) {
             // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
             // Treat this as fatal because if it's not possible to schedule one pod then it's likely that proceeding

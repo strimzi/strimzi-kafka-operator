@@ -23,9 +23,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -391,7 +391,7 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testReconcileDeleteThrowsWhenDeletionReturnsFalse(VertxTestContext context) {
+    public void testReconcileDeleteDoesNotThrowWhenDeletionReturnsFalse(VertxTestContext context) {
         EditReplacePatchDeletable mockDeletable = mock(EditReplacePatchDeletable.class);
         when(mockDeletable.delete()).thenReturn(Boolean.FALSE);
         EditReplacePatchDeletable mockDeletableGrace = mock(EditReplacePatchDeletable.class);
@@ -424,8 +424,61 @@ public abstract class AbstractResourceOperatorTest<C extends KubernetesClient, T
 
         Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
-                .onComplete(context.failing(e -> context.verify(() -> {
-                    assertThat(e.getMessage(), endsWith("could not be deleted (returned false)"));
+                .onComplete(context.succeeding(rr -> context.verify(() -> {
+                    verify(mockDeletable).delete();
+                    async.flag();
+                })));
+    }
+
+    // This tests the pre-check which should stop the self-closing-watch in case the resource is deleted before the
+    // watch is opened.
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(VertxTestContext context) {
+        EditReplacePatchDeletable mockDeletable = mock(EditReplacePatchDeletable.class);
+        when(mockDeletable.delete()).thenReturn(Boolean.FALSE);
+        EditReplacePatchDeletable mockDeletableGrace = mock(EditReplacePatchDeletable.class);
+        when(mockDeletableGrace.delete()).thenReturn(Boolean.FALSE);
+
+        T resource = resource();
+        Resource mockResource = mock(resourceType());
+        AtomicBoolean watchClosed = new AtomicBoolean(false);
+        AtomicBoolean watchCreated = new AtomicBoolean(false);
+
+        when(mockResource.get()).thenAnswer(invocation -> {
+            // First get needs to return the resource to trigger deletion
+            // Next gets return null since the resource was already deleted
+            if (watchCreated.get()) {
+                return null;
+            } else {
+                return resource;
+            }
+        });
+        when(mockResource.withPropagationPolicy(eq(DeletionPropagation.FOREGROUND))).thenReturn(mockDeletableGrace);
+        when(mockDeletableGrace.withGracePeriod(anyLong())).thenReturn(mockDeletable);
+
+        when(mockResource.watch(any())).thenAnswer(invocation -> {
+            watchCreated.set(true);
+            return (Watch) () -> {
+                watchClosed.set(true);
+            };
+        });
+
+        NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
+        when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
+
+        MixedOperation mockCms = mock(MixedOperation.class);
+        when(mockCms.inNamespace(matches(NAMESPACE))).thenReturn(mockNameable);
+
+        C mockClient = mock(clientType());
+        mocker(mockClient, mockCms);
+
+        AbstractResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+
+        Checkpoint async = context.checkpoint();
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), null)
+                .onComplete(context.succeeding(rr -> context.verify(() -> {
+                    verify(mockDeletable).delete();
                     async.flag();
                 })));
     }

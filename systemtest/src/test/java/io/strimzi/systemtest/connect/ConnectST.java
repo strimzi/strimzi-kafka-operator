@@ -721,7 +721,7 @@ class ConnectST extends AbstractST {
         );
         String podIP = connectStatus.getJsonObject("connector").getString("worker_id").split(":")[0];
         String connectorPodName = kubeClient(namespaceName).listPods().stream().filter(pod ->
-                pod.getStatus().getPodIP().equals(podIP)).findFirst().get().getMetadata().getName();
+                pod.getStatus().getPodIP().equals(podIP)).findFirst().orElseThrow().getMetadata().getName();
 
         internalKafkaClient.assertSentAndReceivedMessages(
             internalKafkaClient.sendMessagesPlain(),

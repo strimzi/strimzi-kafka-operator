@@ -53,6 +53,8 @@ public class ClusterOperatorConfig {
     public static final RbacScope DEFAULT_STRIMZI_RBAC_SCOPE = RbacScope.CLUSTER;
     public static final String STRIMZI_CREATE_CLUSTER_ROLES = "STRIMZI_CREATE_CLUSTER_ROLES";
     public static final boolean DEFAULT_CREATE_CLUSTER_ROLES = false;
+    public static final String STRIMZI_NETWORK_POLICY_GENERATION = "STRIMZI_NETWORK_POLICY_GENERATION";
+    public static final boolean DEFAULT_NETWORK_POLICY_GENERATION = true;
 
     // Env vars for configuring images
     public static final String STRIMZI_KAFKA_IMAGES = "STRIMZI_KAFKA_IMAGES";
@@ -80,6 +82,7 @@ public class ClusterOperatorConfig {
     private final long operationTimeoutMs;
     private final long connectBuildTimeoutMs;
     private final boolean createClusterRoles;
+    private final boolean networkPolicyGeneration;
     private final KafkaVersion.Lookup versions;
     private final ImagePullPolicy imagePullPolicy;
     private final List<LocalObjectReference> imagePullSecrets;
@@ -98,6 +101,7 @@ public class ClusterOperatorConfig {
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      * @param connectBuildTimeoutMs timeout used to wait for a Kafka Connect builds to finish
      * @param createClusterRoles true to create the ClusterRoles
+     * @param networkPolicyGeneration true to generate Network Policies
      * @param versions The configured Kafka versions
      * @param imagePullPolicy Image pull policy configured by the user
      * @param imagePullSecrets Set of secrets for pulling container images from secured repositories
@@ -115,6 +119,7 @@ public class ClusterOperatorConfig {
             long operationTimeoutMs,
             long connectBuildTimeoutMs,
             boolean createClusterRoles,
+            boolean networkPolicyGeneration,
             KafkaVersion.Lookup versions,
             ImagePullPolicy imagePullPolicy,
             List<LocalObjectReference> imagePullSecrets,
@@ -129,6 +134,7 @@ public class ClusterOperatorConfig {
         this.operationTimeoutMs = operationTimeoutMs;
         this.connectBuildTimeoutMs = connectBuildTimeoutMs;
         this.createClusterRoles = createClusterRoles;
+        this.networkPolicyGeneration = networkPolicyGeneration;
         this.versions = versions;
         this.imagePullPolicy = imagePullPolicy;
         this.imagePullSecrets = imagePullSecrets;
@@ -178,6 +184,7 @@ public class ClusterOperatorConfig {
         long operationTimeout = parseTimeout(map.get(STRIMZI_OPERATION_TIMEOUT_MS), DEFAULT_OPERATION_TIMEOUT_MS);
         long connectBuildTimeout = parseTimeout(map.get(STRIMZI_CONNECT_BUILD_TIMEOUT_MS), DEFAULT_CONNECT_BUILD_TIMEOUT_MS);
         boolean createClusterRoles = parseCreateClusterRoles(map.get(STRIMZI_CREATE_CLUSTER_ROLES));
+        boolean networkPolicyGeneration = parseNetworkPolicyGeneration(map.get(STRIMZI_NETWORK_POLICY_GENERATION));
         ImagePullPolicy imagePullPolicy = parseImagePullPolicy(map.get(STRIMZI_IMAGE_PULL_POLICY));
         List<LocalObjectReference> imagePullSecrets = parseImagePullSecrets(map.get(STRIMZI_IMAGE_PULL_SECRETS));
         String operatorNamespace = map.get(STRIMZI_OPERATOR_NAMESPACE);
@@ -193,6 +200,7 @@ public class ClusterOperatorConfig {
                 operationTimeout,
                 connectBuildTimeout,
                 createClusterRoles,
+                networkPolicyGeneration,
                 lookup,
                 imagePullPolicy,
                 imagePullSecrets,
@@ -261,6 +269,16 @@ public class ClusterOperatorConfig {
         }
 
         return createClusterRoles;
+    }
+
+    private static boolean parseNetworkPolicyGeneration(String networkPolicyGenerationEnvVar) {
+        boolean networkPolicyGeneration = DEFAULT_NETWORK_POLICY_GENERATION;
+
+        if (networkPolicyGenerationEnvVar != null) {
+            networkPolicyGeneration = Boolean.parseBoolean(networkPolicyGenerationEnvVar);
+        }
+
+        return networkPolicyGeneration;
     }
 
     /**
@@ -422,6 +440,13 @@ public class ClusterOperatorConfig {
         return createClusterRoles;
     }
 
+    /**
+     * @return  Indicates whether Network policies should be generated
+     */
+    public boolean isNetworkPolicyGeneration() {
+        return networkPolicyGeneration;
+    }
+
     public KafkaVersion.Lookup versions() {
         return versions;
     }
@@ -487,6 +512,7 @@ public class ClusterOperatorConfig {
                 ",operationTimeoutMs=" + operationTimeoutMs +
                 ",connectBuildTimeoutMs=" + connectBuildTimeoutMs +
                 ",createClusterRoles=" + createClusterRoles +
+                ",networkPolicyGeneration=" + networkPolicyGeneration +
                 ",versions=" + versions +
                 ",imagePullPolicy=" + imagePullPolicy +
                 ",imagePullSecrets=" + imagePullSecrets +

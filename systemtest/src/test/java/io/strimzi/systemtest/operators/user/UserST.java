@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.operators.user;
 
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -43,10 +44,8 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -139,8 +138,9 @@ class UserST extends AbstractST {
         KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(NAMESPACE, observedGeneration, userName);
         KafkaUserUtils.waitForKafkaUserCreation(NAMESPACE, userName);
 
-        kafkaUserSecret = TestUtils.toJsonString(kubeClient().getSecret(userName));
-        assertThat(kafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
+        String anotherKafkaUserSecret = TestUtils.toJsonString(kubeClient(NAMESPACE).getSecret(NAMESPACE, userName));
+
+        assertThat(anotherKafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
 
         kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(NAMESPACE).withName(userName).get();
         kafkaUserAsJson = TestUtils.toJsonString(kUser);
@@ -156,21 +156,23 @@ class UserST extends AbstractST {
     @ParallelTest
     void testBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
-        createBigAmountOfUsers(extensionContext, clusterName, "SCRAM_SHA");
+        createBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA");
     }
 
     @Tag(SCALABILITY)
     @ParallelTest
     void testBigAmountOfTlsUsers(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
-        createBigAmountOfUsers(extensionContext, clusterName, "TLS");
+        createBigAmountOfUsers(extensionContext, userName, "TLS");
     }
 
     @ParallelTest
     void testTlsUserWithQuotas(ExtensionContext extensionContext) {
-        KafkaUser user = KafkaUserTemplates.tlsUser(userClusterName, "encrypted-arnost").build();
+        KafkaUser user = KafkaUserTemplates.tlsUser(NAMESPACE, userClusterName, "encrypted-arnost").build();
 
         resourceManager.createResource(extensionContext, user);
 
@@ -179,7 +181,7 @@ class UserST extends AbstractST {
 
     @ParallelTest
     void testScramUserWithQuotas(ExtensionContext extensionContext) {
-        KafkaUser user = KafkaUserTemplates.scramShaUser(userClusterName, "scramed-arnost").build();
+        KafkaUser user = KafkaUserTemplates.scramShaUser(NAMESPACE, userClusterName, "scramed-arnost").build();
 
         resourceManager.createResource(extensionContext, user);
 
@@ -216,7 +218,7 @@ class UserST extends AbstractST {
         assertThat(userSecret.getMetadata().getAnnotations().get(annotationKey), is(annotationValue));
     }
 
-    void testUserWithQuotas(ExtensionContext extensionContext, KafkaUser user) {
+    synchronized void testUserWithQuotas(ExtensionContext extensionContext, KafkaUser user) {
         String userName = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(user.getMetadata().getName()).get().getStatus().getUsername();
 
         Integer prodRate = 1111;
@@ -242,15 +244,20 @@ class UserST extends AbstractST {
         assertThat(result.out().contains("controller_mutation_rate=" + mutRate), is(true));
 
         // delete user
-        KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(user.getMetadata().getName()).delete();
+        KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(user.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(user.getMetadata().getName());
 
-        ExecResult resultAfterDelete = cmdKubeClient(NAMESPACE).execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
-        assertThat(resultAfterDelete.out(), not(containsString(userName)));
-        assertThat(resultAfterDelete.out(), not(containsString("request_percentage")));
-        assertThat(resultAfterDelete.out(), not(containsString("producer_byte_rate")));
-        assertThat(resultAfterDelete.out(), not(containsString("consumer_byte_rate")));
-        assertThat(resultAfterDelete.out(), not(containsString("controller_mutation_rate")));
+        TestUtils.waitFor("all KafkaUser " + userName + " attributes will be cleaned", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                ExecResult resultAfterDelete = cmdKubeClient(NAMESPACE).execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
+
+                return
+                    !resultAfterDelete.out().contains(userName) &&
+                    !resultAfterDelete.out().contains("request_percentage") &&
+                    !resultAfterDelete.out().contains("producer_byte_rate") &&
+                    !resultAfterDelete.out().contains("consumer_byte_rate") &&
+                    !resultAfterDelete.out().contains("controller_mutation_rate");
+            });
     }
 
     @ParallelNamespaceTest
@@ -362,34 +369,34 @@ class UserST extends AbstractST {
         assertNull(kubeClient(namespaceName).getSecret(scramShaSecret.getMetadata().getName()));
     }
 
-    synchronized void createBigAmountOfUsers(ExtensionContext extensionContext, String clusterName, String typeOfUser) {
+    synchronized void createBigAmountOfUsers(ExtensionContext extensionContext, String userName, String typeOfUser) {
 
         int numberOfUsers = 100;
 
         for (int i = 0; i < numberOfUsers; i++) {
-            String userName = "alisa" + i + "-" + clusterName;
+            String userNameWithSuffix = userName + "-" + i;
 
             if (typeOfUser.equals("TLS")) {
-                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userName)
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userNameWithSuffix)
                     .editMetadata()
                         .withNamespace(NAMESPACE)
                     .endMetadata()
                     .build());
             } else {
-                resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(userClusterName, userName)
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(userClusterName, userNameWithSuffix)
                     .editMetadata()
                         .withNamespace(NAMESPACE)
                     .endMetadata()
                     .build());
             }
 
-            LOGGER.info("Checking status of KafkaUser {}", userName);
-            Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userName).get()
+            LOGGER.info("Checking status of KafkaUser {}", userNameWithSuffix);
+            Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userNameWithSuffix).get()
                     .getStatus().getConditions().get(0);
             LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
             LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
             assertThat(kafkaCondition.getType(), is(Ready.toString()));
-            LOGGER.info("KafkaUser {} is in desired state: {}", userName, kafkaCondition.getType());
+            LOGGER.info("KafkaUser {} is in desired state: {}", userNameWithSuffix, kafkaCondition.getType());
         }
     }
 

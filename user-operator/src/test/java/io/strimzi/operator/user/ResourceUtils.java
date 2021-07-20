@@ -37,24 +37,23 @@ public class ResourceUtils {
     public static final String CA_KEY_NAME = NAME + "-key";
     public static final String PASSWORD = "my-password";
 
-    public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels) {
+    public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels, boolean aclsAdminApiSupported) {
         Map<String, String> envVars = new HashMap<>(4);
         envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE);
         envVars.put(UserOperatorConfig.STRIMZI_LABELS, labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));
         envVars.put(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, CA_CERT_NAME);
         envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
+        envVars.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, Boolean.toString(aclsAdminApiSupported));
 
         return UserOperatorConfig.fromMap(envVars);
     }
 
-    public static UserOperatorConfig createUserOperatorConfig() {
-        Map<String, String> envVars = new HashMap<>(4);
-        envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE);
-        envVars.put(UserOperatorConfig.STRIMZI_LABELS, "");
-        envVars.put(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, CA_CERT_NAME);
-        envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
+    public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels) {
+        return createUserOperatorConfig(labels, true);
+    }
 
-        return UserOperatorConfig.fromMap(envVars);
+    public static UserOperatorConfig createUserOperatorConfig() {
+        return createUserOperatorConfig(Map.of(), true);
     }
 
     public static KafkaUser createKafkaUser(KafkaUserAuthentication authentication) {

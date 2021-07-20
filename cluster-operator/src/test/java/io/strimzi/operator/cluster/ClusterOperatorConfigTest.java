@@ -73,6 +73,7 @@ public class ClusterOperatorConfigTest {
                 30_000,
                 120_000,
                 false,
+                true,
                 new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()),
                 null,
                 null,

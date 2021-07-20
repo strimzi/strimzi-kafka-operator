@@ -41,6 +41,15 @@ public class KafkaAuthorizationSimple extends KafkaAuthorization {
         return TYPE_SIMPLE;
     }
 
+    /**
+     * Simple authorizer is the native Kafka authorizer. This method returns always true for it.
+     *
+     * @return Returns always true for Simple authorizer
+     */
+    public boolean supportsAdminApi()   {
+        return true;
+    }
+
     @Description("List of super users. Should contain list of user principals which should get unlimited access rights.")
     @Example("- CN=my-user\n" +
              "- CN=my-other-user")

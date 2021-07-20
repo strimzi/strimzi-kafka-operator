@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.templates.crd;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -30,7 +31,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.Charset;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.TestUtils.toYamlString;
@@ -103,6 +106,10 @@ public class KafkaClientsTemplates {
     private static PodSpec createClientSpec(String namespaceName, boolean tlsListener, String kafkaClientsName, boolean hostnameVerification,
                                             String listenerName, String secretPrefix, KafkaUser... kafkaUsers) {
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
+        if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+            List<LocalObjectReference> imagePullSecrets = Collections.singletonList(new LocalObjectReference(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET));
+            podSpecBuilder.withImagePullSecrets(imagePullSecrets);
+        }
         ContainerBuilder containerBuilder = new ContainerBuilder()
             .withName(kafkaClientsName)
             .withImage(Environment.TEST_CLIENT_IMAGE)
@@ -191,7 +198,7 @@ public class KafkaClientsTemplates {
 
                 if (tlsListener) {
                     String clusterName = kafkaUser.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-                    String clusterNamespace = KafkaResource.kafkaClient().inAnyNamespace().list().getItems().stream().filter(kafka -> kafka.getMetadata().getName().equals(clusterName)).findFirst().get().getMetadata().getNamespace();
+                    String clusterNamespace = KafkaResource.kafkaClient().inAnyNamespace().list().getItems().stream().filter(kafka -> kafka.getMetadata().getName().equals(clusterName)).findFirst().orElseThrow().getMetadata().getNamespace();
                     String clusterCaSecretName = KafkaUtils.getKafkaTlsListenerCaCertName(clusterNamespace, clusterName, listenerName);
                     String clusterCaSecretVolumeName = "ca-cert-" + kafkaUserName;
                     String caSecretMountPoint = "/opt/kafka/cluster-ca-" + kafkaUserName;

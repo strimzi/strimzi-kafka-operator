@@ -84,20 +84,6 @@ public class KafkaBrokerConfigurationDiffTest {
     }
 
     @Test
-    public void testDefaultValue() {
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()), getDesiredConfiguration(emptyList()), kafkaVersion, brokerId);
-        assertThat(kcd.isDesiredPropertyDefaultValue("offset.metadata.max.bytes", getCurrentConfiguration(emptyList())), is(true));
-    }
-
-    @Test
-    public void testNonDefaultValue() {
-        List<ConfigEntry> ces = singletonList(new ConfigEntry("offset.metadata.max.bytes", "4097"));
-        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(ces),
-                getDesiredConfiguration(emptyList()), kafkaVersion, brokerId);
-        assertThat(kcd.isDesiredPropertyDefaultValue("offset.metadata.max.bytes", getCurrentConfiguration(ces)), is(false));
-    }
-
-    @Test
     public void testCustomPropertyAdded() {
         ArrayList<ConfigEntry> ces = new ArrayList<>();
         ces.add(new ConfigEntry("custom.property", "42"));

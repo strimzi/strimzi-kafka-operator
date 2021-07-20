@@ -139,6 +139,9 @@ docu_check:
 shellcheck:
 	./.azure/scripts/shellcheck.sh
 
+release_files_check:
+	./.azure/scripts/release_files_check.sh
+
 spotbugs: $(SUBDIRS) systemtest_make
 
 docu_pushtowebsite: docu_htmlnoheader docu_html
