@@ -42,14 +42,13 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
     public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     public static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9091;
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
-    public static final long DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 18;
     public static final String DEFAULT_SECRET_PREFIX = "";
 
     private String watchedNamespace;
     private String image;
     private String secretPrefix;
     private long reconciliationIntervalSeconds = DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS;
-    private long zookeeperSessionTimeoutSeconds = DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS;
+    private Long zookeeperSessionTimeoutSeconds;
     private Probe livenessProbe;
     private Probe readinessProbe;
     private ResourceRequirements resources;
@@ -92,11 +91,11 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
     @DeprecatedProperty(description = "This property has been deprecated because ZooKeeper is not used anymore by the User Operator.")
     @PresentInVersions("v1alpha1-v1beta2")
     @Deprecated
-    public long getZookeeperSessionTimeoutSeconds() {
+    public Long getZookeeperSessionTimeoutSeconds() {
         return zookeeperSessionTimeoutSeconds;
     }
 
-    public void setZookeeperSessionTimeoutSeconds(long zookeeperSessionTimeoutSeconds) {
+    public void setZookeeperSessionTimeoutSeconds(Long zookeeperSessionTimeoutSeconds) {
         this.zookeeperSessionTimeoutSeconds = zookeeperSessionTimeoutSeconds;
     }
 

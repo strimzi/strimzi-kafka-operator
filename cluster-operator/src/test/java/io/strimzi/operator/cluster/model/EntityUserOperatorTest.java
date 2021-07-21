@@ -77,7 +77,6 @@ public class EntityUserOperatorTest {
     private final String uoImage = "my-user-operator-image";
     private final String secretPrefix = "strimzi-";
     private final int uoReconciliationInterval = 120;
-    private final int uoZookeeperSessionTimeout = 18;
 
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String metricsCMName = "metrics-cm";
@@ -92,7 +91,6 @@ public class EntityUserOperatorTest {
             .withWatchedNamespace(uoWatchedNamespace)
             .withImage(uoImage)
             .withReconciliationIntervalSeconds(uoReconciliationInterval)
-            .withZookeeperSessionTimeoutSeconds(uoZookeeperSessionTimeout)
             .withSecretPrefix(secretPrefix)
             .withLivenessProbe(livenessProbe)
             .withReadinessProbe(readinessProbe)
