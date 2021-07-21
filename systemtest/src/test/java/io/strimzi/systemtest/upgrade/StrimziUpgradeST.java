@@ -8,9 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.SetupClusterOperator;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
@@ -114,13 +113,20 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         install.applyBindings(extensionContext, NAMESPACE);
 
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).delete();
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).create(
-            new BundleResource.BundleResourceBuilder()
-                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+                .withExtensionContext(extensionContext)
                 .withNamespace(NAMESPACE)
-                .buildBundleInstance()
-                .buildBundleDeployment()
-                .build());
+                .createInstallation()
+                .runBundleInstallation();
+
+//        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).create(
+//            new BundleResource.BundleResourceBuilder()
+//                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+//                .withNamespace(NAMESPACE)
+//                .buildBundleInstance()
+//                .buildBundleDeployment()
+//                .build());
 
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, operatorSnapshot);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zooSnapshot);

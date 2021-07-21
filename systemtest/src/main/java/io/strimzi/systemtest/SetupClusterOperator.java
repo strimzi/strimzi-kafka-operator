@@ -108,49 +108,58 @@ public class SetupClusterOperator {
             cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
             helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
         } else {
-            LOGGER.info("Going to install ClusterOperator via Yaml bundle");
-            prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
-            if (Environment.isNamespaceRbacScope()) {
-                // if roles only, only deploy the rolebindings
-                for (String namespace : bindingsNamespaces) {
-                    applyRoles(namespace);
-                    applyRoleBindings(extensionContext, namespaceInstallTo, namespace);
-                }
-                applyRoleBindings(extensionContext, namespaceInstallTo, namespaceInstallTo);
-            } else {
-                applyBindings(extensionContext, namespaceInstallTo, bindingsNamespaces);
-            }
-            // cluster-wide installation
-            if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
-                if (Environment.isNamespaceRbacScope()) {
-                    // we override namespaceToWatch to where cluster operator is installed because RBAC is
-                    // enabled and we have use only single namespace
-                    namespaceToWatch = namespaceInstallTo;
-                } else {
-                    // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
-                    createClusterRoleBindings();
-                }
-            }
-
-            // copy image-pull secret
-            if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
-                StUtils.copyImagePullSecret(namespaceInstallTo);
-            }
-            // 060-Deployment
-            ResourceManager.setCoDeploymentName(clusterOperatorName);
-            ResourceManager.getInstance().createResource(extensionContext,
-                new BundleResource.BundleResourceBuilder()
-                    .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-                    .withNamespace(namespaceInstallTo)
-                    .withWatchingNamespaces(namespaceToWatch)
-                    .withOperationTimeout(operationTimeout)
-                    .withReconciliationInterval(reconciliationInterval)
-                    .withExtraEnvVars(extraEnvVars)
-                    .buildBundleInstance()
-                    .buildBundleDeployment()
-                    .build());
+            bundleInstallation();
         }
         return this;
+    }
+
+    public SetupClusterOperator runBundleInstallation() {
+        bundleInstallation();
+        return this;
+    }
+
+    private void bundleInstallation() {
+        LOGGER.info("Going to install ClusterOperator via Yaml bundle");
+        prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
+        if (Environment.isNamespaceRbacScope()) {
+            // if roles only, only deploy the rolebindings
+            for (String namespace : bindingsNamespaces) {
+                applyRoles(namespace);
+                applyRoleBindings(extensionContext, namespaceInstallTo, namespace);
+            }
+            applyRoleBindings(extensionContext, namespaceInstallTo, namespaceInstallTo);
+        } else {
+            applyBindings(extensionContext, namespaceInstallTo, bindingsNamespaces);
+        }
+        // cluster-wide installation
+        if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
+            if (Environment.isNamespaceRbacScope()) {
+                // we override namespaceToWatch to where cluster operator is installed because RBAC is
+                // enabled and we have use only single namespace
+                namespaceToWatch = namespaceInstallTo;
+            } else {
+                // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
+                createClusterRoleBindings();
+            }
+        }
+
+        // copy image-pull secret
+        if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+            StUtils.copyImagePullSecret(namespaceInstallTo);
+        }
+        // 060-Deployment
+        ResourceManager.setCoDeploymentName(clusterOperatorName);
+        ResourceManager.getInstance().createResource(extensionContext,
+            new BundleResource.BundleResourceBuilder()
+                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+                .withNamespace(namespaceInstallTo)
+                .withWatchingNamespaces(namespaceToWatch)
+                .withOperationTimeout(operationTimeout)
+                .withReconciliationInterval(reconciliationInterval)
+                .withExtraEnvVars(extraEnvVars)
+                .buildBundleInstance()
+                .buildBundleDeployment()
+                .build());
     }
 
     private void createClusterRoleBindings() {
@@ -288,7 +297,11 @@ public class SetupClusterOperator {
      * This includes ClusterRoles themselves as well as RoleBindings that reference them.
      */
     public File switchClusterRolesToRolesIfNeeded(File oldFile) {
-        boolean isRbacScope = this.extraEnvVars.stream().anyMatch(it -> it.getName().equals(Environment.STRIMZI_RBAC_SCOPE_ENV) && it.getValue().equals(Environment.STRIMZI_RBAC_SCOPE_NAMESPACE));
+        // This is basically workaround for use BundleResource directly
+        boolean isRbacScope = false;
+        if (this.extraEnvVars != null) {
+            isRbacScope = this.extraEnvVars.stream().anyMatch(it -> it.getName().equals(Environment.STRIMZI_RBAC_SCOPE_ENV) && it.getValue().equals(Environment.STRIMZI_RBAC_SCOPE_NAMESPACE));
+        }
 
         if (Environment.isNamespaceRbacScope() || isRbacScope) {
             try {
