@@ -37,6 +37,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -203,14 +204,14 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
      * @param context
      */
     @Test
-    public void testUpdateStatusAfterResourceUpdatedThrowsKubernetesClientException(VertxTestContext context) {
+    public void testUpdateStatusAfterResourceUpdated(VertxTestContext context) {
         String resourceName = getResourceName(RESOURCE_NAME);
         Checkpoint async = context.checkpoint();
         String namespace = getNamespace();
 
         CrdOperator<C, T, L> op = operator();
 
-        Promise updateFailed = Promise.promise();
+        Promise updateStatus = Promise.promise();
 
         LOGGER.info("Getting Kubernetes version");
         PlatformFeaturesAvailability.create(vertx, client)
@@ -233,13 +234,13 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     LOGGER.info("Updating resource status after underlying resource has changed");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus);
                 })
-                .onComplete(context.failing(e -> context.verify(() -> {
-                    assertThat("Exception was not KubernetesClientException, it was : " + e.toString(),
-                            e, instanceOf(KubernetesClientException.class));
-                    updateFailed.complete();
+                .onComplete(context.succeeding(res -> context.verify(() -> {
+                    assertThat(res.getMetadata().getName(), is(resourceName));
+                    assertThat(res.getMetadata().getNamespace(), is(namespace));
+                    updateStatus.complete();
                 })));
 
-        updateFailed.future().compose(v -> {
+        updateStatus.future().compose(v -> {
             LOGGER.info("Deleting resource");
             return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
         })
