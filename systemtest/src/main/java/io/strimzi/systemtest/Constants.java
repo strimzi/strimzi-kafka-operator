@@ -322,7 +322,7 @@ public interface Constants {
      * Auxiliary variables for storing data across our tests
      */
     String NAMESPACE_KEY = "NAMESPACE_NAME";
-    String PREPARE_ENV_KEY = "DO_PREPARE_ENV";
+    String PREPARE_OPERATOR_ENV_KEY = "PREPARE_OPERATOR_ENV";
 
     /**
      * Auxiliary variable for cluster operator deployment

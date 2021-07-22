@@ -131,9 +131,9 @@ public class SetupClusterOperator {
     private void bundleInstallation() {
         LOGGER.info("Going to install ClusterOperator via Yaml bundle");
 
-        if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_ENV_KEY) == null) {
+        if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY) == null) {
             prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_ENV_KEY, false);
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY, false);
         } else {
             LOGGER.info("Environment for ClusterOperator was already prepared! Going to install it now.");
         }
@@ -309,11 +309,7 @@ public class SetupClusterOperator {
      * This includes ClusterRoles themselves as well as RoleBindings that reference them.
      */
     public File switchClusterRolesToRolesIfNeeded(File oldFile) {
-        // This is basically workaround for use BundleResource directly
-        boolean isRbacScope = false;
-        if (this.extraEnvVars != null) {
-            isRbacScope = this.extraEnvVars.stream().anyMatch(it -> it.getName().equals(Environment.STRIMZI_RBAC_SCOPE_ENV) && it.getValue().equals(Environment.STRIMZI_RBAC_SCOPE_NAMESPACE));
-        }
+        boolean isRbacScope = this.extraEnvVars.stream().anyMatch(it -> it.getName().equals(Environment.STRIMZI_RBAC_SCOPE_ENV) && it.getValue().equals(Environment.STRIMZI_RBAC_SCOPE_NAMESPACE));
 
         if (Environment.isNamespaceRbacScope() || isRbacScope) {
             try {

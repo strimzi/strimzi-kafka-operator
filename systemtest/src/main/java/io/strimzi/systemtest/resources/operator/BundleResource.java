@@ -224,8 +224,8 @@ public class BundleResource implements ResourceType<Deployment> {
         }
         // Remove duplicates from envVars
         List<EnvVar> envVarsWithoutDuplicates = envVars.stream()
-                .distinct()
-                .collect(Collectors.toList());
+            .distinct()
+            .collect(Collectors.toList());
 
         // Apply updated env variables
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVarsWithoutDuplicates);
