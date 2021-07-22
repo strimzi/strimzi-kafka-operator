@@ -300,7 +300,7 @@ public class AbstractUpgradeST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
     }
 
-    protected void changeClusterOperator(JsonObject testParameters, String namespace) throws IOException {
+    protected void changeClusterOperator(JsonObject testParameters, String namespace, ExtensionContext extensionContext) throws IOException {
         File coDir;
         // Modify + apply installation files
         LOGGER.info("Going to update CO from {} to {}", testParameters.getString("fromVersion"), testParameters.getString("toVersion"));
@@ -312,13 +312,13 @@ public class AbstractUpgradeST extends AbstractST {
             coDir = new File(dir, testParameters.getString("toExamples") + "/install/cluster-operator/");
         }
 
-        copyModifyApply(coDir, namespace);
+        copyModifyApply(coDir, namespace, extensionContext);
 
         LOGGER.info("Waiting for CO upgrade");
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coPods);
     }
 
-    protected void copyModifyApply(File root, String namespace) {
+    protected void copyModifyApply(File root, String namespace, ExtensionContext extensionContext) {
         Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
                 cmdKubeClient().replaceContent(TestUtils.changeRoleBindingSubject(f, namespace));
@@ -328,6 +328,8 @@ public class AbstractUpgradeST extends AbstractST {
                 cmdKubeClient().replaceContent(TestUtils.getContent(f, TestUtils::toYamlString));
             }
         });
+        // Set info that CO is already installed
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(io.strimzi.systemtest.Constants.PREPARE_OPERATOR_ENV_KEY, false);
     }
 
     protected void deleteInstalledYamls(File root, String namespace) {
@@ -409,7 +411,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
 
         // Modify + apply installation files
-        copyModifyApply(coDir, namespace);
+        copyModifyApply(coDir, namespace, extensionContext);
 
         LOGGER.info("Waiting for {} deployment", ResourceManager.getCoDeploymentName());
         DeploymentUtils.waitForDeploymentAndPodsReady(ResourceManager.getCoDeploymentName(), 1);
