@@ -2,18 +2,20 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest;
+package io.strimzi.systemtest.resources.operator;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleResource;
-import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.resources.specific.HelmResource;
-import io.strimzi.systemtest.resources.specific.OlmResource;
+import io.strimzi.systemtest.resources.operator.specific.HelmResource;
+import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -30,7 +32,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
@@ -56,9 +60,11 @@ public class SetupClusterOperator {
     private long operationTimeout;
     private long reconciliationInterval;
     private List<EnvVar> extraEnvVars;
+    private Map<String, String> extraLabels;
+    private ClusterOperatorRBACType clusterOperatorRBACType;
 
-    SetupClusterOperator() {}
-    SetupClusterOperator(SetupClusterOperatorBuilder builder) {
+    public SetupClusterOperator() {}
+    public SetupClusterOperator(SetupClusterOperatorBuilder builder) {
         this.extensionContext = builder.extensionContext;
         this.clusterOperatorName = builder.clusterOperatorName;
         this.namespaceInstallTo = builder.namespaceInstallTo;
@@ -67,6 +73,8 @@ public class SetupClusterOperator {
         this.operationTimeout = builder.operationTimeout;
         this.reconciliationInterval = builder.reconciliationInterval;
         this.extraEnvVars = builder.extraEnvVars;
+        this.extraLabels = builder.extraLabels;
+        this.clusterOperatorRBACType = builder.clusterOperatorRBACType;
 
         // assign defaults is something is not specified
         if (this.clusterOperatorName == null || this.clusterOperatorName.isEmpty()) this.clusterOperatorName = Constants.STRIMZI_DEPLOYMENT_NAME;
@@ -75,6 +83,8 @@ public class SetupClusterOperator {
         if (this.operationTimeout == 0) this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
         if (this.reconciliationInterval == 0) this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
         if (this.extraEnvVars == null) this.extraEnvVars = new ArrayList<>();
+        if (this.extraLabels == null) this.extraLabels = new HashMap<>();
+        if (this.clusterOperatorRBACType == null) this.clusterOperatorRBACType = ClusterOperatorRBACType.CLUSTER;
     }
 
     /**
@@ -120,28 +130,15 @@ public class SetupClusterOperator {
 
     private void bundleInstallation() {
         LOGGER.info("Going to install ClusterOperator via Yaml bundle");
-        prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
-        if (Environment.isNamespaceRbacScope()) {
-            // if roles only, only deploy the rolebindings
-            for (String namespace : bindingsNamespaces) {
-                applyRoles(namespace);
-                applyRoleBindings(extensionContext, namespaceInstallTo, namespace);
-            }
-            applyRoleBindings(extensionContext, namespaceInstallTo, namespaceInstallTo);
+
+        if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_ENV_KEY) == null) {
+            prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_ENV_KEY, false);
         } else {
-            applyBindings(extensionContext, namespaceInstallTo, bindingsNamespaces);
+            LOGGER.info("Environment for ClusterOperator was already prepared! Going to install it now.");
         }
-        // cluster-wide installation
-        if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
-            if (Environment.isNamespaceRbacScope()) {
-                // we override namespaceToWatch to where cluster operator is installed because RBAC is
-                // enabled and we have use only single namespace
-                namespaceToWatch = namespaceInstallTo;
-            } else {
-                // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
-                createClusterRoleBindings();
-            }
-        }
+
+        applyBindings();
 
         // copy image-pull secret
         if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
@@ -151,12 +148,13 @@ public class SetupClusterOperator {
         ResourceManager.setCoDeploymentName(clusterOperatorName);
         ResourceManager.getInstance().createResource(extensionContext,
             new BundleResource.BundleResourceBuilder()
-                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
+                .withName(clusterOperatorName)
                 .withNamespace(namespaceInstallTo)
                 .withWatchingNamespaces(namespaceToWatch)
                 .withOperationTimeout(operationTimeout)
                 .withReconciliationInterval(reconciliationInterval)
                 .withExtraEnvVars(extraEnvVars)
+                .withExtraLabels(extraLabels)
                 .buildBundleInstance()
                 .buildBundleDeployment()
                 .build());
@@ -179,6 +177,8 @@ public class SetupClusterOperator {
         private long operationTimeout;
         private long reconciliationInterval;
         private List<EnvVar> extraEnvVars;
+        private Map<String, String> extraLabels;
+        private ClusterOperatorRBACType clusterOperatorRBACType;
 
         public SetupClusterOperatorBuilder withExtensionContext(ExtensionContext extensionContext) {
             this.extensionContext = extensionContext;
@@ -212,6 +212,18 @@ public class SetupClusterOperator {
         // currently supported only for Bundle installation
         public SetupClusterOperatorBuilder withExtraEnvVars(List<EnvVar> envVars) {
             this.extraEnvVars = envVars;
+            return self();
+        }
+
+        // currently supported only for Bundle installation
+        public SetupClusterOperatorBuilder withExtraLabels(Map<String, String> extraLabels) {
+            this.extraLabels = extraLabels;
+            return self();
+        }
+
+        // currently supported only for Bundle installation
+        public SetupClusterOperatorBuilder withClusterOperatorRBACType(ClusterOperatorRBACType clusterOperatorRBACType) {
+            this.clusterOperatorRBACType = clusterOperatorRBACType;
             return self();
         }
 
@@ -319,14 +331,12 @@ public class SetupClusterOperator {
     }
 
     public void applyRoleBindings(ExtensionContext extensionContext, String namespace, String bindingsNamespace) {
+        // 020-RoleBinding
         File roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml");
         RoleBindingResource.roleBinding(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace, bindingsNamespace);
-        // 020-RoleBinding
-//        RoleBindingResource.roleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml", namespace, bindingsNamespace);
+        // 031-RoleBinding
         roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml");
         RoleBindingResource.roleBinding(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace, bindingsNamespace);
-        // 031-RoleBinding
-//        RoleBindingResource.roleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml", namespace, bindingsNamespace);
     }
 
     public void applyRoles(String namespace) {
@@ -348,31 +358,32 @@ public class SetupClusterOperator {
 
     /**
      * Method to apply Strimzi cluster operator specific RoleBindings and ClusterRoleBindings for specific namespaces.
-     * @param namespace namespace where CO will be deployed to
-     * @param bindingsNamespaces list of namespaces where Bindings should be deployed to
      */
-    public void applyBindings(ExtensionContext extensionContext, String namespace, List<String> bindingsNamespaces) {
-        for (String bindingsNamespace : bindingsNamespaces) {
-            applyClusterRoleBindings(extensionContext, namespace);
-            applyRoleBindings(extensionContext, namespace, bindingsNamespace);
+    public void applyBindings() {
+        if (Environment.isNamespaceRbacScope() || this.clusterOperatorRBACType.equals(ClusterOperatorRBACType.NAMESPACE)) {
+            // if roles only, only deploy the rolebindings
+            for (String bindingsNamespace : bindingsNamespaces) {
+                applyRoles(bindingsNamespace);
+                applyRoleBindings(extensionContext, namespaceInstallTo, bindingsNamespace);
+            }
+            applyRoleBindings(extensionContext, namespaceInstallTo, namespaceInstallTo);
+        } else {
+            for (String bindingsNamespace : bindingsNamespaces) {
+                applyClusterRoleBindings(extensionContext, this.namespaceInstallTo);
+                applyRoleBindings(extensionContext, this.namespaceInstallTo, bindingsNamespace);
+            }
         }
-    }
-
-    /**
-     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
-     * @param namespace namespace where CO will be deployed to
-     */
-    public void applyBindings(ExtensionContext extensionContext, String namespace) {
-        applyBindings(extensionContext, namespace, Collections.singletonList(namespace));
-    }
-
-    /**
-     * Method for apply Strimzi cluster operator specific Role and ClusterRole bindings for specific namespaces.
-     * @param namespace namespace where CO will be deployed to
-     * @param bindingsNamespaces array of namespaces where Bindings should be deployed to
-     */
-    public void applyBindings(ExtensionContext extensionContext, String namespace, String... bindingsNamespaces) {
-        applyBindings(extensionContext, namespace, Arrays.asList(bindingsNamespaces));
+        // cluster-wide installation
+        if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
+            if (Environment.isNamespaceRbacScope()) {
+                // we override namespaceToWatch to where cluster operator is installed because RBAC is
+                // enabled and we have use only single namespace
+                namespaceToWatch = namespaceInstallTo;
+            } else {
+                // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
+                createClusterRoleBindings();
+            }
+        }
     }
 
     private static void applyClusterRoleBindings(ExtensionContext extensionContext, String namespace) {

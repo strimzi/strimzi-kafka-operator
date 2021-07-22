@@ -12,7 +12,7 @@ import static org.hamcrest.CoreMatchers.is;
 
 import java.util.Map;
 
-import io.strimzi.systemtest.SetupClusterOperator;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import org.apache.logging.log4j.LogManager;

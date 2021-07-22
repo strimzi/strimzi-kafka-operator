@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.SetupClusterOperator;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -110,7 +110,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
         // Update CRDs, CRB, etc.
         install.applyClusterOperatorInstallFiles(NAMESPACE);
-        install.applyBindings(extensionContext, NAMESPACE);
+        install.applyBindings();
 
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).delete();
 

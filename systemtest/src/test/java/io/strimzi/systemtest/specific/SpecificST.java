@@ -22,7 +22,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.SetupClusterOperator;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -154,17 +154,6 @@ public class SpecificST extends AbstractST {
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
-
-//        resourceManager.createResource(sharedExtensionContext, new BundleResource.BundleResourceBuilder()
-//            .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-//            .withNamespace(NAMESPACE)
-//            .withWatchingNamespaces(NAMESPACE)
-//            .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
-//            .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
-//            .buildBundleInstance()
-//            .buildBundleDeployment()
-//            .build());
-
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(NAMESPACE)
@@ -241,14 +230,6 @@ public class SpecificST extends AbstractST {
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, NAMESPACE, clusterName);
 
         // Revert changes for CO deployment
-//        resourceManager.createResource(sharedExtensionContext,
-//            new BundleResource.BundleResourceBuilder()
-//                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-//                .withNamespace(NAMESPACE)
-//                .buildBundleInstance()
-//                .buildBundleDeployment()
-//                .build());
-
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(NAMESPACE)
@@ -278,17 +259,6 @@ public class SpecificST extends AbstractST {
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
-//        resourceManager.createResource(sharedExtensionContext,
-//            new BundleResource.BundleResourceBuilder()
-//                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-//                .withNamespace(NAMESPACE)
-//                .withWatchingNamespaces(NAMESPACE)
-//                .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
-//                .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
-//                .buildBundleInstance()
-//                .buildBundleDeployment()
-//                .build());
-
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(NAMESPACE)
@@ -352,14 +322,6 @@ public class SpecificST extends AbstractST {
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, NAMESPACE, clusterName);
 
         // Revert changes for CO deployment
-//        resourceManager.createResource(sharedExtensionContext,
-//            new BundleResource.BundleResourceBuilder()
-//                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-//                .withNamespace(NAMESPACE)
-//                .buildBundleInstance()
-//                .buildBundleDeployment()
-//                .build());
-
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(NAMESPACE)
@@ -462,15 +424,15 @@ public class SpecificST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                            .withPort(9094)
-                            .withType(KafkaListenerType.LOADBALANCER)
-                            .withTls(false)
-                            .withNewConfiguration()
-                                .withLoadBalancerSourceRanges(Collections.singletonList(ipWithPrefix))
-                                .withFinalizers(LB_FINALIZERS)
-                            .endConfiguration()
-                            .build())
+                        .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                        .withPort(9094)
+                        .withType(KafkaListenerType.LOADBALANCER)
+                        .withTls(false)
+                        .withNewConfiguration()
+                            .withLoadBalancerSourceRanges(Collections.singletonList(ipWithPrefix))
+                            .withFinalizers(LB_FINALIZERS)
+                        .endConfiguration()
+                        .build())
                 .endKafka()
             .endSpec()
             .build());
@@ -493,16 +455,16 @@ public class SpecificST extends AbstractST {
         LOGGER.info("Replacing Kafka CR invalid load-balancer source range to {}", invalidNetworkAddress);
 
         KafkaResource.replaceKafkaResource(clusterName, kafka ->
-                kafka.getSpec().getKafka().setListeners(Collections.singletonList(new GenericKafkaListenerBuilder()
-                        .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                        .withPort(9094)
-                        .withType(KafkaListenerType.LOADBALANCER)
-                        .withTls(false)
-                        .withNewConfiguration()
-                            .withLoadBalancerSourceRanges(Collections.singletonList(ipWithPrefix))
-                            .withFinalizers(LB_FINALIZERS)
-                        .endConfiguration()
-                        .build()))
+            kafka.getSpec().getKafka().setListeners(Collections.singletonList(new GenericKafkaListenerBuilder()
+                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                .withPort(9094)
+                .withType(KafkaListenerType.LOADBALANCER)
+                .withTls(false)
+                .withNewConfiguration()
+                    .withLoadBalancerSourceRanges(Collections.singletonList(ipWithPrefix))
+                    .withFinalizers(LB_FINALIZERS)
+                .endConfiguration()
+                .build()))
         );
 
         LOGGER.info("Expecting that clients will not be able to connect to external load-balancer service cause of invalid load-balancer source range.");
