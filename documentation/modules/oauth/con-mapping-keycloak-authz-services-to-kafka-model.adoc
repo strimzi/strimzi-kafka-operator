@@ -7,7 +7,7 @@ The Kafka authorization model is used as a basis for defining the Keycloak roles
 
 To grant Kafka permissions to user accounts or service accounts, you first create an _OAuth client specification_ in Keycloak for the Kafka broker.
 You then specify Keycloak Authorization Services rules on the client.
-Typically, the client id of the OAuth client that represents the broker is `kafka` (the xref:proc-oauth-authorization-keycloak-example_-{context}[example files] provided with Strimzi use `kafka` as the OAuth client id).
+Typically, the client id of the OAuth client that represents the broker is `kafka` (the xref:proc-oauth-authorization-keycloak-example_str[example files] provided with Strimzi use `kafka` as the OAuth client id).
 
 [NOTE]
 ====
@@ -106,4 +106,4 @@ For example, `Dev Team B can read from topics starting with x`.
 [role="_additional-resources"]
 .Additional resources
 
-* For more information about how to configure permissions through Keycloak Authorization Services, see xref:proc-oauth-authorization-keycloak-example_{context}[]. 
+* For more information about how to configure permissions through Keycloak Authorization Services, see xref:proc-oauth-authorization-keycloak-example_str[].
