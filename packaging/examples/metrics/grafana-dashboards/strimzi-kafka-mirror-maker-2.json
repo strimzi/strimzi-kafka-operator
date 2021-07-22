@@ -260,7 +260,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_connect_incoming_byte_total{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"})",
+          "expr": "sum(rate(kafka_consumer_incoming_byte_total{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}[1m]))",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -290,7 +290,7 @@
       "yaxes": [
         {
           "format": "bytes",
-          "label": "Bytes",
+          "label": "Bytes/sec",
           "logBase": 1,
           "max": null,
           "min": "0",
@@ -348,7 +348,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_connect_outgoing_byte_total{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"})",
+          "expr": "sum(rate(kafka_producer_outgoing_byte_total{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}[1m]))",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 2,
@@ -378,7 +378,7 @@
       "yaxes": [
         {
           "format": "bytes",
-          "label": "Bytes",
+          "label": "Bytes/sec",
           "logBase": 1,
           "max": null,
           "min": "0",
@@ -661,6 +661,159 @@
         "align": false,
         "alignLevel": null
       }
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      },
+      "id": 34,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(kafka_consumer_fetch_manager_records_lag{clientid!~\"consumer-mirrormaker2-.*\"}) by (topic, partition)",
+          "interval": "",
+          "legendFormat": "{{topic}} (partition: {{partition}})",
+          "refId": "A"
+        }
+      ],
+      "title": "Mirroring Lag",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "id": 36,
+      "options": {
+        "showHeader": true
+      },
+      "pluginVersion": "8.0.3",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(kafka_consumer_fetch_manager_records_lag{clientid!~\"consumer-mirrormaker2-.*\"}) by (partition, topic)",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "{{topic}} (partition: {{partition}})",
+          "refId": "A"
+        }
+      ],
+      "title": "Mirroring Lag",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "Time": 0,
+              "Value": 3,
+              "partition": 2,
+              "topic": 1
+            },
+            "renameByName": {
+              "Value": "Lag",
+              "partition": "Partition",
+              "topic": "Topic"
+            }
+          }
+        }
+      ],
+      "type": "table"
     }
   ],
   "refresh": "5s",
