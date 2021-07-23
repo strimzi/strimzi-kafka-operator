@@ -86,6 +86,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         deployCOInNamespace(extensionContext, SECOND_CO_NAME, SECOND_NAMESPACE, SECOND_CO_SELECTOR_ENV, true);
 
         cluster.setNamespace(DEFAULT_NAMESPACE);
+        cluster.createNamespace(DEFAULT_NAMESPACE);
 
         LOGGER.info("Deploying Kafka without CR selector");
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3).build());

@@ -99,23 +99,33 @@ public class SetupClusterOperator {
             if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
                 // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
                 if (!Environment.isNamespaceRbacScope()) {
-                    cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
+                    if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
+                        cluster.setNamespace(namespaceInstallTo);
+                        cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
+                        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
+                    }
                     createClusterRoleBindings();
                     olmResource = new OlmResource(cluster.getDefaultOlmNamespace());
                     olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
                 }
             // single-namespace olm co-operator
             } else {
-                cluster.setNamespace(namespaceInstallTo);
-                cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
+                if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
+                    cluster.setNamespace(namespaceInstallTo);
+                    cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
+                    extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
+                }
                 olmResource = new OlmResource(namespaceInstallTo);
                 olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
             }
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
             helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
-            cluster.setNamespace(namespaceInstallTo);
-            cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
+            if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
+                cluster.setNamespace(namespaceInstallTo);
+                cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
+                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
+            }
             helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
         } else {
             bundleInstallation();
@@ -131,9 +141,9 @@ public class SetupClusterOperator {
     private void bundleInstallation() {
         LOGGER.info("Going to install ClusterOperator via Yaml bundle");
 
-        if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY) == null) {
+        if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
             prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY, false);
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
         } else {
             LOGGER.info("Environment for ClusterOperator was already prepared! Going to install it now.");
         }
@@ -311,7 +321,7 @@ public class SetupClusterOperator {
     public File switchClusterRolesToRolesIfNeeded(File oldFile) {
         boolean isRbacScope = this.extraEnvVars.stream().anyMatch(it -> it.getName().equals(Environment.STRIMZI_RBAC_SCOPE_ENV) && it.getValue().equals(Environment.STRIMZI_RBAC_SCOPE_NAMESPACE));
 
-        if (Environment.isNamespaceRbacScope() || isRbacScope) {
+        if (Environment.isNamespaceRbacScope() || isRbacScope || this.clusterOperatorRBACType == ClusterOperatorRBACType.NAMESPACE) {
             try {
                 File tmpFile = File.createTempFile("rbac-" + oldFile.getName().replace(".yaml", ""), ".yaml");
                 TestUtils.writeFile(tmpFile.getAbsolutePath(), TestUtils.readFile(oldFile).replace("ClusterRole", "Role"));

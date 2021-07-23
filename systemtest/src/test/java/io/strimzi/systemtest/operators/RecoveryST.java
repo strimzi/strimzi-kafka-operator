@@ -295,12 +295,8 @@ class RecoveryST extends AbstractST {
 
     @BeforeEach
     void setup(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String clusterOperatorName = clusterName + "-" + Constants.STRIMZI_DEPLOYMENT_NAME;
-
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withClusterOperatorName(clusterOperatorName)
             .withNamespace(NAMESPACE)
             .createInstallation()
             .runInstallation();

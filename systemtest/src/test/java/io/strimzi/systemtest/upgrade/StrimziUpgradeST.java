@@ -109,9 +109,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
 
         // Update CRDs, CRB, etc.
-//        install.applyClusterOperatorInstallFiles(NAMESPACE);
-//        install.applyBindings();
-
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).delete();
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
@@ -119,14 +116,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
             .withNamespace(NAMESPACE)
             .createInstallation()
             .runBundleInstallation();
-
-//        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).create(
-//            new BundleResource.BundleResourceBuilder()
-//                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-//                .withNamespace(NAMESPACE)
-//                .buildBundleInstance()
-//                .buildBundleDeployment()
-//                .build());
 
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, operatorSnapshot);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zooSnapshot);
