@@ -48,14 +48,12 @@
       }
     ]
   },
-
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
   "iteration": 1536950082067,
   "links": [],
-
   "panels": [
     {
       "cacheTimeout": null,
@@ -76,7 +74,7 @@
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 7,
+        "h": 4,
         "w": 4,
         "x": 0,
         "y": 0
@@ -159,12 +157,12 @@
         "thresholdMarkers": true
       },
       "gridPos": {
-        "h": 7,
+        "h": 4,
         "w": 4,
         "x": 4,
         "y": 0
       },
-      "id": 27,
+      "id": 37,
       "interval": null,
       "links": [],
       "mappingType": 1,
@@ -181,7 +179,7 @@
       "maxDataPoints": 100,
       "nullPointMode": "connected",
       "nullText": null,
-      "postfix": "",
+      "postfix": "rps",
       "postfixFontSize": "50%",
       "prefix": "",
       "prefixFontSize": "50%",
@@ -202,7 +200,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "sum(kafka_connect_worker_task_count{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"})",
+          "expr": "sum(kafka_connect_mirror_mirrorsourceconnector_record_rate{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"})",
           "format": "time_series",
           "intervalFactor": 2,
           "refId": "A",
@@ -210,7 +208,7 @@
         }
       ],
       "thresholds": "",
-      "title": "Number of Tasks",
+      "title": "Total record rate",
       "type": "singlestat",
       "valueFontSize": "200%",
       "valueMaps": [
@@ -230,7 +228,7 @@
       "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 8,
         "x": 8,
         "y": 0
@@ -318,7 +316,7 @@
       "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 8,
         "x": 16,
         "y": 0
@@ -399,17 +397,222 @@
       }
     },
     {
+      "cacheTimeout": null,
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 4
+      },
+      "id": 27,
+      "interval": null,
+      "links": [],
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "mean"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "7.1.1",
+      "targets": [
+        {
+          "expr": "sum(kafka_connect_worker_task_count{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"})",
+          "format": "time_series",
+          "intervalFactor": 2,
+          "refId": "A",
+          "step": 40
+        }
+      ],
+      "title": "Number of Tasks",
+      "type": "stat"
+    },
+    {
+      "cacheTimeout": null,
+      "colorBackground": false,
+      "colorValue": false,
+      "colors": [
+        "#299c46",
+        "rgba(237, 129, 40, 0.89)",
+        "#d44a3a"
+      ],
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {},
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "format": "Bps",
+      "gauge": {
+        "maxValue": 100,
+        "minValue": 0,
+        "show": false,
+        "thresholdLabels": false,
+        "thresholdMarkers": true
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 4
+      },
+      "id": 38,
+      "interval": null,
+      "links": [],
+      "mappingType": 1,
+      "mappingTypes": [
+        {
+          "name": "value to text",
+          "value": 1
+        },
+        {
+          "name": "range to text",
+          "value": 2
+        }
+      ],
+      "maxDataPoints": 100,
+      "nullPointMode": "connected",
+      "nullText": null,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.0.3",
+      "postfix": "",
+      "postfixFontSize": "50%",
+      "prefix": "",
+      "prefixFontSize": "50%",
+      "rangeMaps": [
+        {
+          "from": "null",
+          "text": "N/A",
+          "to": "null"
+        }
+      ],
+      "sparkline": {
+        "fillColor": "rgba(31, 118, 189, 0.18)",
+        "full": false,
+        "lineColor": "rgb(31, 120, 193)",
+        "show": false,
+        "ymax": null,
+        "ymin": null
+      },
+      "tableColumn": "",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "sum(kafka_connect_mirror_mirrorsourceconnector_byte_rate{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"})",
+          "format": "time_series",
+          "interval": "",
+          "intervalFactor": 2,
+          "legendFormat": "",
+          "refId": "A",
+          "step": 40
+        }
+      ],
+      "thresholds": "",
+      "title": "Total byte rate",
+      "type": "singlestat",
+      "valueFontSize": "100%",
+      "valueMaps": [
+        {
+          "op": "=",
+          "text": "N/A",
+          "value": "null"
+        }
+      ],
+      "valueName": "avg"
+    },
+    {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+
       "fill": 1,
       "gridPos": {
         "h": 7,
         "w": 8,
         "x": 0,
-        "y": 7
+        "y": 8
       },
       "id": 30,
       "legend": {
@@ -493,11 +696,12 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 8,
         "x": 8,
-        "y": 7
+        "y": 8
       },
       "id": 31,
       "legend": {
@@ -585,7 +789,7 @@
         "h": 7,
         "w": 8,
         "x": 16,
-        "y": 7
+        "y": 8
       },
       "id": 32,
       "legend": {
@@ -667,35 +871,11 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
           "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "align": "auto",
+            "displayMode": "auto"
           },
           "mappings": [],
           "thresholds": {
@@ -712,36 +892,729 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "partition"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 76
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Partition"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 76
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Current"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 65
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Average"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Min"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 45
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Max"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 41
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 146
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 11,
+        "h": 10,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 15
       },
-      "id": 34,
+      "id": 39,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
-        },
-        "tooltip": {
-          "mode": "single"
-        }
+        "frameIndex": 0,
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Time"
+          }
+        ]
       },
+      "pluginVersion": "7.1.1",
+      "targets": [
+        {
+          "exemplar": false,
+          "expr": "sum(kafka_connect_mirror_mirrorsourceconnector_record_age_ms{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (partition, topic)",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(kafka_connect_mirror_mirrorsourceconnector_record_age_ms_avg{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (partition, topic)",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(kafka_connect_mirror_mirrorsourceconnector_record_age_ms_min{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (partition, topic)",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "C"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(kafka_connect_mirror_mirrorsourceconnector_record_age_ms_max{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (partition, topic)",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "D"
+        }
+      ],
+      "title": "Record Age",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "Time": 0,
+              "Value": 3,
+              "partition": 2,
+              "topic": 1
+            },
+            "renameByName": {
+              "Value": "Lag",
+              "partition": "Partition",
+              "topic": "Topic"
+            }
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Value #A": "Current",
+              "Value #Avg": "Average",
+              "Value #B": "Average",
+              "Value #C": "Min",
+              "Value #D": "Max",
+              "partition": "Partition",
+              "topic": "Topic",
+              "{partition=\"2\", topic=\"my-cluster-source.kafka-test-apps\"}": "Min"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "partition"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 76
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Partition"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 76
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Current"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 65
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Average"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Min"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 45
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Max"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 41
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 155
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      },
+      "id": 40,
+      "options": {
+        "frameIndex": 0,
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Time"
+          }
+        ]
+      },
+      "pluginVersion": "7.1.1",
+      "targets": [
+        {
+          "exemplar": false,
+          "expr": "sum(kafka_connect_mirror_mirrorsourceconnector_replication_latency_ms{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (partition, topic)",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(kafka_connect_mirror_mirrorsourceconnector_replication_latency_ms_avg{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (partition, topic)",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(kafka_connect_mirror_mirrorsourceconnector_replication_latency_ms_min{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (partition, topic)",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "C"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(kafka_connect_mirror_mirrorsourceconnector_replication_latency_ms_max{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (partition, topic)",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "D"
+        }
+      ],
+      "title": "Replication Latency",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "Time": 0,
+              "Value": 3,
+              "partition": 2,
+              "topic": 1
+            },
+            "renameByName": {
+              "Value": "Lag",
+              "partition": "Partition",
+              "topic": "Topic"
+            }
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Value #A": "Current",
+              "Value #Avg": "Average",
+              "Value #B": "Average",
+              "Value #C": "Min",
+              "Value #D": "Max",
+              "partition": "Partition",
+              "topic": "Topic",
+              "{partition=\"2\", topic=\"my-cluster-source.kafka-test-apps\"}": "Min"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "partition"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 76
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Partition"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 76
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Current"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 65
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Average"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 70
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Min"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 45
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Max"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 41
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 155
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Source"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 267
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "id": 41,
+      "options": {
+        "frameIndex": 0,
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Time"
+          }
+        ]
+      },
+      "pluginVersion": "7.1.1",
+      "targets": [
+        {
+          "exemplar": false,
+          "expr": "sum(kafka_connect_mirror_mirrorcheckpointconnector_checkpoint_latency_ms{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (source, target)",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "A"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(kafka_connect_mirror_mirrorcheckpointconnector_checkpoint_latency_ms_avg{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (source, target)",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "B"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(kafka_connect_mirror_mirrorcheckpointconnector_checkpoint_latency_ms_min{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (source, target)",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "C"
+        },
+        {
+          "exemplar": true,
+          "expr": "sum(kafka_connect_mirror_mirrorcheckpointconnector_checkpoint_latency_ms_max{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"}) by (source, target)",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
+          "refId": "D"
+        }
+      ],
+      "title": "Offset Synchronization Latency",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "Time": 0,
+              "Value": 3,
+              "partition": 2,
+              "topic": 1
+            },
+            "renameByName": {
+              "Value": "Lag",
+              "partition": "Partition",
+              "topic": "Topic"
+            }
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Value #A": "Current",
+              "Value #Avg": "Average",
+              "Value #B": "Average",
+              "Value #C": "Min",
+              "Value #D": "Max",
+              "partition": "Partition",
+              "source": "Source",
+              "target": "Target",
+              "topic": "Topic",
+              "{partition=\"2\", topic=\"my-cluster-source.kafka-test-apps\"}": "Min"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "${DS_PROMETHEUS}",
+
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 25
+      },
+      "hiddenSeries": false,
+      "id": 34,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.1.1",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(kafka_consumer_fetch_manager_records_lag{clientid!~\"consumer-mirrormaker2-.*\"}) by (topic, partition)",
+          "expr": "sum(kafka_consumer_fetch_manager_records_lag{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\",clientid!~\"consumer-mirrormaker2-.*\"}) by (topic, partition)",
           "interval": "",
           "legendFormat": "{{topic}} (partition: {{partition}})",
           "refId": "A"
         }
       ],
-      "title": "Mirroring Lag",
-      "type": "timeseries"
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Consumer Lag",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
     },
     {
       "datasource": "${DS_PROMETHEUS}",
@@ -772,20 +1645,19 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 11,
+        "h": 9,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 25
       },
       "id": 36,
       "options": {
         "showHeader": true
       },
-      "pluginVersion": "8.0.3",
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(kafka_consumer_fetch_manager_records_lag{clientid!~\"consumer-mirrormaker2-.*\"}) by (partition, topic)",
+          "expr": "sum(kafka_consumer_fetch_manager_records_lag{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\",clientid!~\"consumer-mirrormaker2-.*\"}) by (partition, topic)",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -793,7 +1665,7 @@
           "refId": "A"
         }
       ],
-      "title": "Mirroring Lag",
+      "title": "Consumer Lag",
       "transformations": [
         {
           "id": "organize",
@@ -817,7 +1689,7 @@
     }
   ],
   "refresh": "5s",
-  "schemaVersion": 16,
+  "schemaVersion": 26,
   "style": "dark",
   "tags": [
     "Strimzi",
