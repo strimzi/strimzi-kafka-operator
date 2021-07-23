@@ -18,7 +18,6 @@ public class HttpBridgeAbstractST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeKafkaExternalListenersST.class);
 
     public static int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
-    public static String kafkaClientsPodName = "";
     protected static final String CLUSTER_NAME = "http-bridge-cluster-name";
     public static String bridgeUrl = "";
 

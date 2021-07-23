@@ -39,6 +39,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -117,7 +120,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         testWeirdUsername(extensionContext, weirdUserName, new KafkaListenerAuthenticationTls(), bridgeSpec, SecurityProtocol.SSL);
     }
 
-    private void testWeirdUsername(ExtensionContext extensionContext, String weirdUserName, KafkaListenerAuthentication auth, KafkaBridgeSpec spec, SecurityProtocol securityProtocol) {
+    private synchronized void testWeirdUsername(ExtensionContext extensionContext, String weirdUserName, KafkaListenerAuthentication auth, KafkaBridgeSpec spec, SecurityProtocol securityProtocol) {
         String aliceUser = mapWithClusterNames.get(extensionContext.getDisplayName());
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
@@ -158,23 +161,46 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
             .build();
 
         // Create topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName)
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .build());
 
         // Create user
         if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
-            resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, weirdUserName).build());
-            resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, aliceUser).build());
+            resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, weirdUserName)
+                .editMetadata()
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .build());
+            resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, aliceUser)
+                .editMetadata()
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .build());
         } else {
-            resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, weirdUserName).build());
-            resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, aliceUser).build());
+            resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, weirdUserName)
+                .editMetadata()
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .build());
+            resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, aliceUser)
+                .editMetadata()
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .build());
         }
 
         String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(NAMESPACE, true, kafkaClientsName).build());
 
         // Deploy http bridge
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(clusterName, KafkaResources.tlsBootstrapAddress(clusterName), 1)
+                .editMetadata()
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
                 .withNewSpecLike(spec)
                     .withBootstrapServers(KafkaResources.tlsBootstrapAddress(clusterName))
                     .withNewHttp(Constants.HTTP_BRIDGE_DEFAULT_PORT)
@@ -187,7 +213,11 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         Service service = KafkaBridgeUtils.createBridgeNodePortService(clusterName, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
         ServiceResource.createServiceResource(extensionContext, service, NAMESPACE);
 
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge()
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .build());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withClusterName(clusterName)
@@ -207,5 +237,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
     void createClassResources(ExtensionContext extensionContext) {
         LOGGER.debug("===============================================================");
         LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
+
+        cluster.createNamespace(extensionContext, NAMESPACE);
     }
 }

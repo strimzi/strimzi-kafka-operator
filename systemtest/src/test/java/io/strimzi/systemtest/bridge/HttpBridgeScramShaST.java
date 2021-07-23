@@ -152,11 +152,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, scramShaUser);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName, scramShaUser)
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(NAMESPACE, true, kafkaClientsName, scramShaUser).build());
 
         kafkaClientsPodName = kubeClient(NAMESPACE).listPodsByPrefixInName(NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
 
@@ -189,9 +185,12 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
                     .endTls()
                 .endSpec().build());
 
+        producerName = producerName + new Random().nextInt(Integer.MAX_VALUE);
+        consumerName = consumerName + new Random().nextInt(Integer.MAX_VALUE);
+
         kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
-            .withProducerName(producerName + new Random().nextInt(Integer.MAX_VALUE))
-            .withConsumerName(consumerName + new Random().nextInt(Integer.MAX_VALUE))
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeScramShaClusterName))
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)

@@ -18,6 +18,8 @@ import java.util.Collections;
  */
 public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
 
+    public static ExtensionContext sharedExtensionContext;
+
     private static final Logger LOGGER = LogManager.getLogger(BeforeAllOnce.class);
     private static boolean systemReady = false;
     private static SetupClusterOperator install;
@@ -29,13 +31,14 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
     synchronized private static void systemSetup(ExtensionContext extensionContext) throws Exception {
         // 'if' is used to make sure procedure will be executed only once, not before every class
         if (!systemReady) {
+            sharedExtensionContext = extensionContext;
             systemReady = true;
             LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
             LOGGER.debug("{} - [BEFORE SUITE] has been called", BeforeAllOnce.class.getName());
 
             // setup cluster operator before all suites only once
             install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                .withExtensionContext(extensionContext)
+                .withExtensionContext(sharedExtensionContext)
                 .withNamespace(Constants.INFRA_NAMESPACE)
                 .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
                 .createInstallation()
@@ -65,6 +68,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [AFTER SUITE] has been called", this.getClass().getName());
         // Clear cluster from all created namespaces and configurations files for cluster operator.
+
         install.deleteClusterOperatorInstallFiles();
         KubeClusterResource.getInstance().deleteCustomResources();
         KubeClusterResource.getInstance().deleteNamespaces();

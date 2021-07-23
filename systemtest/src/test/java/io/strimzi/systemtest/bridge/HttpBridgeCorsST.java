@@ -51,6 +51,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     private static final String NOT_ALLOWED_ORIGIN = "https://evil.io";
 
     private KafkaBridgeExampleClients kafkaBridgeClientJob;
+    private String kafkaClientsPodName;
 
     @ParallelTest
     void testCorsOriginAllowed() {
@@ -143,10 +144,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
         String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName)
-            .editMetadata()
-                .withNamespace(NAMESPACE)
-            .endMetadata().build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(NAMESPACE, false, kafkaClientsName).build());
         kafkaClientsPodName = kubeClient(NAMESPACE).listPodsByPrefixInName(NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridgeWithCors(httpBridgeCorsClusterName, KafkaResources.plainBootstrapAddress(httpBridgeCorsClusterName),

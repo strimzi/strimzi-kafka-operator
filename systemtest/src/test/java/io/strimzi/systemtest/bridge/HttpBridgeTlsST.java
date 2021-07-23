@@ -31,6 +31,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.Random;
+
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
@@ -49,6 +51,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
     private static final String NAMESPACE = "http-bridge-tls-namespace";
     private final String httpBridgeTlsClusterName = "http-bridge-tls-cluster-name";
     private KafkaBridgeExampleClients kafkaBridgeClientJob;
+    private String kafkaClientsPodName;
 
     @ParallelTest
     void testSendSimpleMessageTls(ExtensionContext extensionContext) {
@@ -154,7 +157,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
                 .withNamespace(NAMESPACE)
             .endMetadata().build());
 
-        kafkaClientsPodName = kubeClient(NAMESPACE).listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+        kafkaClientsPodName = kubeClient(NAMESPACE).listPodsByPrefixInName(NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecret = new CertSecretSource();
@@ -183,10 +186,13 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
             .endSpec()
             .build());
 
-        KafkaBridgeExampleClients kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
+        producerName = producerName + new Random().nextInt(Integer.MAX_VALUE);
+        consumerName = consumerName + new Random().nextInt(Integer.MAX_VALUE);
+
+        kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeTlsClusterName))
-            .withProducerName(httpBridgeTlsClusterName + "-" + producerName)
-            .withConsumerName(httpBridgeTlsClusterName + "-" + consumerName)
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withPort(bridgePort)

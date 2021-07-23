@@ -25,10 +25,8 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.test.annotations.IsolatedSuite;
 import io.vertx.core.json.JsonArray;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +35,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.parallel.Isolated;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,7 +60,7 @@ import static org.hamcrest.Matchers.containsString;
 @Tag(REGRESSION)
 @Tag(BRIDGE)
 @Tag(INTERNAL_CLIENTS_USED)
-@IsolatedSuite("Different deployment of the Cluster Operator")
+@Isolated("Different deployment of the Cluster Operator")
 class HttpBridgeST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);
     private static final String NAMESPACE = "bridge-namespace";
@@ -69,10 +68,11 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     private final String httpBridgeClusterName = "http-bridge-cluster-name";
 
     private KafkaBridgeExampleClients kafkaBridgeClientJob;
+    private String kafkaClientsPodName;
 
     @ParallelTest
     void testSendSimpleMessage(ExtensionContext extensionContext) {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         KafkaBridgeExampleClients kafkaBridgeClientJobProduce = kafkaBridgeClientJob.toBuilder().withTopicName(topicName).build();
 
         // Create topic
@@ -104,16 +104,22 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
     @ParallelTest
     void testReceiveSimpleMessage(ExtensionContext extensionContext) {
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, TOPIC_NAME)
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, topicName)
             .editMetadata()
                 .withNamespace(NAMESPACE)
             .endMetadata()
             .build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.toBuilder()
+            .withTopicName(topicName)
+            .build()
+            .consumerStrimziBridge()
+            .build());
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withTopicName(TOPIC_NAME)
+            .withTopicName(topicName)
             .withNamespaceName(NAMESPACE)
             .withClusterName(httpBridgeClusterName)
             .withMessageCount(MESSAGE_COUNT)
@@ -193,13 +199,13 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         // Remove variable which is already in use
         envVarGeneral.remove(usedVariable);
         LOGGER.info("Verify values before update");
-        checkReadinessLivenessProbe(KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), initialDelaySeconds, timeoutSeconds,
+        checkReadinessLivenessProbe(NAMESPACE, KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
         checkSpecificVariablesInContainer(NAMESPACE, KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarGeneral);
 
         LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
         assertThat(
-                StUtils.checkEnvVarInPod(kubeClient(NAMESPACE).listPods(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
+                StUtils.checkEnvVarInPod(NAMESPACE, kubeClient(NAMESPACE).listPods(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
                 is(not("test.value"))
         );
 
@@ -258,7 +264,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         KafkaBridgeUtils.waitForKafkaBridgeReady(NAMESPACE, httpBridgeClusterName);
         PodUtils.waitForPodsReady(kubeClient(NAMESPACE).getDeploymentSelectors(deploymentName), 0, true);
 
-        bridgePods = kubeClient(NAMESPACE).listPodNames(Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
+        bridgePods = kubeClient(NAMESPACE).listPodNames(NAMESPACE, httpBridgeClusterName, Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
         KafkaBridgeStatus bridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(bridgeName).get().getStatus();
 
         assertThat(bridgePods.size(), is(0));
@@ -399,8 +405,6 @@ class HttpBridgeST extends HttpBridgeAbstractST {
             ).createInstallation()
             .runInstallation();
 
-        // TODO: maybe wait???
-
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
         String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
 
@@ -431,9 +435,12 @@ class HttpBridgeST extends HttpBridgeAbstractST {
             .endSpec()
             .build());
 
+        producerName = producerName + new Random().nextInt(Integer.MAX_VALUE);
+        consumerName = consumerName + new Random().nextInt(Integer.MAX_VALUE);
+
         kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
-            .withProducerName(producerName + new Random().nextInt(Integer.MAX_VALUE))
-            .withConsumerName(consumerName + new Random().nextInt(Integer.MAX_VALUE))
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeClusterName))
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
@@ -444,14 +451,10 @@ class HttpBridgeST extends HttpBridgeAbstractST {
             .build();
     }
 
-//    @AfterAll
-//    void tearDown(ExtensionContext extensionContext) {
-//        // rollback to default configuration of cluster operator
-//        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-//            .withExtensionContext(extensionContext)
-//            .withNamespace(Constants.INFRA_NAMESPACE)
-//            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-//            .createInstallation()
-//            .runInstallation();
-//    }
+    @AfterAll
+    void tearDown(ExtensionContext extensionContext) throws Exception {
+        this.afterAllMayOverride(extensionContext);
+
+        install = install.rollbackToDefaultConfiguration();
+    }
 }

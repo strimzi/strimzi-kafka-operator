@@ -407,4 +407,13 @@ public class SetupClusterOperator {
             cmdKubeClient().delete(clusterOperatorConfig);
         }
     }
+
+    public SetupClusterOperator rollbackToDefaultConfiguration() {
+        return new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(BeforeAllOnce.sharedExtensionContext)
+            .withNamespace(Constants.INFRA_NAMESPACE)
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .createInstallation()
+            .runInstallation();
+    }
 }
