@@ -65,7 +65,7 @@ public class MicrometerMetricsProvider implements MetricsProvider {
     public Timer timer(String name, String description, Tags tags) {
         return Timer.builder(name)
                 .description(description)
-                .sla(Duration.ofMillis(10), Duration.ofMillis(25), Duration.ofMillis(50), Duration.ofMillis(100), Duration.ofMillis(500), Duration.ofMillis(1000), Duration.ofMillis(5000))
+                .sla(Duration.ofMillis(1000), Duration.ofMillis(5000), Duration.ofMillis(10000), Duration.ofMillis(30000), Duration.ofMillis(60000), Duration.ofMillis(120000), Duration.ofMillis(300000))
                 .tags(tags)
                 .register(metrics);
     }
