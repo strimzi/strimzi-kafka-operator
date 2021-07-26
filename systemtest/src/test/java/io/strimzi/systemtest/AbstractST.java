@@ -474,10 +474,14 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    protected void assertNoCoErrorsLogged(long sinceSeconds) {
+    protected void assertNoCoErrorsLogged(String namespaceName, long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
-        String clusterOperatorLog = cmdKubeClient().searchInLog("deploy", ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable");
+        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog("deploy", ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
+    }
+
+    protected void assertNoCoErrorsLogged(long sinceSeconds) {
+        assertNoCoErrorsLogged(kubeClient().getNamespace(), sinceSeconds);
     }
 
     protected void testDockerImagesForKafkaCluster(String clusterName, String clusterOperatorNamespaceName, String kafkaNamespaceName,

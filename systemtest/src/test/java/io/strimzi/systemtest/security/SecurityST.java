@@ -650,6 +650,7 @@ class SecurityST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String secretName = KafkaResources.clusterCaCertificateSecretName(clusterName);
+        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         LocalDateTime maintenanceWindowStart = LocalDateTime.now().withSecond(0);
         long maintenanceWindowDuration = 14;
@@ -668,7 +669,7 @@ class SecurityST extends AbstractST {
             .build());
 
 
-        KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build();
+        KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, userName).build();
 
         resourceManager.createResource(extensionContext, user);
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());

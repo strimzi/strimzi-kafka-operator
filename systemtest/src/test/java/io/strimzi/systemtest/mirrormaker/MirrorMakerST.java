@@ -453,7 +453,11 @@ public class MirrorMakerST extends AbstractST {
             .build();
 
         internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
-        internalKafkaClient.consumesTlsMessagesUntilOperationIsSuccessful(internalKafkaClient.getMessageCount());
+        InternalKafkaClient newInternalKafkaClient = internalKafkaClient.toBuilder()
+                .withClusterName(kafkaClusterTargetName)
+                .withKafkaUsername(userTarget.getMetadata().getName())
+                .build();
+        newInternalKafkaClient.consumesTlsMessagesUntilOperationIsSuccessful(internalKafkaClient.getMessageCount());
     }
 
     @ParallelNamespaceTest

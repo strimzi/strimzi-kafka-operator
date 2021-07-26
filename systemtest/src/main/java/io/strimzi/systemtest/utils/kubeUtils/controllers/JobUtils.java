@@ -48,7 +48,7 @@ public class JobUtils {
     public static void waitForJobFailure(String jobName, String namespace, long timeout) {
         LOGGER.info("Waiting for job: {} will be in error state", jobName);
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeout,
-            () -> !kubeClient().checkSucceededJobStatus(namespace, jobName, 1));
+            () -> kubeClient().checkFailedJobStatus(namespace, jobName, 1));
     }
 
     /**
