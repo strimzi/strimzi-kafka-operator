@@ -14,6 +14,8 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.RestartReasons;
+import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -37,10 +39,11 @@ public class ZookeeperSetOperator extends StatefulSetOperator {
      * @param client The Kubernetes client
      * @param leaderFinder The Zookeeper leader finder.
      * @param operationTimeoutMs The timeout.
-     * @param metricsProvider - metrics provider needed by pod operator for publishing restart reasons
+     * @param podOperations used to manage stateful set
+     * @param pvcOperations used to manage persistent volume claims
      */
-    public ZookeeperSetOperator(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder leaderFinder, long operationTimeoutMs, MetricsProvider metricsProvider) {
-        super(vertx, client, operationTimeoutMs, metricsProvider);
+    public ZookeeperSetOperator(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder leaderFinder, long operationTimeoutMs, PodOperator podOperations, PvcOperator pvcOperations) {
+        super(vertx, client, operationTimeoutMs, podOperations, pvcOperations);
         this.leaderFinder = leaderFinder;
     }
 

@@ -713,15 +713,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             RestartReasons reasons = new RestartReasons();
 
             if (this.clusterCa.keyReplaced()) {
-                reasons.add(RestartReason.CA_CERT_KEY_REPLACED, "trust new cluster CA certificate signed by new key");
+                reasons.add(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED);
             }
             if (this.clientsCa.keyReplaced()) {
-                reasons.add(RestartReason.CA_CERT_KEY_REPLACED, "trust new clients CA certificate signed by new key");
+                reasons.add(RestartReason.CLIENT_CA_CERT_KEY_REPLACED);
             }
             if (!reasons.isEmpty()) {
                 Future<Void> zkRollFuture;
                 Function<Pod, RestartReasons> rollPodAndLogReason = pod -> {
-                    LOGGER.debugCr(reconciliation, "Rolling Pod {} to {}", pod.getMetadata().getName(), reasons.getReasonMessages());
+                    LOGGER.debugCr(reconciliation, "Rolling Pod {} to {}", pod.getMetadata().getName(), reasons.getAllReasonNotes());
                     return reasons;
                 };
                 if (this.clusterCa.keyReplaced()) {
@@ -758,7 +758,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return deploymentOperations.getAsync(namespace, deploymentName)
                     .compose(dep -> {
                         if (dep != null) {
-                            LOGGER.debugCr(reconciliation, "Rolling Deployment {} to {}", deploymentName, reasons.getReasonMessages());
+                            LOGGER.debugCr(reconciliation, "Rolling Deployment {} to {}", deploymentName, reasons.getAllReasonNotes());
                             return deploymentOperations.rollingUpdate(reconciliation, namespace, deploymentName, operationTimeoutMs, reasons);
                         } else {
                             return Future.succeededFuture();
@@ -789,7 +789,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 RestartReasons reasons = new RestartReasons();
                                 if (pod != null && podsToRoll.contains(pod.getMetadata().getName())) {
                                     LOGGER.debugCr(reconciliation, "Rolling Kafka pod {} due to manual rolling update annotation on a pod", pod.getMetadata().getName());
-                                    return reasons.add(RestartReason.MANUAL_ROLLING_UPDATE, "manual rolling update annotation on a pod");
+                                    return reasons.add(RestartReason.MANUAL_ROLLING_UPDATE);
                                 } else {
                                     return reasons;
                                 }
@@ -821,7 +821,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 }
                                 LOGGER.debugCr(reconciliation, "Rolling Kafka pod {} due to manual rolling update annotation",
                                         pod.getMetadata().getName());
-                                return new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "manual rolling update");
+                                return new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE);
                             });
                         } else {
                             // The STS is not annotated to roll all pods.
@@ -859,7 +859,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return zkSetOperations.maybeRollingUpdate(reconciliation, sts, pod -> {
                                 if (pod != null && podsToRoll.contains(pod.getMetadata().getName())) {
                                     LOGGER.debugCr(reconciliation, "Rolling ZooKeeper pod {} due to manual rolling update annotation on a pod", pod.getMetadata().getName());
-                                    return new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "manual rolling update annotation on a pod");
+                                    return new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE);
                                 } else {
                                     return new RestartReasons();
                                 }
@@ -888,7 +888,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return zkSetOperations.maybeRollingUpdate(reconciliation, sts, pod -> {
                                 LOGGER.debugCr(reconciliation, "Rolling Zookeeper pod {} due to manual rolling update",
                                         pod.getMetadata().getName());
-                                return new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "manual rolling update");
+                                return new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE);
                             });
                         } else {
                             // The STS is not annotated to roll all pods.
@@ -954,7 +954,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         RestartReasons reasons = new RestartReasons();
                         if (notUpToDate) {
                             LOGGER.debugCr(reconciliation, "Rolling pod {} prior to upgrade", pod.getMetadata().getName());
-                            reasons.add(RestartReason.ROLL_BEFORE_UPGRADE, "Rolling pod prior to upgrade");
+                            reasons.add(RestartReason.ROLL_BEFORE_UPGRADE);
                         }
                         return reasons;
                     });
@@ -2693,7 +2693,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     Storage currentStorage = ModelUtils.decodeStorageFromJson(jsonStorage);
 
                     if (new StorageDiff(reconciliation, currentStorage, desiredStorage, currentReplicas, desiredReplicas).isVolumesAddedOrRemoved())    {
-                        return reasons.add(RestartReason.JBOD_VOLUMES_CHANGED, "JBOD volumes were added or removed");
+                        return reasons.add(RestartReason.JBOD_VOLUMES_CHANGED);
                     }
                 }
             }
@@ -3317,7 +3317,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> entityOperatorRollingUpdate() {
             //TODO, organise CA stuff
-            RestartReasons reasons = new RestartReasons().add(RestartReason.CA_CERT_CHANGED, "Existing Entity Operator certs changed");
+            RestartReasons reasons = new RestartReasons().add(RestartReason.ENTITY_OPERATOR_CERTS_CHANGED);
             return withVoid(deploymentOperations.rollingUpdate(reconciliation, namespace, EntityOperator.entityOperatorName(name), operationTimeoutMs, reasons));
         }
 
@@ -3416,7 +3416,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlRollingUpdate() {
-            RestartReasons reasons = new RestartReasons().add(RestartReason.CA_CERT_CHANGED, "Existing Cruise Control certs changed");
+            RestartReasons reasons = new RestartReasons().add(RestartReason.CRUISE_CONTROL_CERTS_CHANGED);
             return withVoid(deploymentOperations.rollingUpdate(reconciliation, namespace, CruiseControl.cruiseControlName(name), operationTimeoutMs, reasons));
         }
 
@@ -3491,20 +3491,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
             }
             if (!isPodUpToDate) {
-                reasons.add(RestartReason.POD_HAS_OLD_GENERATION, "Pod has old generation");
+                reasons.add(RestartReason.POD_HAS_OLD_GENERATION);
             }
             if (fsResizingRestartRequest.contains(pod.getMetadata().getName()))   {
-                reasons.add(RestartReason.FILE_SYSTEM_RESIZE_NEEDED, "file system needs to be resized");
+                reasons.add(RestartReason.FILE_SYSTEM_RESIZE_NEEDED);
             }
             if (!areCustomListenerCertsUpToDate) {
-                reasons.add(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE, "custom certificate one or more listeners changed");
+                reasons.add(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE);
             }
             if (nodeCertsChange) {
-                reasons.add(RestartReason.SERVER_CERT_CHANGE, "server certificates changed");
+                reasons.add(RestartReason.SERVER_CERT_CHANGE);
             }
             if (!reasons.isEmpty()) {
                 LOGGER.debugCr(reconciliation, "Rolling pod {} due to {}",
-                        pod.getMetadata().getName(), reasons.getReasonMessages());
+                        pod.getMetadata().getName(), reasons.getAllReasonNotes());
             }
             return reasons;
         }
@@ -3690,7 +3690,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaExporterRollingUpdate() {
-            RestartReasons reasons = new RestartReasons().add(RestartReason.CA_CERT_CHANGED, "Existing Kafka Exporter certs changed");
+            RestartReasons reasons = new RestartReasons().add(RestartReason.KAFKA_EXPORTER_CERTS_CHANGED);
             return withVoid(deploymentOperations.rollingUpdate(reconciliation, namespace, KafkaExporter.kafkaExporterName(name), operationTimeoutMs, reasons));
         }
 

@@ -14,7 +14,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.RestartReasons;
-import io.strimzi.operator.common.operator.resource.notification.RestartReasonPublisher;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -24,17 +23,6 @@ import io.vertx.core.Vertx;
 public class DeploymentOperator extends AbstractScalableResourceOperator<KubernetesClient, Deployment, DeploymentList, RollableScalableResource<Deployment>> {
 
     private final PodOperator podOperations;
-
-    /**
-     * Constructor
-     *
-     * @param vertx The Vertx instance
-     * @param client The Kubernetes client
-     * @param restartReasonPublisher - provides metrics TODO
-     */
-    public DeploymentOperator(Vertx vertx, KubernetesClient client, RestartReasonPublisher restartReasonPublisher) {
-        this(vertx, client, new PodOperator(vertx, client, restartReasonPublisher));
-    }
 
     public DeploymentOperator(Vertx vertx, KubernetesClient client, PodOperator podOperations) {
         super(vertx, client, "Deployment");

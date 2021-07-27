@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.model.RestartReason;
 import io.strimzi.operator.common.model.RestartReasons;
 import io.strimzi.operator.common.Reconciliation;
@@ -115,7 +116,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
     @Override
     protected StatefulSetOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new StatefulSetOperator(vertx, mockClient, 60_000L, mock(MetricsProvider.class)) {
+        return new StatefulSetOperator(vertx, mockClient, 60_000L, mock(PodOperator.class), mock(PvcOperator.class)) {
             @Override
             public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
@@ -130,7 +131,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
     @Override
     protected StatefulSetOperator createResourceOperationsWithMockedReadiness(Vertx vertx, KubernetesClient mockClient) {
-        return new StatefulSetOperator(vertx, mockClient, 60_000L, mock(MetricsProvider.class)) {
+        return new StatefulSetOperator(vertx, mockClient, 60_000L,  mock(PodOperator.class), mock(PvcOperator.class)) {
             @Override
             public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret) {
                 return Future.succeededFuture();
@@ -206,7 +207,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         };
 
         Checkpoint a = context.checkpoint();
-        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod -> new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "roll"))
+        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod -> new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE))
             .onComplete(context.succeeding(v -> a.flag()));
     }
 
@@ -257,7 +258,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         };
 
         Checkpoint a = context.checkpoint();
-        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod ->  new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "roll"))
+        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod ->  new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE))
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e, instanceOf(TimeoutException.class));
                 a.flag();
@@ -304,7 +305,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         };
 
         Checkpoint a = context.checkpoint();
-        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod ->  new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "roll")).onComplete(context.failing(e -> context.verify(() -> {
+        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod ->  new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE)).onComplete(context.failing(e -> context.verify(() -> {
             assertThat(e, instanceOf(TimeoutException.class));
             a.flag();
         })));
@@ -349,7 +350,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         };
 
         Checkpoint a = context.checkpoint();
-        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod ->  new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "roll"))
+        op.maybeRestartPod(new Reconciliation("test", "kind", "namespace", "name"), resource, "my-pod-0", pod ->  new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE))
             .onComplete(context.failing(e -> context.verify(() -> {
                 assertThat(e.getMessage(), is("reconcile failed"));
                 a.flag();

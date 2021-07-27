@@ -466,7 +466,7 @@ public class KafkaRollerTest {
         Checkpoint async = testContext.checkpoint();
         kafkaRoller.rollingRestart(pod -> {
             if (podsToRestart.contains(podName2Number(pod.getMetadata().getName()))) {
-                return new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "roll");
+                return new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE);
             } else {
                 return new RestartReasons();
             }
@@ -493,7 +493,7 @@ public class KafkaRollerTest {
         CountDownLatch async = new CountDownLatch(1);
         kafkaRoller.rollingRestart(pod -> {
             if (podsToRestart.contains(podName2Number(pod.getMetadata().getName()))) {
-                return  new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "roll");
+                return  new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE);
             } else {
                 return new RestartReasons();
             }

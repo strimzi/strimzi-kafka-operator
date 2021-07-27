@@ -16,6 +16,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.RestartReasons;
 import io.strimzi.operator.common.operator.resource.notification.RestartReasonPublisher;
+import io.strimzi.operator.common.operator.resource.publication.PodRestartReasonPublisher;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -28,7 +29,7 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PodOperator.class);
     private static final String NO_UID = "NULL";
-    private RestartReasonPublisher restartPublisher;
+    private final PodRestartReasonPublisher restartPublisher;
 
     /**
      * Constructor
@@ -37,7 +38,7 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
      * @param client The Kubernetes client
      * @param restartPublisher - publishes restart reasons to K8s events and Prometheus
      */
-    public PodOperator(Vertx vertx, KubernetesClient client, RestartReasonPublisher restartPublisher) {
+    public PodOperator(Vertx vertx, KubernetesClient client, PodRestartReasonPublisher restartPublisher) {
         super(vertx, client, "Pods");
         this.restartPublisher = restartPublisher;
     }

@@ -20,7 +20,6 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.RestartReasons;
@@ -29,7 +28,6 @@ import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.strimzi.operator.common.operator.resource.notification.RestartReasonPublisher;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -53,17 +51,6 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     private final PvcOperator pvcOperations;
     protected final long operationTimeoutMs;
     protected final SecretOperator secretOperations;
-
-    /**
-     * Constructor
-     * @param vertx The Vertx instance.
-     * @param client The Kubernetes client.
-     * @param operationTimeoutMs The timeout.
-     * @param metricsProvider - metrics provider needed by pod operator for publishing restart reasons
-     */
-    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs, MetricsProvider metricsProvider) {
-        this(vertx, client, operationTimeoutMs, new PodOperator(vertx, client, new RestartReasonPublisher(client, metricsProvider)), new PvcOperator(vertx, client));
-    }
 
     /**
      * @param vertx The Vertx instance.
@@ -160,7 +147,7 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
             Future<Void> fut;
             RestartReasons reasons = podNeedsRestart.apply(pod);
             if (reasons != null && !reasons.isEmpty()) {
-                LOGGER.debugCr(reconciliation, "Rolling update of {}/{}: pod {} due to {}", namespace, name, podName, reasons.getReasonMessages());
+                LOGGER.debugCr(reconciliation, "Rolling update of {}/{}: pod {} due to {}", namespace, name, podName, reasons.getAllReasonNotes());
                 fut = restartPod(reconciliation, pod, reasons);
             } else {
                 LOGGER.debugCr(reconciliation, "Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);

@@ -210,7 +210,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 supplier,
                 config);
 
-        RestartReasons expectedReason = new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE, "manual rolling update");
+        RestartReasons expectedReason = new RestartReasons().add(RestartReason.MANUAL_ROLLING_UPDATE);
         Checkpoint async = context.checkpoint();
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -315,13 +315,13 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                     RestartReasons reasonsToRollZkPod2 = zkPodNeedsRestart.apply(podWithName("my-cluster-zookeeper-2"));
 
                     assertThat("Pod 0 not annotated for restart", reasonsToRollZkPod0.isEmpty());
-                    assertThat("Pod 0 not annotated for restart", reasonsToRollZkPod0.getReasonMessages().isEmpty());
+                    assertThat("Pod 0 not annotated for restart", reasonsToRollZkPod0.getAllReasonNotes().isEmpty());
 
                     assertThat("Pod 1 is annotated for restart", reasonsToRollZkPod1.contains(RestartReason.MANUAL_ROLLING_UPDATE));
-                    assertThat("Pod 1 is annotated for restart", reasonsToRollZkPod1.getReasonMessages().contains("manual rolling update annotation on a pod"));
+                    assertThat("Pod 1 is annotated for restart", reasonsToRollZkPod1.getAllReasonNotes().contains("manual rolling update annotation on a pod"));
 
                     assertThat("Pod 2 is annotated for restart", reasonsToRollZkPod2.contains(RestartReason.MANUAL_ROLLING_UPDATE));
-                    assertThat("Pod 2 is annotated for restart", reasonsToRollZkPod2.getReasonMessages().contains("manual rolling update annotation on a pod"));
+                    assertThat("Pod 2 is annotated for restart", reasonsToRollZkPod2.getAllReasonNotes().contains("manual rolling update annotation on a pod"));
 
                     // Verify Kafka rolling updates
                     assertThat(kao.maybeRollKafkaInvocations, is(1));
@@ -331,13 +331,13 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                     RestartReasons reasonsToRollKafkaPod2 = kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2"));
 
                     assertThat("Pod 0 is annotated for restart", reasonsToRollKafkaPod0.contains(RestartReason.MANUAL_ROLLING_UPDATE));
-                    assertThat("Pod 0 is annotated for restart", reasonsToRollKafkaPod0.getReasonMessages().contains("manual rolling update annotation on a pod"));
+                    assertThat("Pod 0 is annotated for restart", reasonsToRollKafkaPod0.getAllReasonNotes().contains("manual rolling update annotation on a pod"));
 
                     assertThat("Pod 1 is annotated for restart", reasonsToRollKafkaPod1.contains(RestartReason.MANUAL_ROLLING_UPDATE));
-                    assertThat("Pod 1 is annotated for restart", reasonsToRollKafkaPod1.getReasonMessages().contains("manual rolling update annotation on a pod"));
+                    assertThat("Pod 1 is annotated for restart", reasonsToRollKafkaPod1.getAllReasonNotes().contains("manual rolling update annotation on a pod"));
 
                     assertThat("Pod 2 is not annotated for restart", reasonsToRollKafkaPod2.isEmpty());
-                    assertThat("Pod 0 is annotated for restart", reasonsToRollKafkaPod2.getReasonMessages().isEmpty());
+                    assertThat("Pod 0 is annotated for restart", reasonsToRollKafkaPod2.getAllReasonNotes().isEmpty());
 
                     async.flag();
                 })));

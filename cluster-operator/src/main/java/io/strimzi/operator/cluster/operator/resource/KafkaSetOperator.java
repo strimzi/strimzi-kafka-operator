@@ -8,11 +8,11 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.model.RestartReasons;
+import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
@@ -25,21 +25,17 @@ public class KafkaSetOperator extends StatefulSetOperator {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaSetOperator.class);
 
-    private final AdminClientProvider adminClientProvider;
-
     /**
      * Constructor
      *
      * @param vertx  The Vertx instance
      * @param client The Kubernetes client
-     * @param operationTimeoutMs The timeout.
-     * @param adminClientProvider A provider for the AdminClient.
-     * @param metricsProvider - metrics provider needed by pod operator for publishing restart reasons
+     * @param operationTimeoutMs The timeout
+     * @param podOperator used to manage stateful set
+     * @param pvcOperator used to manage persistent volume claims
      */
-    public KafkaSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs,
-                            AdminClientProvider adminClientProvider, MetricsProvider metricsProvider) {
-        super(vertx, client, operationTimeoutMs, metricsProvider);
-        this.adminClientProvider = adminClientProvider;
+    public KafkaSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs, PodOperator podOperator, PvcOperator pvcOperator) {
+        super(vertx, client, operationTimeoutMs, podOperator, pvcOperator);
     }
 
     @Override

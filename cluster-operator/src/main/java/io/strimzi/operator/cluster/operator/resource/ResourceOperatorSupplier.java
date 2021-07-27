@@ -26,7 +26,6 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
-import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -47,7 +46,7 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
-import io.strimzi.operator.common.operator.resource.notification.RestartReasonPublisher;
+import io.strimzi.operator.common.operator.resource.publication.PodRestartReasonPublisher;
 import io.vertx.core.Vertx;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
@@ -93,9 +92,8 @@ public class ResourceOperatorSupplier {
                  () -> new BackOff(5_000, 2, 4)),
              new DefaultAdminClientProvider(),
              new DefaultZookeeperScalerProvider(),
-             new PodOperator(vertx, client, new PodRestartReasonPublisher(client, metricsProvider, operatorName)),
+             new PodOperator(vertx, client, new PodRestartReasonPublisher(client, metricsProvider, pfa, operatorName)),
              metricsProvider,
-             new RestartReasonPublisher(client, metricsProvider),
              pfa,
              gates,
              operationTimeoutMs);
@@ -103,22 +101,22 @@ public class ResourceOperatorSupplier {
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder zlf,
                                     AdminClientProvider adminClientProvider, ZookeeperScalerProvider zkScalerProvider,
-                                    MetricsProvider metricsProvider, RestartReasonPublisher restartReasonPublisher, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
+                                    PodOperator podOperator, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs, metricsProvider),
-                new KafkaSetOperator(vertx, client, operationTimeoutMs, adminClientProvider, metricsProvider),
+                new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs, podOperator, new PvcOperator(vertx, client)),
+                new KafkaSetOperator(vertx, client, operationTimeoutMs, podOperator, new PvcOperator(vertx, client)),
                 new ConfigMapOperator(vertx, client),
                 new SecretOperator(vertx, client),
                 new PvcOperator(vertx, client),
-                new DeploymentOperator(vertx, client, restartReasonPublisher),
+                new DeploymentOperator(vertx, client, podOperator),
                 new ServiceAccountOperator(vertx, client, gates.serviceAccountPatchingEnabled()),
                 new RoleBindingOperator(vertx, client),
                 new RoleOperator(vertx, client),
                 new ClusterRoleBindingOperator(vertx, client),
                 new NetworkPolicyOperator(vertx, client),
                 new PodDisruptionBudgetOperator(vertx, client),
-                new PodOperator(vertx, client, new RestartReasonPublisher(client, metricsProvider)),
+                podOperator,
                 new IngressOperator(vertx, client),
                 new IngressV1Beta1Operator(vertx, client),
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,

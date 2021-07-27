@@ -476,7 +476,7 @@ public class KafkaRoller {
         // Always get the broker config. This request gets sent to that specific broker, so it's a proof that we can
         // connect to the broker and that it's capable of responding.
         if (!initAdminClient()) {
-            RestartReasons reasons = new RestartReasons().add(RestartReason.ADMIN_CLIENT_CANNOT_CONNECT_TO_BROKER, "Unable to connect to broker with admin client");
+            RestartReasons reasons = new RestartReasons().add(RestartReason.ADMIN_CLIENT_CANNOT_CONNECT_TO_BROKER);
             return new RestartPlan(true, reasons);
         }
         Config brokerConfig;
@@ -510,7 +510,7 @@ public class KafkaRoller {
                 needsReconfig = true;
             }
         } else if (needsRestart) {
-            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted. Reason: {}", podId, reasonToRestartPod.getReasonMessages());
+            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted. Reason: {}", podId, reasonToRestartPod.getAllReasonNotes());
         }
         return new RestartPlan(needsRestart, needsReconfig, podStuck, diff, loggingDiff, reasonToRestartPod);
     }
