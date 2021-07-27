@@ -26,6 +26,7 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 
 import java.util.List;
 import java.util.Map.Entry;
@@ -100,7 +101,11 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                     .orElseThrow(() -> new InvalidResourceException("connectCluster with alias " + connectClusterAlias + " cannot be found in the list of clusters at spec.clusters"));
         }        
         cluster.setConfiguration(new KafkaMirrorMaker2Configuration(reconciliation, connectCluster.getConfig().entrySet()));
-        return fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
+        KafkaMirrorMaker2Cluster mm2 = fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
+        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_DEPLOYMENT_LABELS) != null) {
+            mm2.templatePodLabels = Util.mergeLabelsOrAnnotations(mm2.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_DEPLOYMENT_LABELS).getValue()));
+        }
+        return mm2;
     }
 
     private static KafkaConnectSpec buildKafkaConnectSpec(KafkaMirrorMaker2Spec spec, KafkaMirrorMaker2ClusterSpec connectCluster) {

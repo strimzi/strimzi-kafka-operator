@@ -298,6 +298,10 @@ public class KafkaConnectCluster extends AbstractModel {
             }
         }
 
+        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_CONNECT_DEPLOYMENT_LABELS) != null) {
+            kafkaConnect.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaConnect.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_CONNECT_DEPLOYMENT_LABELS).getValue()));
+        }
+
         return kafkaConnect;
     }
 

@@ -34,6 +34,7 @@ import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.Main;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -207,6 +208,9 @@ public class EntityOperator extends AbstractModel {
                 tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
             result.tlsSidecarImage = tlsSideCarImage;
+            if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_DEPLOYMENT_LABELS) != null) {
+                result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_DEPLOYMENT_LABELS).getValue()));
+            }
         }
         return result;
     }

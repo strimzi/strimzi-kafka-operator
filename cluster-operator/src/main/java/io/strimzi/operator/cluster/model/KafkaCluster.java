@@ -568,6 +568,10 @@ public class KafkaCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
         }
 
+        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_KAFKA_DEPLOYMENT_LABELS) != null) {
+            result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_KAFKA_DEPLOYMENT_LABELS).getValue()));
+        }
+
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
         return result;
     }

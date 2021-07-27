@@ -316,6 +316,10 @@ public class ZookeeperCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
         }
 
+        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_ZOOKEEPER_DEPLOYMENT_LABELS) != null) {
+            zk.templatePodLabels = Util.mergeLabelsOrAnnotations(zk.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_ZOOKEEPER_DEPLOYMENT_LABELS).getValue()));
+        }
+
         return zk;
     }
 

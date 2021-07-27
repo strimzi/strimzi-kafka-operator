@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -147,6 +148,10 @@ public class KafkaExporter extends AbstractModel {
             kafkaExporter.setOwnerReference(kafkaAssembly);
         } else {
             kafkaExporter.isDeployed = false;
+        }
+
+        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_DEPLOYMENT_LABELS) != null) {
+            kafkaExporter.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaExporter.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_DEPLOYMENT_LABELS).getValue()));
         }
 
         return kafkaExporter;

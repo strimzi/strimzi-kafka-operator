@@ -34,6 +34,7 @@ import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,6 +76,7 @@ public class KafkaConnectBuild extends AbstractModel {
      * @param versions      Kafka versions configuration
      * @return              Instance of KafkaConnectBuild class
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public static KafkaConnectBuild fromCrd(Reconciliation reconciliation, KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
         KafkaConnectBuild build = new KafkaConnectBuild(reconciliation, kafkaConnect);
         KafkaConnectSpec spec = kafkaConnect.getSpec();
@@ -132,6 +134,9 @@ public class KafkaConnectBuild extends AbstractModel {
                 build.templateServiceAccountLabels = template.getBuildServiceAccount().getMetadata().getLabels();
                 build.templateServiceAccountAnnotations = template.getBuildServiceAccount().getMetadata().getAnnotations();
             }
+        }
+        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_CONNECT_BUILD_DEPLOYMENT_LABELS) != null) {
+            build.templatePodLabels = Util.mergeLabelsOrAnnotations(build.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_CONNECT_BUILD_DEPLOYMENT_LABELS).getValue()));
         }
 
         build.build = spec.getBuild();

@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -197,6 +198,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             }
 
             kafkaMirrorMakerCluster.tracing = spec.getTracing();
+        }
+        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_MIRROR_MAKER_DEPLOYMENT_LABELS) != null) {
+            kafkaMirrorMakerCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaMirrorMakerCluster.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_MIRROR_MAKER_DEPLOYMENT_LABELS).getValue()));
         }
 
         kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);

@@ -45,6 +45,7 @@ import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 
@@ -236,6 +237,10 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.setResources(spec.getResources());
             cruiseControl.setOwnerReference(kafkaAssembly);
             cruiseControl = updateTemplate(spec, cruiseControl);
+        }
+
+        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_CRUISE_CONTROL_DEPLOYMENT_LABELS) != null) {
+            cruiseControl.templatePodLabels = Util.mergeLabelsOrAnnotations(cruiseControl.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_CRUISE_CONTROL_DEPLOYMENT_LABELS).getValue()));
         }
 
         return cruiseControl;

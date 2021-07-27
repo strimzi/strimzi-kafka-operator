@@ -35,6 +35,7 @@ import io.strimzi.operator.cluster.model.components.JmxTransQueries;
 import io.strimzi.operator.cluster.model.components.JmxTransServer;
 import io.strimzi.operator.cluster.model.components.JmxTransServers;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -66,7 +67,6 @@ public class JmxTrans extends AbstractModel {
     public static final String JMX_FILE_PATH = "/var/lib/jmxtrans";
 
     protected static final String ENV_VAR_JMXTRANS_LOGGING_LEVEL = "JMXTRANS_LOGGING_LEVEL";
-
 
     private boolean isDeployed;
     private boolean isJmxAuthenticated;
@@ -155,6 +155,9 @@ public class JmxTrans extends AbstractModel {
                 }
             }
 
+        }
+        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_JMX_TRANS_DEPLOYMENT_LABELS) != null) {
+            result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_JMX_TRANS_DEPLOYMENT_LABELS).getValue()));
         }
 
         return result;
