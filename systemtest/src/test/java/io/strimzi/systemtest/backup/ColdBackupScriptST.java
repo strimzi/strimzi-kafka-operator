@@ -76,8 +76,8 @@ public class ColdBackupScriptST extends AbstractST {
         // recreate the namespace and deploy the operator
         ResourceManager.kubeClient().deleteNamespace(NAMESPACE);
         NamespaceUtils.waitForNamespaceDeletion(NAMESPACE);
-        // THis is needed to allow installation of new operator and creation of the namespace
-        context.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY, null);
+        // This is needed to allow installation of new operator and creation of the namespace
+        context.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + NAMESPACE, null);
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(context)
