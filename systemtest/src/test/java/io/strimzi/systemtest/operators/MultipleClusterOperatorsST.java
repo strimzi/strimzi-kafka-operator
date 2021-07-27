@@ -15,12 +15,12 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
-import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
@@ -189,7 +189,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
             // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
             List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(coNamespace, coName);
             clusterRoleBindingList.forEach(
-                clusterRoleBinding -> ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
+                clusterRoleBinding -> ResourceManager.getInstance().createResource(extensionContext, clusterRoleBinding));
         }
 
         LOGGER.info("Creating {} in {} namespace", coName, coNamespace);

@@ -174,7 +174,7 @@ public class SetupClusterOperator {
         // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
         List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(namespaceInstallTo);
         clusterRoleBindingList.forEach(clusterRoleBinding ->
-            ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
+            ResourceManager.getInstance().createResource(extensionContext, clusterRoleBinding));
     }
 
     public static class SetupClusterOperatorBuilder {
@@ -295,7 +295,8 @@ public class SetupClusterOperator {
      * Configuration files are loaded from packaging/install/cluster-operator directory.
      */
     public void applyClusterOperatorInstallFiles(String namespace) {
-        clusterOperatorConfigs.clear();
+//        deleteClusterOperatorInstallFiles();
+//        clusterOperatorConfigs.clear();
         List<File> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted()
             .filter(File::isFile)
             .filter(file ->
