@@ -145,3 +145,5 @@ createGlobalResources: true
 labelsExclusionPattern: ""
 # Controls whether Strimzi generates network policy resources (By default true)
 generateNetworkPolicy: true
+# Override the value for Connect build timeout
+connectBuildTimeoutMs: 300000
