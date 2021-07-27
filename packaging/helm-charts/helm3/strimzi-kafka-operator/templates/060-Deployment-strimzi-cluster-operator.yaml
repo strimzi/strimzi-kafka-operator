@@ -118,7 +118,7 @@ spec:
             - name: STRIMZI_NETWORK_POLICY_GENERATION
               value: {{ .Values.generateNetworkPolicy }}
             {{- end }}
-            {{- if ne (.Values.connectBuildTimeoutMs | quote) "300000" }}
+            {{- if ne (int .Values.connectBuildTimeoutMs) 300000 }}
             - name: STRIMZI_CONNECT_BUILD_TIMEOUT_MS
               value: {{ .Values.connectBuildTimeoutMs | quote }}
             {{- end }}
