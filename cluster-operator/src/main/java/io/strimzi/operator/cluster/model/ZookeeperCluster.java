@@ -93,6 +93,8 @@ public class ZookeeperCluster extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_CONFIGURATION = "ZOOKEEPER_CONFIGURATION";
     public static final String ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED = "ZOOKEEPER_SNAPSHOT_CHECK_ENABLED";
 
+    protected static final String CO_ENV_VAR_CUSTOM_ZOOKEEPER_POD_LABELS = "STRIMZI_CUSTOM_ZOOKEEPER_LABELS";
+
     // Config map keys
     public static final String CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT = "zookeeper.node-count";
 
@@ -120,6 +122,15 @@ public class ZookeeperCluster extends AbstractModel {
 
     public static String headlessServiceName(String cluster) {
         return cluster + ZookeeperCluster.HEADLESS_SERVICE_NAME_SUFFIX;
+    }
+
+    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_ZOOKEEPER_POD_LABELS);
+        if (value != null) {
+            buildEnvVar(CO_ENV_VAR_CUSTOM_ZOOKEEPER_POD_LABELS, value);
+            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+        }
     }
 
     /**
@@ -316,9 +327,7 @@ public class ZookeeperCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
         }
 
-        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_ZOOKEEPER_DEPLOYMENT_LABELS) != null) {
-            zk.templatePodLabels = Util.mergeLabelsOrAnnotations(zk.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_ZOOKEEPER_DEPLOYMENT_LABELS).getValue()));
-        }
+        zk.templatePodLabels = Util.mergeLabelsOrAnnotations(zk.templatePodLabels, CUSTOM_POD_LABELS);
 
         return zk;
     }

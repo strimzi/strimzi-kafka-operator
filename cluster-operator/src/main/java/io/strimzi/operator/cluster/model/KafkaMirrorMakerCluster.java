@@ -32,6 +32,7 @@ import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -95,6 +96,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected static final String ENV_VAR_STRIMZI_LIVENESS_PERIOD = "STRIMZI_LIVENESS_PERIOD";
     protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
 
+    protected static final String CO_ENV_VAR_CUSTOM_MIRROR_MAKER_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_MIRROR_MAKER_LABELS";
+
     protected String include;
     protected Tracing tracing;
 
@@ -102,6 +105,15 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected KafkaMirrorMakerConsumerSpec consumer;
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+
+    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_MIRROR_MAKER_POD_LABELS);
+        if (value != null) {
+            buildEnvVar(CO_ENV_VAR_CUSTOM_MIRROR_MAKER_POD_LABELS, value);
+            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -199,9 +211,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
             kafkaMirrorMakerCluster.tracing = spec.getTracing();
         }
-        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_MIRROR_MAKER_DEPLOYMENT_LABELS) != null) {
-            kafkaMirrorMakerCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaMirrorMakerCluster.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_MIRROR_MAKER_DEPLOYMENT_LABELS).getValue()));
-        }
+        kafkaMirrorMakerCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaMirrorMakerCluster.templatePodLabels, CUSTOM_POD_LABELS);
 
         kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);
 

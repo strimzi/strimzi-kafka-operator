@@ -42,6 +42,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -108,6 +109,8 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_ORIGINS = "KAFKA_BRIDGE_CORS_ALLOWED_ORIGINS";
     protected static final String ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_METHODS = "KAFKA_BRIDGE_CORS_ALLOWED_METHODS";
 
+    protected static final String CO_ENV_VAR_CUSTOM_BRIDGE_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_LABELS";
+
     private KafkaBridgeTls tls;
     private KafkaClientAuthentication authentication;
     private KafkaBridgeHttpConfig http;
@@ -120,6 +123,15 @@ public class KafkaBridgeCluster extends AbstractModel {
     private List<ContainerEnvVar> templateContainerEnvVars;
     private SecurityContext templateContainerSecurityContext;
     private Tracing tracing;
+
+    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_BRIDGE_POD_LABELS);
+        if (value != null) {
+            buildEnvVar(CO_ENV_VAR_CUSTOM_BRIDGE_POD_LABELS, value);
+            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -212,9 +224,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(kafkaBridgeCluster, template.getPodDisruptionBudget());
         }
 
-        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_BRIDGE_DEPLOYMENT_LABELS) != null) {
-            kafkaBridgeCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaBridgeCluster.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_BRIDGE_DEPLOYMENT_LABELS).getValue()));
-        }
+        kafkaBridgeCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaBridgeCluster.templatePodLabels, CUSTOM_POD_LABELS);
         if (spec.getHttp() != null) {
             kafkaBridgeCluster.setHttpEnabled(true);
             kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());

@@ -52,6 +52,7 @@ import io.strimzi.operator.common.model.OrderedProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -124,6 +125,8 @@ public class CruiseControl extends AbstractModel {
     protected static final String ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
     protected static final String ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
 
+    protected static final String CO_ENV_VAR_CUSTOM_CRUISE_CONTROL_POD_LABELS = "STRIMZI_CUSTOM_CRUISE_CONTROL_LABELS";
+
     // Templates
     protected List<ContainerEnvVar> templateCruiseControlContainerEnvVars;
     protected List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
@@ -132,6 +135,15 @@ public class CruiseControl extends AbstractModel {
     protected SecurityContext templateTlsSidecarContainerSecurityContext;
 
     private boolean isDeployed;
+
+    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_CRUISE_CONTROL_POD_LABELS);
+        if (value != null) {
+            buildEnvVar(CO_ENV_VAR_CUSTOM_CRUISE_CONTROL_POD_LABELS, value);
+            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -237,10 +249,7 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.setResources(spec.getResources());
             cruiseControl.setOwnerReference(kafkaAssembly);
             cruiseControl = updateTemplate(spec, cruiseControl);
-        }
-
-        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_CRUISE_CONTROL_DEPLOYMENT_LABELS) != null) {
-            cruiseControl.templatePodLabels = Util.mergeLabelsOrAnnotations(cruiseControl.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_CRUISE_CONTROL_DEPLOYMENT_LABELS).getValue()));
+            cruiseControl.templatePodLabels = Util.mergeLabelsOrAnnotations(cruiseControl.templatePodLabels, CUSTOM_POD_LABELS);
         }
 
         return cruiseControl;

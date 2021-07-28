@@ -68,6 +68,8 @@ public class JmxTrans extends AbstractModel {
 
     protected static final String ENV_VAR_JMXTRANS_LOGGING_LEVEL = "JMXTRANS_LOGGING_LEVEL";
 
+    protected static final String CO_ENV_VAR_CUSTOM_JMX_TRANS_POD_LABELS = "STRIMZI_CUSTOM_JMX_TRANS_LABELS";
+
     private boolean isDeployed;
     private boolean isJmxAuthenticated;
     private String configMapName;
@@ -76,6 +78,15 @@ public class JmxTrans extends AbstractModel {
 
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+
+    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_JMX_TRANS_POD_LABELS);
+        if (value != null) {
+            buildEnvVar(CO_ENV_VAR_CUSTOM_JMX_TRANS_POD_LABELS, value);
+            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -154,10 +165,7 @@ public class JmxTrans extends AbstractModel {
                     result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
                 }
             }
-
-        }
-        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_JMX_TRANS_DEPLOYMENT_LABELS) != null) {
-            result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_JMX_TRANS_DEPLOYMENT_LABELS).getValue()));
+            result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, CUSTOM_POD_LABELS);
         }
 
         return result;

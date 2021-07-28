@@ -8,7 +8,6 @@
 * Add support for `tls-external` authentication to User Operator to allow management of ACLs and Quotas for TLS users with user certificates generated externally (#5249) 
 * Support for disabling the automatic generation of network policies by the Cluster Operator. Set the Cluster Operator's `STRIMZI_NETWORK_POLICY_GENERATION` environment variable to `false` to disable network policies. (#5258)
 * Update User Operator to use Admin API for managing SCRAM-SHA-512 users 
-* Support custom labels for the Pods deployed by the operator
 
 ### Changes, deprecations and removals
 

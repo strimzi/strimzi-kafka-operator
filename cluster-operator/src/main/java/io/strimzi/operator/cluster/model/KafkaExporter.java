@@ -32,7 +32,9 @@ import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class KafkaExporter extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka-exporter";
@@ -56,6 +58,8 @@ public class KafkaExporter extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER = "KAFKA_EXPORTER_KAFKA_SERVER";
     protected static final String ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA = "KAFKA_EXPORTER_ENABLE_SARAMA";
 
+    protected static final String CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_EXPORTER_LABELS";
+
     protected String groupRegex = ".*";
     protected String topicRegex = ".*";
     protected boolean saramaLoggingEnabled;
@@ -66,6 +70,15 @@ public class KafkaExporter extends AbstractModel {
 
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+
+    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_POD_LABELS);
+        if (value != null) {
+            buildEnvVar(CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_POD_LABELS, value);
+            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -150,9 +163,7 @@ public class KafkaExporter extends AbstractModel {
             kafkaExporter.isDeployed = false;
         }
 
-        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_DEPLOYMENT_LABELS) != null) {
-            kafkaExporter.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaExporter.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_DEPLOYMENT_LABELS).getValue()));
-        }
+        kafkaExporter.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaExporter.templatePodLabels, CUSTOM_POD_LABELS);
 
         return kafkaExporter;
     }

@@ -28,7 +28,9 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
@@ -48,12 +50,23 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_ACCESS_TOKENS_CLUSTERS = "KAFKA_MIRRORMAKER_2_OAUTH_OAUTH_ACCESS_TOKENS_CLUSTERS";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS = "KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS";
 
+    protected static final String CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_MIRROR_MAKER2_LABELS";
+
     protected static final String MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT = "/opt/kafka/mm2-oauth/";
     protected static final String MIRRORMAKER_2_OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/mm2-oauth-certs/";
     protected static final String MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/mm2-certs/";
     protected static final String MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT = "/opt/kafka/mm2-password/";
 
     private List<KafkaMirrorMaker2ClusterSpec> clusters;
+
+    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_POD_LABELS);
+        if (value != null) {
+            buildEnvVar(CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_POD_LABELS, value);
+            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -102,9 +115,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         }        
         cluster.setConfiguration(new KafkaMirrorMaker2Configuration(reconciliation, connectCluster.getConfig().entrySet()));
         KafkaMirrorMaker2Cluster mm2 = fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
-        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_DEPLOYMENT_LABELS) != null) {
-            mm2.templatePodLabels = Util.mergeLabelsOrAnnotations(mm2.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_DEPLOYMENT_LABELS).getValue()));
-        }
+        mm2.templatePodLabels = Util.mergeLabelsOrAnnotations(mm2.templatePodLabels, CUSTOM_POD_LABELS);
         return mm2;
     }
 

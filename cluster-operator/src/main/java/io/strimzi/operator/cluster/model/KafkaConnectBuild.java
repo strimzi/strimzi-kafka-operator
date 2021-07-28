@@ -39,6 +39,7 @@ import io.strimzi.operator.common.Util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -48,6 +49,8 @@ public class KafkaConnectBuild extends AbstractModel {
 
     private static final String DEFAULT_KANIKO_EXECUTOR_IMAGE = "gcr.io/kaniko-project/executor:latest";
 
+    protected static final String CO_ENV_VAR_CUSTOM_CONNECT_BUILD_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_CONNECT_BUILD_LABELS";
+
     private Build build;
     private List<ContainerEnvVar> templateBuildContainerEnvVars;
     private SecurityContext templateBuildContainerSecurityContext;
@@ -55,6 +58,15 @@ public class KafkaConnectBuild extends AbstractModel {
     private Map<String, String> templateBuildConfigAnnotations;
     private String baseImage;
     private List<String> additionalKanikoOptions;
+
+    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_CONNECT_BUILD_POD_LABELS);
+        if (value != null) {
+            buildEnvVar(CO_ENV_VAR_CUSTOM_CONNECT_BUILD_POD_LABELS, value);
+            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -135,9 +147,7 @@ public class KafkaConnectBuild extends AbstractModel {
                 build.templateServiceAccountAnnotations = template.getBuildServiceAccount().getMetadata().getAnnotations();
             }
         }
-        if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_CONNECT_BUILD_DEPLOYMENT_LABELS) != null) {
-            build.templatePodLabels = Util.mergeLabelsOrAnnotations(build.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_CONNECT_BUILD_DEPLOYMENT_LABELS).getValue()));
-        }
+        build.templatePodLabels = Util.mergeLabelsOrAnnotations(build.templatePodLabels, CUSTOM_POD_LABELS);
 
         build.build = spec.getBuild();
 

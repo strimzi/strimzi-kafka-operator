@@ -42,6 +42,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -66,6 +67,8 @@ public class EntityOperator extends AbstractModel {
     // Entity Operator configuration keys
     public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
 
+    protected static final String CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_POD_LABELS = "STRIMZI_CUSTOM_ENTITY_OPERATOR_LABELS";
+
     private String zookeeperConnect;
     private EntityTopicOperator topicOperator;
     private EntityUserOperator userOperator;
@@ -77,6 +80,15 @@ public class EntityOperator extends AbstractModel {
 
     private boolean isDeployed;
     private String tlsSidecarImage;
+
+    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_POD_LABELS);
+        if (value != null) {
+            buildEnvVar(CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_POD_LABELS, value);
+            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
 
@@ -208,9 +220,7 @@ public class EntityOperator extends AbstractModel {
                 tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
             result.tlsSidecarImage = tlsSideCarImage;
-            if (CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_DEPLOYMENT_LABELS) != null) {
-                result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, Util.parseMap(CUSTOM_ENV_VARS.get(CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_DEPLOYMENT_LABELS).getValue()));
-            }
+            result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, CUSTOM_POD_LABELS);
         }
         return result;
     }
