@@ -155,7 +155,7 @@ public class SpecificST extends AbstractST {
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(sharedExtensionContext)
             .withNamespace(NAMESPACE)
             .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
             .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
@@ -230,7 +230,7 @@ public class SpecificST extends AbstractST {
 
         // Revert changes for CO deployment
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(sharedExtensionContext)
             .withNamespace(NAMESPACE)
             .createInstallation()
             .runBundleInstallation();
@@ -259,7 +259,7 @@ public class SpecificST extends AbstractST {
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(sharedExtensionContext)
             .withNamespace(NAMESPACE)
             .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
             .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
@@ -321,7 +321,7 @@ public class SpecificST extends AbstractST {
 
         // Revert changes for CO deployment
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(sharedExtensionContext)
             .withNamespace(NAMESPACE)
             .createInstallation()
             .runBundleInstallation();
