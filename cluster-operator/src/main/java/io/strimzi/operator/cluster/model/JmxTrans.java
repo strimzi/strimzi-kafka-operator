@@ -83,7 +83,6 @@ public class JmxTrans extends AbstractModel {
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_JMX_TRANS_POD_LABELS);
         if (value != null) {
-            buildEnvVar(CO_ENV_VAR_CUSTOM_JMX_TRANS_POD_LABELS, value);
             CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
         }
     }

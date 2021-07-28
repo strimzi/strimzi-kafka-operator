@@ -63,7 +63,6 @@ public class KafkaConnectBuild extends AbstractModel {
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_CONNECT_BUILD_POD_LABELS);
         if (value != null) {
-            buildEnvVar(CO_ENV_VAR_CUSTOM_CONNECT_BUILD_POD_LABELS, value);
             CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
         }
     }

@@ -63,7 +63,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_POD_LABELS);
         if (value != null) {
-            buildEnvVar(CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_POD_LABELS, value);
             CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
         }
     }
