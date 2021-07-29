@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Abstraction of an operator which is driven by resources of a given {@link #kind()}.
@@ -70,9 +71,10 @@ public interface Operator {
     default void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, String namespace, Handler<AsyncResult<Void>> handler) {
         if (desiredNames.size() > 0) {
             List<Future> futures = new ArrayList<>();
-            resourceCounter(namespace).set(desiredNames.size());
+            desiredNames.stream().map(res -> res.getNamespace()).collect(Collectors.toSet()).forEach(ns -> resourceCounter(ns).set(0));
 
             for (NamespaceAndName resourceRef : desiredNames) {
+                resourceCounter(resourceRef.getNamespace()).getAndIncrement();
                 Reconciliation reconciliation = new Reconciliation(trigger, kind(), resourceRef.getNamespace(), resourceRef.getName());
                 futures.add(reconcile(reconciliation));
             }
