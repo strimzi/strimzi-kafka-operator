@@ -64,23 +64,23 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      */
     public Future<Void> rollingUpdate(Reconciliation reconciliation, String namespace, String name, long operationTimeoutMs, RestartReasons reasons) {
         return getAsync(namespace, name)
-                .compose(deployment -> deleteSingletonPod(reconciliation, namespace, name, reasons))
+                .compose(deployment -> restartSingletonPod(reconciliation, namespace, name, reasons, operationTimeoutMs))
                 .compose(ignored -> readiness(reconciliation, namespace, name, 1_000, operationTimeoutMs));
     }
 
     /**
-     * Asynchronously delete the given pod.
+     * Asynchronously restart the given pod.
      * @param reconciliation The reconciliation
      * @param namespace The namespace of the pod.
      * @param name The name of the pod.
-     * @param reasons - why the pod needs to be terminated
+     * @param reasons why the pod needs to be terminated
+     * @param timeoutMs how long the restart operation has to complete
      * @return A Future which will complete once all the pods has been deleted.
      */
-    public Future<ReconcileResult<Pod>> deleteSingletonPod(Reconciliation reconciliation, String namespace, String name, RestartReasons reasons) {
+    public Future<Void> restartSingletonPod(Reconciliation reconciliation, String namespace, String name, RestartReasons reasons, long timeoutMs) {
         Labels labels = Labels.EMPTY.withStrimziName(name);
-        String podName = podOperations.list(namespace, labels).get(0).getMetadata().getName();
-        // TODO publish reasons
-        return podOperations.reconcile(reconciliation, namespace, podName, null);
+        Pod pod = podOperations.list(namespace, labels).get(0);
+        return podOperations.restart(reconciliation, pod, timeoutMs, reasons);
     }
 
     @Override

@@ -16,7 +16,8 @@ import org.apache.logging.log4j.Logger;
 
 
 /**
- *
+ * Creates Kubernetes events, and increments metric counters, to make Strimzi initiated restarts, and reasons why
+ * more observable for people responsible for running Strimzi
  */
 public class PodRestartReasonPublisher {
 
@@ -30,6 +31,11 @@ public class PodRestartReasonPublisher {
         k8sPublisher = KubernetesEventsPublisher.createPublisher(kubernetesClient, operatorId, pfa.getHighestEventApiVersion());
     }
 
+    /**
+     * Emit events to Kubernetes events api, and to the Micrometer registry for scraping
+     * @param restartingPod pod being restarted
+     * @param reasons collection of 1 to N reasons why the pod needs to be restarted
+     */
     public void publish(Pod restartingPod, RestartReasons reasons) {
         LOG.debug("Publishing restart for pod {} for {}", restartingPod.getMetadata().getName(), reasons.getAllReasonNotes());
         k8sPublisher.publishRestartEvents(restartingPod, reasons);
