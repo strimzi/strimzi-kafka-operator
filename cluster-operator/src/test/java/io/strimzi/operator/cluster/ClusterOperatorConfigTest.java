@@ -11,6 +11,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.UnsupportedVersionException;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -32,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ClusterOperatorConfigTest {
 
-    private static Map<String, String> envVars = new HashMap<>(8);
+    private static final Map<String, String> envVars = new HashMap<>(8);
     static {
         envVars.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, "namespace");
         envVars.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "30000");
@@ -44,6 +45,7 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE, "operator-namespace");
         envVars.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "+ControlPlaneListener");
+        envVars.put(ClusterOperatorConfig.CLUSTER_OPERATOR_HOST, "ClusterOperator");
     }
 
     @Test
@@ -82,7 +84,7 @@ public class ClusterOperatorConfigTest {
                 ClusterOperatorConfig.RbacScope.CLUSTER,
                 null,
                 "",
-                10);
+                10, "X");
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(60_000L));
@@ -100,7 +102,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getConnectBuildTimeoutMs(), is(40_000L));
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
         assertThat(config.featureGates().controlPlaneListenerEnabled(), is(true));
-        assertThat(config.getOperatorName(), is("ClusterOperator"));
+        assertThat(config.getOperatorId(), is("ClusterOperator"));
     }
 
     @Test

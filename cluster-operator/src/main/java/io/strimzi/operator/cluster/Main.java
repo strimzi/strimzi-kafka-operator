@@ -102,7 +102,7 @@ public class Main {
 
         //TODO operator name
         MetricsProvider metricsProvider = new MicrometerMetricsProvider();
-        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, metricsProvider, pfa, config.featureGates(), "", config.getOperationTimeoutMs());
+        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, metricsProvider, pfa, config.featureGates(), config.getOperatorId(), config.getOperationTimeoutMs());
 
         OpenSslCertManager certManager = new OpenSslCertManager();
         PasswordGenerator passwordGenerator = new PasswordGenerator(12,

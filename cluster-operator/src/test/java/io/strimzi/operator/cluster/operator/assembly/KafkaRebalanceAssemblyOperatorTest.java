@@ -917,7 +917,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 ClusterOperatorConfig.RbacScope.CLUSTER,
                 Labels.fromMap(Map.of("selectorLabel", "value")),
                 "",
-                10);
+                10,
+                "X");
 
         kcrao = new KafkaRebalanceAssemblyOperator(Vertx.vertx(), pfa, supplier, config);
 

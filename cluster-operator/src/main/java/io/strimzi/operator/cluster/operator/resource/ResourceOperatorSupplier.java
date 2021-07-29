@@ -83,7 +83,7 @@ public class ResourceOperatorSupplier {
     public final MetricsProvider metricsProvider;
     public AdminClientProvider adminClientProvider;
 
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, FeatureGates gates, String operatorName, long operationTimeoutMs) {
+    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, FeatureGates gates, String operatorId, long operationTimeoutMs) {
         this(vertx,
              client,
              new ZookeeperLeaderFinder(vertx,
@@ -92,7 +92,7 @@ public class ResourceOperatorSupplier {
                  () -> new BackOff(5_000, 2, 4)),
              new DefaultAdminClientProvider(),
              new DefaultZookeeperScalerProvider(),
-             new PodOperator(vertx, client, new PodRestartReasonPublisher(client, metricsProvider, pfa, operatorName)),
+             new PodOperator(vertx, client, new PodRestartReasonPublisher(client, metricsProvider, pfa, operatorId)),
              metricsProvider,
              pfa,
              gates,

@@ -77,6 +77,9 @@ public class ClusterOperatorConfig {
     public static final long DEFAULT_CONNECT_BUILD_TIMEOUT_MS = 300_000;
     public static final int DEFAULT_STRIMZI_OPERATIONS_THREAD_POOL_SIZE = 10;
 
+    //Hostname as injected by K8s is used to identify an "instance" of a controller/operator, needed for K8s events
+    public static final String CLUSTER_OPERATOR_HOST = "HOSTNAME";
+
     private final Set<String> namespaces;
     private final long reconciliationIntervalMs;
     private final long operationTimeoutMs;
@@ -92,11 +95,11 @@ public class ClusterOperatorConfig {
     private final Labels customResourceSelector;
     private final FeatureGates featureGates;
     private final int operationsThreadPoolSize;
+    private String operatorInstance;
 
     /**
      * Constructor
-     *
-     * @param namespaces namespace in which the operator will run and create resources
+     *  @param namespaces namespace in which the operator will run and create resources
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      * @param connectBuildTimeoutMs timeout used to wait for a Kafka Connect builds to finish
@@ -111,6 +114,7 @@ public class ClusterOperatorConfig {
      * @param customResourceSelector Labels used to filter the custom resources seen by the cluster operator
      * @param featureGates Configuration string with feature gates settings
      * @param operationsThreadPoolSize The size of the thread pool used for various operations
+     * @param operatorInstance
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     public ClusterOperatorConfig(
@@ -128,7 +132,8 @@ public class ClusterOperatorConfig {
             RbacScope rbacScope,
             Labels customResourceSelector,
             String featureGates,
-            int operationsThreadPoolSize) {
+            int operationsThreadPoolSize,
+            String operatorInstance) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
@@ -144,6 +149,7 @@ public class ClusterOperatorConfig {
         this.customResourceSelector = customResourceSelector;
         this.featureGates = new FeatureGates(featureGates);
         this.operationsThreadPoolSize = operationsThreadPoolSize;
+        this.operatorInstance = operatorInstance;
     }
 
     /**
@@ -192,6 +198,8 @@ public class ClusterOperatorConfig {
         RbacScope rbacScope = parseRbacScope(map.get(STRIMZI_RBAC_SCOPE));
         Labels customResourceSelector = parseLabels(map, STRIMZI_CUSTOM_RESOURCE_SELECTOR);
         String featureGates = map.getOrDefault(STRIMZI_FEATURE_GATES, "");
+        String operatorInstance = map.get(CLUSTER_OPERATOR_HOST);
+
         int operationsThreadPoolSize = parseInt(map.get(STRIMZI_OPERATIONS_THREAD_POOL_SIZE), DEFAULT_STRIMZI_OPERATIONS_THREAD_POOL_SIZE);
 
         return new ClusterOperatorConfig(
@@ -209,7 +217,8 @@ public class ClusterOperatorConfig {
                 rbacScope,
                 customResourceSelector,
                 featureGates,
-                operationsThreadPoolSize);
+                operationsThreadPoolSize,
+                operatorInstance);
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {
@@ -269,6 +278,10 @@ public class ClusterOperatorConfig {
         }
 
         return createClusterRoles;
+    }
+
+    public String getOperatorId() {
+        return operatorInstance;
     }
 
     private static boolean parseNetworkPolicyGeneration(String networkPolicyGenerationEnvVar) {

@@ -90,7 +90,6 @@ import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.strimzi.operator.common.operator.resource.publication.PodRestartReasonPublisher;
-import io.strimzi.operator.common.operator.resource.publication.RestartEventsPublisher;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -763,7 +762,8 @@ public class ResourceUtils {
                 ClusterOperatorConfig.RbacScope.CLUSTER,
                 null,
                 "",
-                10);
+                10,
+                "X");
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfigRolesOnly(KafkaVersion.Lookup versions, long operationTimeoutMs) {
@@ -782,7 +782,8 @@ public class ResourceUtils {
                 ClusterOperatorConfig.RbacScope.NAMESPACE,
                 null,
                 "",
-                10);
+                10,
+                "X");
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions) {
