@@ -177,6 +177,7 @@ the documentation for more details.
 | `featureGates`                       | Feature Gates configuration               | ``                                                   |
 | `labelsExclusionPattern`             | Override the exclude pattern for exclude some labels             | `""`  
 | `generateNetworkPolicy`              | Controls whether Strimzi generates network policy resources      | `true`                        |
+| `connectBuildTimeoutMs`              | Overrides the default timeout value for building new Kafka Connect    | `300000`                 |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 
