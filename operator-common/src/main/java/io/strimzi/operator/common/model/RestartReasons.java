@@ -6,7 +6,6 @@ package io.strimzi.operator.common.model;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -71,8 +70,7 @@ public class RestartReasons implements Iterable<RestartReason> {
         List<String> explicitNotes = reasons.get(reason);
         if (explicitNotes.isEmpty()) {
             return reason.getDefaultNote();
-        }
-        else {
+        } else {
             return String.join(", ", explicitNotes);
         }
     }
@@ -86,7 +84,7 @@ public class RestartReasons implements Iterable<RestartReason> {
             } else {
                 return explicitNotes.stream();
             }
-        } )
+        })
         .collect(Collectors.toList());
     }
 

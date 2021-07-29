@@ -1,5 +1,8 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.operator.common.operator.resource.publication.micrometer;
-
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.micrometer.core.instrument.Tag;
@@ -47,7 +50,6 @@ class MicrometerRestartEventsPublisherTest {
         when(pod.getMetadata().getName()).thenReturn("example-pod");
         when(pod.getMetadata().getNamespace()).thenReturn("test-ns");
     }
-
 
     @Test
     void expectedFieldsPopulated() {

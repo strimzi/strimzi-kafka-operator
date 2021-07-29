@@ -103,23 +103,21 @@ public class PlatformFeaturesAvailability {
     private static Future<EventApiVersion> highestEventVersion(Vertx vertx, OkHttpClient httpClient, String masterUrl) {
 
         return checkApiAvailability(vertx, httpClient, masterUrl, "events.k8s.io", "v1").compose(v1Supported -> {
-                    if (v1Supported) {
-                        LOGGER.debug("Detected events.k8s.io/v1");
-                        return Future.succeededFuture(EventApiVersion.V1);
-                    }
-                    else {
-                        return checkApiAvailability(vertx, httpClient, masterUrl, "events.k8s.io", "v1beta1").compose(v1Beta1Supported -> {
-                            if (v1Beta1Supported) {
-                                LOGGER.debug("Detected events.k8s.io/v1beta1");
-                                return Future.succeededFuture(EventApiVersion.V1BETA1);
-                            }
-                            else {
-                                LOGGER.debug("No events.k8s.io detected, falling back to legacy core event API");
-                                return Future.succeededFuture(EventApiVersion.CORE);
-                            }
-                        });
+            if (v1Supported) {
+                LOGGER.debug("Detected events.k8s.io/v1");
+                return Future.succeededFuture(EventApiVersion.V1);
+            } else {
+                return checkApiAvailability(vertx, httpClient, masterUrl, "events.k8s.io", "v1beta1").compose(v1Beta1Supported -> {
+                    if (v1Beta1Supported) {
+                        LOGGER.debug("Detected events.k8s.io/v1beta1");
+                        return Future.succeededFuture(EventApiVersion.V1BETA1);
+                    } else {
+                        LOGGER.debug("No events.k8s.io detected, falling back to legacy core event API");
+                        return Future.succeededFuture(EventApiVersion.CORE);
                     }
                 });
+            }
+        });
     }
 
     private static OkHttpClient getOkHttpClient(KubernetesClient client)   {

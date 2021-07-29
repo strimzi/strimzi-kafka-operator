@@ -22,7 +22,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.model.RestartReason;
 import io.strimzi.operator.common.model.RestartReasons;
 import io.strimzi.operator.common.Reconciliation;

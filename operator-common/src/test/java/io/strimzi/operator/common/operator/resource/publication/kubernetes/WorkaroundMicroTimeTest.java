@@ -1,3 +1,7 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.operator.common.operator.resource.publication.kubernetes;
 
 import org.junit.jupiter.api.Test;
@@ -22,7 +26,7 @@ class WorkaroundMicroTimeTest {
         //In January, NZ is in daylight savings time, so is UTC+13, as opposed to the usual twelve
         ZonedDateTime utcPlus13 = Instant.parse("2020-01-02T00:15:05.000000Z").atZone(ZoneId.of("NZ"));
         //Sanity check I got that right...
-        assertThat(utcPlus13.getHour(), is (13));
+        assertThat(utcPlus13.getHour(), is(13));
 
         assertThat(new WorkaroundMicroTime(utcPlus13).serialise(), is("2020-01-02T13:15:05.000000+13:00"));
     }

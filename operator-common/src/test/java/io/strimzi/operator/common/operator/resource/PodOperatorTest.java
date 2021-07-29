@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.notification.RestartReasonPublisher;
 import io.strimzi.operator.common.operator.resource.publication.PodRestartReasonPublisher;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Vertx;

@@ -1,3 +1,7 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.operator.common.operator.resource.publication.kubernetes;
 
 import io.fabric8.kubernetes.api.model.MicroTime;
@@ -26,7 +30,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class KubernetesEventsPublisher implements RestartEventsPublisher {
 
-    private static final Logger log = LogManager.getLogger(KubernetesEventsPublisher.class);
+    private static final Logger LOG = LogManager.getLogger(KubernetesEventsPublisher.class);
 
     private final Clock clock;
 
@@ -37,10 +41,10 @@ public abstract class KubernetesEventsPublisher implements RestartEventsPublishe
     protected String controller = "strimzi.io/cluster-operator";
 
     // Matches first character or characters following an underscore
-    private static final Pattern pascalCaseHelper = Pattern.compile("^.|_.");
+    private static final Pattern PASCAL_CASE_HELPER = Pattern.compile("^.|_.");
 
-    private static final int maxMessageLength = 1000;
-    private static final String diaresis = "...";
+    private static final int MAX_MESSAGE_LENGTH = 1000;
+    private static final String DIARESIS = "...";
 
     public KubernetesEventsPublisher(Clock clock) {
         this.clock = clock;
@@ -64,8 +68,7 @@ public abstract class KubernetesEventsPublisher implements RestartEventsPublishe
             return new V1EventPublisher(clock, client, operatorId);
         } else if (highestEventApiVersion == EventApiVersion.V1BETA1) {
             return new V1Beta1EventPublisher(clock, client, operatorId);
-        }
-        else {
+        } else {
             return new CoreEventPublisher(clock, client, operatorId);
         }
     }
@@ -80,13 +83,12 @@ public abstract class KubernetesEventsPublisher implements RestartEventsPublishe
                 String note = maybeTruncated(reasons.getNoteFor(reason));
                 String type = getType(reason);
                 String k8sFormattedReason = pascalCasedReason(reason);
-                log.debug("Publishing K8s event, time {}, type, {}, reason, {}, note, {}, pod, {}",
+                LOG.debug("Publishing K8s event, time {}, type, {}, reason, {}, note, {}, pod, {}",
                         k8sEventTime, type, k8sFormattedReason, note, podReference);
                 publishEvent(k8sEventTime, podReference, k8sFormattedReason, type, note);
             }
-        }
-        catch (Exception e) {
-            log.error("Exception on K8s event publication", e);
+        } catch (Exception e) {
+            LOG.error("Exception on K8s event publication", e);
         }
     }
 
@@ -102,7 +104,7 @@ public abstract class KubernetesEventsPublisher implements RestartEventsPublishe
 
     // GoLovesPascalCaseSoKubernetesDoesToo
     String pascalCasedReason(RestartReason reason) {
-        Matcher matcher = pascalCaseHelper.matcher(reason.name().toLowerCase(Locale.ROOT));
+        Matcher matcher = PASCAL_CASE_HELPER.matcher(reason.name().toLowerCase(Locale.ROOT));
         return matcher.replaceAll(result -> result.group().replace("_", "").toUpperCase(Locale.ROOT));
     }
 
@@ -143,10 +145,10 @@ public abstract class KubernetesEventsPublisher implements RestartEventsPublishe
 
         if (note.length() != stringBytes.length) {
             throw new UnsupportedOperationException("Truncating messages containing multibyte characters isn't implemented");
-        } else if (stringBytes.length <= maxMessageLength)  {
+        } else if (stringBytes.length <= MAX_MESSAGE_LENGTH)  {
             return note;
         } else {
-            return new String(stringBytes, 0, 997, UTF_8) + diaresis;
+            return new String(stringBytes, 0, 997, UTF_8) + DIARESIS;
         }
     }
 }

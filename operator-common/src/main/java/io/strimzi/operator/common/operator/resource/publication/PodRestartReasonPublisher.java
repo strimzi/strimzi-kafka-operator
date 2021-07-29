@@ -2,7 +2,6 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-
 package io.strimzi.operator.common.operator.resource.publication;
 
 import io.fabric8.kubernetes.api.model.Pod;
@@ -21,7 +20,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class PodRestartReasonPublisher {
 
-    private static final Logger log = LogManager.getLogger(PodRestartReasonPublisher.class);
+    private static final Logger LOG = LogManager.getLogger(PodRestartReasonPublisher.class);
 
     private final RestartEventsPublisher k8sPublisher;
     private final RestartEventsPublisher micrometerPublisher;
@@ -32,7 +31,7 @@ public class PodRestartReasonPublisher {
     }
 
     public void publish(Pod restartingPod, RestartReasons reasons) {
-        log.debug("Publishing restart for pod {} for {}", restartingPod.getMetadata().getName(), reasons.getAllReasonNotes());
+        LOG.debug("Publishing restart for pod {} for {}", restartingPod.getMetadata().getName(), reasons.getAllReasonNotes());
         k8sPublisher.publishRestartEvents(restartingPod, reasons);
         micrometerPublisher.publishRestartEvents(restartingPod, reasons);
     }

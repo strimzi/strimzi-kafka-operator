@@ -1,3 +1,7 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.operator.common.operator.resource.publication.kubernetes;
 
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -14,10 +18,10 @@ import java.time.format.DateTimeFormatter;
  */
 public class WorkaroundMicroTime extends MicroTime {
 
-    private static final DateTimeFormatter k8sMicroTime = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'.'SSSSSSXXX");
+    private static final DateTimeFormatter K8S_MICROTIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'.'SSSSSSXXX");
 
     public WorkaroundMicroTime(ZonedDateTime dateTime) {
-        setTime(k8sMicroTime.format(dateTime));
+        setTime(K8S_MICROTIME.format(dateTime));
     }
 
     @JsonValue
