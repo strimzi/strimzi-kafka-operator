@@ -318,10 +318,10 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                     assertThat("Pod 0 not annotated for restart", reasonsToRollZkPod0.getAllReasonNotes().isEmpty());
 
                     assertThat("Pod 1 is annotated for restart", reasonsToRollZkPod1.contains(RestartReason.MANUAL_ROLLING_UPDATE));
-                    assertThat("Pod 1 is annotated for restart", reasonsToRollZkPod1.getAllReasonNotes().contains("manual rolling update annotation on a pod"));
+                    assertThat("Pod 1 is annotated for restart", reasonsToRollZkPod1.getAllReasonNotes().contains("Pod was manually annotated to be rolled"));
 
                     assertThat("Pod 2 is annotated for restart", reasonsToRollZkPod2.contains(RestartReason.MANUAL_ROLLING_UPDATE));
-                    assertThat("Pod 2 is annotated for restart", reasonsToRollZkPod2.getAllReasonNotes().contains("manual rolling update annotation on a pod"));
+                    assertThat("Pod 2 is annotated for restart", reasonsToRollZkPod2.getAllReasonNotes().contains("Pod was manually annotated to be rolled"));
 
                     // Verify Kafka rolling updates
                     assertThat(kao.maybeRollKafkaInvocations, is(1));
@@ -331,10 +331,10 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                     RestartReasons reasonsToRollKafkaPod2 = kao.kafkaPodNeedsRestart.apply(podWithName("my-cluster-kafka-2"));
 
                     assertThat("Pod 0 is annotated for restart", reasonsToRollKafkaPod0.contains(RestartReason.MANUAL_ROLLING_UPDATE));
-                    assertThat("Pod 0 is annotated for restart", reasonsToRollKafkaPod0.getAllReasonNotes().contains("manual rolling update annotation on a pod"));
+                    assertThat("Pod 0 is annotated for restart", reasonsToRollKafkaPod0.getAllReasonNotes().contains("Pod was manually annotated to be rolled"));
 
                     assertThat("Pod 1 is annotated for restart", reasonsToRollKafkaPod1.contains(RestartReason.MANUAL_ROLLING_UPDATE));
-                    assertThat("Pod 1 is annotated for restart", reasonsToRollKafkaPod1.getAllReasonNotes().contains("manual rolling update annotation on a pod"));
+                    assertThat("Pod 1 is annotated for restart", reasonsToRollKafkaPod1.getAllReasonNotes().contains("Pod was manually annotated to be rolled"));
 
                     assertThat("Pod 2 is not annotated for restart", reasonsToRollKafkaPod2.isEmpty());
                     assertThat("Pod 0 is annotated for restart", reasonsToRollKafkaPod2.getAllReasonNotes().isEmpty());

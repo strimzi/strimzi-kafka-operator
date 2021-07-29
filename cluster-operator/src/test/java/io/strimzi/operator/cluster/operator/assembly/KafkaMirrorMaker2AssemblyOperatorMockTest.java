@@ -120,7 +120,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                     () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
-                Mockito.mock(PodOperator.class),
+                ResourceUtils.podOperator(vertx, mockClient),
                 ResourceUtils.metricsProvider(),
                 pfa, FeatureGates.NONE, 60_000L);
 

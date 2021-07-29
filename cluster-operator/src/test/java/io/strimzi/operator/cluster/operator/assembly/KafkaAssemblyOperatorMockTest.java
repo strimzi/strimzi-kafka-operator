@@ -289,7 +289,7 @@ public class KafkaAssemblyOperatorMockTest {
         ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, client);
         return new ResourceOperatorSupplier(vertx, client, leaderFinder,
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                Mockito.mock(PodOperator.class), ResourceUtils.metricsProvider(),
+                ResourceUtils.podOperator(vertx, client), ResourceUtils.metricsProvider(),
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 FeatureGates.NONE, 2_000);
     }

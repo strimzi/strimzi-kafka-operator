@@ -9,6 +9,7 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -76,8 +77,6 @@ public class RestartReasons implements Iterable<RestartReason> {
         }
     }
 
-
-
     // For logging, generally
     public List<String> getAllReasonNotes() {
         return reasons.entrySet().stream().flatMap(entry -> {
@@ -89,5 +88,18 @@ public class RestartReasons implements Iterable<RestartReason> {
             }
         } )
         .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        RestartReasons that = (RestartReasons) o;
+        return Objects.equals(reasons, that.reasons);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(reasons);
     }
 }

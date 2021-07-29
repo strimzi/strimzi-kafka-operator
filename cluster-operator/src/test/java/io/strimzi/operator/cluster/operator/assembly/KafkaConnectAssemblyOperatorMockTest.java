@@ -120,7 +120,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                     () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
-                Mockito.mock(PodOperator.class),
+                ResourceUtils.podOperator(vertx, mockClient),
                 ResourceUtils.metricsProvider(),
                 pfa, FeatureGates.NONE, 60_000L);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);

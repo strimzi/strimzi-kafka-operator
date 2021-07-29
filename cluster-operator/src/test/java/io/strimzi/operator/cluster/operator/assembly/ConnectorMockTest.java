@@ -151,7 +151,7 @@ public class ConnectorMockTest {
                     () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
-                Mockito.mock(PodOperator.class),
+                ResourceUtils.podOperator(vertx, client),
                 ResourceUtils.metricsProvider(),
                 pfa, FeatureGates.NONE, 10_000);
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(map(

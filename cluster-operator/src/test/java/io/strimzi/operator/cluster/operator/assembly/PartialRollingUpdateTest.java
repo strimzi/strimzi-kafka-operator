@@ -177,7 +177,7 @@ public class PartialRollingUpdateTest {
         return new ResourceOperatorSupplier(vertx, bootstrapClient,
                 ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                Mockito.mock(PodOperator.class), ResourceUtils.metricsProvider(),
+                ResourceUtils.podOperator(vertx, bootstrapClient), ResourceUtils.metricsProvider(),
                 new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16),
                 FeatureGates.NONE, 60_000L);
     }

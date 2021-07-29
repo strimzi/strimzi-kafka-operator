@@ -135,7 +135,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
         client.secrets().inNamespace(namespace).create(secret);
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client, mock(ZookeeperLeaderFinder.class),
                 mock(AdminClientProvider.class), mock(ZookeeperScalerProvider.class),
-                mock(PodOperator.class), mock(MetricsProvider.class), new PlatformFeaturesAvailability(false, KubernetesVersion.V1_20), FeatureGates.NONE, 10000);
+                ResourceUtils.podOperator(vertx, client), mock(MetricsProvider.class), new PlatformFeaturesAvailability(false, KubernetesVersion.V1_20), FeatureGates.NONE, 10000);
         operator = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
                 certManager,
                 passwordGenerator,
@@ -266,7 +266,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                         Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
                 assertThat("Tls listener thumbprint annotation changed, pod should need restart",
                         isPodToRestart.apply(pod),
-                        equalTo(new RestartReasons().add(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE, "custom certificate one or more listeners changed")));
+                        equalTo(new RestartReasons().add(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE)));
 
                 async.flag();
             })));
@@ -293,7 +293,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                         Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
 
                 assertThat(isPodToRestart.apply(pod),
-                        equalTo(new RestartReasons().add(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE, "custom certificate one or more listeners changed")));
+                        equalTo(new RestartReasons().add(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE)));
 
                 async.flag();
             })));

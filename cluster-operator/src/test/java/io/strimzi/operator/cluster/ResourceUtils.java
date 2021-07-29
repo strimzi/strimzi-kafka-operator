@@ -89,6 +89,8 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
+import io.strimzi.operator.common.operator.resource.publication.PodRestartReasonPublisher;
+import io.strimzi.operator.common.operator.resource.publication.RestartEventsPublisher;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -574,6 +576,10 @@ public class ResourceUtils {
                     return new PemKeyCertOptions();
                 }
             };
+    }
+
+    public static PodOperator podOperator(Vertx vertx, KubernetesClient client) {
+        return new PodOperator(vertx, client, mock(PodRestartReasonPublisher.class));
     }
 
     public static AdminClientProvider adminClientProvider() {

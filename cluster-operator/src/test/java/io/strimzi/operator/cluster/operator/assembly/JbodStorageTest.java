@@ -135,7 +135,7 @@ public class JbodStorageTest {
                 new ResourceOperatorSupplier(this.vertx, this.mockClient,
                         ResourceUtils.zookeeperLeaderFinder(this.vertx, this.mockClient),
                         ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                        Mockito.mock(PodOperator.class), ResourceUtils.metricsProvider(),
+                        ResourceUtils.podOperator(vertx, mockClient), ResourceUtils.metricsProvider(),
                         pfa, FeatureGates.NONE, 60_000L);
 
         this.operator = new KafkaAssemblyOperator(this.vertx, pfa, new MockCertManager(),
