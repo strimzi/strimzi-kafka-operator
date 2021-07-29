@@ -254,7 +254,7 @@ public class KafkaConnectBuild extends AbstractModel {
     private List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumes = new ArrayList<>(3);
 
-        volumes.add(VolumeUtils.createEmptyDirVolume("workspace", null));
+        //volumes.add(VolumeUtils.createEmptyDirVolume("workspace", null));
         volumes.add(VolumeUtils.createConfigMapVolume("dockerfile", KafkaConnectResources.dockerFileConfigMapName(cluster), Collections.singletonMap("Dockerfile", "Dockerfile")));
 
         if (build.getOutput() instanceof DockerOutput) {
@@ -278,7 +278,7 @@ public class KafkaConnectBuild extends AbstractModel {
     private List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMounts = new ArrayList<>(3);
 
-        volumeMounts.add(new VolumeMountBuilder().withName("workspace").withMountPath("/workspace").build());
+        //volumeMounts.add(new VolumeMountBuilder().withName("workspace").withMountPath("/workspace").build());
         volumeMounts.add(new VolumeMountBuilder().withName("dockerfile").withMountPath("/dockerfile").build());
 
         if (build.getOutput() instanceof DockerOutput) {
@@ -322,7 +322,7 @@ public class KafkaConnectBuild extends AbstractModel {
 
         List<String> args = additionalKanikoOptions != null ? new ArrayList<>(4 + additionalKanikoOptions.size()) : new ArrayList<>(4);
         args.add("--dockerfile=/dockerfile/Dockerfile");
-        args.add("--context=dir://workspace");
+        //args.add("--context=dir://workspace");
         args.add("--image-name-with-digest-file=/dev/termination-log");
         args.add("--destination=" + build.getOutput().getImage());
 

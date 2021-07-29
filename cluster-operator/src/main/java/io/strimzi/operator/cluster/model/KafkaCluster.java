@@ -22,7 +22,6 @@ import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.v1.HTTPIngressPath;
@@ -1398,7 +1397,7 @@ public class KafkaCluster extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>(dataVolumes);
 
         if (rack != null || isExposedWithNodePort()) {
-            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, null));
+            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "100Ki"));
         }
 
         volumeList.add(createTempDirVolume());
@@ -1406,7 +1405,8 @@ public class KafkaCluster extends AbstractModel {
         volumeList.add(VolumeUtils.createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
-        volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
+        //volumeList.add(new VolumeBuilder().withName("ready-files").withNewEmptyDir().withMedium("Memory").endEmptyDir().build());
+        volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki"));
 
         for (GenericKafkaListener listener : listeners) {
             if (listener.isTls()
