@@ -1297,13 +1297,13 @@ spec:
                 description: Pod readiness checking.
             oneOf:
             - properties:
-                whitelist: {}
-              required:
-              - whitelist
-            - properties:
                 include: {}
               required:
               - include
+            - properties:
+                whitelist: {}
+              required:
+              - whitelist
             required:
             - replicas
             - consumer
