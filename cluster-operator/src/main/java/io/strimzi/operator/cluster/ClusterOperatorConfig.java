@@ -99,7 +99,7 @@ public class ClusterOperatorConfig {
 
     /**
      * Constructor
-     *  @param namespaces namespace in which the operator will run and create resources
+     * @param namespaces namespace in which the operator will run and create resources
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      * @param connectBuildTimeoutMs timeout used to wait for a Kafka Connect builds to finish
@@ -114,7 +114,7 @@ public class ClusterOperatorConfig {
      * @param customResourceSelector Labels used to filter the custom resources seen by the cluster operator
      * @param featureGates Configuration string with feature gates settings
      * @param operationsThreadPoolSize The size of the thread pool used for various operations
-     * @param operatorInstance
+     * @param operatorInstance - host name of the cluster operator, used when populating K8s events
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     public ClusterOperatorConfig(

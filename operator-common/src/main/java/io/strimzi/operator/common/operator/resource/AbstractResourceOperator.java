@@ -184,8 +184,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
                     return null;
                 }
             });
-
-
+        
         Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L));
 
         return CompositeFuture.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());

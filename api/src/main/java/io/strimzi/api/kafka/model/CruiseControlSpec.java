@@ -12,11 +12,10 @@ import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.sundr.builder.annotations.Buildable;
-import lombok.EqualsAndHashCode;
-
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.EqualsAndHashCode;
 
 @Buildable(
         editableEnabled = false,

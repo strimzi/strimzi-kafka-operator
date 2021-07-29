@@ -11,7 +11,6 @@ import io.strimzi.operator.common.model.OrderedProperties;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpClientResponse;
 import io.vertx.core.json.JsonObject;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

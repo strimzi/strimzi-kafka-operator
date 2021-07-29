@@ -23,9 +23,9 @@ import java.util.logging.LogManager;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.mockserver.configuration.ConfigurationProperties.javaLoggerLogLevel;
-import static org.mockserver.model.Header.header;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
+import static org.mockserver.model.Header.header;
 
 public class MockCruiseControl {
 

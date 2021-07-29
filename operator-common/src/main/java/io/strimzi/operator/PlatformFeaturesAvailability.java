@@ -82,7 +82,7 @@ public class PlatformFeaturesAvailability {
     /**
      * Brief rundown - the various APIs and K8s versions
      *   events.k8s.io/v1      - introduced in Kubernetes 1.19
-     *   events.k8s.io/v1beta1 - introduced in Kubernetes 1.8, deprecated in 1.19, will be removed in 1.19
+     *   events.k8s.io/v1beta1 - introduced in Kubernetes 1.8, deprecated in 1.19, will be removed in 1.25
      *   core events           - Always around, but has significant performance issues, so a new event API was introduced.
      *
      * Preference is for v1 events.k8s.io if it exists, then v1beta1, then falling back to Core v1.Event API if necessary.

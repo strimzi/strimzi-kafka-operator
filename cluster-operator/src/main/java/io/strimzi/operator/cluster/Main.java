@@ -103,7 +103,6 @@ public class Main {
     static CompositeFuture run(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
         Util.printEnvInfo();
 
-        //TODO operator name
         MetricsProvider metricsProvider = new MicrometerMetricsProvider();
         ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, metricsProvider, pfa, config.featureGates(), config.getOperatorId(), config.getOperationTimeoutMs());
 
