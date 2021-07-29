@@ -62,7 +62,7 @@ class MicrometerRestartEventsPublisherTest {
         assertThat(tags.size(), is(3));
         assertThat(Tag.of("pod.name", "example-pod"), is(in(tags)));
         assertThat(Tag.of("pod.namespace", "test-ns"), is(in(tags)));
-        assertThat(Tag.of("reason", "jbod.volumes.changed"), is(in(tags)));
+        assertThat(Tag.of("reason", "jbod_volumes_changed"), is(in(tags)));
     }
 
     @Test
@@ -81,8 +81,8 @@ class MicrometerRestartEventsPublisherTest {
 
         assertThat("Three tags per invocation, pod name, pod ns, reason", allTags.size(), is(6));
         assertThat("When duplicated tags removed, expect 2 common, and 2 unique", new HashSet<>(allTags).size(), is(4));
-        assertThat(Tag.of("reason",  "jbod.volumes.changed"), is(in(allTags)));
-        assertThat(Tag.of("reason",  "ca.cert.removed"), is(in(allTags)));
+        assertThat(Tag.of("reason",  "jbod_volumes_changed"), is(in(allTags)));
+        assertThat(Tag.of("reason",  "ca_cert_removed"), is(in(allTags)));
     }
 
 }

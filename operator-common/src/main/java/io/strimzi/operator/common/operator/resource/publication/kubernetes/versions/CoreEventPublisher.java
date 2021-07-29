@@ -25,6 +25,9 @@ public class CoreEventPublisher extends KubernetesEventsPublisher {
         EventBuilder builder = new EventBuilder();
 
         builder.withAction(action)
+                .withNewMetadata()
+                    .withGenerateName("strimzi-event")
+                .endMetadata()
                 .withReportingComponent(controller)
                 .withReportingInstance(operatorId)
                 .withInvolvedObject(podReference)

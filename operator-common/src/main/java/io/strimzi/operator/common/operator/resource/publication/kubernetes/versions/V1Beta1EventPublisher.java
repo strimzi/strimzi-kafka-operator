@@ -26,6 +26,9 @@ public class V1Beta1EventPublisher extends KubernetesEventsPublisher {
         EventBuilder builder = new EventBuilder();
 
         builder.withAction(action)
+                .withNewMetadata()
+                    .withGenerateName("strimzi-event")
+                .endMetadata()
                 .withReportingController(controller)
                 .withReportingInstance(operatorId)
                 .withRegarding(podReference)

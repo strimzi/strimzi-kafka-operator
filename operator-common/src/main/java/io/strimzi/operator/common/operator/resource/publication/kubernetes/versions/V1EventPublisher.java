@@ -23,7 +23,10 @@ public class V1EventPublisher extends KubernetesEventsPublisher {
     protected void publishEvent(MicroTime eventTime, ObjectReference podReference, String reason, String type, String note) {
         EventBuilder builder = new EventBuilder();
 
-        builder.withAction(action)
+        builder.withNewMetadata()
+                    .withGenerateName("strimzi-event")
+                .endMetadata()
+                .withAction(action)
                 .withReportingController(controller)
                 .withReportingInstance(operatorId)
                 .withRegarding(podReference)

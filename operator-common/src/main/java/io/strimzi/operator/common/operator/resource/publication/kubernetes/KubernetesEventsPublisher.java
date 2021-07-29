@@ -12,6 +12,8 @@ import io.strimzi.operator.common.operator.resource.publication.RestartEventsPub
 import io.strimzi.operator.common.operator.resource.publication.kubernetes.versions.CoreEventPublisher;
 import io.strimzi.operator.common.operator.resource.publication.kubernetes.versions.V1Beta1EventPublisher;
 import io.strimzi.operator.common.operator.resource.publication.kubernetes.versions.V1EventPublisher;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.time.Clock;
 import java.time.ZonedDateTime;
@@ -23,6 +25,8 @@ import java.util.regex.Pattern;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class KubernetesEventsPublisher implements RestartEventsPublisher {
+
+    private static final Logger log = LogManager.getLogger(KubernetesEventsPublisher.class);
 
     private final Clock clock;
 
@@ -71,11 +75,18 @@ public abstract class KubernetesEventsPublisher implements RestartEventsPublishe
         MicroTime k8sEventTime = new WorkaroundMicroTime(ZonedDateTime.now(clock));
         ObjectReference podReference = createPodReference(pod);
 
-        for (RestartReason reason : reasons) {
-            String message = maybeTruncated(reasons.getNoteFor(reason));
-            String type = getType(reason);
-            String k8sFormattedReason = pascalCasedReason(reason);
-            publishEvent(k8sEventTime, podReference, k8sFormattedReason, type, message);
+        try {
+            for (RestartReason reason : reasons) {
+                String note = maybeTruncated(reasons.getNoteFor(reason));
+                String type = getType(reason);
+                String k8sFormattedReason = pascalCasedReason(reason);
+                log.debug("Publishing K8s event, time {}, type, {}, reason, {}, note, {}, pod, {}",
+                        k8sEventTime, type, k8sFormattedReason, note, podReference);
+                publishEvent(k8sEventTime, podReference, k8sFormattedReason, type, note);
+            }
+        }
+        catch (Exception e) {
+            log.error("Exception on K8s event publication", e);
         }
     }
 

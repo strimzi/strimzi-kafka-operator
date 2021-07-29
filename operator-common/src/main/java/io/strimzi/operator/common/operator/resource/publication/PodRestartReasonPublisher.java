@@ -12,12 +12,16 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.model.RestartReasons;
 import io.strimzi.operator.common.operator.resource.publication.kubernetes.KubernetesEventsPublisher;
 import io.strimzi.operator.common.operator.resource.publication.micrometer.MicrometerRestartEventsPublisher;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 /**
  *
  */
 public class PodRestartReasonPublisher {
+
+    private static final Logger log = LogManager.getLogger(PodRestartReasonPublisher.class);
 
     private final RestartEventsPublisher k8sPublisher;
     private final RestartEventsPublisher micrometerPublisher;
@@ -28,6 +32,7 @@ public class PodRestartReasonPublisher {
     }
 
     public void publish(Pod restartingPod, RestartReasons reasons) {
+        log.debug("Publishing restart for pod {} for {}", restartingPod.getMetadata().getName(), reasons.getAllReasonNotes());
         k8sPublisher.publishRestartEvents(restartingPod, reasons);
         micrometerPublisher.publishRestartEvents(restartingPod, reasons);
     }

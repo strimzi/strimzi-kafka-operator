@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.RestartReasons;
-import io.strimzi.operator.common.operator.resource.notification.RestartReasonPublisher;
 import io.strimzi.operator.common.operator.resource.publication.PodRestartReasonPublisher;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -78,6 +77,7 @@ public class PodOperator extends AbstractReadyResourceOperator<KubernetesClient,
 
         LOGGER.infoCr(reconciliation, "Rolling pod {}",  podName);
         resourceSupport.executeBlocking(promise -> {
+            LOGGER.infoCr(reconciliation, "Publishing restart reasons");
             restartPublisher.publish(pod, reasons);
             promise.complete();
         });
