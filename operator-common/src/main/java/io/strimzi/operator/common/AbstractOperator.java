@@ -563,7 +563,7 @@ public abstract class AbstractOperator<
             LOGGER.debugCr(reconciliation, "Removed metric " + METRICS_PREFIX + "resource.state{}", key);
         }
 
-        if (cr != null) {
+        if (cr != null && Util.matchesSelector(selector(), cr)) {
             resourcesStateCounter.computeIfAbsent(key, tags ->
                     metrics.gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", metricTags)
             );
