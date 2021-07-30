@@ -477,7 +477,7 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         });
         Map<String, String> desiredMap = new OrderedProperties().addStringPairs(Util.expandVars(desiredLogging)).asMap();
 
-        fetchedLoggers.entrySet().forEach(fetchedLogger -> updateLoggers.put(fetchedLogger.getKey(), getLevel(fetchedLogger.getKey(), fetchedLoggers, desiredMap)));
+        fetchedLoggers.entrySet().forEach(fetchedLogger -> updateLoggers.put(fetchedLogger.getKey(), getLevel(fetchedLogger.getKey(), desiredMap)));
         addToLoggers(defaultLogging.asMap(), updateLoggers);
         addToLoggers(desiredMap, updateLoggers);
 
@@ -494,7 +494,6 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
     }
 
     protected String getLevel(String logger, Map<String, String> desired) {
-
         // direct hit
         if (desired.keySet().contains("log4j.logger." + logger)) {
             return desired.get("log4j.logger." + logger);

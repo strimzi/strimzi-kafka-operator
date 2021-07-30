@@ -290,4 +290,28 @@ public class KafkaConnectApiTest {
                             async.flag();
                         }))));
     }
+
+    @IsolatedTest
+    public void testHierarchy() {
+        String rootLevel = "TRACE";
+        String desired = "log4j.rootLogger=" + rootLevel + ", CONSOLE\n" +
+                "log4j.logger.oorg.apache.zookeeper=WARN\n" +
+                "log4j.logger.oorg.I0Itec.zkclient=INFO\n" +
+                "log4j.logger.oorg.reflections.Reflection=INFO\n" +
+                "log4j.logger.oorg.reflections=FATAL\n" +
+                "log4j.logger.foo=WARN\n" +
+                "log4j.logger.foo.bar=TRACE\n" +
+                "log4j.logger.oorg.eclipse.jetty.util=DEBUG\n" +
+                "log4j.logger.foo.bar.quux=DEBUG";
+
+        KafkaConnectApiImpl client = new KafkaConnectApiImpl(vertx);
+        OrderedProperties ops = new OrderedProperties();
+        ops.addStringPairs(desired);
+        assertEquals(client.getLevel("foo.bar", ops.asMap()), "TRACE");
+        assertEquals(client.getLevel("foo.lala", ops.asMap()), "WARN");
+        assertEquals(client.getLevel("bar.faa", ops.asMap()), rootLevel);
+        assertEquals(client.getLevel("org", ops.asMap()), "TRACE");
+        assertEquals(client.getLevel("oorg.eclipse.jetty.util.thread.strategy.EatWhatYouKill", ops.asMap()), "DEBUG");
+        assertEquals(client.getLevel("oorg.eclipse.group.art", ops.asMap()), rootLevel);
+    }
 }
