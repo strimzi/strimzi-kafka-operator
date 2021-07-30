@@ -67,14 +67,11 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     }
 
     public synchronized static void collectLogs(ExtensionContext extensionContext, String testClass, String testMethod) throws IOException {
-        final String namespaceName;
-        final LogCollector logCollector;
-
         // Stop test execution time counter in case of failures
         TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION, testClass, testMethod);
 
         testMethod = testMethod.isEmpty() ? "class-context-" + new Random().nextInt(Integer.MAX_VALUE) : testMethod;
-        logCollector = new LogCollector(testClass, testMethod, kubeClient(), Environment.TEST_LOG_DIR);
+        final LogCollector logCollector = new LogCollector(testClass, testMethod, kubeClient(), Environment.TEST_LOG_DIR);
         // collecting logs for all resources inside Kubernetes cluster
         logCollector.collect();
     }

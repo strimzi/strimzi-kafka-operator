@@ -35,9 +35,7 @@ public class ListenersUtils {
      */
     public static boolean hasListenerWithOAuth(List<GenericKafkaListener> listeners)    {
         return listeners.stream()
-                .filter(listener -> isListenerWithOAuth(listener))
-                .findFirst()
-                .isPresent();
+                .anyMatch(listener -> isListenerWithOAuth(listener));
     }
 
     public static boolean isListenerWithOAuth(GenericKafkaListener listener) {
@@ -144,9 +142,7 @@ public class ListenersUtils {
      */
     public static boolean hasExternalListener(List<GenericKafkaListener> listeners)    {
         return listeners.stream()
-                .filter(listener -> KafkaListenerType.INTERNAL != listener.getType())
-                .findFirst()
-                .isPresent();
+                .anyMatch(listener -> KafkaListenerType.INTERNAL != listener.getType());
     }
 
     /**

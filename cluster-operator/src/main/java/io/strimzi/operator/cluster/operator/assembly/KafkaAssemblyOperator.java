@@ -162,6 +162,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final String operatorNamespace;
     private final Labels operatorNamespaceLabels;
     private final FeatureGates featureGates;
+    private final boolean isNetworkPolicyGeneration;
 
     private final ZookeeperSetOperator zkSetOperations;
     private final KafkaSetOperator kafkaSetOperations;
@@ -196,6 +197,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.operatorNamespace = config.getOperatorNamespace();
         this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
+        this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.featureGates = config.featureGates();
         this.routeOperations = supplier.routeOperations;
         this.zkSetOperations = supplier.zkSetOperations;
@@ -1229,7 +1231,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
+            if (isNetworkPolicyGeneration) {
+                return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
+            } else {
+                return withVoid(Future.succeededFuture());
+            }
         }
 
         Future<ReconciliationState> zkPodDisruptionBudget() {
@@ -2029,17 +2035,16 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                                 if (broker.getStatus() != null && broker.getStatus().getHostIP() != null) {
                                     String hostIP = broker.getStatus().getHostIP();
-                                    Node podNode = allNodes.stream().filter(node -> {
-                                        if (node.getStatus() != null && node.getStatus().getAddresses() != null)    {
-                                            return null != node.getStatus().getAddresses().stream().filter(address -> hostIP.equals(address.getAddress())).findFirst().orElse(null);
-                                        } else {
-                                            return false;
-                                        }
-                                    }).findFirst().orElse(null);
-
-                                    if (podNode != null) {
-                                        brokerNodes.put(podIndex, podNode);
-                                    }
+                                    allNodes.stream()
+                                            .filter(node -> {
+                                                if (node.getStatus() != null && node.getStatus().getAddresses() != null) {
+                                                    return node.getStatus().getAddresses().stream().anyMatch(address -> hostIP.equals(address.getAddress()));
+                                                } else {
+                                                    return false;
+                                                }
+                                            })
+                                            .findFirst()
+                                            .ifPresent(podNode -> brokerNodes.put(podIndex, podNode));
                                 }
                             }
 
@@ -2462,7 +2467,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, KafkaCluster.networkPolicyName(name), kafkaCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
+            if (isNetworkPolicyGeneration) {
+                return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, KafkaCluster.networkPolicyName(name), kafkaCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
+            } else {
+                return withVoid(Future.succeededFuture());
+            }
         }
 
         Future<ReconciliationState> kafkaPodDisruptionBudget() {
@@ -2492,11 +2501,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             // * The PVC doesn't exist yet, we should create it
                             // * The PVC is not Bound and we should reconcile it
                             reconcilePvc(desiredPvc).onComplete(resultPromise);
-                        } else if (currentPvc.getStatus().getConditions().stream().filter(cond -> "Resizing".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))).findFirst().orElse(null) != null)  {
+                        } else if (currentPvc.getStatus().getConditions().stream().anyMatch(cond -> "Resizing".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))))  {
                             // The PVC is Bound but it is already resizing => Nothing to do, we should let it resize
                             LOGGER.debugCr(reconciliation, "The PVC {} is resizing, nothing to do", desiredPvc.getMetadata().getName());
                             resultPromise.complete();
-                        } else if (currentPvc.getStatus().getConditions().stream().filter(cond -> "FileSystemResizePending".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))).findFirst().orElse(null) != null)  {
+                        } else if (currentPvc.getStatus().getConditions().stream().anyMatch(cond -> "FileSystemResizePending".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))))  {
                             // The PVC is Bound and resized but waiting for FS resizing => We need to restart the pod which is using it
                             String podName = cluster.getPodName(getPodIndexFromPvcName(desiredPvc.getMetadata().getName()));
                             fsResizingRestartRequest.add(podName);
@@ -3437,8 +3446,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlNetPolicy() {
-            return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, CruiseControl.policyName(name),
-                    cruiseControl != null ? cruiseControl.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels) : null));
+            if (isNetworkPolicyGeneration) {
+                return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, CruiseControl.policyName(name),
+                        cruiseControl != null ? cruiseControl.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels) : null));
+            } else {
+                return withVoid(Future.succeededFuture());
+            }
         }
 
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {

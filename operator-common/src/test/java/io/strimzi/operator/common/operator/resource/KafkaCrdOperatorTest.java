@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
@@ -115,5 +116,11 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
         createResourceOperations(vertx, mockClient)
             .updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, resource())
             .onComplete(context.succeeding(kafka -> async.flag()));
+    }
+
+    @Override
+    @Test
+    public void testReconcileDeleteDoesNotTimeoutWhenResourceIsAlreadyDeleted(VertxTestContext context) {
+        assumeTrue(false, "CrdOperator does not use self-closing watch so this test should be skipped");
     }
 }

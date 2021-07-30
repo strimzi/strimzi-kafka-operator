@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.dsl.Deletable;
 import io.fabric8.kubernetes.client.dsl.Gettable;
 import io.fabric8.kubernetes.client.dsl.Listable;
 import io.fabric8.kubernetes.client.dsl.Watchable;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -24,6 +25,7 @@ import io.vertx.core.Vertx;
 import java.io.Closeable;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class ResourceSupport {
     public static final long DEFAULT_TIMEOUT_MS = 300_000;
@@ -91,26 +93,40 @@ public class ResourceSupport {
      * returning a Future which completes when {@code watchFn} returns non-null
      * to some event on the watchable, or after a timeout.
      *
-     * The given {@code watchFn} will be invoked on a worked thread when the
+     * The given {@code watchFn} will be invoked on a worker thread when the
      * Kubernetes resources changes, so may block.
      * When the {@code watchFn} returns non-null the watch will be closed and then
      * the future returned from this method will be completed on the context thread.
      *
-     * @param watchable The watchable.
+     * In some cases such as resource deletion, it might happen that the resource is deleted already before the watch is
+     * started and as a result the watch never completes. The {@code preCheckFn} will be invoked on a worker thread
+     * after the watch has been created. It is expected to double check if we still need to wait for the watch to fire.
+     * When the {@code preCheckFn} returns non-null the watch will be closed and the future returned from this method
+     * will be completed with the result of the {@code preCheckFn} on the context thread. In the deletion example
+     * described above, the {@code preCheckFn} can check if the resource still exists and close the watch in case it was
+     * already deleted.
+     *
+     * @param reconciliation Reconciliation marker used for logging
+     * @param watchable The watchable - used to watch the resource.
+     * @param gettable The Gettable - used to get the resource in the pre-check.
      * @param operationTimeoutMs The timeout in ms.
      * @param watchFnDescription A description of what {@code watchFn} is watching for.
      *                           E.g. "observe ${condition} of ${kind} ${namespace}/${name}".
-     * @param watchFn The function to determine
+     * @param watchFn The function to determine if the event occured
+     * @param preCheckFn Pre-check function to avoid situation when the watch is never fired because ot was started too late.
      * @param <T> The type of watched resource.
      * @param <U> The result type of the {@code watchFn}.
      *
      * @return A Futures which completes when the {@code watchFn} returns non-null
      * in response to some Kubenetes even on the watched resource(s).
      */
-    <T, U> Future<U> selfClosingWatch(Watchable<Watcher<T>> watchable,
+    <T, U> Future<U> selfClosingWatch(Reconciliation reconciliation,
+                                      Watchable<Watcher<T>> watchable,
+                                      Gettable<T> gettable,
                                       long operationTimeoutMs,
                                       String watchFnDescription,
-                                      BiFunction<Watcher.Action, T, U> watchFn) {
+                                      BiFunction<Watcher.Action, T, U> watchFn,
+                                      Function<T, U> preCheckFn) {
 
         return new Watcher<T>() {
             private final Promise<Watch> watchPromise;
@@ -135,7 +151,7 @@ public class ResourceSupport {
 
                     closeFuture.onComplete(closeResult ->
                         vertx.runOnContext(ignored2 -> {
-                            LOGGER.debugOp("Completing watch future");
+                            LOGGER.debugCr(reconciliation, "Completing watch future");
                             if (joinResult.succeeded() && closeResult.succeeded()) {
                                 resultPromise.complete(joinResult.result().resultAt(1));
                             } else {
@@ -147,7 +163,19 @@ public class ResourceSupport {
 
                 try {
                     Watch watch = watchable.watch(this);
-                    LOGGER.debugOp("Opened watch {} for evaluation of {}", watch, watchFnDescription);
+                    LOGGER.debugCr(reconciliation, "Opened watch {} for evaluation of {}", watch, watchFnDescription);
+
+                    // Pre-check is done after the watch is open to make sure we did not missed the event. In the worst
+                    // case, both pre-check and watch complete the future. But at least one should always complete it.
+                    U apply = preCheckFn.apply(gettable.get());
+                    if (apply != null) {
+                        LOGGER.debugCr(reconciliation, "Pre-check is already complete, no need to wait for the watch: {}", watchFnDescription);
+                        donePromise.tryComplete(apply);
+                        vertx.cancelTimer(timerId);
+                    } else {
+                        LOGGER.debugCr(reconciliation, "Pre-check is not complete yet, let's wait for the watch: {}", watchFnDescription);
+                    }
+
                     watchPromise.complete(watch);
                 } catch (Throwable t) {
                     watchPromise.fail(t);
@@ -161,14 +189,15 @@ public class ResourceSupport {
                         try {
                             U apply = watchFn.apply(action, resource);
                             if (apply != null) {
+                                LOGGER.debugCr(reconciliation, "Satisfied: {}", watchFnDescription);
                                 f.tryComplete(apply);
                                 vertx.cancelTimer(timerId);
                             } else {
-                                LOGGER.debugOp("Not yet satisfied: {}", watchFnDescription);
+                                LOGGER.debugCr(reconciliation, "Not yet satisfied: {}", watchFnDescription);
                             }
                         } catch (Throwable t) {
                             if (!f.tryFail(t)) {
-                                LOGGER.debugOp("Ignoring exception thrown while " +
+                                LOGGER.debugCr(reconciliation, "Ignoring exception thrown while " +
                                         "evaluating watch {} because the future was already completed", watchFnDescription, t);
                             }
                         }
@@ -188,7 +217,7 @@ public class ResourceSupport {
     /**
      * Asynchronously deletes the given resource(s), returning a Future which completes on the context thread.
      * <strong>Note: The API server can return asynchronously, meaning the resource is still accessible from the API server
-     * after the returned Future completes. Use {@link #selfClosingWatch(Watchable, long, String, BiFunction)}
+     * after the returned Future completes. Use {@link #selfClosingWatch(Reconciliation, Watchable, Gettable, long, String, BiFunction, Function)}
      * to provide server-synchronous semantics.</strong>
      *
      * @param resource The resource(s) to delete.
@@ -198,12 +227,11 @@ public class ResourceSupport {
         return executeBlocking(
             blockingFuture -> {
                 try {
-                    Boolean delete = resource.delete();
-                    if (!Boolean.TRUE.equals(delete)) {
-                        blockingFuture.fail(new RuntimeException(resource + " could not be deleted (returned " + delete + ")"));
-                    } else {
-                        blockingFuture.complete();
-                    }
+                    // Returns TRUE when resource was deleted and FALSE when it was not found (see BaseOperation Fabric8 class)
+                    // In both cases we return success since the end-result has been achieved
+                    // Throws an exception for other errors
+                    resource.delete();
+                    blockingFuture.complete();
                 } catch (Throwable t) {
                     blockingFuture.fail(t);
                 }

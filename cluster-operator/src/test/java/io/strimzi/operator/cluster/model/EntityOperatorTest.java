@@ -226,8 +226,8 @@ public class EntityOperatorTest {
                                             .withLabels(podLabels)
                                             .withAnnotations(podAnots)
                                         .endMetadata()
-                                        .withNewPriorityClassName("top-priority")
-                                        .withNewSchedulerName("my-scheduler")
+                                        .withPriorityClassName("top-priority")
+                                        .withSchedulerName("my-scheduler")
                                         .withTolerations(singletonList(toleration))
                                         .withTopologySpreadConstraints(tsc1, tsc2)
                                         .withEnableServiceLinks(false)
@@ -673,13 +673,13 @@ public class EntityOperatorTest {
     @ParallelTest
     public void testUserOperatorContainerEnvVarsConflict() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
-        String testEnvOneKey = EntityUserOperator.ENV_VAR_ZOOKEEPER_CONNECT;
+        String testEnvOneKey = EntityUserOperator.ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS;
         String testEnvOneValue = "test.env.one";
         envVar1.setName(testEnvOneKey);
         envVar1.setValue(testEnvOneValue);
 
         ContainerEnvVar envVar2 = new ContainerEnvVar();
-        String testEnvTwoKey = EntityUserOperator.ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS;
+        String testEnvTwoKey = EntityUserOperator.ENV_VAR_KAFKA_BOOTSTRAP_SERVERS;
         String testEnvTwoValue = "test.env.two";
         envVar2.setName(testEnvTwoKey);
         envVar2.setValue(testEnvTwoValue);

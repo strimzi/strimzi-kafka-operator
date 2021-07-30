@@ -33,10 +33,6 @@ spec:
               value: my-cluster-clients-ca
             - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
               value: "120000"
-            - name: STRIMZI_ZOOKEEPER_CONNECT
-              value: my-cluster-zookeeper-client:2181
-            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS
-              value: "18000"
             - name: STRIMZI_LOG_LEVEL
               value: INFO
             - name: STRIMZI_GC_LOG_ENABLED

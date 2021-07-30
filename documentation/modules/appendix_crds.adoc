@@ -223,7 +223,7 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |integer
 |tlsTrustedCertificates             1.2+<.<a|Trusted certificates for TLS connection to the OAuth server.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
-|tokenEndpointUri                   1.2+<.<a|URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with clientId and a secret. 
+|tokenEndpointUri                   1.2+<.<a|URI of the Token Endpoint to use with SASL_PLAIN mechanism when the client authenticates with `clientId` and a `secret`. If set, the client can authenticate over SASL_PLAIN by either setting `username` to `clientId`, and setting `password` to client `secret`, or by setting `username` to account username, and `password` to access token prefixed with `$accessToken:`. If this option is not set, the `password` is always interpreted as an access token (without a prefix), and `username` as the account username (a so called 'no-client-credentials' mode).
 |string
 |type                               1.2+<.<a|Must be `oauth`.
 |string
@@ -583,13 +583,15 @@ The `type` property is a discriminator that distinguishes use of the `KafkaAutho
 It must have the value `custom` for the type `KafkaAuthorizationCustom`.
 [options="header"]
 |====
-|Property                |Description
-|type             1.2+<.<a|Must be `custom`.
+|Property                 |Description
+|type              1.2+<.<a|Must be `custom`.
 |string
-|authorizerClass  1.2+<.<a|Authorization implementation class, which must be available in classpath.
+|authorizerClass   1.2+<.<a|Authorization implementation class, which must be available in classpath.
 |string
-|superUsers       1.2+<.<a|List of super users, which are user principals with unlimited access rights.
+|superUsers        1.2+<.<a|List of super users, which are user principals with unlimited access rights.
 |string array
+|supportsAdminApi  1.2+<.<a|Indicates whether the custom authorizer supports the APIs for managing ACLs using the Kafka Admin API. Defaults to `false`.
+|boolean
 |====
 
 [id='type-Rack-{context}']
@@ -1147,7 +1149,7 @@ include::../api/io.strimzi.api.kafka.model.EntityUserOperatorSpec.adoc[leveloffs
 |string
 |reconciliationIntervalSeconds   1.2+<.<a|Interval between periodic reconciliations.
 |integer
-|zookeeperSessionTimeoutSeconds  1.2+<.<a|Timeout for the ZooKeeper session.
+|zookeeperSessionTimeoutSeconds  1.2+<.<a|*The `zookeeperSessionTimeoutSeconds` property has been deprecated.* This property has been deprecated because ZooKeeper is not used anymore by the User Operator. Timeout for the ZooKeeper session.
 |integer
 |secretPrefix                    1.2+<.<a|The prefix that will be added to the KafkaUser name to be used as the Secret name.
 |string

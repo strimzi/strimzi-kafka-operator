@@ -24,10 +24,9 @@ spec:
           args: ["start", "--kafka-provision=no"]
           imagePullPolicy: Always
           env:
+#           setting the env var WATCH_NAMESPACE to have an empty value, so that it can watch for instances across all namespaces.
             - name: WATCH_NAMESPACE
-              valueFrom:
-                fieldRef:
-                  fieldPath: metadata.namespace
+              value: ""
             - name: POD_NAME
               valueFrom:
                 fieldRef:

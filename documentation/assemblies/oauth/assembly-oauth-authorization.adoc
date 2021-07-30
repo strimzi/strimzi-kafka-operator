@@ -8,5 +8,5 @@
 include::modules/con-oauth-authorization-intro.adoc[leveloffset=+1]
 include::modules/con-oauth-authorization-mechanism.adoc[leveloffset=+1]
 include::modules/proc-oauth-authorization-broker-config.adoc[leveloffset=+1]
-include::modules/con-oauth-authorization-keycloak-authorization-services.adoc[leveloffset=+1]
-include::modules/con-oauth-authorization-keycloak-example.adoc[leveloffset=+1]
+include::assembly-managing-policies-permissions-keycloak.adoc[leveloffset=+1]
+include::modules/proc-oauth-authorization-keycloak-example.adoc[leveloffset=+1]

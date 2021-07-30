@@ -51,53 +51,51 @@ spec:
               value: my-cluster-clients-ca-cert
             - name: STRIMZI_CA_KEY_NAME <4>
               value: my-cluster-clients-ca
-            - name: STRIMZI_ZOOKEEPER_CONNECT <5>
-              value: my-cluster-zookeeper-client:2181
-            - name: STRIMZI_LABELS <6>
+            - name: STRIMZI_LABELS <5>
               value: "strimzi.io/cluster=my-cluster"
-            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS <7>
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS <6>
               value: "120000"
-            - name: STRIMZI_ZOOKEEPER_CONNECT <8>
-              value: my-cluster-zookeeper-client:2181
-            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS <9>
-              value: "18000"
-            - name: STRIMZI_LOG_LEVEL <10>
+            - name: STRIMZI_LOG_LEVEL <7>
               value: INFO
-            - name: STRIMZI_GC_LOG_ENABLED <11>
+            - name: STRIMZI_GC_LOG_ENABLED <8>
               value: "true"
-            - name: STRIMZI_CA_VALIDITY <12>
+            - name: STRIMZI_CA_VALIDITY <9>
               value: "365"
-            - name: STRIMZI_CA_RENEWAL <13>
+            - name: STRIMZI_CA_RENEWAL <10>
               value: "30"
-            - name: STRIMZI_JAVA_OPTS <14>
+            - name: STRIMZI_JAVA_OPTS <11>
               value: "-Xmx=512M -Xms=256M"
-            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES <15>
+            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES <12>
               value: "-Djavax.net.debug=verbose -DpropertyName=value"
+            - name: STRIMZI_SECRET_PREFIX <13>
+              value: "kafka-"
+            - name: STRIMZI_ACLS_ADMIN_API_SUPPORTED <14>
+              value: "true"
 ----
 <1> The Kubernetes namespace for the User Operator to watch for `KafkaUser` resources. Only one namespace can be specified.
 <2>  The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
 Use a comma-separated list to specify two or three broker addresses in case a server is down.
 <3> The Kubernetes `Secret` that contains the public key (`ca.crt`) value of the Certificate Authority that signs new user certificates for TLS client authentication.
 <4> The Kubernetes `Secret` that contains the private key (`ca.key`) value of the Certificate Authority that signs new user certificates for TLS client authentication.
-<5> The host and port pair of the address to connect to the ZooKeeper cluster.
-This must be the same ZooKeeper cluster that your Kafka cluster is using.
-<6> The label selector used to identify the `KafkaUser` resources managed by the User Operator.
-<7> The interval between periodic reconciliations, in milliseconds.
+<5> The label selector used to identify the `KafkaUser` resources managed by the User Operator.
+<6> The interval between periodic reconciliations, in milliseconds.
 The default is `120000` (2 minutes).
-<8> The host and port pair of the address to connect to the ZooKeeper cluster.
-This must be the same ZooKeeper cluster that your Kafka cluster is using.
-<9> The ZooKeeper session timeout, in milliseconds.
 The default is `18000` (18 seconds).
-<10> The level for printing logging messages.
+<7> The level for printing logging messages.
 You can set the level to `ERROR`, `WARNING`, `INFO`, `DEBUG`, or `TRACE`.
-<11> Enables garbage collection (GC) logging.
+<8> Enables garbage collection (GC) logging.
 The default is `true`.
-<12> The validity period for the Certificate Authority.
+<9> The validity period for the Certificate Authority.
 The default is `365` days.
-<13> The renewal period for the Certificate Authority. The renewal period is measured backwards from the expiry date of the current certificate.
+<10> The renewal period for the Certificate Authority. The renewal period is measured backwards from the expiry date of the current certificate.
 The default is `30` days to initiate certificate renewal before the old certificates expire.
-<14> (Optional) The Java options used by the JVM running the User Operator
-<15> (Optional) The debugging (`-D`) options set for the User Operator
+<11> (Optional) The Java options used by the JVM running the User Operator
+<12> (Optional) The debugging (`-D`) options set for the User Operator
+<13> (Optional) Prefix for the names of Kubernetes secrets created by the User Operator.
+<14> (Optional) Indicates whether the Kafka cluster supports management of authorization ACL rules using the Kafka Admin API.
+When set to `false`, the User Operator will reject all resources with `simple` authorization ACL rules.
+This helps to avoid unnecessary exceptions in the Kafka cluster logs.
+The default is `true`.
 
 
 . If you are using TLS to connect to the Kafka cluster, specify the secrets used to authenticate connection.
