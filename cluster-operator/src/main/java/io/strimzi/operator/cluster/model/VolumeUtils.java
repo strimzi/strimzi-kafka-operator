@@ -174,14 +174,21 @@ public class VolumeUtils {
      *
      * @param name      Name of the Volume
      * @param sizeLimit Volume size
+     * @param medium    Medium used for the emptryDir
+     *
      * @return The Volume created
      */
-    public static Volume createEmptyDirVolume(String name, String sizeLimit) {
+    public static Volume createEmptyDirVolume(String name, String sizeLimit, String medium) {
         String validName = getValidVolumeName(name);
 
         EmptyDirVolumeSource emptyDirVolumeSource = new EmptyDirVolumeSourceBuilder().build();
+
         if (sizeLimit != null && !sizeLimit.isEmpty()) {
             emptyDirVolumeSource.setSizeLimit(new Quantity(sizeLimit));
+        }
+
+        if (medium != null) {
+            emptyDirVolumeSource.setMedium(medium);
         }
 
         Volume volume = new VolumeBuilder()
@@ -254,7 +261,7 @@ public class VolumeUtils {
                 Integer id = ((EphemeralStorage) storage).getId();
                 String name = getVolumePrefix(id);
                 String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
-                volumes.add(createEmptyDirVolume(name, sizeLimit));
+                volumes.add(createEmptyDirVolume(name, sizeLimit, null));
             }
         }
 
