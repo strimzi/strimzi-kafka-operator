@@ -71,11 +71,11 @@ public class KafkaExporter extends AbstractModel {
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
 
-    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_POD_LABELS);
         if (value != null) {
-            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
         }
     }
 
@@ -162,7 +162,7 @@ public class KafkaExporter extends AbstractModel {
             kafkaExporter.isDeployed = false;
         }
 
-        kafkaExporter.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaExporter.templatePodLabels, CUSTOM_POD_LABELS);
+        kafkaExporter.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaExporter.templatePodLabels, DEFAULT_POD_LABELS);
 
         return kafkaExporter;
     }

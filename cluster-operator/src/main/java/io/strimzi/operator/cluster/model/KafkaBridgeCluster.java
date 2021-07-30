@@ -124,11 +124,11 @@ public class KafkaBridgeCluster extends AbstractModel {
     private SecurityContext templateContainerSecurityContext;
     private Tracing tracing;
 
-    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_BRIDGE_POD_LABELS);
         if (value != null) {
-            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
         }
     }
 
@@ -223,7 +223,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(kafkaBridgeCluster, template.getPodDisruptionBudget());
         }
 
-        kafkaBridgeCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaBridgeCluster.templatePodLabels, CUSTOM_POD_LABELS);
+        kafkaBridgeCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaBridgeCluster.templatePodLabels, DEFAULT_POD_LABELS);
         if (spec.getHttp() != null) {
             kafkaBridgeCluster.setHttpEnabled(true);
             kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());

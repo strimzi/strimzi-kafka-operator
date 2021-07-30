@@ -237,11 +237,11 @@ public class KafkaCluster extends AbstractModel {
     List<PersistentVolumeClaim> dataPvcs;
     List<VolumeMount> dataVolumeMountPaths;
 
-    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_KAFKA_POD_LABELS);
         if (value != null) {
-            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
         }
     }
 
@@ -578,7 +578,7 @@ public class KafkaCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
         }
 
-        result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, CUSTOM_POD_LABELS);
+        result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
 
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
         return result;

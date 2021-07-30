@@ -59,11 +59,11 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
     private List<KafkaMirrorMaker2ClusterSpec> clusters;
 
-    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_POD_LABELS);
         if (value != null) {
-            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
         }
     }
 
@@ -114,7 +114,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         }        
         cluster.setConfiguration(new KafkaMirrorMaker2Configuration(reconciliation, connectCluster.getConfig().entrySet()));
         KafkaMirrorMaker2Cluster mm2 = fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
-        mm2.templatePodLabels = Util.mergeLabelsOrAnnotations(mm2.templatePodLabels, CUSTOM_POD_LABELS);
+        mm2.templatePodLabels = Util.mergeLabelsOrAnnotations(mm2.templatePodLabels, DEFAULT_POD_LABELS);
         return mm2;
     }
 

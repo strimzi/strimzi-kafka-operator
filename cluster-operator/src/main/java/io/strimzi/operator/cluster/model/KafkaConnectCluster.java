@@ -142,11 +142,11 @@ public class KafkaConnectCluster extends AbstractModel {
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
 
-    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_CONNECT_POD_LABELS);
         if (value != null) {
-            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
         }
     }
 
@@ -308,7 +308,7 @@ public class KafkaConnectCluster extends AbstractModel {
             }
         }
 
-        kafkaConnect.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaConnect.templatePodLabels, CUSTOM_POD_LABELS);
+        kafkaConnect.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaConnect.templatePodLabels, DEFAULT_POD_LABELS);
 
         return kafkaConnect;
     }

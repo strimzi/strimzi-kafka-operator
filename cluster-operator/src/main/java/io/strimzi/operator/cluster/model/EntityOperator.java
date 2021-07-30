@@ -81,11 +81,11 @@ public class EntityOperator extends AbstractModel {
     private boolean isDeployed;
     private String tlsSidecarImage;
 
-    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_POD_LABELS);
         if (value != null) {
-            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
         }
     }
 
@@ -219,7 +219,7 @@ public class EntityOperator extends AbstractModel {
                 tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
             result.tlsSidecarImage = tlsSideCarImage;
-            result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, CUSTOM_POD_LABELS);
+            result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
         }
         return result;
     }

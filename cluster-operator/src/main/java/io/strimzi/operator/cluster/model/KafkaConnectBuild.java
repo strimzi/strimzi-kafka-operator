@@ -59,11 +59,11 @@ public class KafkaConnectBuild extends AbstractModel {
     private String baseImage;
     private List<String> additionalKanikoOptions;
 
-    private static final Map<String, String> CUSTOM_POD_LABELS = new HashMap<>();
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_CONNECT_BUILD_POD_LABELS);
         if (value != null) {
-            CUSTOM_POD_LABELS.putAll(Util.parseMap(value));
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
         }
     }
 
@@ -146,7 +146,7 @@ public class KafkaConnectBuild extends AbstractModel {
                 build.templateServiceAccountAnnotations = template.getBuildServiceAccount().getMetadata().getAnnotations();
             }
         }
-        build.templatePodLabels = Util.mergeLabelsOrAnnotations(build.templatePodLabels, CUSTOM_POD_LABELS);
+        build.templatePodLabels = Util.mergeLabelsOrAnnotations(build.templatePodLabels, DEFAULT_POD_LABELS);
 
         build.build = spec.getBuild();
 
