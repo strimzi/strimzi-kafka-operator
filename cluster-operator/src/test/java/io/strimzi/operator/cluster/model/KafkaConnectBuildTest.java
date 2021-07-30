@@ -52,7 +52,6 @@ public class KafkaConnectBuildTest {
             .build();
 
     private final List<String> defaultArgs = List.of("--dockerfile=/dockerfile/Dockerfile",
-            "--context=dir://workspace",
             "--image-name-with-digest-file=/dev/termination-log",
             "--destination=my-image:latest");
 
@@ -202,20 +201,16 @@ public class KafkaConnectBuildTest {
         assertThat(pod.getSpec().getContainers().get(0).getPorts().size(), is(0));
         assertThat(pod.getSpec().getContainers().get(0).getResources().getLimits(), is(limit));
         assertThat(pod.getSpec().getContainers().get(0).getResources().getRequests(), is(request));
-        assertThat(pod.getSpec().getVolumes().size(), is(3));
-        assertThat(pod.getSpec().getVolumes().get(0).getName(), is("workspace"));
-        assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir(), is(notNullValue()));
-        assertThat(pod.getSpec().getVolumes().get(1).getName(), is("dockerfile"));
-        assertThat(pod.getSpec().getVolumes().get(1).getConfigMap().getName(), is(KafkaConnectResources.dockerFileConfigMapName(cluster)));
-        assertThat(pod.getSpec().getVolumes().get(2).getName(), is("docker-credentials"));
-        assertThat(pod.getSpec().getVolumes().get(2).getSecret().getSecretName(), is("my-docker-credentials"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(3));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("workspace"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/workspace"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("dockerfile"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/dockerfile"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("docker-credentials"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/kaniko/.docker"));
+        assertThat(pod.getSpec().getVolumes().size(), is(2));
+        assertThat(pod.getSpec().getVolumes().get(0).getName(), is("dockerfile"));
+        assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getName(), is(KafkaConnectResources.dockerFileConfigMapName(cluster)));
+        assertThat(pod.getSpec().getVolumes().get(1).getName(), is("docker-credentials"));
+        assertThat(pod.getSpec().getVolumes().get(1).getSecret().getSecretName(), is("my-docker-credentials"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(2));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("dockerfile"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/dockerfile"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("docker-credentials"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/kaniko/.docker"));
         assertThat(pod.getMetadata().getOwnerReferences().size(), is(1));
         assertThat(pod.getMetadata().getOwnerReferences().get(0), is(build.createOwnerReference()));
     }
@@ -242,17 +237,13 @@ public class KafkaConnectBuildTest {
         KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS);
 
         Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, null);
-        assertThat(pod.getSpec().getVolumes().size(), is(2));
+        assertThat(pod.getSpec().getVolumes().size(), is(1));
         assertThat(pod.getSpec().getContainers().get(0).getArgs(), is(defaultArgs));
-        assertThat(pod.getSpec().getVolumes().get(0).getName(), is("workspace"));
-        assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir(), is(notNullValue()));
-        assertThat(pod.getSpec().getVolumes().get(1).getName(), is("dockerfile"));
-        assertThat(pod.getSpec().getVolumes().get(1).getConfigMap().getName(), is(KafkaConnectResources.dockerFileConfigMapName(cluster)));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(2));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("workspace"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/workspace"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is("dockerfile"));
-        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/dockerfile"));
+        assertThat(pod.getSpec().getVolumes().get(0).getName(), is("dockerfile"));
+        assertThat(pod.getSpec().getVolumes().get(0).getConfigMap().getName(), is(KafkaConnectResources.dockerFileConfigMapName(cluster)));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().size(), is(1));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is("dockerfile"));
+        assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is("/dockerfile"));
     }
 
     @ParallelTest

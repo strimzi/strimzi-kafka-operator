@@ -252,9 +252,8 @@ public class KafkaConnectBuild extends AbstractModel {
      * @return  List of volumes
      */
     private List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumes = new ArrayList<>(3);
+        List<Volume> volumes = new ArrayList<>(2);
 
-        //volumes.add(VolumeUtils.createEmptyDirVolume("workspace", null));
         volumes.add(VolumeUtils.createConfigMapVolume("dockerfile", KafkaConnectResources.dockerFileConfigMapName(cluster), Collections.singletonMap("Dockerfile", "Dockerfile")));
 
         if (build.getOutput() instanceof DockerOutput) {
@@ -276,9 +275,8 @@ public class KafkaConnectBuild extends AbstractModel {
      * @return  List of volume mounts
      */
     private List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMounts = new ArrayList<>(3);
+        List<VolumeMount> volumeMounts = new ArrayList<>(2);
 
-        //volumeMounts.add(new VolumeMountBuilder().withName("workspace").withMountPath("/workspace").build());
         volumeMounts.add(new VolumeMountBuilder().withName("dockerfile").withMountPath("/dockerfile").build());
 
         if (build.getOutput() instanceof DockerOutput) {

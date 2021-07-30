@@ -191,6 +191,7 @@ public class KafkaExporterTest {
         Volume volume = volumes.stream().filter(vol -> AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
         assertThat(volume.getEmptyDir().getMedium(), is("Memory"));
+        assertThat(volume.getEmptyDir().getSizeLimit(), is("1Mi"));
 
         volume = volumes.stream().filter(vol -> KafkaExporter.CLUSTER_CA_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));

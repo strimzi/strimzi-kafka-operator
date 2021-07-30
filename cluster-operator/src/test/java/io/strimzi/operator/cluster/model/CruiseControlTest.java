@@ -305,10 +305,12 @@ public class CruiseControlTest {
         volume = volumes.stream().filter(vol -> AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
         assertThat(volume.getEmptyDir().getMedium(), is("Memory"));
+        assertThat(volume.getEmptyDir().getSizeLimit(), is("1Mi"));
 
         volume = volumes.stream().filter(vol -> CruiseControl.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
         assertThat(volume.getEmptyDir().getMedium(), is("Memory"));
+        assertThat(volume.getEmptyDir().getSizeLimit(), is("1Mi"));
 
         // Test volume mounts
         // TLS sidecar container
