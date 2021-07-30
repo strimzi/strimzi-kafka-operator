@@ -138,7 +138,14 @@ rules:
 - apiGroups:
   - ""
   resources:
-    # The cluster operator needs to be able to create events and delegate permissions to do so
+    # The cluster operator needs to be able to create legacy events if later APIs aren't supported and delegate permissions to do so
+  - events
+  verbs:
+  - create
+- apiGroups:
+  - "events.k8s.io"
+  resources:
+  # The cluster operator needs to be able to create events using newer, more efficent APIs, and delegate permissions to do so
   - events
   verbs:
   - create
