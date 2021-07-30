@@ -18,6 +18,9 @@ import java.time.format.DateTimeFormatter;
  */
 public class WorkaroundMicroTime extends MicroTime {
 
+    //Keep Spotbugs happy
+    private static final long serialVersionUID = 0;
+    
     private static final DateTimeFormatter K8S_MICROTIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'.'SSSSSSXXX");
 
     public WorkaroundMicroTime(ZonedDateTime dateTime) {
