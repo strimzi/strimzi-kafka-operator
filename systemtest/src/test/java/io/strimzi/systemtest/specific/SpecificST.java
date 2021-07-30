@@ -55,6 +55,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_SHORT;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
@@ -247,7 +248,7 @@ public class SpecificST extends AbstractST {
 
     @IsolatedTest("Modification of shared Cluster Operator configuration")
     @Tag(CONNECT)
-    @Tag(REGRESSION)
+    @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     public void testRackAwareConnectCorrectDeployment(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
@@ -318,7 +319,6 @@ public class SpecificST extends AbstractST {
         assertThat(connectPodNodeSelectorRequirement.getOperator(), is("Exists"));
 
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, NAMESPACE, clusterName);
-
         // Revert changes for CO deployment
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(sharedExtensionContext)

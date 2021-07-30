@@ -142,12 +142,12 @@ public class SetupClusterOperator {
         LOGGER.info("Going to install ClusterOperator via Yaml bundle");
 
         if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
-            prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
+            cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
         } else {
             LOGGER.info("Environment for ClusterOperator was already prepared! Going to install it now.");
         }
-
+        prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
         applyBindings();
 
         // copy image-pull secret
@@ -255,8 +255,6 @@ public class SetupClusterOperator {
      */
     public void prepareEnvForOperator(ExtensionContext extensionContext, String clientNamespace, List<String> namespaces, String... resources) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
-        cluster.createNamespaces(extensionContext, clientNamespace, namespaces);
-        cluster.createCustomResources(resources);
         applyClusterOperatorInstallFiles(clientNamespace);
         NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, namespaces);
 
@@ -295,8 +293,6 @@ public class SetupClusterOperator {
      * Configuration files are loaded from packaging/install/cluster-operator directory.
      */
     public void applyClusterOperatorInstallFiles(String namespace) {
-//        deleteClusterOperatorInstallFiles();
-//        clusterOperatorConfigs.clear();
         List<File> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted()
             .filter(File::isFile)
             .filter(file ->
