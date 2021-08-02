@@ -12,7 +12,7 @@ import static org.hamcrest.CoreMatchers.is;
 
 import java.util.Map;
 
-import io.strimzi.systemtest.SetupClusterOperator;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import org.apache.logging.log4j.LogManager;
@@ -76,6 +76,8 @@ public class ColdBackupScriptST extends AbstractST {
         // recreate the namespace and deploy the operator
         ResourceManager.kubeClient().deleteNamespace(NAMESPACE);
         NamespaceUtils.waitForNamespaceDeletion(NAMESPACE);
+        // This is needed to allow installation of new operator and creation of the namespace
+        context.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + NAMESPACE, null);
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(context)

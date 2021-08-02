@@ -14,7 +14,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.SetupClusterOperator;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
@@ -106,14 +106,22 @@ public class CruiseControlST extends AbstractST {
     void testCruiseControlWithRebalanceResourceAndRefreshAnnotation(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
-        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .build());
+        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName)
+            .editMetadata()
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .build());
 
         KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, NAMESPACE, clusterName), NAMESPACE, clusterName);
 
         LOGGER.info("Annotating KafkaRebalance: {} with 'refresh' anno", clusterName);
-        KafkaRebalanceUtils.annotateKafkaRebalanceResource(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, NAMESPACE, clusterName), clusterName, KafkaRebalanceAnnotation.refresh);
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterName, KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, NAMESPACE, clusterName), NAMESPACE, clusterName, KafkaRebalanceAnnotation.refresh);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(NAMESPACE, clusterName, KafkaRebalanceState.ProposalReady);
 
         LOGGER.info("Trying rebalancing process again");
         KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, NAMESPACE, clusterName), NAMESPACE, clusterName);

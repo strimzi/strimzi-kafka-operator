@@ -21,8 +21,12 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class BundleResource implements ResourceType<Deployment> {
     private static final Logger LOGGER = LogManager.getLogger(BundleResource.class);
@@ -35,6 +39,7 @@ public class BundleResource implements ResourceType<Deployment> {
     private long operationTimeout;
     private long reconciliationInterval;
     private List<EnvVar> extraEnvVars;
+    private Map<String, String> extraLabels;
 
     @Override
     public String getKind() {
@@ -74,12 +79,15 @@ public class BundleResource implements ResourceType<Deployment> {
         this.operationTimeout = builder.operationTimeout;
         this.reconciliationInterval = builder.reconciliationInterval;
         this.extraEnvVars = builder.extraEnvVars;
+        this.extraLabels = builder.extraLabels;
 
         // assign defaults is something is not specified
         if (this.name == null || this.name.isEmpty()) this.name = Constants.STRIMZI_DEPLOYMENT_NAME;
         if (this.namespaceToWatch == null) this.namespaceToWatch = this.namespaceInstallTo;
         if (this.operationTimeout == 0) this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
         if (this.reconciliationInterval == 0) this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
+        if (this.extraEnvVars == null) this.extraEnvVars = new ArrayList<>();
+        if (this.extraLabels == null) this.extraLabels = new HashMap<>();
     }
 
     public static class BundleResourceBuilder {
@@ -90,6 +98,7 @@ public class BundleResource implements ResourceType<Deployment> {
         private long operationTimeout;
         private long reconciliationInterval;
         private List<EnvVar> extraEnvVars;
+        private Map<String, String> extraLabels;
 
         public BundleResourceBuilder withName(String name) {
             this.name = name;
@@ -115,6 +124,11 @@ public class BundleResource implements ResourceType<Deployment> {
 
         public BundleResourceBuilder withExtraEnvVars(List<EnvVar> extraEnvVars) {
             this.extraEnvVars = extraEnvVars;
+            return self();
+        }
+
+        public BundleResourceBuilder withExtraLabels(Map<String, String> extraLabels) {
+            this.extraLabels = extraLabels;
             return self();
         }
 
@@ -189,10 +203,11 @@ public class BundleResource implements ResourceType<Deployment> {
         envVars.add(new EnvVar("STRIMZI_RBAC_SCOPE", Environment.STRIMZI_RBAC_SCOPE, null));
 
         if (extraEnvVars != null) {
+
             envVars.forEach(envVar -> extraEnvVars.stream()
-                    .filter(aVar -> envVar.getName().equals(aVar.getName()))
-                    .findFirst()
-                    .ifPresent(xVar -> envVar.setValue(xVar.getValue()))
+                .filter(extraVar -> envVar.getName().equals(extraVar.getName()))
+                .findFirst()
+                .ifPresent(xVar -> envVar.setValue(xVar.getValue()))
             );
         }
 
@@ -204,10 +219,16 @@ public class BundleResource implements ResourceType<Deployment> {
             envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_SECRETS", Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET, null));
         }
         // adding custom evn vars specified by user in installation
-        if (extraEnvVars != null) envVars.addAll(extraEnvVars);
+        if (extraEnvVars != null) {
+            envVars.addAll(extraEnvVars);
+        }
+        // Remove duplicates from envVars
+        List<EnvVar> envVarsWithoutDuplicates = envVars.stream()
+            .distinct()
+            .collect(Collectors.toList());
 
         // Apply updated env variables
-        clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
+        clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVarsWithoutDuplicates);
         return new DeploymentBuilder(clusterOperator)
             .editMetadata()
                 .withName(name)
@@ -217,8 +238,12 @@ public class BundleResource implements ResourceType<Deployment> {
             .editSpec()
                 .withNewSelector()
                     .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
+                    .addToMatchLabels(this.extraLabels)
                 .endSelector()
                 .editTemplate()
+                    .editMetadata()
+                        .addToLabels(this.extraLabels)
+                    .endMetadata()
                     .editSpec()
                         .editFirstContainer()
                             .withImage(StUtils.changeOrgAndTag(coImage))

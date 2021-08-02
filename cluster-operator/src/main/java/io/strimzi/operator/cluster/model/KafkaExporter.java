@@ -28,10 +28,13 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class KafkaExporter extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka-exporter";
@@ -55,6 +58,8 @@ public class KafkaExporter extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER = "KAFKA_EXPORTER_KAFKA_SERVER";
     protected static final String ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA = "KAFKA_EXPORTER_ENABLE_SARAMA";
 
+    protected static final String CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_EXPORTER_LABELS";
+
     protected String groupRegex = ".*";
     protected String topicRegex = ".*";
     protected boolean saramaLoggingEnabled;
@@ -65,6 +70,14 @@ public class KafkaExporter extends AbstractModel {
 
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_POD_LABELS);
+        if (value != null) {
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -148,6 +161,8 @@ public class KafkaExporter extends AbstractModel {
         } else {
             kafkaExporter.isDeployed = false;
         }
+
+        kafkaExporter.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaExporter.templatePodLabels, DEFAULT_POD_LABELS);
 
         return kafkaExporter;
     }

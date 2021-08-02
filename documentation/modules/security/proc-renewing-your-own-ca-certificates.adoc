@@ -11,7 +11,6 @@ If you are using your own certificates, the Cluster Operator will not renew them
 Therefore, it is important that you follow this procedure during the renewal period of the certificate in order to replace CA certificates that will soon expire.
 
 The procedure describes the renewal of CA certificates in PEM format.
-You can also use certificates in PKCS #12 format.
 
 .Prerequisites
 

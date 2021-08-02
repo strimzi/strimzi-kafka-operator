@@ -121,7 +121,7 @@ public class DeploymentConfigOperator extends AbstractScalableResourceOperator<O
         DeploymentConfig resource = resourceOp.get();
         
         if (resource != null)   {
-            return Boolean.TRUE.equals(resourceOp.isReady());
+            return resourceOp.isReady();
         } else {
             return false;
         }

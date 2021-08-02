@@ -21,6 +21,7 @@
   All operations done by the User Operator now use Kafka Admin API and connect directly to Kafka instead of ZooKeeper.
   As a result, the environment variables `STRIMZI_ZOOKEEPER_CONNECT` and `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS` were removed from the User Operator configuration.
 * All `emptyDir` volumes used by Strimzi for temporary files have now configured a fixed size limit.
+* Annotate Cluster Operator resource metrics with a namespace label
 
 ## 0.24.0
 

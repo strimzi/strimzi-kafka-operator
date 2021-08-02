@@ -60,7 +60,7 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         setupEnvAndUpgradeClusterOperator(extensionContext, testParameters, producerName, consumerName, continuousTopicName, continuousConsumerGroup, testParameters.getString("deployKafkaVersion"), NAMESPACE);
         logPodImages(clusterName);
         // Downgrade CO
-        changeClusterOperator(testParameters, NAMESPACE);
+        changeClusterOperator(testParameters, NAMESPACE, extensionContext);
         // Wait for Kafka cluster rolling update
         waitForKafkaClusterRollingUpdate();
         logPodImages(clusterName);

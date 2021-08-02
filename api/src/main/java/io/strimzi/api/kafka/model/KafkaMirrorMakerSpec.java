@@ -29,7 +29,7 @@ import lombok.EqualsAndHashCode;
 @JsonPropertyOrder({
         "version", "replicas", "image", "consumer", "producer", "resources", "whitelist", "include", "jvmOptions",
         "logging", "metricsConfig", "tracing", "template"})
-@OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("whitelist")), @OneOf.Alternative(@OneOf.Alternative.Property("include"))})
+@OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("include")), @OneOf.Alternative(@OneOf.Alternative.Property("whitelist"))})
 @EqualsAndHashCode
 public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics {
     private static final long serialVersionUID = 1L;

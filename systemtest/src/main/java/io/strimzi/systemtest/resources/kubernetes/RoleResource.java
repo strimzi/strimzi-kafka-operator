@@ -12,6 +12,7 @@ import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 public class RoleResource implements ResourceType<Role> {
 
@@ -38,22 +39,15 @@ public class RoleResource implements ResourceType<Role> {
         return resource != null;
     }
 
-    public static Role role(String yamlPath, String namespace) {
+    public static void role(ExtensionContext extensionContext, String yamlPath, String namespace) {
         LOGGER.info("Creating Role from {} in namespace {}", yamlPath, namespace);
         Role role = getRoleFromYaml(yamlPath);
 
-        return createRole(
-            new RoleBuilder(role)
-                .editMetadata()
-                    .withNamespace(namespace)
-                .endMetadata()
-                .build(),
-                namespace);
-    }
-
-    public static Role createRole(Role role, String clientNamespace) {
-        ResourceManager.kubeClient().namespace(clientNamespace).createOrReplaceRole(role);
-        return role;
+        ResourceManager.getInstance().createResource(extensionContext, new RoleBuilder(role)
+            .editMetadata()
+                .withNamespace(namespace)
+            .endMetadata()
+            .build());
     }
 
     private static Role getRoleFromYaml(String yamlPath) {
