@@ -14,7 +14,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.SetupClusterOperator;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -92,22 +92,22 @@ public class FeatureGatesST extends AbstractST {
 
         LOGGER.info("Try to send some messages to Kafka over next few minutes.");
         KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(clusterName, topicName)
-                .editSpec()
-                    .withReplicas(kafkaReplicas)
-                    .withPartitions(kafkaReplicas)
-                .endSpec()
-                .build();
+            .editSpec()
+                .withReplicas(kafkaReplicas)
+                .withPartitions(kafkaReplicas)
+            .endSpec()
+            .build();
         resourceManager.createResource(extensionContext, kafkaTopic);
 
         KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
-                .withProducerName(producerName)
-                .withConsumerName(consumerName)
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
-                .withTopicName(topicName)
-                .withMessageCount(messageCount)
-                .withDelayMs(500)
-                .withNamespaceName(NAMESPACE)
-                .build();
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
+            .withTopicName(topicName)
+            .withMessageCount(messageCount)
+            .withDelayMs(500)
+            .withNamespaceName(NAMESPACE)
+            .build();
 
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());

@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.olm;
 
-import io.strimzi.systemtest.resources.specific.OlmResource;
+import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;

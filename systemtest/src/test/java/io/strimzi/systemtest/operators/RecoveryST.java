@@ -12,7 +12,7 @@ import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.SetupClusterOperator;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -295,12 +295,8 @@ class RecoveryST extends AbstractST {
 
     @BeforeEach
     void setup(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String clusterOperatorName = clusterName + "-" + Constants.STRIMZI_DEPLOYMENT_NAME;
-
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withClusterOperatorName(clusterOperatorName)
             .withNamespace(NAMESPACE)
             .createInstallation()
             .runInstallation();

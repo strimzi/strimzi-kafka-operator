@@ -22,7 +22,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.SetupClusterOperator;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;

@@ -42,6 +42,7 @@ import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.resources.kubernetes.JobResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
+import io.strimzi.systemtest.resources.kubernetes.RoleResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.StUtils;
@@ -119,7 +120,8 @@ public class ResourceManager {
         new JobResource(),
         new NetworkPolicyResource(),
         new RoleBindingResource(),
-        new ServiceResource()
+        new ServiceResource(),
+        new RoleResource()
     };
 
     @SafeVarargs

@@ -8,10 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.SetupClusterOperator;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
@@ -94,7 +92,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         String startInterBrokerProtocol = getValueForLastKafkaVersionInFile(startKafkaVersionsYaml, "protocol");
 
         // Modify + apply installation files
-        copyModifyApply(coDir, NAMESPACE);
+        copyModifyApply(coDir, NAMESPACE, extensionContext);
         convertCRDs(conversionTool, NAMESPACE);
         // Apply Kafka Persistent without version
         LOGGER.info("Going to deploy Kafka from: {}", startKafkaPersistent.getPath());
@@ -111,17 +109,13 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
 
         // Update CRDs, CRB, etc.
-        install.applyClusterOperatorInstallFiles(NAMESPACE);
-        SetupClusterOperator.applyBindings(extensionContext, NAMESPACE);
-
         kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).delete();
-        kubeClient().getClient().apps().deployments().inNamespace(NAMESPACE).withName(ResourceManager.getCoDeploymentName()).create(
-            new BundleResource.BundleResourceBuilder()
-                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-                .withNamespace(NAMESPACE)
-                .buildBundleInstance()
-                .buildBundleDeployment()
-                .build());
+
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(extensionContext)
+            .withNamespace(NAMESPACE)
+            .createInstallation()
+            .runBundleInstallation();
 
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, operatorSnapshot);
         StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zooSnapshot);
@@ -148,7 +142,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         makeSnapshots(clusterName);
 
         // Upgrade CO
-        changeClusterOperator(acrossUpgradeData, NAMESPACE);
+        changeClusterOperator(acrossUpgradeData, NAMESPACE, extensionContext);
         logPodImages(clusterName);
         //  Upgrade kafka
         changeKafkaAndLogFormatVersion(acrossUpgradeData.getJsonObject("proceduresAfterOperatorUpgrade"), acrossUpgradeData, clusterName, extensionContext);
@@ -177,7 +171,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         convertCRDs(conversionTool, NAMESPACE);
 
         // Upgrade CO
-        changeClusterOperator(acrossUpgradeData, NAMESPACE);
+        changeClusterOperator(acrossUpgradeData, NAMESPACE, extensionContext);
         // Wait till first upgrade finished
         zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
@@ -276,7 +270,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
         // Upgrade CO to HEAD
         logPodImages(clusterName);
-        changeClusterOperator(testParameters, NAMESPACE);
+        changeClusterOperator(testParameters, NAMESPACE, extensionContext);
 
         if (TestKafkaVersion.containsVersion(getDefaultKafkaVersionPerStrimzi(testParameters.getString("fromVersion")).version())) {
             waitForKafkaClusterRollingUpdate();

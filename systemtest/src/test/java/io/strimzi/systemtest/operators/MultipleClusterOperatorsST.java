@@ -15,13 +15,12 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.SetupClusterOperator;
+import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
-import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
-import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
@@ -42,6 +41,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +86,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         deployCOInNamespace(extensionContext, SECOND_CO_NAME, SECOND_NAMESPACE, SECOND_CO_SELECTOR_ENV, true);
 
         cluster.setNamespace(DEFAULT_NAMESPACE);
+        cluster.createNamespace(DEFAULT_NAMESPACE);
 
         LOGGER.info("Deploying Kafka without CR selector");
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3).build());
@@ -160,7 +161,6 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         // because KafkaRebalance is pointing to Kafka with CC cluster, we need to create KR before adding the label back
         // to test if KR will be ignored
-
         LOGGER.info("Creating KafkaRebalance when CC doesn't have label for CO, the KR should be ignored");
         resourceManager.createResource(extensionContext, false, KafkaRebalanceTemplates.kafkaRebalance(clusterName).build());
 
@@ -186,51 +186,30 @@ public class MultipleClusterOperatorsST extends AbstractST {
         String namespace = multipleNamespaces ? Constants.WATCH_ALL_NAMESPACES : coNamespace;
 
         if (multipleNamespaces) {
-            install.prepareEnvForOperator(extensionContext, coNamespace);
-
-            // Apply rolebindings in CO namespace
-            SetupClusterOperator.applyBindings(extensionContext, coNamespace);
-
             // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
             List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(coNamespace, coName);
             clusterRoleBindingList.forEach(
-                clusterRoleBinding -> ClusterRoleBindingResource.clusterRoleBinding(extensionContext, clusterRoleBinding));
+                clusterRoleBinding -> ResourceManager.getInstance().createResource(extensionContext, clusterRoleBinding));
         }
 
         LOGGER.info("Creating {} in {} namespace", coName, coNamespace);
 
-        resourceManager.createResource(extensionContext,
-            new BundleResource.BundleResourceBuilder()
-                .withName(Constants.STRIMZI_DEPLOYMENT_NAME)
-                .withNamespace(coNamespace)
-                .withWatchingNamespaces(namespace)
-                .buildBundleInstance()
-                .buildBundleDeployment()
-                .editOrNewMetadata()
-                    .withName(coName)
-                    .endMetadata()
-                    .editOrNewSpec()
-                        .editOrNewSelector()
-                            .addToMatchLabels("app.kubernetes.io/operator", coName)
-                        .endSelector()
-                        .editOrNewTemplate()
-                            .editOrNewMetadata()
-                                .addToLabels("app.kubernetes.io/operator", coName)
-                            .endMetadata()
-                            .editOrNewSpec()
-                                .editContainer(0)
-                                    .addToEnv(selectorEnv)
-                                .endContainer()
-                            .endSpec()
-                        .endTemplate()
-                    .endSpec()
-                .build());
+        List<EnvVar> envVarList = new ArrayList<>();
+        envVarList.add(selectorEnv);
+
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(extensionContext)
+            .withNamespace(coNamespace)
+            .withClusterOperatorName(coName)
+            .withWatchingNamespaces(namespace)
+            .withExtraLabels(Collections.singletonMap("app.kubernetes.io/operator", coName))
+            .withExtraEnvVars(envVarList)
+            .createInstallation()
+            .runBundleInstallation();
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    void setup() {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
-        install.prepareEnvForOperator(extensionContext, DEFAULT_NAMESPACE);
-        SetupClusterOperator.applyBindings(extensionContext, DEFAULT_NAMESPACE);
     }
 }

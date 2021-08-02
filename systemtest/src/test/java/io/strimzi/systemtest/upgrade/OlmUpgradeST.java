@@ -9,7 +9,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
-import io.strimzi.systemtest.resources.specific.OlmResource;
+import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
