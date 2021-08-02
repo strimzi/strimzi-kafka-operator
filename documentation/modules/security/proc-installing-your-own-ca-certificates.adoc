@@ -9,9 +9,6 @@ This procedure describes how to install your own CA certificates and keys instea
 
 You can use this procedure to install your own cluster or client CA certificates.
 
-The procedure describes renewal of CA certificates in PEM format.
-You can also use certificates in PKCS #12 format.
-
 .Prerequisites
 
 * The Cluster Operator is running.
