@@ -16,7 +16,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -477,7 +479,9 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         });
         Map<String, String> desiredMap = new OrderedProperties().addStringPairs(Util.expandVars(desiredLogging)).asMap();
 
-        fetchedLoggers.entrySet().forEach(fetchedLogger -> updateLoggers.put(fetchedLogger.getKey(), getLevel(fetchedLogger.getKey(), desiredMap)));
+        updateLoggers.putAll(fetchedLoggers.keySet().stream().collect(Collectors.toMap(
+            Function.identity(),
+            key -> getEffectiveLevel(key, desiredMap))));
         addToLoggers(defaultLogging.asMap(), updateLoggers);
         addToLoggers(desiredMap, updateLoggers);
 
@@ -493,16 +497,25 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
         }
     }
 
-    protected String getLevel(String logger, Map<String, String> desired) {
+    /**
+     * Gets the level of the given {@code logger} in the given map of {@code desired} levels,
+     * or the level inherited from the logger hierarchy.
+     * @param logger The logger name
+     * @param desired Map of logger levels
+     * @return The effective level of the given logger.
+     */
+    protected String getEffectiveLevel(String logger, Map<String, String> desired) {
         // direct hit
-        if (desired.keySet().contains("log4j.logger." + logger)) {
+        if (desired.containsKey("log4j.logger." + logger)) {
             return desired.get("log4j.logger." + logger);
         }
 
         Map<String, String> desiredSortedReverse = new TreeMap<>(Comparator.reverseOrder());
         desiredSortedReverse.putAll(desired);
         //desired contains substring of logger, search in reversed order to find the most specific match
-        Optional<Map.Entry<String, String>> opt = desiredSortedReverse.entrySet().stream().filter(entry -> ("log4j.logger." + logger).startsWith(entry.getKey())).findFirst();
+        Optional<Map.Entry<String, String>> opt = desiredSortedReverse.entrySet().stream()
+                .filter(entry -> ("log4j.logger." + logger).startsWith(entry.getKey()))
+                .findFirst();
         if (opt.isPresent()) {
             return opt.get().getValue();
         }

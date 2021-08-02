@@ -307,11 +307,11 @@ public class KafkaConnectApiTest {
         KafkaConnectApiImpl client = new KafkaConnectApiImpl(vertx);
         OrderedProperties ops = new OrderedProperties();
         ops.addStringPairs(desired);
-        assertEquals(client.getLevel("foo.bar", ops.asMap()), "TRACE");
-        assertEquals(client.getLevel("foo.lala", ops.asMap()), "WARN");
-        assertEquals(client.getLevel("bar.faa", ops.asMap()), rootLevel);
-        assertEquals(client.getLevel("org", ops.asMap()), "TRACE");
-        assertEquals(client.getLevel("oorg.eclipse.jetty.util.thread.strategy.EatWhatYouKill", ops.asMap()), "DEBUG");
-        assertEquals(client.getLevel("oorg.eclipse.group.art", ops.asMap()), rootLevel);
+        assertEquals("TRACE", client.getEffectiveLevel("foo.bar", ops.asMap()));
+        assertEquals("WARN", client.getEffectiveLevel("foo.lala", ops.asMap()));
+        assertEquals(rootLevel, client.getEffectiveLevel("bar.faa", ops.asMap()));
+        assertEquals("TRACE", client.getEffectiveLevel("org", ops.asMap()));
+        assertEquals("DEBUG", client.getEffectiveLevel("oorg.eclipse.jetty.util.thread.strategy.EatWhatYouKill", ops.asMap()));
+        assertEquals(rootLevel, client.getEffectiveLevel("oorg.eclipse.group.art", ops.asMap()));
     }
 }
