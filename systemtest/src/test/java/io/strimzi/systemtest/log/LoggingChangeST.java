@@ -1087,7 +1087,7 @@ class LoggingChangeST extends AbstractST {
                         "log4j.logger.org.eclipse.jetty.util.thread.strategy.EatWhatYouKill=OFF\n" +
                         "log4j.logger.org.reflections=ERROR";
 
-        String externalCmName = "external-cm";
+        String externalCmName = "external-cm-hierarchy";
 
         ConfigMap mm2LoggingMap = new ConfigMapBuilder()
                 .withNewMetadata()
