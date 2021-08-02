@@ -42,6 +42,7 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -67,8 +68,8 @@ public class KafkaBridgeCluster extends AbstractModel {
             .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
 
     // Cluster Operator environment variables for custom discovery labels and annotations
-    protected static final String CO_ENV_VAR_CUSTOM_LABELS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS";
-    protected static final String CO_ENV_VAR_CUSTOM_ANNOTATIONS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_ANNOTATIONS";
+    protected static final String CO_ENV_VAR_CUSTOM_SERVICE_LABELS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS";
+    protected static final String CO_ENV_VAR_CUSTOM_SERVICE_ANNOTATIONS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_ANNOTATIONS";
 
     // Kafka Bridge configuration keys (EnvVariables)
     protected static final String ENV_VAR_PREFIX = "KAFKA_BRIDGE_";
@@ -99,7 +100,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_HOST = "KAFKA_BRIDGE_AMQP_HOST";
     protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_PORT = "KAFKA_BRIDGE_AMQP_PORT";
     protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_CERT_DIR = "KAFKA_BRIDGE_AMQP_CERT_DIR";
-    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_MESSAGE_CONNVERTER = "KAFKA_BRIDGE_AMQP_MESSAGE_CONNVERTER";
+    protected static final String ENV_VAR_KAFKA_BRIDGE_AMQP_MESSAGE_CONVERTER = "KAFKA_BRIDGE_AMQP_MESSAGE_CONVERTER";
 
     protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_ENABLED = "KAFKA_BRIDGE_HTTP_ENABLED";
     protected static final String ENV_VAR_KAFKA_BRIDGE_HTTP_HOST = "KAFKA_BRIDGE_HTTP_HOST";
@@ -107,6 +108,8 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED = "KAFKA_BRIDGE_CORS_ENABLED";
     protected static final String ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_ORIGINS = "KAFKA_BRIDGE_CORS_ALLOWED_ORIGINS";
     protected static final String ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_METHODS = "KAFKA_BRIDGE_CORS_ALLOWED_METHODS";
+
+    protected static final String CO_ENV_VAR_CUSTOM_BRIDGE_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_LABELS";
 
     private KafkaBridgeTls tls;
     private KafkaClientAuthentication authentication;
@@ -120,6 +123,14 @@ public class KafkaBridgeCluster extends AbstractModel {
     private List<ContainerEnvVar> templateContainerEnvVars;
     private SecurityContext templateContainerSecurityContext;
     private Tracing tracing;
+
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_BRIDGE_POD_LABELS);
+        if (value != null) {
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -212,6 +223,7 @@ public class KafkaBridgeCluster extends AbstractModel {
             ModelUtils.parsePodDisruptionBudgetTemplate(kafkaBridgeCluster, template.getPodDisruptionBudget());
         }
 
+        kafkaBridgeCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaBridgeCluster.templatePodLabels, DEFAULT_POD_LABELS);
         if (spec.getHttp() != null) {
             kafkaBridgeCluster.setHttpEnabled(true);
             kafkaBridgeCluster.setKafkaBridgeHttpConfig(spec.getHttp());
@@ -234,8 +246,8 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         ports.add(createServicePort(REST_API_PORT_NAME, port, port, "TCP"));
 
-        return createDiscoverableService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceLabels, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_LABELS)),
-                Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_ANNOTATIONS)));
+        return createDiscoverableService("ClusterIP", ports, Util.mergeLabelsOrAnnotations(templateServiceLabels, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_LABELS)),
+                Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), templateServiceAnnotations, ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_ANNOTATIONS)));
     }
 
     /**

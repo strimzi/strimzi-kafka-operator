@@ -122,6 +122,8 @@ public class KafkaConnectCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_CONNECT_JMX_USERNAME = "KAFKA_CONNECT_JMX_USERNAME";
     protected static final String ENV_VAR_KAFKA_CONNECT_JMX_PASSWORD = "KAFKA_CONNECT_JMX_PASSWORD";
 
+    protected static final String CO_ENV_VAR_CUSTOM_CONNECT_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_CONNECT_LABELS";
+
     private Rack rack;
     private String initImage;
 
@@ -139,6 +141,14 @@ public class KafkaConnectCluster extends AbstractModel {
 
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
+
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_CONNECT_POD_LABELS);
+        if (value != null) {
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -297,6 +307,8 @@ public class KafkaConnectCluster extends AbstractModel {
                 kafkaConnect.externalVolumes = externalConfiguration.getVolumes();
             }
         }
+
+        kafkaConnect.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaConnect.templatePodLabels, DEFAULT_POD_LABELS);
 
         return kafkaConnect;
     }

@@ -35,6 +35,7 @@ import io.strimzi.operator.cluster.model.components.JmxTransQueries;
 import io.strimzi.operator.cluster.model.components.JmxTransServer;
 import io.strimzi.operator.cluster.model.components.JmxTransServers;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,6 +68,7 @@ public class JmxTrans extends AbstractModel {
 
     protected static final String ENV_VAR_JMXTRANS_LOGGING_LEVEL = "JMXTRANS_LOGGING_LEVEL";
 
+    protected static final String CO_ENV_VAR_CUSTOM_JMX_TRANS_POD_LABELS = "STRIMZI_CUSTOM_JMX_TRANS_LABELS";
 
     private boolean isDeployed;
     private boolean isJmxAuthenticated;
@@ -76,6 +78,14 @@ public class JmxTrans extends AbstractModel {
 
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_JMX_TRANS_POD_LABELS);
+        if (value != null) {
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -154,7 +164,7 @@ public class JmxTrans extends AbstractModel {
                     result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
                 }
             }
-
+            result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
         }
 
         return result;

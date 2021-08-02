@@ -156,6 +156,7 @@ public abstract class AbstractModel {
     private static final String ENV_VAR_HTTP_PROXY = "HTTP_PROXY";
     private static final String ENV_VAR_HTTPS_PROXY = "HTTPS_PROXY";
     private static final String ENV_VAR_NO_PROXY = "NO_PROXY";
+
     /**
      * Configure HTTP/HTTPS Proxy env vars
      * These are set in the Cluster Operator and then passed to all created containers

@@ -28,9 +28,11 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -94,6 +96,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected static final String ENV_VAR_STRIMZI_LIVENESS_PERIOD = "STRIMZI_LIVENESS_PERIOD";
     protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
 
+    protected static final String CO_ENV_VAR_CUSTOM_MIRROR_MAKER_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_MIRROR_MAKER_LABELS";
+
     protected String include;
     protected Tracing tracing;
 
@@ -101,6 +105,14 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected KafkaMirrorMakerConsumerSpec consumer;
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_MIRROR_MAKER_POD_LABELS);
+        if (value != null) {
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -198,6 +210,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
             kafkaMirrorMakerCluster.tracing = spec.getTracing();
         }
+        kafkaMirrorMakerCluster.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaMirrorMakerCluster.templatePodLabels, DEFAULT_POD_LABELS);
 
         kafkaMirrorMakerCluster.setOwnerReference(kafkaMirrorMaker);
 

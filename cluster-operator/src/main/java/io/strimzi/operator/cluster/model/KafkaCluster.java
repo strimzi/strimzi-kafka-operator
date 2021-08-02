@@ -145,6 +145,8 @@ public class KafkaCluster extends AbstractModel {
     protected static final String ENV_VAR_KAFKA_JMX_USERNAME = "KAFKA_JMX_USERNAME";
     protected static final String ENV_VAR_KAFKA_JMX_PASSWORD = "KAFKA_JMX_PASSWORD";
 
+    protected static final String CO_ENV_VAR_CUSTOM_KAFKA_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_LABELS";
+
     // Suffixes for secrets with certificates
     private static final String SECRET_BROKERS_SUFFIX = NAME_SUFFIX + "-brokers";
 
@@ -234,6 +236,14 @@ public class KafkaCluster extends AbstractModel {
     List<Volume> dataVolumes;
     List<PersistentVolumeClaim> dataPvcs;
     List<VolumeMount> dataVolumeMountPaths;
+
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_KAFKA_POD_LABELS);
+        if (value != null) {
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -567,6 +577,8 @@ public class KafkaCluster extends AbstractModel {
 
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
         }
+
+        result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
 
         result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
         return result;

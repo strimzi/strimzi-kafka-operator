@@ -45,12 +45,14 @@ import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -123,6 +125,8 @@ public class CruiseControl extends AbstractModel {
     protected static final String ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
     protected static final String ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
 
+    protected static final String CO_ENV_VAR_CUSTOM_CRUISE_CONTROL_POD_LABELS = "STRIMZI_CUSTOM_CRUISE_CONTROL_LABELS";
+
     // Templates
     protected List<ContainerEnvVar> templateCruiseControlContainerEnvVars;
     protected List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
@@ -131,6 +135,14 @@ public class CruiseControl extends AbstractModel {
     protected SecurityContext templateTlsSidecarContainerSecurityContext;
 
     private boolean isDeployed;
+
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_CRUISE_CONTROL_POD_LABELS);
+        if (value != null) {
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -236,6 +248,7 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.setResources(spec.getResources());
             cruiseControl.setOwnerReference(kafkaAssembly);
             cruiseControl = updateTemplate(spec, cruiseControl);
+            cruiseControl.templatePodLabels = Util.mergeLabelsOrAnnotations(cruiseControl.templatePodLabels, DEFAULT_POD_LABELS);
         }
 
         return cruiseControl;

@@ -26,8 +26,11 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
@@ -47,12 +50,22 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_ACCESS_TOKENS_CLUSTERS = "KAFKA_MIRRORMAKER_2_OAUTH_OAUTH_ACCESS_TOKENS_CLUSTERS";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS = "KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS";
 
+    protected static final String CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_MIRROR_MAKER2_LABELS";
+
     protected static final String MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT = "/opt/kafka/mm2-oauth/";
     protected static final String MIRRORMAKER_2_OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/mm2-oauth-certs/";
     protected static final String MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/mm2-certs/";
     protected static final String MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT = "/opt/kafka/mm2-password/";
 
     private List<KafkaMirrorMaker2ClusterSpec> clusters;
+
+    private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
+    static {
+        String value = System.getenv(CO_ENV_VAR_CUSTOM_MIRROR_MAKER2_POD_LABELS);
+        if (value != null) {
+            DEFAULT_POD_LABELS.putAll(Util.parseMap(value));
+        }
+    }
 
     /**
      * Constructor
@@ -100,7 +113,9 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                     .orElseThrow(() -> new InvalidResourceException("connectCluster with alias " + connectClusterAlias + " cannot be found in the list of clusters at spec.clusters"));
         }        
         cluster.setConfiguration(new KafkaMirrorMaker2Configuration(reconciliation, connectCluster.getConfig().entrySet()));
-        return fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
+        KafkaMirrorMaker2Cluster mm2 = fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, cluster);
+        mm2.templatePodLabels = Util.mergeLabelsOrAnnotations(mm2.templatePodLabels, DEFAULT_POD_LABELS);
+        return mm2;
     }
 
     private static KafkaConnectSpec buildKafkaConnectSpec(KafkaMirrorMaker2Spec spec, KafkaMirrorMaker2ClusterSpec connectCluster) {
