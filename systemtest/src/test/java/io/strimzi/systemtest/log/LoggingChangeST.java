@@ -1065,6 +1065,102 @@ class LoggingChangeST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @Tag(ROLLING_UPDATE)
+    void testMM2LoggingLevelsHierarchy(ExtensionContext extensionContext) {
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-source", 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-target", 3).build());
+        resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
+
+        String log4jConfig =
+                "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                        "log4j.rootLogger=OFF, CONSOLE\n" +
+                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
+                        "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
+                        "log4j.logger.org.eclipse.jetty.util.thread=FATAL\n" +
+                        "log4j.logger.org.apache.kafka.connect.runtime.WorkerTask=OFF\n" +
+                        "log4j.logger.org.eclipse.jetty.util.thread.strategy.EatWhatYouKill=OFF\n" +
+                        "log4j.logger.org.reflections=ERROR";
+
+        String externalCmName = "external-cm-hierarchy";
+
+        ConfigMap mm2LoggingMap = new ConfigMapBuilder()
+                .withNewMetadata()
+                .addToLabels("app", "strimzi")
+                .withName(externalCmName)
+                .withNamespace(namespaceName)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j.properties", log4jConfig))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(mm2LoggingMap);
+
+        ExternalLogging mm2XternalLogging = new ExternalLoggingBuilder()
+                .withNewValueFrom()
+                .withConfigMapKeyRef(
+                        new ConfigMapKeySelectorBuilder()
+                                .withName(externalCmName)
+                                .withKey("log4j.properties")
+                                .build()
+                )
+                .endValueFrom()
+                .build();
+
+        resourceManager.createResource(extensionContext,
+            KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, clusterName + "-target", clusterName + "-source", 1, false)
+                .editOrNewSpec()
+                    .withLogging(mm2XternalLogging)
+                .endSpec()
+                .build());
+
+        String kafkaMM2PodName = kubeClient().namespace(namespaceName).listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
+
+        Map<String, String> mm2Snapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
+
+        LOGGER.info("Waiting for log4j.properties will contain desired settings");
+        TestUtils.waitFor("Logger init levels", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().namespace(namespaceName).execInPod(kafkaMM2PodName, "curl", "http://localhost:8083/admin/loggers/root").out().contains("OFF")
+        );
+
+        LOGGER.info("Changing log levels");
+        String updatedLog4jConfig =
+                "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+                        "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                        "log4j.rootLogger=INFO, CONSOLE\n" +
+                        "log4j.logger.org.apache.zookeeper=ERROR\n" +
+                        "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
+                        "log4j.logger.org.eclipse.jetty.util.thread=WARN\n" +
+                        "log4j.logger.org.reflections=ERROR";
+
+        mm2LoggingMap = new ConfigMapBuilder()
+                .withNewMetadata()
+                .addToLabels("app", "strimzi")
+                .withName(externalCmName)
+                .withNamespace(namespaceName)
+                .endMetadata()
+                .withData(Collections.singletonMap("log4j.properties", updatedLog4jConfig))
+                .build();
+
+        kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(mm2LoggingMap);
+
+        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> cmdKubeClient().namespace(namespaceName).execInPod(kafkaMM2PodName, "curl", "http://localhost:8083/admin/loggers/root").out().contains("INFO")
+                    // not set logger should inherit parent level (in this case 'org.eclipse.jetty.util.thread')
+                    && cmdKubeClient().namespace(namespaceName).execInPod(kafkaMM2PodName, "curl", "http://localhost:8083/admin/loggers/org.eclipse.jetty.util.thread.strategy.EatWhatYouKill").out().contains("WARN")
+                    // logger with not set parent should inherit root
+                    && cmdKubeClient().namespace(namespaceName).execInPod(kafkaMM2PodName, "curl", "http://localhost:8083/admin/loggers/org.apache.kafka.connect.runtime.WorkerTask").out().contains("INFO")
+        );
+
+        assertThat("MirrorMaker2 pod should not roll", DeploymentUtils.depSnapshot(namespaceName, KafkaMirrorMaker2Resources.deploymentName(clusterName)), equalTo(mm2Snapshot));
+    }
+
+    @ParallelNamespaceTest
     void testNotExistingCMSetsDefaultLogging(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String defaultProps = TestUtils.getFileAsString(TestUtils.USER_PATH + "/../cluster-operator/src/main/resources/kafkaDefaultLoggingProperties");
@@ -1201,6 +1297,8 @@ class LoggingChangeST extends AbstractST {
 
         InlineLogging inlineWarn = new InlineLogging();
         inlineWarn.setLoggers(Collections.singletonMap("connect.root.logger.level", "WARN"));
+
+        inlineWarn.setLoggers(Map.of("connect.root.logger.level", "WARN", "log4j.logger." + connectorClassName, "ERROR"));
 
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, connect -> connect.getSpec().setLogging(inlineWarn), namespaceName);
 

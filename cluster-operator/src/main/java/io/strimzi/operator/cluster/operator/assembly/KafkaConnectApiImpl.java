@@ -8,13 +8,17 @@ package io.strimzi.operator.cluster.operator.assembly;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -473,9 +477,13 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             }
             return k1.compareTo(k2);
         });
-        updateLoggers.putAll(fetchedLoggers);
+        Map<String, String> desiredMap = new OrderedProperties().addStringPairs(Util.expandVars(desiredLogging)).asMap();
+
+        updateLoggers.putAll(fetchedLoggers.keySet().stream().collect(Collectors.toMap(
+            Function.identity(),
+            key -> getEffectiveLevel(key, desiredMap))));
         addToLoggers(defaultLogging.asMap(), updateLoggers);
-        addToLoggers(new OrderedProperties().addStringPairs(Util.expandVars(desiredLogging)).asMap(), updateLoggers);
+        addToLoggers(desiredMap, updateLoggers);
 
         if (updateLoggers.equals(fetchedLoggers)) {
             return Future.succeededFuture(false);
@@ -487,6 +495,33 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
             }
             return result.map(true);
         }
+    }
+
+    /**
+     * Gets the level of the given {@code logger} in the given map of {@code desired} levels,
+     * or the level inherited from the logger hierarchy.
+     * @param logger The logger name
+     * @param desired Map of logger levels
+     * @return The effective level of the given logger.
+     */
+    protected String getEffectiveLevel(String logger, Map<String, String> desired) {
+        // direct hit
+        if (desired.containsKey("log4j.logger." + logger)) {
+            return desired.get("log4j.logger." + logger);
+        }
+
+        Map<String, String> desiredSortedReverse = new TreeMap<>(Comparator.reverseOrder());
+        desiredSortedReverse.putAll(desired);
+        //desired contains substring of logger, search in reversed order to find the most specific match
+        Optional<Map.Entry<String, String>> opt = desiredSortedReverse.entrySet().stream()
+                .filter(entry -> ("log4j.logger." + logger).startsWith(entry.getKey()))
+                .findFirst();
+        if (opt.isPresent()) {
+            return opt.get().getValue();
+        }
+
+        //nothing found, use root level
+        return getLoggerLevelFromAppenderCouple(Util.expandVar(desired.get("log4j.rootLogger"), desired));
     }
 
     private void addToLoggers(Map<String, String> entries, Map<String, String> updateLoggers) {
