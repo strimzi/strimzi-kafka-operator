@@ -9,6 +9,7 @@
 * Support for disabling the automatic generation of network policies by the Cluster Operator. Set the Cluster Operator's `STRIMZI_NETWORK_POLICY_GENERATION` environment variable to `false` to disable network policies. (#5258)
 * Update User Operator to use Admin API for managing SCRAM-SHA-512 users
 * Configure fixed size limit for `emptyDir` volumes used for temporary files (#5340)
+* Update Strimzi Kafka Bridge to 0.20.2
 
 ### Changes, deprecations and removals
 
