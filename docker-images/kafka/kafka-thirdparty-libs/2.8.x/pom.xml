@@ -22,6 +22,7 @@
         <kafka-quotas-plugin.version>0.1.0</kafka-quotas-plugin.version>
         <kafka-mirror-maker-2-extensions.version>1.0.0</kafka-mirror-maker-2-extensions.version>
         <kafka-kubernetes-config-provider.version>0.1.0</kafka-kubernetes-config-provider.version>
+        <kafka-env-var-config-provider.version>0.1.0</kafka-env-var-config-provider.version>
         <jmx-prometheus-javaagent.version>0.16.1</jmx-prometheus-javaagent.version>
         <json-smart.version>2.4.7</json-smart.version>
         <jsonevent-layout.version>1.7</jsonevent-layout.version>
@@ -324,6 +325,12 @@
                     <artifactId>jackson-databind</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <!-- EnvVar Configuration Provider for Apache Kafka -->
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>kafka-env-var-config-provider</artifactId>
+            <version>${kafka-env-var-config-provider.version}</version>
         </dependency>
     </dependencies>
 </project>
