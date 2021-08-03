@@ -584,7 +584,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         if (storage instanceof EphemeralStorage) {
             String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
-            volumeList.add(VolumeUtils.createEmptyDirVolume(VOLUME_NAME, sizeLimit));
+            volumeList.add(VolumeUtils.createEmptyDirVolume(VOLUME_NAME, sizeLimit, null));
         }
 
         volumeList.add(createTempDirVolume());

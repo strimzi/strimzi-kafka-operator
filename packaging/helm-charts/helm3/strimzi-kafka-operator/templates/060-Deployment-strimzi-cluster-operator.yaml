@@ -39,6 +39,7 @@ spec:
         - name: strimzi-tmp
           emptyDir:
             medium: Memory
+            sizeLimit: 1Mi
         - name: {{ .Values.logVolume }}
           configMap:
             name: {{ .Values.logConfigMap }}

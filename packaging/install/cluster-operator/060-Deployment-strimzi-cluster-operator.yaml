@@ -21,6 +21,7 @@ spec:
         - name: strimzi-tmp
           emptyDir:
             medium: Memory
+            sizeLimit: 1Mi
         - name: co-config-volume
           configMap:
             name: strimzi-cluster-operator

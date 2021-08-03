@@ -19,22 +19,33 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ParallelSuite
 public class VolumeUtilsTest {
+    @ParallelTest
+    public void testCreateEmptyDirVolumeWithMedium() {
+        Volume volume = VolumeUtils.createEmptyDirVolume("bar", "1Gi", "Memory");
+        assertThat(volume.getEmptyDir().getMedium(), is("Memory"));
+    }
+
+    @ParallelTest
+    public void testCreateEmptyDirVolumeWithNullMedium() {
+        Volume volume = VolumeUtils.createEmptyDirVolume("bar", null, null);
+        assertThat(volume.getEmptyDir().getMedium(), is(nullValue()));
+    }
 
     @ParallelTest
     public void testCreateEmptyDirVolumeWithSizeLimit() {
-        Volume volume = VolumeUtils.createEmptyDirVolume("bar", "1Gi");
+        Volume volume = VolumeUtils.createEmptyDirVolume("bar", "1Gi", null);
         assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
     }
 
     @ParallelTest
     public void testCreateEmptyDirVolumeWithNullSizeLimit() {
-        Volume volume = VolumeUtils.createEmptyDirVolume("bar", null);
+        Volume volume = VolumeUtils.createEmptyDirVolume("bar", null, null);
         assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 
     @ParallelTest
     public void testCreateEmptyDirVolumeWithEmptySizeLimit() {
-        Volume volume = VolumeUtils.createEmptyDirVolume("bar", "");
+        Volume volume = VolumeUtils.createEmptyDirVolume("bar", "", null);
         assertThat(volume.getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 

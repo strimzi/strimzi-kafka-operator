@@ -43,7 +43,6 @@ import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.Volume;
-import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
@@ -1578,16 +1577,11 @@ public abstract class AbstractModel {
     }
 
     protected Volume createTempDirVolume() {
-        return createTempDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME);
+        return VolumeUtils.createEmptyDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, "1Mi", "Memory");
     }
 
     protected Volume createTempDirVolume(String volumeName) {
-        return new VolumeBuilder()
-                .withName(volumeName)
-                .withNewEmptyDir()
-                    .withMedium("Memory")
-                .endEmptyDir()
-                .build();
+        return VolumeUtils.createEmptyDirVolume(volumeName, "1Mi", "Memory");
     }
 
     protected VolumeMount createTempDirVolumeMount() {
