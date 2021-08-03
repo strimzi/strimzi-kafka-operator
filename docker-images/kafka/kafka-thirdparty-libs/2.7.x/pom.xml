@@ -36,10 +36,6 @@
             <id>cruise-control</id>
             <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
         </repository>
-        <repository>
-            <id>env-var-config-provider-staging</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1112/</url>
-        </repository>
     </repositories>
 
     <dependencyManagement>
