@@ -1121,7 +1121,6 @@ class LoggingChangeST extends AbstractST {
         String kafkaMM2PodName = kubeClient().namespace(namespaceName).listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
 
         Map<String, String> mm2Snapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
-        final String kafkaClientsPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
 
         LOGGER.info("Waiting for log4j.properties will contain desired settings");
         TestUtils.waitFor("Logger init levels", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -1302,6 +1301,8 @@ class LoggingChangeST extends AbstractST {
 
         InlineLogging inlineWarn = new InlineLogging();
         inlineWarn.setLoggers(Collections.singletonMap("connect.root.logger.level", "WARN"));
+
+        inlineWarn.setLoggers(Map.of("connect.root.logger.level", "WARN", "log4j.logger." + connectorClassName, "ERROR"));
 
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, connect -> connect.getSpec().setLogging(inlineWarn), namespaceName);
 
