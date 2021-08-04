@@ -51,7 +51,6 @@ public class AclRule implements UnknownPropertyPreserving, Serializable {
             "ACL rules with type `allow` are used to allow user to execute the specified operations. " +
             "Default value is `allow`.")
     @DefaultValue("allow")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     public AclRuleType getType() {
         return type;
     }

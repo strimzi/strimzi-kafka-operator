@@ -707,6 +707,18 @@ public class CrdGenerator {
         } else {
             for (Class c : subtypes(crdClass)) {
                 hasAnyGetterAndAnySetter(c);
+                try {
+                    String typePropertyName = crdClass.getAnnotation(JsonTypeInfo.class).property();
+                    String methodName = "get" + typePropertyName.substring(0, 1).toUpperCase(Locale.ENGLISH) + typePropertyName.substring(1).toLowerCase(Locale.ENGLISH);
+                    @SuppressWarnings("unchecked")
+                    Method method = c.getMethod(methodName);
+
+                    if (!hasAnnotatedType(method)) {
+                        err(c.getCanonicalName() + "#" + methodName + " is not annotated with @JsonInclude(JsonInclude.Include.NON_NULL)");
+                    }
+                } catch (NoSuchMethodException e) {
+                    err(e.getMessage());
+                }
             }
         }
         checkInherits(crdClass, "java.io.Serializable");
@@ -717,6 +729,11 @@ public class CrdGenerator {
             checkClassOverrides(crdClass, "hashCode");
         }
         checkClassOverrides(crdClass, "equals", Object.class);
+    }
+
+    private boolean hasAnnotatedType(Method method) {
+        JsonInclude ann = method.getAnnotation(JsonInclude.class);
+        return ann != null && ann.value().equals(JsonInclude.Include.NON_NULL);
     }
 
     private void checkInherits(Class<?> crdClass, String className) {
@@ -922,7 +939,7 @@ public class CrdGenerator {
     private ObjectNode addSimpleTypeConstraints(ApiVersion crApiVersion, ObjectNode result, Property property) {
 
         Example example = property.getAnnotation(Example.class);
-        // TODO make support verions
+        // TODO make support versions
         if (example != null) {
             result.put("example", example.value());
         }
@@ -958,12 +975,6 @@ public class CrdGenerator {
         if (deprecated != null) {
             result.put("deprecated", true);
         }*/
-
-        if ("type".equals(property.getName()) && property.getDeclaringClass().getPackage().getName().startsWith("io.strimzi") && !Modifier.isAbstract(property.getDeclaringClass().getModifiers())) {
-            if (property.getAnnotation(JsonInclude.class) == null || property.getAnnotation(JsonInclude.class).value() != JsonInclude.Include.NON_NULL) {
-                err(property.getDeclaringClass() + " " + property.getName() + " is not annotated with @JsonInclude(JsonInclude.Include.NON_NULL)");
-            }
-        }
 
         return result;
     }

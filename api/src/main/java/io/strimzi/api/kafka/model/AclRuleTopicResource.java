@@ -31,6 +31,7 @@ public class AclRuleTopicResource extends AclRuleResource {
 
     @Description("Must be `" + TYPE_TOPIC + "`")
     @Override
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getType() {
         return TYPE_TOPIC;
     }

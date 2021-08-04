@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CrdGeneratorTest {
@@ -115,7 +116,8 @@ public class CrdGeneratorTest {
                 },
                 emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), null);
         StringWriter w = new StringWriter();
-        crdGenerator.generate(ExampleWithTypeCrd.class, w);
-        assertTrue(errors.contains("class io.strimzi.crdgenerator.ExampleWithTypeCrd type is not annotated with @JsonInclude(JsonInclude.Include.NON_NULL)"), errors.toString());
+        crdGenerator.generate(ExampleCrd.class, w);
+        assertTrue(errors.contains("io.strimzi.crdgenerator.ExampleCrd.PolymorphicLeft#getDiscrim is not annotated with @JsonInclude(JsonInclude.Include.NON_NULL)"), errors.toString());
+        assertFalse(errors.contains("io.strimzi.crdgenerator.ExampleCrd.PolymorphicRight#getDiscrim is not annotated with @JsonInclude(JsonInclude.Include.NON_NULL)"), errors.toString());
     }
 }

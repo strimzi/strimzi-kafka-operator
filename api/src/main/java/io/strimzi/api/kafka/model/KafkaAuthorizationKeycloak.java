@@ -45,6 +45,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
 
     @Description("Must be `" + TYPE_KEYCLOAK + "`")
     @Override
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getType() {
         return TYPE_KEYCLOAK;
     }

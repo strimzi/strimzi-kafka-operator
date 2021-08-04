@@ -26,6 +26,7 @@ public class JarArtifact extends DownloadableArtifact {
 
     @Description("Must be `" + TYPE_JAR + "`")
     @Override
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getType() {
         return TYPE_JAR;
     }

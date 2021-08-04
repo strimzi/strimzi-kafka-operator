@@ -41,7 +41,6 @@ public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
 
     @Description("The type of the listener. " +
             "Can be one of the following three types: `plain`, `tls`, and `external`.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getType() {
         return type;
     }
