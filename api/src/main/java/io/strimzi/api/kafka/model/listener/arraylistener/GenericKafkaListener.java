@@ -86,6 +86,7 @@ public class GenericKafkaListener implements UnknownPropertyPreserving, Serializ
             "* `nodeport` type uses NodePort type services to expose Kafka.\n" +
             "* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka.\n")
     @JsonProperty(required = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public KafkaListenerType getType() {
         return type;
     }

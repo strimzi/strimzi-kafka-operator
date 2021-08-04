@@ -55,6 +55,7 @@ public class Condition implements UnknownPropertyPreserving, Serializable {
         this.reason = reason;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     @Description("The unique identifier of a condition, used to distinguish between other conditions in the resource.")
     public String getType() {
         return type;

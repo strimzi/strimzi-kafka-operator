@@ -959,6 +959,12 @@ public class CrdGenerator {
             result.put("deprecated", true);
         }*/
 
+        if ("type".equals(property.getName()) && property.getDeclaringClass().getPackage().getName().startsWith("io.strimzi") && !Modifier.isAbstract(property.getDeclaringClass().getModifiers())) {
+            if (property.getAnnotation(JsonInclude.class) == null || property.getAnnotation(JsonInclude.class).value() != JsonInclude.Include.NON_NULL) {
+                err(property.getDeclaringClass() + " " + property.getName() + " is not annotated with @JsonInclude(JsonInclude.Include.NON_NULL)");
+            }
+        }
+
         return result;
     }
 

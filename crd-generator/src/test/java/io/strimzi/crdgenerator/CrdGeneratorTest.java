@@ -98,4 +98,24 @@ public class CrdGeneratorTest {
         // TODO there's a bunch more checks we need here.
         // In particular one about the use of @Alternative
     }
+
+    @Test
+    public void simpleTestWithoutType() throws IOException {
+        Set<String> errors = new HashSet<>();
+        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1,
+                CrdGenerator.YAML_MAPPER, emptyMap(), new CrdGenerator.Reporter() {
+                    @Override
+                    public void warn(String s) {
+                    }
+
+                    @Override
+                    public void err(String s) {
+                        errors.add(s);
+                    }
+                },
+                emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), null);
+        StringWriter w = new StringWriter();
+        crdGenerator.generate(ExampleWithTypeCrd.class, w);
+        assertTrue(errors.contains("class io.strimzi.crdgenerator.ExampleWithTypeCrd type is not annotated with @JsonInclude(JsonInclude.Include.NON_NULL)"), errors.toString());
+    }
 }
