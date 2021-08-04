@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
@@ -39,6 +40,7 @@ public class ClusterOperatorRbacST extends AbstractST {
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testCRBDeletionErrorIsIgnoredWhenRackAwarenessIsNotEnabled(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
 
@@ -71,6 +73,7 @@ public class ClusterOperatorRbacST extends AbstractST {
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testCRBDeletionErrorsWhenRackAwarenessIsEnabled(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
 

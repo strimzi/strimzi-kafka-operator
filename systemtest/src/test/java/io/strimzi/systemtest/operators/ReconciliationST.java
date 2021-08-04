@@ -49,6 +49,9 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.Collections;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.STATEFUL_SET;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -64,6 +67,8 @@ public class ReconciliationST extends AbstractST {
     private static final int SCALE_TO = 4;
 
     @ParallelNamespaceTest
+    @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testPauseReconciliationInKafkaAndKafkaConnectWithConnector(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -131,6 +136,7 @@ public class ReconciliationST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @Tag(CRUISE_CONTROL)
     void testPauseReconciliationInKafkaRebalanceAndTopic(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

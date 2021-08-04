@@ -89,8 +89,11 @@ import static io.strimzi.api.kafka.model.KafkaResources.clusterCaKeySecretName;
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
@@ -788,6 +791,8 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testTlsHostnameVerificationWithKafkaConnect(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -837,6 +842,7 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @Tag(MIRROR_MAKER)
     void testTlsHostnameVerificationWithMirrorMaker(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -1232,6 +1238,8 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testKafkaAndKafkaConnectTlsVersion(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -1309,6 +1317,8 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testKafkaAndKafkaConnectCipherSuites(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.resources.crd.kafkaclients;
 
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 
@@ -227,7 +226,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                         .withContainers()
                         .addNewContainer()
                             .withName(kafkaStreamsName)
-                            .withImage(Environment.STRIMZI_REGISTRY_DEFAULT + "/" + Environment.STRIMZI_CLIENTS_ORG_DEFAULT + "/" + Constants.STRIMZI_EXAMPLE_STREAMS_NAME + ":latest")
+                            .withImage(Environment.TEST_STREAMS_IMAGE)
                             .addNewEnv()
                                 .withName("BOOTSTRAP_SERVERS")
                                 .withValue(bootstrapAddress)

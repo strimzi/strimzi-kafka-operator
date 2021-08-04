@@ -55,6 +55,12 @@ public class Environment {
      */
     private static final String TEST_CLIENT_IMAGE_ENV = "TEST_CLIENT_IMAGE";
     /**
+     * Specify Kafka client app images used in system tests.
+     */
+    private static final String TEST_PRODUCER_IMAGE_ENV = "TEST_PRODUCER_IMAGE";
+    private static final String TEST_CONSUMER_IMAGE_ENV = "TEST_CONSUMER_IMAGE";
+    private static final String TEST_STREAMS_IMAGE_ENV = "TEST_STREAMS_IMAGE";
+    /**
      * Specify kafka bridge image used in system tests.
      */
     private static final String BRIDGE_IMAGE_ENV = "BRIDGE_IMAGE";
@@ -136,7 +142,6 @@ public class Environment {
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_TAG_DEFAULT = "latest";
     public static final String STRIMZI_REGISTRY_DEFAULT = "quay.io";
-    public static final String STRIMZI_CLIENTS_ORG_DEFAULT = "strimzi-examples";
     private static final String TEST_LOG_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/logs/";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     private static final String STRIMZI_COMPONENTS_LOG_LEVEL_DEFAULT = "INFO";
@@ -172,6 +177,13 @@ public class Environment {
     // variables for test-client image
     private static final String TEST_CLIENT_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/test-client:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String TEST_CLIENT_IMAGE = getOrDefault(TEST_CLIENT_IMAGE_ENV, TEST_CLIENT_IMAGE_DEFAULT);
+    // variables for kafka client app images
+    private static final String TEST_PRODUCER_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/strimzi-examples/java-kafka-producer:latest";
+    private static final String TEST_CONSUMER_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/strimzi-examples/java-kafka-consumer:latest";
+    private static final String TEST_STREAMS_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/strimzi-examples/java-kafka-streams:latest";
+    public static final String TEST_PRODUCER_IMAGE = getOrDefault(TEST_PRODUCER_IMAGE_ENV, TEST_PRODUCER_IMAGE_DEFAULT);
+    public static final String TEST_CONSUMER_IMAGE = getOrDefault(TEST_CONSUMER_IMAGE_ENV, TEST_CONSUMER_IMAGE_DEFAULT);
+    public static final String TEST_STREAMS_IMAGE = getOrDefault(TEST_STREAMS_IMAGE_ENV, TEST_STREAMS_IMAGE_DEFAULT);
     // variables for kafka bridge image
     private static final String BRIDGE_IMAGE_DEFAULT = "latest-released";
     public static final String BRIDGE_IMAGE = getOrDefault(BRIDGE_IMAGE_ENV, BRIDGE_IMAGE_DEFAULT);

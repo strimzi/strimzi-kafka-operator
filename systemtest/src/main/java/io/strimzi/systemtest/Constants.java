@@ -75,10 +75,6 @@ public interface Constants {
     String ALWAYS_IMAGE_PULL_POLICY = "Always";
     String IF_NOT_PRESENT_IMAGE_PULL_POLICY = "IfNotPresent";
 
-    String STRIMZI_EXAMPLE_PRODUCER_NAME = "java-kafka-producer";
-    String STRIMZI_EXAMPLE_CONSUMER_NAME = "java-kafka-consumer";
-    String STRIMZI_EXAMPLE_STREAMS_NAME = "java-kafka-streams";
-
     /**
      * Constants for specific ports
      */
