@@ -153,7 +153,7 @@ the documentation for more details.
 | `kafkaBridge.image.registry`         | Kafka Bridge image registry               | `quay.io`                                            |
 | `kafkaBridge.image.repository`       | Kafka Bridge image repository             | `strimzi`                                            |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge                                        |
-| `kafkaBridge.image.tag`              | Kafka Bridge image tag                    | `0.20.1`                                             |
+| `kafkaBridge.image.tag`              | Kafka Bridge image tag                    | `0.20.2`                                             |
 | `kanikoExecutor.image.registry`      | Kaniko Executor image registry            | `quay.io`                                            |
 | `kanikoExecutor.image.repository`    | Kaniko Executor image repository          | `strimzi`                                            |
 | `kanikoExecutor.image.name`          | Kaniko Executor image name                | `kaniko-executor`                                    |
