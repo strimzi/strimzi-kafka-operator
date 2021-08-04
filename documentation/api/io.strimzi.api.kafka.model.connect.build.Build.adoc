@@ -113,6 +113,7 @@ spec:
 <1> (Required) List of connector plugins and their artifacts.
 
 Strimzi supports the following types of artifacts:
+
 * JAR files, which are downloaded and used directly
 * TGZ archives, which are downloaded and unpacked
 * Other artifacts, which are downloaded and used directly

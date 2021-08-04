@@ -84,7 +84,7 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
 
     @Description("Defines which address type should be used as the node address. " +
             "Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. " +
-            "By default, the addresses will be used in the following order (the first one found will be used):\n" +
+            "By default, the addresses will be used in the following order (the first one found will be used):\n\n" +
             "* `ExternalDNS`\n" +
             "* `ExternalIP`\n" +
             "* `InternalDNS`\n" +

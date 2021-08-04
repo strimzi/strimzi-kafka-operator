@@ -6,7 +6,7 @@ Configures Kafka MirrorMaker.
 Use the `include` property to configure a list of topics that Kafka MirrorMaker mirrors from the source to the target Kafka cluster.
 
 The property allows any regular expression from the simplest case with a single topic name to complex patterns.
-For example, you can mirror topics A and B using "A|B" or all topics using "*".
+For example, you can mirror topics A and B using `A|B` or all topics using `*`.
 You can also pass multiple regular expressions separated by commas to the Kafka MirrorMaker.
 
 [id='property-mm-producer-consumer-{context}']

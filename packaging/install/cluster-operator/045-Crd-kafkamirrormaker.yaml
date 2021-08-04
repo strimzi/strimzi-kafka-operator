@@ -496,17 +496,17 @@ spec:
                 description: List of topics which are included for mirroring. This
                   option allows any regular expression using Java-style regular expressions.
                   Mirroring two topics named A and B is achieved by using the expression
-                  `'A\|B'`. Or, as a special case, you can mirror all topics using
-                  the regular expression '*'. You can also specify multiple regular
-                  expressions separated by commas.
+                  `A\|B`. Or, as a special case, you can mirror all topics using the
+                  regular expression `*`. You can also specify multiple regular expressions
+                  separated by commas.
               include:
                 type: string
                 description: List of topics which are included for mirroring. This
                   option allows any regular expression using Java-style regular expressions.
                   Mirroring two topics named A and B is achieved by using the expression
-                  `'A\|B'`. Or, as a special case, you can mirror all topics using
-                  the regular expression '*'. You can also specify multiple regular
-                  expressions separated by commas.
+                  `A\|B`. Or, as a special case, you can mirror all topics using the
+                  regular expression `*`. You can also specify multiple regular expressions
+                  separated by commas.
               jvmOptions:
                 type: object
                 properties:
