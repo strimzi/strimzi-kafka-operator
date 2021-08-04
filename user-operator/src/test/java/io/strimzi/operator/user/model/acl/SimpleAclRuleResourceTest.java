@@ -286,7 +286,7 @@ public class SimpleAclRuleResourceTest {
     }
 
     @Test
-    public void testFromCrdToKafkaResourceWithoutName()  {
+    public void testFromCrdToKafkaResourceWithoutNameThrows()  {
         // Consumer group without specified name
         AclRuleResource groupResource = new AclRuleGroupResourceBuilder()
                 .withPatternType(AclResourcePatternType.LITERAL)
