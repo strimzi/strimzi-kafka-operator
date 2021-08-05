@@ -338,6 +338,7 @@ spec:
                                   - Hostname
                                 description: |-
                                   Defines which address type should be used as the node address. Available types are: `ExternalDNS`, `ExternalIP`, `InternalDNS`, `InternalIP` and `Hostname`. By default, the addresses will be used in the following order (the first one found will be used):
+
                                   * `ExternalDNS`
                                   * `ExternalIP`
                                   * `InternalDNS`

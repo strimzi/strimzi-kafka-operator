@@ -85,7 +85,7 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
     }
 
     @Description("List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. " +
-            "Mirroring two topics named A and B is achieved by using the expression `'A|B'`. Or, as a special case, you can mirror all topics using the regular expression '*'. " +
+            "Mirroring two topics named A and B is achieved by using the expression `A|B`. Or, as a special case, you can mirror all topics using the regular expression `*`. " +
             "You can also specify multiple regular expressions separated by commas.")
     @DeprecatedProperty(movedToPath = "spec.include")
     @PresentInVersions("v1alpha1-v1beta2")
@@ -99,7 +99,7 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
     }
 
     @Description("List of topics which are included for mirroring. This option allows any regular expression using Java-style regular expressions. " +
-            "Mirroring two topics named A and B is achieved by using the expression `'A|B'`. Or, as a special case, you can mirror all topics using the regular expression '*'. " +
+            "Mirroring two topics named A and B is achieved by using the expression `A|B`. Or, as a special case, you can mirror all topics using the regular expression `*`. " +
             "You can also specify multiple regular expressions separated by commas.")
     public String getInclude() {
         return include;
