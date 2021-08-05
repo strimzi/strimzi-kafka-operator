@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class SimpleAclRuleResourceTest {
@@ -282,5 +283,24 @@ public class SimpleAclRuleResourceTest {
                 .build();
         ResourcePattern expectedKafkaTransactionalIdResourcePattern = new ResourcePattern(ResourceType.TRANSACTIONAL_ID, "my-transactionalId", PatternType.LITERAL);
         assertThat(SimpleAclRuleResource.fromCrd(resource).toKafkaResourcePattern(), is(expectedKafkaTransactionalIdResourcePattern));
+    }
+
+    @Test
+    public void testFromCrdToKafkaResourceWithoutNameThrows()  {
+        // Consumer group without specified name
+        AclRuleResource groupResource = new AclRuleGroupResourceBuilder()
+                .withPatternType(AclResourcePatternType.LITERAL)
+                .build();
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> SimpleAclRuleResource.fromCrd(groupResource).toKafkaResourcePattern());
+        assertThat(e.getMessage(), is("Name is required for resource type: GROUP"));
+
+        // Topic without specified name
+        AclRuleResource topicResource = new AclRuleTopicResourceBuilder()
+                .withPatternType(AclResourcePatternType.LITERAL)
+                .build();
+
+        e = assertThrows(IllegalArgumentException.class, () -> SimpleAclRuleResource.fromCrd(topicResource).toKafkaResourcePattern());
+        assertThat(e.getMessage(), is("Name is required for resource type: TOPIC"));
     }
 }

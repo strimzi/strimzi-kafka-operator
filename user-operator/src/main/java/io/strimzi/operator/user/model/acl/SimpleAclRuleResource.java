@@ -137,6 +137,10 @@ public class SimpleAclRuleResource {
                 throw new IllegalArgumentException("Invalid Acl resource type: " + type);
         }
 
+        if (kafkaName == null)   {
+            throw new IllegalArgumentException("Name is required for resource type: " + type);
+        }
+
         return new ResourcePattern(kafkaType, kafkaName, kafkaPattern);
     }
 
