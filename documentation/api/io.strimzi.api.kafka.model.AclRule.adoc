@@ -1,4 +1,4 @@
-Configures access control rule for a `KafkaUser` when brokers are using the `AclAuthorizer`.
+Configures access control rules for a `KafkaUser` when brokers are using the `AclAuthorizer`.
 
 .Example `KafkaUser` configuration with authorization
 [source,yaml,subs="attributes+"]
@@ -51,7 +51,20 @@ Cluster type resources have no name.
 A name is specified as a `literal` or a `prefix` using the `patternType` property.
 
 * Literal names are taken exactly as they are specified in the `name` field.
-* Prefix names use the value from the `name` as a prefix, and will apply the rule to all resources with names starting with the value.
+* Prefix names use the `name` value as a prefix and then apply the rule to all resources with names starting with that value.
+
+When `patternType` is set as `literal`, you can set the name to `*` to indicate that the rule applies to all resources.
+
+.Example ACL rule that allows the user to read messages from all topics
+[source,yaml,subs="attributes+"]
+----
+    acls:
+      - resource:
+          type: topic
+          name: "*"
+          patternType: literal
+        operation: Read
+----
 
 [id='property-acl-type-{context}']
 === `type`
