@@ -178,9 +178,9 @@ public class Environment {
     private static final String TEST_CLIENT_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/test-client:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String TEST_CLIENT_IMAGE = getOrDefault(TEST_CLIENT_IMAGE_ENV, TEST_CLIENT_IMAGE_DEFAULT);
     // variables for kafka client app images
-    private static final String TEST_PRODUCER_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/strimzi-examples/java-kafka-producer:latest";
-    private static final String TEST_CONSUMER_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/strimzi-examples/java-kafka-consumer:latest";
-    private static final String TEST_STREAMS_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/strimzi-examples/java-kafka-streams:latest";
+    private static final String TEST_PRODUCER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/strimzi-examples/java-kafka-producer:latest";
+    private static final String TEST_CONSUMER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/strimzi-examples/java-kafka-consumer:latest";
+    private static final String TEST_STREAMS_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/strimzi-examples/java-kafka-streams:latest";
     public static final String TEST_PRODUCER_IMAGE = getOrDefault(TEST_PRODUCER_IMAGE_ENV, TEST_PRODUCER_IMAGE_DEFAULT);
     public static final String TEST_CONSUMER_IMAGE = getOrDefault(TEST_CONSUMER_IMAGE_ENV, TEST_CONSUMER_IMAGE_DEFAULT);
     public static final String TEST_STREAMS_IMAGE = getOrDefault(TEST_STREAMS_IMAGE_ENV, TEST_STREAMS_IMAGE_DEFAULT);
