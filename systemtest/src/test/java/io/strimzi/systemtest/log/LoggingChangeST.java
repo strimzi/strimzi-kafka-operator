@@ -1157,22 +1157,22 @@ class LoggingChangeST extends AbstractST {
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext,
-                KafkaTemplates.kafkaEphemeral(clusterName, 3).build(),
-                KafkaClientsTemplates.kafkaClients(kafkaClientsName).build());
+            KafkaTemplates.kafkaEphemeral(clusterName, 3).build(),
+            KafkaClientsTemplates.kafkaClients(kafkaClientsName).build());
 
         resourceManager.createResource(extensionContext,
-                KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, true)
-                    .editMetadata()
-                        .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-                    .endMetadata()
-                    .editOrNewSpec()
-                        .addToConfig("key.converter.schemas.enable", false)
-                        .addToConfig("value.converter.schemas.enable", false)
-                        .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-                        .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                    .endSpec()
-                    .build(),
-                    KafkaConnectorTemplates.defaultKafkaConnector(clusterName, clusterName, 1).build()
+            KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, true)
+                .editMetadata()
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .editOrNewSpec()
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .endSpec()
+                .build(),
+            KafkaConnectorTemplates.defaultKafkaConnector(clusterName, clusterName, 1).build()
         );
 
         String connectorClassName = "org.apache.kafka.connect.file.FileStreamSourceConnector";
@@ -1192,8 +1192,8 @@ class LoggingChangeST extends AbstractST {
 
         LOGGER.info("Restarting Kafka connector {} with class name {}", clusterName, connectorClassName);
         cmdKubeClient().namespace(namespaceName).execInPod(kafkaClientsPodName,
-                "curl", "-X", "POST",
-                "http://" + KafkaConnectResources.serviceName(clusterName) + ":8083/connectors/" + clusterName + "/restart");
+            "curl", "-X", "POST",
+            "http://" + KafkaConnectResources.serviceName(clusterName) + ":8083/connectors/" + clusterName + "/restart");
 
         KafkaConnectorUtils.waitForConnectorWorkerStatus(namespaceName, kafkaClientsPodName, clusterName, clusterName, "RUNNING");
 
@@ -1208,6 +1208,8 @@ class LoggingChangeST extends AbstractST {
         InlineLogging inlineWarn = new InlineLogging();
         inlineWarn.setLoggers(Collections.singletonMap("connect.root.logger.level", "WARN"));
 
+        inlineWarn.setLoggers(Map.of("connect.root.logger.level", "WARN", "log4j.logger." + connectorClassName, "ERROR"));
+
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, connect -> connect.getSpec().setLogging(inlineWarn), namespaceName);
 
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -1216,10 +1218,8 @@ class LoggingChangeST extends AbstractST {
         );
 
         LOGGER.info("Checking if KafkaConnector {} doesn't inherit logger from KafkaConnect", connectorClassName);
-        connectorLogger = cmdKubeClient().namespace(namespaceName).execInPod(kafkaClientsPodName, "curl",
-            "http://" + KafkaConnectResources.serviceName(clusterName) + ":8083/admin/loggers/" + connectorClassName).out();
 
-        assertTrue(connectorLogger.contains("ERROR"));
+        KafkaConnectorUtils.loggerStabilityWait(namespaceName, clusterName, kafkaClientsPodName, "ERROR", connectorClassName);
     }
 
     @BeforeAll

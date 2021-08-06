@@ -43,7 +43,7 @@ public class KafkaConnectorUtils {
                 String availableConnectors = getCreatedConnectors(namespaceName, connectPodName);
                 if (availableConnectors.contains(connectorName)) {
                     LOGGER.info("Connector with name {} is present. Remaining seconds for stability {}", connectorName,
-                            Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
+                        Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                     return i[0]++ == (Constants.GLOBAL_RECONCILIATION_COUNT);
                 } else {
                     throw new RuntimeException("Connector" + connectorName + " is not stable!");
@@ -204,6 +204,29 @@ public class KafkaConnectorUtils {
                         "http://" + KafkaConnectResources.serviceName(connectName) + ":8083/connectors/" + connectorName + "/status").out().trim()
                 );
                 return connectorStatus.getJsonObject("connector").getString("state").equals(state);
+            }
+        );
+    }
+
+    public static void loggerStabilityWait(String namespaceName, String connectClusterName, String podName, String desiredLogger, String connectorName) {
+        int[] counter = {0};
+        TestUtils.waitFor("Connector logger will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () ->  {
+                String logger = cmdKubeClient().namespace(namespaceName).execInPod(podName, "curl",
+                    "http://" + KafkaConnectResources.serviceName(connectClusterName) + ":8083/admin/loggers/" + connectorName).out();
+                if (logger.contains(desiredLogger)) {
+                    counter[0]++;
+                    LOGGER.info("Logger level is {}. Remaining seconds for logger to be stable: {}", desiredLogger, Constants.GLOBAL_RECONCILIATION_COUNT - counter[0]);
+                } else {
+                    LOGGER.warn("Logger level has changed: {}. Reseting counter from {} to 0", logger, counter[0]);
+                    counter[0] = 0;
+                }
+
+                if (counter[0] == Constants.GLOBAL_RECONCILIATION_COUNT) {
+                    LOGGER.info("Logger for connector {} is stable", connectorName);
+                    return true;
+                }
+                return false;
             }
         );
     }
