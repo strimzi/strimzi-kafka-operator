@@ -69,9 +69,6 @@ rules:
     # The cluster operator runs the KafkaConnectAssemblyOperator, which needs to access and manage KafkaConnect resources
   - kafkaconnects
   - kafkaconnects/status
-    # The cluster operator runs the KafkaConnectS2IAssemblyOperator, which needs to access and manage KafkaConnectS2I resources
-  - kafkaconnects2is
-  - kafkaconnects2is/status
     # The cluster operator runs the KafkaConnectorAssemblyOperator, which needs to access and manage KafkaConnector resources
   - kafkaconnectors
   - kafkaconnectors/status
@@ -146,42 +143,12 @@ rules:
   verbs:
   - create
 - apiGroups:
-    # OpenShift S2I requirements
-  - apps.openshift.io
-  resources:
-  - deploymentconfigs
-  - deploymentconfigs/scale
-  - deploymentconfigs/status
-  - deploymentconfigs/finalizers
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - delete
-  - patch
-  - update
-- apiGroups:
-    # OpenShift S2I requirements
+    # Kafka Connect Build on OpenShift requirement
   - build.openshift.io
   resources:
   - buildconfigs
   - buildconfigs/instantiate
   - builds
-  verbs:
-  - get
-  - list
-  - watch
-  - create
-  - delete
-  - patch
-  - update
-- apiGroups:
-    # OpenShift S2I requirements
-  - image.openshift.io
-  resources:
-  - imagestreams
-  - imagestreams/status
   verbs:
   - get
   - list

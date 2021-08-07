@@ -9,7 +9,7 @@ image:
   registry: quay.io
   repository: strimzi
   name: operator
-  tag: latest
+  tag: 0.25.0-rc1
 logVolume: co-config-volume
 logConfigMap: strimzi-cluster-operator
 logLevel: ${env:STRIMZI_LOG_LEVEL:-INFO}
@@ -35,49 +35,49 @@ zookeeper:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.25.0-rc1
 kafka:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.25.0-rc1
 kafkaConnect:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.25.0-rc1
 topicOperator:
   image:
     registry: quay.io
     repository: strimzi
     name: operator
-    tag: latest
+    tag: 0.25.0-rc1
 userOperator:
   image:
     registry: quay.io
     repository: strimzi
     name: operator
-    tag: latest
+    tag: 0.25.0-rc1
 kafkaInit:
   image:
     registry: quay.io
     repository: strimzi
     name: operator
-    tag: latest
+    tag: 0.25.0-rc1
 tlsSidecarEntityOperator:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.25.0-rc1
 kafkaMirrorMaker:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.25.0-rc1
 kafkaBridge:
   image:
     registry: quay.io
@@ -89,37 +89,37 @@ kafkaExporter:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.25.0-rc1
 jmxTrans:
   image:
     registry: quay.io
     repository: strimzi
     name: jmxtrans
-    tag: latest
+    tag: 0.25.0-rc1
 kafkaMirrorMaker2:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.25.0-rc1
 cruiseControl:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.25.0-rc1
 tlsSidecarCruiseControl:
   image:
     registry: quay.io
     repository: strimzi
     name: kafka
-    tagPrefix: latest
+    tagPrefix: 0.25.0-rc1
 kanikoExecutor:
   image:
     registry: quay.io
     repository: strimzi
     name: kaniko-executor
-    tag: latest
+    tag: 0.25.0-rc1
 resources:
   limits:
     memory: 384Mi
