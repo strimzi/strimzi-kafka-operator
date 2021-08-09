@@ -49,16 +49,18 @@ public class KafkaConnectDockerfile {
      */
     public KafkaConnectDockerfile(String fromImage, Build connectBuild) {
         StringWriter stringWriter = new StringWriter();
+        StringWriter prefixStringWriter = new StringWriter();
+        PrintWriter prefixWriter = new PrintWriter(prefixStringWriter);
         PrintWriter writer = new PrintWriter(stringWriter);
 
-        printHeader(writer); // Print initial comment
+        printHeader(prefixWriter); // Print initial comment
         from(writer, fromImage); // Create FROM statement
         user(writer, ROOT_USER); // Switch to root user to be able to add plugins
         proxy(writer); // Configures proxy environment variables
-        connectorPlugins(writer, connectBuild.getPlugins());
+        connectorPlugins(prefixWriter, writer, connectBuild.getPlugins());
         user(writer, NON_PRIVILEGED_USER); // Switch back to the regular unprivileged user
 
-        dockerfile = stringWriter.toString();
+        dockerfile = prefixStringWriter.toString() + stringWriter.toString();
 
         writer.close();
     }
@@ -110,12 +112,13 @@ public class KafkaConnectDockerfile {
     /**
      * Adds the commands to donwload and possibly unpact the connector plugins
      *
+     * @param writer    Writer for printing the Docker commands - prefix for multistage build
      * @param writer    Writer for printing the Docker commands
      * @param plugins   List of plugins which should be added to the container image
      */
-    private void connectorPlugins(PrintWriter writer, List<Plugin> plugins) {
+    private void connectorPlugins(PrintWriter prefixWriter, PrintWriter writer, List<Plugin> plugins) {
         for (Plugin plugin : plugins)   {
-            addPlugin(writer, plugin);
+            addPlugin(prefixWriter, writer, plugin);
         }
     }
 
@@ -123,10 +126,11 @@ public class KafkaConnectDockerfile {
      * Adds a particular connector plugin to the container image. It will go through the individual artifacts and add
      * them one by one depending on their type.
      *
+     * @param writer    Writer for printing the Docker commands as the prefix for multistage build
      * @param writer    Writer for printing the Docker commands
      * @param plugin    A single plugin which should be added to the new container image
      */
-    private void addPlugin(PrintWriter writer, Plugin plugin)    {
+    private void addPlugin(PrintWriter prefixWriter, PrintWriter writer, Plugin plugin)    {
         printSectionHeader(writer, "Connector plugin " + plugin.getName());
 
         String connectorPath = BASE_PLUGIN_PATH + plugin.getName();
@@ -139,7 +143,7 @@ public class KafkaConnectDockerfile {
             } else if (art instanceof ZipArtifact) {
                 addZipArtifact(writer, connectorPath, (ZipArtifact) art);
             } else if (art instanceof MavenArtifact) {
-                addMavenArtifact(writer, connectorPath, (MavenArtifact) art);
+                addMavenArtifact(prefixWriter, writer, connectorPath, (MavenArtifact) art);
             } else if (art instanceof OtherArtifact) {
                 addOtherArtifact(writer, connectorPath, (OtherArtifact) art);
             } else {
@@ -316,13 +320,13 @@ public class KafkaConnectDockerfile {
      * @param connectorPath     Path where the connector to which this artifact belongs should be downloaded
      * @param mvn               The maven artifact
      */
-    private void addMavenArtifact(PrintWriter writer, String connectorPath, MavenArtifact mvn) {
+    private void addMavenArtifact(PrintWriter prefixWriter, PrintWriter writer, String connectorPath, MavenArtifact mvn) {
         validateGavPresence(mvn);
         String repo = mvn.getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybePatchRepository(mvn.getRepository());
         String artifactHash = Util.sha1Prefix(mvn.getGroup() + mvn.getArtifact() + mvn.getVersion());
         String artifactDir = connectorPath + "/" + artifactHash;
 
-        String downloadCmd =  String.format("curl -L --output pom.xml %s%s/%s/%s/%s-%s.pom",
+        String downloadPomCmd =  String.format("curl -L --output pom.xml %s%s/%s/%s/%s-%s.pom",
                 repo,
                 mvn.getGroup().replace(".", "/"), //org.apache.camel is translated as org/apache/camel in the URL
                 mvn.getArtifact().replace(".", "/"),
@@ -330,12 +334,25 @@ public class KafkaConnectDockerfile {
                 mvn.getArtifact(),
                 mvn.getVersion());
 
-        String mvnCmd = "mvn dependency:copy-dependencies -DoutputDirectory=" + artifactDir;
+        String downloadJarCmd = String.format("curl -L --create-dirs --output " + artifactDir + "/%s-%s.jar %s%s/%s/%s/%s-%s.jar",
+                mvn.getArtifact(),
+                mvn.getVersion(),
+                repo,
+                mvn.getGroup().replace(".", "/"), //org.apache.camel is translated as org/apache/camel in the URL
+                mvn.getArtifact().replace(".", "/"),
+                mvn.getVersion(),
+                mvn.getArtifact(),
+                mvn.getVersion());
 
-        writer.println("RUN mkdir -p " + artifactDir + " \\");
-        writer.println("      && " + downloadCmd + " \\");
-        writer.println("      && " + mvnCmd + " \\");
-        writer.println("      && rm pom.xml");
+        prefixWriter.println("FROM maven:3.8.1-openjdk-17-slim AS download" + artifactHash);
+        prefixWriter.println("WORKDIR /tmp/artifacts/");
+        prefixWriter.println("RUN " + downloadPomCmd + " \\");
+        prefixWriter.println("      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/ \\");
+        prefixWriter.println("      && rm pom.xml");
+        prefixWriter.println();
+
+        writer.println("RUN " + downloadJarCmd);
+        writer.println("COPY --from=download" + artifactHash + " /tmp/artifacts/ " + artifactDir);
         writer.println();
     }
 

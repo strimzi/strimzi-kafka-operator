@@ -1745,19 +1745,19 @@ spec:
                               properties:
                                 artifact:
                                   type: string
-                                  description: Name of the artifact.
+                                  description: Name of the artifact. Applicable for 'maven' type of artifact only.
                                 fileName:
                                   type: string
                                   description: Name under which the artifact will be stored.
                                 group:
                                   type: string
-                                  description: Group of the artifact.
+                                  description: Group of the artifact. Applicable for 'maven' type of artifact only.
                                 repository:
                                   type: string
-                                  description: TODO.
+                                  description: The repository to download the artifact from. Applicable for 'maven' type of artifact only.
                                 sha512sum:
                                   type: string
-                                  description: SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
+                                  description: SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable for 'maven' type of artifact.
                                 type:
                                   type: string
                                   enum:
@@ -1770,13 +1770,12 @@ spec:
                                 url:
                                   type: string
                                   pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
-                                  description: URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
+                                  description: URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required. Not applicable for 'maven' type of artifact.
                                 version:
                                   type: string
-                                  description: Version of the artifact.
+                                  description: Version of the artifact. Applicable for 'maven' type of artifact only.
                               required:
                                 - type
-                                - url
                             description: List of artifacts which belong to this connector plugin. Required.
                         required:
                           - name
