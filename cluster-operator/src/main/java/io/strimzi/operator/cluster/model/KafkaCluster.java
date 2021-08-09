@@ -1545,28 +1545,18 @@ public class KafkaCluster extends AbstractModel {
         List<Container> initContainers = new ArrayList<>(1);
 
         if (rack != null || !ListenersUtils.nodePortListeners(listeners).isEmpty()) {
-            Container initContainer;
+            Container initContainer = new ContainerBuilder()
+                    .withName(INIT_NAME)
+                    .withImage(initImage)
+                    .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
+                    .withEnv(getInitContainerEnvVars())
+                    .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
+                    .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
+                    .withSecurityContext(templateInitContainerSecurityContext)
+                    .build();
+
             if (getResources() != null) {
-                initContainer = new ContainerBuilder()
-                        .withName(INIT_NAME)
-                        .withImage(initImage)
-                        .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
-                        .withResources(getResources())
-                        .withEnv(getInitContainerEnvVars())
-                        .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
-                        .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
-                        .withSecurityContext(templateInitContainerSecurityContext)
-                        .build();
-            } else {
-                initContainer = new ContainerBuilder()
-                        .withName(INIT_NAME)
-                        .withImage(initImage)
-                        .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
-                        .withEnv(getInitContainerEnvVars())
-                        .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
-                        .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
-                        .withSecurityContext(templateInitContainerSecurityContext)
-                        .build();
+                initContainer.setResources(getResources());
             }
             initContainers.add(initContainer);
         }
