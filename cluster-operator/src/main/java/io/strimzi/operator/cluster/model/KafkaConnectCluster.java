@@ -16,9 +16,7 @@ import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
@@ -531,17 +529,29 @@ public class KafkaConnectCluster extends AbstractModel {
         List<Container> initContainers = new ArrayList<>(1);
 
         if (rack != null) {
-            Container initContainer = new ContainerBuilder()
-                    .withName(INIT_NAME)
-                    .withImage(initImage)
-                    .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
-                    .withResources(getInitContainerResourceResourceRequirements())
-                    .withEnv(getInitContainerEnvVars())
-                    .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
-                    .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
-                    .withSecurityContext(templateInitContainerSecurityContext)
-                    .build();
-
+            Container initContainer;
+            if (getInitContainerResourceResourceRequirements() != null) {
+                initContainer = new ContainerBuilder()
+                        .withName(INIT_NAME)
+                        .withImage(initImage)
+                        .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
+                        .withResources(getInitContainerResourceResourceRequirements())
+                        .withEnv(getInitContainerEnvVars())
+                        .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
+                        .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
+                        .withSecurityContext(templateInitContainerSecurityContext)
+                        .build();
+            } else {
+                initContainer = new ContainerBuilder()
+                        .withName(INIT_NAME)
+                        .withImage(initImage)
+                        .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
+                        .withEnv(getInitContainerEnvVars())
+                        .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
+                        .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
+                        .withSecurityContext(templateInitContainerSecurityContext)
+                        .build();
+            }
             initContainers.add(initContainer);
         }
 
@@ -549,12 +559,7 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     private ResourceRequirements getInitContainerResourceResourceRequirements() {
-        return new ResourceRequirementsBuilder()
-                .addToRequests("cpu", new Quantity("100m"))
-                .addToRequests("memory", new Quantity("128Mi"))
-                .addToLimits("cpu", new Quantity("1"))
-                .addToLimits("memory", new Quantity("256Mi"))
-                .build();
+        return getResources();
     }
 
     protected String getCommand() {
