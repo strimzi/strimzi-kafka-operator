@@ -8,10 +8,12 @@ import io.strimzi.api.kafka.model.connect.build.Artifact;
 import io.strimzi.api.kafka.model.connect.build.Build;
 import io.strimzi.api.kafka.model.connect.build.DownloadableArtifact;
 import io.strimzi.api.kafka.model.connect.build.JarArtifact;
+import io.strimzi.api.kafka.model.connect.build.MavenArtifact;
 import io.strimzi.api.kafka.model.connect.build.OtherArtifact;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifact;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifact;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
 
 import java.io.PrintWriter;
@@ -136,11 +138,31 @@ public class KafkaConnectDockerfile {
                 addTgzArtifact(writer, connectorPath, (TgzArtifact) art);
             } else if (art instanceof ZipArtifact) {
                 addZipArtifact(writer, connectorPath, (ZipArtifact) art);
+            } else if (art instanceof MavenArtifact) {
+                addMavenArtifact(writer, connectorPath, (MavenArtifact) art);
             } else if (art instanceof OtherArtifact) {
                 addOtherArtifact(writer, connectorPath, (OtherArtifact) art);
             } else {
                 throw new RuntimeException("Unexpected artifact type " + art.getType());
             }
+        }
+    }
+
+    private void validateUrlPresence(DownloadableArtifact art) {
+        if (art.getUrl() == null) {
+            throw new InvalidConfigurationException(art.getType() + " artifact is missing an URL.");
+        }
+    }
+
+    private void validateGavPresence(MavenArtifact art) {
+        if (art.getGroup() == null) {
+            throw new InvalidConfigurationException(art.getType() + " artifact is missing Group.");
+        }
+        if (art.getArtifact() == null) {
+            throw new InvalidConfigurationException(art.getType() + " artifact is missing Artifact.");
+        }
+        if (art.getVersion() == null) {
+            throw new InvalidConfigurationException(art.getType() + " artifact is missing Version.");
         }
     }
 
@@ -152,6 +174,7 @@ public class KafkaConnectDockerfile {
      * @param jar               The JAR-type artifact
      */
     private void addJarArtifact(PrintWriter writer, String connectorPath, JarArtifact jar) {
+        validateUrlPresence(jar);
         String artifactHash = Util.sha1Prefix(jar.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String artifactPath = artifactDir + "/" + artifactHash + ".jar";
@@ -213,6 +236,7 @@ public class KafkaConnectDockerfile {
      * @param tgz               The TGZ-type artifact
      */
     private void addTgzArtifact(PrintWriter writer, String connectorPath, TgzArtifact tgz) {
+        validateUrlPresence(tgz);
         String artifactHash = Util.sha1Prefix(tgz.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".tgz";
@@ -251,6 +275,7 @@ public class KafkaConnectDockerfile {
      * @param zip               The ZIP-type artifact
      */
     private void addZipArtifact(PrintWriter writer, String connectorPath, ZipArtifact zip) {
+        validateUrlPresence(zip);
         String artifactHash = Util.sha1Prefix(zip.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".zip";
@@ -282,6 +307,48 @@ public class KafkaConnectDockerfile {
         }
 
         writer.println();
+    }
+
+    /**
+     * Add command sequence for downloading Maven artifact
+     *
+     * @param writer            Writer for printing the Docker commands
+     * @param connectorPath     Path where the connector to which this artifact belongs should be downloaded
+     * @param mvn               The maven artifact
+     */
+    private void addMavenArtifact(PrintWriter writer, String connectorPath, MavenArtifact mvn) {
+        validateGavPresence(mvn);
+        String repo = mvn.getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybePatchRepository(mvn.getRepository());
+        String artifactHash = Util.sha1Prefix(mvn.getGroup() + mvn.getArtifact() + mvn.getVersion());
+        String artifactDir = connectorPath + "/" + artifactHash;
+
+        String downloadCmd =  String.format("curl -L --output pom.xml %s%s/%s/%s/%s-%s.pom",
+                repo,
+                mvn.getGroup().replace(".", "/"), //org.apache.camel is translated as org/apache/camel in the URL
+                mvn.getArtifact().replace(".", "/"),
+                mvn.getVersion(),
+                mvn.getArtifact(),
+                mvn.getVersion());
+
+        String mvnCmd = "mvn dependency:copy-dependencies -DoutputDirectory=" + artifactDir;
+
+        writer.println("RUN mkdir -p " + artifactDir + " \\");
+        writer.println("      && " + downloadCmd + " \\");
+        writer.println("      && " + mvnCmd + " \\");
+        writer.println("      && rm pom.xml");
+        writer.println();
+    }
+
+    /**
+     * @param repository The repository to check whether contains the slash as the last character
+     * @return The repository with slash ('/') as the last character
+     */
+    private String maybePatchRepository(String repository) {
+        if (repository.lastIndexOf('/') + 1 == repository.length()) {
+            return repository;
+        } else {
+            return repository + "/";
+        }
     }
 
     /**

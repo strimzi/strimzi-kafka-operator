@@ -12,13 +12,16 @@ import io.strimzi.api.kafka.model.connect.build.OtherArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifactBuilder;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
 import static io.strimzi.operator.cluster.model.KafkaBrokerConfigurationBuilderTest.IsEquivalent.isEquivalent;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
 public class KafkaConnectDockerfileTest {
@@ -395,5 +398,51 @@ public class KafkaConnectDockerfileTest {
                 "      && rm -f /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512\n" +
                 "\n" +
                 "USER 1001\n\n"));
+    }
+
+    @ParallelTest
+    public void testNoUrlWhenRequired() {
+
+        Artifact tgzArtifact = new TgzArtifactBuilder()
+                .build();
+        Artifact jarArtifact = new JarArtifactBuilder()
+                .build();
+        Artifact zipArtifact = new ZipArtifactBuilder()
+                .build();
+
+        Build connectBuildTgz = new BuildBuilder()
+                .withPlugins(new PluginBuilder()
+                        .withName("my-connector-plugin")
+                        .withArtifacts(singletonList(tgzArtifact))
+                        .build())
+                .build();
+
+        Throwable e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildTgz));
+
+        assertThat(e.getMessage(), is("tgz artifact is missing an URL."));
+
+
+        Build connectBuildZip = new BuildBuilder()
+                .withPlugins(new PluginBuilder()
+                        .withName("my-connector-plugin")
+                        .withArtifacts(singletonList(zipArtifact))
+                        .build())
+                .build();
+
+        e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildZip));
+
+        assertThat(e.getMessage(), is("zip artifact is missing an URL."));
+
+
+        Build connectBuildJar = new BuildBuilder()
+                .withPlugins(new PluginBuilder()
+                        .withName("my-connector-plugin")
+                        .withArtifacts(singletonList(jarArtifact))
+                        .build())
+                .build();
+
+        e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildJar));
+
+        assertThat(e.getMessage(), is("jar artifact is missing an URL."));
     }
 }

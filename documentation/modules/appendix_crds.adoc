@@ -1986,7 +1986,7 @@ Used in: xref:type-Build-{context}[`Build`]
 |name       1.2+<.<a|The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required.
 |string
 |artifacts  1.2+<.<a|List of artifacts which belong to this connector plugin. Required.
-|xref:type-JarArtifact-{context}[`JarArtifact`], xref:type-TgzArtifact-{context}[`TgzArtifact`], xref:type-ZipArtifact-{context}[`ZipArtifact`], xref:type-OtherArtifact-{context}[`OtherArtifact`] array
+|xref:type-JarArtifact-{context}[`JarArtifact`], xref:type-TgzArtifact-{context}[`TgzArtifact`], xref:type-ZipArtifact-{context}[`ZipArtifact`], xref:type-MavenArtifact-{context}[`MavenArtifact`], xref:type-OtherArtifact-{context}[`OtherArtifact`] array
 |====
 
 [id='type-JarArtifact-{context}']
@@ -1998,9 +1998,9 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 [options="header"]
 |====
 |Property          |Description
-|url        1.2+<.<a|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
+|url        1.2+<.<a|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required. Not applicable for 'maven' type of artifact.
 |string
-|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
+|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable for 'maven' type of artifact.
 |string
 |type       1.2+<.<a|Must be `jar`.
 |string
@@ -2015,9 +2015,9 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 [options="header"]
 |====
 |Property          |Description
-|url        1.2+<.<a|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
+|url        1.2+<.<a|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required. Not applicable for 'maven' type of artifact.
 |string
-|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
+|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable for 'maven' type of artifact.
 |string
 |type       1.2+<.<a|Must be `tgz`.
 |string
@@ -2032,11 +2032,34 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 [options="header"]
 |====
 |Property          |Description
-|url        1.2+<.<a|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
+|url        1.2+<.<a|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required. Not applicable for 'maven' type of artifact.
 |string
-|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
+|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable for 'maven' type of artifact.
 |string
 |type       1.2+<.<a|Must be `zip`.
+|string
+|====
+
+[id='type-MavenArtifact-{context}']
+### `MavenArtifact` schema reference
+
+Used in: xref:type-Plugin-{context}[`Plugin`]
+
+
+The `type` property is a discriminator that distinguishes use of the `MavenArtifact` type from xref:type-JarArtifact-{context}[`JarArtifact`], xref:type-TgzArtifact-{context}[`TgzArtifact`], xref:type-ZipArtifact-{context}[`ZipArtifact`], xref:type-OtherArtifact-{context}[`OtherArtifact`].
+It must have the value `maven` for the type `MavenArtifact`.
+[options="header"]
+|====
+|Property           |Description
+|repository  1.2+<.<a|The repository to download the artifact from. Applicable for 'maven' type of artifact only.
+|string
+|group       1.2+<.<a|Group of the artifact. Applicable for 'maven' type of artifact only.
+|string
+|artifact    1.2+<.<a|Name of the artifact. Applicable for 'maven' type of artifact only.
+|string
+|version     1.2+<.<a|Version of the artifact. Applicable for 'maven' type of artifact only.
+|string
+|type        1.2+<.<a|Must be `maven`.
 |string
 |====
 
@@ -2049,9 +2072,9 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 [options="header"]
 |====
 |Property          |Description
-|url        1.2+<.<a|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required.
+|url        1.2+<.<a|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required. Not applicable for 'maven' type of artifact.
 |string
-|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified.
+|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable for 'maven' type of artifact.
 |string
 |fileName   1.2+<.<a|Name under which the artifact will be stored.
 |string
