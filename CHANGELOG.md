@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.26.0
+
+
+### Changes, deprecations and removals
+
+
 ## 0.25.0
 
 * Move from Scala 2.12 to Scala 2.13. (#5192)

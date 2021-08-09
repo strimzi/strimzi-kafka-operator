@@ -13,7 +13,7 @@
 :toclevels: 3
 
 //Latest Strimzi version
-:ProductVersion: 0.25.0
+:ProductVersion: 0.26.0
 //Strimzi versions used in upgrades sections for API conversions
 :ConvertAfterProductVersion: 0.22
 :ConvertBeforeProductVersion: 0.23
