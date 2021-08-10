@@ -31,7 +31,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "replicas", "image", "storage", "config", "livenessProbe", "readinessProbe", "jvmOptions", "resources",
+        "replicas", "image", "storage", "config", "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources",
          "metricsConfig", "logging", "template"})
 @EqualsAndHashCode
 public class ZookeeperClusterSpec implements HasConfigurableMetrics, UnknownPropertyPreserving, Serializable {
@@ -55,6 +55,7 @@ public class ZookeeperClusterSpec implements HasConfigurableMetrics, UnknownProp
     private Probe livenessProbe;
     private Probe readinessProbe;
     private JvmOptions jvmOptions;
+    private KafkaJmxOptions jmxOptions;
     private MetricsConfig metricsConfig;
     private ZookeeperClusterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
@@ -149,6 +150,17 @@ public class ZookeeperClusterSpec implements HasConfigurableMetrics, UnknownProp
 
     public void setJvmOptions(JvmOptions jvmOptions) {
         this.jvmOptions = jvmOptions;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Description("JMX Options for Zookeeper nodes")
+    @JsonProperty("jmxOptions")
+    public KafkaJmxOptions getJmxOptions() {
+        return jmxOptions;
+    }
+
+    public void setJmxOptions(KafkaJmxOptions jmxOptions) {
+        this.jmxOptions = jmxOptions;
     }
 
     @Description("Metrics configuration.")

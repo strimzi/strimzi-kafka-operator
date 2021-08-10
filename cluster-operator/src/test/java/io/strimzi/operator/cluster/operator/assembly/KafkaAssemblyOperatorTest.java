@@ -362,6 +362,25 @@ public class KafkaAssemblyOperatorTest {
 
     @ParameterizedTest
     @MethodSource("data")
+    public void testCreateClusterWithZookeeperJmxEnabled(Params params, VertxTestContext context) {
+        setFields(params);
+        Kafka kafka = getKafkaAssembly("foo");
+        kafka.getSpec().getZookeeper().setJmxOptions(new KafkaJmxOptionsBuilder()
+            .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder().build())
+            .build());
+        createCluster(context, kafka,
+                Collections.singletonList(new SecretBuilder()
+                        .withNewMetadata()
+                            .withName(ZookeeperCluster.jmxSecretName("foo"))
+                            .withNamespace("test")
+                        .endMetadata()
+                        .withData(Collections.singletonMap("foo", "bar"))
+                        .build()
+                ));
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
     public void testCreateClusterWithJmxTrans(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafka = getKafkaAssembly("foo");
@@ -861,6 +880,18 @@ public class KafkaAssemblyOperatorTest {
 
     @ParameterizedTest
     @MethodSource("data")
+    public void testUpdateZookeeperClusterAuthenticationTrue(Params params, VertxTestContext context) {
+        setFields(params);
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
+        KafkaJmxOptions kafkaJmxOptions = new KafkaJmxOptionsBuilder().withAuthentication(
+                 new KafkaJmxAuthenticationPasswordBuilder().build())
+                .build();
+        kafkaAssembly.getSpec().getZookeeper().setJmxOptions(kafkaJmxOptions);
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
     public void testUpdateClusterLogConfig(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
@@ -1104,6 +1135,9 @@ public class KafkaAssemblyOperatorTest {
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaCluster.jmxSecretName(clusterName))).thenReturn(
                 Future.succeededFuture(originalKafkaCluster.generateJmxSecret())
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, ZookeeperCluster.jmxSecretName(clusterName))).thenReturn(
+                Future.succeededFuture(originalZookeeperCluster.generateJmxSecret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, ZookeeperCluster.nodesSecretName(clusterName))).thenReturn(
                 Future.succeededFuture()

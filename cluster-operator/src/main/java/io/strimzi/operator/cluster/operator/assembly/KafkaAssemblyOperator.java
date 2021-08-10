@@ -267,6 +267,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.rollingUpdateForNewCaKey())
                 .compose(state -> state.getZookeeperDescription())
                 .compose(state -> state.zkModelWarnings())
+                .compose(state -> state.zkJmxSecret())
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkNetPolicy())
                 .compose(state -> state.zkManualRollingUpdate())
@@ -1226,6 +1227,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         existingZookeeperCertsChanged = changed;
                         return this;
                     });
+        }
+
+        Future<ReconciliationState> zkJmxSecret() {
+            if (zkCluster.isJmxAuthenticated()) {
+                Future<Secret> secretFuture = secretOperations.getAsync(namespace, ZookeeperCluster.jmxSecretName(name));
+                return secretFuture.compose(secret -> {
+                    if (secret == null) {
+                        return withVoid(secretOperations.reconcile(reconciliation, namespace, ZookeeperCluster.jmxSecretName(name), zkCluster.generateJmxSecret()));
+                    }
+                    return withVoid(Future.succeededFuture(ReconcileResult.noop(secret)));
+                });
+            }
+            return withVoid(secretOperations.reconcile(reconciliation, namespace, KafkaCluster.jmxSecretName(name), null));
         }
 
         Future<ReconciliationState> zkNetPolicy() {

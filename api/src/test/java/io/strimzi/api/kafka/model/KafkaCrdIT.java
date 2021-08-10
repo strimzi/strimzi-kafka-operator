@@ -128,6 +128,19 @@ public class KafkaCrdIT extends AbstractCrdIT {
     }
 
     @Test
+    public void testKafkaWithInvalidZookeeperJmxAuthentication() {
+        Throwable exception = assertThrows(
+            KubeClusterException.class,
+            () -> {
+                createDeleteCustomResource("Kafka-with-invalid-zookeeper-jmx-authentication.yaml");
+            });
+
+        assertThat(exception.getMessage(), anyOf(
+                containsStringIgnoringCase("spec.zookeeper.jmxOptions.authentication.type in body should be one of [password]"),
+                containsStringIgnoringCase("spec.zookeeper.jmxOptions.authentication.type: Unsupported value: \"not-right\": supported values: \"password\"")));
+    }
+
+    @Test
     void testJmxOptionsWithoutRequiredOutputDefinitionKeys() {
         Throwable exception = assertThrows(
             KubeClusterException.class,

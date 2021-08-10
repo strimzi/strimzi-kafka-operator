@@ -39,6 +39,7 @@ import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.RackBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
@@ -209,6 +210,39 @@ public class ZookeeperClusterTest {
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
+    }
+
+    @ParallelTest
+    public void testGenerateHeadlessServiceWithJmxMetrics() {
+        Kafka kafka = new KafkaBuilder(ka)
+                .editSpec()
+                    .editZookeeper()
+                        .withJmxOptions(new KafkaJmxOptionsBuilder().build())
+                    .endZookeeper()
+                .endSpec()
+                .build();
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        Service headless = zc.generateHeadlessService();
+
+        assertThat(headless.getMetadata().getName(), is(ZookeeperCluster.headlessServiceName(cluster)));
+        assertThat(headless.getSpec().getType(), is("ClusterIP"));
+        assertThat(headless.getSpec().getClusterIP(), is("None"));
+        assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
+        assertThat(headless.getSpec().getPorts().size(), is(4));
+        assertThat(headless.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(ZookeeperCluster.CLIENT_TLS_PORT)));
+        assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(headless.getSpec().getPorts().get(1).getName(), is(ZookeeperCluster.CLUSTERING_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(Integer.valueOf(ZookeeperCluster.CLUSTERING_PORT)));
+        assertThat(headless.getSpec().getPorts().get(2).getName(), is(ZookeeperCluster.LEADER_ELECTION_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(Integer.valueOf(ZookeeperCluster.LEADER_ELECTION_PORT)));
+        assertThat(headless.getSpec().getPorts().get(3).getName(), is(ZookeeperCluster.JMX_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(Integer.valueOf(ZookeeperCluster.JMX_PORT)));
+        assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
+        assertThat(headless.getSpec().getIpFamilyPolicy(), is(nullValue()));
+        assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
+
+        checkOwnerReference(zc.createOwnerReference(), headless);
     }
 
     @ParallelTest

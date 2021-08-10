@@ -368,4 +368,20 @@ public class AuthenticationUtils {
         }
     }
 
+    /**
+     * Generates the necessary resources that the Zookeeper Cluster needs to secure the Jmx Port
+     *
+     * @param authentication the Authentication Configuration for the Jmx Port
+     * @param zookeeperCluster the current state of the zookeeper Cluster within the Kafka CR
+     */
+    public static void configureZookeeperJmxOptions(KafkaJmxAuthentication authentication, ZookeeperCluster zookeeperCluster)   {
+        if (authentication != null) {
+            if (authentication instanceof KafkaJmxAuthenticationPassword) {
+                zookeeperCluster.setJmxAuthenticated(true);
+            }
+        } else {
+            zookeeperCluster.setJmxAuthenticated(false);
+        }
+    }
+
 }

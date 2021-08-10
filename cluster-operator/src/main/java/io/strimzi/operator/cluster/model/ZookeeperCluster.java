@@ -44,17 +44,21 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.MetricsAndLogging;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Base64;
+
 
 public class ZookeeperCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "zookeeper";
@@ -77,9 +81,20 @@ public class ZookeeperCluster extends AbstractModel {
     private static final String HEADLESS_SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-nodes";
     private static final String NODES_CERTS_SUFFIX = NAME_SUFFIX + "-nodes";
 
+
+    // Env vars for JMX service
+    protected static final String ENV_VAR_ZOOKEEPER_JMX_ENABLED = "ZOOKEEPER_JMX_ENABLED";
+    private static final String ZOOKEEPER_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";
+    private static final String SECRET_JMX_USERNAME_KEY = "jmx-username";
+    private static final String SECRET_JMX_PASSWORD_KEY = "jmx-password";
+    private static final String ENV_VAR_ZOOKEEPER_JMX_USERNAME = "ZOOKEEPER_JMX_USERNAME";
+    private static final String ENV_VAR_ZOOKEEPER_JMX_PASSWORD = "ZOOKEEPER_JMX_PASSWORD";
+
     // Zookeeper configuration
     private boolean isSnapshotCheckEnabled;
     private String version;
+    private boolean isJmxEnabled;
+    private boolean isJmxAuthenticated;
 
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withTimeoutSeconds(5)
@@ -286,6 +301,11 @@ public class ZookeeperCluster extends AbstractModel {
 
         zk.setJvmOptions(zookeeperClusterSpec.getJvmOptions());
 
+        if (zookeeperClusterSpec.getJmxOptions() != null) {
+            zk.setJmxEnabled(Boolean.TRUE);
+            AuthenticationUtils.configureZookeeperJmxOptions(zookeeperClusterSpec.getJmxOptions().getAuthentication(), zk);
+        }
+
         if (zookeeperClusterSpec.getTemplate() != null) {
             ZookeeperClusterTemplate template = zookeeperClusterSpec.getTemplate();
 
@@ -414,7 +434,7 @@ public class ZookeeperCluster extends AbstractModel {
         expressions5.put(Labels.STRIMZI_NAME_LABEL, CruiseControl.cruiseControlName(cluster));
         labelSelector5.setMatchLabels(expressions5);
         cruiseControlPeer.setPodSelector(labelSelector5);
-            
+
         // This is a hack because we have no guarantee that the CO namespace has some particular labels
         List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(4);
         clientsPortPeers.add(kafkaClusterPeer);
@@ -436,6 +456,18 @@ public class ZookeeperCluster extends AbstractModel {
                     .build();
 
             rules.add(metricsRule);
+        }
+
+        if (isJmxEnabled) {
+            NetworkPolicyPort jmxPort = new NetworkPolicyPort();
+            jmxPort.setPort(new IntOrString(JMX_PORT));
+
+            NetworkPolicyIngressRule jmxRule = new NetworkPolicyIngressRuleBuilder()
+                    .withPorts(jmxPort)
+                    .withFrom()
+                    .build();
+
+            rules.add(jmxRule);
         }
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
@@ -544,6 +576,14 @@ public class ZookeeperCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
         }
 
+        if (isJmxEnabled) {
+            varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_JMX_ENABLED, "true"));
+            if (isJmxAuthenticated) {
+                varList.add(buildEnvVarFromSecret(ENV_VAR_ZOOKEEPER_JMX_USERNAME, jmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
+                varList.add(buildEnvVarFromSecret(ENV_VAR_ZOOKEEPER_JMX_PASSWORD, jmxSecretName(cluster), SECRET_JMX_PASSWORD_KEY));
+            }
+        }
+
         heapOptions(varList, 0.75, 2L * 1024L * 1024L * 1024L);
         jvmPerformanceOptions(varList);
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
@@ -557,10 +597,14 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     private List<ServicePort> getServicePortList() {
-        List<ServicePort> portList = new ArrayList<>(3);
+        List<ServicePort> portList = new ArrayList<>(4);
         portList.add(createServicePort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT, CLIENT_TLS_PORT, "TCP"));
         portList.add(createServicePort(CLUSTERING_PORT_NAME, CLUSTERING_PORT, CLUSTERING_PORT, "TCP"));
         portList.add(createServicePort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT, LEADER_ELECTION_PORT, "TCP"));
+
+        if (isJmxEnabled) {
+            portList.add(createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
+        }
 
         return portList;
     }
@@ -677,5 +721,46 @@ public class ZookeeperCluster extends AbstractModel {
         ConfigMap zkConfigMap = super.generateMetricsAndLogConfigMap(metricsAndLogging);
         zkConfigMap.getData().put(CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(getReplicas()));
         return zkConfigMap;
+    }
+
+    public boolean isJmxEnabled() {
+        return isJmxEnabled;
+    }
+
+    public void setJmxEnabled(boolean jmxEnabled) {
+        isJmxEnabled = jmxEnabled;
+    }
+
+    public boolean isJmxAuthenticated() {
+        return isJmxAuthenticated;
+    }
+
+    public void setJmxAuthenticated(boolean jmxAuthenticated) {
+        isJmxAuthenticated = jmxAuthenticated;
+    }
+
+    /**
+     * @param cluster The name of the cluster.
+     * @return The name of the jmx Secret.
+     */
+    public static String jmxSecretName(String cluster) {
+        return cluster + ZookeeperCluster.ZOOKEEPER_JMX_SECRET_SUFFIX;
+    }
+
+
+    /**
+     * Generate the Secret containing the username and password to secure the jmx port on the zookeeper nodes
+     *
+     * @return The generated Secret
+     */
+    public Secret generateJmxSecret() {
+        Map<String, String> data = new HashMap<>(2);
+        String[] keys = {SECRET_JMX_USERNAME_KEY, SECRET_JMX_PASSWORD_KEY};
+        PasswordGenerator passwordGenerator = new PasswordGenerator(16);
+        for (String key : keys) {
+            data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
+        }
+
+        return createSecret(ZookeeperCluster.jmxSecretName(cluster), data);
     }
 }
