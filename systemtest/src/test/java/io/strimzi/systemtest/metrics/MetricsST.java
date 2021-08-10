@@ -70,6 +70,7 @@ import java.util.regex.Pattern;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.GLOBAL_TIMEOUT;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
@@ -90,6 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
 @Tag(METRICS)
+@Tag(CRUISE_CONTROL)
 public class MetricsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);
@@ -171,6 +173,7 @@ public class MetricsST extends AbstractST {
     @ParallelTest
     @Tag(ACCEPTANCE)
     @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testKafkaConnectRequests() {
         kafkaConnectMetricsData = collector.toBuilder()
             .withComponentType(ComponentType.KafkaConnect)
@@ -183,6 +186,7 @@ public class MetricsST extends AbstractST {
 
     @ParallelTest
     @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testKafkaConnectResponse() {
         kafkaConnectMetricsData = collector.toBuilder()
             .withComponentType(ComponentType.KafkaConnect)
@@ -195,6 +199,7 @@ public class MetricsST extends AbstractST {
 
     @ParallelTest
     @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testKafkaConnectIoNetwork() {
         kafkaConnectMetricsData = collector.toBuilder()
             .withComponentType(ComponentType.KafkaConnect)
@@ -361,6 +366,7 @@ public class MetricsST extends AbstractST {
 
     @ParallelTest
     @Tag(MIRROR_MAKER2)
+    @Tag(CONNECT_COMPONENTS)
     @Tag(ACCEPTANCE)
     void testMirrorMaker2Metrics() {
         kafkaMirrorMaker2MetricsData = collector.toBuilder()
@@ -431,7 +437,6 @@ public class MetricsST extends AbstractST {
 
     @ParallelTest
     @Tag(ACCEPTANCE)
-    @Tag(CRUISE_CONTROL)
     void testCruiseControlMetrics() {
 
         String cruiseControlMetrics = CruiseControlUtils.callApi(FIRST_NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, "/metrics");
@@ -718,7 +723,7 @@ public class MetricsST extends AbstractST {
             .build()
             .collectMetricsFromPods();
     }
-    
+
     private List<String> getExpectedTopics() {
         ArrayList<String> list = new ArrayList<>();
         list.add("mirrormaker2-cluster-configs");

@@ -46,6 +46,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -72,6 +75,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
     public static final Map<String, String> SECOND_CO_SELECTOR = Collections.singletonMap("app.kubernetes.io/operator", SECOND_CO_NAME);
 
     @IsolatedTest
+    @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     void testMultipleCOsInDifferentNamespaces(ExtensionContext extensionContext) {
         // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
         assumeFalse(Environment.isNamespaceRbacScope());
@@ -138,6 +143,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
     }
 
     @IsolatedTest
+    @Tag(CRUISE_CONTROL)
     void testKafkaCCAndRebalanceWithMultipleCOs(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         int scaleTo = 4;

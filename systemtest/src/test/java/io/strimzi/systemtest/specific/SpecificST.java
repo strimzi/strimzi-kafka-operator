@@ -57,6 +57,7 @@ import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_SHORT;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
@@ -142,6 +143,7 @@ public class SpecificST extends AbstractST {
 
     @IsolatedTest("Modification of shared Cluster Operator configuration")
     @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
     void testRackAwareConnectWrongDeployment(ExtensionContext extensionContext) {
@@ -248,6 +250,7 @@ public class SpecificST extends AbstractST {
 
     @IsolatedTest("Modification of shared Cluster Operator configuration")
     @Tag(CONNECT)
+    @Tag(CONNECT_COMPONENTS)
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     public void testRackAwareConnectCorrectDeployment(ExtensionContext extensionContext) {
