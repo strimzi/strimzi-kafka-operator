@@ -14,9 +14,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
@@ -1548,24 +1545,19 @@ public class KafkaCluster extends AbstractModel {
         List<Container> initContainers = new ArrayList<>(1);
 
         if (rack != null || !ListenersUtils.nodePortListeners(listeners).isEmpty()) {
-            ResourceRequirements resources = new ResourceRequirementsBuilder()
-                    .addToRequests("cpu", new Quantity("100m"))
-                    .addToRequests("memory", new Quantity("128Mi"))
-                    .addToLimits("cpu", new Quantity("1"))
-                    .addToLimits("memory", new Quantity("256Mi"))
-                    .build();
-
             Container initContainer = new ContainerBuilder()
                     .withName(INIT_NAME)
                     .withImage(initImage)
                     .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
-                    .withResources(resources)
                     .withEnv(getInitContainerEnvVars())
                     .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
                     .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
                     .withSecurityContext(templateInitContainerSecurityContext)
                     .build();
 
+            if (getResources() != null) {
+                initContainer.setResources(getResources());
+            }
             initContainers.add(initContainer);
         }
 

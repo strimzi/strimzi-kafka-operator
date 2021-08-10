@@ -16,9 +16,6 @@ import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
@@ -535,26 +532,19 @@ public class KafkaConnectCluster extends AbstractModel {
                     .withName(INIT_NAME)
                     .withImage(initImage)
                     .withArgs("/opt/strimzi/bin/kafka_init_run.sh")
-                    .withResources(getInitContainerResourceResourceRequirements())
                     .withEnv(getInitContainerEnvVars())
                     .withVolumeMounts(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT))
                     .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, initImage))
                     .withSecurityContext(templateInitContainerSecurityContext)
                     .build();
 
+            if (getResources() != null) {
+                initContainer.setResources(getResources());
+            }
             initContainers.add(initContainer);
         }
 
         return initContainers;
-    }
-
-    private ResourceRequirements getInitContainerResourceResourceRequirements() {
-        return new ResourceRequirementsBuilder()
-                .addToRequests("cpu", new Quantity("100m"))
-                .addToRequests("memory", new Quantity("128Mi"))
-                .addToLimits("cpu", new Quantity("1"))
-                .addToLimits("memory", new Quantity("256Mi"))
-                .build();
     }
 
     protected String getCommand() {
