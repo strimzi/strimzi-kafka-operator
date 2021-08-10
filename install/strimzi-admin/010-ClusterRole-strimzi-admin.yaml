@@ -14,8 +14,6 @@ rules:
   - kafkas
   - kafkaconnects
   - kafkaconnects/scale
-  - kafkaconnects2is
-  - kafkaconnects2is/scale
   - kafkamirrormakers
   - kafkamirrormakers/scale
   - kafkausers
