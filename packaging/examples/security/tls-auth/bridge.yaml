@@ -52,5 +52,3 @@ spec:
       key: user.key
   http:
     port: 8080
- 
-
