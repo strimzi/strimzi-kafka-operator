@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.strimzi.StrimziKafkaContainer;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnector;
@@ -29,7 +30,10 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.CreateTopicsResult;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -39,9 +43,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -55,7 +62,8 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectorIT {
-    private static EmbeddedKafkaCluster cluster;
+    private static StrimziKafkaContainer kafkaContainer;
+    private static AdminClient adminClient;
     private static Vertx vertx;
     private ConnectCluster connectCluster;
 
@@ -67,24 +75,37 @@ public class KafkaConnectorIT {
                         .setEnabled(true)
         ));
 
-        cluster = new EmbeddedKafkaCluster(3);
-        cluster.start();
+        kafkaContainer = new StrimziKafkaContainer();
+        kafkaContainer.start();
+
+        Properties properties = new Properties();
+        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers());
+        adminClient = AdminClient.create(properties);
     }
 
     @AfterAll
     public static void after() {
         vertx.close();
+        adminClient.close();
+        kafkaContainer.stop();
     }
 
     @BeforeEach
-    public void beforeEach() throws IOException, InterruptedException {
+    public void beforeEach() throws IOException, InterruptedException, ExecutionException {
         String connectClusterName = getClass().getSimpleName();
-        cluster.createTopics(connectClusterName + "-offsets", connectClusterName + "-config", connectClusterName + "-status");
 
-        // Start a 3 node connect cluster
+        CreateTopicsResult createTopicsResult = adminClient.createTopics(
+            Arrays.asList(
+                new NewTopic(connectClusterName + "-offsets", 1, (short) 1),
+                new NewTopic(connectClusterName + "-config", 1,  (short) 1),
+                new NewTopic(connectClusterName + "-status", 1,  (short) 1)
+            ));
+        createTopicsResult.all().get();
+
+        // Start a 1 node connect cluster
         connectCluster = new ConnectCluster()
-                .usingBrokers(cluster.bootstrapServers())
-                .addConnectNodes(3);
+            .usingBrokers(kafkaContainer.getBootstrapServers())
+            .addConnectNodes(1);
         connectCluster.startup();
     }
 
@@ -154,7 +175,7 @@ public class KafkaConnectorIT {
                         null, null, connectCrdOperator, null, null, null, null, null, metrics, null),
                 ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
-            connectCluster.getPort() + 2
+            connectCluster.getPort()
         ) { };
 
         Checkpoint async = context.checkpoint();

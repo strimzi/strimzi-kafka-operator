@@ -20,7 +20,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContainer> {
 
@@ -31,6 +33,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     private static final int ZOOKEEPER_PORT = 2181;
     private static final String LATEST_KAFKA_VERSION;
     private static final List<String> SUPPORTED_KAFKA_VERSIONS = new ArrayList<>(5);
+    private static Map<String, String> kafkaConfigurationMap = new HashMap<>();
     private static final String STRIMZI_VERSION;
 
     private int kafkaExposedPort;
@@ -73,9 +76,11 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         LOGGER.info("Supported Strimzi version: {}", STRIMZI_VERSION);
     }
 
-    public StrimziKafkaContainer(final String version) {
+    public StrimziKafkaContainer(final String version, Map<String, String> additionalKafkaConfiguration) {
         super("quay.io/strimzi/kafka:" + version);
         super.withNetwork(Network.SHARED);
+
+        kafkaConfigurationMap = additionalKafkaConfiguration;
 
         // exposing kafka port from the container
         withExposedPorts(KAFKA_PORT);
@@ -83,8 +88,12 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         withEnv("LOG_DIR", "/tmp");
     }
 
+    public StrimziKafkaContainer(Map<String, String> additionalKafkaConfiguration) {
+        this(STRIMZI_VERSION + "-kafka-" + LATEST_KAFKA_VERSION, additionalKafkaConfiguration);
+    }
+
     public StrimziKafkaContainer() {
-        this(STRIMZI_VERSION + "-kafka-" + LATEST_KAFKA_VERSION);
+        this(STRIMZI_VERSION + "-kafka-" + LATEST_KAFKA_VERSION, Collections.emptyMap());
     }
 
     @Override
@@ -133,13 +142,23 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
             kafkaListenerSecurityProtocol.append(",");
         });
 
+        StringBuilder kafkaConfiguration = new StringBuilder();
+
+        // default listener config
+        kafkaConfiguration.append(" --override listeners=" + kafkaListeners + "PLAINTEXT://0.0.0.0:" + KAFKA_PORT);
+        kafkaConfiguration.append(" --override advertised.listeners=" + advertisedListeners);
+        kafkaConfiguration.append(" --override zookeeper.connect=localhost:" + ZOOKEEPER_PORT);
+        kafkaConfiguration.append(" --override listener.security.protocol.map=" + kafkaListenerSecurityProtocol + "PLAINTEXT:PLAINTEXT");
+        kafkaConfiguration.append(" --override inter.broker.listener.name=BROKER1");
+
+        // additional kafka config
+        kafkaConfigurationMap.forEach((configName, configValue) -> {
+            kafkaConfiguration.append(" --override " + configName + "=" + configValue);
+        });
+
         String command = "#!/bin/bash \n";
         command += "bin/zookeeper-server-start.sh config/zookeeper.properties &\n";
-        command += "bin/kafka-server-start.sh config/server.properties --override listeners=" + kafkaListeners + "PLAINTEXT://0.0.0.0:" + KAFKA_PORT +
-            " --override advertised.listeners=" + advertisedListeners +
-            " --override zookeeper.connect=localhost:" + ZOOKEEPER_PORT +
-            " --override listener.security.protocol.map=" + kafkaListenerSecurityProtocol + "PLAINTEXT:PLAINTEXT" +
-            " --override inter.broker.listener.name=BROKER1\n";
+        command += "bin/kafka-server-start.sh config/server.properties" + kafkaConfiguration.toString();
 
         LOGGER.info("Copying command to 'STARTER_SCRIPT' script.");
 

@@ -14,8 +14,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -82,12 +85,35 @@ public class StrimziKafkaContainerTest {
     }
 
     @Test
-    void testStartContainer() {
+    void testStartContainerWithEmptyConfiguration() {
         assumeDocker();
         systemUnderTest = new StrimziKafkaContainer();
 
         systemUnderTest.start();
 
         assertThat(systemUnderTest.getBootstrapServers(), is("PLAINTEXT://localhost:" + systemUnderTest.getMappedPort(9092)));
+    }
+
+    @Test
+    void testStartContainerWithSomeConfiguration() {
+        assumeDocker();
+
+        Map<String, String> kafkaConfiguration = new HashMap<>();
+
+        kafkaConfiguration.put("log.cleaner.enable", "false");
+        kafkaConfiguration.put("log.cleaner.backoff.ms", "1000");
+        kafkaConfiguration.put("ssl.enabled.protocols", "TLSv1");
+        kafkaConfiguration.put("log.index.interval.bytes", "2048");
+
+        systemUnderTest = new StrimziKafkaContainer(kafkaConfiguration);
+
+        systemUnderTest.start();
+
+        String logsFromKafka = systemUnderTest.getLogs();
+
+        assertThat(logsFromKafka, containsString("log.cleaner.enable = false"));
+        assertThat(logsFromKafka, containsString("log.cleaner.backoff.ms = 1000"));
+        assertThat(logsFromKafka, containsString("ssl.enabled.protocols = [TLSv1]"));
+        assertThat(logsFromKafka, containsString("log.index.interval.bytes = 2048"));
     }
 }

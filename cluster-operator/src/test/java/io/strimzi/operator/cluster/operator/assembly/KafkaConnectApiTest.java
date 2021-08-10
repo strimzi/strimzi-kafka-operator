@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
+import io.strimzi.StrimziKafkaContainer;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
@@ -28,7 +29,6 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.connect.cli.ConnectDistributed;
 import org.apache.kafka.connect.runtime.Connect;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiTest {
-    private static EmbeddedKafkaCluster cluster;
+    private static StrimziKafkaContainer kafkaContainer;
     private static Vertx vertx;
     private Connect connect;
     private static final int PORT = 18083;
@@ -68,9 +68,12 @@ public class KafkaConnectApiTest {
         workerProps.put("value.converter", "org.apache.kafka.connect.json.JsonConverter");
         workerProps.put("value.converter.schemas.enable", "false");
         workerProps.put("offset.storage.topic", getClass().getSimpleName() + "-offsets");
+        workerProps.put("offset.storage.replication.factor", "1");
         workerProps.put("config.storage.topic", getClass().getSimpleName() + "-config");
+        workerProps.put("config.storage.replication.factor", "1");
         workerProps.put("status.storage.topic", getClass().getSimpleName() + "-status");
-        workerProps.put("bootstrap.servers", cluster.bootstrapServers());
+        workerProps.put("status.storage.replication.factor", "1");
+        workerProps.put("bootstrap.servers", kafkaContainer.getBootstrapServers());
         //DistributedConfig config = new DistributedConfig(workerProps);
         //RestServer rest = new RestServer(config);
         //rest.initializeServer();
@@ -98,13 +101,14 @@ public class KafkaConnectApiTest {
     public static void before() throws IOException {
         vertx = Vertx.vertx();
 
-        cluster = new EmbeddedKafkaCluster(3);
-        cluster.start();
+        kafkaContainer = new StrimziKafkaContainer();
+        kafkaContainer.start();
     }
 
     @AfterAll
     public static void after() {
         vertx.close();
+        kafkaContainer.stop();
     }
 
     @IsolatedTest
