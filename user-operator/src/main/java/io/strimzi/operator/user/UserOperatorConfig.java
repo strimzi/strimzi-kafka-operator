@@ -28,10 +28,14 @@ public class UserOperatorConfig {
     public static final String STRIMZI_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
     public static final String STRIMZI_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
     public static final String STRIMZI_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
+    public static final String STRIMZI_SCRAM_SHA_PASSWORD_LENGTH = "STRIMZI_SCRAM_SHA_PASSWORD_LENGTH";
+    public static final String STRIMZI_SCRAM_SHA_PASSWORD_ALPHABET = "STRIMZI_SCRAM_SHA_PASSWORD_ALPHABET";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final String DEFAULT_KAFKA_BOOTSTRAP_SERVERS = "localhost:9091";
     public static final String DEFAULT_SECRET_PREFIX = "";
+    public static final int DEFAULT_SCRAM_SHA_PASSWORD_LENGTH = 12;
+    public static final String DEFAULT_SCRAM_SHA_PASSWORD_ALPHABET = "abcdefghijklmnopqrstuvwxyz" + "ABCDEFGHIJKLMNOPQRSTUVWXYZ" + "0123456789";
     // Defaults to true for backwards compatibility in standalone UO deployments
     public static final boolean DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED = true;
 
@@ -48,6 +52,8 @@ public class UserOperatorConfig {
     private final int clientsCaValidityDays;
     private final int clientsCaRenewalDays;
     private final boolean aclsAdminApiSupported;
+    private final int scramPasswordLength;
+    private final String scramPasswordAlphabet;
 
     /**
      * Constructor
@@ -65,6 +71,8 @@ public class UserOperatorConfig {
      * @param aclsAdminApiSupported Indicates whether Kafka Admin API can be used to manage ACL rights
      * @param clientsCaValidityDays Number of days for which the certificate should be valid
      * @param clientsCaRenewalDays How long before the certificate expiration should the user certificate be renewed
+     * @param scramPasswordLength Length used for the Scram-Sha Password
+     * @param scramPasswordAlphabet String with characters which will be used to generate the character of the password starting with the second character
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public UserOperatorConfig(String namespace,
@@ -79,7 +87,9 @@ public class UserOperatorConfig {
                               String secretPrefix,
                               boolean aclsAdminApiSupported,
                               int clientsCaValidityDays,
-                              int clientsCaRenewalDays) {
+                              int clientsCaRenewalDays,
+                              int scramPasswordLength,
+                              String scramPasswordAlphabet) {
         this.namespace = namespace;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.kafkaBootstrapServers = kafkaBootstrapServers;
@@ -93,6 +103,8 @@ public class UserOperatorConfig {
         this.aclsAdminApiSupported = aclsAdminApiSupported;
         this.clientsCaValidityDays = clientsCaValidityDays;
         this.clientsCaRenewalDays = clientsCaRenewalDays;
+        this.scramPasswordLength = scramPasswordLength;
+        this.scramPasswordAlphabet = scramPasswordAlphabet;
     }
 
     /**
@@ -112,6 +124,18 @@ public class UserOperatorConfig {
         String reconciliationIntervalEnvVar = map.get(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
         if (reconciliationIntervalEnvVar != null) {
             reconciliationInterval = Long.parseLong(reconciliationIntervalEnvVar);
+        }
+
+        int scramPasswordLength = DEFAULT_SCRAM_SHA_PASSWORD_LENGTH;
+        String scramPasswordLengthEnvVar = map.get(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH);
+        if (scramPasswordLengthEnvVar != null) {
+            scramPasswordLength = Integer.parseInt(scramPasswordLengthEnvVar);
+        }
+
+        String scramPasswordAlphabet = DEFAULT_SCRAM_SHA_PASSWORD_ALPHABET;
+        String scramPasswordAlphabetEnvVar = map.get(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_ALPHABET);
+        if (scramPasswordAlphabetEnvVar != null && !scramPasswordAlphabetEnvVar.isEmpty()) {
+            scramPasswordAlphabet = scramPasswordAlphabetEnvVar;
         }
 
         String kafkaBootstrapServers = DEFAULT_KAFKA_BOOTSTRAP_SERVERS;
@@ -159,7 +183,7 @@ public class UserOperatorConfig {
 
         return new UserOperatorConfig(namespace, reconciliationInterval, kafkaBootstrapServers, labels,
                 caCertSecretName, caKeySecretName, clusterCaCertSecretName, eoKeySecretName, caNamespace, secretPrefix,
-                aclsAdminApiSupported, clientsCaValidityDays, clientsCaRenewalDays);
+                aclsAdminApiSupported, clientsCaValidityDays, clientsCaRenewalDays, scramPasswordLength, scramPasswordAlphabet);
     }
 
     /**
@@ -285,6 +309,20 @@ public class UserOperatorConfig {
     /**
      * @return  Indicates whether the Kafka Admin API for managing ACLs is supported by the Kafka cluster or not
      */
+    public int getScramPasswordLength() {
+        return scramPasswordLength;
+    }
+
+    /**
+     * @return  Indicates whether the Kafka Admin API for managing ACLs is supported by the Kafka cluster or not
+     */
+    public String getScramPasswordAlphabet() {
+        return scramPasswordAlphabet;
+    }
+
+    /**
+     * @return  Indicates whether the Kafka Admin API for managing ACLs is supported by the Kafka cluster or not
+     */
     public boolean isAclsAdminApiSupported() {
         return aclsAdminApiSupported;
     }
@@ -304,6 +342,7 @@ public class UserOperatorConfig {
                 ",aclsAdminApiSupported=" + aclsAdminApiSupported +
                 ",clientsCaValidityDays=" + clientsCaValidityDays +
                 ",clientsCaRenewalDays=" + clientsCaRenewalDays +
+                ",scramPasswordLength=" + scramPasswordLength +
                 ")";
     }
 }
