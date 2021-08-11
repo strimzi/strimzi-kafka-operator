@@ -84,4 +84,10 @@ def postGithubPrComment(def file) {
     }
 }
 
+def buildKafkaConfigModels() {
+    dir("${workspace}/config-model-generator") {
+        sh(script: "./build-config-models.sh build -Dstyle.color=always")
+    }
+}
+
 return this
