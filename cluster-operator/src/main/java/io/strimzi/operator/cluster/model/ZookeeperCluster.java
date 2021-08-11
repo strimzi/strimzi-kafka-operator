@@ -81,7 +81,6 @@ public class ZookeeperCluster extends AbstractModel {
     private static final String HEADLESS_SERVICE_NAME_SUFFIX = NAME_SUFFIX + "-nodes";
     private static final String NODES_CERTS_SUFFIX = NAME_SUFFIX + "-nodes";
 
-
     // Env vars for JMX service
     protected static final String ENV_VAR_ZOOKEEPER_JMX_ENABLED = "ZOOKEEPER_JMX_ENABLED";
     private static final String ZOOKEEPER_JMX_SECRET_SUFFIX = NAME_SUFFIX + "-jmx";

@@ -13,6 +13,8 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
+import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
@@ -28,6 +30,7 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -651,6 +654,66 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
                     async.flag();
                 })));
+    }
+
+    @Test
+    public void testCreateClusterWithZookeeperJmxEnabled(VertxTestContext context) {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName(NAME)
+                    .withNamespace(NAMESPACE)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewKafka()
+                    .withReplicas(3)
+                    .withNewEphemeralStorage()
+                    .endEphemeralStorage()
+                .endKafka()
+                .withNewZookeeper()
+                    .withJmxOptions(new KafkaJmxOptionsBuilder()
+                            .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder()
+                                    .build())
+                            .build())
+                    .withReplicas(3)
+                    .withNewEphemeralStorage()
+                    .endEphemeralStorage()
+                .endZookeeper()
+                .endSpec()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
+                supplier, ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), 1L));
+        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
+
+        Checkpoint async = context.checkpoint();
+
+        ZookeeperSetOperator mockZsOps = supplier.zkSetOperations;
+        when(mockZsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        op.new ReconciliationState(reconciliation, kafka).getZookeeperDescription()
+                .onComplete(context.succeeding(c -> context.verify(() -> {
+                    assertThat("dummy", is("dummy"));
+
+                    async.flag();
+                })));
+
+//        SecretOperator secretOps = supplier.secretOperations;
+
+//        when(secretOps.getAsync(NAMESPACE, ZookeeperCluster.jmxSecretName(NAME))).thenReturn(
+//                Future.succeededFuture(someZkClusterInstance.generateJmxSecret())
+//        ); HOW DO I GET someZkClusterInstance instance?
+
+//        op.new ReconciliationState(reconciliation, kafka).zkJmxSecret
+//                .onComplete(context.succeeding(c -> context.verify(() -> {
+//                    Secret jmxSecret = secretArgumentCaptor.getValue();
+//
+//                    assertThat(secretArgumentCaptor.getAllValues(), hasSize(1));
+//                    assertThat(jmxSecret.getData(), hasKey("username"));
+//                    assertThat(jmxSecret.getData(), hasKey("password"));
+//
+//                    async.flag();
+//                })));
     }
 
     /**

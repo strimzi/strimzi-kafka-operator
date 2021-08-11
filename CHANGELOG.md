@@ -3,6 +3,7 @@
 ## 0.26.0
 
 * Update the Open Policy Agent Authorizer to version [1.1.0](https://github.com/Bisnode/opa-kafka-plugin/releases/tag/v1.1.0)
+* Expose JMX port on Zookeeper nodes via a headless service.
 
 ### Changes, deprecations and removals
 
@@ -18,7 +19,6 @@
 * Update User Operator to use Admin API for managing SCRAM-SHA-512 users
 * Configure fixed size limit for `emptyDir` volumes used for temporary files (#5340)
 * Update Strimzi Kafka Bridge to 0.20.2
-* Expose JMX port on Zookeeper nodes via a headless service
 
 ### Changes, deprecations and removals
 
