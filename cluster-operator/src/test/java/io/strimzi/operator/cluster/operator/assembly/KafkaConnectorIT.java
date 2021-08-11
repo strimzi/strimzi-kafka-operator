@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.strimzi.StrimziKafkaCluster;
 import io.strimzi.StrimziKafkaContainer;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectorList;
@@ -45,6 +46,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -62,7 +64,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectorIT {
-    private static StrimziKafkaContainer kafkaContainer;
+    private static StrimziKafkaCluster kafkaCluster;
     private static AdminClient adminClient;
     private static Vertx vertx;
     private ConnectCluster connectCluster;
@@ -75,11 +77,14 @@ public class KafkaConnectorIT {
                         .setEnabled(true)
         ));
 
-        kafkaContainer = new StrimziKafkaContainer();
-        kafkaContainer.start();
+        Map<String, String> kafkaClusterConfiguration = new HashMap<>();
+        kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
+
+        kafkaCluster = new StrimziKafkaCluster(kafkaClusterConfiguration);
+        kafkaCluster.start();
 
         Properties properties = new Properties();
-        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers());
+        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers());
         adminClient = AdminClient.create(properties);
     }
 
@@ -87,7 +92,7 @@ public class KafkaConnectorIT {
     public static void after() {
         vertx.close();
         adminClient.close();
-        kafkaContainer.stop();
+        kafkaCluster.stop();
     }
 
     @BeforeEach
@@ -96,16 +101,16 @@ public class KafkaConnectorIT {
 
         CreateTopicsResult createTopicsResult = adminClient.createTopics(
             Arrays.asList(
-                new NewTopic(connectClusterName + "-offsets", 1, (short) 1),
-                new NewTopic(connectClusterName + "-config", 1,  (short) 1),
-                new NewTopic(connectClusterName + "-status", 1,  (short) 1)
+                new NewTopic(connectClusterName + "-offsets", 3, (short) 3),
+                new NewTopic(connectClusterName + "-config", 3,  (short) 3),
+                new NewTopic(connectClusterName + "-status", 3,  (short) 3)
             ));
         createTopicsResult.all().get();
 
-        // Start a 1 node connect cluster
+        // Start a 3 node connect cluster
         connectCluster = new ConnectCluster()
-            .usingBrokers(kafkaContainer.getBootstrapServers())
-            .addConnectNodes(1);
+            .usingBrokers(kafkaCluster.getBootstrapServers())
+            .addConnectNodes(3);
         connectCluster.startup();
     }
 
@@ -175,7 +180,7 @@ public class KafkaConnectorIT {
                         null, null, connectCrdOperator, null, null, null, null, null, metrics, null),
                 ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
-            connectCluster.getPort()
+            connectCluster.getPort() + 2
         ) { };
 
         Checkpoint async = context.checkpoint();

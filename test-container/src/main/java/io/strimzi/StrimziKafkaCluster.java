@@ -83,6 +83,13 @@ public class StrimziKafkaCluster implements Startable {
             .collect(Collectors.toList());
     }
 
+    public StrimziKafkaCluster(Map<String, String> additionalKafkaConfiguration) {
+        this(StrimziKafkaContainer.getStrimziVersion() + "-kafka-" + StrimziKafkaContainer.getLatestKafkaVersion(),
+            3,
+            3,
+            additionalKafkaConfiguration);
+    }
+
     public Collection<StrimziKafkaContainer> getBrokers() {
         return this.brokers;
     }

@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-import io.strimzi.StrimziKafkaContainer;
+import io.strimzi.StrimziKafkaCluster;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiTest {
-    private static StrimziKafkaContainer kafkaContainer;
+    private static StrimziKafkaCluster kafkaCluster;
     private static Vertx vertx;
     private Connect connect;
     private static final int PORT = 18083;
@@ -68,12 +68,12 @@ public class KafkaConnectApiTest {
         workerProps.put("value.converter", "org.apache.kafka.connect.json.JsonConverter");
         workerProps.put("value.converter.schemas.enable", "false");
         workerProps.put("offset.storage.topic", getClass().getSimpleName() + "-offsets");
-        workerProps.put("offset.storage.replication.factor", "1");
+        workerProps.put("offset.storage.replication.factor", "3");
         workerProps.put("config.storage.topic", getClass().getSimpleName() + "-config");
-        workerProps.put("config.storage.replication.factor", "1");
+        workerProps.put("config.storage.replication.factor", "3");
         workerProps.put("status.storage.topic", getClass().getSimpleName() + "-status");
-        workerProps.put("status.storage.replication.factor", "1");
-        workerProps.put("bootstrap.servers", kafkaContainer.getBootstrapServers());
+        workerProps.put("status.storage.replication.factor", "3");
+        workerProps.put("bootstrap.servers", kafkaCluster.getBootstrapServers());
         //DistributedConfig config = new DistributedConfig(workerProps);
         //RestServer rest = new RestServer(config);
         //rest.initializeServer();
@@ -101,14 +101,17 @@ public class KafkaConnectApiTest {
     public static void before() throws IOException {
         vertx = Vertx.vertx();
 
-        kafkaContainer = new StrimziKafkaContainer();
-        kafkaContainer.start();
+        Map<String, String> kafkaClusterConfiguration = new HashMap<>();
+        kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
+
+        kafkaCluster = new StrimziKafkaCluster(kafkaClusterConfiguration);
+        kafkaCluster.start();
     }
 
     @AfterAll
     public static void after() {
         vertx.close();
-        kafkaContainer.stop();
+        kafkaCluster.stop();
     }
 
     @IsolatedTest
