@@ -28,14 +28,16 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziKafkaContainer.class);
 
+    public static final int KAFKA_PORT = 9092;
+    public static final int ZOOKEEPER_PORT = 2181;
+
     private static final String STARTER_SCRIPT = "/testcontainers_start.sh";
-    private static final int KAFKA_PORT = 9092;
-    private static final int ZOOKEEPER_PORT = 2181;
     private static final String LATEST_KAFKA_VERSION;
     private static final List<String> SUPPORTED_KAFKA_VERSIONS = new ArrayList<>(5);
-    private static Map<String, String> kafkaConfigurationMap = new HashMap<>();
     private static final String STRIMZI_VERSION;
 
+    private Map<String, String> kafkaConfigurationMap;
+    private String externalZookeeperConnect;
     private int kafkaExposedPort;
 
     static {
@@ -80,7 +82,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         super("quay.io/strimzi/kafka:" + version);
         super.withNetwork(Network.SHARED);
 
-        kafkaConfigurationMap = additionalKafkaConfiguration;
+        kafkaConfigurationMap = new HashMap<>(additionalKafkaConfiguration);
 
         // exposing kafka port from the container
         withExposedPorts(KAFKA_PORT);
@@ -103,13 +105,18 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         super.doStart();
     }
 
+    public StrimziKafkaContainer withExternalZookeeper(String connectString) {
+        this.externalZookeeperConnect = connectString;
+        return self();
+    }
+
     @Override
     protected void containerIsStarting(InspectContainerResponse containerInfo, boolean reused) {
         super.containerIsStarting(containerInfo, reused);
 
-        kafkaExposedPort = getMappedPort(KAFKA_PORT);
+        this.kafkaExposedPort = getMappedPort(KAFKA_PORT);
 
-        LOGGER.info("This is mapped port {}", kafkaExposedPort);
+        LOGGER.info("This is mapped port {}", this.kafkaExposedPort);
 
         StringBuilder advertisedListeners = new StringBuilder(getBootstrapServers());
 
@@ -152,12 +159,17 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         kafkaConfiguration.append(" --override inter.broker.listener.name=BROKER1");
 
         // additional kafka config
-        kafkaConfigurationMap.forEach((configName, configValue) -> {
+        this.kafkaConfigurationMap.forEach((configName, configValue) -> {
             kafkaConfiguration.append(" --override " + configName + "=" + configValue);
         });
 
         String command = "#!/bin/bash \n";
-        command += "bin/zookeeper-server-start.sh config/zookeeper.properties &\n";
+
+        if (this.externalZookeeperConnect != null) {
+            withEnv("KAFKA_ZOOKEEPER_CONNECT", this.externalZookeeperConnect);
+        } else {
+            command += "bin/zookeeper-server-start.sh config/zookeeper.properties &\n";
+        }
         command += "bin/kafka-server-start.sh config/server.properties" + kafkaConfiguration.toString();
 
         LOGGER.info("Copying command to 'STARTER_SCRIPT' script.");
@@ -169,7 +181,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     }
 
     public String getBootstrapServers() {
-        return String.format("PLAINTEXT://%s:%s", getContainerIpAddress(), kafkaExposedPort);
+        return String.format("PLAINTEXT://%s:%s", getContainerIpAddress(), this.kafkaExposedPort);
     }
 
     public static List<String> getSupportedKafkaVersions() {

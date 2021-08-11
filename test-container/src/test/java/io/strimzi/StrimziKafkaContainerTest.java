@@ -38,6 +38,8 @@ public class StrimziKafkaContainerTest {
         LOGGER.info("Verifying that at least one kafka version is present.");
 
         assertThat(StrimziKafkaContainer.getSupportedKafkaVersions(), is(not(nullValue())));
+
+        systemUnderTest.stop();
     }
 
     private void assumeDocker() {
@@ -82,6 +84,8 @@ public class StrimziKafkaContainerTest {
 
         LOGGER.info("Asserting Strimzi version: {}", strimziVersion);
         assertThat(strimziVersion, is(StrimziKafkaContainer.getStrimziVersion()));
+
+        systemUnderTest.stop();
     }
 
     @Test
@@ -115,5 +119,7 @@ public class StrimziKafkaContainerTest {
         assertThat(logsFromKafka, containsString("log.cleaner.backoff.ms = 1000"));
         assertThat(logsFromKafka, containsString("ssl.enabled.protocols = [TLSv1]"));
         assertThat(logsFromKafka, containsString("log.index.interval.bytes = 2048"));
+
+        systemUnderTest.stop();
     }
 }
