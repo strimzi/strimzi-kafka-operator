@@ -39,6 +39,7 @@ spec:
         - name: strimzi-tmp
           emptyDir:
             medium: Memory
+            sizeLimit: 1Mi
         - name: {{ .Values.logVolume }}
           configMap:
             name: {{ .Values.logConfigMap }}
@@ -113,6 +114,14 @@ spec:
             {{- if .Values.labelsExclusionPattern }}
             - name: STRIMZI_LABELS_EXCLUSION_PATTERN
               value: {{ .Values.labelsExclusionPattern | quote }}
+            {{- end }}
+            {{- if ne .Values.generateNetworkPolicy true}}
+            - name: STRIMZI_NETWORK_POLICY_GENERATION
+              value: {{ .Values.generateNetworkPolicy }}
+            {{- end }}
+            {{- if ne (int .Values.connectBuildTimeoutMs) 300000 }}
+            - name: STRIMZI_CONNECT_BUILD_TIMEOUT_MS
+              value: {{ .Values.connectBuildTimeoutMs | quote }}
             {{- end }}
           livenessProbe:
             httpGet:
