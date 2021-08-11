@@ -479,16 +479,12 @@ public class KafkaConnectDockerfileTest {
                 "##############################\n" +
                 "\n" +
                 "FROM registry.access.redhat.com/ubi8/openjdk-11:1.3-18 AS download401856c0\n" +
-                "WORKDIR /tmp/artifacts/\n" +
                 "RUN curl -L --output pom.xml https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.pom \\\n" +
-                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/ \\\n" +
-                "      && rm pom.xml\n" +
+                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/\n" +
                 "\n" +
                 "FROM registry.access.redhat.com/ubi8/openjdk-11:1.3-18 AS download6ecfeffd\n" +
-                "WORKDIR /tmp/artifacts/\n" +
                 "RUN curl -L --output pom.xml https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.pom \\\n" +
-                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/ \\\n" +
-                "      && rm pom.xml\n" +
+                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/\n" +
                 "\n" +
                 "FROM myImage:latest\n" +
                 "\n" +
