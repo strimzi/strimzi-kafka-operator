@@ -1,19 +1,19 @@
 [
   {
     "fromVersion":"HEAD",
-    "toVersion":"0.24.0",
+    "toVersion":"0.25.0",
     "fromExamples":"HEAD",
-    "toExamples":"strimzi-0.24.0",
+    "toExamples":"strimzi-0.25.0",
     "urlFrom":"HEAD",
-    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.24.0/strimzi-0.24.0.zip",
+    "urlTo":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.25.0/strimzi-0.25.0.zip",
     "generateTopics": true,
     "additionalTopics": 2,
     "oldestKafka": "2.7.0",
     "imagesAfterOperatorDowngrade": {
-      "zookeeper": "strimzi/kafka:0.24.0-kafka-2.8.0",
-      "kafka": "strimzi/kafka:0.24.0-kafka-2.8.0",
-      "topicOperator": "strimzi/operator:0.24.0",
-      "userOperator": "strimzi/operator:0.24.0"
+      "zookeeper": "strimzi/kafka:0.25.0-kafka-2.8.0",
+      "kafka": "strimzi/kafka:0.25.0-kafka-2.8.0",
+      "topicOperator": "strimzi/operator:0.25.0",
+      "userOperator": "strimzi/operator:0.25.0"
     },
     "deployKafkaVersion": "2.8.0",
     "client": {
