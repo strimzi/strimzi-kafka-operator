@@ -30,6 +30,8 @@ public class UserOperatorConfigTest {
         envVars.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_VALIDITY, "1000");
         envVars.put(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, "10");
         envVars.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, "false");
+        envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, "20");
+
 
         Map<String, String> labels = new HashMap<>(2);
         labels.put("label1", "value1");
@@ -50,6 +52,7 @@ public class UserOperatorConfigTest {
         assertThat(config.getClientsCaValidityDays(), is(1000));
         assertThat(config.getClientsCaRenewalDays(), is(10));
         assertThat(config.isAclsAdminApiSupported(), is(false));
+        assertThat(config.getScramPasswordLength(), is(20));
     }
 
     @Test
@@ -78,6 +81,15 @@ public class UserOperatorConfigTest {
     }
 
     @Test
+    public void testFromMapScramPasswordLengthEnvVarMissingSetsDefault()  {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+        envVars.remove(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH);
+
+        UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+        assertThat(config.getScramPasswordLength(), is(UserOperatorConfig.DEFAULT_SCRAM_SHA_PASSWORD_LENGTH));
+    }
+
+    @Test
     public void testFromMapStrimziLabelsEnvVarMissingSetsEmptyLabels()  {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
         envVars.remove(UserOperatorConfig.STRIMZI_LABELS);
@@ -99,6 +111,14 @@ public class UserOperatorConfigTest {
     public void testFromMapInvalidReconciliationIntervalThrows()  {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
         envVars.put(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "not_an_long");
+
+        assertThrows(NumberFormatException.class, () -> UserOperatorConfig.fromMap(envVars));
+    }
+
+    @Test
+    public void testFromMapInvalidScramPasswordLengthThrows()  {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+        envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, "not_an_integer");
 
         assertThrows(NumberFormatException.class, () -> UserOperatorConfig.fromMap(envVars));
     }

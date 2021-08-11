@@ -295,7 +295,7 @@ public class UserOperatorConfig {
     }
 
     /**
-     * @return  Indicates whether the Kafka Admin API for managing ACLs is supported by the Kafka cluster or not
+     * @return  The length used for Scram-Sha Password
      */
     public int getScramPasswordLength() {
         return scramPasswordLength;
