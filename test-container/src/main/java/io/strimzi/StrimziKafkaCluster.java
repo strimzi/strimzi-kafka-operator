@@ -26,6 +26,12 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+/**
+ * StrimziKafkaCluster is a multi-node instance of the Kafka and Zookeeper using the latest image from quay.io/strimzi/kafka.
+ * It perfectly fits for integration/system testing. We always deploy one zookeeper with a specified amount of Kafka instances.
+ * Everything is isolated environment and running as a separate container inside Docker. The additional configuration
+ * for Kafka brokers can be specified by @additionalKafkaConfiguration parameter in the constructor.
+ */
 public class StrimziKafkaCluster implements Startable {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziZookeeperContainer.class);
@@ -36,7 +42,7 @@ public class StrimziKafkaCluster implements Startable {
     private final Collection<StrimziKafkaContainer> brokers;
 
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
-    public StrimziKafkaCluster(String version, int brokersNum, int internalTopicReplicationFactor, Map<String, String> additionalKafkaConfiguration) {
+    public StrimziKafkaCluster(String imageVersion, int brokersNum, int internalTopicReplicationFactor, Map<String, String> additionalKafkaConfiguration) {
         if (brokersNum < 0) {
             throw new IllegalArgumentException("brokersNum '" + brokersNum + "' must be greater than 0");
         }
@@ -68,7 +74,7 @@ public class StrimziKafkaCluster implements Startable {
                 // adding broker id for each kafka container
                 additionalKafkaConfiguration.put("broker.id", String.valueOf(brokerId));
 
-                return new StrimziKafkaContainer(version, additionalKafkaConfiguration)
+                return new StrimziKafkaContainer(imageVersion, additionalKafkaConfiguration)
                     .withNetwork(this.network)
                     .withNetworkAliases("broker-" + brokerId)
                     .dependsOn(this.zookeeper)

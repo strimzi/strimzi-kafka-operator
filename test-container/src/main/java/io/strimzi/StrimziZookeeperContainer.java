@@ -17,6 +17,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * StrimziZookeeperContainer is an instance of the Zookeeper encapsulated inside a docker container using the latest image
+ * from quay.io/strimzi/kafka. It can be combined with @StrimziKafkaContainer but we suggest to use directly @StrimziKafkaCluster
+ * for more complicated testing.
+ */
 public class StrimziZookeeperContainer extends GenericContainer<StrimziZookeeperContainer> {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziZookeeperContainer.class);
@@ -28,8 +33,8 @@ public class StrimziZookeeperContainer extends GenericContainer<StrimziZookeeper
 
     private int zookeeperExposedPort;
 
-    public StrimziZookeeperContainer(final String version) {
-        super("quay.io/strimzi/kafka:" + version);
+    public StrimziZookeeperContainer(final String imageVersion) {
+        super("quay.io/strimzi/kafka:" + imageVersion);
         super.withNetwork(Network.SHARED);
 
         // exposing zookeeper port from the container

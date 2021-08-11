@@ -24,6 +24,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * StrimziKafkaContainer is a single-node instance of Kafka using the latest image from quay.io/strimzi/kafka.
+ * There are two options for how to use it. The first one is using an embedded zookeeper which will run inside Kafka container. The
+ * Another option is to use @StrimziZookeeperContainer as an external Zookeeper. The additional configuration for Kafka
+ * broker can be injected via constructor. This container is a good fit for integration testing but for more hardcore
+ * testing we suggest using @StrimziKafkaCluster.
+ */
 public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContainer> {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziKafkaContainer.class);
@@ -78,8 +85,8 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         LOGGER.info("Supported Strimzi version: {}", STRIMZI_VERSION);
     }
 
-    public StrimziKafkaContainer(final String version, Map<String, String> additionalKafkaConfiguration) {
-        super("quay.io/strimzi/kafka:" + version);
+    public StrimziKafkaContainer(final String imageVersion, Map<String, String> additionalKafkaConfiguration) {
+        super("quay.io/strimzi/kafka:" + imageVersion);
         super.withNetwork(Network.SHARED);
 
         kafkaConfigurationMap = new HashMap<>(additionalKafkaConfiguration);
@@ -152,11 +159,12 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         StringBuilder kafkaConfiguration = new StringBuilder();
 
         // default listener config
-        kafkaConfiguration.append(" --override listeners=" + kafkaListeners + "PLAINTEXT://0.0.0.0:" + KAFKA_PORT);
-        kafkaConfiguration.append(" --override advertised.listeners=" + advertisedListeners);
-        kafkaConfiguration.append(" --override zookeeper.connect=localhost:" + ZOOKEEPER_PORT);
-        kafkaConfiguration.append(" --override listener.security.protocol.map=" + kafkaListenerSecurityProtocol + "PLAINTEXT:PLAINTEXT");
-        kafkaConfiguration.append(" --override inter.broker.listener.name=BROKER1");
+        kafkaConfiguration
+            .append(" --override listeners=" + kafkaListeners + "PLAINTEXT://0.0.0.0:" + KAFKA_PORT)
+            .append(" --override advertised.listeners=" + advertisedListeners)
+            .append(" --override zookeeper.connect=localhost:" + ZOOKEEPER_PORT)
+            .append(" --override listener.security.protocol.map=" + kafkaListenerSecurityProtocol + "PLAINTEXT:PLAINTEXT")
+            .append(" --override inter.broker.listener.name=BROKER1");
 
         // additional kafka config
         this.kafkaConfigurationMap.forEach((configName, configValue) -> {
