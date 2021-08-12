@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
-import io.strimzi.StrimziKafkaCluster;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
@@ -29,6 +28,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.connect.cli.ConnectDistributed;
 import org.apache.kafka.connect.runtime.Connect;
+import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiTest {
-    private static StrimziKafkaCluster kafkaCluster;
+    private static EmbeddedKafkaCluster kafkaCluster;
     private static Vertx vertx;
     private Connect connect;
     private static final int PORT = 18083;
@@ -73,7 +73,7 @@ public class KafkaConnectApiTest {
         workerProps.put("config.storage.replication.factor", "3");
         workerProps.put("status.storage.topic", getClass().getSimpleName() + "-status");
         workerProps.put("status.storage.replication.factor", "3");
-        workerProps.put("bootstrap.servers", kafkaCluster.getBootstrapServers());
+        workerProps.put("bootstrap.servers", kafkaCluster.bootstrapServers());
         //DistributedConfig config = new DistributedConfig(workerProps);
         //RestServer rest = new RestServer(config);
         //rest.initializeServer();
@@ -104,14 +104,13 @@ public class KafkaConnectApiTest {
         Map<String, String> kafkaClusterConfiguration = new HashMap<>();
         kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
 
-        kafkaCluster = new StrimziKafkaCluster(kafkaClusterConfiguration);
+        kafkaCluster = new EmbeddedKafkaCluster(3);
         kafkaCluster.start();
     }
 
     @AfterAll
     public static void after() {
         vertx.close();
-        kafkaCluster.stop();
     }
 
     @IsolatedTest

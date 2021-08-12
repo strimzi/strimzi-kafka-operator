@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.strimzi.StrimziKafkaCluster;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnector;
@@ -34,6 +33,7 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -45,7 +45,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -63,7 +62,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectorIT {
-    private static StrimziKafkaCluster kafkaCluster;
+    private static EmbeddedKafkaCluster kafkaCluster;
     private static AdminClient adminClient;
     private static Vertx vertx;
     private ConnectCluster connectCluster;
@@ -76,14 +75,11 @@ public class KafkaConnectorIT {
                         .setEnabled(true)
         ));
 
-        Map<String, String> kafkaClusterConfiguration = new HashMap<>();
-        kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
-
-        kafkaCluster = new StrimziKafkaCluster(kafkaClusterConfiguration);
+        kafkaCluster = new EmbeddedKafkaCluster(3);
         kafkaCluster.start();
 
         Properties properties = new Properties();
-        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers());
+        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.bootstrapServers());
         adminClient = AdminClient.create(properties);
     }
 
@@ -91,7 +87,6 @@ public class KafkaConnectorIT {
     public static void after() {
         vertx.close();
         adminClient.close();
-        kafkaCluster.stop();
     }
 
     @BeforeEach
@@ -108,7 +103,7 @@ public class KafkaConnectorIT {
 
         // Start a 3 node connect cluster
         connectCluster = new ConnectCluster()
-            .usingBrokers(kafkaCluster.getBootstrapServers())
+            .usingBrokers(kafkaCluster.bootstrapServers())
             .addConnectNodes(3);
         connectCluster.startup();
     }
