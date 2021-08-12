@@ -29,10 +29,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
-import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.CreateTopicsResult;
-import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
@@ -43,7 +40,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -63,7 +59,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectorIT {
     private static EmbeddedKafkaCluster kafkaCluster;
-    private static AdminClient adminClient;
     private static Vertx vertx;
     private ConnectCluster connectCluster;
 
@@ -80,26 +75,16 @@ public class KafkaConnectorIT {
 
         Properties properties = new Properties();
         properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.bootstrapServers());
-        adminClient = AdminClient.create(properties);
     }
 
     @AfterAll
     public static void after() {
         vertx.close();
-        adminClient.close();
     }
 
     @BeforeEach
     public void beforeEach() throws IOException, InterruptedException, ExecutionException {
         String connectClusterName = getClass().getSimpleName();
-
-        CreateTopicsResult createTopicsResult = adminClient.createTopics(
-            Arrays.asList(
-                new NewTopic(connectClusterName + "-offsets", 3, (short) 3),
-                new NewTopic(connectClusterName + "-config", 3,  (short) 3),
-                new NewTopic(connectClusterName + "-status", 3,  (short) 3)
-            ));
-        createTopicsResult.all().get();
 
         // Start a 3 node connect cluster
         connectCluster = new ConnectCluster()

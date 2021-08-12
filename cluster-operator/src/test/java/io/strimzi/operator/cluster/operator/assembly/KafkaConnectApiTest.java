@@ -101,9 +101,6 @@ public class KafkaConnectApiTest {
     public static void before() throws IOException {
         vertx = Vertx.vertx();
 
-        Map<String, String> kafkaClusterConfiguration = new HashMap<>();
-        kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
-
         kafkaCluster = new EmbeddedKafkaCluster(3);
         kafkaCluster.start();
     }
