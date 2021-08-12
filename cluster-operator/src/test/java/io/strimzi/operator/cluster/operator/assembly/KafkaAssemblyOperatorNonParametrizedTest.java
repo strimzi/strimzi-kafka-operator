@@ -10,12 +10,7 @@ import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.strimzi.api.kafka.model.CertificateAuthority;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
-import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.*;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
@@ -28,20 +23,13 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.IngressOperator;
-import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
-import io.strimzi.operator.common.operator.resource.PodOperator;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.*;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -64,17 +52,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaAssemblyOperatorNonParametrizedTest {
@@ -681,39 +662,13 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 .endSpec()
                 .build();
 
-        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
+        Secret jmxSecret = zookeeperCluster.generateJmxSecret();
 
-        KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
-                supplier, ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), 1L));
-        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
+        assertThat(jmxSecret.getData(), hasKey("jmx-username"));
+        assertThat(jmxSecret.getData(), hasKey("jmx-password"));
 
-        Checkpoint async = context.checkpoint();
-
-        ZookeeperSetOperator mockZsOps = supplier.zkSetOperations;
-        when(mockZsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
-        op.new ReconciliationState(reconciliation, kafka).getZookeeperDescription()
-                .onComplete(context.succeeding(c -> context.verify(() -> {
-                    assertThat("dummy", is("dummy"));
-
-                    async.flag();
-                })));
-
-//        SecretOperator secretOps = supplier.secretOperations;
-
-//        when(secretOps.getAsync(NAMESPACE, ZookeeperCluster.jmxSecretName(NAME))).thenReturn(
-//                Future.succeededFuture(someZkClusterInstance.generateJmxSecret())
-//        ); HOW DO I GET someZkClusterInstance instance?
-
-//        op.new ReconciliationState(reconciliation, kafka).zkJmxSecret
-//                .onComplete(context.succeeding(c -> context.verify(() -> {
-//                    Secret jmxSecret = secretArgumentCaptor.getValue();
-//
-//                    assertThat(secretArgumentCaptor.getAllValues(), hasSize(1));
-//                    assertThat(jmxSecret.getData(), hasKey("username"));
-//                    assertThat(jmxSecret.getData(), hasKey("password"));
-//
-//                    async.flag();
-//                })));
+        context.checkpoint().flag();
     }
 
     /**

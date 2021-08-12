@@ -861,18 +861,6 @@ public class KafkaAssemblyOperatorTest {
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testUpdateZookeeperClusterAuthenticationTrue(Params params, VertxTestContext context) {
-        setFields(params);
-        Kafka kafkaAssembly = getKafkaAssembly("bar");
-        KafkaJmxOptions kafkaJmxOptions = new KafkaJmxOptionsBuilder().withAuthentication(
-                 new KafkaJmxAuthenticationPasswordBuilder().build())
-                .build();
-        kafkaAssembly.getSpec().getZookeeper().setJmxOptions(kafkaJmxOptions);
-        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
-    }
-
-    @ParameterizedTest
-    @MethodSource("data")
     public void testUpdateClusterLogConfig(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
