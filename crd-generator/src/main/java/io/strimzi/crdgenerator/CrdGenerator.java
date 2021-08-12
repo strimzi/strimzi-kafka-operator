@@ -707,18 +707,7 @@ public class CrdGenerator {
         } else {
             for (Class c : subtypes(crdClass)) {
                 hasAnyGetterAndAnySetter(c);
-                try {
-                    String typePropertyName = crdClass.getAnnotation(JsonTypeInfo.class).property();
-                    String methodName = "get" + typePropertyName.substring(0, 1).toUpperCase(Locale.ENGLISH) + typePropertyName.substring(1).toLowerCase(Locale.ENGLISH);
-                    @SuppressWarnings("unchecked")
-                    Method method = c.getMethod(methodName);
-
-                    if (!hasAnnotatedType(method)) {
-                        err(c.getCanonicalName() + "#" + methodName + " is not annotated with @JsonInclude(JsonInclude.Include.NON_NULL)");
-                    }
-                } catch (NoSuchMethodException e) {
-                    err(e.getMessage());
-                }
+                checkDiscriminatorIsIncluded(crdClass, c);
             }
         }
         checkInherits(crdClass, "java.io.Serializable");
@@ -731,7 +720,22 @@ public class CrdGenerator {
         checkClassOverrides(crdClass, "equals", Object.class);
     }
 
-    private boolean hasAnnotatedType(Method method) {
+    private void checkDiscriminatorIsIncluded(Class<?> crdClass, Class c) {
+        try {
+            String typePropertyName = crdClass.getAnnotation(JsonTypeInfo.class).property();
+            String methodName = "get" + typePropertyName.substring(0, 1).toUpperCase(Locale.ENGLISH) + typePropertyName.substring(1).toLowerCase(Locale.ENGLISH);
+            @SuppressWarnings("unchecked")
+            Method method = c.getMethod(methodName);
+
+            if (!isAnnotatedWithIncludeNonNull(method)) {
+                err(c.getCanonicalName() + "#" + methodName + " is not annotated with @JsonInclude(JsonInclude.Include.NON_NULL)");
+            }
+        } catch (NoSuchMethodException e) {
+            err(e.getMessage());
+        }
+    }
+
+    private boolean isAnnotatedWithIncludeNonNull(Method method) {
         JsonInclude ann = method.getAnnotation(JsonInclude.class);
         return ann != null && ann.value().equals(JsonInclude.Include.NON_NULL);
     }
