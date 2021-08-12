@@ -4,7 +4,7 @@
  */
 package io.strimzi;
 
-import io.strimzi.test.TestUtils;
+import io.strimzi.utils.TestUtils;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;

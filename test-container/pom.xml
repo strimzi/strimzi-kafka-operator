@@ -27,12 +27,6 @@
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
         </dependency>
-        <!-- for TestUtils.waifFor       -->
-        <dependency>
-            <groupId>io.strimzi</groupId>
-            <artifactId>test</artifactId>
-            <scope>compile</scope>
-        </dependency>
         <dependency>
             <groupId>com.github.docker-java</groupId>
             <artifactId>docker-java-api</artifactId>

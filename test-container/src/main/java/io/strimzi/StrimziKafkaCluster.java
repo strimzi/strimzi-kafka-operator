@@ -5,7 +5,7 @@
 package io.strimzi;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.strimzi.test.TestUtils;
+import io.strimzi.utils.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Container;
