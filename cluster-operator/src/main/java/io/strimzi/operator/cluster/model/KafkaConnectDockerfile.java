@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.connect.build.OtherArtifact;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifact;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifact;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
 
@@ -20,6 +21,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class is used to generate the Dockerfile used by Kafka Connect Build. It takes the API definition with the
@@ -39,9 +42,11 @@ public class KafkaConnectDockerfile {
     private static final String HTTPS_PROXY = System.getenv(ENV_VAR_HTTPS_PROXY);
     private static final String NO_PROXY = System.getenv(ENV_VAR_NO_PROXY);
 
-    private static final String UBI_MAVEN_IMAGE = "registry.access.redhat.com/ubi8/openjdk-11:1.3-18";
-
     private final String dockerfile;
+
+    private final Pattern special = Pattern.compile("[!@#$%&*()+=\\\\|<>?{};\\[\\]~]");
+    private static final String DEFAULT_MAVEN_IMAGE = "registry.access.redhat.com/ubi8/openjdk-11:1.3-18";
+    private final String mavenImage;
 
     /**
      * Broker configuration template constructor
@@ -50,6 +55,7 @@ public class KafkaConnectDockerfile {
      * @param connectBuild  The Build definition from the API
      */
     public KafkaConnectDockerfile(String fromImage, Build connectBuild) {
+        this.mavenImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_MAVEN_IMAGE, DEFAULT_MAVEN_IMAGE);
         StringWriter stringWriter = new StringWriter();
         PrintWriter writer = new PrintWriter(stringWriter);
 
@@ -74,6 +80,9 @@ public class KafkaConnectDockerfile {
     private void connectorPluginsPreStage(PrintWriter writer, List<Plugin> plugins) {
         plugins.forEach(plugin -> plugin.getArtifacts().stream().filter(artifact -> artifact instanceof MavenArtifact)
             .forEach(mvn -> {
+                checkForShellMetachars(((MavenArtifact) mvn).getGroup());
+                checkForShellMetachars(((MavenArtifact) mvn).getArtifact());
+                checkForShellMetachars(((MavenArtifact) mvn).getVersion());
                 String repo = ((MavenArtifact) mvn).getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybePatchRepository(((MavenArtifact) mvn).getRepository());
                 String artifactHash = Util.sha1Prefix(((MavenArtifact) mvn).getGroup() + ((MavenArtifact) mvn).getArtifact() + ((MavenArtifact) mvn).getVersion());
                 String downloadPomCmd = String.format("curl -L --output pom.xml %s%s/%s/%s/%s-%s.pom",
@@ -84,12 +93,19 @@ public class KafkaConnectDockerfile {
                         ((MavenArtifact) mvn).getArtifact(),
                         ((MavenArtifact) mvn).getVersion());
 
-                writer.println("FROM " + UBI_MAVEN_IMAGE + " AS download" + artifactHash);
+                writer.println("FROM " + mavenImage + " AS download" + artifactHash);
                 writer.println("RUN " + downloadPomCmd + " \\");
                 writer.println("      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/");
                 writer.println();
             }
         ));
+    }
+
+    private void checkForShellMetachars(String toBeChecked) {
+        Matcher hasSpecial = special.matcher(toBeChecked);
+        if (hasSpecial.find()) {
+            throw new InvalidConfigurationException("String '" + toBeChecked + "' contains forbidden character");
+        }
     }
 
     /**
@@ -351,7 +367,8 @@ public class KafkaConnectDockerfile {
         String artifactHash = Util.sha1Prefix(mvn.getGroup() + mvn.getArtifact() + mvn.getVersion());
         String artifactDir = connectorPath + "/" + artifactHash;
 
-        String downloadJarCmd = String.format("curl -L --create-dirs --output " + artifactDir + "/%s-%s.jar %s%s/%s/%s/%s-%s.jar",
+        String downloadJarCmd = String.format("curl -L --create-dirs --output %s/%s-%s.jar %s%s/%s/%s/%s-%s.jar",
+                artifactDir,
                 mvn.getArtifact(),
                 mvn.getVersion(),
                 repo,

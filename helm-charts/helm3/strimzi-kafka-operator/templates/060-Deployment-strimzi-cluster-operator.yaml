@@ -91,6 +91,8 @@ spec:
               value: {{ default .Values.jmxTrans.image.registry .Values.imageRegistryOverride }}/{{ default .Values.jmxTrans.image.repository .Values.imageRepositoryOverride }}/{{ .Values.jmxTrans.image.name }}:{{ default .Values.jmxTrans.image.tag .Values.imageTagOverride }}
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
               value: {{ default .Values.kanikoExecutor.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kanikoExecutor.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kanikoExecutor.image.name }}:{{ default .Values.kanikoExecutor.image.tag .Values.imageTagOverride }}
+            - name: STRIMZI_DEFAULT_MAVEN_IMAGE
+              value: { { default .Values.mavenImage.image.registry .Values.imageRegistryOverride } }/{{ default .Values.mavenImage.image.repository .Values.imageRepositoryOverride }}/{{ .Values.mavenImage.image.name }}:{{ default .Values.mavenImage.image.tag .Values.imageTagOverride }}
             - name: STRIMZI_OPERATOR_NAMESPACE
               valueFrom:
                 fieldRef:

@@ -55,6 +55,7 @@ release_version:
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/[0-9.]\+=quay.io\/strimzi\/kafka[a-zA-Z0-9_.-]\?\+:[a-zA-Z0-9_.-]\+-kafka-[0-9.]\+"\?/s/:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/:$(RELEASE_VERSION)-kafka-\1/g' {} \;
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/jmxtrans:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/jmxtrans:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/jmxtrans:$(RELEASE_VERSION)/g' {} \;
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kaniko-executor:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kaniko-executor:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/kaniko-executor:$(RELEASE_VERSION)/g' {} \;
+	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/maven-image:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/maven-image:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/maven-image:$(RELEASE_VERSION)/g' {} \;
 	# Set Kafka Bridge version to its own version
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;
 

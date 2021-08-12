@@ -502,4 +502,34 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001\n" +
                 "\n"));
     }
+
+    private Build getConnectBuildFromGAV(String g, String a, String v) {
+        MavenArtifact mvn = new MavenArtifactBuilder()
+                .withGroup(g)
+                .withArtifact(a)
+                .withVersion(v)
+                .build();
+
+        return new BuildBuilder()
+                .withPlugins(new PluginBuilder()
+                        .withName("my-connector-plugin")
+                        .withArtifacts(mvn)
+                        .build())
+                .build();
+    }
+
+    @ParallelTest
+    public void testForbiddenChars() {
+        Build b1 = getConnectBuildFromGAV("$(echo rm -rf)", "a", "v");
+        Build b2 = getConnectBuildFromGAV("g", "; print $PASSWORD", "v");
+        Build b3 = getConnectBuildFromGAV("g", "a", "\\I AM VIRUS, PLEASE PAY ME");
+
+        Throwable t1 = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", b1));
+        Throwable t2 = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", b2));
+        Throwable t3 = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", b3));
+
+        assertThat(t1.getMessage(), is("String '$(echo rm -rf)' contains forbidden character"));
+        assertThat(t2.getMessage(), is("String '; print $PASSWORD' contains forbidden character"));
+        assertThat(t3.getMessage(), is("String '\\I AM VIRUS, PLEASE PAY ME' contains forbidden character"));
+    }
 }
