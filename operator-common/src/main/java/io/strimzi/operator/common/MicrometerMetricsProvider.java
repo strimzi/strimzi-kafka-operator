@@ -11,6 +11,7 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import io.vertx.micrometer.backends.BackendRegistries;
 
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -64,6 +65,7 @@ public class MicrometerMetricsProvider implements MetricsProvider {
     public Timer timer(String name, String description, Tags tags) {
         return Timer.builder(name)
                 .description(description)
+                .sla(Duration.ofMillis(1000), Duration.ofMillis(5000), Duration.ofMillis(10000), Duration.ofMillis(30000), Duration.ofMillis(60000), Duration.ofMillis(120000), Duration.ofMillis(300000))
                 .tags(tags)
                 .register(metrics);
     }
