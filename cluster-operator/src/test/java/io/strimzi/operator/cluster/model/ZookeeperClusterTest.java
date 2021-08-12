@@ -39,6 +39,7 @@ import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.RackBuilder;
@@ -87,6 +88,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasKey;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
@@ -243,6 +245,38 @@ public class ZookeeperClusterTest {
         assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
 
         checkOwnerReference(zc.createOwnerReference(), headless);
+    }
+
+    @ParallelTest
+    public void testCreateClusterWithZookeeperJmxEnabled() {
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                .withName(cluster)
+                .withNamespace(namespace)
+                .endMetadata()
+                .withNewSpec()
+                .withNewKafka()
+                .withReplicas(3)
+                .withNewEphemeralStorage()
+                .endEphemeralStorage()
+                .endKafka()
+                .withNewZookeeper()
+                .withJmxOptions(new KafkaJmxOptionsBuilder()
+                        .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder()
+                                .build())
+                        .build())
+                .withReplicas(3)
+                .withNewEphemeralStorage()
+                .endEphemeralStorage()
+                .endZookeeper()
+                .endSpec()
+                .build();
+
+        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
+        Secret jmxSecret = zookeeperCluster.generateJmxSecret();
+
+        assertThat(jmxSecret.getData(), hasKey("jmx-username"));
+        assertThat(jmxSecret.getData(), hasKey("jmx-password"));
     }
 
     @ParallelTest
