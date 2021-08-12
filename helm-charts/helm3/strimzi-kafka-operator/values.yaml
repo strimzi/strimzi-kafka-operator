@@ -120,12 +120,6 @@ kanikoExecutor:
     repository: strimzi
     name: kaniko-executor
     tag: 0.25.0
-mavenImage:
-  image:
-    registry: quay.io
-    repository: strimzi
-    name: maven-image
-    tag: 0.25.0
 resources:
   limits:
     memory: 384Mi
