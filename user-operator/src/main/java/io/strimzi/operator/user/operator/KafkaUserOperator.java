@@ -48,8 +48,8 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
     private final CertManager certManager;
     private final ScramCredentialsOperator scramCredentialsOperator;
     private final QuotasOperator quotasOperator;
-    private final PasswordGenerator passwordGenerator = new PasswordGenerator(12);
     private final UserOperatorConfig config;
+    private final PasswordGenerator passwordGenerator;
 
     /**
      * Creates the instance of KafkaUserOperator
@@ -78,6 +78,7 @@ public class KafkaUserOperator extends AbstractOperator<KafkaUser, KafkaUserSpec
         this.quotasOperator = quotasOperator;
         this.aclOperations = aclOperations;
         this.config = config;
+        this.passwordGenerator = new PasswordGenerator(this.config.getScramPasswordLength());
     }
 
     @Override

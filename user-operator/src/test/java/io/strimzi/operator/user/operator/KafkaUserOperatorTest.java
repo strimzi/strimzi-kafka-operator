@@ -174,7 +174,7 @@ public class KafkaUserOperatorTest {
         when(scramOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
         when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig(Map.of(), false));
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig(Map.of(), false, "12"));
         KafkaUser user = new KafkaUserBuilder()
                 .withNewMetadata()
                     .withName(ResourceUtils.NAME)
@@ -828,7 +828,7 @@ public class KafkaUserOperatorTest {
 
         Promise reconcileAllCompleted = Promise.promise();
 
-        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig(ResourceUtils.LABELS, false)) {
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig(ResourceUtils.LABELS, false, "12")) {
             @Override
             public Future<KafkaUserStatus> createOrUpdate(Reconciliation reconciliation, KafkaUser resource) {
                 createdOrUpdated.add(resource.getMetadata().getName());
@@ -911,7 +911,6 @@ public class KafkaUserOperatorTest {
                                 .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
                                 .withStrimziKind(KafkaUser.RESOURCE_KIND)
                                 .toMap()));
-
                 assertThat(scramPasswordCaptor.getValue(), is(new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD)))));
                 assertThat(new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD))).matches("[a-zA-Z0-9]{12}"), is(true));
 
@@ -932,6 +931,75 @@ public class KafkaUserOperatorTest {
                 async.flag();
             })));
     }
+
+    @Test
+    public void testReconcileNewScramShaUserwithConfigurableLength(VertxTestContext context)    {
+
+        String scramShaPasswordLength = "30";
+        CrdOperator mockCrdOps = mock(CrdOperator.class);
+        SecretOperator mockSecretOps = mock(SecretOperator.class);
+        SimpleAclOperator aclOps = mock(SimpleAclOperator.class);
+        ScramCredentialsOperator scramOps = mock(ScramCredentialsOperator.class);
+        QuotasOperator quotasOps = mock(QuotasOperator.class);
+
+        KafkaUserOperator op = new KafkaUserOperator(vertx, mockCertManager, mockCrdOps, mockSecretOps, scramOps, quotasOps, aclOps, ResourceUtils.createUserOperatorConfig(scramShaPasswordLength));
+        KafkaUser user = ResourceUtils.createKafkaUserScramSha();
+
+        ArgumentCaptor<String> secretNamespaceCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> secretNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
+        when(mockSecretOps.reconcile(any(), secretNamespaceCaptor.capture(), secretNameCaptor.capture(), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> aclNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Set<SimpleAclRule>> aclRulesCaptor = ArgumentCaptor.forClass(Set.class);
+        when(aclOps.reconcile(any(), aclNameCaptor.capture(), aclRulesCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<String> scramUserCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> scramPasswordCaptor = ArgumentCaptor.forClass(String.class);
+        when(scramOps.reconcile(any(), scramUserCaptor.capture(), scramPasswordCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        when(mockSecretOps.getAsync(anyString(), eq(user.getMetadata().getName()))).thenReturn(Future.succeededFuture(null));
+
+        when(mockCrdOps.get(eq(user.getMetadata().getNamespace()), eq(user.getMetadata().getName()))).thenReturn(user);
+        when(mockCrdOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(user));
+        when(mockCrdOps.updateStatusAsync(any(), any(KafkaUser.class))).thenReturn(Future.succeededFuture());
+        when(quotasOps.reconcile(any(), any(), any())).thenReturn(Future.succeededFuture());
+
+        Checkpoint async = context.checkpoint();
+        op.reconcile(new Reconciliation("test-trigger", KafkaUser.RESOURCE_KIND, ResourceUtils.NAMESPACE, ResourceUtils.NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+
+                    List<String> capturedNames = secretNameCaptor.getAllValues();
+                    assertThat(capturedNames, hasSize(1));
+                    assertThat(capturedNames.get(0), is(ResourceUtils.NAME));
+
+                    List<String> capturedNamespaces = secretNamespaceCaptor.getAllValues();
+                    assertThat(capturedNamespaces, hasSize(1));
+                    assertThat(capturedNamespaces.get(0), is(ResourceUtils.NAMESPACE));
+
+                    List<Secret> capturedSecrets = secretCaptor.getAllValues();
+
+                    assertThat(capturedSecrets, hasSize(1));
+
+                    Secret captured = capturedSecrets.get(0);
+                    assertThat(captured.getMetadata().getName(), is(user.getMetadata().getName()));
+                    assertThat(captured.getMetadata().getNamespace(), is(user.getMetadata().getNamespace()));
+                    assertThat(captured.getMetadata().getLabels(),
+                            is(Labels.fromMap(user.getMetadata().getLabels())
+                                    .withKubernetesName(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                                    .withKubernetesInstance(ResourceUtils.NAME)
+                                    .withKubernetesPartOf(ResourceUtils.NAME)
+                                    .withKubernetesManagedBy(KafkaUserModel.KAFKA_USER_OPERATOR_NAME)
+                                    .withStrimziKind(KafkaUser.RESOURCE_KIND)
+                                    .toMap()));
+
+                    assertThat(scramPasswordCaptor.getValue(), is(new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD)))));
+                    assertThat(new String(Base64.getDecoder().decode(captured.getData().get(KafkaUserModel.KEY_PASSWORD))).matches("[a-zA-Z0-9]{30}"), is(true));
+
+                    async.flag();
+                })));
+    }
+
 
     @Test
     public void testReconcileNewScramShaUserWithProvidedPassword(VertxTestContext context)    {
