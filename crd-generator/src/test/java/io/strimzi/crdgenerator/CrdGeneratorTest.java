@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CrdGeneratorTest {
@@ -97,5 +98,26 @@ public class CrdGeneratorTest {
         assertTrue(errors.contains("Target kubernetes versions 1.11+ don't support schema-per-version, but multiple versions present on io.strimzi.crdgenerator.VersionedExampleCrd.someInt"), errors.toString());
         // TODO there's a bunch more checks we need here.
         // In particular one about the use of @Alternative
+    }
+
+    @Test
+    public void simpleTestWithoutType() throws IOException {
+        Set<String> errors = new HashSet<>();
+        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1,
+                CrdGenerator.YAML_MAPPER, emptyMap(), new CrdGenerator.Reporter() {
+                    @Override
+                    public void warn(String s) {
+                    }
+
+                    @Override
+                    public void err(String s) {
+                        errors.add(s);
+                    }
+                },
+                emptyList(), null, null, new CrdGenerator.NoneConversionStrategy(), null);
+        StringWriter w = new StringWriter();
+        crdGenerator.generate(ExampleCrd.class, w);
+        assertTrue(errors.contains("io.strimzi.crdgenerator.ExampleCrd.PolymorphicLeft#getDiscrim is not annotated with @JsonInclude(JsonInclude.Include.NON_NULL)"), errors.toString());
+        assertFalse(errors.contains("io.strimzi.crdgenerator.ExampleCrd.PolymorphicRight#getDiscrim is not annotated with @JsonInclude(JsonInclude.Include.NON_NULL)"), errors.toString());
     }
 }

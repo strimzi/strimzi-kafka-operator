@@ -32,6 +32,7 @@ public class KafkaUserAuthorizationSimple extends KafkaUserAuthorization {
 
     @Description("Must be `" + TYPE_SIMPLE + "`")
     @Override
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public String getType() {
         return TYPE_SIMPLE;
     }
