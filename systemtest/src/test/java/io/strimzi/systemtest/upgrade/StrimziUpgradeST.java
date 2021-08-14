@@ -227,8 +227,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     private JsonObject getDataForStartUpgrade(JsonArray upgradeJson) throws IOException {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
-        List<String> versions = sortedVersions.stream().map(item -> item.version()).collect(Collectors.toList());
-
         Collections.reverse(upgradeJson.getList());
 
         JsonObject startingVersion = null;

@@ -37,6 +37,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -282,15 +283,16 @@ public class NetworkPoliciesST extends AbstractST {
         labels.put("my-label", "my-value");
 
         EnvVar operatorLabelsEnv = new EnvVarBuilder()
-            .withName("STRIMZI_OPERATOR_NAMESPACE_LABELS")
-            .withValue(labels.toString().replaceAll("\\{|}", ""))
-            .build();
+                .withName("STRIMZI_OPERATOR_NAMESPACE_LABELS")
+                .withValue(labels.toString().replaceAll("\\{|}", ""))
+                .build();
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withBindingsNamespaces(Arrays.asList(NAMESPACE, secondNamespace))
+            .withExtraEnvVars(Collections.singletonList(operatorLabelsEnv))
             .createInstallation()
             .runInstallation();
 

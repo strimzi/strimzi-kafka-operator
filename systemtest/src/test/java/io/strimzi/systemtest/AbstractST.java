@@ -137,7 +137,7 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    private List<List<String>> commandLines(String namespaceName, String podName, String containerName, String cmd) {
+    private List<List<String>> commandLines(String namespaceName, String podName, String containerName) {
         List<List<String>> result = new ArrayList<>();
         String output = cmdKubeClient().namespace(namespaceName).execInPodContainer(podName, containerName, "/bin/bash", "-c",
             "for pid in $(ps -C java -o pid h); do cat /proc/$pid/cmdline; done"
@@ -149,7 +149,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void assertExpectedJavaOpts(String namespaceName, String podName, String containerName, String expectedXmx, String expectedXms, String expectedXx) {
-        List<List<String>> cmdLines = commandLines(namespaceName, podName, containerName, "java");
+        List<List<String>> cmdLines = commandLines(namespaceName, podName, containerName);
         assertThat("Expected exactly 1 java process to be running", cmdLines.size(), is(1));
         List<String> cmd = cmdLines.get(0);
         int toIndex = cmd.indexOf("-jar");
@@ -287,10 +287,10 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void verifyLabelsForKafkaCluster(String clusterOperatorNamespaceName, String componentsNamespaceName, String clusterName, String appName) {
-        verifyLabelsOnPods(componentsNamespaceName, clusterName, "zookeeper", appName, Kafka.RESOURCE_KIND);
-        verifyLabelsOnPods(componentsNamespaceName, clusterName, "kafka", appName, Kafka.RESOURCE_KIND);
+        verifyLabelsOnPods(componentsNamespaceName, clusterName, "zookeeper", Kafka.RESOURCE_KIND);
+        verifyLabelsOnPods(componentsNamespaceName, clusterName, "kafka", Kafka.RESOURCE_KIND);
         verifyLabelsOnCOPod(clusterOperatorNamespaceName);
-        verifyLabelsOnPods(componentsNamespaceName, clusterName, "entity-operator", appName, Kafka.RESOURCE_KIND);
+        verifyLabelsOnPods(componentsNamespaceName, clusterName, "entity-operator", Kafka.RESOURCE_KIND);
         verifyLabelsForCRDs(componentsNamespaceName);
         verifyLabelsForKafkaAndZKServices(componentsNamespaceName, clusterName, appName);
         verifyLabelsForSecrets(componentsNamespaceName, clusterName, appName);
@@ -307,11 +307,7 @@ public abstract class AbstractST implements TestSeparator {
         assertThat(coLabels.get(Labels.STRIMZI_KIND_LABEL), is("cluster-operator"));
     }
 
-    protected void verifyLabelsOnPods(String clusterName, String podType, String appName, String kind) {
-        verifyLabelsOnPods(kubeClient().getNamespace(), clusterName, podType, appName, kind);
-    }
-
-    protected void verifyLabelsOnPods(String namespaceName, String clusterName, String podType, String appName, String kind) {
+    protected void verifyLabelsOnPods(String namespaceName, String clusterName, String podType, String kind) {
         LOGGER.info("Verifying labels on pod type {}", podType);
         kubeClient(namespaceName).listPods().stream()
             .filter(pod -> pod.getMetadata().getName().startsWith(clusterName.concat("-" + podType)))
@@ -480,7 +476,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void assertNoCoErrorsLogged(String namespaceName, long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
-        String clusterOperatorLog = cmdKubeClient().searchInLog("deploy", ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable");
+        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog("deploy", ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 

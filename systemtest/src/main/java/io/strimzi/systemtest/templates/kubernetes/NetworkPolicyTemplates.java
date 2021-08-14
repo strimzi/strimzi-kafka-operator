@@ -17,15 +17,6 @@ public class NetworkPolicyTemplates {
 
     private static final Logger LOGGER = LogManager.getLogger(NetworkPolicyTemplates.class);
 
-    public static NetworkPolicyBuilder networkPolicyBuilder(String name, String namespace) {
-        return networkPolicyBuilder(namespace, name, null)
-            .withNewSpec()
-                .withNewPodSelector()
-                .endPodSelector()
-                .withPolicyTypes("Ingress")
-            .endSpec();
-    }
-
     public static NetworkPolicyBuilder networkPolicyBuilder(String namespace, String name, LabelSelector labelSelector) {
         return new NetworkPolicyBuilder()
             .withApiVersion("networking.k8s.io/v1")
