@@ -1239,7 +1239,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     return withVoid(Future.succeededFuture(ReconcileResult.noop(secret)));
                 });
             }
-            return withVoid(secretOperations.reconcile(reconciliation, namespace, KafkaCluster.jmxSecretName(name), null));
+            return withVoid(secretOperations.reconcile(reconciliation, namespace, ZookeeperCluster.jmxSecretName(name), null));
         }
 
         Future<ReconciliationState> zkNetPolicy() {
