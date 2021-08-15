@@ -10,12 +10,14 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
@@ -542,5 +544,23 @@ public class ModelUtils {
             model.setMetricsEnabled(true);
             model.setMetricsConfigInCm(resourceWithMetrics.getMetricsConfig());
         }
+    }
+
+    /**
+     * Creates the OwnerReference based on the resource passed as parameter
+     *
+     * @param owner     The resource which should be the owner
+     *
+     * @return          The new OwnerReference
+     */
+    public static OwnerReference createOwnerReference(HasMetadata owner)   {
+        return new OwnerReferenceBuilder()
+                .withApiVersion(owner.getApiVersion())
+                .withKind(owner.getKind())
+                .withName(owner.getMetadata().getName())
+                .withUid(owner.getMetadata().getUid())
+                .withBlockOwnerDeletion(false)
+                .withController(false)
+                .build();
     }
 }

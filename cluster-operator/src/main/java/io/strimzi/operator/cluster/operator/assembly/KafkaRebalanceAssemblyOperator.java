@@ -3,6 +3,7 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 package io.strimzi.operator.cluster.operator.assembly;
+
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -27,6 +28,7 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -634,11 +636,11 @@ public class KafkaRebalanceAssemblyOperator
                 brokerLoadBeforeOptimization, brokerLoadAfterOptimization);
 
         ConfigMap rebalanceMap = new ConfigMapBuilder()
-                .withApiVersion("v1")
                 .withNewMetadata()
-                .withNamespace(kafkaRebalance.getMetadata().getNamespace())
-                .withName(kafkaRebalance.getMetadata().getName())
-                .withLabels(Collections.singletonMap("app", "strimzi"))
+                    .withNamespace(kafkaRebalance.getMetadata().getNamespace())
+                    .withName(kafkaRebalance.getMetadata().getName())
+                    .withLabels(Collections.singletonMap("app", "strimzi"))
+                    .withOwnerReferences(ModelUtils.createOwnerReference(kafkaRebalance))
                 .endMetadata()
                 .withData(Collections.singletonMap(BROKER_LOAD_KEY, beforeAndAfterBrokerLoad.encode()))
                 .build();
