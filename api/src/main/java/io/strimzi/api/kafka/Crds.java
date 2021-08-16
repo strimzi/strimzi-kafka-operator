@@ -193,7 +193,7 @@ public class Crds {
     }
 
     public static MixedOperation<Kafka, KafkaList, Resource<Kafka>> kafkaOperation(KubernetesClient client) {
-        return client.customResources(Kafka.class, KafkaList.class);
+        return client.resources(Kafka.class, KafkaList.class);
     }
 
     public static CustomResourceDefinition kafkaConnect() {
@@ -201,7 +201,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaConnect, KafkaConnectList, Resource<KafkaConnect>> kafkaConnectOperation(KubernetesClient client) {
-        return client.customResources(KafkaConnect.class, KafkaConnectList.class);
+        return client.resources(KafkaConnect.class, KafkaConnectList.class);
     }
 
     public static CustomResourceDefinition kafkaConnector() {
@@ -209,7 +209,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaConnector, KafkaConnectorList, Resource<KafkaConnector>> kafkaConnectorOperation(KubernetesClient client) {
-        return client.customResources(KafkaConnector.class, KafkaConnectorList.class);
+        return client.resources(KafkaConnector.class, KafkaConnectorList.class);
     }
 
     public static CustomResourceDefinition kafkaTopic() {
@@ -217,7 +217,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> topicOperation(KubernetesClient client) {
-        return client.customResources(KafkaTopic.class, KafkaTopicList.class);
+        return client.resources(KafkaTopic.class, KafkaTopicList.class);
     }
 
     public static CustomResourceDefinition kafkaUser() {
@@ -225,7 +225,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaUser, KafkaUserList, Resource<KafkaUser>> kafkaUserOperation(KubernetesClient client) {
-        return client.customResources(KafkaUser.class, KafkaUserList.class);
+        return client.resources(KafkaUser.class, KafkaUserList.class);
     }
 
     public static CustomResourceDefinition kafkaMirrorMaker() {
@@ -233,7 +233,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>> mirrorMakerOperation(KubernetesClient client) {
-        return client.customResources(KafkaMirrorMaker.class, KafkaMirrorMakerList.class);
+        return client.resources(KafkaMirrorMaker.class, KafkaMirrorMakerList.class);
     }
 
     public static CustomResourceDefinition kafkaBridge() {
@@ -241,7 +241,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaBridge, KafkaBridgeList, Resource<KafkaBridge>> kafkaBridgeOperation(KubernetesClient client) {
-        return client.customResources(KafkaBridge.class, KafkaBridgeList.class);
+        return client.resources(KafkaBridge.class, KafkaBridgeList.class);
     }
 
     public static CustomResourceDefinition kafkaMirrorMaker2() {
@@ -249,7 +249,7 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>> kafkaMirrorMaker2Operation(KubernetesClient client) {
-        return client.customResources(KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class);
+        return client.resources(KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class);
     }
 
     public static CustomResourceDefinition kafkaRebalance() {
@@ -257,14 +257,14 @@ public class Crds {
     }
 
     public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceOperation(KubernetesClient client) {
-        return client.customResources(KafkaRebalance.class, KafkaRebalanceList.class);
+        return client.resources(KafkaRebalance.class, KafkaRebalanceList.class);
     }
 
     public static <T extends CustomResource, L extends CustomResourceList<T>> MixedOperation<T, L, Resource<T>>
             operation(KubernetesClient client,
                       Class<T> cls,
                       Class<L> listCls) {
-        return client.customResources(cls, listCls);
+        return client.resources(cls, listCls);
     }
 
     public static <T extends CustomResource> String kind(Class<T> cls) {

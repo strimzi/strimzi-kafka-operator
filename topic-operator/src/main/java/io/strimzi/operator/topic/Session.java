@@ -350,7 +350,7 @@ public class Session extends AbstractVerticle {
         try {
             LOGGER.debug("Watching KafkaTopics matching {}", config.get(Config.LABELS).labels());
 
-            Session.this.topicWatch = kubeClient.customResources(KafkaTopic.class, KafkaTopicList.class)
+            Session.this.topicWatch = kubeClient.resources(KafkaTopic.class, KafkaTopicList.class)
                     .inNamespace(config.get(Config.NAMESPACE)).withLabels(config.get(Config.LABELS).labels()).watch(watcher);
             LOGGER.debug("Watching setup");
             promise.complete();
