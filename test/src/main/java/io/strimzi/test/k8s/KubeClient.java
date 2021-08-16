@@ -857,7 +857,7 @@ public class KubeClient {
     }
 
     public <T extends CustomResource, L extends CustomResourceList<T>> MixedOperation<T, L, Resource<T>> customResources(CustomResourceDefinitionContext crdContext, Class<T> resourceType, Class<L> listClass) {
-        return client.customResources(resourceType, listClass); //TODO namespace here
+        return client.resources(resourceType, listClass); //TODO namespace here
     }
 
     // =========================

@@ -48,7 +48,7 @@ public class CrdOperator<C extends KubernetesClient,
 
     @Override
     protected MixedOperation<T, L, Resource<T>> operation() {
-        return client.customResources(cls, listCls);
+        return client.resources(cls, listCls);
     }
 
     /**

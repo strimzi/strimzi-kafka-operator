@@ -109,7 +109,7 @@ public class K8sImpl implements K8s {
     }
 
     private MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> operation() {
-        return client.customResources(KafkaTopic.class, KafkaTopicList.class);
+        return client.resources(KafkaTopic.class, KafkaTopicList.class);
     }
 
     @Override
