@@ -346,18 +346,27 @@ public class KafkaAssemblyOperatorTest {
     public void testCreateClusterWithJmxEnabled(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafka = getKafkaAssembly("foo");
-        kafka.getSpec().getKafka().setJmxOptions(new KafkaJmxOptionsBuilder()
-            .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder().build())
-            .build());
-        createCluster(context, kafka,
-                Collections.singletonList(new SecretBuilder()
-                        .withNewMetadata()
-                            .withName(KafkaCluster.jmxSecretName("foo"))
-                            .withNamespace("test")
-                        .endMetadata()
-                        .withData(Collections.singletonMap("foo", "bar"))
-                        .build()
-                )); //getInitialCertificates(getKafkaAssembly("foo").getMetadata().getName()));
+        KafkaJmxOptions jmxOptions = new KafkaJmxOptionsBuilder()
+                .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder().build())
+                .build();
+        kafka.getSpec().getKafka().setJmxOptions(jmxOptions);
+        kafka.getSpec().getZookeeper().setJmxOptions(jmxOptions);
+        Secret kafkaJmxSecret = new SecretBuilder()
+                .withNewMetadata()
+                .withName(KafkaCluster.jmxSecretName("foo"))
+                .withNamespace("test")
+                .endMetadata()
+                .withData(singletonMap("foo", "bar"))
+                .build();
+        Secret zookeeperJmxSecret = new SecretBuilder()
+                .withNewMetadata()
+                .withName(ZookeeperCluster.jmxSecretName("foo"))
+                .withNamespace("test")
+                .endMetadata()
+                .withData(singletonMap("foo", "bar"))
+                .build();
+        createCluster(context, kafka, List.of(kafkaJmxSecret, zookeeperJmxSecret));
+        //getInitialCertificates(getKafkaAssembly("foo").getMetadata().getName()));
     }
 
     @ParameterizedTest
@@ -856,6 +865,7 @@ public class KafkaAssemblyOperatorTest {
                  new KafkaJmxAuthenticationPasswordBuilder().build())
                 .build();
         kafkaAssembly.getSpec().getKafka().setJmxOptions(kafkaJmxOptions);
+        kafkaAssembly.getSpec().getZookeeper().setJmxOptions(kafkaJmxOptions);
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
@@ -1104,6 +1114,9 @@ public class KafkaAssemblyOperatorTest {
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaCluster.jmxSecretName(clusterName))).thenReturn(
                 Future.succeededFuture(originalKafkaCluster.generateJmxSecret())
+        );
+        when(mockSecretOps.getAsync(clusterNamespace, ZookeeperCluster.jmxSecretName(clusterName))).thenReturn(
+                Future.succeededFuture(originalZookeeperCluster.generateJmxSecret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, ZookeeperCluster.nodesSecretName(clusterName))).thenReturn(
                 Future.succeededFuture()

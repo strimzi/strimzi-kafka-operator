@@ -3,6 +3,7 @@
 ## 0.26.0
 
 * Update the Open Policy Agent Authorizer to version [1.1.0](https://github.com/Bisnode/opa-kafka-plugin/releases/tag/v1.1.0)
+* Expose JMX port on Zookeeper nodes via a headless service.
 
 ### Changes, deprecations and removals
 

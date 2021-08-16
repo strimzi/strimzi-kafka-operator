@@ -1749,6 +1749,21 @@ spec:
                                 description: The system property value.
                           description: A map of additional system properties which will be passed using the `-D` option to the JVM.
                       description: JVM Options for pods.
+                    jmxOptions:
+                      type: object
+                      properties:
+                        authentication:
+                          type: object
+                          properties:
+                            type:
+                              type: string
+                              enum:
+                                - password
+                              description: Authentication type. Currently the only supported types are `password`.`password` type creates a username and protected port with no TLS.
+                          required:
+                            - type
+                          description: Authentication configuration for connecting to the JMX port.
+                      description: JMX Options for Zookeeper nodes.
                     resources:
                       type: object
                       properties:

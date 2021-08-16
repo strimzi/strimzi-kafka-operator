@@ -54,6 +54,8 @@ if [ "$ZOOKEEPER_METRICS_ENABLED" = "true" ]; then
   export KAFKA_OPTS
 fi
 
+. ./set_kafka_jmx_options.sh "${ZOOKEEPER_JMX_ENABLED}" "${ZOOKEEPER_JMX_USERNAME}" "${ZOOKEEPER_JMX_PASSWORD}"
+
 if [ -z "$KAFKA_HEAP_OPTS" ] && [ -n "${DYNAMIC_HEAP_FRACTION}" ]; then
     . ./dynamic_resources.sh
     # Calculate a max heap size based some DYNAMIC_HEAP_FRACTION of the heap

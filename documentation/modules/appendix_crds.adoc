@@ -675,7 +675,7 @@ Used in: xref:type-JvmOptions-{context}[`JvmOptions`]
 [id='type-KafkaJmxOptions-{context}']
 ### `KafkaJmxOptions` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 xref:type-KafkaJmxOptions-schema-{context}[Full list of `KafkaJmxOptions` schema properties]
 
@@ -1028,6 +1028,8 @@ include::../api/io.strimzi.api.kafka.model.ZookeeperClusterSpec.adoc[leveloffset
 |xref:type-Probe-{context}[`Probe`]
 |jvmOptions      1.2+<.<a|JVM Options for pods.
 |xref:type-JvmOptions-{context}[`JvmOptions`]
+|jmxOptions      1.2+<.<a|JMX Options for Zookeeper nodes.
+|xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 |resources       1.2+<.<a|CPU and memory resources to reserve. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
 
 
