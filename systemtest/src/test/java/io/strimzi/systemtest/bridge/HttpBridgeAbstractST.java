@@ -19,7 +19,4 @@ public class HttpBridgeAbstractST extends AbstractST {
 
     public static int bridgePort = Constants.HTTP_BRIDGE_DEFAULT_PORT;
     protected static final String CLUSTER_NAME = "http-bridge-cluster-name";
-    public static String bridgeUrl = "";
-
-    protected WebClient client;
 }

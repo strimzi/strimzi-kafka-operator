@@ -19,6 +19,7 @@ import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.logs.CollectorElement;
@@ -116,7 +117,7 @@ public class SetupClusterOperator {
                     olmResource = new OlmResource(cluster.getDefaultOlmNamespace());
                     olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
                 }
-            // single-namespace olm co-operator
+                // single-namespace olm co-operator
             } else {
                 if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
                     cluster.setNamespace(namespaceInstallTo);
@@ -151,6 +152,7 @@ public class SetupClusterOperator {
         String testClassName = extensionContext.getRequiredTestClass().getName();
         String testMethodName = testClassName.contains(extensionContext.getDisplayName()) ? "" : extensionContext.getDisplayName();
 
+        // check if namespace is already created
         if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);

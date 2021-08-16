@@ -24,7 +24,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target(ElementType.METHOD)
 @Retention(RUNTIME)
 @Execution(ExecutionMode.CONCURRENT)
-@ResourceLock(mode = ResourceAccessMode.READ, value = "global")
+@ResourceLock(mode = ResourceAccessMode.READ, value = "parallel-test")
 @Test
 public @interface ParallelTest {
 }

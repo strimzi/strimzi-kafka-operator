@@ -18,6 +18,7 @@ import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
+import kafka.log.Log;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,11 +59,13 @@ public class BundleResource implements ResourceType<Deployment> {
     @Override
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public boolean waitForReadiness(Deployment resource) {
+        System.out.println(resource.getMetadata().getName());
+        System.out.println(resource.getMetadata().getNamespace());
         return resource != null
             && resource.getMetadata() != null
             && resource.getMetadata().getName() != null
             && resource.getStatus() != null
-            && DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getName(), resource.getSpec().getReplicas());
+            && DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), resource.getSpec().getReplicas());
     }
 
     // this is for resourceTypes inside ResourceManager

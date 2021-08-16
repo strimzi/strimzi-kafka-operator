@@ -61,6 +61,7 @@ import static org.hamcrest.Matchers.containsString;
 @Tag(BRIDGE)
 @Tag(INTERNAL_CLIENTS_USED)
 @Isolated("Different deployment of the Cluster Operator")
+// TODO: how to make sure that ISOLATED class will not block methods...?
 class HttpBridgeST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);
     private static final String NAMESPACE = "bridge-namespace";
@@ -74,6 +75,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     @ParallelTest
     void testSendSimpleMessage(ExtensionContext extensionContext) {
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
 
         final KafkaBridgeExampleClients kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName)
@@ -116,6 +118,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     @ParallelTest
     void testReceiveSimpleMessage(ExtensionContext extensionContext) {
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, topicName)
             .editMetadata()
@@ -406,6 +409,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     void createClassResources(ExtensionContext extensionContext) {
         cluster.createNamespace(extensionContext, NAMESPACE);
 
+        // install new one with branch new configuration
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(Constants.INFRA_NAMESPACE)

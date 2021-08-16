@@ -55,8 +55,9 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
     private KafkaBridgeExampleClients kafkaBridgeClientJob;
     private String kafkaClientsPodName;
+    private String bridgeUrl;
 
-    @IsolatedTest
+    @ParallelTest
     void testCorsOriginAllowed() {
         final String kafkaBridgeUser = "bridge-user-example";
         final String groupId = ClientUtils.generateRandomConsumerGroup();
@@ -77,7 +78,10 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
         String responseAllowHeaders = BridgeUtils.getHeaderValue("access-control-allow-headers", response);
         LOGGER.info("Checking if response from Bridge is correct");
-        assertThat(response, containsString("200 OK"));
+
+        final boolean isResponseOk = response.contains("200 OK") || response.contains("204 No Content");
+
+        assertThat(isResponseOk, is(true));
         assertThat(BridgeUtils.getHeaderValue("access-control-allow-origin", response), is(ALLOWED_ORIGIN));
         assertThat(responseAllowHeaders, containsString("access-control-allow-origin"));
         assertThat(responseAllowHeaders, containsString("origin"));
