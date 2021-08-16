@@ -26,6 +26,8 @@
         <dependency>
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
+            <version>${spotbugs.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.github.docker-java</groupId>

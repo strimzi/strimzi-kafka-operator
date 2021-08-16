@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiTest {
-    private static EmbeddedKafkaCluster kafkaCluster;
+    private static EmbeddedKafkaCluster cluster;
     private static Vertx vertx;
     private Connect connect;
     private static final int PORT = 18083;
@@ -68,12 +68,8 @@ public class KafkaConnectApiTest {
         workerProps.put("value.converter", "org.apache.kafka.connect.json.JsonConverter");
         workerProps.put("value.converter.schemas.enable", "false");
         workerProps.put("offset.storage.topic", getClass().getSimpleName() + "-offsets");
-        workerProps.put("offset.storage.replication.factor", "3");
         workerProps.put("config.storage.topic", getClass().getSimpleName() + "-config");
-        workerProps.put("config.storage.replication.factor", "3");
         workerProps.put("status.storage.topic", getClass().getSimpleName() + "-status");
-        workerProps.put("status.storage.replication.factor", "3");
-        workerProps.put("bootstrap.servers", kafkaCluster.bootstrapServers());
         //DistributedConfig config = new DistributedConfig(workerProps);
         //RestServer rest = new RestServer(config);
         //rest.initializeServer();
@@ -101,8 +97,8 @@ public class KafkaConnectApiTest {
     public static void before() throws IOException {
         vertx = Vertx.vertx();
 
-        kafkaCluster = new EmbeddedKafkaCluster(3);
-        kafkaCluster.start();
+        cluster = new EmbeddedKafkaCluster(3);
+        cluster.start();
     }
 
     @AfterAll

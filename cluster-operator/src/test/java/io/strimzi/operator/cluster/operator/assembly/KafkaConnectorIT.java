@@ -42,7 +42,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -56,7 +55,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectorIT {
-    private static EmbeddedKafkaCluster kafkaCluster;
+    private static EmbeddedKafkaCluster cluster;
     private static Vertx vertx;
     private ConnectCluster connectCluster;
 
@@ -68,8 +67,8 @@ public class KafkaConnectorIT {
                         .setEnabled(true)
         ));
 
-        kafkaCluster = new EmbeddedKafkaCluster(3);
-        kafkaCluster.start();
+        cluster = new EmbeddedKafkaCluster(3);
+        cluster.start();
     }
 
     @AfterAll
@@ -78,12 +77,12 @@ public class KafkaConnectorIT {
     }
 
     @BeforeEach
-    public void beforeEach() throws IOException, InterruptedException, ExecutionException {
+    public void beforeEach() throws IOException, InterruptedException {
         String connectClusterName = getClass().getSimpleName();
 
         // Start a 3 node connect cluster
         connectCluster = new ConnectCluster()
-            .usingBrokers(kafkaCluster.bootstrapServers())
+            .usingBrokers(cluster.bootstrapServers())
             .addConnectNodes(3);
         connectCluster.startup();
     }
