@@ -49,7 +49,7 @@ Kafka provides two built-in connectors:
 --
 
 You can add other connectors using connector plugins, which are a set of JAR files, TGZ or ZIP archives that define the implementation required to connect to certain types of external system.
-You can also specify a Maven coordinates to fetch plugin from the Maven repository.
+You can also specify Maven coordinates to fetch plugins from a Maven repository.
 
 You create a custom Kafka Connect image that uses new connector plugins.
 

@@ -198,19 +198,19 @@ public class KafkaConnectDockerfile {
 
     private void validateUrlPresence(DownloadableArtifact art) {
         if (art.getUrl() == null) {
-            throw new InvalidConfigurationException(art.getType() + " artifact is missing a URL.");
+            throw new InvalidConfigurationException("`" + art.getType() + "` artifact is missing a URL.");
         }
     }
 
     private void validateGavPresence(MavenArtifact art) {
         if (art.getGroup() == null) {
-            throw new InvalidConfigurationException(art.getType() + " artifact is missing a group ID.");
+            throw new InvalidConfigurationException("`" + art.getType() + "` artifact is missing a group ID.");
         }
         if (art.getArtifact() == null) {
-            throw new InvalidConfigurationException(art.getType() + " artifact is missing an artifact ID.");
+            throw new InvalidConfigurationException("`" + art.getType() + "` artifact is missing an artifact ID.");
         }
         if (art.getVersion() == null) {
-            throw new InvalidConfigurationException(art.getType() + " artifact is missing a version number.");
+            throw new InvalidConfigurationException("`" + art.getType() + "` artifact is missing a version number.");
         }
     }
 
