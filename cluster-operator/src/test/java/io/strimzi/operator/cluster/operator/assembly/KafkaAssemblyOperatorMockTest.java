@@ -19,7 +19,6 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetSpec;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
@@ -508,8 +507,7 @@ public class KafkaAssemblyOperatorMockTest {
     }
 
     private Resource<Kafka> kafkaAssembly(String namespace, String name) {
-        CustomResourceDefinition crd = client.apiextensions().v1().customResourceDefinitions().withName(Kafka.CRD_NAME).get();
-        return client.customResources(CustomResourceDefinitionContext.fromCrd(crd), Kafka.class, KafkaList.class)
+        return client.resources(Kafka.class, KafkaList.class)
                 .inNamespace(namespace).withName(name);
     }
 

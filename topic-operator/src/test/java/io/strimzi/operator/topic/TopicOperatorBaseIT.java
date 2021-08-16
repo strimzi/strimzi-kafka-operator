@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -542,7 +541,7 @@ public abstract class TopicOperatorBaseIT {
     }
 
     protected MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> operation() {
-        return kubeClient.customResources(CustomResourceDefinitionContext.fromCrd(Crds.kafkaTopic()), KafkaTopic.class, KafkaTopicList.class);
+        return kubeClient.resources(KafkaTopic.class, KafkaTopicList.class);
     }
 
     protected void waitForTopicInKafka(String topicName) throws InterruptedException, ExecutionException, TimeoutException {

@@ -139,7 +139,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
                     assertThat(mockClient.policy().v1beta1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
                 } else {
                     assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaMirrorMaker2Resources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
-                    verify(mockClient, never()).customResources(KafkaMirrorMaker2.class);
+                    verify(mockClient, never()).resources(KafkaMirrorMaker2.class);
                 }
 
                 created.complete();

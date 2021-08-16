@@ -131,7 +131,7 @@ public class ClusterOperatorTest {
             throw new RuntimeException(e);
         }
         MixedOperation mockCms = mock(MixedOperation.class);
-        when(client.customResources(any(), any())).thenReturn(mockCms);
+        when(client.resources(any(), any())).thenReturn(mockCms);
 
         List<String> namespaceList = asList(namespaces.split(" *,+ *"));
         for (String namespace: namespaceList) {
@@ -204,7 +204,7 @@ public class ClusterOperatorTest {
         }
 
         MixedOperation mockCms = mock(MixedOperation.class);
-        when(client.customResources(any(), any())).thenReturn(mockCms);
+        when(client.resources(any(), any())).thenReturn(mockCms);
 
         FilterWatchListMultiDeletable mockFilteredCms = mock(FilterWatchListMultiDeletable.class);
         when(mockFilteredCms.withLabels(any())).thenReturn(mockFilteredCms);
