@@ -38,7 +38,7 @@ public class MavenArtifact extends Artifact {
         return TYPE_MVN;
     }
 
-    @Description("Group of the artifact. Applicable for 'maven' type of artifact only.")
+    @Description("Maven group id. Applicable to the `maven` artifact type only.")
     public String getGroup() {
         return group;
     }
@@ -47,7 +47,7 @@ public class MavenArtifact extends Artifact {
         this.group = group;
     }
 
-    @Description("Name of the artifact. Applicable for 'maven' type of artifact only.")
+    @Description("Maven artifact id. Applicable to the `maven` artifact type only.")
     public String getArtifact() {
         return artifact;
     }
@@ -56,7 +56,7 @@ public class MavenArtifact extends Artifact {
         this.artifact = artifact;
     }
 
-    @Description("Version of the artifact. Applicable for 'maven' type of artifact only.")
+    @Description("Maven version number. Applicable to the `maven` artifact type only.")
     public String getVersion() {
         return version;
     }
@@ -65,7 +65,7 @@ public class MavenArtifact extends Artifact {
         this.version = version;
     }
 
-    @Description("The repository to download the artifact from. Applicable for 'maven' type of artifact only.")
+    @Description("Maven repository to download the artifact from. Applicable to the `maven` artifact type only.")
     @DefaultValue("https://repo1.maven.org/maven2/")
     public String getRepository() {
         return repository;

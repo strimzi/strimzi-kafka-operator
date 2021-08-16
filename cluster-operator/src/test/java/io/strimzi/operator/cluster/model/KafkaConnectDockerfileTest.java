@@ -404,7 +404,6 @@ public class KafkaConnectDockerfileTest {
 
     @ParallelTest
     public void testNoUrlWhenRequired() {
-
         Artifact tgzArtifact = new TgzArtifactBuilder()
                 .build();
         Artifact jarArtifact = new JarArtifactBuilder()
@@ -420,9 +419,7 @@ public class KafkaConnectDockerfileTest {
                 .build();
 
         Throwable e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildTgz));
-
-        assertThat(e.getMessage(), is("tgz artifact is missing an URL."));
-
+        assertThat(e.getMessage(), is("tgz artifact is missing a URL."));
 
         Build connectBuildZip = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -432,9 +429,7 @@ public class KafkaConnectDockerfileTest {
                 .build();
 
         e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildZip));
-
-        assertThat(e.getMessage(), is("zip artifact is missing an URL."));
-
+        assertThat(e.getMessage(), is("zip artifact is missing a URL."));
 
         Build connectBuildJar = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -444,8 +439,7 @@ public class KafkaConnectDockerfileTest {
                 .build();
 
         e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildJar));
-
-        assertThat(e.getMessage(), is("jar artifact is missing an URL."));
+        assertThat(e.getMessage(), is("jar artifact is missing a URL."));
     }
 
     @ParallelTest
