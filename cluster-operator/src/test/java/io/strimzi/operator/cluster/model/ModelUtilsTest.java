@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
+import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -546,5 +547,24 @@ public class ModelUtilsTest {
         Labels nsLabels = Labels.fromMap(singletonMap("labelKey", "labelValue"));
         ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(peer, "my-ns", "my-operator-ns", nsLabels);
         assertThat(peer.getNamespaceSelector().getMatchLabels(), is(nsLabels.toMap()));
+    }
+
+    @ParallelTest
+    public void testCreateOwnerReference()   {
+        Kafka owner = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-kafka")
+                    .withUid("some-uid")
+                .endMetadata()
+                .build();
+
+        OwnerReference ref = ModelUtils.createOwnerReference(owner);
+
+        assertThat(ref.getApiVersion(), is(owner.getApiVersion()));
+        assertThat(ref.getKind(), is(owner.getKind()));
+        assertThat(ref.getName(), is(owner.getMetadata().getName()));
+        assertThat(ref.getUid(), is(owner.getMetadata().getUid()));
+        assertThat(ref.getBlockOwnerDeletion(), is(false));
+        assertThat(ref.getController(), is(false));
     }
 }
