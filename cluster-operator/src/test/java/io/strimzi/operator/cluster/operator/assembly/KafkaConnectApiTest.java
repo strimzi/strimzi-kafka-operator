@@ -70,6 +70,7 @@ public class KafkaConnectApiTest {
         workerProps.put("offset.storage.topic", getClass().getSimpleName() + "-offsets");
         workerProps.put("config.storage.topic", getClass().getSimpleName() + "-config");
         workerProps.put("status.storage.topic", getClass().getSimpleName() + "-status");
+        workerProps.put("bootstrap.servers", cluster.bootstrapServers());
         //DistributedConfig config = new DistributedConfig(workerProps);
         //RestServer rest = new RestServer(config);
         //rest.initializeServer();

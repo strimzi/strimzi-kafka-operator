@@ -82,8 +82,8 @@ public class KafkaConnectorIT {
 
         // Start a 3 node connect cluster
         connectCluster = new ConnectCluster()
-            .usingBrokers(cluster.bootstrapServers())
-            .addConnectNodes(3);
+                .usingBrokers(cluster.bootstrapServers())
+                .addConnectNodes(3);
         connectCluster.startup();
     }
 
