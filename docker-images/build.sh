@@ -9,7 +9,7 @@ base_images="base"
 java_images="operator jmxtrans"
 kafka_image="kafka"
 kafka_images="kafka test-client"
-other_images="kaniko-executor maven-image"
+other_images="kaniko-executor maven-builder"
 
 function dependency_check { 
 

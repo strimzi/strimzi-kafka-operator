@@ -132,7 +132,7 @@ this quick start guide.
     - `docker_registry_name/docker_hub_username/jmxtrans`
     - `docker_registry_name/docker_hub_username/kafka`
     - `docker_registry_name/docker_hub_username/kaniko-executor`
-    - `docker_registry_name/docker_hub_username/maven-image`
+    - `docker_registry_name/docker_hub_username/maven-builder`
     - `docker_registry_name/docker_hub_username/operator`
     - `docker_registry_name/docker_hub_username/test-client`
 

@@ -1,4 +1,4 @@
-PROJECT_NAME := maven-image
+PROJECT_NAME := maven-builder
 MAVEN_IMAGE = registry.access.redhat.com/ubi8/openjdk-11:1.3-18
 
 docker_build:

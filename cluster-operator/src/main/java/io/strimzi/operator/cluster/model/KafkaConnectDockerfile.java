@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * This class is used to generate the Dockerfile used by Kafka Connect Build. It takes the API definition with the
@@ -78,14 +79,17 @@ public class KafkaConnectDockerfile {
      * @param plugins       List of plugins which should be added to the container image
      */
     private void connectorPluginsPreStage(PrintWriter writer, List<Plugin> plugins) {
-        plugins.forEach(plugin -> plugin.getArtifacts().stream().filter(artifact -> artifact instanceof MavenArtifact)
-            .forEach(mvn -> {
+        List<Artifact> mvnPlugins = plugins.stream().flatMap(plugin -> plugin.getArtifacts().stream().filter(artifact -> artifact instanceof MavenArtifact)).collect(Collectors.toList());
+        if (mvnPlugins.size() > 0) {
+            writer.println("FROM " + mavenImage + " AS downloadArtifacts");
+            mvnPlugins.forEach(mvn -> {
                 checkForShellMetachars(((MavenArtifact) mvn).getGroup());
                 checkForShellMetachars(((MavenArtifact) mvn).getArtifact());
                 checkForShellMetachars(((MavenArtifact) mvn).getVersion());
                 String repo = ((MavenArtifact) mvn).getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybePatchRepository(((MavenArtifact) mvn).getRepository());
                 String artifactHash = Util.sha1Prefix(((MavenArtifact) mvn).getGroup() + ((MavenArtifact) mvn).getArtifact() + ((MavenArtifact) mvn).getVersion());
-                String downloadPomCmd = String.format("curl -L --output pom.xml %s%s/%s/%s/%s-%s.pom",
+                String downloadPomCmd = String.format("curl -L --create-dirs --output /tmp/%s/pom.xml %s%s/%s/%s/%s-%s.pom",
+                        artifactHash,
                         repo,
                         ((MavenArtifact) mvn).getGroup().replace(".", "/"), //org.apache.camel is translated as org/apache/camel in the URL
                         ((MavenArtifact) mvn).getArtifact().replace(".", "/"),
@@ -93,12 +97,11 @@ public class KafkaConnectDockerfile {
                         ((MavenArtifact) mvn).getArtifact(),
                         ((MavenArtifact) mvn).getVersion());
 
-                writer.println("FROM " + mavenImage + " AS download" + artifactHash);
                 writer.println("RUN " + downloadPomCmd + " \\");
-                writer.println("      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/");
+                writer.println("      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/" + artifactHash + " -f /tmp/" + artifactHash + "/pom.xml");
                 writer.println();
-            }
-        ));
+            });
+        }
     }
 
     private void checkForShellMetachars(String toBeChecked) {
@@ -379,7 +382,7 @@ public class KafkaConnectDockerfile {
                 mvn.getVersion());
 
         writer.println("RUN " + downloadJarCmd);
-        writer.println("COPY --from=download" + artifactHash + " /tmp/artifacts/ " + artifactDir);
+        writer.println("COPY --from=downloadArtifacts /tmp/artifacts/" + artifactHash + " " + artifactDir);
         writer.println();
     }
 
