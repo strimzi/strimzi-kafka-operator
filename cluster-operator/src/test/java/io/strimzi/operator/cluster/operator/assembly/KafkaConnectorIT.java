@@ -72,9 +72,6 @@ public class KafkaConnectorIT {
 
         kafkaCluster = new EmbeddedKafkaCluster(3);
         kafkaCluster.start();
-
-        Properties properties = new Properties();
-        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.bootstrapServers());
     }
 
     @AfterAll
