@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

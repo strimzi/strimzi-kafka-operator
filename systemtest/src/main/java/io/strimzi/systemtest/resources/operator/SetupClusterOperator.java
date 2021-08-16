@@ -6,6 +6,7 @@ package io.strimzi.systemtest.resources.operator;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;

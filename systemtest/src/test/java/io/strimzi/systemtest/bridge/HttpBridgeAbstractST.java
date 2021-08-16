@@ -21,8 +21,5 @@ public class HttpBridgeAbstractST extends AbstractST {
     protected static final String CLUSTER_NAME = "http-bridge-cluster-name";
     public static String bridgeUrl = "";
 
-    public static String producerName = "bridge-producer";
-    public static String consumerName = "bridge-consumer";
-
     protected WebClient client;
 }

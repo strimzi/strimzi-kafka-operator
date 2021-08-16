@@ -8,7 +8,7 @@ import io.strimzi.api.kafka.model.KafkaBridgeHttpCors;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -50,10 +50,13 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     private static final String ALLOWED_ORIGIN = "https://strimzi.io";
     private static final String NOT_ALLOWED_ORIGIN = "https://evil.io";
 
+    private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
+    private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
+
     private KafkaBridgeExampleClients kafkaBridgeClientJob;
     private String kafkaClientsPodName;
 
-    @ParallelTest
+    @IsolatedTest
     void testCorsOriginAllowed() {
         final String kafkaBridgeUser = "bridge-user-example";
         final String groupId = ClientUtils.generateRandomConsumerGroup();

@@ -66,22 +66,33 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     private static final String NAMESPACE = "bridge-namespace";
 
     private final String httpBridgeClusterName = "http-bridge-cluster-name";
+    private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
+    private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
-    private KafkaBridgeExampleClients kafkaBridgeClientJob;
     private String kafkaClientsPodName;
 
     @ParallelTest
     void testSendSimpleMessage(ExtensionContext extensionContext) {
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        KafkaBridgeExampleClients kafkaBridgeClientJobProduce = kafkaBridgeClientJob.toBuilder().withTopicName(topicName).build();
+
+        final KafkaBridgeExampleClients kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
+            .withProducerName(producerName)
+            .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeClusterName))
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withPort(bridgePort)
+            .withDelayMs(1000)
+            .withPollInterval(1000)
+            .withNamespaceName(NAMESPACE)
+            .build();
 
         // Create topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, TOPIC_NAME)
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, topicName)
             .editMetadata()
                 .withNamespace(NAMESPACE)
             .endMetadata()
             .build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJobProduce.producerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge().build());
 
         ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
 
@@ -111,11 +122,19 @@ class HttpBridgeST extends HttpBridgeAbstractST {
                 .withNamespace(NAMESPACE)
             .endMetadata()
             .build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.toBuilder()
+
+        final KafkaBridgeExampleClients kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeClusterName))
             .withTopicName(topicName)
-            .build()
-            .consumerStrimziBridge()
-            .build());
+            .withMessageCount(MESSAGE_COUNT)
+            .withPort(bridgePort)
+            .withDelayMs(1000)
+            .withPollInterval(1000)
+            .withNamespaceName(NAMESPACE)
+            .build();
+
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge().build());
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -434,21 +453,6 @@ class HttpBridgeST extends HttpBridgeAbstractST {
                 .endConsumer()
             .endSpec()
             .build());
-
-        producerName = producerName + new Random().nextInt(Integer.MAX_VALUE);
-        consumerName = consumerName + new Random().nextInt(Integer.MAX_VALUE);
-
-        kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
-            .withProducerName(producerName)
-            .withConsumerName(consumerName)
-            .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeClusterName))
-            .withTopicName(TOPIC_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withPort(bridgePort)
-            .withDelayMs(1000)
-            .withPollInterval(1000)
-            .withNamespaceName(NAMESPACE)
-            .build();
     }
 
     @AfterAll

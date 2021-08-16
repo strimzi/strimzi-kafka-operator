@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
@@ -52,6 +51,9 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
     private final String httpBridgeTlsClusterName = "http-bridge-tls-cluster-name";
     private KafkaBridgeExampleClients kafkaBridgeClientJob;
     private String kafkaClientsPodName;
+
+    private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
+    private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
     @ParallelTest
     void testSendSimpleMessageTls(ExtensionContext extensionContext) {
@@ -185,9 +187,6 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
                 .endTls()
             .endSpec()
             .build());
-
-        producerName = producerName + new Random().nextInt(Integer.MAX_VALUE);
-        consumerName = consumerName + new Random().nextInt(Integer.MAX_VALUE);
 
         kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeTlsClusterName))

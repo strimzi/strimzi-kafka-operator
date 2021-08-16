@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -53,10 +52,13 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     private String kafkaClientsPodName;
     private KafkaBridgeExampleClients kafkaBridgeClientJob;
 
+    private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
+    private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
+
     @ParallelTest
     void testSendSimpleMessageTlsScramSha(ExtensionContext extensionContext) {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaBridgeExampleClients kafkaBridgeClientJb = kafkaBridgeClientJob.toBuilder().withTopicName(topicName).build();
+        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        final KafkaBridgeExampleClients kafkaBridgeClientJb = kafkaBridgeClientJob.toBuilder().withTopicName(topicName).build();
 
         // Create topic
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, topicName)
@@ -88,8 +90,8 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
 
     @ParallelTest
     void testReceiveSimpleMessageTlsScramSha(ExtensionContext extensionContext) {
-        String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaBridgeExampleClients kafkaBridgeClientJb = kafkaBridgeClientJob.toBuilder().withTopicName(topicName).build();
+        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        final KafkaBridgeExampleClients kafkaBridgeClientJb = kafkaBridgeClientJob.toBuilder().withTopicName(topicName).build();
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, TOPIC_NAME)
             .editMetadata()
@@ -184,9 +186,6 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
                         .withTrustedCertificates(certSecret)
                     .endTls()
                 .endSpec().build());
-
-        producerName = producerName + new Random().nextInt(Integer.MAX_VALUE);
-        consumerName = consumerName + new Random().nextInt(Integer.MAX_VALUE);
 
         kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName)
