@@ -400,6 +400,17 @@ public class MockKube {
                     }
                     return createOrReplaceable;
                 });
+
+        when(mockClient.resources(any(Class.class), any(Class.class)))
+                .thenAnswer(invocation -> {
+                    Class<CustomResource> crClass = invocation.getArgument(0);
+                    String key = crdKey(crClass);
+                    CreateOrReplaceable createOrReplaceable = crdMixedOps.get(key);
+                    if (createOrReplaceable == null) {
+                        throw new RuntimeException("Unknown CRD " + key);
+                    }
+                    return createOrReplaceable;
+                });
     }
 
     private MixedOperation<StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>>
