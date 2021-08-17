@@ -379,10 +379,8 @@ public class KafkaConnectDockerfile {
      */
     private void addMavenArtifact(PrintWriter writer, String connectorPath, MavenArtifact mvn) {
         validateGavPresence(mvn);
-        String repo = mvn.getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybePatchRepository(mvn.getRepository());
         String artifactHash = Util.sha1Prefix(mvn.getGroup() + mvn.getArtifact() + mvn.getVersion());
         String artifactDir = connectorPath + "/" + artifactHash;
-
 
         writer.println("COPY --from=downloadArtifacts /tmp/artifacts/" + artifactHash + " " + artifactDir);
         writer.println();
