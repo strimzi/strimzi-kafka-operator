@@ -133,6 +133,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
@@ -183,6 +184,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> crdOperator;
     private final ZookeeperScalerProvider zkScalerProvider;
     private final AdminClientProvider adminClientProvider;
+
+    /*
+       What exactly is the lifecycle of this?
+       Put on start of reconciliation (with cancelled=false)? And remove at end of reconciliation?
+       Or is it really about deletion specifically (keyed on uid perhaps), so
+       added on CR creation and removed on deletion, and thus transitions strictly uncancelled -> cancelled?
+     */
+    private final Map<String, Cancellable> cancellations = new ConcurrentHashMap<>();
 
     /**
      * @param vertx The Vertx instance
@@ -461,12 +470,22 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
             }
             Promise<T> p = Promise.promise();
-            executorService.submit(() -> {
-                try {
-                    T result = callable.call();
-                    vertx.runOnContext(i -> p.tryComplete(result));
-                } catch (Exception e) {
-                    vertx.runOnContext(i -> p.tryFail(e));
+            cancellations.compute(namespace + "/" + name, (k, v) -> {
+                if (v != null && v.isCancelled()) {
+                    p.tryFail("cancelled");
+                    return v;
+                } else {
+                    java.util.concurrent.Future<?> future = executorService.submit((Callable<Void>) () -> {
+                        try {
+                            T result = callable.call();
+                            vertx.runOnContext(i -> p.tryComplete(result));
+                            return null;
+                        } catch (Exception e) {
+                            vertx.runOnContext(i -> p.tryFail(e));
+                            throw e;
+                        }
+                    });
+                    return Cancellable.future(future);
                 }
             });
             return p.future();
@@ -3831,5 +3850,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
 
+    public void cancel(String namespace, String name) {
+        cancellations.compute(namespace + "/" + name, (k, v) -> {
+            if (v == null) {
+                return Cancellable.atomic();
+            } else {
+                v.cancel();
+                return v;
+            }
+        });
+    }
 
 }
