@@ -15,7 +15,7 @@
               value: {{ default .Values.defaultImageRegistry .Values.tlsSidecarCruiseControl.image.registry }}/{{ default .Values.defaultImageRepository .Values.tlsSidecarCruiseControl.image.repository }}/{{ .Values.tlsSidecarCruiseControl.image.name }}:{{ default .Values.defaultImageTag .Values.tlsSidecarCruiseControl.image.tagPrefix }}-kafka-2.8.0
             - name: STRIMZI_KAFKA_IMAGES
               value: |                 
-                2.7.0={{ default .Values.defaultImageRegistry .Values.kafka.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafka.image.repository  }}/{{ .Values.kafka.image.name }}:{{ default .Values.defaultImageTag .Values.kafka.image.tagPrefix }}-kafka-2.7.0
+                2.7.0={{ default .Values.defaultImageRegistry .Values.kafka.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafka.image.repository }}/{{ .Values.kafka.image.name }}:{{ default .Values.defaultImageTag .Values.kafka.image.tagPrefix }}-kafka-2.7.0
                 2.7.1={{ default .Values.defaultImageRegistry .Values.kafka.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafka.image.repository }}/{{ .Values.kafka.image.name }}:{{ default .Values.defaultImageTag .Values.kafka.image.tagPrefix }}-kafka-2.7.1
                 2.8.0={{ default .Values.defaultImageRegistry .Values.kafka.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafka.image.repository }}/{{ .Values.kafka.image.name }}:{{ default .Values.defaultImageTag .Values.kafka.image.tagPrefix }}-kafka-2.8.0
             - name: STRIMZI_KAFKA_CONNECT_IMAGES
