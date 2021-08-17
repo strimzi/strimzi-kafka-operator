@@ -563,4 +563,37 @@ public class Util {
             }
         }
     }
+
+    /**
+     * Poll {@code condition} repeatedly every {@code intervalMs} until it returns true, or {@code timeoutMs} has passed.
+     * @param reconciliation The reconciliation (for logging)
+     * @param logContext  Some context (for logging)
+     * @param intervalMs The polling interval
+     * @param timeoutMs The timeout
+     * @param condition Whether the condition has been satisfied
+     * @return true if {@code condition} returned true, false if the {@code timeoutMs} passed before {@code condition} returned true.
+     * @throws InterruptedException If the thread was interrupted
+     */
+    @SuppressWarnings("BusyWait")
+    public static boolean await(Reconciliation reconciliation, String logContext, long intervalMs, long timeoutMs, BooleanSupplier condition) throws InterruptedException {
+        boolean success = false;
+        // Use nanotime because currentTimeMillis is not monotonic
+        long t0 = System.nanoTime();
+        long deadline = t0 + timeoutMs * 1_000_000;
+        LOGGER.debugCr(reconciliation, "Polling for {}", logContext);
+        while (System.nanoTime() < deadline) {
+            if (condition.getAsBoolean()) {
+                success = true;
+                break;
+            }
+            long sleepNs = Math.min(intervalMs * 1_000_000, deadline - System.nanoTime());
+            long sleepMillisPart = sleepNs / 1_000_000;
+            int sleepNanoPart = (int) (sleepNs % 1_000_000);
+            LOGGER.traceCr(reconciliation, "Polling condition {} unsatisfied; sleeping for ~{}ms", logContext, sleepMillisPart);
+            Thread.sleep(sleepMillisPart, sleepNanoPart);
+        }
+        LOGGER.debugCr(reconciliation, "Polling condition {} {} after {}ms",
+                logContext, success ? "satisfied" : "unsatisfied", (System.nanoTime() - t0) / 1_000_000);
+        return success;
+    }
 }

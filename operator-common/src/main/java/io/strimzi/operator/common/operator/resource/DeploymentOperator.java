@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import java.util.concurrent.TimeoutException;
+
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
@@ -12,6 +14,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -103,6 +106,16 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      */
     public Future<Void> waitForObserved(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
+    }
+
+    public void awaitObserved(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs)
+            throws InterruptedException, java.util.concurrent.TimeoutException {
+        String context = String.format("metadata.generation==status.observedGeneration of %s %s", resourceKind, name);
+        if (Util.await(reconciliation, context, pollIntervalMs, timeoutMs,
+            () -> isObserved(namespace, name))) {
+            return;
+        }
+        throw new TimeoutException(context);
     }
 
     /**

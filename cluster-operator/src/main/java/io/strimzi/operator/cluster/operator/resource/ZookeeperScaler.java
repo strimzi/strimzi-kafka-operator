@@ -130,15 +130,8 @@ public class ZookeeperScaler implements AutoCloseable {
                 watchedEvent -> LOGGER.debugCr(reconciliation, "Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zookeeperConnectionString),
                 clientConfig);
 
-            boolean success = false;
-            long deadline = System.currentTimeMillis() + operationTimeoutMs;
-            while (System.currentTimeMillis() < deadline) {
-                if (zkAdmin.getState().isAlive() && zkAdmin.getState().isConnected()) {
-                    success = true;
-                    break;
-                }
-                Thread.sleep(Math.max(1000, deadline - System.currentTimeMillis()));
-            }
+            boolean success = Util.await(reconciliation, "connect to zk", 1_000, operationTimeoutMs,
+                () -> zkAdmin.getState().isAlive() && zkAdmin.getState().isConnected());
             if (!success) {
                 String message = String.format("Failed to connect to Zookeeper %s. Connection was not ready in %d ms.", zookeeperConnectionString, operationTimeoutMs);
                 LOGGER.warnCr(reconciliation, message);

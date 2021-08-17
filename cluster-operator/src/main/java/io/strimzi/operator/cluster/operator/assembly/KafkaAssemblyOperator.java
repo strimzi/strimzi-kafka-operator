@@ -92,6 +92,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.AbstractReadyResourceOperator;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -131,6 +132,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
@@ -440,11 +444,51 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ConfigMap jmxTransConfigMap = null;
         private Deployment jmxTransDeployment = null;
 
+        private ScheduledExecutorService executorService;
+
+
         ReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
             this.reconciliation = reconciliation;
             this.kafkaAssembly = kafkaAssembly;
             this.namespace = kafkaAssembly.getMetadata().getNamespace();
             this.name = kafkaAssembly.getMetadata().getName();
+        }
+
+        public <T> Future<T> run(Callable<T> callable) {
+            synchronized (this) {
+                if (executorService == null) {
+                    executorService = Executors.newSingleThreadScheduledExecutor();
+                }
+            }
+            Promise<T> p = Promise.promise();
+            executorService.submit(() -> {
+                try {
+                    T result = callable.call();
+                    vertx.runOnContext(i -> p.tryComplete(result));
+                } catch (Exception e) {
+                    vertx.runOnContext(i -> p.tryFail(e));
+                }
+            });
+            return p.future();
+        }
+
+        public Future<Void> awaitReadiness(AbstractReadyResourceOperator<?, ?, ?, ?> op, String resourceName) {
+            return awaitReadiness(op, resourceName, 1_000, operationTimeoutMs);
+        }
+
+        public Future<Void> awaitReadiness(AbstractReadyResourceOperator<?, ?, ?, ?> op, String resourceName,
+                                           long intervalMs, long timeoutMs) {
+            return run(() -> {
+                op.awaitReadiness(reconciliation, namespace, resourceName, intervalMs, timeoutMs);
+                return null;
+            });
+        }
+
+        public Future<Void> awaitObserved(DeploymentOperator op, String resourceName) {
+            return run(() -> {
+                op.awaitObserved(reconciliation, namespace, resourceName, 1_000, operationTimeoutMs);
+                return null;
+            });
         }
 
         /**
@@ -1348,8 +1392,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkScalingUpByOne(ZookeeperScaler zkScaler, int current, int desired) {
             if (current < desired) {
                 return zkSetOperations.scaleUp(reconciliation, namespace, zkCluster.getName(), current + 1)
-                        .compose(ignore -> podOperations.readiness(reconciliation, namespace, zkCluster.getPodName(current), 1_000, operationTimeoutMs))
-                        .compose(ignore -> reconciliation.run(vertx, () -> {
+                        .compose(ignore -> awaitReadiness(podOperations, zkCluster.getPodName(current)))
+                        .compose(ignore -> run(() -> {
                             zkScaler.scale(current + 1);
                             return this;
                         }))
@@ -1395,7 +1439,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkScalingDownByOne(ZookeeperScaler zkScaler, int current, int desired) {
             if (current > desired) {
                 return podsReady(zkCluster, current - 1)
-                        .compose(ignore -> reconciliation.run(vertx, () -> {
+                        .compose(ignore -> run(() -> {
                             zkScaler.scale(current - 1);
                             return this;
                         }))
@@ -1414,7 +1458,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // No need to check for pod readiness since we run right after the readiness check
             return zkScaler(zkCluster.getReplicas())
                     .compose(zkScaler ->
-                        reconciliation.run(vertx, () -> {
+                        run(() -> {
                             zkScaler.scale(zkCluster.getReplicas());
                             return this;
                         })
@@ -2764,7 +2808,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             for (int i = 0; i < replicas; i++) {
                 LOGGER.debugCr(reconciliation, "Checking readiness of pod {}.", model.getPodName(i));
-                podFutures.add(podOperations.readiness(reconciliation, namespace, model.getPodName(i), 1_000, operationTimeoutMs));
+                podFutures.add(awaitReadiness(podOperations, model.getPodName(i)));
             }
 
             return withVoid(CompositeFuture.join(podFutures));
@@ -2995,7 +3039,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                         return stsOperator.reconcile(reconciliation, namespace, sts.getMetadata().getName(), sts);
                     })
-                    .compose(ignored -> podOperations.readiness(reconciliation, namespace, podName, pollingIntervalMs, timeoutMs));
+                    .compose(ignored -> awaitReadiness(podOperations, podName, pollingIntervalMs, timeoutMs));
 
             return fut;
         }
@@ -3324,11 +3368,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> entityOperatorReady() {
             if (this.entityOperator != null && isEntityOperatorDeployed()) {
                 Future<Deployment> future = deploymentOperations.getAsync(namespace, this.entityOperator.getName());
-                return future.compose(dep -> {
-                    return withVoid(deploymentOperations.waitForObserved(reconciliation, namespace, this.entityOperator.getName(), 1_000, operationTimeoutMs));
-                }).compose(dep -> {
-                    return withVoid(deploymentOperations.readiness(reconciliation, namespace, this.entityOperator.getName(), 1_000, operationTimeoutMs));
-                }).map(i -> this);
+                return future
+                        .compose(dep -> awaitObserved(deploymentOperations, this.entityOperator.getName()))
+                        .compose(dep -> awaitReadiness(deploymentOperations, this.entityOperator.getName()))
+                        .map(i -> this);
             }
             return withVoid(Future.succeededFuture());
         }
@@ -3426,11 +3469,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> cruiseControlReady() {
             if (this.cruiseControl != null && ccDeployment != null) {
                 Future<Deployment> future = deploymentOperations.getAsync(namespace, this.cruiseControl.getName());
-                return future.compose(dep -> {
-                    return withVoid(deploymentOperations.waitForObserved(reconciliation, namespace, this.cruiseControl.getName(), 1_000, operationTimeoutMs));
-                }).compose(dep -> {
-                    return withVoid(deploymentOperations.readiness(reconciliation, namespace, this.cruiseControl.getName(), 1_000, operationTimeoutMs));
-                }).map(i -> this);
+                return future
+                        .compose(dep -> awaitObserved(deploymentOperations, this.cruiseControl.getName()))
+                        .compose(dep -> awaitReadiness(deploymentOperations, this.cruiseControl.getName()))
+                        .map(i -> this);
             }
             return withVoid(Future.succeededFuture());
         }
@@ -3699,11 +3741,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaExporterReady() {
             if (this.kafkaExporter != null && exporterDeployment != null) {
                 Future<Deployment> future = deploymentOperations.getAsync(namespace, this.kafkaExporter.getName());
-                return future.compose(dep -> {
-                    return withVoid(deploymentOperations.waitForObserved(reconciliation, namespace, this.kafkaExporter.getName(), 1_000, operationTimeoutMs));
-                }).compose(dep -> {
-                    return withVoid(deploymentOperations.readiness(reconciliation, namespace, this.kafkaExporter.getName(), 1_000, operationTimeoutMs));
-                }).map(i -> this);
+                return future
+                        .compose(dep -> awaitObserved(deploymentOperations, this.kafkaExporter.getName()))
+                        .compose(dep -> awaitReadiness(deploymentOperations, this.kafkaExporter.getName()))
+                        .map(i -> this);
             }
             return withVoid(Future.succeededFuture());
         }
@@ -3759,11 +3800,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> jmxTransDeploymentReady() {
             if (this.jmxTrans != null && jmxTransDeployment != null) {
                 Future<Deployment> future = deploymentOperations.getAsync(namespace,  this.jmxTrans.getName());
-                return future.compose(dep -> {
-                    return withVoid(deploymentOperations.waitForObserved(reconciliation, namespace,  this.jmxTrans.getName(), 1_000, operationTimeoutMs));
-                }).compose(dep -> {
-                    return withVoid(deploymentOperations.readiness(reconciliation, namespace, this.jmxTrans.getName(), 1_000, operationTimeoutMs));
-                }).map(i -> this);
+                return future
+                        .compose(dep -> awaitObserved(deploymentOperations, this.jmxTrans.getName()))
+                        .compose(dep -> awaitReadiness(deploymentOperations, this.jmxTrans.getName()))
+                        .map(i -> this);
             }
             return withVoid(Future.succeededFuture());
         }
@@ -3790,4 +3830,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
     }
+
+
 }

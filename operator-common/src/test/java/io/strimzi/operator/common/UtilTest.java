@@ -23,7 +23,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UtilTest {
     @Test
@@ -187,5 +190,26 @@ public class UtilTest {
 
         selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2", "label1", "value1", "label3", "value3")).build());
         assertThat(matchesSelector(selector, testResource), is(false));
+    }
+
+    @Test
+    public void testPoll() throws InterruptedException {
+        int[] calls = new int[]{0};
+        assertTrue(Util.await(Reconciliation.DUMMY_RECONCILIATION, "test", 10, 50, () -> {
+            calls[0] += 1;
+            return true;
+        }));
+        assertEquals(1, calls[0]);
+
+        calls[0] = 0;
+        assertTrue(Util.await(Reconciliation.DUMMY_RECONCILIATION, "test", 10, 50, () -> {
+            calls[0] += 1;
+            return calls[0] == 2;
+        }));
+        assertEquals(2, calls[0]);
+
+        assertFalse(Util.await(Reconciliation.DUMMY_RECONCILIATION, "test", 10, 50, () -> {
+            return false;
+        }));
     }
 }
