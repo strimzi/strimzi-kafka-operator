@@ -122,7 +122,6 @@ import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -633,7 +632,6 @@ public class ResourceUtils {
             @Override
             public ZookeeperScaler createZookeeperScaler(Reconciliation reconciliation, Vertx vertx, String zookeeperConnectionString, Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
                 ZookeeperScaler mockZooScaler = mock(ZookeeperScaler.class);
-                when(mockZooScaler.scale(anyInt())).thenReturn(Future.succeededFuture());
                 return mockZooScaler;
             }
         };

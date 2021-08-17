@@ -4,27 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.strimzi.operator.cluster.model.Ca;
-import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.MockCertManager;
-import io.vertx.core.Vertx;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.admin.ZooKeeperAdmin;
-import org.apache.zookeeper.client.ZKClientConfig;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -34,10 +13,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.operator.MockCertManager;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.admin.ZooKeeperAdmin;
+import org.apache.zookeeper.client.ZKClientConfig;
+import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -48,9 +41,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
 public class ZookeeperScalerTest {
-    private static Vertx vertx;
+    public static final Reconciliation RECONCILIATION = new Reconciliation("test", "TestResource", "my-namespace", "my-resource");
 
     // Shared values used in tests
     String dummyBase64Value = Base64.getEncoder().encodeToString("dummy".getBytes(StandardCharsets.US_ASCII));
@@ -67,15 +59,6 @@ public class ZookeeperScalerTest {
             "my-cluster-zookeeper-nodes",
             "myproject");
 
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
-    }
-
-    @AfterAll
-    public static void after() {
-        vertx.close();
-    }
 
     @Test
     public void testIsNotDifferent()   {
@@ -176,7 +159,7 @@ public class ZookeeperScalerTest {
     }
 
     @Test
-    public void testConnectionTimeout(VertxTestContext context)  {
+    public void testConnectionTimeout() throws InterruptedException {
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.NOT_CONNECTED);
 
@@ -187,18 +170,15 @@ public class ZookeeperScalerTest {
             }
         };
 
-        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyCaSecret, dummyCoSecret, 1_000);
+        ZookeeperScaler scaler = new ZookeeperScaler(RECONCILIATION, zooKeeperAdminProvider, "zookeeper:2181", null, dummyCaSecret, dummyCoSecret, 1_000);
 
-        Checkpoint check = context.checkpoint();
-        scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
-            assertThat(cause.getMessage(), is("Failed to connect to Zookeeper zookeeper:2181. Connection was not ready in 1000 ms."));
-            verify(mockZooAdmin, times(1)).close(anyInt());
-            check.flag();
-        })));
+        ZookeeperScalingException cause = assertThrows(ZookeeperScalingException.class, () -> scaler.scale(5));
+        assertThat(cause.getMessage(), is("Failed to connect to Zookeeper zookeeper:2181. Connection was not ready in 1000 ms."));
+        verify(mockZooAdmin, times(1)).close(anyInt());
     }
 
     @Test
-    public void testNoChange(VertxTestContext context) throws KeeperException, InterruptedException {
+    public void testNoChange() throws KeeperException, InterruptedException {
         String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                 "version=100000000b";
 
@@ -214,18 +194,15 @@ public class ZookeeperScalerTest {
             }
         };
 
-        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
+        ZookeeperScaler scaler = new ZookeeperScaler(RECONCILIATION, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
 
-        Checkpoint check = context.checkpoint();
-        scaler.scale(1).onComplete(context.succeeding(res -> context.verify(() -> {
-            verify(mockZooAdmin, never()).reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull());
-            verify(mockZooAdmin, times(1)).close(anyInt());
-            check.flag();
-        })));
+        scaler.scale(1);
+        verify(mockZooAdmin, never()).reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull());
+        verify(mockZooAdmin, times(1)).close(anyInt());
     }
 
     @Test
-    public void testWithChange(VertxTestContext context) throws KeeperException, InterruptedException {
+    public void testWithChange() throws KeeperException, InterruptedException {
         String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                 "server.2=my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                 "version=100000000b";
@@ -246,18 +223,15 @@ public class ZookeeperScalerTest {
             }
         };
 
-        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
+        ZookeeperScaler scaler = new ZookeeperScaler(RECONCILIATION, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
 
-        Checkpoint check = context.checkpoint();
-        scaler.scale(1).onComplete(context.succeeding(res -> context.verify(() -> {
-            verify(mockZooAdmin, times(1)).reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull());
-            verify(mockZooAdmin, times(1)).close(anyInt());
-            check.flag();
-        })));
+        scaler.scale(1);
+        verify(mockZooAdmin, times(1)).reconfigure(isNull(), isNull(), anyList(), anyLong(), isNull());
+        verify(mockZooAdmin, times(1)).close(anyInt());
     }
 
     @Test
-    public void testWhenThrows(VertxTestContext context) throws KeeperException, InterruptedException {
+    public void testWhenThrows() throws KeeperException, InterruptedException {
         String config = "server.1=my-cluster-zookeeper-0.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                 "server.2=my-cluster-zookeeper-1.my-cluster-zookeeper-nodes.myproject.svc:2888:3888:participant;127.0.0.1:12181\n" +
                 "version=100000000b";
@@ -275,29 +249,23 @@ public class ZookeeperScalerTest {
             }
         };
 
-        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
+        ZookeeperScaler scaler = new ZookeeperScaler(RECONCILIATION, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
 
-        Checkpoint check = context.checkpoint();
-        scaler.scale(1).onComplete(context.failing(cause -> context.verify(() -> {
-            assertThat(cause.getCause(), instanceOf(KeeperException.class));
-            verify(mockZooAdmin, times(1)).close(anyInt());
-            check.flag();
-        })));
+        ZookeeperScalingException cause = assertThrows(ZookeeperScalingException.class, () -> scaler.scale(1));
+        assertThat(cause.getCause(), instanceOf(KeeperException.class));
+        verify(mockZooAdmin, times(1)).close(anyInt());
     }
 
     @Test
-    public void testConnectionToNonExistingHost(VertxTestContext context)  {
-        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, new DefaultZooKeeperAdminProvider(), "i-do-not-exist.com:2181", null, dummyCaSecret, dummyCoSecret, 2_000);
+    public void testConnectionToNonExistingHost()  {
+        ZookeeperScaler scaler = new ZookeeperScaler(RECONCILIATION, new DefaultZooKeeperAdminProvider(), "i-do-not-exist.com:2181", null, dummyCaSecret, dummyCoSecret, 2_000);
 
-        Checkpoint check = context.checkpoint();
-        scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
-            assertThat(cause.getMessage(), is("Failed to connect to Zookeeper i-do-not-exist.com:2181. Connection was not ready in 2000 ms."));
-            check.flag();
-        })));
+        ZookeeperScalingException cause = assertThrows(ZookeeperScalingException.class, () -> scaler.scale(5));
+        assertThat(cause.getMessage(), is("Failed to connect to Zookeeper i-do-not-exist.com:2181. Connection was not ready in 2000 ms."));
     }
 
     @Test
-    public void testConnectionClosedOnGetConfigFailure(VertxTestContext context) throws KeeperException, InterruptedException  {
+    public void testConnectionClosedOnGetConfigFailure() throws KeeperException, InterruptedException  {
         ZooKeeperAdmin mockZooAdmin = mock(ZooKeeperAdmin.class);
         when(mockZooAdmin.getState()).thenReturn(ZooKeeper.States.CONNECTED);
         when(mockZooAdmin.getConfig(false, null)).thenThrow(KeeperException.ConnectionLossException.class);
@@ -310,14 +278,11 @@ public class ZookeeperScalerTest {
             }
         };
 
-        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyCaSecret, dummyCoSecret, 1_000);
+        ZookeeperScaler scaler = new ZookeeperScaler(RECONCILIATION, zooKeeperAdminProvider, "zookeeper:2181", null, dummyCaSecret, dummyCoSecret, 1_000);
 
-        Checkpoint check = context.checkpoint();
-        scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
-            assertThat(cause.getMessage(), is("Failed to get current Zookeeper server configuration"));
-            verify(mockZooAdmin, times(1)).close(anyInt());
-            check.flag();
-        })));
+        ZookeeperScalingException cause = assertThrows(ZookeeperScalingException.class, () -> scaler.scale(5));
+        assertThat(cause.getMessage(), is("Failed to get current Zookeeper server configuration"));
+        verify(mockZooAdmin, times(1)).close(anyInt());
     }
 
 }

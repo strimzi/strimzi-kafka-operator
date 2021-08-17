@@ -1349,7 +1349,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (current < desired) {
                 return zkSetOperations.scaleUp(reconciliation, namespace, zkCluster.getName(), current + 1)
                         .compose(ignore -> podOperations.readiness(reconciliation, namespace, zkCluster.getPodName(current), 1_000, operationTimeoutMs))
-                        .compose(ignore -> zkScaler.scale(current + 1))
+                        .compose(ignore -> reconciliation.run(vertx, () -> {
+                            zkScaler.scale(current + 1);
+                            return this;
+                        }))
                         .compose(ignore -> zkScalingUpByOne(zkScaler, current + 1, desired));
             } else {
                 return Future.succeededFuture(this);
@@ -1392,7 +1395,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkScalingDownByOne(ZookeeperScaler zkScaler, int current, int desired) {
             if (current > desired) {
                 return podsReady(zkCluster, current - 1)
-                        .compose(ignore -> zkScaler.scale(current - 1))
+                        .compose(ignore -> reconciliation.run(vertx, () -> {
+                            zkScaler.scale(current - 1);
+                            return this;
+                        }))
                         .compose(ignore -> zkSetOperations.scaleDown(reconciliation, namespace, zkCluster.getName(), current - 1))
                         .compose(ignore -> zkScalingDownByOne(zkScaler, current - 1, desired));
             } else {
@@ -1407,22 +1413,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             // No need to check for pod readiness since we run right after the readiness check
             return zkScaler(zkCluster.getReplicas())
-                    .compose(zkScaler -> {
-                        Promise<ReconciliationState> scalingPromise = Promise.promise();
-
-                        zkScaler.scale(zkCluster.getReplicas()).onComplete(res -> {
-                            zkScaler.close();
-
-                            if (res.succeeded())    {
-                                scalingPromise.complete(this);
-                            } else {
-                                LOGGER.warnCr(reconciliation, "Failed to verify Zookeeper configuration", res.cause());
-                                scalingPromise.fail(res.cause());
-                            }
-                        });
-
-                        return scalingPromise.future();
-                    });
+                    .compose(zkScaler ->
+                        reconciliation.run(vertx, () -> {
+                            zkScaler.scale(zkCluster.getReplicas());
+                            return this;
+                        })
+                    );
         }
 
         Future<ReconciliationState> zkServiceEndpointReadiness() {

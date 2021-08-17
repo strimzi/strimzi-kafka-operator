@@ -4,9 +4,15 @@
  */
 package io.strimzi.operator.common;
 
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -28,6 +34,7 @@ public class Reconciliation {
     private final String name;
     private final int id;
     private final Marker marker;
+    private ExecutorService executorService;
 
     public Reconciliation(String trigger, String kind, String namespace, String assemblyName) {
         this.trigger = trigger;
@@ -56,5 +63,23 @@ public class Reconciliation {
 
     public String toString() {
         return "Reconciliation #" + id + "(" + trigger + ") " + kind() + "(" + namespace() + "/" + name() + ")";
+    }
+
+    public <T> Future<T> run(Vertx vertx, Callable<T> callable) {
+        synchronized (this) {
+            if (executorService == null) {
+                executorService = Executors.newSingleThreadScheduledExecutor();
+            }
+        }
+        Promise<T> p = Promise.promise();
+        executorService.submit(() -> {
+            try {
+                T result = callable.call();
+                vertx.runOnContext(i -> p.tryComplete(result));
+            } catch (Exception e) {
+                vertx.runOnContext(i -> p.tryFail(e));
+            }
+        });
+        return p.future();
     }
 }
