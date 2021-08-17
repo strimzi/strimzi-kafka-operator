@@ -115,7 +115,7 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
 
         return new JobBuilder()
             .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withNamespace(namespaceName)
                 .withLabels(producerLabels)
                 .withName(producerName)
             .endMetadata()
@@ -165,7 +165,7 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
 
         return new JobBuilder()
             .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withNamespace(namespaceName)
                 .withLabels(consumerLabels)
                 .withName(consumerName)
             .endMetadata()

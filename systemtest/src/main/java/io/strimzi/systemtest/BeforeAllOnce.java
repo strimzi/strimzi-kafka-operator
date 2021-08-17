@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.systemtest.parallel.ParallelSuiteController;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
@@ -20,10 +21,10 @@ import java.util.Collections;
 public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
 
     public static ExtensionContext sharedExtensionContext;
+    public static SetupClusterOperator install;
 
     private static final Logger LOGGER = LogManager.getLogger(BeforeAllOnce.class);
     private static boolean systemReady = false;
-    private static SetupClusterOperator install;
 
     /**
      * Separate method with 'synchronized static' required for make sure procedure will be executed
@@ -36,6 +37,10 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
             systemReady = true;
             LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
             LOGGER.debug("{} - [BEFORE SUITE] has been called", BeforeAllOnce.class.getName());
+            LOGGER.debug(extensionContext.getDisplayName());
+            LOGGER.debug(extensionContext.getTestClass());
+            LOGGER.debug(extensionContext.getRoot());
+            LOGGER.debug(extensionContext.getTags());
 
             // setup cluster operator before all suites only once
             install = new SetupClusterOperator.SetupClusterOperatorBuilder()
@@ -44,6 +49,9 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
                 .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
                 .createInstallation()
                 .runInstallation();
+
+            // this is for correction because callback also count some randomly chosen class twice
+            ParallelSuiteController.decrementCounter();
         }
     }
 
@@ -56,7 +64,6 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
     @Override
     public void beforeAll(ExtensionContext extensionContext) throws Exception {
         systemSetup(extensionContext);
-        extensionContext.getRoot().getStore(ExtensionContext.Namespace.GLOBAL).put(systemReady, this);
     }
 
     /**
@@ -71,7 +78,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
         // Clear cluster from all created namespaces and configurations files for cluster operator.
 
         install.deleteClusterOperatorInstallFiles();
-        KubeClusterResource.getInstance().deleteCustomResources();
+        KubeClusterResource.getInstance().deleteCustomResources(sharedExtensionContext);
         KubeClusterResource.getInstance().deleteNamespaces();
     }
 }

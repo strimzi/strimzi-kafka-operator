@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.json.JsonArray;
@@ -39,6 +40,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.Constants.PARALLEL_NAMESPACE;
+import static io.strimzi.systemtest.Constants.PARALLEL_SUITE;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -370,6 +372,18 @@ public class StUtils {
             annotation -> annotation.annotationType().getName()
                 .toLowerCase(Locale.ENGLISH)
                 .contains(PARALLEL_NAMESPACE)).count() == 1;
+    }
+
+    /**
+     * Checking if test case contains annotation ParallelSuite
+     * @param extensionContext context of the test case
+     * @return true if test case contains annotation ParallelSuite, otherwise false
+     */
+    public static boolean isParallelSuite(ExtensionContext extensionContext) {
+        return Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
+            annotation -> annotation.annotationType().getName()
+                .toLowerCase(Locale.ENGLISH)
+                .contains(PARALLEL_SUITE)).count() == 1;
     }
 
     /**

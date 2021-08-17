@@ -289,6 +289,7 @@ public interface Constants {
      * Tag for tests which executing in parallel namespaces
      */
     String PARALLEL_NAMESPACE = "parallelnamespace";
+    String PARALLEL_SUITE = "parallelsuite";
 
     /**
      * Cruise Control related parameters
@@ -319,6 +320,7 @@ public interface Constants {
      */
     String NAMESPACE_KEY = "NAMESPACE_NAME";
     String PREPARE_OPERATOR_ENV_KEY = "PREPARE_OPERATOR_ENV";
+    String PARALLEL_CLASS_COUNT = "PARALLEL_CLASS_COUNT";
 
     /**
      * Auxiliary variable for cluster operator deployment

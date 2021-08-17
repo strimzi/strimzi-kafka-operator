@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
+import io.strimzi.systemtest.parallel.ParallelSuiteController;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
@@ -75,7 +76,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
-    protected SetupClusterOperator install = new SetupClusterOperator();
+    protected SetupClusterOperator install;
     protected OlmResource olmResource;
     protected KubeClusterResource cluster;
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
@@ -538,6 +539,9 @@ public abstract class AbstractST implements TestSeparator {
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(extensionContext);
         }
+        if (StUtils.isParallelSuite(extensionContext)) {
+            ParallelSuiteController.removeParallelSuite(extensionContext);
+        }
     }
 
     /**
@@ -597,6 +601,10 @@ public abstract class AbstractST implements TestSeparator {
      */
     protected void beforeAllMayOverride(ExtensionContext extensionContext) {
         cluster = KubeClusterResource.getInstance();
+        if (StUtils.isParallelSuite(extensionContext)) {
+            ParallelSuiteController.addParallelSuite(extensionContext);
+
+        }
     }
 
     @BeforeEach

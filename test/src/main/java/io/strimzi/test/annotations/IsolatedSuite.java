@@ -23,7 +23,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({ElementType.TYPE})
 @Inherited
 // child nodes can execute in parallel (only 'read' mode)
-@ResourceLock(mode = ResourceAccessMode.READ, value = "global")
+@ResourceLock(mode = ResourceAccessMode.READ_WRITE, value = "global")
 public @interface IsolatedSuite {
     String value() default "";
 }

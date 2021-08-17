@@ -12,12 +12,14 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.parallel.ParallelSuiteController;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -35,7 +37,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.parallel.Isolated;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -60,8 +61,6 @@ import static org.hamcrest.Matchers.containsString;
 @Tag(REGRESSION)
 @Tag(BRIDGE)
 @Tag(INTERNAL_CLIENTS_USED)
-@Isolated("Different deployment of the Cluster Operator")
-// TODO: how to make sure that ISOLATED class will not block methods...?
 class HttpBridgeST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);
     private static final String NAMESPACE = "bridge-namespace";
@@ -406,12 +405,18 @@ class HttpBridgeST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    void createClassResources(ExtensionContext extensionContext) {
+    void createClassResources(ExtensionContext extensionContext) throws InterruptedException {
+        // active waiting with sleep
+        while (ParallelSuiteController.waitUntilZeroParallelSuites());
+
         cluster.createNamespace(extensionContext, NAMESPACE);
 
+        // un-install old cluster operator
+        install = BeforeAllOnce.install;
+        install.unInstall();
         // install new one with branch new configuration
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(BeforeAllOnce.sharedExtensionContext)
             .withNamespace(Constants.INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withExtraEnvVars(

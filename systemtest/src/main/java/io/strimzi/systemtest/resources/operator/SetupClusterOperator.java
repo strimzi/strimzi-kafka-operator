@@ -24,6 +24,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.logs.CollectorElement;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.strimzi.test.k8s.cluster.Kubernetes;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
@@ -411,12 +413,53 @@ public class SetupClusterOperator {
         }
     }
 
+    public void unInstall() {
+        LOGGER.info("Un-installing cluster operator from {} namespace", Constants.INFRA_NAMESPACE);
+        // trigger that we will again create namespace
+        BeforeAllOnce.sharedExtensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, null);
+        deleteClusterOperatorInstallFiles();
+        KubeClusterResource.getInstance().deleteCustomResources(BeforeAllOnce.sharedExtensionContext);
+        KubeClusterResource.getInstance().deleteNamespace(BeforeAllOnce.sharedExtensionContext, Constants.INFRA_NAMESPACE);
+    }
+
     public SetupClusterOperator rollbackToDefaultConfiguration() {
+        // un-install old cluster operator
+        unInstall();
+
+        // install new one with default configuration
         return new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.sharedExtensionContext)
             .withNamespace(Constants.INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .createInstallation()
             .runInstallation();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SetupClusterOperator that = (SetupClusterOperator) o;
+        return operationTimeout ==
+            that.operationTimeout &&
+            reconciliationInterval == that.reconciliationInterval &&
+            Objects.equals(cluster, that.cluster) &&
+            Objects.equals(clusterOperatorConfigs, that.clusterOperatorConfigs) &&
+            Objects.equals(helmResource, that.helmResource) &&
+            Objects.equals(olmResource, that.olmResource) &&
+            Objects.equals(extensionContext, that.extensionContext) &&
+            Objects.equals(clusterOperatorName, that.clusterOperatorName) &&
+            Objects.equals(namespaceInstallTo, that.namespaceInstallTo) &&
+            Objects.equals(namespaceToWatch, that.namespaceToWatch) &&
+            Objects.equals(bindingsNamespaces, that.bindingsNamespaces) &&
+            Objects.equals(extraEnvVars, that.extraEnvVars) &&
+            Objects.equals(extraLabels, that.extraLabels) &&
+            clusterOperatorRBACType == that.clusterOperatorRBACType;
+    }
+    @Override
+    public int hashCode() {
+        return Objects.hash(cluster, clusterOperatorConfigs, helmResource, olmResource, extensionContext,
+            clusterOperatorName, namespaceInstallTo, namespaceToWatch, bindingsNamespaces, operationTimeout,
+            reconciliationInterval, extraEnvVars, extraLabels, clusterOperatorRBACType);
     }
 }

@@ -45,6 +45,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -545,12 +546,17 @@ class ConnectBuilderST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
+        // TODO: if install object are equal we are not gonna un-install...
+        //  (note 1: when we use 'while (ParallelSuiteController.waitUntilZeroParallelSuites());'
+        //  it is pre-condition to do un-installation and install new CO.) => there is no need equality mechanism...
+        install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(NAMESPACE)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();
+
 
         if (cluster.isNotKubernetes()) {
             outputRegistry = "image-registry.openshift-image-registry.svc:5000/" + NAMESPACE;
@@ -560,5 +566,12 @@ class ConnectBuilderST extends AbstractST {
             outputRegistry = service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().orElseThrow().getPort();
         }
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(SHARED_KAFKA_CLUSTER_NAME, 3).build());
+    }
+
+    @AfterAll
+    void tearDown(ExtensionContext extensionContext) throws Exception {
+        this.afterAllMayOverride(extensionContext);
+
+        install = install.rollbackToDefaultConfiguration();
     }
 }
