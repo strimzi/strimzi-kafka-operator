@@ -12,7 +12,7 @@
             - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
               value: {{ default .Values.defaultImageRegistry .Values.cruiseControl.image.registry }}/{{ default .Values.defaultImageRepository .Values.cruiseControl.image.repository }}/{{ .Values.cruiseControl.image.name }}:{{ default .Values.defaultImageTag .Values.cruiseControl.image.tagPrefix }}-kafka-2.8.0
             - name: STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE
-              value: {{ default .Values.defaultImageRegistry .Values.tlsSidecarCruiseControl.image.registry }}/{{ default .Values.defaultImageRepository .Values.tlsSidecarCruiseControl.image.repository }}/{{ .Values.tlsSidecarCruiseControl.image.name }}:{{ default .Values.tlsSidecarCruiseControl.image.tagPrefix }}-kafka-2.8.0
+              value: {{ default .Values.defaultImageRegistry .Values.tlsSidecarCruiseControl.image.registry }}/{{ default .Values.defaultImageRepository .Values.tlsSidecarCruiseControl.image.repository }}/{{ .Values.tlsSidecarCruiseControl.image.name }}:{{ default .Values.defaultImageTag .Values.tlsSidecarCruiseControl.image.tagPrefix }}-kafka-2.8.0
             - name: STRIMZI_KAFKA_IMAGES
               value: |                 
                 2.7.0={{ default .Values.defaultImageRegistry .Values.kafka.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafka.image.repository  }}/{{ .Values.kafka.image.name }}:{{ default .Values.defaultImageTag .Values.kafka.image.tagPrefix }}-kafka-2.7.0
@@ -27,7 +27,7 @@
               value: |                 
                 2.7.0={{ default .Values.defaultImageRegistry .Values.kafkaMirrorMaker.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaMirrorMaker.image.repository }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaMirrorMaker.image.tagPrefix }}-kafka-2.7.0
                 2.7.1={{ default .Values.defaultImageRegistry .Values.kafkaMirrorMaker.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaMirrorMaker.image.repository }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaMirrorMaker.image.tagPrefix }}-kafka-2.7.1
-                2.8.0={{ default .Values.defaultImageRegistry .Values.kafkaMirrorMaker.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaMirrorMaker.image.repository }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.kafkaMirrorMaker.image.tagPrefix .Values.imageTagOverride }}-kafka-2.8.0
+                2.8.0={{ default .Values.defaultImageRegistry .Values.kafkaMirrorMaker.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaMirrorMaker.image.repository }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaMirrorMaker.image.tagPrefix }}-kafka-2.8.0
             - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
               value: |                 
                 2.7.0={{ default .Values.defaultImageRegistry .Values.kafkaMirrorMaker2.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaMirrorMaker2.image.repository }}/{{ .Values.kafkaMirrorMaker2.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaMirrorMaker2.image.tagPrefix }}-kafka-2.7.0
