@@ -1964,12 +1964,11 @@ spec:
                                   from. Applicable to the `maven` artifact type only.
                               sha512sum:
                                 type: string
-                                description: SHA512 checksum of the artifact. Optional.
+                                description: 'SHA512 checksum of the artifact. Optional.
                                   If specified, the checksum will be verified while
                                   building the new container. If not specified, the
                                   downloaded artifact will not be verified. Not applicable
-                                  for 'maven' type of artifact.Not applicable to the
-                                  `maven` artifact type.
+                                  to the `maven` artifact type. '
                               type:
                                 type: string
                                 enum:
@@ -1988,8 +1987,9 @@ spec:
                                   downloaded artifacts. For security reasons, you
                                   should first verify the artifacts manually and configure
                                   the checksum verification to make sure the same
-                                  artifact is used in the automated build. Required.Not
-                                  applicable to the `maven` artifact type.
+                                  artifact is used in the automated build. Required
+                                  for `jar`, `zip`, and `tgz` artifacts. Not applicable
+                                  to the `maven` artifact type.
                               version:
                                 type: string
                                 description: Maven version number. Applicable to the

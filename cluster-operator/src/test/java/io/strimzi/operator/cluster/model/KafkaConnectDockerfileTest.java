@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.api.kafka.model.connect.build.Artifact;
 import io.strimzi.api.kafka.model.connect.build.Build;
 import io.strimzi.api.kafka.model.connect.build.BuildBuilder;
+import io.strimzi.api.kafka.model.connect.build.JarArtifact;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.MavenArtifact;
 import io.strimzi.api.kafka.model.connect.build.MavenArtifactBuilder;
@@ -444,6 +445,10 @@ public class KafkaConnectDockerfileTest {
 
     @ParallelTest
     public void testMavenDockerfile()   {
+        JarArtifact jar = new JarArtifactBuilder()
+                .withUrl("http://url.com/ar.jar")
+                .build();
+
         MavenArtifact mvn1 = new MavenArtifactBuilder()
                 .withGroup("g1")
                 .withArtifact("a1")
@@ -457,9 +462,14 @@ public class KafkaConnectDockerfileTest {
                 .build();
 
         Build connectBuild = new BuildBuilder()
-                .withPlugins(new PluginBuilder()
+                .withPlugins(
+                    new PluginBuilder()
                         .withName("my-connector-plugin")
-                        .withArtifacts(mvn1, mvn2)
+                        .withArtifacts(jar, mvn1, mvn2)
+                        .build(),
+                    new PluginBuilder()
+                        .withName("other-connector-plugin")
+                        .withArtifacts(jar)
                         .build())
                 .build();
 
@@ -472,12 +482,14 @@ public class KafkaConnectDockerfileTest {
                 "##############################\n" +
                 "##############################\n" +
                 "\n" +
-                "FROM registry.access.redhat.com/ubi8/openjdk-11:1.3-18 AS downloadArtifacts\n" +
+                "FROM quay.io/strimzi/maven-builder:latest AS downloadArtifacts\n" +
                 "RUN curl -L --create-dirs --output /tmp/401856c0/pom.xml https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.pom \\\n" +
-                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/401856c0 -f /tmp/401856c0/pom.xml\n" +
+                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/401856c0 -f /tmp/401856c0/pom.xml \\\n" +
+                "      && curl -L --create-dirs --output /tmp/artifacts/401856c0/a1-v1.jar https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.jar\n" +
                 "\n" +
                 "RUN curl -L --create-dirs --output /tmp/6ecfeffd/pom.xml https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.pom \\\n" +
-                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/6ecfeffd -f /tmp/6ecfeffd/pom.xml\n" +
+                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/6ecfeffd -f /tmp/6ecfeffd/pom.xml \\\n" +
+                "      && curl -L --create-dirs --output /tmp/artifacts/6ecfeffd/a2-v2.jar https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.jar\n" +
                 "\n" +
                 "FROM myImage:latest\n" +
                 "\n" +
@@ -486,11 +498,18 @@ public class KafkaConnectDockerfileTest {
                 "##########\n" +
                 "# Connector plugin my-connector-plugin\n" +
                 "##########\n" +
-                "RUN curl -L --create-dirs --output /opt/kafka/plugins/my-connector-plugin/401856c0/a1-v1.jar https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.jar\n" +
+                "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/9bb2fd11 \\\n" +
+                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/9bb2fd11/9bb2fd11.jar http://url.com/ar.jar\n" +
+                "\n" +
                 "COPY --from=downloadArtifacts /tmp/artifacts/401856c0 /opt/kafka/plugins/my-connector-plugin/401856c0\n" +
                 "\n" +
-                "RUN curl -L --create-dirs --output /opt/kafka/plugins/my-connector-plugin/6ecfeffd/a2-v2.jar https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.jar\n" +
                 "COPY --from=downloadArtifacts /tmp/artifacts/6ecfeffd /opt/kafka/plugins/my-connector-plugin/6ecfeffd\n" +
+                "\n" +
+                "##########\n" +
+                "# Connector plugin other-connector-plugin\n" +
+                "##########\n" +
+                "RUN mkdir -p /opt/kafka/plugins/other-connector-plugin/9bb2fd11 \\\n" +
+                "      && curl -L --output /opt/kafka/plugins/other-connector-plugin/9bb2fd11/9bb2fd11.jar http://url.com/ar.jar\n" +
                 "\n" +
                 "USER 1001\n" +
                 "\n"));
