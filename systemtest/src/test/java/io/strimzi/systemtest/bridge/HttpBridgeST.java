@@ -14,9 +14,9 @@ import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.parallel.ParallelSuiteController;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -33,7 +33,6 @@ import io.vertx.core.json.JsonArray;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -61,6 +60,7 @@ import static org.hamcrest.Matchers.containsString;
 @Tag(REGRESSION)
 @Tag(BRIDGE)
 @Tag(INTERNAL_CLIENTS_USED)
+@IsolatedSuite
 class HttpBridgeST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);
     private static final String NAMESPACE = "bridge-namespace";
@@ -406,9 +406,6 @@ class HttpBridgeST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void createClassResources(ExtensionContext extensionContext) throws InterruptedException {
-        // active waiting with sleep
-        while (ParallelSuiteController.waitUntilZeroParallelSuites());
-
         cluster.createNamespace(extensionContext, NAMESPACE);
 
         // un-install old cluster operator
@@ -462,12 +459,5 @@ class HttpBridgeST extends HttpBridgeAbstractST {
                 .endConsumer()
             .endSpec()
             .build());
-    }
-
-    @AfterAll
-    void tearDown(ExtensionContext extensionContext) throws Exception {
-        this.afterAllMayOverride(extensionContext);
-
-        install = install.rollbackToDefaultConfiguration();
     }
 }

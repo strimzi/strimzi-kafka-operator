@@ -13,7 +13,7 @@ import java.time.Duration;
 
 public class ParallelSuiteController {
 
-    private static final long STARTING_DELAY = Duration.ofSeconds(10).toMillis();
+    private static final long STARTING_DELAY = Duration.ofSeconds(5).toMillis();
 
     private static final Logger LOGGER = LogManager.getLogger(ParallelSuiteController.class);
     private static int counter;
@@ -41,12 +41,18 @@ public class ParallelSuiteController {
     }
 
     public static boolean waitUntilZeroParallelSuites() {
-        try {
-            Thread.sleep(STARTING_DELAY);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        // until more that 0 parallel suites running in parallel 'active waiting'
+        boolean preCondition = true;
+
+        while (preCondition) {
+            try {
+                Thread.sleep(STARTING_DELAY);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            preCondition = counter > 0;
         }
-        return counter > 0;
+        return false;
     }
 
     public static int getCounter() {

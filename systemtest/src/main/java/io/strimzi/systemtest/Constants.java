@@ -290,6 +290,7 @@ public interface Constants {
      */
     String PARALLEL_NAMESPACE = "parallelnamespace";
     String PARALLEL_SUITE = "parallelsuite";
+    String ISOLATED_SUITE = "isolatedsuite";
 
     /**
      * Cruise Control related parameters

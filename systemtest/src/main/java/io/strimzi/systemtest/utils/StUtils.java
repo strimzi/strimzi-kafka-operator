@@ -38,6 +38,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.strimzi.systemtest.Constants.ISOLATED_SUITE;
 import static io.strimzi.systemtest.Constants.PARALLEL_NAMESPACE;
 import static io.strimzi.systemtest.Constants.PARALLEL_SUITE;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
@@ -383,6 +384,18 @@ public class StUtils {
             annotation -> annotation.annotationType().getName()
                 .toLowerCase(Locale.ENGLISH)
                 .contains(PARALLEL_SUITE)).count() == 1;
+    }
+
+    /**
+     * Checking if test case contains annotation IsolatedSuite
+     * @param extensionContext context of the test case
+     * @return true if test case contains annotation IsolatedSuite, otherwise false
+     */
+    public static boolean isIsolatedSuite(ExtensionContext extensionContext) {
+        return Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
+            annotation -> annotation.annotationType().getName()
+                .toLowerCase(Locale.ENGLISH)
+                .contains(ISOLATED_SUITE)).count() == 1;
     }
 
     /**

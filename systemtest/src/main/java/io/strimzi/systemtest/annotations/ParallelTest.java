@@ -28,4 +28,3 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Test
 public @interface ParallelTest {
 }
-
