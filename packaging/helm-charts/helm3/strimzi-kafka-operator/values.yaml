@@ -120,7 +120,7 @@ tlsSidecarCruiseControl:
     tagPrefix: ""
 kanikoExecutor:
   image:
-    registry: quay.io
+    registry: ""
     repository: ""
     name: kaniko-executor
     tag: ""
