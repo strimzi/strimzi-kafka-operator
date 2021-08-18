@@ -110,7 +110,7 @@ public class UserOperatorConfigTest {
     @Test
     public void testFromMapInvalidReconciliationIntervalThrows()  {
         Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
-        envVars.put(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "not_an_long");
+        envVars.put(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "not_a_long");
 
         assertThrows(NumberFormatException.class, () -> UserOperatorConfig.fromMap(envVars));
     }
