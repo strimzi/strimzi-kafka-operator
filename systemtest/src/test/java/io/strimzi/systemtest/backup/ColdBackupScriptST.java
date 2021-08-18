@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.backup;
 
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.USER_PATH;
@@ -26,7 +27,6 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
 import io.strimzi.test.executor.Exec;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -36,7 +36,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 public class ColdBackupScriptST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ColdBackupScriptST.class);
-    private static final String NAMESPACE = "cold-backup";
 
     @Test
     void backupAndRestore(ExtensionContext context) {
@@ -44,14 +43,6 @@ public class ColdBackupScriptST extends AbstractST {
         String groupName = "my-group", newGroupName = "new-group";
         int firstBatchSize = 100, secondBatchSize = 10;
         String backupFilePath = USER_PATH + "/target/" + clusterName + ".zip";
-
-        // deploy a test cluster
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(context)
-            .withClusterOperatorName(Constants.STRIMZI_DEPLOYMENT_NAME)
-            .withNamespace(NAMESPACE)
-            .createInstallation()
-            .runInstallation();
 
         resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(clusterName, 1, 1).build());
         String clientsPodName = deployAndGetInternalClientsPodName(context);
@@ -69,28 +60,23 @@ public class ColdBackupScriptST extends AbstractST {
         clients.sendMessagesPlain();
 
         // run backup procedure
-        LOGGER.info("Running backup procedure for {}/{}", NAMESPACE, clusterName);
+        LOGGER.info("Running backup procedure for {}/{}", INFRA_NAMESPACE, clusterName);
         String[] backupCommand = new String[] {
-            USER_PATH + "/../tools/cold-backup/run.sh", "backup", "-n", NAMESPACE, "-c", clusterName, "-t", backupFilePath, "-y"
+            USER_PATH + "/../tools/cold-backup/run.sh", "backup", "-n", INFRA_NAMESPACE, "-c", clusterName, "-t", backupFilePath, "-y"
         };
         Exec.exec(true, backupCommand);
 
-        // recreate the namespace and deploy the operator
-        ResourceManager.kubeClient().deleteNamespace(NAMESPACE);
-        NamespaceUtils.waitForNamespaceDeletion(NAMESPACE);
-        // This is needed to allow installation of new operator and creation of the namespace
-        context.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + NAMESPACE, null);
-
+        install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(context)
-            .withNamespace(NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
             .runInstallation();
 
         // run restore procedure and wait for provisioning
-        LOGGER.info("Running restore procedure for {}/{}", NAMESPACE, clusterName);
+        LOGGER.info("Running restore procedure for {}/{}", INFRA_NAMESPACE, clusterName);
         String[] restoreCommand = new String[] {
-            USER_PATH + "/../tools/cold-backup/run.sh", "restore", "-n", NAMESPACE, "-c", clusterName, "-s", backupFilePath, "-y"
+            USER_PATH + "/../tools/cold-backup/run.sh", "restore", "-n", INFRA_NAMESPACE, "-c", clusterName, "-s", backupFilePath, "-y"
         };
         Exec.exec(true, restoreCommand);
 
@@ -124,7 +110,7 @@ public class ColdBackupScriptST extends AbstractST {
         String topicName = mapWithTestTopics.get(context.getDisplayName());
         InternalKafkaClient clients = new InternalKafkaClient.Builder()
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(INFRA_NAMESPACE)
             .withUsingPodName(podName)
             .withClusterName(clusterName)
             .withTopicName(topicName)

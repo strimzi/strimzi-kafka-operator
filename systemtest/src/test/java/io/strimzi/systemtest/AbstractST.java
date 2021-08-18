@@ -545,7 +545,10 @@ public abstract class AbstractST implements TestSeparator {
         // contract that always we always change configuration of CO when we annotate suite to 'isolated' and therefore
         // we need to rollback to default configuration, which most of the suites use.
         if (StUtils.isIsolatedSuite(extensionContext)) {
-            install = install.rollbackToDefaultConfiguration();
+            // install configuration differs from default one we are gonna roll-back
+            if (install != null && !SetupClusterOperator.buildDefaultInstallation().equals(install)) {
+                install = install.rollbackToDefaultConfiguration();
+            }
         }
     }
 
@@ -606,6 +609,8 @@ public abstract class AbstractST implements TestSeparator {
      */
     protected void beforeAllMayOverride(ExtensionContext extensionContext) {
         cluster = KubeClusterResource.getInstance();
+        install = BeforeAllOnce.getInstall();
+
         if (StUtils.isParallelSuite(extensionContext)) {
             ParallelSuiteController.addParallelSuite(extensionContext);
         }

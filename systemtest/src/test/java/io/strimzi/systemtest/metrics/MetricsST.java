@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -91,6 +92,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @Tag(REGRESSION)
 @Tag(METRICS)
 @Tag(CRUISE_CONTROL)
+@IsolatedSuite
 public class MetricsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);

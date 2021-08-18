@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -38,6 +39,7 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -49,6 +51,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
+@IsolatedSuite
 class AllNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(AllNamespaceST.class);
@@ -188,11 +191,12 @@ class AllNamespaceST extends AbstractNamespaceST {
     private void deployTestSpecificResources(ExtensionContext extensionContext) {
         LOGGER.info("Creating resources before the test class");
 
+        install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(CO_NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-            .withBindingsNamespaces(Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE))
+            .withBindingsNamespaces(Arrays.asList(INFRA_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
@@ -221,6 +225,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) {
         // Strimzi is deployed with cluster-wide access in this class STRIMZI_RBAC_SCOPE=NAMESPACE won't work
+        super.beforeAllMayOverride(extensionContext);
         assumeFalse(Environment.isNamespaceRbacScope());
 
         deployTestSpecificResources(extensionContext);

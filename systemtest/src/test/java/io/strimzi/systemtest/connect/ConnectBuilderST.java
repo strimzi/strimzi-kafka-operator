@@ -25,6 +25,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
@@ -45,7 +46,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -58,6 +58,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -73,11 +74,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(REGRESSION)
 @Tag(CONNECT_COMPONENTS)
 @Tag(CONNECT)
+@IsolatedSuite
 class ConnectBuilderST extends AbstractST {
 
-    private static final String NAMESPACE = "connect-builder";
     private static final Logger LOGGER = LogManager.getLogger(ConnectBuilderST.class);
-    private static final String SHARED_KAFKA_CLUSTER_NAME = NAMESPACE;
+    private static final String SHARED_KAFKA_CLUSTER_NAME = INFRA_NAMESPACE;
 
     private static final String ECHO_SINK_CLASS_NAME = "cz.scholz.kafka.connect.echosink.EchoSinkConnector";
     private static final String CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME = "org.apache.camel.kafkaconnector.http.CamelHttpSinkConnector";
@@ -168,7 +169,7 @@ class ConnectBuilderST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+        String kafkaClientsPodName = kubeClient(INFRA_NAMESPACE).listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
         resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, SHARED_KAFKA_CLUSTER_NAME, 1)
             .editMetadata()
@@ -185,10 +186,10 @@ class ConnectBuilderST extends AbstractST {
             .build());
 
         KafkaConnectUtils.waitForConnectNotReady(connectClusterName);
-        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(connectClusterName, NAMESPACE, "The Kafka Connect build failed(.*)?");
+        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(connectClusterName, INFRA_NAMESPACE, "The Kafka Connect build failed(.*)?");
 
         LOGGER.info("Checking if KafkaConnect status condition contains message about build failure");
-        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(connectClusterName).get();
+        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(connectClusterName).get();
 
         LOGGER.info("Deploying network policies for KafkaConnect");
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, kafkaConnect, KafkaConnectResources.deploymentName(connectClusterName));
@@ -220,7 +221,7 @@ class ConnectBuilderST extends AbstractST {
         assertTrue(plugins.contains(ECHO_SINK_CLASS_NAME));
 
         LOGGER.info("Checking if KafkaConnect resource contains EchoSink connector in status");
-        kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(connectClusterName).get();
+        kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(connectClusterName).get();
         assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(ECHO_SINK_CLASS_NAME)));
     }
 
@@ -269,14 +270,14 @@ class ConnectBuilderST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(NAMESPACE).withName(connectClusterName).get();
+        KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(INFRA_NAMESPACE).withName(connectClusterName).get();
 
         assertThat(kafkaConnector.getSpec().getClassName(), is(ECHO_SINK_CLASS_NAME));
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(INFRA_NAMESPACE)
             .withClusterName(SHARED_KAFKA_CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -298,11 +299,11 @@ class ConnectBuilderST extends AbstractST {
         ImageStream imageStream = new ImageStreamBuilder()
             .editOrNewMetadata()
                 .withName(imageStreamName)
-                .withNamespace(NAMESPACE)
+                .withNamespace(INFRA_NAMESPACE)
             .endMetadata()
             .build();
 
-        kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().inNamespace(NAMESPACE).create(imageStream);
+        kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().inNamespace(INFRA_NAMESPACE).create(imageStream);
 
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterTest, SHARED_KAFKA_CLUSTER_NAME, 1, false)
             .editMetadata()
@@ -318,7 +319,7 @@ class ConnectBuilderST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(connectClusterTest).get();
+        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(connectClusterTest).get();
 
         LOGGER.info("Checking, if KafkaConnect has all artifacts and if is successfully created");
         assertThat(kafkaConnect.getSpec().getBuild().getPlugins().get(0).getArtifacts().size(), is(2));
@@ -414,7 +415,7 @@ class ConnectBuilderST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(connectClusterName).get();
+        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(connectClusterName).get();
 
         LOGGER.info("Checking if both Connectors were created and Connect contains both plugins");
         assertThat(kafkaConnect.getSpec().getBuild().getPlugins().size(), is(2));
@@ -546,31 +547,21 @@ class ConnectBuilderST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        // TODO: if install object are equal we are not gonna un-install...
-        //  (note 1: when we use 'while (ParallelSuiteController.waitUntilZeroParallelSuites());'
-        //  it is pre-condition to do un-installation and install new CO.) => there is no need equality mechanism...
         install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(NAMESPACE)
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();
 
         if (cluster.isNotKubernetes()) {
-            outputRegistry = "image-registry.openshift-image-registry.svc:5000/" + NAMESPACE;
+            outputRegistry = "image-registry.openshift-image-registry.svc:5000/" + INFRA_NAMESPACE;
         } else {
             LOGGER.warn("For running these tests on K8s you have to have internal registry deployed using `minikube start --insecure-registry '10.0.0.0/24'` and `minikube addons enable registry`");
             Service service = kubeClient("kube-system").getService("registry");
             outputRegistry = service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().orElseThrow().getPort();
         }
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(SHARED_KAFKA_CLUSTER_NAME, 3).build());
-    }
-
-    @AfterAll
-    void tearDown(ExtensionContext extensionContext) throws Exception {
-        this.afterAllMayOverride(extensionContext);
-
-        install = install.rollbackToDefaultConfiguration();
     }
 }

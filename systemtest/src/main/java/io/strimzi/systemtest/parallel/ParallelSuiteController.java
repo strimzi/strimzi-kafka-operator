@@ -45,6 +45,7 @@ public class ParallelSuiteController {
         boolean preCondition = true;
 
         while (preCondition) {
+            LOGGER.info("Current number of parallel suites is: {}", counter);
             try {
                 Thread.sleep(STARTING_DELAY);
             } catch (InterruptedException e) {

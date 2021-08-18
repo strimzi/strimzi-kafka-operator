@@ -61,6 +61,7 @@ import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_SHORT;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -83,7 +84,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 public class SpecificST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(SpecificST.class);
-    public static final String NAMESPACE = "specific-cluster-test";
     private ExtensionContext sharedExtensionContext;
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
@@ -161,7 +161,7 @@ public class SpecificST extends AbstractST {
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(sharedExtensionContext)
-            .withNamespace(NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
             .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
             .createInstallation()
@@ -215,7 +215,7 @@ public class SpecificST extends AbstractST {
         List<String> connectWrongPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         String connectWrongPodName = connectWrongPods.get(0);
         LOGGER.info("Waiting for ClusterOperator to get timeout operation of incorrectly set up KafkaConnect");
-        KafkaConnectUtils.waitForKafkaConnectCondition("TimeoutException", "NotReady", NAMESPACE, clusterName);
+        KafkaConnectUtils.waitForKafkaConnectCondition("TimeoutException", "NotReady", INFRA_NAMESPACE, clusterName);
 
         PodStatus kcWrongStatus = kubeClient().getPod(connectWrongPodName).getStatus();
         assertThat("Unschedulable", is(kcWrongStatus.getConditions().get(0).getReason()));
@@ -227,24 +227,24 @@ public class SpecificST extends AbstractST {
         KafkaConnectUtils.waitForConnectReady(clusterName);
         LOGGER.info("KafkaConnect is ready with changed rack key: '{}'.", rackKey);
         LOGGER.info("Verify KafkaConnect rack key update");
-        kc = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).get();
+        kc = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get();
         assertThat(kc.getSpec().getRack().getTopologyKey(), is(rackKey));
 
         List<String> kcPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
-        KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, NAMESPACE, clusterName);
+        KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, INFRA_NAMESPACE, clusterName);
 
         // Revert changes for CO deployment
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(sharedExtensionContext)
-            .withNamespace(NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
             .runBundleInstallation();
 
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         // check the ClusterRoleBinding annotations and labels in Kafka cluster
-        Map<String, String> actualLabel = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getTemplate().getClusterRoleBinding().getMetadata().getLabels();
-        Map<String, String> actualAnno = KafkaConnectResource.kafkaConnectClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getTemplate().getClusterRoleBinding().getMetadata().getAnnotations();
+        Map<String, String> actualLabel = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getSpec().getTemplate().getClusterRoleBinding().getMetadata().getLabels();
+        Map<String, String> actualAnno = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getSpec().getTemplate().getClusterRoleBinding().getMetadata().getAnnotations();
 
         assertThat(actualLabel, is(label));
         assertThat(actualAnno, is(anno));
@@ -266,7 +266,7 @@ public class SpecificST extends AbstractST {
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(sharedExtensionContext)
-            .withNamespace(NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
             .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
             .createInstallation()
@@ -323,11 +323,11 @@ public class SpecificST extends AbstractST {
         assertThat(connectPodNodeSelectorRequirement.getKey(), is(rackKey));
         assertThat(connectPodNodeSelectorRequirement.getOperator(), is("Exists"));
 
-        KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, NAMESPACE, clusterName);
+        KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, INFRA_NAMESPACE, clusterName);
         // Revert changes for CO deployment
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(sharedExtensionContext)
-            .withNamespace(NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
             .runBundleInstallation();
 
@@ -370,7 +370,7 @@ public class SpecificST extends AbstractST {
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(INFRA_NAMESPACE)
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
@@ -399,9 +399,9 @@ public class SpecificST extends AbstractST {
         LOGGER.info("Kafka with version {} deployed.", nonExistingVersion);
 
         KafkaUtils.waitForKafkaNotReady(clusterName);
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, NAMESPACE, nonExistingVersionMessage);
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, INFRA_NAMESPACE, nonExistingVersionMessage);
 
-        KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).delete();
+        KafkaResource.kafkaClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).delete();
     }
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
@@ -442,7 +442,7 @@ public class SpecificST extends AbstractST {
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(INFRA_NAMESPACE)
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
@@ -492,7 +492,7 @@ public class SpecificST extends AbstractST {
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(sharedExtensionContext)
-            .withNamespace(NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
             .runInstallation();
     }

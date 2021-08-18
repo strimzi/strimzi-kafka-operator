@@ -22,6 +22,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
@@ -60,6 +61,7 @@ import java.util.Map;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.LOGGING_RELOADING_INTERVAL;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.RECONCILIATION_INTERVAL;
@@ -78,14 +80,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
+@IsolatedSuite
 class LoggingChangeST extends AbstractST {
-    static final String NAMESPACE = "logging-change-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(LoggingChangeST.class);
 
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testJSONFormatLogging(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // In this test scenario we change configuration for CO and we have to be sure, that CO is installed via YAML bundle instead of helm or OLM
@@ -180,7 +182,7 @@ class LoggingChangeST extends AbstractST {
             .withNewMetadata()
                 .withName(configMapCOName)
                 // we are using this namespace because CO is deployed @BeforeAll
-                .withNamespace(NAMESPACE)
+                .withNamespace(INFRA_NAMESPACE)
             .endMetadata()
             .addToData("log4j2.properties", loggersConfigCO)
             .build();
@@ -189,7 +191,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapOperators);
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapZookeeper);
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapOperators);
-        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(configMapCO);
+        kubeClient().getClient().configMaps().inNamespace(INFRA_NAMESPACE).createOrReplace(configMapCO);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editOrNewSpec()
@@ -230,9 +232,9 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName));
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
-        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(NAMESPACE, ResourceManager.getCoDeploymentName());
+        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(INFRA_NAMESPACE, ResourceManager.getCoDeploymentName());
 
-        StUtils.checkLogForJSONFormat(NAMESPACE, operatorSnapshot, ResourceManager.getCoDeploymentName());
+        StUtils.checkLogForJSONFormat(INFRA_NAMESPACE, operatorSnapshot, ResourceManager.getCoDeploymentName());
         StUtils.checkLogForJSONFormat(namespaceName, kafkaPods, "kafka");
         StUtils.checkLogForJSONFormat(namespaceName, zkPods, "zookeeper");
         StUtils.checkLogForJSONFormat(namespaceName, eoPods, "topic-operator");
@@ -243,7 +245,7 @@ class LoggingChangeST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testDynamicallySetEOloggingLevels(ExtensionContext extensionContext) throws InterruptedException {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         InlineLogging ilOff = new InlineLogging();
@@ -426,7 +428,7 @@ class LoggingChangeST extends AbstractST {
     @Tag(BRIDGE)
     @Tag(ROLLING_UPDATE)
     void testDynamicallySetBridgeLoggingLevels(ExtensionContext extensionContext) throws InterruptedException {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
@@ -550,8 +552,8 @@ class LoggingChangeST extends AbstractST {
     @IsolatedTest("Scraping log from shared Cluster Operator")
     @Tag(ROLLING_UPDATE)
     void testDynamicallySetClusterOperatorLoggingLevels(ExtensionContext extensionContext) throws InterruptedException {
-        final Map<String, String> coPod = DeploymentUtils.depSnapshot(NAMESPACE, STRIMZI_DEPLOYMENT_NAME);
-        final String coPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(NAMESPACE, STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();
+        final Map<String, String> coPod = DeploymentUtils.depSnapshot(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME);
+        final String coPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();
         final String command = "cat /opt/strimzi/custom-config/log4j2.properties";
 
         String log4jConfig =
@@ -582,54 +584,54 @@ class LoggingChangeST extends AbstractST {
             .withNewMetadata()
                 .addToLabels("app", "strimzi")
                 .withName(STRIMZI_DEPLOYMENT_NAME)
-                .withNamespace(NAMESPACE)
+                .withNamespace(INFRA_NAMESPACE)
             .endMetadata()
             .withData(Collections.singletonMap("log4j2.properties", log4jConfig))
             .build();
 
         LOGGER.info("Checking that original logging config is different from the new one");
-        assertThat(log4jConfig, not(equalTo(cmdKubeClient().namespace(NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().trim())));
+        assertThat(log4jConfig, not(equalTo(cmdKubeClient().namespace(INFRA_NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().trim())));
 
         LOGGER.info("Changing logging for cluster-operator");
-        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(coMap);
+        kubeClient().getClient().configMaps().inNamespace(INFRA_NAMESPACE).createOrReplace(coMap);
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = OFF")
+            () -> cmdKubeClient().namespace(INFRA_NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = OFF")
         );
 
         LOGGER.info("Checking log4j2.properties in CO pod");
-        String podLogConfig = cmdKubeClient().namespace(NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
+        String podLogConfig = cmdKubeClient().namespace(INFRA_NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
         assertThat(podLogConfig, equalTo(log4jConfig));
 
         LOGGER.info("Checking if CO rolled its pod");
-        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(NAMESPACE, STRIMZI_DEPLOYMENT_NAME)));
+        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME)));
 
         LOGGER.info("Waiting {} ms log to be empty", LOGGING_RELOADING_INTERVAL);
         // wait some time and check whether logs after this time are empty
         Thread.sleep(LOGGING_RELOADING_INTERVAL);
 
         LOGGER.info("Asserting if log will contain no records");
-        assertThat(StUtils.getLogFromPodByTime(NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s"), is(emptyString()));
+        assertThat(StUtils.getLogFromPodByTime(INFRA_NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s"), is(emptyString()));
 
         LOGGER.info("Changing all levels from OFF to INFO/WARN");
         log4jConfig = log4jConfig.replaceAll("OFF", "INFO");
         coMap.setData(Collections.singletonMap("log4j2.properties", log4jConfig));
 
         LOGGER.info("Changing logging for cluster-operator");
-        kubeClient().getClient().configMaps().inNamespace(NAMESPACE).createOrReplace(coMap);
+        kubeClient().getClient().configMaps().inNamespace(INFRA_NAMESPACE).createOrReplace(coMap);
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().namespace(NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = INFO")
+            () -> cmdKubeClient().namespace(INFRA_NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = INFO")
         );
 
         LOGGER.info("Checking log4j2.properties in CO pod");
-        podLogConfig = cmdKubeClient().namespace(NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
+        podLogConfig = cmdKubeClient().namespace(INFRA_NAMESPACE).execInPod(coPodName, "/bin/bash", "-c", command).out().trim();
         assertThat(podLogConfig, equalTo(log4jConfig));
 
         LOGGER.info("Checking if CO rolled its pod");
-        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(NAMESPACE, STRIMZI_DEPLOYMENT_NAME)));
+        assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME)));
 
         long reconciliationSleep = RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis();
         LOGGER.info("Waiting {} ms log not to be empty", reconciliationSleep);
@@ -637,7 +639,7 @@ class LoggingChangeST extends AbstractST {
         Thread.sleep(reconciliationSleep * 2);
 
         LOGGER.info("Asserting if log will contain no records");
-        String coLog = StUtils.getLogFromPodByTime(NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
+        String coLog = StUtils.getLogFromPodByTime(INFRA_NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
         assertThat(coLog, is(not(emptyString())));
         assertThat(coLog.contains("INFO"), is(true));
     }
@@ -647,7 +649,7 @@ class LoggingChangeST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testDynamicallySetConnectLoggingLevels(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
@@ -741,7 +743,7 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     void testDynamicallySetKafkaLoggingLevels(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
@@ -817,7 +819,7 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     void testDynamicallySetUnknownKafkaLogger(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
@@ -840,7 +842,7 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     void testDynamicallySetUnknownKafkaLoggerValue(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
@@ -861,7 +863,7 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     void testDynamicallySetKafkaExternalLogging(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // this test changes dynamically unchangeable logging config and thus RU is expected
@@ -986,7 +988,7 @@ class LoggingChangeST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
     void testDynamicallySetMM2LoggingLevels(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
@@ -1068,7 +1070,7 @@ class LoggingChangeST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testMM2LoggingLevelsHierarchy(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
@@ -1163,7 +1165,7 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     void testNotExistingCMSetsDefaultLogging(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String defaultProps = TestUtils.getFileAsString(TestUtils.USER_PATH + "/../cluster-operator/src/main/resources/kafkaDefaultLoggingProperties");
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -1317,7 +1319,7 @@ class LoggingChangeST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .createInstallation()
             .runInstallation();

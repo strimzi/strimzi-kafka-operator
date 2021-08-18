@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.RECOVERY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -44,9 +46,8 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
  * Procedure described in documentation  https://strimzi.io/docs/master/#namespace-deletion_str
  */
 @Tag(RECOVERY)
+@IsolatedSuite
 class NamespaceDeletionRecoveryST extends AbstractST {
-
-    static final String NAMESPACE = "namespace-recovery-cluster-test";
 
     private static final Logger LOGGER = LogManager.getLogger(NamespaceDeletionRecoveryST.class);
 
@@ -69,7 +70,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         // Wait till consumer offset topic is created
         KafkaTopicUtils.waitForKafkaTopicCreationByNamePrefix("consumer-offsets");
         // Get list of topics and list of PVC needed for recovery
-        List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).list().getItems();
+        List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(INFRA_NAMESPACE).list().getItems();
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
         deleteAndRecreateNamespace();
 
@@ -79,7 +80,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         // Recreate all KafkaTopic resources
         for (KafkaTopic kafkaTopic : kafkaTopicList) {
             kafkaTopic.getMetadata().setResourceVersion(null);
-            KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).createOrReplace(kafkaTopic);
+            KafkaTopicResource.kafkaTopicClient().inNamespace(INFRA_NAMESPACE).createOrReplace(kafkaTopic);
         }
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
@@ -107,7 +108,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(INFRA_NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .withMessageCount(MESSAGE_COUNT)
@@ -192,7 +193,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(INFRA_NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -210,7 +211,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
             .runInstallation();
 
@@ -240,7 +241,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(defaultKafkaClientsPodName)
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(INFRA_NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -256,7 +257,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private void recreatePvcAndUpdatePv(List<PersistentVolumeClaim> persistentVolumeClaimList) {
         for (PersistentVolumeClaim pvc : persistentVolumeClaimList) {
             pvc.getMetadata().setResourceVersion(null);
-            kubeClient().getClient().persistentVolumeClaims().inNamespace(NAMESPACE).create(pvc);
+            kubeClient().getClient().persistentVolumeClaims().inNamespace(INFRA_NAMESPACE).create(pvc);
 
             PersistentVolume pv = kubeClient().getClient().persistentVolumes().withName(pvc.getSpec().getVolumeName()).get();
             pv.getSpec().setClaimRef(null);
@@ -268,18 +269,18 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         // Recreate CO
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
             .runInstallation();
     }
 
     private void deleteAndRecreateNamespace() {
         // Delete namespace with all resources
-        kubeClient().deleteNamespace(NAMESPACE);
-        NamespaceUtils.waitForNamespaceDeletion(NAMESPACE);
+        kubeClient().deleteNamespace(INFRA_NAMESPACE);
+        NamespaceUtils.waitForNamespaceDeletion(INFRA_NAMESPACE);
 
         // Recreate namespace
-        cluster.createNamespace(NAMESPACE);
+        cluster.createNamespace(INFRA_NAMESPACE);
     }
 
     @BeforeAll

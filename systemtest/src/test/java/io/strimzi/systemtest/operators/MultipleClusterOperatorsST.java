@@ -15,6 +15,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -57,6 +58,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
+@IsolatedSuite
 public class MultipleClusterOperatorsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleClusterOperatorsST.class);
@@ -203,6 +205,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         List<EnvVar> envVarList = new ArrayList<>();
         envVarList.add(selectorEnv);
 
+        install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(coNamespace)

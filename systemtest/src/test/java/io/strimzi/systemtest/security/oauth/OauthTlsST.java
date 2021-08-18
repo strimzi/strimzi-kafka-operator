@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -50,6 +51,7 @@ import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.HTTP_BRIDGE_DEFAULT_PORT;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
@@ -63,11 +65,11 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
+@IsolatedSuite
 public class OauthTlsST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthTlsST.class);
 
     private final String oauthClusterName = "oauth-cluster-tls-name";
-    private static final String NAMESPACE = "oauth2-tls-cluster-test";
 
     @Description(
             "As an oauth producer, I am able to produce messages to the kafka broker\n" +
@@ -93,10 +95,10 @@ public class OauthTlsST extends OauthAbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 
     @Description("As an oauth KafkaConnect, I am able to sink messages from kafka broker topic using encrypted communication.")
@@ -123,12 +125,12 @@ public class OauthTlsST extends OauthAbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
+        ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
 
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
+        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, oauthClusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
@@ -170,7 +172,7 @@ public class OauthTlsST extends OauthAbstractST {
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
 
-        KafkaConnectorUtils.createFileSinkConnector(defaultKafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, NAMESPACE, 8083));
+        KafkaConnectorUtils.createFileSinkConnector(defaultKafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, INFRA_NAMESPACE, 8083));
 
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
@@ -200,12 +202,12 @@ public class OauthTlsST extends OauthAbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
+        ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
 
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
+        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName).build());
 
@@ -246,8 +248,8 @@ public class OauthTlsST extends OauthAbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge().build());
-        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
+        ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
     }
 
     @Description("As a oauth mirror maker, I am able to replicate topic data using using encrypted communication")
@@ -277,12 +279,12 @@ public class OauthTlsST extends OauthAbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, producerName);
+        ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
 
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
+        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
         String targetKafkaCluster = oauthClusterName + "-target";
 
@@ -413,8 +415,8 @@ public class OauthTlsST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, kafkaOauthClientJob.consumerStrimziOauthTls(targetKafkaCluster).build());
 
-        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(NAMESPACE, consumerName);
+        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
     }
 
     @ParallelTest
@@ -473,17 +475,17 @@ public class OauthTlsST extends OauthAbstractST {
                 .build();
 
         resourceManager.createResource(extensionContext, oauthInternalClientIntrospectionJob.producerStrimziOauthTls(introspectionKafka).build());
-        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
         resourceManager.createResource(extensionContext, oauthInternalClientIntrospectionJob.consumerStrimziOauthTls(introspectionKafka).build());
-        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 
     @BeforeAll
     void setUp(ExtensionContext extensionContext) {
         super.beforeAllMayOverride(extensionContext);
         // for namespace
-        super.setupCoAndKeycloak(extensionContext, NAMESPACE);
+        super.setupCoAndKeycloak(extensionContext, INFRA_NAMESPACE);
 
         keycloakInstance.setRealm("internal", true);
 
@@ -521,7 +523,7 @@ public class OauthTlsST extends OauthAbstractST {
     @AfterAll
     void tearDown(ExtensionContext extensionContext) throws Exception {
         // delete keycloak before namespace
-        KeycloakUtils.deleteKeycloak(NAMESPACE);
+        KeycloakUtils.deleteKeycloak(INFRA_NAMESPACE);
         // delete namespace etc.
         super.afterAllMayOverride(extensionContext);
     }

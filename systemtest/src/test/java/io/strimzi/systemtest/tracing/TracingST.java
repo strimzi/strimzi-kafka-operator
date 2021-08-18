@@ -12,7 +12,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -65,6 +65,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag(REGRESSION)
 @Tag(TRACING)
 @Tag(INTERNAL_CLIENTS_USED)
+@ParallelSuite
 public class TracingST extends AbstractST {
 
     private static final String NAMESPACE = "tracing-cluster-test";
@@ -571,12 +572,7 @@ public class TracingST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) throws IOException {
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(NAMESPACE)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-            .createInstallation()
-            .runInstallation();
+        super.beforeAllMayOverride(extensionContext);
         // deployment of the jaeger
         deployJaegerOperator(extensionContext);
     }

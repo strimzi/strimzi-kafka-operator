@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -36,7 +37,6 @@ import static org.hamcrest.Matchers.is;
 
 @Tag(REGRESSION)
 public class CustomAuthorizerST extends AbstractST {
-    static final String NAMESPACE = "custom-authorizer-namespace";
     static final String CLUSTER_NAME = "custom-authorizer";
     static final String ADMIN = "sre-admin";
     private static final Logger LOGGER = LogManager.getLogger(CustomAuthorizerST.class);
@@ -108,7 +108,7 @@ public class CustomAuthorizerST extends AbstractST {
 
         InternalKafkaClient writeKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(INFRA_NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(kafkaUserWrite)
             .withMessageCount(numberOfMessages)
@@ -121,7 +121,7 @@ public class CustomAuthorizerST extends AbstractST {
 
         InternalKafkaClient readKafkaClient = new InternalKafkaClient.Builder()
                 .withTopicName(topicName)
-                .withNamespaceName(NAMESPACE)
+                .withNamespaceName(INFRA_NAMESPACE)
                 .withClusterName(CLUSTER_NAME)
                 .withKafkaUsername(kafkaUserRead)
                 .withMessageCount(numberOfMessages)
@@ -172,7 +172,7 @@ public class CustomAuthorizerST extends AbstractST {
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(INFRA_NAMESPACE)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(ADMIN)
             .withMessageCount(MESSAGE_COUNT)
@@ -192,7 +192,7 @@ public class CustomAuthorizerST extends AbstractST {
     public void setup(ExtensionContext extensionContext) {
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
             .runInstallation();
 
