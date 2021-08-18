@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
@@ -82,7 +81,7 @@ public class SetupClusterOperator {
         // assign defaults is something is not specified
         if (this.clusterOperatorName == null || this.clusterOperatorName.isEmpty()) this.clusterOperatorName = Constants.STRIMZI_DEPLOYMENT_NAME;
         // if namespace is not set we install operator to 'infra-namespace'
-        if (this.namespaceInstallTo == null | this.namespaceInstallTo.isEmpty()) this.namespaceInstallTo = INFRA_NAMESPACE;
+        if (this.namespaceInstallTo == null || this.namespaceInstallTo.isEmpty()) this.namespaceInstallTo = INFRA_NAMESPACE;
         if (this.namespaceToWatch == null) this.namespaceToWatch = this.namespaceInstallTo;
         if (this.bindingsNamespaces == null) this.bindingsNamespaces = Collections.singletonList(this.namespaceInstallTo);
         if (this.operationTimeout == 0) this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
@@ -414,10 +413,10 @@ public class SetupClusterOperator {
     public void unInstall() {
         LOGGER.info("Un-installing cluster operator from {} namespace", Constants.INFRA_NAMESPACE);
         // trigger that we will again create namespace
-        BeforeAllOnce.sharedExtensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, null);
+        BeforeAllOnce.getSharedExtensionContext().getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, null);
         deleteClusterOperatorInstallFiles();
-        KubeClusterResource.getInstance().deleteCustomResources(BeforeAllOnce.sharedExtensionContext);
-        KubeClusterResource.getInstance().deleteNamespace(BeforeAllOnce.sharedExtensionContext, Constants.INFRA_NAMESPACE);
+        KubeClusterResource.getInstance().deleteCustomResources(BeforeAllOnce.getSharedExtensionContext());
+        KubeClusterResource.getInstance().deleteNamespace(BeforeAllOnce.getSharedExtensionContext(), Constants.INFRA_NAMESPACE);
     }
 
     public SetupClusterOperator rollbackToDefaultConfiguration() {
@@ -426,7 +425,7 @@ public class SetupClusterOperator {
 
         // install new one with default configuration
         return new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.sharedExtensionContext)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(Constants.INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .createInstallation()

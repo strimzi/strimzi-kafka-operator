@@ -20,11 +20,10 @@ import java.util.Collections;
  */
 public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
 
-    public static ExtensionContext sharedExtensionContext;
-    public static SetupClusterOperator install;
-
+    private static SetupClusterOperator install;
     private static final Logger LOGGER = LogManager.getLogger(BeforeAllOnce.class);
     private static boolean systemReady = false;
+    private static ExtensionContext sharedExtensionContext;
 
     /**
      * Separate method with 'synchronized static' required for make sure procedure will be executed
@@ -80,5 +79,13 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
         install.deleteClusterOperatorInstallFiles();
         KubeClusterResource.getInstance().deleteCustomResources(sharedExtensionContext);
         KubeClusterResource.getInstance().deleteNamespaces();
+    }
+
+    public static ExtensionContext getSharedExtensionContext() {
+        return sharedExtensionContext;
+    }
+
+    public static SetupClusterOperator getInstall() {
+        return install;
     }
 }

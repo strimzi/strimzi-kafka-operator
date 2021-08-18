@@ -409,11 +409,11 @@ class HttpBridgeST extends HttpBridgeAbstractST {
         cluster.createNamespace(extensionContext, NAMESPACE);
 
         // un-install old cluster operator
-        install = BeforeAllOnce.install;
+        install = BeforeAllOnce.getInstall();
         install.unInstall();
         // install new one with branch new configuration
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.sharedExtensionContext)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(Constants.INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withExtraEnvVars(

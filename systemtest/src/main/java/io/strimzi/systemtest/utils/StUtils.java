@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -57,6 +58,11 @@ public class StUtils {
 
     private static final Pattern BETWEEN_JSON_OBJECTS_PATTERN = Pattern.compile("}[\\n\\r]+\\{");
     private static final Pattern ALL_BEFORE_JSON_PATTERN = Pattern.compile("(.*\\s)}, \\{", Pattern.DOTALL);
+    private static final BiFunction<String, ExtensionContext, Boolean> CONTAINS_ANNOTATION =
+        (annotationName, extensionContext) -> Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
+            annotation -> annotation.annotationType().getName()
+                .toLowerCase(Locale.ENGLISH)
+                .contains(annotationName)).count() == 1;
 
     private StUtils() { }
 
@@ -368,10 +374,7 @@ public class StUtils {
      * @return true if test case contains annotation ParallelNamespaceTest, otherwise false
      */
     public static boolean isParallelNamespaceTest(ExtensionContext extensionContext) {
-        return Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
-            annotation -> annotation.annotationType().getName()
-                .toLowerCase(Locale.ENGLISH)
-                .contains(PARALLEL_NAMESPACE)).count() == 1;
+        return CONTAINS_ANNOTATION.apply(PARALLEL_NAMESPACE, extensionContext);
     }
 
     /**
@@ -380,10 +383,7 @@ public class StUtils {
      * @return true if test case contains annotation ParallelSuite, otherwise false
      */
     public static boolean isParallelSuite(ExtensionContext extensionContext) {
-        return Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
-            annotation -> annotation.annotationType().getName()
-                .toLowerCase(Locale.ENGLISH)
-                .contains(PARALLEL_SUITE)).count() == 1;
+        return CONTAINS_ANNOTATION.apply(PARALLEL_SUITE, extensionContext);
     }
 
     /**
@@ -392,10 +392,7 @@ public class StUtils {
      * @return true if test case contains annotation IsolatedSuite, otherwise false
      */
     public static boolean isIsolatedSuite(ExtensionContext extensionContext) {
-        return Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
-            annotation -> annotation.annotationType().getName()
-                .toLowerCase(Locale.ENGLISH)
-                .contains(ISOLATED_SUITE)).count() == 1;
+        return CONTAINS_ANNOTATION.apply(ISOLATED_SUITE, extensionContext);
     }
 
     /**
