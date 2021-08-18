@@ -1988,8 +1988,8 @@ spec:
                                   should first verify the artifacts manually and configure
                                   the checksum verification to make sure the same
                                   artifact is used in the automated build. Required
-                                  for `jar`, `zip`, and `tgz` artifacts. Not applicable
-                                  to the `maven` artifact type.
+                                  for `jar`, `zip`, `tgz` and `other` artifacts. Not
+                                  applicable to the `maven` artifact type.
                               version:
                                 type: string
                                 description: Maven version number. Applicable to the

@@ -21,6 +21,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -79,40 +80,46 @@ public class KafkaConnectDockerfile {
      * @param plugins       List of plugins which should be added to the container image
      */
     private void connectorPluginsPreStage(PrintWriter writer, List<Plugin> plugins) {
-        List<Artifact> mvnArtifacts = plugins.stream().flatMap(plugin -> plugin.getArtifacts().stream()).filter(artifact -> artifact instanceof MavenArtifact).collect(Collectors.toList());
+        Map<String, List<Artifact>> artifactMap = plugins.stream().collect(Collectors.toMap(plugin -> plugin.getName(),
+            plugin -> plugin.getArtifacts().stream().filter(artifact -> artifact instanceof MavenArtifact).collect(Collectors.toList())));
+        artifactMap.entrySet().removeIf(plugin -> plugin.getValue().isEmpty());
 
-        if (mvnArtifacts.size() > 0) {
+        if (artifactMap.size() > 0) {
             writer.println("FROM " + mavenImage + " AS downloadArtifacts");
-            mvnArtifacts.forEach(mvn -> {
-                checkForShellMetachars(((MavenArtifact) mvn).getGroup());
-                checkForShellMetachars(((MavenArtifact) mvn).getArtifact());
-                checkForShellMetachars(((MavenArtifact) mvn).getVersion());
-                String repo = ((MavenArtifact) mvn).getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybePatchRepository(((MavenArtifact) mvn).getRepository());
-                String artifactHash = Util.sha1Prefix(((MavenArtifact) mvn).getGroup() + ((MavenArtifact) mvn).getArtifact() + ((MavenArtifact) mvn).getVersion());
-                String downloadPomCmd = String.format("curl -L --create-dirs --output /tmp/%s/pom.xml %s%s/%s/%s/%s-%s.pom",
-                        artifactHash,
-                        repo,
-                        ((MavenArtifact) mvn).getGroup().replace(".", "/"), //org.apache.camel is translated as org/apache/camel in the URL
-                        ((MavenArtifact) mvn).getArtifact().replace(".", "/"),
-                        ((MavenArtifact) mvn).getVersion(),
-                        ((MavenArtifact) mvn).getArtifact(),
-                        ((MavenArtifact) mvn).getVersion());
+            artifactMap.entrySet().forEach(plugin -> {
+                plugin.getValue().forEach(mvn -> {
+                    String repo = ((MavenArtifact) mvn).getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybeAppendSlash(((MavenArtifact) mvn).getRepository());
+                    checkForShellMetachars(((MavenArtifact) mvn).getGroup());
+                    checkForShellMetachars(((MavenArtifact) mvn).getArtifact());
+                    checkForShellMetachars(((MavenArtifact) mvn).getVersion());
+                    checkForShellMetachars(repo);
+                    String artifactHash = Util.sha1Prefix(((MavenArtifact) mvn).getGroup() + ((MavenArtifact) mvn).getArtifact() + ((MavenArtifact) mvn).getVersion());
+                    String artifactDir = plugin.getKey() + "/" + artifactHash;
+                    String downloadPomCmd = String.format("curl -L --create-dirs --output /tmp/%s/pom.xml %s%s/%s/%s/%s-%s.pom",
+                            artifactDir,
+                            repo,
+                            ((MavenArtifact) mvn).getGroup().replace(".", "/"), //org.apache.camel is translated as org/apache/camel in the URL
+                            ((MavenArtifact) mvn).getArtifact().replace(".", "/"),
+                            ((MavenArtifact) mvn).getVersion(),
+                            ((MavenArtifact) mvn).getArtifact(),
+                            ((MavenArtifact) mvn).getVersion());
 
-                String downloadJarCmd = String.format("curl -L --create-dirs --output /tmp/artifacts/%s/%s-%s.jar %s%s/%s/%s/%s-%s.jar",
-                        artifactHash,
-                        ((MavenArtifact) mvn).getArtifact(),
-                        ((MavenArtifact) mvn).getVersion(),
-                        repo,
-                        ((MavenArtifact) mvn).getGroup().replace(".", "/"), //org.apache.camel is translated as org/apache/camel in the URL
-                        ((MavenArtifact) mvn).getArtifact().replace(".", "/"),
-                        ((MavenArtifact) mvn).getVersion(),
-                        ((MavenArtifact) mvn).getArtifact(),
-                        ((MavenArtifact) mvn).getVersion());
+                    String downloadJarCmd = String.format("curl -L --create-dirs --output /tmp/artifacts/%s/%s-%s.jar %s%s/%s/%s/%s-%s.jar",
+                            artifactDir,
+                            ((MavenArtifact) mvn).getArtifact(),
+                            ((MavenArtifact) mvn).getVersion(),
+                            repo,
+                            ((MavenArtifact) mvn).getGroup().replace(".", "/"), //org.apache.camel is translated as org/apache/camel in the URL
+                            ((MavenArtifact) mvn).getArtifact().replace(".", "/"),
+                            ((MavenArtifact) mvn).getVersion(),
+                            ((MavenArtifact) mvn).getArtifact(),
+                            ((MavenArtifact) mvn).getVersion());
 
-                writer.println("RUN " + downloadPomCmd + " \\");
-                writer.println("      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/" + artifactHash + " -f /tmp/" + artifactHash + "/pom.xml \\");
-                writer.println("      && " + downloadJarCmd);
-                writer.println();
+                    writer.println("RUN " + downloadPomCmd + " \\");
+                    writer.println("      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/" + artifactDir + " -f /tmp/" + artifactDir + "/pom.xml \\");
+                    writer.println("      && " + downloadJarCmd);
+                    writer.println();
+                });
             });
         }
     }
@@ -120,7 +127,7 @@ public class KafkaConnectDockerfile {
     private void checkForShellMetachars(String toBeChecked) {
         Matcher hasSpecial = special.matcher(toBeChecked);
         if (hasSpecial.find()) {
-            throw new InvalidConfigurationException("String '" + toBeChecked + "' contains forbidden character");
+            throw new InvalidConfigurationException("String '" + toBeChecked + "' contains forbidden character `" + hasSpecial.group() + "`");
         }
     }
 
@@ -200,7 +207,7 @@ public class KafkaConnectDockerfile {
             } else if (art instanceof ZipArtifact) {
                 addZipArtifact(writer, connectorPath, (ZipArtifact) art);
             } else if (art instanceof MavenArtifact) {
-                addMavenArtifact(writer, connectorPath, (MavenArtifact) art);
+                addMavenArtifact(writer, plugin.getName(), (MavenArtifact) art);
             } else if (art instanceof OtherArtifact) {
                 addOtherArtifact(writer, connectorPath, (OtherArtifact) art);
             } else {
@@ -209,20 +216,20 @@ public class KafkaConnectDockerfile {
         }
     }
 
-    private void validateUrlPresence(DownloadableArtifact art) {
-        if (art.getUrl() == null) {
+    private void checkUrlIsPresent(DownloadableArtifact art) {
+        if (art.getUrl() == null || art.getUrl().isEmpty()) {
             throw new InvalidConfigurationException("`" + art.getType() + "` artifact is missing a URL.");
         }
     }
 
-    private void validateGavPresence(MavenArtifact art) {
-        if (art.getGroup() == null) {
+    private void checkGavIsPresent(MavenArtifact art) {
+        if (art.getGroup() == null || art.getGroup().isEmpty()) {
             throw new InvalidConfigurationException("`" + art.getType() + "` artifact is missing a group ID.");
         }
-        if (art.getArtifact() == null) {
+        if (art.getArtifact() == null || art.getArtifact().isEmpty()) {
             throw new InvalidConfigurationException("`" + art.getType() + "` artifact is missing an artifact ID.");
         }
-        if (art.getVersion() == null) {
+        if (art.getVersion() == null || art.getVersion().isEmpty()) {
             throw new InvalidConfigurationException("`" + art.getType() + "` artifact is missing a version number.");
         }
     }
@@ -235,7 +242,7 @@ public class KafkaConnectDockerfile {
      * @param jar               The JAR-type artifact
      */
     private void addJarArtifact(PrintWriter writer, String connectorPath, JarArtifact jar) {
-        validateUrlPresence(jar);
+        checkUrlIsPresent(jar);
         String artifactHash = Util.sha1Prefix(jar.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String artifactPath = artifactDir + "/" + artifactHash + ".jar";
@@ -252,6 +259,7 @@ public class KafkaConnectDockerfile {
      * @param other             The Other-type artifact
      */
     private void addOtherArtifact(PrintWriter writer, String connectorPath, OtherArtifact other) {
+        checkUrlIsPresent(other);
         String artifactHash = Util.sha1Prefix(other.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String fileName = other.getFileName() != null ? other.getFileName() : artifactHash;
@@ -297,7 +305,7 @@ public class KafkaConnectDockerfile {
      * @param tgz               The TGZ-type artifact
      */
     private void addTgzArtifact(PrintWriter writer, String connectorPath, TgzArtifact tgz) {
-        validateUrlPresence(tgz);
+        checkUrlIsPresent(tgz);
         String artifactHash = Util.sha1Prefix(tgz.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".tgz";
@@ -336,7 +344,7 @@ public class KafkaConnectDockerfile {
      * @param zip               The ZIP-type artifact
      */
     private void addZipArtifact(PrintWriter writer, String connectorPath, ZipArtifact zip) {
-        validateUrlPresence(zip);
+        checkUrlIsPresent(zip);
         String artifactHash = Util.sha1Prefix(zip.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".zip";
@@ -374,27 +382,26 @@ public class KafkaConnectDockerfile {
      * Add command sequence for downloading Maven artifact
      *
      * @param writer            Writer for printing the Docker commands
-     * @param connectorPath     Path where the connector to which this artifact belongs should be downloaded
+     * @param connectorName     Name of the connector to which this artifact belongs should be downloaded
      * @param mvn               The maven artifact
      */
-    private void addMavenArtifact(PrintWriter writer, String connectorPath, MavenArtifact mvn) {
-        validateGavPresence(mvn);
+    private void addMavenArtifact(PrintWriter writer, String connectorName, MavenArtifact mvn) {
+        checkGavIsPresent(mvn);
         String artifactHash = Util.sha1Prefix(mvn.getGroup() + mvn.getArtifact() + mvn.getVersion());
-        String artifactDir = connectorPath + "/" + artifactHash;
 
-        writer.println("COPY --from=downloadArtifacts /tmp/artifacts/" + artifactHash + " " + artifactDir);
+        writer.println("COPY --from=downloadArtifacts /tmp/artifacts/" + connectorName + "/" + artifactHash + " " + BASE_PLUGIN_PATH + connectorName + "/" + artifactHash);
         writer.println();
     }
 
     /**
-     * @param repository The repository to check whether contains the slash as the last character
-     * @return The repository with slash ('/') as the last character
+     * @param checked The string to check whether contains the slash as the last character
+     * @return The string with slash ('/') as the last character
      */
-    private String maybePatchRepository(String repository) {
-        if (repository.lastIndexOf('/') + 1 == repository.length()) {
-            return repository;
+    private String maybeAppendSlash(String checked) {
+        if (checked.lastIndexOf('/') + 1 == checked.length()) {
+            return checked;
         } else {
-            return repository + "/";
+            return checked + "/";
         }
     }
 

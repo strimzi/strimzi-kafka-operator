@@ -29,7 +29,7 @@ public abstract class DownloadableArtifact extends Artifact {
     @Description("URL of the artifact which will be downloaded. " +
             "Strimzi does not do any security scanning of the downloaded artifacts. " +
             "For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. " +
-            "Required for `jar`, `zip`, and `tgz` artifacts. " +
+            "Required for `jar`, `zip`, `tgz` and `other` artifacts. " +
             "Not applicable to the `maven` artifact type.")
     @Pattern("^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]")
     public String getUrl() {

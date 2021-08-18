@@ -6,7 +6,7 @@
 * Expose JMX port on Zookeeper nodes via a headless service.
 * Allow configuring labels and annotations for JMX authentication secrets
 * Enable Cruise Control anomaly.detection configurations
-* Add support for building connector images from the maven coordinates
+* Add support for building connector images from the Maven coordinates
 
 ### Changes, deprecations and removals
 

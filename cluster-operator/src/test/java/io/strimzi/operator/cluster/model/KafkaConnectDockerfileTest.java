@@ -411,6 +411,8 @@ public class KafkaConnectDockerfileTest {
                 .build();
         Artifact zipArtifact = new ZipArtifactBuilder()
                 .build();
+        Artifact otherArtifact = new OtherArtifactBuilder()
+                .build();
 
         Build connectBuildTgz = new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -441,6 +443,16 @@ public class KafkaConnectDockerfileTest {
 
         e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildJar));
         assertThat(e.getMessage(), is("`jar` artifact is missing a URL."));
+
+        Build connectBuildOther = new BuildBuilder()
+                .withPlugins(new PluginBuilder()
+                        .withName("my-connector-plugin")
+                        .withArtifacts(singletonList(otherArtifact))
+                        .build())
+                .build();
+
+        e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildOther));
+        assertThat(e.getMessage(), is("`other` artifact is missing a URL."));
     }
 
     @ParallelTest
@@ -483,13 +495,13 @@ public class KafkaConnectDockerfileTest {
                 "##############################\n" +
                 "\n" +
                 "FROM quay.io/strimzi/maven-builder:latest AS downloadArtifacts\n" +
-                "RUN curl -L --create-dirs --output /tmp/401856c0/pom.xml https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.pom \\\n" +
-                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/401856c0 -f /tmp/401856c0/pom.xml \\\n" +
-                "      && curl -L --create-dirs --output /tmp/artifacts/401856c0/a1-v1.jar https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.jar\n" +
+                "RUN curl -L --create-dirs --output /tmp/my-connector-plugin/401856c0/pom.xml https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.pom \\\n" +
+                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/my-connector-plugin/401856c0 -f /tmp/my-connector-plugin/401856c0/pom.xml \\\n" +
+                "      && curl -L --create-dirs --output /tmp/artifacts/my-connector-plugin/401856c0/a1-v1.jar https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.jar\n" +
                 "\n" +
-                "RUN curl -L --create-dirs --output /tmp/6ecfeffd/pom.xml https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.pom \\\n" +
-                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/6ecfeffd -f /tmp/6ecfeffd/pom.xml \\\n" +
-                "      && curl -L --create-dirs --output /tmp/artifacts/6ecfeffd/a2-v2.jar https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.jar\n" +
+                "RUN curl -L --create-dirs --output /tmp/my-connector-plugin/6ecfeffd/pom.xml https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.pom \\\n" +
+                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/my-connector-plugin/6ecfeffd -f /tmp/my-connector-plugin/6ecfeffd/pom.xml \\\n" +
+                "      && curl -L --create-dirs --output /tmp/artifacts/my-connector-plugin/6ecfeffd/a2-v2.jar https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.jar\n" +
                 "\n" +
                 "FROM myImage:latest\n" +
                 "\n" +
@@ -501,9 +513,9 @@ public class KafkaConnectDockerfileTest {
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/9bb2fd11 \\\n" +
                 "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/9bb2fd11/9bb2fd11.jar http://url.com/ar.jar\n" +
                 "\n" +
-                "COPY --from=downloadArtifacts /tmp/artifacts/401856c0 /opt/kafka/plugins/my-connector-plugin/401856c0\n" +
+                "COPY --from=downloadArtifacts /tmp/artifacts/my-connector-plugin/401856c0 /opt/kafka/plugins/my-connector-plugin/401856c0\n" +
                 "\n" +
-                "COPY --from=downloadArtifacts /tmp/artifacts/6ecfeffd /opt/kafka/plugins/my-connector-plugin/6ecfeffd\n" +
+                "COPY --from=downloadArtifacts /tmp/artifacts/my-connector-plugin/6ecfeffd /opt/kafka/plugins/my-connector-plugin/6ecfeffd\n" +
                 "\n" +
                 "##########\n" +
                 "# Connector plugin other-connector-plugin\n" +
@@ -515,12 +527,15 @@ public class KafkaConnectDockerfileTest {
                 "\n"));
     }
 
-    private Build getConnectBuildFromGAV(String g, String a, String v) {
+    private static Build connectBuildFromGavAndUrl(String g, String a, String v, String url) {
         MavenArtifact mvn = new MavenArtifactBuilder()
                 .withGroup(g)
                 .withArtifact(a)
                 .withVersion(v)
                 .build();
+        if (url != null) {
+            mvn.setRepository(url);
+        }
 
         return new BuildBuilder()
                 .withPlugins(new PluginBuilder()
@@ -532,16 +547,19 @@ public class KafkaConnectDockerfileTest {
 
     @ParallelTest
     public void testForbiddenChars() {
-        Build b1 = getConnectBuildFromGAV("$(echo rm -rf)", "a", "v");
-        Build b2 = getConnectBuildFromGAV("g", "; print $PASSWORD", "v");
-        Build b3 = getConnectBuildFromGAV("g", "a", "\\I AM VIRUS, PLEASE PAY ME");
+        Build b1 = connectBuildFromGavAndUrl("$(echo rm -rf)", "a", "v", null);
+        Build b2 = connectBuildFromGavAndUrl("g", "; print $PASSWORD", "v", null);
+        Build b3 = connectBuildFromGavAndUrl("g", "a", "\\I AM VIRUS, PLEASE PAY ME", null);
+        Build b4 = connectBuildFromGavAndUrl("g", "a", "v", "http://h@cking.site.com");
 
         Throwable t1 = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", b1));
         Throwable t2 = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", b2));
         Throwable t3 = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", b3));
+        Throwable t4 = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", b4));
 
-        assertThat(t1.getMessage(), is("String '$(echo rm -rf)' contains forbidden character"));
-        assertThat(t2.getMessage(), is("String '; print $PASSWORD' contains forbidden character"));
-        assertThat(t3.getMessage(), is("String '\\I AM VIRUS, PLEASE PAY ME' contains forbidden character"));
+        assertThat(t1.getMessage(), is("String '$(echo rm -rf)' contains forbidden character `$`"));
+        assertThat(t2.getMessage(), is("String '; print $PASSWORD' contains forbidden character `;`"));
+        assertThat(t3.getMessage(), is("String '\\I AM VIRUS, PLEASE PAY ME' contains forbidden character `\\`"));
+        assertThat(t4.getMessage(), is("String 'http://h@cking.site.com/' contains forbidden character `@`"));
     }
 }
