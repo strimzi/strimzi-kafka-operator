@@ -27,7 +27,7 @@ import java.util.Map;
 @JsonPropertyOrder({
         "statefulset", "pod", "bootstrapService", "brokersService", "externalBootstrapService", "perPodService",
         "externalBootstrapRoute", "perPodRoute", "externalBootstrapIngress", "perPodIngress", "persistentVolumeClaim",
-        "podDisruptionBudget", "kafkaContainer", "initContainer", "clusterCaCert", "serviceAccount"})
+        "podDisruptionBudget", "kafkaContainer", "initContainer", "clusterCaCert", "serviceAccount", "jmxSecret"})
 @EqualsAndHashCode
 public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -49,6 +49,7 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
     private ContainerTemplate initContainer;
     private ResourceTemplate clusterRoleBinding;
     private ResourceTemplate serviceAccount;
+    private ResourceTemplate jmxSecret;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka `StatefulSet`.")
@@ -219,6 +220,15 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
 
     public void setServiceAccount(ResourceTemplate serviceAccount) {
         this.serviceAccount = serviceAccount;
+    }
+
+    @Description("Template for Secret of the Kafka Cluster JMX authentication")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getJmxSecret() {
+        return jmxSecret;
+    }
+    public void setJmxSecret(ResourceTemplate jmxSecret) {
+        this.jmxSecret = jmxSecret;
     }
 
     @Override

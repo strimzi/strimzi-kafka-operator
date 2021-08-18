@@ -1113,10 +1113,10 @@ public class KafkaAssemblyOperatorTest {
                 emptyList()
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaCluster.jmxSecretName(clusterName))).thenReturn(
-                Future.succeededFuture(originalKafkaCluster.generateJmxSecret())
+                Future.succeededFuture(originalKafkaCluster.generateJmxSecret(emptyMap(), emptyMap()))
         );
         when(mockSecretOps.getAsync(clusterNamespace, ZookeeperCluster.jmxSecretName(clusterName))).thenReturn(
-                Future.succeededFuture(originalZookeeperCluster.generateJmxSecret())
+                Future.succeededFuture(originalZookeeperCluster.generateJmxSecret(emptyMap(), emptyMap()))
         );
         when(mockSecretOps.getAsync(clusterNamespace, ZookeeperCluster.nodesSecretName(clusterName))).thenReturn(
                 Future.succeededFuture()

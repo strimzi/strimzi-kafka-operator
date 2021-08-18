@@ -87,6 +87,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasKey;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -273,10 +274,50 @@ public class ZookeeperClusterTest {
                 .build();
 
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
-        Secret jmxSecret = zookeeperCluster.generateJmxSecret();
+        Secret jmxSecret = zookeeperCluster.generateJmxSecret(emptyMap(), emptyMap());
 
         assertThat(jmxSecret.getData(), hasKey("jmx-username"));
         assertThat(jmxSecret.getData(), hasKey("jmx-password"));
+    }
+
+    @ParallelTest
+    public void testJmxSecretCustomLabelsAndAnnotations() {
+        Map<String, String> customLabels = new HashMap<>(2);
+        customLabels.put("label1", "value1");
+        customLabels.put("label2", "value2");
+
+        Map<String, String> customAnnotations = new HashMap<>(2);
+        customAnnotations.put("anno1", "value3");
+        customAnnotations.put("anno2", "value4");
+
+        Kafka kafka = new KafkaBuilder(ka)
+                .editSpec()
+                .editZookeeper()
+                .withJmxOptions(new KafkaJmxOptionsBuilder()
+                        .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder()
+                                .build())
+                        .build())
+                .withNewTemplate()
+                .withNewJmxSecret()
+                .withNewMetadata()
+                .withAnnotations(customAnnotations)
+                .withLabels(customLabels)
+                .endMetadata()
+                .endJmxSecret()
+                .endTemplate()
+                .endZookeeper()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        Secret jmxSecret = kc.generateJmxSecret(customAnnotations, customLabels);
+
+        for (Map.Entry<String, String> entry : customAnnotations.entrySet()) {
+            assertThat(jmxSecret.getMetadata().getAnnotations(), hasEntry(entry.getKey(), entry.getValue()));
+        }
+        for (Map.Entry<String, String> entry : customLabels.entrySet()) {
+            assertThat(jmxSecret.getMetadata().getLabels(), hasEntry(entry.getKey(), entry.getValue()));
+        }
     }
 
     @ParallelTest
