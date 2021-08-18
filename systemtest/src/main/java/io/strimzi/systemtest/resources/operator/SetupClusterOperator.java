@@ -432,32 +432,4 @@ public class SetupClusterOperator {
             .createInstallation()
             .runInstallation();
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SetupClusterOperator that = (SetupClusterOperator) o;
-        return operationTimeout ==
-            that.operationTimeout &&
-            reconciliationInterval == that.reconciliationInterval &&
-            Objects.equals(cluster, that.cluster) &&
-            Objects.equals(clusterOperatorConfigs, that.clusterOperatorConfigs) &&
-            Objects.equals(helmResource, that.helmResource) &&
-            Objects.equals(olmResource, that.olmResource) &&
-            Objects.equals(extensionContext, that.extensionContext) &&
-            Objects.equals(clusterOperatorName, that.clusterOperatorName) &&
-            Objects.equals(namespaceInstallTo, that.namespaceInstallTo) &&
-            Objects.equals(namespaceToWatch, that.namespaceToWatch) &&
-            Objects.equals(bindingsNamespaces, that.bindingsNamespaces) &&
-            Objects.equals(extraEnvVars, that.extraEnvVars) &&
-            Objects.equals(extraLabels, that.extraLabels) &&
-            clusterOperatorRBACType == that.clusterOperatorRBACType;
-    }
-    @Override
-    public int hashCode() {
-        return Objects.hash(cluster, clusterOperatorConfigs, helmResource, olmResource, extensionContext,
-            clusterOperatorName, namespaceInstallTo, namespaceToWatch, bindingsNamespaces, operationTimeout,
-            reconciliationInterval, extraEnvVars, extraLabels, clusterOperatorRBACType);
-    }
 }
