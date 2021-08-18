@@ -18,7 +18,6 @@ import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.test.TestUtils;
-import kafka.log.Log;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -557,7 +557,6 @@ class ConnectBuilderST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-
         if (cluster.isNotKubernetes()) {
             outputRegistry = "image-registry.openshift-image-registry.svc:5000/" + NAMESPACE;
         } else {
