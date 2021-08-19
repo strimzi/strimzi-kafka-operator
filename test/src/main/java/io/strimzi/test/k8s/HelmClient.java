@@ -39,14 +39,14 @@ public class HelmClient {
     }
 
     /** Install a chart given its local path, release name, and values to override */
-    public HelmClient install(Path chart, String releaseName, Map<String, String> valuesMap) {
+    public HelmClient install(Path chart, String releaseName, Map<String, Object> valuesMap) {
         LOGGER.info("Installing helm-chart {}", releaseName);
         String values = Stream.of(valuesMap).flatMap(m -> m.entrySet().stream())
                 .map(entry -> String.format("%s=%s", entry.getKey(), entry.getValue()))
                 .collect(Collectors.joining(","));
         Exec.exec(null, wait(namespace(command("install",
                 releaseName,
-                "--set-string", values,
+                "--set", values,
                 "--timeout", INSTALL_TIMEOUT_SECONDS,
                 chart.toString()))), 0, true, true);
         return this;

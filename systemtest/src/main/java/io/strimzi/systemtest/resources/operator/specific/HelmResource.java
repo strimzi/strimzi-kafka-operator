@@ -17,12 +17,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
-import java.util.stream.Stream;
 
-import static io.strimzi.test.TestUtils.entry;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class HelmResource implements SpecificResourceType {
@@ -67,62 +65,65 @@ public class HelmResource implements SpecificResourceType {
     }
 
     private void clusterOperator(long operationTimeout, long reconciliationInterval) {
-        Map<String, String> values = Collections.unmodifiableMap(Stream.of(
-                // image registry config
-                entry("image.registry", Environment.STRIMZI_REGISTRY),
-                entry("topicOperator.image.registry", Environment.STRIMZI_REGISTRY),
-                entry("userOperator.image.registry", Environment.STRIMZI_REGISTRY),
-                entry("kafkaInit.image.registry", Environment.STRIMZI_REGISTRY),
-                entry("jmxTrans.image.registry", Environment.STRIMZI_REGISTRY),
-                entry("kanikoExecutor.image.registry", Environment.STRIMZI_REGISTRY),
-                entry("tlsSidecarEntityOperator.image.registry", Environment.STRIMZI_REGISTRY),
-                entry("kafkaExporter.image.registry", Environment.STRIMZI_REGISTRY),
-                entry("cruiseControl.image.registry", Environment.STRIMZI_REGISTRY),
-                entry("tlsSidecarCruiseControl.image.registry", Environment.STRIMZI_REGISTRY),
-                entry("kafka.image.registry", Environment.STRIMZI_REGISTRY),
-                entry("kafkaConnect.image.registry", Environment.STRIMZI_REGISTRY),
-                entry("kafkaMirrorMaker.image.registry", Environment.STRIMZI_REGISTRY),
-                entry("kafkaMirrorMaker2.image.registry", Environment.STRIMZI_REGISTRY),
-                entry("kafkaBridge.image.registry", Environment.STRIMZI_REGISTRY_DEFAULT),
 
-                // image repository config
-                entry("image.repository", Environment.STRIMZI_ORG),
-                entry("topicOperator.image.repository", Environment.STRIMZI_ORG),
-                entry("userOperator.image.repository", Environment.STRIMZI_ORG),
-                entry("kafkaInit.image.repository", Environment.STRIMZI_ORG),
-                entry("jmxTrans.image.repository", Environment.STRIMZI_ORG),
-                entry("kanikoExecutor.image.repository", Environment.STRIMZI_ORG),
-                entry("tlsSidecarEntityOperator.image.repository", Environment.STRIMZI_ORG),
-                entry("kafkaExporter.image.repository", Environment.STRIMZI_ORG),
-                entry("cruiseControl.image.repository", Environment.STRIMZI_ORG),
-                entry("tlsSidecarCruiseControl.image.repository", Environment.STRIMZI_ORG),
-                entry("kafka.image.repository", Environment.STRIMZI_ORG),
-                entry("kafkaConnect.image.repository", Environment.STRIMZI_ORG),
-                entry("kafkaMirrorMaker.image.repository", Environment.STRIMZI_ORG),
-                entry("kafkaMirrorMaker2.image.repository", Environment.STRIMZI_ORG),
-                entry("kafkaBridge.image.repository", Environment.STRIMZI_ORG_DEFAULT),
+        Map<String, Object> values = new HashMap<>();
+        // image registry config
+        values.put("image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("topicOperator.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("userOperator.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("kafkaInit.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("jmxTrans.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("kanikoExecutor.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("tlsSidecarEntityOperator.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("kafkaExporter.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("cruiseControl.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("tlsSidecarCruiseControl.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("kafka.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("kafkaConnect.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("kafkaMirrorMaker.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("kafkaMirrorMaker2.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("kafkaBridge.image.registry", Environment.STRIMZI_REGISTRY_DEFAULT);
 
-                // image tags config
-                entry("image.tag", Environment.STRIMZI_TAG),
-                entry("topicOperator.image.tag", Environment.STRIMZI_TAG),
-                entry("userOperator.image.tag", Environment.STRIMZI_TAG),
-                entry("kafkaInit.image.tag", Environment.STRIMZI_TAG),
-                entry("jmxTrans.image.tag", Environment.STRIMZI_TAG),
-                entry("kafkaBridge.image.tag", Environment.useLatestReleasedBridge() ? "latest" : BridgeUtils.getBridgeVersion()),
+        // image repository config
+        values.put("image.repository", Environment.STRIMZI_ORG);
+        values.put("topicOperator.image.repository", Environment.STRIMZI_ORG);
+        values.put("userOperator.image.repository", Environment.STRIMZI_ORG);
+        values.put("kafkaInit.image.repository", Environment.STRIMZI_ORG);
+        values.put("jmxTrans.image.repository", Environment.STRIMZI_ORG);
+        values.put("kanikoExecutor.image.repository", Environment.STRIMZI_ORG);
+        values.put("tlsSidecarEntityOperator.image.repository", Environment.STRIMZI_ORG);
+        values.put("kafkaExporter.image.repository", Environment.STRIMZI_ORG);
+        values.put("cruiseControl.image.repository", Environment.STRIMZI_ORG);
+        values.put("tlsSidecarCruiseControl.image.repository", Environment.STRIMZI_ORG);
+        values.put("kafka.image.repository", Environment.STRIMZI_ORG);
+        values.put("kafkaConnect.image.repository", Environment.STRIMZI_ORG);
+        values.put("kafkaMirrorMaker.image.repository", Environment.STRIMZI_ORG);
+        values.put("kafkaMirrorMaker2.image.repository", Environment.STRIMZI_ORG);
+        values.put("kafkaBridge.image.repository", Environment.STRIMZI_ORG_DEFAULT);
 
-                // Additional config
-                entry("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY),
-                entry("resources.requests.memory", REQUESTS_MEMORY),
-                entry("resources.requests.cpu", REQUESTS_CPU),
-                entry("resources.limits.memory", LIMITS_MEMORY),
-                entry("resources.limits.cpu", LIMITS_CPU),
-                entry("logLevelOverride", Environment.STRIMZI_LOG_LEVEL),
-                entry("fullReconciliationIntervalMs", Long.toString(reconciliationInterval)),
-                entry("operationTimeoutMs", Long.toString(operationTimeout)),
-                // As FG is CSV, we need to escape commas for interpretation of helm installation string
-                entry("featureGates", Environment.STRIMZI_FEATURE_GATES.replaceAll(",", "\\\\,")),
-                entry("watchAnyNamespace", this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES) ? "true" : "false"))
-                .collect(TestUtils.entriesToMap()));
+        // image tags config
+        values.put("image.tag", Environment.STRIMZI_TAG);
+        values.put("topicOperator.image.tag", Environment.STRIMZI_TAG);
+        values.put("userOperator.image.tag", Environment.STRIMZI_TAG);
+        values.put("kafkaInit.image.tag", Environment.STRIMZI_TAG);
+        values.put("jmxTrans.image.tag", Environment.STRIMZI_TAG);
+        values.put("kafkaBridge.image.tag", Environment.useLatestReleasedBridge() ? "latest" : BridgeUtils.getBridgeVersion());
+
+        // Additional config
+        values.put("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY);
+        values.put("resources.requests.memory", REQUESTS_MEMORY);
+        values.put("resources.requests.cpu", REQUESTS_CPU);
+        values.put("resources.limits.memory", LIMITS_MEMORY);
+        values.put("resources.limits.cpu", LIMITS_CPU);
+        values.put("logLevelOverride", Environment.STRIMZI_LOG_LEVEL);
+        values.put("fullReconciliationIntervalMs", Long.toString(reconciliationInterval));
+        values.put("operationTimeoutMs", Long.toString(operationTimeout));
+        // As FG is CSV, we need to escape commas for interpretation of helm installation string
+        values.put("featureGates", Environment.STRIMZI_FEATURE_GATES.replaceAll(",", "\\\\,"));
+        values.put("watchAnyNamespace", this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES));
+        // We need to remove CO namespace to avoid creation of roles and rolebindings multiple times in one namespace
+        // Roles will be created in installTo namespace even if it's not specified in watchNamespaces
+        values.put("watchNamespaces", "{" + this.namespaceToWatch.replace(namespaceInstallTo + ",", "").replace("," + namespaceInstallTo, "") + "}");
 
         Path pathToChart = new File(HELM_CHART).toPath();
         String oldNamespace = KubeClusterResource.getInstance().setNamespace("kube-system");
