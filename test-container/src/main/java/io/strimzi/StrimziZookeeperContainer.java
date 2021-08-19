@@ -5,6 +5,7 @@
 package io.strimzi;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
@@ -15,13 +16,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * StrimziZookeeperContainer is an instance of the Zookeeper encapsulated inside a docker container using the latest image
  * from quay.io/strimzi/kafka. It can be combined with @StrimziKafkaContainer but we suggest to use directly @StrimziKafkaCluster
  * for more complicated testing.
  */
+@SuppressFBWarnings("EQ_DOESNT_OVERRIDE_EQUALS")
 public class StrimziZookeeperContainer extends GenericContainer<StrimziZookeeperContainer> {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziZookeeperContainer.class);
@@ -80,18 +81,5 @@ public class StrimziZookeeperContainer extends GenericContainer<StrimziZookeeper
             Transferable.of(command.getBytes(StandardCharsets.UTF_8), 700),
             STARTER_SCRIPT
         );
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        StrimziZookeeperContainer that = (StrimziZookeeperContainer) o;
-        return zookeeperExposedPort == that.zookeeperExposedPort;
-    }
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), zookeeperExposedPort);
     }
 }

@@ -109,7 +109,7 @@ public class StrimziKafkaCluster implements Startable {
             e.printStackTrace();
         }
 
-        TestUtils.waitFor("Zookeeper readiness", Duration.ofSeconds(1).toMillis(), Duration.ofSeconds(30).toMillis(),
+        TestUtils.waitFor("Broker node", Duration.ofSeconds(1).toMillis(), Duration.ofSeconds(30).toMillis(),
             () -> {
                 Container.ExecResult result = null;
                 try {
@@ -131,8 +131,11 @@ public class StrimziKafkaCluster implements Startable {
 
     @Override
     public void stop() {
-        // stop all containers in parallel
-        Stream.concat(this.brokers.stream(), Stream.of(this.zookeeper))
+        // firstly we shut-down zookeeper -> reason: 'On the command line if I kill ZK first it sometimes prevents a broker from shutting down quickly.'
+        this.zookeeper.stop();
+
+        // stop all kafka containers in parallel
+        this.brokers.stream()
             .parallel()
             .forEach(GenericContainer::stop);
     }

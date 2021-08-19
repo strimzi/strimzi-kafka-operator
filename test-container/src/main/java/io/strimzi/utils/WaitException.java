@@ -4,6 +4,11 @@
  */
 package io.strimzi.utils;
 
+/**
+ * Extension for RuntimeException used in active waiting @see TestUtils.waitFor(...) method.
+ * Usage of this Exception should be always associated with active waiting where the condition
+ * should not always be met which results in WaitException.
+ */
 public class WaitException extends RuntimeException {
     public WaitException(String message) {
         super(message);
