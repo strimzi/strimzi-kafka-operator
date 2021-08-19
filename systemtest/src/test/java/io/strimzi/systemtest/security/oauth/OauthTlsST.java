@@ -245,6 +245,7 @@ public class OauthTlsST extends OauthAbstractST {
             .withPort(HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
+            .withNamespaceName(INFRA_NAMESPACE)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge().build());

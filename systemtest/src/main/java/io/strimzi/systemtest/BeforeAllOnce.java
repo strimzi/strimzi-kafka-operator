@@ -36,10 +36,6 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
             systemReady = true;
             LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
             LOGGER.debug("{} - [BEFORE SUITE] has been called", BeforeAllOnce.class.getName());
-            LOGGER.debug(extensionContext.getDisplayName());
-            LOGGER.debug(extensionContext.getTestClass());
-            LOGGER.debug(extensionContext.getRoot());
-            LOGGER.debug(extensionContext.getTags());
 
             // setup cluster operator before all suites only once
             install = new SetupClusterOperator.SetupClusterOperatorBuilder()
@@ -74,11 +70,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
         // clean data from system
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [AFTER SUITE] has been called", this.getClass().getName());
-        // Clear cluster from all created namespaces and configurations files for cluster operator.
-
-        install.deleteClusterOperatorInstallFiles();
-        KubeClusterResource.getInstance().deleteCustomResources(sharedExtensionContext);
-        KubeClusterResource.getInstance().deleteNamespaces();
+        install.unInstall();
     }
 
     public static ExtensionContext getSharedExtensionContext() {

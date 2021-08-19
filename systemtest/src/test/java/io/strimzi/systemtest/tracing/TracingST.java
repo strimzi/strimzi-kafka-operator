@@ -50,6 +50,7 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.KAFKA_TRACING_CLIENT_KEY;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
@@ -68,7 +69,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @ParallelSuite
 public class TracingST extends AbstractST {
 
-    private static final String NAMESPACE = "tracing-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);
 
     private static final String JAEGER_PRODUCER_SERVICE = "hello-world-producer";
@@ -475,11 +475,11 @@ public class TracingST extends AbstractST {
 
         if (files != null && files.length > 0) {
             for (File file : files) {
-                String yamlContent = TestUtils.setMetadataNamespace(file, NAMESPACE)
-                    .replace("namespace: \"observability\"", "namespace: \"" + NAMESPACE + "\"");
+                String yamlContent = TestUtils.setMetadataNamespace(file, INFRA_NAMESPACE)
+                    .replace("namespace: \"observability\"", "namespace: \"" + INFRA_NAMESPACE + "\"");
                 jaegerConfigs.push(yamlContent);
                 LOGGER.info("Creating {} from {}", file.getName(), file.getAbsolutePath());
-                cmdKubeClient(NAMESPACE).applyContent(yamlContent);
+                cmdKubeClient(INFRA_NAMESPACE).applyContent(yamlContent);
             }
         } else {
             throw new FileNotFoundException("Folder with Jaeger files is empty or doesn't exist");
@@ -493,14 +493,14 @@ public class TracingST extends AbstractST {
 
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(() -> this.deleteJaeger()));
-        DeploymentUtils.waitForDeploymentAndPodsReady(NAMESPACE, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(INFRA_NAMESPACE, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withApiVersion("networking.k8s.io/v1")
             .withKind(Constants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName("jaeger-allow")
-                .withNamespace(NAMESPACE)
+                .withNamespace(INFRA_NAMESPACE)
             .endMetadata()
             .withNewSpec()
                 .addNewIngress()
@@ -532,7 +532,7 @@ public class TracingST extends AbstractST {
 
     @BeforeEach
     void createTestResources(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String streamsTopicTargetName = KafkaTopicUtils.generateRandomNameOfTopic();

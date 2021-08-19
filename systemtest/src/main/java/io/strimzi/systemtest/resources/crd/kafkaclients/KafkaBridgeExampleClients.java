@@ -72,6 +72,16 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
         }
 
         @Override
+        public Builder withNamespaceName(String namespaceName) {
+            return (Builder) super.withNamespaceName(namespaceName);
+        }
+
+        @Override
+        public KafkaBasicExampleClients.Builder withMessage(String message) {
+            return (Builder) super.withMessage(message);
+        }
+
+        @Override
         public KafkaBridgeExampleClients build() {
             return new KafkaBridgeExampleClients(this);
         }

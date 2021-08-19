@@ -31,7 +31,7 @@ public class KafkaBasicExampleClients {
     protected long delayMs;
     protected String namespaceName;
 
-    public static class Builder {
+    public static class Builder<SELF extends Builder<SELF>> {
         private String producerName;
         private String consumerName;
         private String bootstrapAddress;
@@ -43,54 +43,58 @@ public class KafkaBasicExampleClients {
         private long delayMs;
         private String namespaceName;
 
-        public Builder withProducerName(String producerName) {
+        public SELF withProducerName(String producerName) {
             this.producerName = producerName;
-            return this;
+            return self();
         }
 
-        public Builder withConsumerName(String consumerName) {
+        public SELF withConsumerName(String consumerName) {
             this.consumerName = consumerName;
-            return this;
+            return self();
         }
 
-        public Builder withBootstrapAddress(String bootstrapAddress) {
+        public SELF withBootstrapAddress(String bootstrapAddress) {
             this.bootstrapAddress = bootstrapAddress;
-            return this;
+            return self();
         }
 
-        public Builder withTopicName(String topicName) {
+        public SELF withTopicName(String topicName) {
             this.topicName = topicName;
-            return this;
+            return self();
         }
 
-        public Builder withMessageCount(int messageCount) {
+        public SELF withMessageCount(int messageCount) {
             this.messageCount = messageCount;
-            return this;
+            return self();
         }
 
-        public Builder withMessage(String message) {
+        public SELF withMessage(String message) {
             this.message = message;
-            return this;
+            return self();
         }
 
-        public Builder withAdditionalConfig(String additionalConfig) {
+        public SELF withAdditionalConfig(String additionalConfig) {
             this.additionalConfig = additionalConfig;
-            return this;
+            return self();
         }
 
-        public Builder withConsumerGroup(String consumerGroup) {
+        public SELF withConsumerGroup(String consumerGroup) {
             this.consumerGroup = consumerGroup;
-            return this;
+            return self();
         }
 
-        public Builder withDelayMs(long delayMs) {
+        public SELF withDelayMs(long delayMs) {
             this.delayMs = delayMs;
-            return this;
+            return self();
         }
 
-        public Builder withNamespaceName(String namespaceName) {
+        public SELF withNamespaceName(String namespaceName) {
             this.namespaceName = namespaceName;
-            return this;
+            return self();
+        }
+
+        protected SELF self() {
+            return (SELF) this;
         }
 
         public KafkaBasicExampleClients build() {

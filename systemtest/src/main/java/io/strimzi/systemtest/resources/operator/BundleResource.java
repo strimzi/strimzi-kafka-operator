@@ -7,6 +7,7 @@ package io.strimzi.systemtest.resources.operator;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.strimzi.systemtest.Constants;
@@ -246,7 +247,18 @@ public class BundleResource implements ResourceType<Deployment> {
                         .editFirstContainer()
                             .withImage(StUtils.changeOrgAndTag(coImage))
                             .withImagePullPolicy(Environment.OPERATOR_IMAGE_PULL_POLICY)
+                            .editResources()
+                                .addToLimits("memory", new Quantity("2048Mi"))
+                                .addToLimits("cpu", new Quantity("1000m"))
+                                .addToRequests("memory", new Quantity("1024Mi"))
+                                .addToRequests("cpu", new Quantity("200m"))
+                            .endResources()
                         .endContainer()
+                        .editFirstVolume()
+                            .editEmptyDir()
+                                .withNewSizeLimit("2Mi")
+                            .endEmptyDir()
+                        .endVolume()
                     .endSpec()
                 .endTemplate()
             .endSpec();

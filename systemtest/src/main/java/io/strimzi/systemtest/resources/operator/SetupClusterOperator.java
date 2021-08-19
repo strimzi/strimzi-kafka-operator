@@ -421,11 +421,20 @@ public class SetupClusterOperator {
 
     public void unInstall() {
         LOGGER.info("Un-installing cluster operator from {} namespace", Constants.INFRA_NAMESPACE);
-        // trigger that we will again create namespace
         BeforeAllOnce.getSharedExtensionContext().getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, null);
-        deleteClusterOperatorInstallFiles();
-        KubeClusterResource.getInstance().deleteCustomResources(BeforeAllOnce.getSharedExtensionContext());
-        KubeClusterResource.getInstance().deleteNamespace(BeforeAllOnce.getSharedExtensionContext(), Constants.INFRA_NAMESPACE);
+
+        // trigger that we will again create namespace
+
+        if (Environment.isHelmInstall()) {
+            helmResource.delete();
+        } else if (Environment.isOlmInstall()) {
+            olmResource.delete();
+        } else {
+            // Clear cluster from all created namespaces and configurations files for cluster operator.
+            deleteClusterOperatorInstallFiles();
+            KubeClusterResource.getInstance().deleteCustomResources(BeforeAllOnce.getSharedExtensionContext());
+            KubeClusterResource.getInstance().deleteNamespace(BeforeAllOnce.getSharedExtensionContext(), Constants.INFRA_NAMESPACE);
+        }
     }
 
     public SetupClusterOperator rollbackToDefaultConfiguration() {

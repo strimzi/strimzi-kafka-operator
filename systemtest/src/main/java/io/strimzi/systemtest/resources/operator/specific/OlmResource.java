@@ -57,7 +57,6 @@ public class OlmResource implements SpecificResourceType {
 
     public void create(ExtensionContext extensionContext, long operationTimeout, long reconciliationInterval) {
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
-        ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(this::delete));
         this.clusterOperator(this.namespace, operationTimeout, reconciliationInterval);
     }
 
