@@ -93,6 +93,7 @@ public class KafkaBasicExampleClients {
             return self();
         }
 
+        @SuppressWarnings("unchecked")
         protected SELF self() {
             return (SELF) this;
         }
