@@ -301,11 +301,15 @@ public class OpenSslCertManager implements CertManager {
         } finally {
             delete(tmpKey);
             delete(database);
-            // File created by OpenSSL
-            delete(new File(database.toString() + ".old").toPath());
+            if (database != null) {
+                // File created by OpenSSL
+                delete(new File(database + ".old").toPath());
+            }
             delete(attr);
-            // File created by OpenSSL
-            delete(new File(attr.toString() + ".old").toPath());
+            if (attr != null) {
+                // File created by OpenSSL
+                delete(new File(attr + ".old").toPath());
+            }
             delete(newCertsDir);
             delete(csrFile);
             delete(defaultConfig);
@@ -464,9 +468,15 @@ public class OpenSslCertManager implements CertManager {
             cmd.exec(false);
         } finally {
             delete(database);
-            delete(new File(database.toString() + ".old").toPath());
+            if (database != null) {
+                // File created by OpenSSL
+                delete(new File(database + ".old").toPath());
+            }
             delete(attr);
-            delete(new File(attr.toString() + ".old").toPath());
+            if (attr != null) {
+                // File created by OpenSSL
+                delete(new File(attr + ".old").toPath());
+            }
             delete(newCertsDir);
             delete(defaultConfig);
             delete(sna);
