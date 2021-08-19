@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.api.kafka.Cmd;
 import io.strimzi.api.kafka.model.connect.build.Artifact;
 import io.strimzi.api.kafka.model.connect.build.Build;
 import io.strimzi.api.kafka.model.connect.build.DownloadableArtifact;
@@ -95,25 +96,8 @@ public class KafkaConnectDockerfile {
                     checkForShellMetachars(repo);
                     String artifactHash = Util.sha1Prefix(((MavenArtifact) mvn).getGroup() + ((MavenArtifact) mvn).getArtifact() + ((MavenArtifact) mvn).getVersion());
                     String artifactDir = plugin.getKey() + "/" + artifactHash;
-                    String downloadPomCmd = String.format("curl -L --create-dirs --output /tmp/%s/pom.xml %s%s/%s/%s/%s-%s.pom",
-                            artifactDir,
-                            repo,
-                            ((MavenArtifact) mvn).getGroup().replace(".", "/"), //org.apache.camel is translated as org/apache/camel in the URL
-                            ((MavenArtifact) mvn).getArtifact().replace(".", "/"),
-                            ((MavenArtifact) mvn).getVersion(),
-                            ((MavenArtifact) mvn).getArtifact(),
-                            ((MavenArtifact) mvn).getVersion());
-
-                    String downloadJarCmd = String.format("curl -L --create-dirs --output /tmp/artifacts/%s/%s-%s.jar %s%s/%s/%s/%s-%s.jar",
-                            artifactDir,
-                            ((MavenArtifact) mvn).getArtifact(),
-                            ((MavenArtifact) mvn).getVersion(),
-                            repo,
-                            ((MavenArtifact) mvn).getGroup().replace(".", "/"), //org.apache.camel is translated as org/apache/camel in the URL
-                            ((MavenArtifact) mvn).getArtifact().replace(".", "/"),
-                            ((MavenArtifact) mvn).getVersion(),
-                            ((MavenArtifact) mvn).getArtifact(),
-                            ((MavenArtifact) mvn).getVersion());
+                    Cmd downloadPomCmd = new Cmd("curl", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, (MavenArtifact) mvn, "pom"));
+                    Cmd downloadJarCmd = new Cmd("curl", "-L", "--create-dirs", "--output", "/tmp/artifacts/" + artifactDir + "/" + ((MavenArtifact) mvn).getArtifact() + "-" + ((MavenArtifact) mvn).getVersion() + ".jar", assembleResourceUrl(repo, (MavenArtifact) mvn, "jar"));
 
                     writer.println("RUN " + downloadPomCmd + " \\");
                     writer.println("      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/" + artifactDir + " -f /tmp/" + artifactDir + "/pom.xml \\");
@@ -122,6 +106,17 @@ public class KafkaConnectDockerfile {
                 });
             });
         }
+    }
+
+    private String assembleResourceUrl(String repo, MavenArtifact mvn, String extension) {
+        return String.format("%s%s/%s/%s/%s-%s.%s",
+                repo,
+                mvn.getGroup().replace(".", "/"),
+                mvn.getArtifact().replace(".", "/"),
+                mvn.getVersion(),
+                mvn.getArtifact(),
+                mvn.getVersion(),
+                extension);
     }
 
     private void checkForShellMetachars(String toBeChecked) {
@@ -246,9 +241,9 @@ public class KafkaConnectDockerfile {
         String artifactHash = Util.sha1Prefix(jar.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String artifactPath = artifactDir + "/" + artifactHash + ".jar";
-        String downloadCmd =  "curl -L --output " + artifactPath + " " + jar.getUrl();
+        Cmd downloadCmd =  new Cmd("curl", "-L", "--output").append(artifactPath).append(jar.getUrl());
 
-        addUnmodifiedArtifact(writer, jar, artifactDir, downloadCmd, artifactPath);
+        addUnmodifiedArtifact(writer, jar, artifactDir, downloadCmd.toString(), artifactPath);
     }
 
     /**
@@ -264,9 +259,9 @@ public class KafkaConnectDockerfile {
         String artifactDir = connectorPath + "/" + artifactHash;
         String fileName = other.getFileName() != null ? other.getFileName() : artifactHash;
         String artifactPath = artifactDir + "/" + fileName;
-        String downloadCmd =  "curl -L --output " + artifactPath + " " + other.getUrl();
+        Cmd downloadCmd =  new Cmd("curl", "-L", "--output").append(artifactPath).append(other.getUrl());
 
-        addUnmodifiedArtifact(writer, other, artifactDir, downloadCmd, artifactPath);
+        addUnmodifiedArtifact(writer, other, artifactDir, downloadCmd.toString(), artifactPath);
     }
 
     /**
@@ -289,9 +284,9 @@ public class KafkaConnectDockerfile {
             String checksum = art.getSha512sum() + " " + artifactPath;
 
             writer.println("      && " + downloadCmd + " \\");
-            writer.println("      && echo \"" + checksum + "\" > " + artifactPath + ".sha512 \\");
-            writer.println("      && sha512sum --check " + artifactPath + ".sha512 \\");
-            writer.println("      && rm -f " + artifactPath + ".sha512");
+            writer.println("      && " + new Cmd("echo", checksum) + " > " + artifactPath + ".sha512 \\");
+            writer.println("      && " + new Cmd("sha512sum", "--check", artifactPath + ".sha512") + " \\");
+            writer.println("      && " + new Cmd("rm", "-f", artifactPath + ".sha512"));
         }
 
         writer.println();
@@ -310,28 +305,22 @@ public class KafkaConnectDockerfile {
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".tgz";
 
-        String downloadCmd =  "curl -L --output " + archivePath + " " + tgz.getUrl();
-        String unpackCmd =  "tar xvfz " + archivePath + " -C " + artifactDir;
-        String deleteCmd =  "rm -vf " + archivePath;
+        Cmd downloadCmd =  new Cmd("curl", "-L", "--output").append(archivePath).append(tgz.getUrl());
+        Cmd unpackCmd = new Cmd("tar", "xvfz", archivePath, "-C", artifactDir);
+        Cmd deleteCmd =  new Cmd("rm", "-vf", archivePath);
 
         writer.println("RUN mkdir -p " + artifactDir + " \\");
+        writer.println("      && " + downloadCmd + " \\");
 
-        if (tgz.getSha512sum() == null || tgz.getSha512sum().isEmpty()) {
-            // No checksum => we just download and unpack the file
-            writer.println("      && " + downloadCmd + " \\");
-            writer.println("      && " + unpackCmd + " \\");
-            writer.println("      && " + deleteCmd);
-        } else {
+        if (tgz.getSha512sum() != null && !tgz.getSha512sum().isEmpty()) {
             // Checksum exists => we need to check it
             String checksum = tgz.getSha512sum() + " " + archivePath;
-
-            writer.println("      && " + downloadCmd + " \\");
-            writer.println("      && echo \"" + checksum + "\" > " + archivePath + ".sha512 \\");
-            writer.println("      && sha512sum --check " + archivePath + ".sha512 \\");
-            writer.println("      && rm -f " + archivePath + ".sha512 \\");
-            writer.println("      && " + unpackCmd + " \\");
-            writer.println("      && " + deleteCmd);
+            writer.println("      && " + new Cmd("echo", checksum) + " > " + archivePath + ".sha512 \\");
+            writer.println("      && " + new Cmd("sha512sum", "--check", archivePath + ".sha512") + " \\");
+            writer.println("      && " + new Cmd("rm", "-f", archivePath + ".sha512") + " \\");
         }
+        writer.println("      && " + unpackCmd + " \\");
+        writer.println("      && " + deleteCmd);
 
         writer.println();
     }
@@ -349,31 +338,26 @@ public class KafkaConnectDockerfile {
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".zip";
 
-        String downloadCmd =  "curl -L --output " + archivePath + " " + zip.getUrl();
-        String unpackCmd =  "unzip " + archivePath + " -d " + artifactDir;
-        String deleteSymLinks = "find " + artifactDir + " -type l | xargs rm -f";
-        String deleteCmd =  "rm -vf " + archivePath;
+        Cmd downloadCmd = new Cmd("curl", "-L", "--output").append(archivePath).append(zip.getUrl());
+        Cmd unpackCmd = new Cmd("unzip", archivePath, "-d", artifactDir);
+        String deleteSymLinks = new Cmd("find", artifactDir, "-type", "l") + " | " + new Cmd("xargs", "rm", "-f");
+        Cmd deleteCmd = new Cmd("rm", "-vf", archivePath);
 
         writer.println("RUN mkdir -p " + artifactDir + " \\");
+        writer.println("      && " + downloadCmd + " \\");
 
-        if (zip.getSha512sum() == null || zip.getSha512sum().isEmpty()) {
-            // No checksum => we just download and unpack the file
-            writer.println("      && " + downloadCmd + " \\");
-            writer.println("      && " + unpackCmd + " \\");
-            writer.println("      && " + deleteSymLinks + " \\");
-            writer.println("      && " + deleteCmd);
-        } else {
+        if (zip.getSha512sum() != null && !zip.getSha512sum().isEmpty()) {
             // Checksum exists => we need to check it
             String checksum = zip.getSha512sum() + " " + archivePath;
 
-            writer.println("      && " + downloadCmd + " \\");
-            writer.println("      && echo \"" + checksum + "\" > " + archivePath + ".sha512 \\");
-            writer.println("      && sha512sum --check " + archivePath + ".sha512 \\");
-            writer.println("      && rm -f " + archivePath + ".sha512 \\");
-            writer.println("      && " + unpackCmd + " \\");
-            writer.println("      && " + deleteSymLinks + " \\");
-            writer.println("      && " + deleteCmd);
+            writer.println("      && " + new Cmd("echo", checksum) + " > " + archivePath + ".sha512 \\");
+            writer.println("      && " + new Cmd("sha512sum", "--check", archivePath + ".sha512") + " \\");
+            writer.println("      && " + new Cmd("rm", "-f", archivePath + ".sha512") + " \\");
         }
+
+        writer.println("      && " + unpackCmd + " \\");
+        writer.println("      && " + deleteSymLinks + " \\");
+        writer.println("      && " + deleteCmd);
 
         writer.println();
     }

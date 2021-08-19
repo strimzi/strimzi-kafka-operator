@@ -114,7 +114,7 @@ public class KafkaConnectDockerfileTest {
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/51e5038c \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/51e5038c/51e5038c.jar https://mydomain.tld/my.jar",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/51e5038c/51e5038c.jar' 'https://mydomain.tld/my.jar'",
                 "USER 1001"));
     }
 
@@ -132,10 +132,10 @@ public class KafkaConnectDockerfileTest {
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/0df6d15c \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar https://mydomain.tld/my2.jar \\",
-                "      && echo \"sha-512-checksum /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar\" > /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512 \\",
-                "      && sha512sum --check /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512 \\",
-                "      && rm -f /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar' 'https://mydomain.tld/my2.jar' \\",
+                "      && 'echo' 'sha-512-checksum /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar' > /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512 \\",
+                "      && 'sha512sum' '--check' '/opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512' \\",
+                "      && 'rm' '-f' '/opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512'",
                 "USER 1001"));
     }
 
@@ -153,7 +153,7 @@ public class KafkaConnectDockerfileTest {
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/2c3b64c7 \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/2c3b64c7/my.so https://mydomain.tld/download?artifact=my.so",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/2c3b64c7/my.so' 'https://mydomain.tld/download?artifact=my.so'",
                 "USER 1001"));
     }
 
@@ -171,10 +171,10 @@ public class KafkaConnectDockerfileTest {
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/2e6fee06 \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/2e6fee06/my2.so https://mydomain.tld/download?artifactId=1874 \\",
-                "      && echo \"sha-512-checksum /opt/kafka/plugins/my-connector-plugin/2e6fee06/my2.so\" > /opt/kafka/plugins/my-connector-plugin/2e6fee06/my2.so.sha512 \\",
-                "      && sha512sum --check /opt/kafka/plugins/my-connector-plugin/2e6fee06/my2.so.sha512 \\",
-                "      && rm -f /opt/kafka/plugins/my-connector-plugin/2e6fee06/my2.so.sha512",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/2e6fee06/my2.so' 'https://mydomain.tld/download?artifactId=1874' \\",
+                "      && 'echo' 'sha-512-checksum /opt/kafka/plugins/my-connector-plugin/2e6fee06/my2.so' > /opt/kafka/plugins/my-connector-plugin/2e6fee06/my2.so.sha512 \\",
+                "      && 'sha512sum' '--check' '/opt/kafka/plugins/my-connector-plugin/2e6fee06/my2.so.sha512' \\",
+                "      && 'rm' '-f' '/opt/kafka/plugins/my-connector-plugin/2e6fee06/my2.so.sha512'",
                 "USER 1001"));
     }
 
@@ -192,10 +192,10 @@ public class KafkaConnectDockerfileTest {
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/2e6fee06 \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/2e6fee06/2e6fee06 https://mydomain.tld/download?artifactId=1874 \\",
-                "      && echo \"sha-512-checksum /opt/kafka/plugins/my-connector-plugin/2e6fee06/2e6fee06\" > /opt/kafka/plugins/my-connector-plugin/2e6fee06/2e6fee06.sha512 \\",
-                "      && sha512sum --check /opt/kafka/plugins/my-connector-plugin/2e6fee06/2e6fee06.sha512 \\",
-                "      && rm -f /opt/kafka/plugins/my-connector-plugin/2e6fee06/2e6fee06.sha512",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/2e6fee06/2e6fee06' 'https://mydomain.tld/download?artifactId=1874' \\",
+                "      && 'echo' 'sha-512-checksum /opt/kafka/plugins/my-connector-plugin/2e6fee06/2e6fee06' > /opt/kafka/plugins/my-connector-plugin/2e6fee06/2e6fee06.sha512 \\",
+                "      && 'sha512sum' '--check' '/opt/kafka/plugins/my-connector-plugin/2e6fee06/2e6fee06.sha512' \\",
+                "      && 'rm' '-f' '/opt/kafka/plugins/my-connector-plugin/2e6fee06/2e6fee06.sha512'",
                 "USER 1001"));
     }
 
@@ -213,12 +213,12 @@ public class KafkaConnectDockerfileTest {
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/51e5038c \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/51e5038c/51e5038c.jar https://mydomain.tld/my.jar",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/51e5038c/51e5038c.jar' 'https://mydomain.tld/my.jar'",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/0df6d15c \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar https://mydomain.tld/my2.jar \\",
-                "      && echo \"sha-512-checksum /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar\" > /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512 \\",
-                "      && sha512sum --check /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512 \\",
-                "      && rm -f /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar' 'https://mydomain.tld/my2.jar' \\",
+                "      && 'echo' 'sha-512-checksum /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar' > /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512 \\",
+                "      && 'sha512sum' '--check' '/opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512' \\",
+                "      && 'rm' '-f' '/opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512'",
                 "USER 1001"));
     }
 
@@ -236,9 +236,9 @@ public class KafkaConnectDockerfileTest {
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/6718766b \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/6718766b.tgz https://mydomain.tld/my.tgz \\",
-                "      && tar xvfz /opt/kafka/plugins/my-connector-plugin/6718766b.tgz -C /opt/kafka/plugins/my-connector-plugin/6718766b \\",
-                "      && rm -vf /opt/kafka/plugins/my-connector-plugin/6718766b.tgz",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/6718766b.tgz' 'https://mydomain.tld/my.tgz' \\",
+                "      && 'tar' 'xvfz' '/opt/kafka/plugins/my-connector-plugin/6718766b.tgz' '-C' '/opt/kafka/plugins/my-connector-plugin/6718766b' \\",
+                "      && 'rm' '-vf' '/opt/kafka/plugins/my-connector-plugin/6718766b.tgz'",
                 "USER 1001"));
     }
 
@@ -256,10 +256,10 @@ public class KafkaConnectDockerfileTest {
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/d8d533bc \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/d8d533bc.zip https://mydomain.tld/my.zip \\",
-                "      && unzip /opt/kafka/plugins/my-connector-plugin/d8d533bc.zip -d /opt/kafka/plugins/my-connector-plugin/d8d533bc \\",
-                "      && find /opt/kafka/plugins/my-connector-plugin/d8d533bc -type l | xargs rm -f \\",
-                "      && rm -vf /opt/kafka/plugins/my-connector-plugin/d8d533bc.zip",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/d8d533bc.zip' 'https://mydomain.tld/my.zip' \\",
+                "      && 'unzip' '/opt/kafka/plugins/my-connector-plugin/d8d533bc.zip' '-d' '/opt/kafka/plugins/my-connector-plugin/d8d533bc' \\",
+                "      && 'find' '/opt/kafka/plugins/my-connector-plugin/d8d533bc' '-type' 'l' | 'xargs' 'rm' '-f' \\",
+                "      && 'rm' '-vf' '/opt/kafka/plugins/my-connector-plugin/d8d533bc.zip'",
                 "USER 1001"));
     }
 
@@ -277,13 +277,13 @@ public class KafkaConnectDockerfileTest {
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/90e04094 \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/90e04094.zip https://mydomain.tld/my2.zip \\",
-                "      && echo \"sha-512-checksum /opt/kafka/plugins/my-connector-plugin/90e04094.zip\" > /opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512 \\",
-                "      && sha512sum --check /opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512 \\",
-                "      && rm -f /opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512 \\",
-                "      && unzip /opt/kafka/plugins/my-connector-plugin/90e04094.zip -d /opt/kafka/plugins/my-connector-plugin/90e04094 \\",
-                "      && find /opt/kafka/plugins/my-connector-plugin/90e04094 -type l | xargs rm -f \\",
-                "      && rm -vf /opt/kafka/plugins/my-connector-plugin/90e04094.zip",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip' 'https://mydomain.tld/my2.zip' \\",
+                "      && 'echo' 'sha-512-checksum /opt/kafka/plugins/my-connector-plugin/90e04094.zip' > /opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512 \\",
+                "      && 'sha512sum' '--check' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512' \\",
+                "      && 'rm' '-f' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512' \\",
+                "      && 'unzip' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip' '-d' '/opt/kafka/plugins/my-connector-plugin/90e04094' \\",
+                "      && 'find' '/opt/kafka/plugins/my-connector-plugin/90e04094' '-type' 'l' | 'xargs' 'rm' '-f' \\",
+                "      && 'rm' '-vf' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip'",
                 "USER 1001"));
     }
 
@@ -301,12 +301,12 @@ public class KafkaConnectDockerfileTest {
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/638bd501 \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/638bd501.tgz https://mydomain.tld/my2.tgz \\",
-                "      && echo \"sha-512-checksum /opt/kafka/plugins/my-connector-plugin/638bd501.tgz\" > /opt/kafka/plugins/my-connector-plugin/638bd501.tgz.sha512 \\",
-                "      && sha512sum --check /opt/kafka/plugins/my-connector-plugin/638bd501.tgz.sha512 \\",
-                "      && rm -f /opt/kafka/plugins/my-connector-plugin/638bd501.tgz.sha512 \\",
-                "      && tar xvfz /opt/kafka/plugins/my-connector-plugin/638bd501.tgz -C /opt/kafka/plugins/my-connector-plugin/638bd501 \\",
-                "      && rm -vf /opt/kafka/plugins/my-connector-plugin/638bd501.tgz",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/638bd501.tgz' 'https://mydomain.tld/my2.tgz' \\",
+                "      && 'echo' 'sha-512-checksum /opt/kafka/plugins/my-connector-plugin/638bd501.tgz' > /opt/kafka/plugins/my-connector-plugin/638bd501.tgz.sha512 \\",
+                "      && 'sha512sum' '--check' '/opt/kafka/plugins/my-connector-plugin/638bd501.tgz.sha512' \\",
+                "      && 'rm' '-f' '/opt/kafka/plugins/my-connector-plugin/638bd501.tgz.sha512' \\",
+                "      && 'tar' 'xvfz' '/opt/kafka/plugins/my-connector-plugin/638bd501.tgz' '-C' '/opt/kafka/plugins/my-connector-plugin/638bd501' \\",
+                "      && 'rm' '-vf' '/opt/kafka/plugins/my-connector-plugin/638bd501.tgz'",
                 "USER 1001"));
     }
 
@@ -324,16 +324,16 @@ public class KafkaConnectDockerfileTest {
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/6718766b \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/6718766b.tgz https://mydomain.tld/my.tgz \\",
-                "      && tar xvfz /opt/kafka/plugins/my-connector-plugin/6718766b.tgz -C /opt/kafka/plugins/my-connector-plugin/6718766b \\",
-                "      && rm -vf /opt/kafka/plugins/my-connector-plugin/6718766b.tgz",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/6718766b.tgz' 'https://mydomain.tld/my.tgz' \\",
+                "      && 'tar' 'xvfz' '/opt/kafka/plugins/my-connector-plugin/6718766b.tgz' '-C' '/opt/kafka/plugins/my-connector-plugin/6718766b' \\",
+                "      && 'rm' '-vf' '/opt/kafka/plugins/my-connector-plugin/6718766b.tgz'",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/638bd501 \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/638bd501.tgz https://mydomain.tld/my2.tgz \\",
-                "      && echo \"sha-512-checksum /opt/kafka/plugins/my-connector-plugin/638bd501.tgz\" > /opt/kafka/plugins/my-connector-plugin/638bd501.tgz.sha512 \\",
-                "      && sha512sum --check /opt/kafka/plugins/my-connector-plugin/638bd501.tgz.sha512 \\",
-                "      && rm -f /opt/kafka/plugins/my-connector-plugin/638bd501.tgz.sha512 \\",
-                "      && tar xvfz /opt/kafka/plugins/my-connector-plugin/638bd501.tgz -C /opt/kafka/plugins/my-connector-plugin/638bd501 \\",
-                "      && rm -vf /opt/kafka/plugins/my-connector-plugin/638bd501.tgz",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/638bd501.tgz' 'https://mydomain.tld/my2.tgz' \\",
+                "      && 'echo' 'sha-512-checksum /opt/kafka/plugins/my-connector-plugin/638bd501.tgz' > /opt/kafka/plugins/my-connector-plugin/638bd501.tgz.sha512 \\",
+                "      && 'sha512sum' '--check' '/opt/kafka/plugins/my-connector-plugin/638bd501.tgz.sha512' \\",
+                "      && 'rm' '-f' '/opt/kafka/plugins/my-connector-plugin/638bd501.tgz.sha512' \\",
+                "      && 'tar' 'xvfz' '/opt/kafka/plugins/my-connector-plugin/638bd501.tgz' '-C' '/opt/kafka/plugins/my-connector-plugin/638bd501' \\",
+                "      && 'rm' '-vf' '/opt/kafka/plugins/my-connector-plugin/638bd501.tgz'",
                 "USER 1001"));
     }
 
@@ -351,18 +351,18 @@ public class KafkaConnectDockerfileTest {
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/d8d533bc \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/d8d533bc.zip https://mydomain.tld/my.zip \\",
-                "      && unzip /opt/kafka/plugins/my-connector-plugin/d8d533bc.zip -d /opt/kafka/plugins/my-connector-plugin/d8d533bc \\",
-                "      && find /opt/kafka/plugins/my-connector-plugin/d8d533bc -type l | xargs rm -f \\",
-                "      && rm -vf /opt/kafka/plugins/my-connector-plugin/d8d533bc.zip",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/d8d533bc.zip' 'https://mydomain.tld/my.zip' \\",
+                "      && 'unzip' '/opt/kafka/plugins/my-connector-plugin/d8d533bc.zip' '-d' '/opt/kafka/plugins/my-connector-plugin/d8d533bc' \\",
+                "      && 'find' '/opt/kafka/plugins/my-connector-plugin/d8d533bc' '-type' 'l' | 'xargs' 'rm' '-f' \\",
+                "      && 'rm' '-vf' '/opt/kafka/plugins/my-connector-plugin/d8d533bc.zip'",
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/90e04094 \\",
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/90e04094.zip https://mydomain.tld/my2.zip \\",
-                "      && echo \"sha-512-checksum /opt/kafka/plugins/my-connector-plugin/90e04094.zip\" > /opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512 \\",
-                "      && sha512sum --check /opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512 \\",
-                "      && rm -f /opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512 \\",
-                "      && unzip /opt/kafka/plugins/my-connector-plugin/90e04094.zip -d /opt/kafka/plugins/my-connector-plugin/90e04094 \\",
-                "      && find /opt/kafka/plugins/my-connector-plugin/90e04094 -type l | xargs rm -f \\",
-                "      && rm -vf /opt/kafka/plugins/my-connector-plugin/90e04094.zip",
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip' 'https://mydomain.tld/my2.zip' \\",
+                "      && 'echo' 'sha-512-checksum /opt/kafka/plugins/my-connector-plugin/90e04094.zip' > /opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512 \\",
+                "      && 'sha512sum' '--check' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512' \\",
+                "      && 'rm' '-f' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512' \\",
+                "      && 'unzip' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip' '-d' '/opt/kafka/plugins/my-connector-plugin/90e04094' \\",
+                "      && 'find' '/opt/kafka/plugins/my-connector-plugin/90e04094' '-type' 'l' | 'xargs' 'rm' '-f' \\",
+                "      && 'rm' '-vf' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip'",
                 "USER 1001"));
     }
 
@@ -392,13 +392,13 @@ public class KafkaConnectDockerfileTest {
                 "# Connector plugin my-connector-plugin\n" +
                 "##########\n" +
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/51e5038c \\\n" +
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/51e5038c/51e5038c.jar https://mydomain.tld/my.jar\n" +
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/51e5038c/51e5038c.jar' 'https://mydomain.tld/my.jar'\n" +
                 "\n" +
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/0df6d15c \\\n" +
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar https://mydomain.tld/my2.jar \\\n" +
-                "      && echo \"sha-512-checksum /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar\" > /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512 \\\n" +
-                "      && sha512sum --check /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512 \\\n" +
-                "      && rm -f /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512\n" +
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar' 'https://mydomain.tld/my2.jar' \\\n" +
+                "      && 'echo' 'sha-512-checksum /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar' > /opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512 \\\n" +
+                "      && 'sha512sum' '--check' '/opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512' \\\n" +
+                "      && 'rm' '-f' '/opt/kafka/plugins/my-connector-plugin/0df6d15c/0df6d15c.jar.sha512'\n" +
                 "\n" +
                 "USER 1001\n\n"));
     }
@@ -495,13 +495,13 @@ public class KafkaConnectDockerfileTest {
                 "##############################\n" +
                 "\n" +
                 "FROM quay.io/strimzi/maven-builder:latest AS downloadArtifacts\n" +
-                "RUN curl -L --create-dirs --output /tmp/my-connector-plugin/401856c0/pom.xml https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.pom \\\n" +
+                "RUN 'curl' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/401856c0/pom.xml' 'https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.pom' \\\n" +
                 "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/my-connector-plugin/401856c0 -f /tmp/my-connector-plugin/401856c0/pom.xml \\\n" +
-                "      && curl -L --create-dirs --output /tmp/artifacts/my-connector-plugin/401856c0/a1-v1.jar https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.jar\n" +
+                "      && 'curl' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/401856c0/a1-v1.jar' 'https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.jar'\n" +
                 "\n" +
-                "RUN curl -L --create-dirs --output /tmp/my-connector-plugin/6ecfeffd/pom.xml https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.pom \\\n" +
+                "RUN 'curl' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/6ecfeffd/pom.xml' 'https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.pom' \\\n" +
                 "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/my-connector-plugin/6ecfeffd -f /tmp/my-connector-plugin/6ecfeffd/pom.xml \\\n" +
-                "      && curl -L --create-dirs --output /tmp/artifacts/my-connector-plugin/6ecfeffd/a2-v2.jar https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.jar\n" +
+                "      && 'curl' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/6ecfeffd/a2-v2.jar' 'https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.jar'\n" +
                 "\n" +
                 "FROM myImage:latest\n" +
                 "\n" +
@@ -511,7 +511,7 @@ public class KafkaConnectDockerfileTest {
                 "# Connector plugin my-connector-plugin\n" +
                 "##########\n" +
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/9bb2fd11 \\\n" +
-                "      && curl -L --output /opt/kafka/plugins/my-connector-plugin/9bb2fd11/9bb2fd11.jar http://url.com/ar.jar\n" +
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/9bb2fd11/9bb2fd11.jar' 'http://url.com/ar.jar'\n" +
                 "\n" +
                 "COPY --from=downloadArtifacts /tmp/artifacts/my-connector-plugin/401856c0 /opt/kafka/plugins/my-connector-plugin/401856c0\n" +
                 "\n" +
@@ -521,7 +521,7 @@ public class KafkaConnectDockerfileTest {
                 "# Connector plugin other-connector-plugin\n" +
                 "##########\n" +
                 "RUN mkdir -p /opt/kafka/plugins/other-connector-plugin/9bb2fd11 \\\n" +
-                "      && curl -L --output /opt/kafka/plugins/other-connector-plugin/9bb2fd11/9bb2fd11.jar http://url.com/ar.jar\n" +
+                "      && 'curl' '-L' '--output' '/opt/kafka/plugins/other-connector-plugin/9bb2fd11/9bb2fd11.jar' 'http://url.com/ar.jar'\n" +
                 "\n" +
                 "USER 1001\n" +
                 "\n"));
@@ -547,7 +547,7 @@ public class KafkaConnectDockerfileTest {
 
     @ParallelTest
     public void testForbiddenChars() {
-        Build b1 = connectBuildFromGavAndUrl("$(echo rm -rf)", "a", "v", null);
+        Build b1 = connectBuildFromGavAndUrl("$('echo' 'rm' -rf)", "a", "v", null);
         Build b2 = connectBuildFromGavAndUrl("g", "; print $PASSWORD", "v", null);
         Build b3 = connectBuildFromGavAndUrl("g", "a", "\\I AM VIRUS, PLEASE PAY ME", null);
         Build b4 = connectBuildFromGavAndUrl("g", "a", "v", "http://h@cking.site.com");
@@ -557,7 +557,7 @@ public class KafkaConnectDockerfileTest {
         Throwable t3 = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", b3));
         Throwable t4 = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", b4));
 
-        assertThat(t1.getMessage(), is("String '$(echo rm -rf)' contains forbidden character `$`"));
+        assertThat(t1.getMessage(), is("String '$('echo' 'rm' -rf)' contains forbidden character `$`"));
         assertThat(t2.getMessage(), is("String '; print $PASSWORD' contains forbidden character `;`"));
         assertThat(t3.getMessage(), is("String '\\I AM VIRUS, PLEASE PAY ME' contains forbidden character `\\`"));
         assertThat(t4.getMessage(), is("String 'http://h@cking.site.com/' contains forbidden character `@`"));
