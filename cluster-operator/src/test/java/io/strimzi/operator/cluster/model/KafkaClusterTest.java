@@ -311,25 +311,25 @@ public class KafkaClusterTest {
 
         Kafka kafka = new KafkaBuilder(kafkaAssembly)
                 .editSpec()
-                .editKafka()
-                .withJmxOptions(new KafkaJmxOptionsBuilder()
-                        .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder()
-                                .build())
-                        .build())
-                .withNewTemplate()
-                .withNewJmxSecret()
-                .withNewMetadata()
-                .withAnnotations(customAnnotations)
-                .withLabels(customLabels)
-                .endMetadata()
-                .endJmxSecret()
-                .endTemplate()
-                .endKafka()
+                    .editKafka()
+                        .withJmxOptions(new KafkaJmxOptionsBuilder()
+                            .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder()
+                                  .build())
+                            .build())
+                        .withNewTemplate()
+                            .withNewJmxSecret()
+                                .withNewMetadata()
+                                    .withAnnotations(customAnnotations)
+                                    .withLabels(customLabels)
+                                .endMetadata()
+                            .endJmxSecret()
+                        .endTemplate()
+                    .endKafka()
                 .endSpec()
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        Secret jmxSecret = kc.generateJmxSecret(customAnnotations, customLabels);
+        Secret jmxSecret = kc.generateJmxSecret();
 
         for (Map.Entry<String, String> entry : customAnnotations.entrySet()) {
             assertThat(jmxSecret.getMetadata().getAnnotations(), hasEntry(entry.getKey(), entry.getValue()));

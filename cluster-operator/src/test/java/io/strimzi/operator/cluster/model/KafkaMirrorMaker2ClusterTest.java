@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -33,6 +34,8 @@ import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
+import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
@@ -1618,6 +1621,7 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
     }
 
+
     @ParallelTest
     public void testMetricsParsingFromConfigMap() {
         MetricsConfig metrics = new JmxPrometheusExporterMetricsBuilder()
@@ -1636,6 +1640,46 @@ public class KafkaMirrorMaker2ClusterTest {
 
         assertThat(kmm.isMetricsEnabled(), is(true));
         assertThat(kmm.getMetricsConfigInCm(), is(metrics));
+    }
+
+    @ParallelTest
+    public void testJmxSecretCustomLabelsAndAnnotations() {
+        Map<String, String> customLabels = new HashMap<>(2);
+        customLabels.put("label1", "value1");
+        customLabels.put("label2", "value2");
+
+        Map<String, String> customAnnotations = new HashMap<>(2);
+        customAnnotations.put("anno1", "value3");
+        customAnnotations.put("anno2", "value4");
+
+
+        KafkaMirrorMaker2 kafkaMirrorMaker2 = new KafkaMirrorMaker2Builder(this.resource)
+                .editSpec()
+                    .withJmxOptions(new KafkaJmxOptionsBuilder()
+                            .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder()
+                                    .build())
+                            .build())
+                    .withNewTemplate()
+                        .withNewJmxSecret()
+                            .withNewMetadata()
+                                .withAnnotations(customAnnotations)
+                                .withLabels(customLabels)
+                            .endMetadata()
+                        .endJmxSecret()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaMirrorMaker2, VERSIONS);
+
+        Secret jmxSecret = kmm2.generateJmxSecret();
+
+        for (Map.Entry<String, String> entry : customAnnotations.entrySet()) {
+            assertThat(jmxSecret.getMetadata().getAnnotations(), hasEntry(entry.getKey(), entry.getValue()));
+        }
+        for (Map.Entry<String, String> entry : customLabels.entrySet()) {
+            assertThat(jmxSecret.getMetadata().getLabels(), hasEntry(entry.getKey(), entry.getValue()));
+        }
     }
 
     @ParallelTest

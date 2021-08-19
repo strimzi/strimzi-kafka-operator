@@ -252,29 +252,29 @@ public class ZookeeperClusterTest {
     public void testCreateClusterWithZookeeperJmxEnabled() {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
-                .withName(cluster)
-                .withNamespace(namespace)
+                    .withName(cluster)
+                    .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
-                .withNewKafka()
-                .withReplicas(3)
-                .withNewEphemeralStorage()
-                .endEphemeralStorage()
-                .endKafka()
-                .withNewZookeeper()
-                .withJmxOptions(new KafkaJmxOptionsBuilder()
-                        .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder()
+                    .withNewKafka()
+                        .withReplicas(3)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endKafka()
+                    .withNewZookeeper()
+                        .withJmxOptions(new KafkaJmxOptionsBuilder()
+                            .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder()
                                 .build())
-                        .build())
-                .withReplicas(3)
-                .withNewEphemeralStorage()
-                .endEphemeralStorage()
-                .endZookeeper()
+                            .build())
+                        .withReplicas(3)
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endZookeeper()
                 .endSpec()
                 .build();
 
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, KafkaVersionTestUtils.getKafkaVersionLookup());
-        Secret jmxSecret = zookeeperCluster.generateJmxSecret(emptyMap(), emptyMap());
+        Secret jmxSecret = zookeeperCluster.generateJmxSecret();
 
         assertThat(jmxSecret.getData(), hasKey("jmx-username"));
         assertThat(jmxSecret.getData(), hasKey("jmx-password"));
@@ -292,25 +292,25 @@ public class ZookeeperClusterTest {
 
         Kafka kafka = new KafkaBuilder(ka)
                 .editSpec()
-                .editZookeeper()
-                .withJmxOptions(new KafkaJmxOptionsBuilder()
-                        .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder()
+                    .editZookeeper()
+                        .withJmxOptions(new KafkaJmxOptionsBuilder()
+                            .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder()
                                 .build())
-                        .build())
-                .withNewTemplate()
-                .withNewJmxSecret()
-                .withNewMetadata()
-                .withAnnotations(customAnnotations)
-                .withLabels(customLabels)
-                .endMetadata()
-                .endJmxSecret()
-                .endTemplate()
-                .endZookeeper()
+                            .build())
+                        .withNewTemplate()
+                            .withNewJmxSecret()
+                                .withNewMetadata()
+                                    .withAnnotations(customAnnotations)
+                                    .withLabels(customLabels)
+                                .endMetadata()
+                            .endJmxSecret()
+                        .endTemplate()
+                    .endZookeeper()
                 .endSpec()
                 .build();
 
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        Secret jmxSecret = kc.generateJmxSecret(customAnnotations, customLabels);
+        ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        Secret jmxSecret = zookeeperCluster.generateJmxSecret();
 
         for (Map.Entry<String, String> entry : customAnnotations.entrySet()) {
             assertThat(jmxSecret.getMetadata().getAnnotations(), hasEntry(entry.getKey(), entry.getValue()));

@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -59,6 +58,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Base64;
+
+import static java.util.Collections.emptyMap;
 
 
 public class ZookeeperCluster extends AbstractModel {
@@ -343,6 +344,11 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
             }
 
+            if (template.getJmxSecret() != null && template.getJmxSecret().getMetadata() != null) {
+                zk.templateJmxSecretLabels = template.getJmxSecret().getMetadata().getLabels();
+                zk.templateJmxSecretAnnotations = template.getJmxSecret().getMetadata().getAnnotations();
+            }
+
             ModelUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
         }
 
@@ -539,7 +545,7 @@ public class ZookeeperCluster extends AbstractModel {
             data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
             data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
-        return createSecret(ZookeeperCluster.nodesSecretName(cluster), data);
+        return createSecret(ZookeeperCluster.nodesSecretName(cluster), data, emptyMap(), emptyMap());
     }
 
     @Override
@@ -747,15 +753,12 @@ public class ZookeeperCluster extends AbstractModel {
         return cluster + ZookeeperCluster.ZOOKEEPER_JMX_SECRET_SUFFIX;
     }
 
-
     /**
      * Generate the Secret containing the username and password to secure the jmx port on the zookeeper nodes
      *
-     * @param jmxSecretAnnotations The additional annotations of the {@code Secret} created.
-     * @param jmxSecretLabels The additional labels of the {@code Secret} created.
      * @return The generated Secret
      */
-    public Secret generateJmxSecret(Map<String, String> jmxSecretAnnotations, Map<String, String> jmxSecretLabels) {
+    public Secret generateJmxSecret() {
         Map<String, String> data = new HashMap<>(2);
         String[] keys = {SECRET_JMX_USERNAME_KEY, SECRET_JMX_PASSWORD_KEY};
         PasswordGenerator passwordGenerator = new PasswordGenerator(16);
@@ -763,16 +766,6 @@ public class ZookeeperCluster extends AbstractModel {
             data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
         }
 
-        return new SecretBuilder()
-                .withNewMetadata()
-                .withName(ZookeeperCluster.jmxSecretName(cluster))
-                .withOwnerReferences(createOwnerReference())
-                .withNamespace(namespace)
-                .withLabels(Util.mergeLabelsOrAnnotations(labels.toMap(), jmxSecretLabels))
-                .withAnnotations(jmxSecretAnnotations)
-                .endMetadata()
-                .withType("Opaque")
-                .withData(data)
-                .build();
+        return createSecret(ZookeeperCluster.jmxSecretName(cluster), data, templateJmxSecretAnnotations, templateJmxSecretLabels);
     }
 }

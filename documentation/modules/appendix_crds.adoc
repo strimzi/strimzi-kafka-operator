@@ -1814,6 +1814,8 @@ Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Kaf
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |buildServiceAccount  1.2+<.<a|Template for the Kafka Connect Build service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|jmxSecret            1.2+<.<a|Template for Secret of the Kafka Connect Cluster JMX authentication.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
 [id='type-DeploymentTemplate-{context}']

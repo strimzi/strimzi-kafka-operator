@@ -54,6 +54,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * ModelUtils is a utility class that holds generic static helper functions
  * These are generally to be used within the classes that extend the AbstractModel class
@@ -188,16 +190,18 @@ public class ModelUtils {
             data.put(keyCertName + ".password", certAndKey.storePasswordAsBase64String());
         }
 
-        return createSecret(secretName, namespace, labels, ownerReference, data);
+        return createSecret(secretName, namespace, labels, ownerReference, data, emptyMap(), emptyMap());
     }
 
-    public static Secret createSecret(String name, String namespace, Labels labels, OwnerReference ownerReference, Map<String, String> data) {
+    public static Secret createSecret(String name, String namespace, Labels labels, OwnerReference ownerReference,
+                                      Map<String, String> data, Map<String, String> customAnnotations, Map<String, String> customLabels) {
         if (ownerReference == null) {
             return new SecretBuilder()
                     .withNewMetadata()
                         .withName(name)
                         .withNamespace(namespace)
-                        .withLabels(labels.toMap())
+                        .withLabels(Util.mergeLabelsOrAnnotations(labels.toMap(), customLabels))
+                    .withAnnotations(customAnnotations)
                     .endMetadata()
                     .withType("Opaque")
                     .withData(data)
@@ -208,7 +212,8 @@ public class ModelUtils {
                         .withName(name)
                         .withOwnerReferences(ownerReference)
                         .withNamespace(namespace)
-                        .withLabels(labels.toMap())
+                        .withLabels(Util.mergeLabelsOrAnnotations(labels.toMap(), customLabels))
+                        .withAnnotations(customAnnotations)
                     .endMetadata()
                     .withType("Opaque")
                     .withData(data)

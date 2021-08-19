@@ -1230,24 +1230,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkJmxSecret() {
-            Map<String, String> jmxSecretLabels = emptyMap();
-            Map<String, String> jmxSecretAnnotations = emptyMap();
-
-            if (kafkaAssembly.getSpec().getZookeeper() != null
-                    && kafkaAssembly.getSpec().getZookeeper().getTemplate() != null
-                    && kafkaAssembly.getSpec().getZookeeper().getTemplate().getJmxSecret() != null
-                    && kafkaAssembly.getSpec().getZookeeper().getTemplate().getJmxSecret().getMetadata() != null) {
-                jmxSecretAnnotations = kafkaAssembly.getSpec().getZookeeper().getTemplate().getJmxSecret().getMetadata().getAnnotations();
-                jmxSecretLabels = kafkaAssembly.getSpec().getZookeeper().getTemplate().getJmxSecret().getMetadata().getLabels();
-            }
             if (zkCluster.isJmxAuthenticated()) {
                 Future<Secret> secretFuture = secretOperations.getAsync(namespace, ZookeeperCluster.jmxSecretName(name));
-                Map<String, String> finalJmxSecretAnnotations = jmxSecretAnnotations;
-                Map<String, String> finalJmxSecretLabels = jmxSecretLabels;
                 return secretFuture.compose(secret -> {
                     if (secret == null) {
                         return withVoid(secretOperations.reconcile(reconciliation, namespace, ZookeeperCluster.jmxSecretName(name),
-                                zkCluster.generateJmxSecret(finalJmxSecretAnnotations, finalJmxSecretLabels)));
+                                zkCluster.generateJmxSecret()));
                     }
                     return withVoid(Future.succeededFuture(ReconcileResult.noop(secret)));
                 });
@@ -2477,24 +2465,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaJmxSecret() {
-            Map<String, String> jmxSecretLabels = emptyMap();
-            Map<String, String> jmxSecretAnnotations = emptyMap();
-
-            if (kafkaAssembly.getSpec().getKafka() != null
-                    && kafkaAssembly.getSpec().getKafka().getTemplate() != null
-                    && kafkaAssembly.getSpec().getKafka().getTemplate().getJmxSecret() != null
-                    && kafkaAssembly.getSpec().getKafka().getTemplate().getJmxSecret().getMetadata() != null) {
-                jmxSecretAnnotations = kafkaAssembly.getSpec().getKafka().getTemplate().getJmxSecret().getMetadata().getAnnotations();
-                jmxSecretLabels = kafkaAssembly.getSpec().getKafka().getTemplate().getJmxSecret().getMetadata().getLabels();
-            }
             if (kafkaCluster.isJmxAuthenticated()) {
                 Future<Secret> secretFuture = secretOperations.getAsync(namespace, KafkaCluster.jmxSecretName(name));
-                Map<String, String> finalJmxSecretAnnotations = jmxSecretAnnotations;
-                Map<String, String> finalJmxSecretLabels = jmxSecretLabels;
                 return secretFuture.compose(res -> {
                     if (res == null) {
                         return withVoid(secretOperations.reconcile(reconciliation, namespace, KafkaCluster.jmxSecretName(name),
-                                kafkaCluster.generateJmxSecret(finalJmxSecretAnnotations, finalJmxSecretLabels)));
+                                kafkaCluster.generateJmxSecret()));
                     }
                     return withVoid(Future.succeededFuture(this));
                 });

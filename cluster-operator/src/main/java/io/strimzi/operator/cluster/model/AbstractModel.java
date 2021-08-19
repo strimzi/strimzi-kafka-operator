@@ -286,6 +286,8 @@ public abstract class AbstractModel {
     protected Map<String, String> templateClusterRoleBindingAnnotations;
     protected Map<String, String> templateServiceAccountLabels;
     protected Map<String, String> templateServiceAccountAnnotations;
+    protected Map<String, String> templateJmxSecretLabels;
+    protected Map<String, String> templateJmxSecretAnnotations;
 
     protected List<Condition> warningConditions = new ArrayList<>(0);
 
@@ -923,8 +925,8 @@ public abstract class AbstractModel {
                 .build();
     }
 
-    protected Secret createSecret(String name, Map<String, String> data) {
-        return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data);
+    protected Secret createSecret(String name, Map<String, String> data, Map<String, String> customAnnotations, Map<String, String> customLabels) {
+        return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data, customAnnotations, customLabels);
     }
 
     protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {

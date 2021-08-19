@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -96,6 +95,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 import static java.util.Collections.addAll;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static io.strimzi.operator.cluster.model.CruiseControl.CRUISE_CONTROL_METRIC_REPORTER;
@@ -570,6 +570,11 @@ public class KafkaCluster extends AbstractModel {
             if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
                 result.templateServiceAccountLabels = template.getServiceAccount().getMetadata().getLabels();
                 result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
+            }
+
+            if (template.getJmxSecret() != null && template.getJmxSecret().getMetadata() != null) {
+                result.templateJmxSecretLabels = template.getJmxSecret().getMetadata().getLabels();
+                result.templateJmxSecretAnnotations = template.getJmxSecret().getMetadata().getAnnotations();
             }
 
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
@@ -1309,17 +1314,15 @@ public class KafkaCluster extends AbstractModel {
             data.put(KafkaCluster.kafkaPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
             data.put(KafkaCluster.kafkaPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
-        return createSecret(KafkaCluster.brokersSecretName(cluster), data);
+        return createSecret(KafkaCluster.brokersSecretName(cluster), data, emptyMap(), emptyMap());
     }
 
     /**
      * Generate the Secret containing the username and password to secure the jmx port on the kafka brokers
      *
-     * @param jmxSecretAnnotations The additional annotations of the {@code Secret} created.
-     * @param jmxSecretLabels The additional labels of the {@code Secret} created.
      * @return The generated Secret
      */
-    public Secret generateJmxSecret(Map<String, String> jmxSecretAnnotations, Map<String, String> jmxSecretLabels) {
+    public Secret generateJmxSecret() {
         Map<String, String> data = new HashMap<>(2);
         String[] keys = {SECRET_JMX_USERNAME_KEY, SECRET_JMX_PASSWORD_KEY};
         PasswordGenerator passwordGenerator = new PasswordGenerator(16);
@@ -1327,17 +1330,7 @@ public class KafkaCluster extends AbstractModel {
             data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
         }
 
-        return new SecretBuilder()
-                .withNewMetadata()
-                .withName(KafkaCluster.jmxSecretName(cluster))
-                .withOwnerReferences(createOwnerReference())
-                .withNamespace(namespace)
-                .withLabels(Util.mergeLabelsOrAnnotations(labels.toMap(), jmxSecretLabels))
-                .withAnnotations(jmxSecretAnnotations)
-                .endMetadata()
-                .withType("Opaque")
-                .withData(data)
-                .build();
+        return createSecret(KafkaCluster.jmxSecretName(cluster), data, templateJmxSecretAnnotations, templateJmxSecretLabels);
     }
 
     private List<ContainerPort> getContainerPortList() {
