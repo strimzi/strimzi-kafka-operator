@@ -301,8 +301,10 @@ public class OpenSslCertManager implements CertManager {
         } finally {
             delete(tmpKey);
             delete(database);
+            // File created by OpenSSL
             delete(new File(database.toString() + ".old").toPath());
             delete(attr);
+            // File created by OpenSSL
             delete(new File(attr.toString() + ".old").toPath());
             delete(newCertsDir);
             delete(csrFile);
