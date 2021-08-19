@@ -124,8 +124,6 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void createClassResources(ExtensionContext extensionContext) {
-        ParallelSuiteController.addParallelSuite(extensionContext);
-
         cluster.createNamespace(extensionContext, NAMESPACE);
 
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
