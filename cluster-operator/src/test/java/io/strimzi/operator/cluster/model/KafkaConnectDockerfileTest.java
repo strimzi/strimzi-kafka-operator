@@ -496,11 +496,11 @@ public class KafkaConnectDockerfileTest {
                 "\n" +
                 "FROM quay.io/strimzi/maven-builder:latest AS downloadArtifacts\n" +
                 "RUN 'curl' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/401856c0/pom.xml' 'https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.pom' \\\n" +
-                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/my-connector-plugin/401856c0 -f /tmp/my-connector-plugin/401856c0/pom.xml \\\n" +
+                "      && 'mvn' 'dependency:copy-dependencies' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/401856c0' '-f' '/tmp/my-connector-plugin/401856c0/pom.xml' \\\n" +
                 "      && 'curl' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/401856c0/a1-v1.jar' 'https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.jar'\n" +
                 "\n" +
                 "RUN 'curl' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/6ecfeffd/pom.xml' 'https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.pom' \\\n" +
-                "      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/my-connector-plugin/6ecfeffd -f /tmp/my-connector-plugin/6ecfeffd/pom.xml \\\n" +
+                "      && 'mvn' 'dependency:copy-dependencies' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/6ecfeffd' '-f' '/tmp/my-connector-plugin/6ecfeffd/pom.xml' \\\n" +
                 "      && 'curl' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/6ecfeffd/a2-v2.jar' 'https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.jar'\n" +
                 "\n" +
                 "FROM myImage:latest\n" +
@@ -543,23 +543,5 @@ public class KafkaConnectDockerfileTest {
                         .withArtifacts(mvn)
                         .build())
                 .build();
-    }
-
-    @ParallelTest
-    public void testForbiddenChars() {
-        Build b1 = connectBuildFromGavAndUrl("$('echo' 'rm' -rf)", "a", "v", null);
-        Build b2 = connectBuildFromGavAndUrl("g", "; print $PASSWORD", "v", null);
-        Build b3 = connectBuildFromGavAndUrl("g", "a", "\\I AM VIRUS, PLEASE PAY ME", null);
-        Build b4 = connectBuildFromGavAndUrl("g", "a", "v", "http://h@cking.site.com");
-
-        Throwable t1 = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", b1));
-        Throwable t2 = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", b2));
-        Throwable t3 = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", b3));
-        Throwable t4 = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", b4));
-
-        assertThat(t1.getMessage(), is("String '$('echo' 'rm' -rf)' contains forbidden character `$`"));
-        assertThat(t2.getMessage(), is("String '; print $PASSWORD' contains forbidden character `;`"));
-        assertThat(t3.getMessage(), is("String '\\I AM VIRUS, PLEASE PAY ME' contains forbidden character `\\`"));
-        assertThat(t4.getMessage(), is("String 'http://h@cking.site.com/' contains forbidden character `@`"));
     }
 }

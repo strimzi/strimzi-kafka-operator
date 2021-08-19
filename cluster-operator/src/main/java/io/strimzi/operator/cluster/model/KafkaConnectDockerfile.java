@@ -23,8 +23,6 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -47,7 +45,6 @@ public class KafkaConnectDockerfile {
 
     private final String dockerfile;
 
-    private final Pattern special = Pattern.compile("[!@#$%&*()+=\\\\|<>?{};\\[\\]~]");
     private static final String DEFAULT_MAVEN_IMAGE = "quay.io/strimzi/maven-builder:latest";
     private final String mavenImage;
 
@@ -90,17 +87,13 @@ public class KafkaConnectDockerfile {
             artifactMap.entrySet().forEach(plugin -> {
                 plugin.getValue().forEach(mvn -> {
                     String repo = ((MavenArtifact) mvn).getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybeAppendSlash(((MavenArtifact) mvn).getRepository());
-                    checkForShellMetachars(((MavenArtifact) mvn).getGroup());
-                    checkForShellMetachars(((MavenArtifact) mvn).getArtifact());
-                    checkForShellMetachars(((MavenArtifact) mvn).getVersion());
-                    checkForShellMetachars(repo);
                     String artifactHash = Util.sha1Prefix(((MavenArtifact) mvn).getGroup() + ((MavenArtifact) mvn).getArtifact() + ((MavenArtifact) mvn).getVersion());
                     String artifactDir = plugin.getKey() + "/" + artifactHash;
                     Cmd downloadPomCmd = new Cmd("curl", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, (MavenArtifact) mvn, "pom"));
                     Cmd downloadJarCmd = new Cmd("curl", "-L", "--create-dirs", "--output", "/tmp/artifacts/" + artifactDir + "/" + ((MavenArtifact) mvn).getArtifact() + "-" + ((MavenArtifact) mvn).getVersion() + ".jar", assembleResourceUrl(repo, (MavenArtifact) mvn, "jar"));
 
                     writer.println("RUN " + downloadPomCmd + " \\");
-                    writer.println("      && mvn dependency:copy-dependencies -DoutputDirectory=/tmp/artifacts/" + artifactDir + " -f /tmp/" + artifactDir + "/pom.xml \\");
+                    writer.println("      && " + new Cmd("mvn", "dependency:copy-dependencies", "-DoutputDirectory=/tmp/artifacts/" + artifactDir, "-f", "/tmp/" + artifactDir + "/pom.xml") + " \\");
                     writer.println("      && " + downloadJarCmd);
                     writer.println();
                 });
@@ -117,13 +110,6 @@ public class KafkaConnectDockerfile {
                 mvn.getArtifact(),
                 mvn.getVersion(),
                 extension);
-    }
-
-    private void checkForShellMetachars(String toBeChecked) {
-        Matcher hasSpecial = special.matcher(toBeChecked);
-        if (hasSpecial.find()) {
-            throw new InvalidConfigurationException("String '" + toBeChecked + "' contains forbidden character `" + hasSpecial.group() + "`");
-        }
     }
 
     /**
@@ -171,7 +157,7 @@ public class KafkaConnectDockerfile {
     }
 
     /**
-     * Adds the commands to donwload and possibly unpact the connector plugins
+     * Adds the commands to download and possibly unpack the connector plugins
      *
      * @param writer    Writer for printing the Docker commands
      * @param plugins   List of plugins which should be added to the container image
@@ -241,9 +227,9 @@ public class KafkaConnectDockerfile {
         String artifactHash = Util.sha1Prefix(jar.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String artifactPath = artifactDir + "/" + artifactHash + ".jar";
-        Cmd downloadCmd =  new Cmd("curl", "-L", "--output").append(artifactPath).append(jar.getUrl());
+        Cmd downloadCmd =  new Cmd("curl", "-L", "--output", artifactPath, jar.getUrl());
 
-        addUnmodifiedArtifact(writer, jar, artifactDir, downloadCmd.toString(), artifactPath);
+        addUnmodifiedArtifact(writer, jar, artifactDir, downloadCmd, artifactPath);
     }
 
     /**
@@ -259,9 +245,9 @@ public class KafkaConnectDockerfile {
         String artifactDir = connectorPath + "/" + artifactHash;
         String fileName = other.getFileName() != null ? other.getFileName() : artifactHash;
         String artifactPath = artifactDir + "/" + fileName;
-        Cmd downloadCmd =  new Cmd("curl", "-L", "--output").append(artifactPath).append(other.getUrl());
+        Cmd downloadCmd =  new Cmd("curl", "-L", "--output", artifactPath, other.getUrl());
 
-        addUnmodifiedArtifact(writer, other, artifactDir, downloadCmd.toString(), artifactPath);
+        addUnmodifiedArtifact(writer, other, artifactDir, downloadCmd, artifactPath);
     }
 
     /**
@@ -273,7 +259,7 @@ public class KafkaConnectDockerfile {
      * @param downloadCmd       Command for downloading the artifact
      * @param artifactPath      Full path of the artifact
      */
-    private void addUnmodifiedArtifact(PrintWriter writer, DownloadableArtifact art, String artifactDir, String downloadCmd, String artifactPath)    {
+    private void addUnmodifiedArtifact(PrintWriter writer, DownloadableArtifact art, String artifactDir, Cmd downloadCmd, String artifactPath)    {
         writer.println("RUN mkdir -p " + artifactDir + " \\");
 
         if (art.getSha512sum() == null || art.getSha512sum().isEmpty()) {
@@ -305,7 +291,7 @@ public class KafkaConnectDockerfile {
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".tgz";
 
-        Cmd downloadCmd =  new Cmd("curl", "-L", "--output").append(archivePath).append(tgz.getUrl());
+        Cmd downloadCmd =  new Cmd("curl", "-L", "--output", archivePath, tgz.getUrl());
         Cmd unpackCmd = new Cmd("tar", "xvfz", archivePath, "-C", artifactDir);
         Cmd deleteCmd =  new Cmd("rm", "-vf", archivePath);
 
@@ -338,7 +324,7 @@ public class KafkaConnectDockerfile {
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".zip";
 
-        Cmd downloadCmd = new Cmd("curl", "-L", "--output").append(archivePath).append(zip.getUrl());
+        Cmd downloadCmd = new Cmd("curl", "-L", "--output", archivePath, zip.getUrl());
         Cmd unpackCmd = new Cmd("unzip", archivePath, "-d", artifactDir);
         String deleteSymLinks = new Cmd("find", artifactDir, "-type", "l") + " | " + new Cmd("xargs", "rm", "-f");
         Cmd deleteCmd = new Cmd("rm", "-vf", archivePath);
