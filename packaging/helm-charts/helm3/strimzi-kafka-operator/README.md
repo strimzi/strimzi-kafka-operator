@@ -154,7 +154,7 @@ the documentation for more details.
 | `tlsSidecarTopicOperator.image.name` | TLS Sidecar for Topic Operator image name | `kafka`                                              |
 | `tlsSidecarTopicOperator.image.tag`  | Override default TLS Sidecar for Topic Operator image tag prefix | `nil`                         |
 | `kafkaBridge.image.registry`         | Override default Kafka Bridge image registry               | `quay.io`                           |
-| `kafkaBridge.image.repository`       | Override default Kafka Bridge image repository             | `strimzi`                           |
+| `kafkaBridge.image.repository`       | Override defaultKafka Bridge image repository             | `strimzi`                                            |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge`                                        |
 | `kafkaBridge.image.tag`              | Override default Kafka Bridge image tag                    | `0.20.2`                            |
 | `kanikoExecutor.image.registry`      | Override default Kaniko Executor image registry            | `nil`                               |
@@ -179,6 +179,10 @@ the documentation for more details.
 | `labelsExclusionPattern`             | Override the exclude pattern for exclude some labels             | `""`  
 | `generateNetworkPolicy`              | Controls whether Strimzi generates network policy resources      | `true`                        |
 | `connectBuildTimeoutMs`              | Overrides the default timeout value for building new Kafka Connect    | `300000`                 |
+| `mavenBuilder.image.registry`        | Maven Builder image registry              | `quay.io`                                            |
+| `mavenBuilder.image.repository`      | Maven Builder image repository            | `strimzi`                                            |
+| `mavenBuilder.image.name`            | Maven Builder image name                  | `maven-builder`                                       |
+| `mavenBuilder.image.tag`             | Maven Builder image tag                   | `latest`  
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 

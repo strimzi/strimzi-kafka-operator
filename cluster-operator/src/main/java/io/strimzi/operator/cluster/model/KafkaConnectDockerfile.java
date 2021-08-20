@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.api.kafka.Cmd;
+import io.strimzi.operator.common.Cmd;
 import io.strimzi.api.kafka.model.connect.build.Artifact;
 import io.strimzi.api.kafka.model.connect.build.Build;
 import io.strimzi.api.kafka.model.connect.build.DownloadableArtifact;
@@ -46,7 +46,7 @@ public class KafkaConnectDockerfile {
     private final String dockerfile;
 
     private static final String DEFAULT_MAVEN_IMAGE = "quay.io/strimzi/maven-builder:latest";
-    private final String mavenImage;
+    private final String mavenBuilder;
 
     /**
      * Broker configuration template constructor
@@ -55,7 +55,7 @@ public class KafkaConnectDockerfile {
      * @param connectBuild  The Build definition from the API
      */
     public KafkaConnectDockerfile(String fromImage, Build connectBuild) {
-        this.mavenImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_MAVEN_IMAGE, DEFAULT_MAVEN_IMAGE);
+        this.mavenBuilder = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_MAVEN_BUILDER, DEFAULT_MAVEN_IMAGE);
         StringWriter stringWriter = new StringWriter();
         PrintWriter writer = new PrintWriter(stringWriter);
 
@@ -83,7 +83,7 @@ public class KafkaConnectDockerfile {
         artifactMap.entrySet().removeIf(plugin -> plugin.getValue().isEmpty());
 
         if (artifactMap.size() > 0) {
-            writer.println("FROM " + mavenImage + " AS downloadArtifacts");
+            writer.println("FROM " + mavenBuilder + " AS downloadArtifacts");
             artifactMap.entrySet().forEach(plugin -> {
                 plugin.getValue().forEach(mvn -> {
                     String repo = ((MavenArtifact) mvn).getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybeAppendSlash(((MavenArtifact) mvn).getRepository());

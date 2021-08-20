@@ -124,11 +124,11 @@ kanikoExecutor:
     repository: ""
     name: kaniko-executor
     tag: ""
-mavenImage:
+mavenBuilder:
   image:
     registry: ""
     repository: ""
-    name: maven-image
+    name: maven-builder
     tag: ""
 resources:
   limits:

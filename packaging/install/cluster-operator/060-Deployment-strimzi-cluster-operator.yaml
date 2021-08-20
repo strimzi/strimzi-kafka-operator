@@ -87,7 +87,7 @@ spec:
               value: quay.io/strimzi/jmxtrans:latest
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
               value: quay.io/strimzi/kaniko-executor:latest
-            - name: STRIMZI_DEFAULT_MAVEN_IMAGE
+            - name: STRIMZI_DEFAULT_MAVEN_BUILDER
               value: quay.io/strimzi/maven-builder:latest
             - name: STRIMZI_OPERATOR_NAMESPACE
               valueFrom:
