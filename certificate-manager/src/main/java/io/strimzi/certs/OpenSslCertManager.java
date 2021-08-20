@@ -231,6 +231,7 @@ public class OpenSslCertManager implements CertManager {
 
         // Generate a CSR for the key
         Path tmpKey = null;
+        Path sna = null;
         Path defaultConfig = null;
         Path csrFile = null;
         Path newCertsDir = null;
@@ -253,10 +254,10 @@ public class OpenSslCertManager implements CertManager {
             }
 
             csrFile = Files.createTempFile(null, null);
-            defaultConfig = buildConfigFile(subject, true);
+            sna = buildConfigFile(subject, true);
             new OpensslArgs("openssl", "req")
                     .opt("-new")
-                    .optArg("-config", defaultConfig, true)
+                    .optArg("-config", sna, true)
                     .optArg("-key", tmpKey)
                     .optArg("-out", csrFile)
                     .optArg("-subj", subject)
@@ -300,10 +301,19 @@ public class OpenSslCertManager implements CertManager {
         } finally {
             delete(tmpKey);
             delete(database);
+            if (database != null) {
+                // File created by OpenSSL
+                delete(new File(database + ".old").toPath());
+            }
             delete(attr);
+            if (attr != null) {
+                // File created by OpenSSL
+                delete(new File(attr + ".old").toPath());
+            }
             delete(newCertsDir);
             delete(csrFile);
             delete(defaultConfig);
+            delete(sna);
         }
     }
 
@@ -458,7 +468,15 @@ public class OpenSslCertManager implements CertManager {
             cmd.exec(false);
         } finally {
             delete(database);
+            if (database != null) {
+                // File created by OpenSSL
+                delete(new File(database + ".old").toPath());
+            }
             delete(attr);
+            if (attr != null) {
+                // File created by OpenSSL
+                delete(new File(attr + ".old").toPath());
+            }
             delete(newCertsDir);
             delete(defaultConfig);
             delete(sna);
