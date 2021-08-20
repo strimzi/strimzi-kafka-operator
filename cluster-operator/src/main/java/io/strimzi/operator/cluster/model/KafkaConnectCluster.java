@@ -752,7 +752,7 @@ public class KafkaConnectCluster extends AbstractModel {
             data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
         }
 
-        return createJmxSecret(KafkaConnectCluster.jmxSecretName(cluster), data, templateJmxSecretAnnotations, templateJmxSecretLabels);
+        return createJmxSecret(KafkaConnectCluster.jmxSecretName(cluster), data);
     }
 
 

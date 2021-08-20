@@ -931,8 +931,8 @@ public abstract class AbstractModel {
         return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data, emptyMap(), emptyMap());
     }
 
-    protected Secret createJmxSecret(String name, Map<String, String> data, Map<String, String> customAnnotations, Map<String, String> customLabels) {
-        return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data, customAnnotations, customLabels);
+    protected Secret createJmxSecret(String name, Map<String, String> data) {
+        return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data, templateJmxSecretAnnotations, templateJmxSecretLabels);
     }
 
     protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {

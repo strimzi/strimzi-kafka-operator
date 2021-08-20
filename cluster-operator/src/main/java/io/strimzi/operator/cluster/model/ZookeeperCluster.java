@@ -764,6 +764,6 @@ public class ZookeeperCluster extends AbstractModel {
             data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
         }
 
-        return createJmxSecret(ZookeeperCluster.jmxSecretName(cluster), data, templateJmxSecretAnnotations, templateJmxSecretLabels);
+        return createJmxSecret(ZookeeperCluster.jmxSecretName(cluster), data);
     }
 }

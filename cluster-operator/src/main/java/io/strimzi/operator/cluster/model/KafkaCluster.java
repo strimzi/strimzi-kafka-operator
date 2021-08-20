@@ -1329,7 +1329,7 @@ public class KafkaCluster extends AbstractModel {
             data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
         }
 
-        return createJmxSecret(KafkaCluster.jmxSecretName(cluster), data, templateJmxSecretAnnotations, templateJmxSecretLabels);
+        return createJmxSecret(KafkaCluster.jmxSecretName(cluster), data);
     }
 
     private List<ContainerPort> getContainerPortList() {
