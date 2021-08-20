@@ -21,6 +21,7 @@ import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
@@ -43,6 +44,8 @@ import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
+import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.Rack;
@@ -1652,5 +1655,44 @@ public class KafkaConnectClusterTest {
 
         assertThat(kc.isMetricsEnabled(), is(false));
         assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testJmxSecretCustomLabelsAndAnnotations() {
+        Map<String, String> customLabels = new HashMap<>(2);
+        customLabels.put("label1", "value1");
+        customLabels.put("label2", "value2");
+
+        Map<String, String> customAnnotations = new HashMap<>(2);
+        customAnnotations.put("anno1", "value3");
+        customAnnotations.put("anno2", "value4");
+
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withJmxOptions(new KafkaJmxOptionsBuilder()
+                            .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder()
+                                    .build())
+                            .build())
+                    .withNewTemplate()
+                        .withNewJmxSecret()
+                            .withNewMetadata()
+                                .withAnnotations(customAnnotations)
+                                .withLabels(customLabels)
+                            .endMetadata()
+                        .endJmxSecret()
+                    .endTemplate()
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster kafkaConnectCluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS);
+
+        Secret jmxSecret = kafkaConnectCluster.generateJmxSecret();
+
+        for (Map.Entry<String, String> entry : customAnnotations.entrySet()) {
+            assertThat(jmxSecret.getMetadata().getAnnotations(), hasEntry(entry.getKey(), entry.getValue()));
+        }
+        for (Map.Entry<String, String> entry : customLabels.entrySet()) {
+            assertThat(jmxSecret.getMetadata().getLabels(), hasEntry(entry.getKey(), entry.getValue()));
+        }
     }
 }

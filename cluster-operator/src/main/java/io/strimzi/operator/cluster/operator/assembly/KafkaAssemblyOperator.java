@@ -1234,7 +1234,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 Future<Secret> secretFuture = secretOperations.getAsync(namespace, ZookeeperCluster.jmxSecretName(name));
                 return secretFuture.compose(secret -> {
                     if (secret == null) {
-                        return withVoid(secretOperations.reconcile(reconciliation, namespace, ZookeeperCluster.jmxSecretName(name), zkCluster.generateJmxSecret()));
+                        return withVoid(secretOperations.reconcile(reconciliation, namespace, ZookeeperCluster.jmxSecretName(name),
+                                zkCluster.generateJmxSecret()));
                     }
                     return withVoid(Future.succeededFuture(ReconcileResult.noop(secret)));
                 });

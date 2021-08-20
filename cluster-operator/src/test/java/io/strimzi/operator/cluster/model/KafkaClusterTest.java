@@ -49,6 +49,7 @@ import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.MetricsConfig;
@@ -115,6 +116,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -295,6 +297,46 @@ public class KafkaClusterTest {
         assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
 
         checkOwnerReference(kc.createOwnerReference(), headless);
+    }
+
+    @ParallelTest
+    public void testJmxSecretCustomLabelsAndAnnotations() {
+        Map<String, String> customLabels = new HashMap<>(2);
+        customLabels.put("label1", "value1");
+        customLabels.put("label2", "value2");
+
+        Map<String, String> customAnnotations = new HashMap<>(2);
+        customAnnotations.put("anno1", "value3");
+        customAnnotations.put("anno2", "value4");
+
+        Kafka kafka = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editKafka()
+                        .withJmxOptions(new KafkaJmxOptionsBuilder()
+                            .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder()
+                                  .build())
+                            .build())
+                        .withNewTemplate()
+                            .withNewJmxSecret()
+                                .withNewMetadata()
+                                    .withAnnotations(customAnnotations)
+                                    .withLabels(customLabels)
+                                .endMetadata()
+                            .endJmxSecret()
+                        .endTemplate()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        Secret jmxSecret = kc.generateJmxSecret();
+
+        for (Map.Entry<String, String> entry : customAnnotations.entrySet()) {
+            assertThat(jmxSecret.getMetadata().getAnnotations(), hasEntry(entry.getKey(), entry.getValue()));
+        }
+        for (Map.Entry<String, String> entry : customLabels.entrySet()) {
+            assertThat(jmxSecret.getMetadata().getLabels(), hasEntry(entry.getKey(), entry.getValue()));
+        }
     }
 
     @ParallelTest

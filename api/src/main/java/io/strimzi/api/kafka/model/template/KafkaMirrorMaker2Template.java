@@ -25,7 +25,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "deployment", "pod", "apiService", "podDisruptionBudget", "mirrorMaker2Container", "serviceAccount"})
+        "deployment", "pod", "apiService", "podDisruptionBudget", "mirrorMaker2Container", "serviceAccount", "jmxSecret"})
 @EqualsAndHashCode
 public class KafkaMirrorMaker2Template implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -36,6 +36,7 @@ public class KafkaMirrorMaker2Template implements Serializable, UnknownPropertyP
     private PodDisruptionBudgetTemplate podDisruptionBudget;
     private ContainerTemplate mirrorMaker2Container;
     private ResourceTemplate serviceAccount;
+    private ResourceTemplate jmxSecret;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka MirrorMaker 2.0 `Deployment`.")
@@ -96,6 +97,15 @@ public class KafkaMirrorMaker2Template implements Serializable, UnknownPropertyP
 
     public void setServiceAccount(ResourceTemplate serviceAccount) {
         this.serviceAccount = serviceAccount;
+    }
+
+    @Description("Template for Secret of the Kafka MirrorMaker 2 Cluster JMX authentication.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getJmxSecret() {
+        return jmxSecret;
+    }
+    public void setJmxSecret(ResourceTemplate jmxSecret) {
+        this.jmxSecret = jmxSecret;
     }
 
     @Override

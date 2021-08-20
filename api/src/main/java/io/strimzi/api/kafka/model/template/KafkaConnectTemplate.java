@@ -25,7 +25,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"deployment", "pod", "apiService", "connectContainer", "initContainer", "podDisruptionBudget",
-        "serviceAccount", "clusterRoleBinding", "buildPod", "buildContainer", "buildConfig", "buildServiceAccount"})
+        "serviceAccount", "clusterRoleBinding", "buildPod", "buildContainer", "buildConfig", "buildServiceAccount", "jmxSecret"})
 @EqualsAndHashCode
 public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -42,6 +42,7 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
     private ResourceTemplate clusterRoleBinding;
     private ResourceTemplate serviceAccount;
     private ResourceTemplate buildServiceAccount;
+    private ResourceTemplate jmxSecret;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Template for Kafka Connect `Deployment`.")
@@ -165,6 +166,15 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
 
     public void setBuildServiceAccount(ResourceTemplate buildServiceAccount) {
         this.buildServiceAccount = buildServiceAccount;
+    }
+
+    @Description("Template for Secret of the Kafka Connect Cluster JMX authentication.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getJmxSecret() {
+        return jmxSecret;
+    }
+    public void setJmxSecret(ResourceTemplate jmxSecret) {
+        this.jmxSecret = jmxSecret;
     }
 
     @Override

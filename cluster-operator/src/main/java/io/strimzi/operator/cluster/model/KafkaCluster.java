@@ -571,6 +571,11 @@ public class KafkaCluster extends AbstractModel {
                 result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
             }
 
+            if (template.getJmxSecret() != null && template.getJmxSecret().getMetadata() != null) {
+                result.templateJmxSecretLabels = template.getJmxSecret().getMetadata().getLabels();
+                result.templateJmxSecretAnnotations = template.getJmxSecret().getMetadata().getAnnotations();
+            }
+
             ModelUtils.parsePodDisruptionBudgetTemplate(result, template.getPodDisruptionBudget());
         }
 
@@ -1324,7 +1329,7 @@ public class KafkaCluster extends AbstractModel {
             data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
         }
 
-        return createSecret(KafkaCluster.jmxSecretName(cluster), data);
+        return createJmxSecret(KafkaCluster.jmxSecretName(cluster), data);
     }
 
     private List<ContainerPort> getContainerPortList() {

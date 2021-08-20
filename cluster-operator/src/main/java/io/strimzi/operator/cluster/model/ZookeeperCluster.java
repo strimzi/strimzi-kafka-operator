@@ -342,6 +342,11 @@ public class ZookeeperCluster extends AbstractModel {
                 zk.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
             }
 
+            if (template.getJmxSecret() != null && template.getJmxSecret().getMetadata() != null) {
+                zk.templateJmxSecretLabels = template.getJmxSecret().getMetadata().getLabels();
+                zk.templateJmxSecretAnnotations = template.getJmxSecret().getMetadata().getAnnotations();
+            }
+
             ModelUtils.parsePodDisruptionBudgetTemplate(zk, template.getPodDisruptionBudget());
         }
 
@@ -746,7 +751,6 @@ public class ZookeeperCluster extends AbstractModel {
         return cluster + ZookeeperCluster.ZOOKEEPER_JMX_SECRET_SUFFIX;
     }
 
-
     /**
      * Generate the Secret containing the username and password to secure the jmx port on the zookeeper nodes
      *
@@ -760,6 +764,6 @@ public class ZookeeperCluster extends AbstractModel {
             data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
         }
 
-        return createSecret(ZookeeperCluster.jmxSecretName(cluster), data);
+        return createJmxSecret(ZookeeperCluster.jmxSecretName(cluster), data);
     }
 }

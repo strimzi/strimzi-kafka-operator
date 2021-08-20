@@ -2039,6 +2039,27 @@ spec:
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
                         description: Template for the Kafka service account.
+                      jmxSecret:
+                        type: object
+                        properties:
+                          metadata:
+                            type: object
+                            properties:
+                              labels:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Labels added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                              annotations:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Annotations added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                            description: Metadata applied to the resource.
+                        description: Template for Secret of the Kafka Cluster JMX
+                          authentication.
                       clusterRoleBinding:
                         type: object
                         properties:
@@ -3065,6 +3086,27 @@ spec:
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
                         description: Template for the ZooKeeper service account.
+                      jmxSecret:
+                        type: object
+                        properties:
+                          metadata:
+                            type: object
+                            properties:
+                              labels:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Labels added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                              annotations:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Annotations added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                            description: Metadata applied to the resource.
+                        description: Template for Secret of the Zookeeper Cluster
+                          JMX authentication.
                     description: Template for ZooKeeper cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.

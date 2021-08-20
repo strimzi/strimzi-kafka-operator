@@ -101,6 +101,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * AbstractModel an abstract base model for all components of the {@code Kafka} custom resource
  */
@@ -286,6 +288,8 @@ public abstract class AbstractModel {
     protected Map<String, String> templateClusterRoleBindingAnnotations;
     protected Map<String, String> templateServiceAccountLabels;
     protected Map<String, String> templateServiceAccountAnnotations;
+    protected Map<String, String> templateJmxSecretLabels;
+    protected Map<String, String> templateJmxSecretAnnotations;
 
     protected List<Condition> warningConditions = new ArrayList<>(0);
 
@@ -352,7 +356,7 @@ public abstract class AbstractModel {
      * @return The selector labels as an instance of the Labels object.
      */
     public Labels getSelectorLabels() {
-        return getLabelsWithStrimziName(name, Collections.emptyMap()).strimziSelectorLabels();
+        return getLabelsWithStrimziName(name, emptyMap()).strimziSelectorLabels();
     }
 
     /**
@@ -924,7 +928,11 @@ public abstract class AbstractModel {
     }
 
     protected Secret createSecret(String name, Map<String, String> data) {
-        return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data);
+        return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data, emptyMap(), emptyMap());
+    }
+
+    protected Secret createJmxSecret(String name, Map<String, String> data) {
+        return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data, templateJmxSecretAnnotations, templateJmxSecretLabels);
     }
 
     protected Service createService(String type, List<ServicePort> ports, Map<String, String> annotations) {

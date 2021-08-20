@@ -290,6 +290,11 @@ public class KafkaConnectCluster extends AbstractModel {
                 kafkaConnect.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
             }
 
+            if (template.getJmxSecret() != null && template.getJmxSecret().getMetadata() != null) {
+                kafkaConnect.templateJmxSecretLabels = template.getJmxSecret().getMetadata().getLabels();
+                kafkaConnect.templateJmxSecretAnnotations = template.getJmxSecret().getMetadata().getAnnotations();
+            }
+
             ModelUtils.parsePodDisruptionBudgetTemplate(kafkaConnect, template.getPodDisruptionBudget());
         }
 
@@ -747,7 +752,7 @@ public class KafkaConnectCluster extends AbstractModel {
             data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
         }
 
-        return createSecret(KafkaConnectCluster.jmxSecretName(cluster), data);
+        return createJmxSecret(KafkaConnectCluster.jmxSecretName(cluster), data);
     }
 
 
