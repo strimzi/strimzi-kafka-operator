@@ -75,10 +75,8 @@ release_pkg: helm_pkg
 release_helm_version:
 	echo "Updating default image tags in Helm Chart to $(RELEASE_VERSION)"
 	CHART_PATH=./packaging/helm-charts/helm3/strimzi-kafka-operator; \
-	$(SED) -i 's/\(tag: \).*/\1$(RELEASE_VERSION)/g' $$CHART_PATH/values.yaml; \
-	$(SED) -i 's/\(tagPrefix: \).*/\1$(RELEASE_VERSION)/g' $$CHART_PATH/values.yaml; \
-	$(SED) -i 's/\(image\.tag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $$CHART_PATH/README.md; \
-	$(SED) -i 's/\(image\.tagPrefix[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $$CHART_PATH/README.md; \
+	$(SED) -i 's/\(defaultImageTag: \).*/\1$(RELEASE_VERSION)/g' $$CHART_PATH/values.yaml; \
+	$(SED) -i 's/\(defaultImageTag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $$CHART_PATH/README.md; \
 	$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $$CHART_PATH/values.yaml; \
 	$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $$CHART_PATH/README.md
 
