@@ -122,7 +122,7 @@ public class MockCertManager implements CertManager {
             "QtlIdmFljGSaGGY6aJjUvUdgoPp1yQPa5oS+afr5g9gaEp4lxP6mc+Li\n" +
             "-----END CERTIFICATE-----\n";
 
-    private static final String CLIENTS_CERT_STORE_PASSWORD = "123456";
+    private static final String CERT_STORE_PASSWORD = "123456";
 
     private static final byte[] CLUSTER_CERT_STORE;
     private static final byte[] CLIENTS_CERT_STORE;
@@ -158,8 +158,8 @@ public class MockCertManager implements CertManager {
         return Base64.getEncoder().encodeToString(CLIENTS_CERT_STORE);
     }
 
-    public static String clientsCaCertStorePassword() {
-        return Base64.getEncoder().encodeToString(CLIENTS_CERT_STORE_PASSWORD.getBytes(Charset.defaultCharset()));
+    public static String certStorePassword() {
+        return Base64.getEncoder().encodeToString(CERT_STORE_PASSWORD.getBytes(Charset.defaultCharset()));
     }
 
     private void write(File keyFile, String str) throws IOException {

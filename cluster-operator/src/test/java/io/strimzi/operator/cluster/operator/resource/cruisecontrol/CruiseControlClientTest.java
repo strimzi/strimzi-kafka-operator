@@ -31,7 +31,7 @@ public class CruiseControlClientTest {
     private static final String HOST = "localhost";
 
     private static final boolean API_AUTHORIZATION_ENABLED = true;
-    private static final boolean API_AUTHENTICATION_ENABLED = false;
+    private static final boolean API_AUTHENTICATION_ENABLED = true;
 
     private static ClientAndServer ccServer;
 
