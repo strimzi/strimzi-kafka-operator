@@ -1832,6 +1832,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         brokerAddress = DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(name), KafkaResources.kafkaStatefulSetName(name) + "-" + pod);
                     }
 
+                    String userConfiguredAdvertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, pod);
+                    if (userConfiguredAdvertisedHostname != null) {
+                        // If user configured a custom advertised hostname, add it to the SAN names used in the certificate
+                        kafkaBrokerDnsNames.computeIfAbsent(pod, k -> new HashSet<>(1)).add(userConfiguredAdvertisedHostname);
+                    }
+
                     kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, pod, brokerAddress));
                     kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, pod, listener.getPort()));
                 }
