@@ -59,8 +59,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Base64;
 
-import static java.util.Collections.emptyMap;
-
 
 public class ZookeeperCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "zookeeper";
@@ -545,7 +543,7 @@ public class ZookeeperCluster extends AbstractModel {
             data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
             data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
-        return createSecret(ZookeeperCluster.nodesSecretName(cluster), data, emptyMap(), emptyMap());
+        return createSecret(ZookeeperCluster.nodesSecretName(cluster), data);
     }
 
     @Override
@@ -766,6 +764,6 @@ public class ZookeeperCluster extends AbstractModel {
             data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
         }
 
-        return createSecret(ZookeeperCluster.jmxSecretName(cluster), data, templateJmxSecretAnnotations, templateJmxSecretLabels);
+        return createJmxSecret(ZookeeperCluster.jmxSecretName(cluster), data, templateJmxSecretAnnotations, templateJmxSecretLabels);
     }
 }

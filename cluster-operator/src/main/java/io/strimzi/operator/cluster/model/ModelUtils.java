@@ -201,7 +201,7 @@ public class ModelUtils {
                         .withName(name)
                         .withNamespace(namespace)
                         .withLabels(Util.mergeLabelsOrAnnotations(labels.toMap(), customLabels))
-                    .withAnnotations(customAnnotations)
+                        .withAnnotations(customAnnotations)
                     .endMetadata()
                     .withType("Opaque")
                     .withData(data)

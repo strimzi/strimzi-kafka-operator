@@ -101,6 +101,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * AbstractModel an abstract base model for all components of the {@code Kafka} custom resource
  */
@@ -354,7 +356,7 @@ public abstract class AbstractModel {
      * @return The selector labels as an instance of the Labels object.
      */
     public Labels getSelectorLabels() {
-        return getLabelsWithStrimziName(name, Collections.emptyMap()).strimziSelectorLabels();
+        return getLabelsWithStrimziName(name, emptyMap()).strimziSelectorLabels();
     }
 
     /**
@@ -925,7 +927,11 @@ public abstract class AbstractModel {
                 .build();
     }
 
-    protected Secret createSecret(String name, Map<String, String> data, Map<String, String> customAnnotations, Map<String, String> customLabels) {
+    protected Secret createSecret(String name, Map<String, String> data) {
+        return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data, emptyMap(), emptyMap());
+    }
+
+    protected Secret createJmxSecret(String name, Map<String, String> data, Map<String, String> customAnnotations, Map<String, String> customLabels) {
         return ModelUtils.createSecret(name, namespace, labels, createOwnerReference(), data, customAnnotations, customLabels);
     }
 

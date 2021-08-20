@@ -95,7 +95,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 import static java.util.Collections.addAll;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static io.strimzi.operator.cluster.model.CruiseControl.CRUISE_CONTROL_METRIC_REPORTER;
@@ -1314,7 +1313,7 @@ public class KafkaCluster extends AbstractModel {
             data.put(KafkaCluster.kafkaPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
             data.put(KafkaCluster.kafkaPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
-        return createSecret(KafkaCluster.brokersSecretName(cluster), data, emptyMap(), emptyMap());
+        return createSecret(KafkaCluster.brokersSecretName(cluster), data);
     }
 
     /**
@@ -1330,7 +1329,7 @@ public class KafkaCluster extends AbstractModel {
             data.put(key, Base64.getEncoder().encodeToString(passwordGenerator.generate().getBytes(StandardCharsets.US_ASCII)));
         }
 
-        return createSecret(KafkaCluster.jmxSecretName(cluster), data, templateJmxSecretAnnotations, templateJmxSecretLabels);
+        return createJmxSecret(KafkaCluster.jmxSecretName(cluster), data, templateJmxSecretAnnotations, templateJmxSecretLabels);
     }
 
     private List<ContainerPort> getContainerPortList() {
