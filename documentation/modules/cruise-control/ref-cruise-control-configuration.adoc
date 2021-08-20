@@ -165,3 +165,42 @@ spec:
           key: cruise-control-log4j.properties
     # ...
 ----
+
+[[api-security-configuration]]
+[discrete]
+== API security
+
+The Cruise Control API is secured by default to protect the cluster against any potentially destructive Cruise Control operations.
+
+However, these security settings can be disabled.
+
+.An example of disabling Cruise Control API authorization.
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    config:
+      webserver.security.enable: false
+# ...
+----
+
+.An example of disabling Cruise Control API authentication.
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    config:
+       webserver.ssl.enable: false
+# ...
+----
+
