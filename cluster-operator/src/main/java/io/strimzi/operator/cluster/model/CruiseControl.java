@@ -101,7 +101,6 @@ public class CruiseControl extends AbstractModel {
     protected static final String API_AUTH_CONFIG_VOLUME_NAME = "api-auth-config";
     protected static final String API_AUTH_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/api-auth-config/";
 
-
     private static final String NAME_SUFFIX = "-cruise-control";
 
     // Volume name of the temporary volume used by the TLS sidecar container
@@ -681,12 +680,8 @@ public class CruiseControl extends AbstractModel {
         if (!isDeployed()) {
             return null;
         }
-
         Secret secret = clusterCa.cruiseControlSecret();
-
-        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, CruiseControl.secretName(cluster), name,
-                "cruise-control", labels, createOwnerReference(),
-                isMaintenanceTimeWindowsSatisfied);
+        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, CruiseControl.secretName(cluster), name, "cruise-control", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 
     /**
