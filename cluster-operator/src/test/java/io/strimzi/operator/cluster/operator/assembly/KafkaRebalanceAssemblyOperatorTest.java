@@ -143,8 +143,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
             }
 
             @Override
-            public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret coSecret, boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
-                return new CruiseControlApiImpl(vertx, 1, ccSecret, coSecret, true, true);
+            public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret, Secret coSecret, boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
+                return new CruiseControlApiImpl(vertx, 1, ccSecret, ccApiSecret, coSecret, true, false);
             }
         };
 
@@ -166,6 +166,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .thenReturn(Future.succeededFuture(MockCruiseControl.CO_SECRET));
         when(mockSecretOps.getAsync(CLUSTER_NAMESPACE, CruiseControl.secretName(CLUSTER_NAME)))
                 .thenReturn(Future.succeededFuture(MockCruiseControl.CC_SECRET));
+        when(mockSecretOps.getAsync(CLUSTER_NAMESPACE, CruiseControl.apiSecretName(CLUSTER_NAME)))
+                .thenReturn(Future.succeededFuture(MockCruiseControl.CC_API_SECRET));
     }
 
     /**

@@ -95,7 +95,12 @@ public class CruiseControl extends AbstractModel {
     protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "cruise-control-metrics-and-logging";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
+
     private static final String CC_AUTH_CREDENTIALS_FILENAME = API_AUTH_FILE_KEY;
+
+    protected static final String API_AUTH_CONFIG_VOLUME_NAME = "api-auth-config";
+    protected static final String API_AUTH_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/api-auth-config/";
+
 
     private static final String NAME_SUFFIX = "-cruise-control";
 
@@ -127,8 +132,8 @@ public class CruiseControl extends AbstractModel {
     private TlsSidecar tlsSidecar;
     private String tlsSidecarImage;
     private String minInsyncReplicas = "1";
-    public String uriScheme;
-    public boolean authorizationEnabled;
+    private String uriScheme;
+    private boolean authorizationEnabled;
     private Double brokerDiskMiBCapacity;
     private int brokerCpuUtilizationCapacity;
     private Double brokerInboundNetworkKiBPerSecondCapacity;
@@ -208,13 +213,12 @@ public class CruiseControl extends AbstractModel {
         return KafkaCluster.serviceName(cluster) + ":" + DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
 
-    @SuppressWarnings("deprecation")
     public static String encodeToBase64(String s) {
         return Base64.getEncoder().encodeToString(s.getBytes(StandardCharsets.US_ASCII));
     }
 
     public static String getAuthCredentialsFile() {
-        return TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT + CC_AUTH_CREDENTIALS_FILENAME;
+        return API_AUTH_CONFIG_VOLUME_MOUNT + CC_AUTH_CREDENTIALS_FILENAME;
     }
 
     private static boolean isEnabled(CruiseControlConfiguration config, String s1, String s2) {
@@ -445,6 +449,7 @@ public class CruiseControl extends AbstractModel {
                 createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
                 createSecretVolume(TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.secretName(cluster), isOpenShift),
                 createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
+                createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.apiSecretName(cluster), isOpenShift),
                 createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
     }
 
@@ -452,6 +457,7 @@ public class CruiseControl extends AbstractModel {
         return Arrays.asList(createTempDirVolumeMount(),
                 createVolumeMount(CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT),
                 createVolumeMount(CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT),
+                createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT),
                 createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
     }
 
@@ -595,6 +601,15 @@ public class CruiseControl extends AbstractModel {
 
         return varList;
     }
+    /**
+     * Generates the name of the Cruise Control secret with API authorization credentials
+     *
+     * @param kafkaCluster  Name of the Kafka Custom Resource
+     * @return  Name of the Cruise Control secret
+     */
+    public static String apiSecretName(String kafkaCluster) {
+        return CruiseControlResources.apiSecretName(kafkaCluster);
+    }
 
     /**
      * Generates the name of the Cruise Control secret with certificates for connecting to Kafka brokers
@@ -632,12 +647,24 @@ public class CruiseControl extends AbstractModel {
                 API_ADMIN_NAME + ": " + apiAdminPassword + "," + API_ADMIN_ROLE + "\n" +
                 API_USER_NAME + ": " + API_USER_PASSWORD + "," + API_USER_ROLE + "\n";
 
-        Map<String, String> data = new HashMap<>(7);
+        Map<String, String> data = new HashMap<>(3);
         data.put(API_ADMIN_PASSWORD_KEY, encodeToBase64(apiAdminPassword));
         data.put(API_USER_PASSWORD_KEY, encodeToBase64(API_USER_PASSWORD));
         data.put(API_AUTH_FILE_KEY, encodeToBase64(authCredentialsFile));
 
         return data;
+    }
+
+    /**
+     * Generate the Secret containing the Cruise Control API authorization credentials.
+     *
+     * @return The generated Secret.
+     */
+    public Secret generateApiSecret() {
+        if (!isDeployed()) {
+            return null;
+        }
+        return ModelUtils.createSecret(CruiseControl.apiSecretName(cluster), namespace, labels, createOwnerReference(), generateCruiseControlApiCredentials());
     }
 
     /**
@@ -657,18 +684,8 @@ public class CruiseControl extends AbstractModel {
 
         Secret secret = clusterCa.cruiseControlSecret();
 
-        // Generate data used for API authorization
-        Map<String, String> data = new HashMap<>(7);
-        if (secret == null) {
-            data = generateCruiseControlApiCredentials();
-        } else {
-            data.put(API_ADMIN_PASSWORD_KEY, secret.getData().get(API_ADMIN_PASSWORD_KEY));
-            data.put(API_USER_PASSWORD_KEY, secret.getData().get(API_USER_PASSWORD_KEY));
-            data.put(API_AUTH_FILE_KEY, secret.getData().get(API_AUTH_FILE_KEY));
-        }
-
         return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, CruiseControl.secretName(cluster), name,
-                "cruise-control", labels, data, createOwnerReference(),
+                "cruise-control", labels, createOwnerReference(),
                 isMaintenanceTimeWindowsSatisfied);
     }
 

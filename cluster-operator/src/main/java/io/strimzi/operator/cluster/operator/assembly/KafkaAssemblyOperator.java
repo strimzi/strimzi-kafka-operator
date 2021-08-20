@@ -346,6 +346,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.cruiseControlServiceAccount())
                 .compose(state -> state.cruiseControlAncillaryCm())
                 .compose(state -> state.cruiseControlSecret(this::dateSupplier))
+                .compose(state -> state.cruiseControlApiSecret())
                 .compose(state -> state.cruiseControlDeployment())
                 .compose(state -> state.cruiseControlService())
                 .compose(state -> state.cruiseControlReady())
@@ -3419,6 +3420,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     });
         }
 
+        Future<ReconciliationState> cruiseControlApiSecret() {
+            if (this.cruiseControl != null) {
+                Future<Secret> secretFuture = secretOperations.getAsync(namespace, CruiseControl.apiSecretName(name));
+                return secretFuture.compose(res -> {
+                    if (res == null) {
+                        return withVoid(secretOperations.reconcile(reconciliation, namespace, CruiseControl.apiSecretName(name),
+                                cruiseControl.generateApiSecret()));
+                    }
+                    return withVoid(Future.succeededFuture(this));
+                });
+
+            }
+            return withVoid(secretOperations.reconcile(reconciliation, namespace, cruiseControl.apiSecretName(name), null));
+        }
+
         Future<ReconciliationState> cruiseControlDeployment() {
             if (this.cruiseControl != null && ccDeployment != null) {
                 Future<Deployment> future = deploymentOperations.getAsync(namespace, this.cruiseControl.getName());
@@ -3599,7 +3615,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             Secret secret = ModelUtils.buildSecret(reconciliation, clusterCa, clusterCa.clusterOperatorSecret(), namespace,
                     ClusterOperator.secretName(name), "cluster-operator", "cluster-operator",
-                    labels, null, ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
+                    labels,  ownerRef, isMaintenanceTimeWindowsSatisfied(dateSupplier));
 
             return withVoid(secretOperations.reconcile(reconciliation, namespace, ClusterOperator.secretName(name),
                     secret));

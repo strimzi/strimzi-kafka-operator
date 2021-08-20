@@ -47,7 +47,7 @@ public class MockCruiseControlTest {
 
     
     private CruiseControlApi cruiseControlClientProvider(Vertx vertx) {
-        return new CruiseControlApiImpl(vertx, MockCruiseControl.CC_SECRET, MockCruiseControl.CO_SECRET, true, true);
+        return new CruiseControlApiImpl(vertx, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, MockCruiseControl.CO_SECRET, true, false);
     }
 
     private void runTest(Vertx vertx, VertxTestContext context, String userTaskID, int pendingCalls) throws IOException, URISyntaxException {

@@ -177,14 +177,15 @@ public class KafkaRebalanceAssemblyOperator
      * Provides an implementation of the Cruise Control API client
      *
      * @param ccSecret Cruise Control secret
+     * @param ccApiSecret Cruise Control API secret
      * @param coSecret Cluster Operator secret
      * @param apiAuthorizationEnabled if enabled, configures API authorization
      * @param apiAuthenticationEnabled if enabled, configures API authentication
      * @return Cruise Control API client instance
      */
-    public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret coSecret,
+    public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret, Secret coSecret,
                                                            boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
-        return new CruiseControlApiImpl(vertx, ccSecret, coSecret, apiAuthorizationEnabled, apiAuthenticationEnabled);
+        return new CruiseControlApiImpl(vertx, ccSecret, ccApiSecret, coSecret, apiAuthorizationEnabled, apiAuthenticationEnabled);
     }
 
     /**
@@ -1062,28 +1063,36 @@ public class KafkaRebalanceAssemblyOperator
                                         + ": No deployed Cruise Control for doing a rebalance.")).mapEmpty();
                     }
 
-                    String coSecretName =  ClusterOperator.secretName(clusterName);
                     String ccSecretName =  CruiseControlResources.secretName(clusterName);
+                    String ccApiSecretName =  CruiseControlResources.apiSecretName(clusterName);
+                    String coSecretName =  ClusterOperator.secretName(clusterName);
 
-                    Future<Secret> coSecretFuture = secretOperations.getAsync(clusterNamespace, coSecretName);
                     Future<Secret> ccSecretFuture = secretOperations.getAsync(clusterNamespace, ccSecretName);
+                    Future<Secret> ccApiSecretFuture = secretOperations.getAsync(clusterNamespace, ccApiSecretName);
+                    Future<Secret> coSecretFuture = secretOperations.getAsync(clusterNamespace, coSecretName);
 
-                    return CompositeFuture.join(coSecretFuture, ccSecretFuture)
+                    return CompositeFuture.join(ccSecretFuture, ccApiSecretFuture, coSecretFuture)
                             .compose(compositeFuture -> {
-                                Secret coSecret = compositeFuture.resultAt(0);
+
+                                Secret ccSecret = compositeFuture.resultAt(0);
+                                if (ccSecret == null) {
+                                    return Future.failedFuture(Util.missingSecretException(clusterNamespace, ccSecretName));
+                                }
+
+                                Secret ccApiSecret = compositeFuture.resultAt(1);
+                                if (ccApiSecret == null) {
+                                    return Future.failedFuture(Util.missingSecretException(clusterNamespace, ccApiSecretName));
+                                }
+
+                                Secret coSecret = compositeFuture.resultAt(2);
                                 if (coSecret == null) {
                                     return Future.failedFuture(Util.missingSecretException(clusterNamespace, coSecretName));
                                 }
 
-                                Secret ccSecret = compositeFuture.resultAt(1);
-                                if (ccSecret == null) {
-                                    return Future.failedFuture(Util.missingSecretException(clusterNamespace, ccSecretName));
-                                }
                                 CruiseControlConfiguration c = new CruiseControlConfiguration(reconciliation, kafka.getSpec().getCruiseControl().getConfig().entrySet());
                                 boolean apiAuthorizationEnabled = CruiseControl.isApiAuthorizationEnabled(c);
                                 boolean apiAuthenticationEnabled = CruiseControl.isApiAuthenticationEnabled(c);
-                                CruiseControlApi apiClient = cruiseControlClientProvider(ccSecret, coSecret, apiAuthorizationEnabled, apiAuthenticationEnabled);
-
+                                CruiseControlApi apiClient = cruiseControlClientProvider(ccSecret, ccApiSecret, coSecret, apiAuthorizationEnabled, apiAuthenticationEnabled);
 
                                 // get latest KafkaRebalance state as it may have changed
                                 return kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())

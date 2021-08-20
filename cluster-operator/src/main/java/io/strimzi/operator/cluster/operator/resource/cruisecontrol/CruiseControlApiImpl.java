@@ -4,10 +4,12 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.operator.resource.HttpClientUtils;
 import io.fabric8.kubernetes.api.model.HTTPHeader;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.model.CruiseControl;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -19,6 +21,7 @@ import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.PfxOptions;
 
+import java.io.File;
 import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
@@ -32,25 +35,28 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     private final Vertx vertx;
     private final long idleTimeout;
     private Secret ccSecret;
+    private Secret ccApiSecret;
     private Secret coSecret;
     private boolean apiAuthorizationEnabled;
     private boolean apiAuthenticationEnabled;
     private HTTPHeader authHttpHeader;
 
-    public CruiseControlApiImpl(Vertx vertx, Secret ccSecret, Secret coSecret, Boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
+    public CruiseControlApiImpl(Vertx vertx, Secret ccSecret, Secret ccApiSecret, Secret coSecret, Boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
         this.vertx = vertx;
         this.idleTimeout = HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
         this.ccSecret = ccSecret;
+        this.ccApiSecret = ccApiSecret;
         this.coSecret = coSecret;
         this.apiAuthorizationEnabled = apiAuthorizationEnabled;
         this.apiAuthenticationEnabled = apiAuthenticationEnabled;
         this.authHttpHeader = getAuthHttpHeader();
     }
 
-    public CruiseControlApiImpl(Vertx vertx, int idleTimeout, Secret ccSecret, Secret coSecret, Boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
+    public CruiseControlApiImpl(Vertx vertx, int idleTimeout, Secret ccSecret, Secret ccApiSecret, Secret coSecret, Boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
         this.vertx = vertx;
         this.idleTimeout = idleTimeout;
         this.ccSecret = ccSecret;
+        this.ccApiSecret = ccApiSecret;
         this.coSecret = coSecret;
         this.apiAuthorizationEnabled = apiAuthorizationEnabled;
         this.apiAuthenticationEnabled = apiAuthenticationEnabled;
@@ -63,12 +69,24 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     public HttpClientOptions getHttpClientOptions() {
+
         if (apiAuthenticationEnabled) {
+            String trustStorePassword = null;
+            File truststoreFile = null;
+
+            PasswordGenerator pg = new PasswordGenerator(12);
+            trustStorePassword = pg.generate();
+            truststoreFile = Util.createFileTrustStore(getClass().getName(), "ts", Ca.cert(ccSecret, "cruise-control.crt"), trustStorePassword.toCharArray());
+
             return new HttpClientOptions()
                 .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING)
                 .setSsl(true)
-                .setTrustAll(true)
-                .setVerifyHost(false)
+                .setVerifyHost(true)
+                .setPfxTrustOptions(
+                    new PfxOptions()
+                        .setPassword(trustStorePassword)
+                        .setPath(truststoreFile.getAbsolutePath())
+                    )
                 .setPfxKeyCertOptions(
                     new PfxOptions()
                         .setPassword(new String(Util.decodeFromSecret(coSecret, "cluster-operator.password"), StandardCharsets.US_ASCII))
@@ -82,7 +100,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     public HTTPHeader getAuthHttpHeader() {
         if (apiAuthorizationEnabled) {
-            String password = new String(Util.decodeFromSecret(ccSecret, CruiseControl.API_ADMIN_PASSWORD_KEY), StandardCharsets.US_ASCII);
+            String password = new String(Util.decodeFromSecret(ccApiSecret, CruiseControl.API_ADMIN_PASSWORD_KEY), StandardCharsets.US_ASCII);
             HTTPHeader header = CruiseControl.generateAuthHttpHeader(CruiseControl.API_ADMIN_NAME, password);
             return header;
         } else {
