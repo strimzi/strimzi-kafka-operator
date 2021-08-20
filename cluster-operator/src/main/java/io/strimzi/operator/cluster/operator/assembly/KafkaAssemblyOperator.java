@@ -1833,7 +1833,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     }
 
                     String userConfiguredAdvertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, pod);
-                    if (userConfiguredAdvertisedHostname != null) {
+                    if (userConfiguredAdvertisedHostname != null && listener.isTls()) {
                         // If user configured a custom advertised hostname, add it to the SAN names used in the certificate
                         kafkaBrokerDnsNames.computeIfAbsent(pod, k -> new HashSet<>(1)).add(userConfiguredAdvertisedHostname);
                     }
