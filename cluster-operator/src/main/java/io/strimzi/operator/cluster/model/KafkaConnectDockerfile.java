@@ -78,19 +78,19 @@ public class KafkaConnectDockerfile {
      * @param plugins       List of plugins which should be added to the container image
      */
     private void connectorPluginsPreStage(PrintWriter writer, List<Plugin> plugins) {
-        Map<String, List<Artifact>> artifactMap = plugins.stream().collect(Collectors.toMap(plugin -> plugin.getName(),
-            plugin -> plugin.getArtifacts().stream().filter(artifact -> artifact instanceof MavenArtifact).collect(Collectors.toList())));
+        Map<String, List<MavenArtifact>> artifactMap = plugins.stream().collect(Collectors.toMap(plugin -> plugin.getName(),
+            plugin -> plugin.getArtifacts().stream().filter(artifact -> artifact instanceof MavenArtifact).map(artifact -> (MavenArtifact) artifact).collect(Collectors.toList())));
         artifactMap.entrySet().removeIf(plugin -> plugin.getValue().isEmpty());
 
         if (artifactMap.size() > 0) {
             writer.println("FROM " + mavenBuilder + " AS downloadArtifacts");
             artifactMap.entrySet().forEach(plugin -> {
                 plugin.getValue().forEach(mvn -> {
-                    String repo = ((MavenArtifact) mvn).getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybeAppendSlash(((MavenArtifact) mvn).getRepository());
-                    String artifactHash = Util.sha1Prefix(((MavenArtifact) mvn).getGroup() + ((MavenArtifact) mvn).getArtifact() + ((MavenArtifact) mvn).getVersion());
+                    String repo = mvn.getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybeAppendSlash(mvn.getRepository());
+                    String artifactHash = Util.sha1Prefix(mvn.getGroup() + "/" + mvn.getArtifact() + "/" + mvn.getVersion());
                     String artifactDir = plugin.getKey() + "/" + artifactHash;
-                    Cmd downloadPomCmd = new Cmd("curl", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, (MavenArtifact) mvn, "pom"));
-                    Cmd downloadJarCmd = new Cmd("curl", "-L", "--create-dirs", "--output", "/tmp/artifacts/" + artifactDir + "/" + ((MavenArtifact) mvn).getArtifact() + "-" + ((MavenArtifact) mvn).getVersion() + ".jar", assembleResourceUrl(repo, (MavenArtifact) mvn, "jar"));
+                    Cmd downloadPomCmd = new Cmd("curl", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"));
+                    Cmd downloadJarCmd = new Cmd("curl", "-L", "--create-dirs", "--output", "/tmp/artifacts/" + artifactDir + "/" + mvn.getArtifact() + "-" + mvn.getVersion() + ".jar", assembleResourceUrl(repo, mvn, "jar"));
 
                     writer.println("RUN " + downloadPomCmd + " \\");
                     writer.println("      && " + new Cmd("mvn", "dependency:copy-dependencies", "-DoutputDirectory=/tmp/artifacts/" + artifactDir, "-f", "/tmp/" + artifactDir + "/pom.xml") + " \\");
@@ -357,7 +357,7 @@ public class KafkaConnectDockerfile {
      */
     private void addMavenArtifact(PrintWriter writer, String connectorName, MavenArtifact mvn) {
         checkGavIsPresent(mvn);
-        String artifactHash = Util.sha1Prefix(mvn.getGroup() + mvn.getArtifact() + mvn.getVersion());
+        String artifactHash = Util.sha1Prefix(mvn.getGroup() + "/" + mvn.getArtifact() + "/" + mvn.getVersion());
 
         writer.println("COPY --from=downloadArtifacts /tmp/artifacts/" + connectorName + "/" + artifactHash + " " + BASE_PLUGIN_PATH + connectorName + "/" + artifactHash);
         writer.println();

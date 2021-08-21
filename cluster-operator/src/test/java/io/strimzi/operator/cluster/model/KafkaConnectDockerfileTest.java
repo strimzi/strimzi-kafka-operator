@@ -495,13 +495,13 @@ public class KafkaConnectDockerfileTest {
                 "##############################\n" +
                 "\n" +
                 "FROM quay.io/strimzi/maven-builder:latest AS downloadArtifacts\n" +
-                "RUN 'curl' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/401856c0/pom.xml' 'https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.pom' \\\n" +
-                "      && 'mvn' 'dependency:copy-dependencies' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/401856c0' '-f' '/tmp/my-connector-plugin/401856c0/pom.xml' \\\n" +
-                "      && 'curl' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/401856c0/a1-v1.jar' 'https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.jar'\n" +
+                "RUN 'curl' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/64cebd9c/pom.xml' 'https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.pom' \\\n" +
+                "      && 'mvn' 'dependency:copy-dependencies' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/64cebd9c' '-f' '/tmp/my-connector-plugin/64cebd9c/pom.xml' \\\n" +
+                "      && 'curl' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/64cebd9c/a1-v1.jar' 'https://repo1.maven.org/maven2/g1/a1/v1/a1-v1.jar'\n" +
                 "\n" +
-                "RUN 'curl' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/6ecfeffd/pom.xml' 'https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.pom' \\\n" +
-                "      && 'mvn' 'dependency:copy-dependencies' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/6ecfeffd' '-f' '/tmp/my-connector-plugin/6ecfeffd/pom.xml' \\\n" +
-                "      && 'curl' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/6ecfeffd/a2-v2.jar' 'https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.jar'\n" +
+                "RUN 'curl' '-L' '--create-dirs' '--output' '/tmp/my-connector-plugin/9983060e/pom.xml' 'https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.pom' \\\n" +
+                "      && 'mvn' 'dependency:copy-dependencies' '-DoutputDirectory=/tmp/artifacts/my-connector-plugin/9983060e' '-f' '/tmp/my-connector-plugin/9983060e/pom.xml' \\\n" +
+                "      && 'curl' '-L' '--create-dirs' '--output' '/tmp/artifacts/my-connector-plugin/9983060e/a2-v2.jar' 'https://repo1.maven.org/maven2/g2/a2/v2/a2-v2.jar'\n" +
                 "\n" +
                 "FROM myImage:latest\n" +
                 "\n" +
@@ -513,9 +513,9 @@ public class KafkaConnectDockerfileTest {
                 "RUN mkdir -p /opt/kafka/plugins/my-connector-plugin/9bb2fd11 \\\n" +
                 "      && 'curl' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/9bb2fd11/9bb2fd11.jar' 'http://url.com/ar.jar'\n" +
                 "\n" +
-                "COPY --from=downloadArtifacts /tmp/artifacts/my-connector-plugin/401856c0 /opt/kafka/plugins/my-connector-plugin/401856c0\n" +
+                "COPY --from=downloadArtifacts /tmp/artifacts/my-connector-plugin/64cebd9c /opt/kafka/plugins/my-connector-plugin/64cebd9c\n" +
                 "\n" +
-                "COPY --from=downloadArtifacts /tmp/artifacts/my-connector-plugin/6ecfeffd /opt/kafka/plugins/my-connector-plugin/6ecfeffd\n" +
+                "COPY --from=downloadArtifacts /tmp/artifacts/my-connector-plugin/9983060e /opt/kafka/plugins/my-connector-plugin/9983060e\n" +
                 "\n" +
                 "##########\n" +
                 "# Connector plugin other-connector-plugin\n" +
