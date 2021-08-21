@@ -66,7 +66,7 @@ spec:
   partitions: 1 <1>
   replicas: 3 <2>
   config:
-    min.insync.replicas=2 <3>
+    min.insync.replicas: 2 <3>
   #...
 ----
 <1> The number of partitions for the topic. Generally, 1 partition is sufficient.
