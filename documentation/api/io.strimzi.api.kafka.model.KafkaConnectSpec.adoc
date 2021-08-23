@@ -86,7 +86,7 @@ You can also xref:con-common-configuration-ssl-reference[configure the `ssl.endp
 
 [id='property-kafka-connect-logging-{context}']
 === `logging`
-Kafka Connect (and Kafka Connect with Source2Image support) has its own configurable loggers:
+Kafka Connect has its own configurable loggers:
 
 * `connect.root.logger.level`
 * `log4j.logger.org.reflections`

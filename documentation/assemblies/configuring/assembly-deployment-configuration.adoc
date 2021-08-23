@@ -10,7 +10,6 @@ This chapter describes how to configure different aspects of the supported deplo
 
 * Kafka clusters
 * Kafka Connect clusters
-* Kafka Connect clusters with _Source2Image_ support
 * Kafka MirrorMaker
 * Kafka Bridge
 * Cruise Control
