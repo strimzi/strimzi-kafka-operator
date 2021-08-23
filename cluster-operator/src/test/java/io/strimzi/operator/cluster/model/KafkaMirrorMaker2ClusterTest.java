@@ -1539,19 +1539,6 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     @ParallelTest
-    public void testGenerateDeploymentWithOldVersion() {
-        assertThrows(InvalidResourceException.class, () -> {
-            KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
-                    .editSpec()
-                        .withVersion("2.3.1")
-                    .endSpec()
-                    .build();
-
-            KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
-        });
-    }
-
-    @ParallelTest
     public void testNetworkPolicy() {
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resourceWithMetrics)
                 .build();
