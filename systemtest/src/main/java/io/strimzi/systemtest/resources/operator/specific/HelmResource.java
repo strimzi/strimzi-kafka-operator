@@ -123,7 +123,7 @@ public class HelmResource implements SpecificResourceType {
         values.put("watchAnyNamespace", this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES));
         // We need to remove CO namespace to avoid creation of roles and rolebindings multiple times in one namespace
         // Roles will be created in installTo namespace even if it's not specified in watchNamespaces
-        if (!this.namespaceToWatch.equals("*")) {
+        if (!this.namespaceToWatch.equals("*") && !this.namespaceToWatch.equals(this.namespaceInstallTo)) {
             values.put("watchNamespaces", "{" + this.namespaceToWatch.replaceAll(",*" + namespaceInstallTo + ",*", "") + "}");
         }
 
