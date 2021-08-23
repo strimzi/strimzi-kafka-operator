@@ -123,7 +123,9 @@ public class HelmResource implements SpecificResourceType {
         values.put("watchAnyNamespace", this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES));
         // We need to remove CO namespace to avoid creation of roles and rolebindings multiple times in one namespace
         // Roles will be created in installTo namespace even if it's not specified in watchNamespaces
-        values.put("watchNamespaces", "{" + this.namespaceToWatch.replaceAll(",*" + namespaceInstallTo + ",*", "") + "}");
+        if (!this.namespaceToWatch.equals("*")) {
+            values.put("watchNamespaces", "{" + this.namespaceToWatch.replaceAll(",*" + namespaceInstallTo + ",*", "") + "}");
+        }
 
         Path pathToChart = new File(HELM_CHART).toPath();
         String oldNamespace = KubeClusterResource.getInstance().setNamespace("kube-system");
