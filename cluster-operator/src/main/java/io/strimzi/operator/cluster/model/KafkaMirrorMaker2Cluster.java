@@ -95,11 +95,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         KafkaMirrorMaker2Spec spec = kafkaMirrorMaker2.getSpec();
         cluster.setOwnerReference(kafkaMirrorMaker2);
 
-        String specVersion = spec.getVersion();
-        if (versions.version(specVersion).compareVersion("2.4.0") < 0) {
-            throw new InvalidResourceException("Kafka MirrorMaker 2.0 is not available in the version at spec.version (" + specVersion + "). Kafka MirrorMaker 2.0 is available in Kafka version 2.4.0 and later.");
-        } 
-        cluster.setImage(versions.kafkaMirrorMaker2Version(spec.getImage(), specVersion));
+        cluster.setImage(versions.kafkaMirrorMaker2Version(spec.getImage(), spec.getVersion()));
 
         List<KafkaMirrorMaker2ClusterSpec> clustersList = ModelUtils.asListOrEmptyList(spec.getClusters());
         cluster.setClusters(clustersList);
