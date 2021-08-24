@@ -68,10 +68,21 @@ if [ "$FIPS_MODE" = "disabled" ]; then
     export KAFKA_OPTS="${KAFKA_OPTS} -Dcom.redhat.fips=false"
 fi
 
-# enabling Tracing agent (initializes Jaeger tracing) as Java agent
-if [ "$STRIMZI_TRACING" = "jaeger" ]; then
-  KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/tracing-agent*.jar)=jaeger"
-  export KAFKA_OPTS
+# enabling Tracing agent (initializes tracing) as Java agent
+if [ "$STRIMZI_TRACING" = "jaeger" ] || [ "$STRIMZI_TRACING" = "opentelemetry" ]; then
+    KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/tracing-agent*.jar)=$STRIMZI_TRACING"
+    export KAFKA_OPTS
+    if [ "$STRIMZI_TRACING" = "opentelemetry" ]; then
+      if  [ -z "$OTEL_TRACES_EXPORTER" ]; then
+        # auto-set Jaeger exporter
+        export OTEL_TRACES_EXPORTER="jaeger"
+      fi
+
+      if [ -n "$JAEGER_SERVICE_NAME" ] && [ -z "$OTEL_SERVICE_NAME" ]; then
+          # legacy purpose, use previous JAEGER_SERVICE_NAME as OTEL_SERVICE_NAME (if not explicitly set)
+          export OTEL_SERVICE_NAME="${JAEGER_SERVICE_NAME}"
+      fi
+    fi
 fi
 
 if [ -z "$KAFKA_HEAP_OPTS" ] && [ -n "${DYNAMIC_HEAP_FRACTION}" ]; then

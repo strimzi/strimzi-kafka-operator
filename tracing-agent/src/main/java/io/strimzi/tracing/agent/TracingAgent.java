@@ -5,6 +5,7 @@
 package io.strimzi.tracing.agent;
 
 import io.jaegertracing.Configuration;
+import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
 import org.slf4j.Logger;
@@ -22,15 +23,27 @@ public class TracingAgent {
      * @param agentArgs The type of tracing which should be initialized
      */
     public static void premain(String agentArgs) {
-        if ("jaeger".equals(agentArgs)) {
-            String jaegerServiceName = System.getenv("JAEGER_SERVICE_NAME");
+        if (agentArgs != null && (agentArgs.equals("jaeger") || agentArgs.equals("opentelemetry"))) {
+            boolean isOpenTelemetry = "opentelemetry".equals(agentArgs);
 
-            if (jaegerServiceName != null) {
-                LOGGER.info("Initializing Jaeger tracing with service name {}", jaegerServiceName);
-                Tracer tracer = Configuration.fromEnv().getTracer();
-                GlobalTracer.registerIfAbsent(tracer);
+            String envName = isOpenTelemetry ? "OTEL_SERVICE_NAME" : "JAEGER_SERVICE_NAME";
+            String serviceName = System.getenv(envName);
+
+            if (serviceName != null) {
+                LOGGER.info(
+                    "Initializing {} tracing with service name {}",
+                    isOpenTelemetry ? "OpenTelemetry" : "OpenTracing",
+                    serviceName
+                );
+
+                if (isOpenTelemetry) {
+                    AutoConfiguredOpenTelemetrySdk.initialize();
+                } else {
+                    Tracer tracer = Configuration.fromEnv().getTracer();
+                    GlobalTracer.registerIfAbsent(tracer);
+                }
             } else {
-                LOGGER.error("Jaeger tracing cannot be initialized because JAEGER_SERVICE_NAME environment variable is not defined");
+                LOGGER.error("Tracing cannot be initialized because the {} environment variable is not defined", envName);
             }
         }
     }

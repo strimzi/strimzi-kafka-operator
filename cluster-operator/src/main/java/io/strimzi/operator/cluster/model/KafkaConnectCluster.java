@@ -55,6 +55,7 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.tracing.TracingUtils;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -207,9 +208,10 @@ public class KafkaConnectCluster extends AbstractModel {
             config = new KafkaConnectConfiguration(reconciliation, spec.getConfig().entrySet());
             kafkaConnect.setConfiguration(config);
         }
-        if (kafkaConnect.tracing != null)   {
-            config.setConfigOption("consumer.interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
-            config.setConfigOption("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
+
+        if (kafkaConnect.getTracing() != null)   {
+            config.setConfigOption("consumer.interceptor.classes", TracingUtils.consumerInterceptor(kafkaConnect.getTracing()));
+            config.setConfigOption("producer.interceptor.classes", TracingUtils.producerInterceptor(kafkaConnect.getTracing()));
         }
 
         if (kafkaConnect.getImage() == null) {

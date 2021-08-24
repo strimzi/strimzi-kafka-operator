@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.sundr.builder.annotations.Buildable;
@@ -17,16 +18,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_AGENT_HOST;
+import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_COLLECTOR_URL;
+import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_SAMPLER_PARAM;
+import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_SAMPLER_TYPE;
+
 @Buildable(editableEnabled = false)
 public class KafkaTracingClients  extends KafkaClients {
-    private static final String JAEGER_SAMPLER_TYPE =  "const";
-    private static final String JAEGER_SAMPLER_PARAM =  "1";
 
+    private String tracingServiceNameEnvVar;
     private String jaegerServiceProducerName;
     private String jaegerServiceConsumerName;
     private String jaegerServiceStreamsName;
     private String jaegerServerAgentName;
     private String streamsTopicTargetName;
+
+    public String getTracingServiceNameEnvVar() {
+        return tracingServiceNameEnvVar;
+    }
+
+    public void setTracingServiceNameEnvVar(String tracingServiceNameEnvVar) {
+        this.tracingServiceNameEnvVar = tracingServiceNameEnvVar;
+    }
 
     public String getJaegerServiceConsumerName() {
         return jaegerServiceConsumerName;
@@ -75,12 +88,16 @@ public class KafkaTracingClients  extends KafkaClients {
                     .editSpec()
                         .editFirstContainer()
                             .addNewEnv()
-                                .withName("JAEGER_SERVICE_NAME")
+                                .withName(tracingServiceNameEnvVar)
                                 .withValue(jaegerServiceConsumerName)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_AGENT_HOST")
-                                .withValue(jaegerServerAgentName)
+                                .withValue(JAEGER_AGENT_HOST)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
+                                .withValue(JAEGER_COLLECTOR_URL)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")
@@ -104,12 +121,16 @@ public class KafkaTracingClients  extends KafkaClients {
                     .editSpec()
                         .editFirstContainer()
                             .addNewEnv()
-                                .withName("JAEGER_SERVICE_NAME")
+                                .withName(tracingServiceNameEnvVar)
                                 .withValue(jaegerServiceProducerName)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_AGENT_HOST")
-                                .withValue(jaegerServerAgentName)
+                                .withValue(JAEGER_AGENT_HOST)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
+                                .withValue(JAEGER_COLLECTOR_URL)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")
@@ -156,6 +177,7 @@ public class KafkaTracingClients  extends KafkaClients {
                         .withContainers()
                         .addNewContainer()
                             .withName(kafkaStreamsName)
+                            .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
                             .withImage(Environment.TEST_STREAMS_IMAGE)
                             .addNewEnv()
                                 .withName("BOOTSTRAP_SERVERS")
@@ -178,12 +200,16 @@ public class KafkaTracingClients  extends KafkaClients {
                                 .withValue("DEBUG")
                             .endEnv()
                             .addNewEnv()
-                                .withName("JAEGER_SERVICE_NAME")
+                                .withName(tracingServiceNameEnvVar)
                                 .withValue(jaegerServiceStreamsName)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_AGENT_HOST")
-                                .withValue(jaegerServerAgentName)
+                                .withValue(JAEGER_AGENT_HOST)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
+                                .withValue(JAEGER_COLLECTOR_URL)
                             .endEnv()
                             .addNewEnv()
                                 .withName("JAEGER_SAMPLER_TYPE")

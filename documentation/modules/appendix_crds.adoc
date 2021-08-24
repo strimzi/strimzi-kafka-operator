@@ -1647,8 +1647,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 |logging                1.2+<.<a|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|tracing                1.2+<.<a|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
-|xref:type-JaegerTracing-{context}[`JaegerTracing`]
+|tracing                1.2+<.<a|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger, opentelemetry].
+|xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
 |template               1.2+<.<a|Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |externalConfiguration  1.2+<.<a|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
@@ -1850,12 +1850,27 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
 
 
-The `type` property is a discriminator that distinguishes use of the `JaegerTracing` type from other subtypes which may be added in the future.
+The `type` property is a discriminator that distinguishes use of the `JaegerTracing` type from xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`].
 It must have the value `jaeger` for the type `JaegerTracing`.
 [options="header"]
 |====
 |Property     |Description
 |type  1.2+<.<a|Must be `jaeger`.
+|string
+|====
+
+[id='type-OpenTelemetryTracing-{context}']
+### `OpenTelemetryTracing` schema reference
+
+Used in: xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`]
+
+
+The `type` property is a discriminator that distinguishes use of the `OpenTelemetryTracing` type from xref:type-JaegerTracing-{context}[`JaegerTracing`].
+It must have the value `opentelemetry` for the type `OpenTelemetryTracing`.
+[options="header"]
+|====
+|Property     |Description
+|type  1.2+<.<a|Must be `opentelemetry`.
 |string
 |====
 
@@ -2622,8 +2637,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaMirrorMakerSpec.adoc[leveloffset
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
 |metricsConfig   1.2+<.<a|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxPrometheusExporter].
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
-|tracing         1.2+<.<a|The configuration of tracing in Kafka MirrorMaker. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
-|xref:type-JaegerTracing-{context}[`JaegerTracing`]
+|tracing         1.2+<.<a|The configuration of tracing in Kafka MirrorMaker. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger, opentelemetry].
+|xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
 |template        1.2+<.<a|Template to specify how Kafka MirrorMaker resources, `Deployments` and `Pods`, are generated.
 |xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`]
 |livenessProbe   1.2+<.<a|Pod liveness checking.
@@ -2795,8 +2810,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaBridgeSpec.adoc[leveloffset=+1]
 |xref:type-Probe-{context}[`Probe`]
 |template          1.2+<.<a|Template for Kafka Bridge resources. The template allows users to specify how is the `Deployment` and `Pods` generated.
 |xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`]
-|tracing           1.2+<.<a|The configuration of tracing in Kafka Bridge. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
-|xref:type-JaegerTracing-{context}[`JaegerTracing`]
+|tracing           1.2+<.<a|The configuration of tracing in Kafka Bridge. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger, opentelemetry].
+|xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
 |====
 
 [id='type-KafkaBridgeHttpConfig-{context}']
@@ -3034,8 +3049,8 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-KafkaJmxOptions-{context}[`KafkaJmxOptions`]
 |logging                1.2+<.<a|Logging configuration for Kafka Connect. The type depends on the value of the `logging.type` property within the given object, which must be one of [inline, external].
 |xref:type-InlineLogging-{context}[`InlineLogging`], xref:type-ExternalLogging-{context}[`ExternalLogging`]
-|tracing                1.2+<.<a|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger].
-|xref:type-JaegerTracing-{context}[`JaegerTracing`]
+|tracing                1.2+<.<a|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger, opentelemetry].
+|xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
 |template               1.2+<.<a|Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |externalConfiguration  1.2+<.<a|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.

@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha256;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.cluster.tracing.TracingUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.ReconciliationException;
@@ -357,8 +358,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         }
 
         if (mirrorMaker2Cluster.getTracing() != null)   {
-            config.put("consumer.interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
-            config.put("producer.interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
+            config.put("consumer.interceptor.classes", TracingUtils.consumerInterceptor(mirrorMaker2Cluster.getTracing()));
+            config.put("producer.interceptor.classes", TracingUtils.producerInterceptor(mirrorMaker2Cluster.getTracing()));
         }
 
         config.putAll(mirror.getAdditionalProperties());

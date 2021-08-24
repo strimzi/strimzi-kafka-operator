@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.tracing;
 
-import io.strimzi.api.kafka.model.tracing.JaegerTracing;
+import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
@@ -25,15 +25,15 @@ import static io.strimzi.systemtest.Constants.TRACING;
 @Tag(TRACING)
 @Tag(INTERNAL_CLIENTS_USED)
 @ParallelSuite
-public class TracingST extends TracingAbstractST {
+public class OpenTelemetryTracingST extends TracingAbstractST {
     @Override
     protected Tracing tracing() {
-        return new JaegerTracing();
+        return new OpenTelemetryTracing();
     }
 
     @Override
     protected String serviceNameEnvVar() {
-        return "JAEGER_SERVICE_NAME";
+        return "OTEL_SERVICE_NAME";
     }
 
     @ParallelNamespaceTest

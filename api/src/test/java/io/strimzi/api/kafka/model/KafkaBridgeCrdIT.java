@@ -88,7 +88,7 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
 
         assertThat(exception.getMessage(), allOf(
                 containsStringIgnoringCase("Could not resolve type id 'wrongtype'"),
-                containsStringIgnoringCase("known type ids = [jaeger]")));
+                containsStringIgnoringCase("known type ids = [jaeger, opentelemetry]")));
     }
 
     @Test
@@ -98,8 +98,8 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
             () -> createDeleteCustomResource("KafkaBridge-with-wrong-tracing-type.yaml"));
 
         assertThat(exception.getMessage(), anyOf(
-                containsStringIgnoringCase("spec.tracing.type in body should be one of [jaeger]"),
-                containsStringIgnoringCase("spec.tracing.type: Unsupported value: \"wrongtype\": supported values: \"jaeger\"")));
+                containsStringIgnoringCase("spec.tracing.type in body should be one of [jaeger, opentelemetry]"),
+                containsStringIgnoringCase("spec.tracing.type: Unsupported value: \"wrongtype\": supported values: \"jaeger\", \"opentelemetry\"")));
     }
 
     @Test

@@ -26,6 +26,7 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
+import io.strimzi.operator.cluster.tracing.TracingUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 
@@ -311,7 +312,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         KafkaMirrorMakerConsumerConfiguration config = new KafkaMirrorMakerConsumerConfiguration(reconciliation, consumer.getConfig().entrySet());
 
         if (tracing != null) {
-            config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingConsumerInterceptor");
+            config.setConfigOption("interceptor.classes", TracingUtils.consumerInterceptor(tracing));
         }
 
         return config;
@@ -321,7 +322,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         KafkaMirrorMakerProducerConfiguration config = new KafkaMirrorMakerProducerConfiguration(reconciliation, producer.getConfig().entrySet());
 
         if (tracing != null) {
-            config.setConfigOption("interceptor.classes", "io.opentracing.contrib.kafka.TracingProducerInterceptor");
+            config.setConfigOption("interceptor.classes", TracingUtils.producerInterceptor(tracing));
         }
 
         return config;

@@ -445,7 +445,8 @@ spec:
                       type: string
                       enum:
                         - jaeger
-                      description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing.
+                        - opentelemetry
+                      description: The type of tracing used. Supported types are `jaeger` for Jaeger tracing with OpenTracing and `opentelemetry` for tracing with OpenTelemetry.
                   required:
                     - type
                   description: The configuration of tracing in Kafka Connect.

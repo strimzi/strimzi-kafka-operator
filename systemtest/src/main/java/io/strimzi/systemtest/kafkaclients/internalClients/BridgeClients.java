@@ -17,10 +17,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_AGENT_HOST;
+import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_COLLECTOR_URL;
+import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_SAMPLER_PARAM;
+import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_SAMPLER_TYPE;
+
 @Buildable(editableEnabled = false)
 public class BridgeClients extends KafkaClients {
     private int port;
     private int pollInterval;
+
+    private String tracingServiceNameEnvVar;
 
     public int getPollInterval() {
         return pollInterval;
@@ -36,6 +43,19 @@ public class BridgeClients extends KafkaClients {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public String getTracingServiceNameEnvVar() {
+        return tracingServiceNameEnvVar;
+    }
+
+    public void setTracingServiceNameEnvVar(String tracingServiceNameEnvVar) {
+        this.tracingServiceNameEnvVar = tracingServiceNameEnvVar;
+    }
+
+    private String serviceNameEnvVar() {
+        // use tracing service name env var if set, else use "dummy"
+        return tracingServiceNameEnvVar != null ? tracingServiceNameEnvVar : "TEST_SERVICE_NAME";
     }
 
     public Job producerStrimziBridge() {
@@ -87,6 +107,27 @@ public class BridgeClients extends KafkaClients {
                             .addNewEnv()
                                 .withName("MESSAGE_COUNT")
                                 .withValue(Integer.toString(this.getMessageCount()))
+                            .endEnv()
+                            .addNewEnv()
+                                .withName(serviceNameEnvVar())
+                                .withValue(getProducerName())
+                            .endEnv()
+                            // this will only get used if tracing is enabled -- see serviceNameEnvVar()
+                            .addNewEnv()
+                                .withName("JAEGER_AGENT_HOST")
+                                .withValue(JAEGER_AGENT_HOST)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
+                                .withValue(JAEGER_COLLECTOR_URL)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_TYPE")
+                                .withValue(JAEGER_SAMPLER_TYPE)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_PARAM")
+                                .withValue(JAEGER_SAMPLER_PARAM)
                             .endEnv()
                         .endContainer()
                     .endSpec()
@@ -148,6 +189,27 @@ public class BridgeClients extends KafkaClients {
                             .addNewEnv()
                                 .withName("GROUP_ID")
                                 .withValue(this.getConsumerGroup())
+                            .endEnv()
+                            .addNewEnv()
+                                .withName(serviceNameEnvVar())
+                                .withValue(getConsumerName())
+                            .endEnv()
+                            // this will only get used if tracing is enabled -- see serviceNameEnvVar()
+                            .addNewEnv()
+                                .withName("JAEGER_AGENT_HOST")
+                                .withValue(JAEGER_AGENT_HOST)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("OTEL_EXPORTER_JAEGER_ENDPOINT")
+                                .withValue(JAEGER_COLLECTOR_URL)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_TYPE")
+                                .withValue(JAEGER_SAMPLER_TYPE)
+                            .endEnv()
+                            .addNewEnv()
+                                .withName("JAEGER_SAMPLER_PARAM")
+                                .withValue(JAEGER_SAMPLER_PARAM)
                             .endEnv()
                         .endContainer()
                     .endSpec()
