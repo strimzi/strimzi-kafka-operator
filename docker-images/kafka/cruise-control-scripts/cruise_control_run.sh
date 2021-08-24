@@ -14,7 +14,7 @@ mkdir -p /tmp/cruise-control
 # Import certificates into keystore and truststore
 "$CRUISE_CONTROL_HOME"/cruise_control_tls_prepare_certificates.sh
 
-export STRIMZI_TRUSTSTORE_LOCATION=/tmp/cruise-control/cruise-control.truststore.p12
+export STRIMZI_TRUSTSTORE_LOCATION=/tmp/cruise-control/replication.truststore.p12
 export STRIMZI_TRUSTSTORE_PASSWORD="$CERTS_STORE_PASSWORD"
 
 export STRIMZI_KEYSTORE_LOCATION=/tmp/cruise-control/cruise-control.keystore.p12

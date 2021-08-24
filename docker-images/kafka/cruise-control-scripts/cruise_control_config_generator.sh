@@ -52,7 +52,7 @@ ssl.keystore.type=PKCS12
 ssl.keystore.location=/tmp/cruise-control/cruise-control.keystore.p12
 ssl.keystore.password=$CERTS_STORE_PASSWORD
 ssl.truststore.type=PKCS12
-ssl.truststore.location=/tmp/cruise-control/cruise-control.truststore.p12
+ssl.truststore.location=/tmp/cruise-control/replication.truststore.p12
 ssl.truststore.password=$CERTS_STORE_PASSWORD
 ${CRUISE_CONTROL_CONFIGURATION}
 EOF

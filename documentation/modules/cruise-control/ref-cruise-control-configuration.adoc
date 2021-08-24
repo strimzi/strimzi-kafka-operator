@@ -174,10 +174,10 @@ The Cruise Control REST API is secured by default to protect the cluster against
 
 However, you can disable these security settings if needed.
 
-* To disable the built-in authorization, set webserver.security.enable to false.
-* To disable the built-in authentication, set webserver.ssl.enable false.
+* To disable the built-in authorization, set `webserver.security.enable` to `false`.
+* To disable the built-in authentication, set `webserver.ssl.enable` to `false`.
 
-.Example Cruise Control configuration to disable API authorization.
+.Example Cruise Control configuration to disable API authorization
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -192,7 +192,7 @@ spec:
 # ...
 ----
 
-.Example Cruise Control configuration to disable API authentication.
+.Example Cruise Control configuration to disable API authentication
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}

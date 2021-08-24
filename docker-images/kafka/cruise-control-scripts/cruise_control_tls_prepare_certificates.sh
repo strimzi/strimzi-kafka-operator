@@ -23,7 +23,7 @@ function create_keystore {
 }
 
 echo "Preparing truststore for Cruise Control"
-STORE=/tmp/cruise-control/cruise-control.truststore.p12
+STORE=/tmp/cruise-control/replication.truststore.p12
 rm -f "$STORE"
 for CRT in /etc/tls-sidecar/cluster-ca-certs/*.crt; do
   ALIAS=$(basename "$CRT" .crt)
