@@ -74,8 +74,8 @@ public class TracingST extends AbstractST {
     private static final String NAMESPACE = "tracing-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);
 
-    private static final String JAEGER_INSTANCE_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-instance.yaml";
-    private static final String JAEGER_OPERATOR_FILES_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/operator-files/";
+    private static final String JAEGER_INSTANCE_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/" + TracingUtils.getValidKeycloakVersion() + "/jaeger-instance.yaml";
+    private static final String JAEGER_OPERATOR_FILES_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/" + TracingUtils.getValidKeycloakVersion() + "/operator-files/";
 
     private static final String JAEGER_PRODUCER_SERVICE = "hello-world-producer";
     private static final String JAEGER_CONSUMER_SERVICE = "hello-world-consumer";
