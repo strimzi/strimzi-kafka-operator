@@ -4,6 +4,12 @@
  */
 package io.strimzi.operator.topic;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -12,12 +18,6 @@ import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
 
 public class KafkaStreamsTopicStoreTest extends TopicStoreTestBase {
     private static final Map<String, String> MANDATORY_CONFIG;
@@ -43,7 +43,6 @@ public class KafkaStreamsTopicStoreTest extends TopicStoreTestBase {
         Properties kafkaProperties = new Properties();
         kafkaProperties.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         kafkaProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, config.get(Config.APPLICATION_ID));
-        kafkaProperties.put(StreamsConfig.APPLICATION_SERVER_CONFIG, config.get(Config.APPLICATION_SERVER));
 
         String storeTopic = config.get(Config.STORE_TOPIC);
 
