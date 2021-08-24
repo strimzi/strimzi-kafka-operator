@@ -48,7 +48,7 @@ public class KeycloakUtils {
 
     public static void deleteKeycloak(String namespace) {
         LOGGER.info("Teardown Keycloak in namespace: {}", namespace);
-        Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, namespace);
+        Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, namespace, getValidKeycloakVersion());
     }
 
     /**
