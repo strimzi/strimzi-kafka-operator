@@ -4,6 +4,12 @@
  */
 package io.strimzi.operator.topic;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
+
 import io.apicurio.registry.utils.ConcurrentUtil;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.Future;
@@ -21,12 +27,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ThreadLocalRandom;
 
 @ExtendWith(VertxExtension.class)
 public class TopicStoreUpgradeTest {
@@ -100,7 +100,6 @@ public class TopicStoreUpgradeTest {
         Properties kafkaProperties = new Properties();
         kafkaProperties.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         kafkaProperties.put(StreamsConfig.APPLICATION_ID_CONFIG, config.get(Config.APPLICATION_ID));
-        kafkaProperties.put(StreamsConfig.APPLICATION_SERVER_CONFIG, config.get(Config.APPLICATION_SERVER));
 
         ConcurrentUtil.result(Zk2KafkaStreams.upgrade(zk, config, kafkaProperties, true));
 
