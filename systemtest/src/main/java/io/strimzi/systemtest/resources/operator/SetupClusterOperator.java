@@ -442,7 +442,10 @@ public class SetupClusterOperator {
         unInstall();
 
         // install new one with default configuration
-        return buildDefaultInstallation();
+        SetupClusterOperator newInstallation = buildDefaultInstallation();
+        newInstallation = runInstallation();
+
+        return newInstallation;
     }
 
     @Override
