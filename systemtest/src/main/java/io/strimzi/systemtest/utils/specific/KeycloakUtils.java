@@ -23,6 +23,9 @@ public class KeycloakUtils {
     public final static String PATH_TO_KEYCLOAK_PREPARE_SCRIPT = "../systemtest/src/test/resources/oauth2/prepare_keycloak_operator.sh";
     public final static String PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT = "../systemtest/src/test/resources/oauth2/teardown_keycloak_operator.sh";
 
+    public final static String LATEST_KEYCLOAK_VERSION = "15.0.2";
+    public final static String OLD_KEYCLOAK_VERSION = "11.0.1";
+
 
     private KeycloakUtils() {}
 
@@ -31,7 +34,7 @@ public class KeycloakUtils {
 
         // This is needed because from time to time the first try fails on Azure
         TestUtils.waitFor("Keycloak instance readiness", Constants.KEYCLOAK_DEPLOYMENT_POLL, Constants.KEYCLOAK_DEPLOYMENT_TIMEOUT, () -> {
-            ExecResult result = Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, namespace);
+            ExecResult result = Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, namespace, getValidKeycloakVersion());
 
             if (!result.out().contains("All realms were successfully imported")) {
                 LOGGER.info("Errors occurred during Keycloak install: {}", result.err());
@@ -194,5 +197,13 @@ public class KeycloakUtils {
             "-d", policy.toString(),
             "-H", "Content-Type: application/json"
         ).out();
+    }
+
+    public static String getValidKeycloakVersion() {
+        if (Double.parseDouble(kubeClient().clusterKubernetesVersion()) >= 1.22) {
+            return LATEST_KEYCLOAK_VERSION;
+        } else {
+            return OLD_KEYCLOAK_VERSION;
+        }
     }
 }
