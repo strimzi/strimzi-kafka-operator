@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
@@ -69,7 +70,7 @@ public class NetworkPoliciesST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
             .runInstallation();
@@ -176,7 +177,7 @@ public class NetworkPoliciesST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
             .runInstallation();
@@ -265,7 +266,7 @@ public class NetworkPoliciesST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
             .runInstallation();
@@ -292,7 +293,7 @@ public class NetworkPoliciesST extends AbstractST {
                 .build();
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withBindingsNamespaces(Arrays.asList(INFRA_NAMESPACE, secondNamespace))

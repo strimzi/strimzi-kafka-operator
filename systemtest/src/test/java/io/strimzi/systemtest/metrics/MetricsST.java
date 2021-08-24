@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -73,6 +74,7 @@ import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.GLOBAL_TIMEOUT;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
@@ -97,7 +99,6 @@ public class MetricsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);
 
-    public static final String FIRST_NAMESPACE = "first-metrics-cluster-test";
     public static final String SECOND_NAMESPACE = "second-metrics-cluster-test";
     public static final String SECOND_CLUSTER = "second-kafka-cluster";
     public static final String MIRROR_MAKER_CLUSTER = "mm2-cluster";
@@ -218,7 +219,7 @@ public class MetricsST extends AbstractST {
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(topicName)
-            .withNamespaceName(FIRST_NAMESPACE)
+            .withNamespaceName(INFRA_NAMESPACE)
             .withClusterName(metricsClusterName)
             .withMessageCount(5000)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
@@ -294,34 +295,34 @@ public class MetricsST extends AbstractST {
             assertCoMetricNotNull("strimzi_reconciliations_failed_total", resource, clusterOperatorMetricsData);
         }
 
-        assertCoMetricResources(Kafka.RESOURCE_KIND, FIRST_NAMESPACE, 1);
+        assertCoMetricResources(Kafka.RESOURCE_KIND, INFRA_NAMESPACE, 1);
         assertCoMetricResources(Kafka.RESOURCE_KIND, SECOND_NAMESPACE, 1);
-        assertCoMetricResourceState(Kafka.RESOURCE_KIND, metricsClusterName, FIRST_NAMESPACE, 1, "none");
+        assertCoMetricResourceState(Kafka.RESOURCE_KIND, metricsClusterName, INFRA_NAMESPACE, 1, "none");
         assertCoMetricResourceState(Kafka.RESOURCE_KIND, SECOND_CLUSTER, SECOND_NAMESPACE, 1, "none");
 
-        assertCoMetricResources(KafkaBridge.RESOURCE_KIND, FIRST_NAMESPACE, 1);
+        assertCoMetricResources(KafkaBridge.RESOURCE_KIND, INFRA_NAMESPACE, 1);
         assertCoMetricResources(KafkaBridge.RESOURCE_KIND, SECOND_NAMESPACE, 0);
-        assertCoMetricResourceState(KafkaBridge.RESOURCE_KIND, BRIDGE_CLUSTER, FIRST_NAMESPACE, 1, "none");
+        assertCoMetricResourceState(KafkaBridge.RESOURCE_KIND, BRIDGE_CLUSTER, INFRA_NAMESPACE, 1, "none");
 
-        assertCoMetricResources(KafkaConnect.RESOURCE_KIND, FIRST_NAMESPACE, 1);
+        assertCoMetricResources(KafkaConnect.RESOURCE_KIND, INFRA_NAMESPACE, 1);
         assertCoMetricResources(KafkaConnect.RESOURCE_KIND, SECOND_NAMESPACE, 0);
-        assertCoMetricResourceState(KafkaConnect.RESOURCE_KIND, metricsClusterName, FIRST_NAMESPACE, 1, "none");
+        assertCoMetricResourceState(KafkaConnect.RESOURCE_KIND, metricsClusterName, INFRA_NAMESPACE, 1, "none");
 
-        assertCoMetricResources(KafkaMirrorMaker.RESOURCE_KIND, FIRST_NAMESPACE, 0);
+        assertCoMetricResources(KafkaMirrorMaker.RESOURCE_KIND, INFRA_NAMESPACE, 0);
         assertCoMetricResources(KafkaMirrorMaker.RESOURCE_KIND, SECOND_NAMESPACE, 0);
-        assertCoMetricResourceStateNotExists(KafkaMirrorMaker.RESOURCE_KIND, FIRST_NAMESPACE, metricsClusterName);
+        assertCoMetricResourceStateNotExists(KafkaMirrorMaker.RESOURCE_KIND, INFRA_NAMESPACE, metricsClusterName);
 
-        assertCoMetricResources(KafkaMirrorMaker2.RESOURCE_KIND, FIRST_NAMESPACE, 1);
+        assertCoMetricResources(KafkaMirrorMaker2.RESOURCE_KIND, INFRA_NAMESPACE, 1);
         assertCoMetricResources(KafkaMirrorMaker2.RESOURCE_KIND, SECOND_NAMESPACE, 0);
-        assertCoMetricResourceState(KafkaMirrorMaker2.RESOURCE_KIND, MIRROR_MAKER_CLUSTER, FIRST_NAMESPACE, 1, "none");
+        assertCoMetricResourceState(KafkaMirrorMaker2.RESOURCE_KIND, MIRROR_MAKER_CLUSTER, INFRA_NAMESPACE, 1, "none");
 
-        assertCoMetricResources(KafkaConnector.RESOURCE_KIND, FIRST_NAMESPACE, 0);
+        assertCoMetricResources(KafkaConnector.RESOURCE_KIND, INFRA_NAMESPACE, 0);
         assertCoMetricResources(KafkaConnector.RESOURCE_KIND, SECOND_NAMESPACE, 0);
-        assertCoMetricResourceStateNotExists(KafkaConnector.RESOURCE_KIND, FIRST_NAMESPACE, metricsClusterName);
+        assertCoMetricResourceStateNotExists(KafkaConnector.RESOURCE_KIND, INFRA_NAMESPACE, metricsClusterName);
 
-        assertCoMetricResources(KafkaRebalance.RESOURCE_KIND, FIRST_NAMESPACE, 0);
+        assertCoMetricResources(KafkaRebalance.RESOURCE_KIND, INFRA_NAMESPACE, 0);
         assertCoMetricResources(KafkaRebalance.RESOURCE_KIND, SECOND_NAMESPACE, 0);
-        assertCoMetricResourceStateNotExists(KafkaRebalance.RESOURCE_KIND, FIRST_NAMESPACE, metricsClusterName);
+        assertCoMetricResourceStateNotExists(KafkaRebalance.RESOURCE_KIND, INFRA_NAMESPACE, metricsClusterName);
     }
 
     @ParallelTest
@@ -405,6 +406,7 @@ public class MetricsST extends AbstractST {
 
         // Attach consumer before producer
         KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
+            .withNamespaceName(INFRA_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(BRIDGE_CLUSTER))
@@ -446,7 +448,7 @@ public class MetricsST extends AbstractST {
     @Tag(ACCEPTANCE)
     void testCruiseControlMetrics() {
 
-        String cruiseControlMetrics = CruiseControlUtils.callApi(FIRST_NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, "/metrics");
+        String cruiseControlMetrics = CruiseControlUtils.callApi(INFRA_NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, "/metrics");
 
         Matcher regex = Pattern.compile("^([^#].*)\\s+([^\\s]*)$", Pattern.MULTILINE).matcher(cruiseControlMetrics);
 
@@ -586,7 +588,7 @@ public class MetricsST extends AbstractST {
         reasonMessage = "none";
         assertResourceStateMetricInTopicOperator(topicName, reasonMessage, 1.0, toMetrics);
 
-        cluster.setNamespace(FIRST_NAMESPACE);
+        cluster.setNamespace(INFRA_NAMESPACE);
     }
 
     private String getExporterRunScript(String podName) throws InterruptedException, ExecutionException, IOException {
@@ -594,7 +596,7 @@ public class MetricsST extends AbstractST {
         command.add("cat");
         command.add("/tmp/run.sh");
         ArrayList<String> executableCommand = new ArrayList<>();
-        executableCommand.addAll(Arrays.asList(cmdKubeClient().toString(), "exec", podName, "-n", FIRST_NAMESPACE, "--"));
+        executableCommand.addAll(Arrays.asList(cmdKubeClient().toString(), "exec", podName, "-n", INFRA_NAMESPACE, "--"));
         executableCommand.addAll(command);
 
         Exec exec = new Exec();
@@ -650,17 +652,17 @@ public class MetricsST extends AbstractST {
 
         NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(SECOND_NAMESPACE));
 
-        cluster.setNamespace(FIRST_NAMESPACE);
+        cluster.setNamespace(INFRA_NAMESPACE);
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(FIRST_NAMESPACE)
-            .withWatchingNamespaces(FIRST_NAMESPACE + "," + SECOND_NAMESPACE)
-            .withBindingsNamespaces(List.of(FIRST_NAMESPACE, SECOND_NAMESPACE))
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withNamespace(INFRA_NAMESPACE)
+            .withWatchingNamespaces(INFRA_NAMESPACE + "," + SECOND_NAMESPACE)
+            .withBindingsNamespaces(Arrays.asList(INFRA_NAMESPACE, SECOND_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
-        final String firstKafkaClientsName = FIRST_NAMESPACE + "-" + Constants.KAFKA_CLIENTS;
+        final String firstKafkaClientsName = INFRA_NAMESPACE + "-" + Constants.KAFKA_CLIENTS;
         final String secondKafkaClientsName = SECOND_NAMESPACE + "-" + Constants.KAFKA_CLIENTS;
 
         // create resources without wait to deploy them simultaneously
@@ -679,7 +681,7 @@ public class MetricsST extends AbstractST {
                 .endSpec()
                 .build(),
             KafkaTemplates.kafkaWithMetrics(SECOND_CLUSTER, SECOND_NAMESPACE, 1, 1).build(),
-            KafkaClientsTemplates.kafkaClients(FIRST_NAMESPACE, false, firstKafkaClientsName).build(),
+            KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, firstKafkaClientsName).build(),
             KafkaClientsTemplates.kafkaClients(SECOND_NAMESPACE, false, secondKafkaClientsName).build(),
             KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1).build(),
             KafkaBridgeTemplates.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, metricsClusterName, KafkaResources.plainBootstrapAddress(metricsClusterName), 1).build()

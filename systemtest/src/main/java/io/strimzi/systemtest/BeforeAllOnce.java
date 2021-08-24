@@ -31,7 +31,8 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
     synchronized private static void systemSetup(ExtensionContext extensionContext) throws Exception {
         // 'if' is used to make sure procedure will be executed only once, not before every class
         if (!systemReady) {
-            sharedExtensionContext = extensionContext;
+            // get root extension context to be different from others context (BeforeAll)
+            sharedExtensionContext = extensionContext.getRoot();
             systemReady = true;
             LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
             LOGGER.debug("{} - [BEFORE SUITE] has been called", BeforeAllOnce.class.getName());

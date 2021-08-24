@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -210,7 +211,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
             .runInstallation();
@@ -268,7 +269,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private void recreateClusterOperator(ExtensionContext extensionContext) {
         // Recreate CO
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
             .runInstallation();

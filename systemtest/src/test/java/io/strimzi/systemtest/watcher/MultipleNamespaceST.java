@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.watcher;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.strimzi.systemtest.BeforeAllOnce;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -77,7 +79,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     private void deployTestSpecificResources(ExtensionContext extensionContext) {
         install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(String.join(",", INFRA_NAMESPACE, SECOND_NAMESPACE))
             .withBindingsNamespaces(Arrays.asList(INFRA_NAMESPACE, SECOND_NAMESPACE))

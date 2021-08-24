@@ -7,6 +7,7 @@ package io.strimzi.systemtest.operators;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -40,7 +41,7 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
 
         install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withExtraEnvVars(Collections.singletonList(new EnvVar(Environment.STRIMZI_RBAC_SCOPE_ENV, Environment.STRIMZI_RBAC_SCOPE_NAMESPACE, null)))
             .createInstallation()
