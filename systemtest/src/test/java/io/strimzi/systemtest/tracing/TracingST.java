@@ -96,8 +96,8 @@ public class TracingST extends AbstractST {
 
     private Stack<String> jaegerConfigs = new Stack<>();
 
-    private final String jaegerInstancePath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/" + TracingUtils.getValidKeycloakVersion() + "/jaeger-instance.yaml";
-    private final String jaegerOperatorFilesPath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/" + TracingUtils.getValidKeycloakVersion() + "/operator-files/";
+    private final String jaegerInstancePath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/" + TracingUtils.getValidTracingVersion() + "/jaeger-instance.yaml";
+    private final String jaegerOperatorFilesPath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/" + TracingUtils.getValidTracingVersion() + "/operator-files/";
 
     @ParallelNamespaceTest
     void testProducerService(ExtensionContext extensionContext) {

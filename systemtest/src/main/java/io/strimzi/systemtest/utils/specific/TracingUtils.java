@@ -104,7 +104,7 @@ public class TracingUtils {
         });
     }
 
-    public static String getValidKeycloakVersion() {
+    public static String getValidTracingVersion() {
         if (Double.parseDouble(kubeClient().clusterKubernetesVersion()) >= 1.22) {
             return LATEST_TRACING_VERSION;
         } else {
