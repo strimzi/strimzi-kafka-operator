@@ -74,9 +74,6 @@ public class TracingST extends AbstractST {
     private static final String NAMESPACE = "tracing-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);
 
-    private static final String JAEGER_INSTANCE_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-instance.yaml";
-    private static final String JAEGER_OPERATOR_FILES_PATH = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/operator-files/";
-
     private static final String JAEGER_PRODUCER_SERVICE = "hello-world-producer";
     private static final String JAEGER_CONSUMER_SERVICE = "hello-world-consumer";
     private static final String JAEGER_KAFKA_STREAMS_SERVICE = "hello-world-streams";
@@ -99,13 +96,8 @@ public class TracingST extends AbstractST {
 
     private Stack<String> jaegerConfigs = new Stack<>();
 
-    private String kafkaClientsPodName;
-
-    private static KafkaTracingExampleClients kafkaTracingClient;
-
-    private String topicName = "";
-    private String streamsTopicTargetName = "";
-    private String kafkaClientsName = NAMESPACE + "-shared-kafka-clients";
+    private final String jaegerInstancePath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/" + TracingUtils.getValidTracingVersion() + "/jaeger-instance.yaml";
+    private final String jaegerOperatorFilesPath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/" + TracingUtils.getValidTracingVersion() + "/operator-files/";
 
     @ParallelNamespaceTest
     void testProducerService(ExtensionContext extensionContext) {
@@ -741,7 +733,7 @@ public class TracingST extends AbstractST {
     }
 
     private void deployJaegerContent() throws FileNotFoundException {
-        File folder = new File(JAEGER_OPERATOR_FILES_PATH);
+        File folder = new File(jaegerOperatorFilesPath);
         File[] files = folder.listFiles();
 
         if (files != null && files.length > 0) {
@@ -794,7 +786,7 @@ public class TracingST extends AbstractST {
     void deployJaegerInstance(ExtensionContext extensionContext, String namespaceName) {
         LOGGER.info("=== Applying jaeger instance install file ===");
 
-        String instanceYamlContent = TestUtils.getContent(new File(JAEGER_INSTANCE_PATH), TestUtils::toYamlString);
+        String instanceYamlContent = TestUtils.getContent(new File(jaegerInstancePath), TestUtils::toYamlString);
         cmdKubeClient(namespaceName).applyContent(instanceYamlContent.replaceAll("image: 'jaegertracing/all-in-one:*'", "image: 'jaegertracing/all-in-one:" + JAEGER_VERSION.substring(0, 4) + "'"));
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(() -> cmdKubeClient(namespaceName).deleteContent(instanceYamlContent)));
