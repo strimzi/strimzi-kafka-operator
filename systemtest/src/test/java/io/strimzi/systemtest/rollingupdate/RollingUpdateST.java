@@ -49,6 +49,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
@@ -834,15 +835,5 @@ class RollingUpdateST extends AbstractST {
 
         kafkaMetricsOutput.values().forEach(value -> assertThat(value, is("")));
         zkMetricsOutput.values().forEach(value -> assertThat(value, is("")));
-    }
-
-    @BeforeAll
-    void setup(ExtensionContext extensionContext) {
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-            .createInstallation()
-            .runInstallation();
     }
 }
