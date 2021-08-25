@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.watcher;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -26,7 +25,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 class MultipleNamespaceST extends AbstractNamespaceST {
@@ -38,10 +36,6 @@ class MultipleNamespaceST extends AbstractNamespaceST {
      */
     @IsolatedTest
     void testTopicOperatorWatchingOtherNamespace(ExtensionContext extensionContext) {
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
-
-        assumeFalse(Environment.isNamespaceRbacScope());
-
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
@@ -57,10 +51,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
      * Test the case when Kafka will be deployed in different namespace than CO
      */
     @IsolatedTest
-    void testKafkaInDifferentNsThanClusterOperator(ExtensionContext extensionContext) {
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
-        assumeFalse(Environment.isNamespaceRbacScope());
-
+    void testKafkaInDifferentNsThanClusterOperator() {
         LOGGER.info("Deploying Kafka in different namespace than CO when CO watches multiple namespaces");
         checkKafkaInDiffNamespaceThanCO(MAIN_NAMESPACE_CLUSTER_NAME, SECOND_NAMESPACE);
     }
@@ -71,18 +62,12 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     @IsolatedTest
     @Tag(MIRROR_MAKER)
     void testDeployMirrorMakerAcrossMultipleNamespace(ExtensionContext extensionContext) {
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
-        assumeFalse(Environment.isNamespaceRbacScope());
-
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches multiple namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(extensionContext, MAIN_NAMESPACE_CLUSTER_NAME);
     }
 
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) {
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
-        assumeFalse(Environment.isNamespaceRbacScope());
-
         deployTestSpecificResources(extensionContext);
     }
 

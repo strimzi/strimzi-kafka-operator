@@ -78,7 +78,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testMultipleCOsInDifferentNamespaces(ExtensionContext extensionContext) {
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        // Strimzi is deployed with cluster-wide access in this class STRIMZI_RBAC_SCOPE=NAMESPACE won't work
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

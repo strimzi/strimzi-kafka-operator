@@ -60,9 +60,6 @@ class AllNamespaceST extends AbstractNamespaceST {
      */
     @IsolatedTest
     void testTopicOperatorWatchingOtherNamespace(ExtensionContext extensionContext) {
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
-        assumeFalse(Environment.isNamespaceRbacScope());
-
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         LOGGER.info("Deploying TO to watch a different namespace that it is deployed in");
@@ -80,10 +77,7 @@ class AllNamespaceST extends AbstractNamespaceST {
      */
     @IsolatedTest
     @Tag(ACCEPTANCE)
-    void testKafkaInDifferentNsThanClusterOperator(ExtensionContext extensionContext) {
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
-        assumeFalse(Environment.isNamespaceRbacScope());
-
+    void testKafkaInDifferentNsThanClusterOperator() {
         LOGGER.info("Deploying Kafka cluster in different namespace than CO when CO watches all namespaces");
         checkKafkaInDiffNamespaceThanCO(SECOND_CLUSTER_NAME, SECOND_NAMESPACE);
     }
@@ -94,9 +88,6 @@ class AllNamespaceST extends AbstractNamespaceST {
     @IsolatedTest
     @Tag(MIRROR_MAKER)
     void testDeployMirrorMakerAcrossMultipleNamespace(ExtensionContext extensionContext) {
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
-        assumeFalse(Environment.isNamespaceRbacScope());
-
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches all namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(extensionContext, SECOND_CLUSTER_NAME);
     }
@@ -106,9 +97,6 @@ class AllNamespaceST extends AbstractNamespaceST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
     void testDeployKafkaConnectAndKafkaConnectorInOtherNamespaceThanCO(ExtensionContext extensionContext) {
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
-        assumeFalse(Environment.isNamespaceRbacScope());
-
         String kafkaConnectName = mapWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect";
         String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
@@ -128,9 +116,6 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @IsolatedTest
     void testUOWatchingOtherNamespace(ExtensionContext extensionContext) {
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
-        assumeFalse(Environment.isNamespaceRbacScope());
-
         String previousNamespace = cluster.setNamespace(SECOND_NAMESPACE);
         LOGGER.info("Creating user in other namespace than CO and Kafka cluster with UO");
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build());
@@ -140,9 +125,6 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @IsolatedTest
     void testUserInDifferentNamespace(ExtensionContext extensionContext) {
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
-        assumeFalse(Environment.isNamespaceRbacScope());
-
         String startingNamespace = cluster.setNamespace(SECOND_NAMESPACE);
 
         KafkaUser user = KafkaUserTemplates.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build();
@@ -238,7 +220,7 @@ class AllNamespaceST extends AbstractNamespaceST {
 
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) {
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
+        // Strimzi is deployed with cluster-wide access in this class STRIMZI_RBAC_SCOPE=NAMESPACE won't work
         assumeFalse(Environment.isNamespaceRbacScope());
 
         deployTestSpecificResources(extensionContext);
