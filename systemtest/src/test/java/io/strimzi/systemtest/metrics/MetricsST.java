@@ -254,21 +254,21 @@ public class MetricsST extends AbstractST {
 
     @ParallelTest
     void testKafkaExporterDifferentSetting() throws InterruptedException, ExecutionException, IOException {
-        LabelSelector exporterSelector = kubeClient().getDeploymentSelectors(KafkaExporterResources.deploymentName(metricsClusterName));
-        String runScriptContent = getExporterRunScript(kubeClient().listPods(exporterSelector).get(0).getMetadata().getName());
+        LabelSelector exporterSelector = kubeClient().getDeploymentSelectors(INFRA_NAMESPACE, KafkaExporterResources.deploymentName(metricsClusterName));
+        String runScriptContent = getExporterRunScript(kubeClient().listPods(INFRA_NAMESPACE, exporterSelector).get(0).getMetadata().getName());
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\".*\""));
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\".*\""));
 
-        Map<String, String> kafkaExporterSnapshot = DeploymentUtils.depSnapshot(KafkaExporterResources.deploymentName(metricsClusterName));
+        Map<String, String> kafkaExporterSnapshot = DeploymentUtils.depSnapshot(INFRA_NAMESPACE, KafkaExporterResources.deploymentName(metricsClusterName));
 
-        KafkaResource.replaceKafkaResource(metricsClusterName, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(metricsClusterName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex("my-group.*");
             k.getSpec().getKafkaExporter().setTopicRegex(topicName);
-        });
+        }, INFRA_NAMESPACE);
 
-        DeploymentUtils.waitTillDepHasRolled(KafkaExporterResources.deploymentName(metricsClusterName), 1, kafkaExporterSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(INFRA_NAMESPACE, KafkaExporterResources.deploymentName(metricsClusterName), 1, kafkaExporterSnapshot);
 
-        runScriptContent = getExporterRunScript(kubeClient().listPods(exporterSelector).get(0).getMetadata().getName());
+        runScriptContent = getExporterRunScript(kubeClient().listPods(INFRA_NAMESPACE, exporterSelector).get(0).getMetadata().getName());
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\"my-group.*\""));
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\"" + topicName + "\""));
     }
@@ -654,6 +654,7 @@ public class MetricsST extends AbstractST {
 
         cluster.setNamespace(INFRA_NAMESPACE);
 
+        install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)

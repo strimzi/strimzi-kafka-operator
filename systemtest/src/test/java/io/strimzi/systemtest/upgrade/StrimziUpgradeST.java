@@ -23,7 +23,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -305,6 +304,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     // There is no value of having teardown logic for class resources due to the fact that
     // CO was deployed by method StrimziUpgradeST.copyModifyApply() and removed by method StrimziUpgradeST.deleteInstalledYamls()
-    @AfterAll
-    protected void tearDownEnvironmentAfterAll() { }
+    @Override
+    protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception { }
 }

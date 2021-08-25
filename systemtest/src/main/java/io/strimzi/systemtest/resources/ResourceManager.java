@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
+import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DeploymentTypes;
@@ -133,12 +134,15 @@ public class ResourceManager {
             LOGGER.info("Create/Update of {} {} in namespace {}",
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
 
-            // if it is parallel namespace test we are gonna replace resource a namespace
-            if (StUtils.isParallelNamespaceTest(testContext)) {
-                if (!Environment.isNamespaceRbacScope()) {
-                    final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-                    LOGGER.info("Using namespace: {}", namespace);
-                    resource.getMetadata().setNamespace(namespace);
+            // ignore test context of shared Cluster Operator
+            if (testContext != BeforeAllOnce.getSharedExtensionContext()) {
+                // if it is parallel namespace test we are gonna replace resource a namespace
+                if (StUtils.isParallelNamespaceTest(testContext)) {
+                    if (!Environment.isNamespaceRbacScope()) {
+                        final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+                        LOGGER.info("Using namespace: {}", namespace);
+                        resource.getMetadata().setNamespace(namespace);
+                    }
                 }
             }
 

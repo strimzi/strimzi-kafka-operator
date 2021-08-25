@@ -423,7 +423,6 @@ public class SetupClusterOperator {
         BeforeAllOnce.getSharedExtensionContext().getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, null);
 
         // trigger that we will again create namespace
-
         if (Environment.isHelmInstall()) {
             helmResource.delete();
         } else if (Environment.isOlmInstall()) {

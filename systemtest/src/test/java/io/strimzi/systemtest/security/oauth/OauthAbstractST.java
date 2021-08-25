@@ -6,8 +6,6 @@ package io.strimzi.systemtest.security.oauth;
 
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
@@ -71,13 +69,6 @@ public class OauthAbstractST extends AbstractST {
     }
 
     protected void setupCoAndKeycloak(ExtensionContext extensionContext, String namespace) {
-
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(namespace)
-            .createInstallation()
-            .runInstallation();
-
         resourceManager.createResource(extensionContext, NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));
 
         LOGGER.info("Deploying keycloak...");

@@ -493,6 +493,9 @@ public class OauthTlsST extends OauthAbstractST {
         LOGGER.info("Keycloak settings {}", keycloakInstance.toString());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 3)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
