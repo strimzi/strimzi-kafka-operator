@@ -547,7 +547,11 @@ public abstract class AbstractST implements TestSeparator {
         if (StUtils.isIsolatedSuite(extensionContext)) {
             // install configuration differs from default one we are gonna roll-back
             if (install != null && !SetupClusterOperator.buildDefaultInstallation().equals(install)) {
+                LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+                LOGGER.info("Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.");
                 install = install.rollbackToDefaultConfiguration();
+                LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+
             }
         }
     }
