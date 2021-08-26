@@ -3,12 +3,16 @@
 // assembly-scaling-clusters.adoc
 
 [id='con-scaling-kafka-clusters-{context}']
+= Broker scaling configuration
 
-= Scaling Kafka clusters
+[role="_abstract"]
+If your cluster already has topics defined, you can scale clusters by adding and removing brokers.
+You configure the `Kafka.spec.kafka.replicas configuration` to add or reduce the number of brokers.
 
-== Adding brokers to a cluster
+[discrete]
+== Broker addition
 
-The primary way of increasing throughput for a topic is to increase the number of partitions for that topic. 
+The primary way of increasing throughput for a topic is to increase the number of partitions for that topic.
 That works because the extra partitions allow the load of the topic to be shared between the different brokers in the cluster.
 However, in situations where every broker is constrained by a particular resource (typically I/O) using more partitions will not result in increased throughput.
 Instead, you need to add brokers to the cluster.
@@ -18,15 +22,14 @@ You must decide which partitions to move from the existing brokers to the new br
 
 Once the partitions have been redistributed between all the brokers, the resource utilization of each broker should be reduced.
 
-== Removing brokers from a cluster
+[discrete]
+== Broker removal
 
-Because Strimzi uses `StatefulSets` to manage broker pods, you cannot remove _any_ pod from the cluster. 
-You can only remove one or more of the highest numbered pods from the cluster. 
+Because Strimzi uses `StatefulSets` to manage broker pods, you cannot remove _any_ pod from the cluster.
+You can only remove one or more of the highest numbered pods from the cluster.
 For example, in a cluster of 12 brokers the pods are named `_cluster-name_-kafka-0` up to `_cluster-name_-kafka-11`.
 If you decide to scale down by one broker, the `_cluster-name_-kafka-11` will be removed.
 
 Before you remove a broker from a cluster, ensure that it is not assigned to any partitions.
 You should also decide which of the remaining brokers will be responsible for each of the partitions on the broker being decommissioned.
 Once the broker has no assigned partitions, you can scale the cluster down safely.
-
-
