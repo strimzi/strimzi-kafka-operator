@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.fabric8.kubernetes.api.model.batch.v1.JobList;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceOperation;
@@ -19,6 +21,17 @@ public class JobUtils {
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private JobUtils() { }
+
+    /**
+     * Wait until all Jobs are deleted in given namespace.
+     * @param namespace Delete all jobs in this namespace
+     */
+    public static void removeAllJobs(String namespace) {
+        JobList jobs = kubeClient().namespace(namespace).getJobList();
+        for (Job job : jobs.getItems()) {
+            deleteJobWithWait(namespace, job.getMetadata().getName());
+        }
+    }
 
     /**
      * Wait until the given Job has been deleted.
