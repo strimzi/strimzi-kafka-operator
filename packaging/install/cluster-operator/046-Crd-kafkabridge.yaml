@@ -61,26 +61,6 @@ spec:
                 type: string
                 description: A list of host:port pairs for establishing the initial
                   connection to the Kafka cluster.
-              tls:
-                type: object
-                properties:
-                  trustedCertificates:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        certificate:
-                          type: string
-                          description: The name of the file certificate in the Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the certificate.
-                      required:
-                      - certificate
-                      - secretName
-                    description: Trusted certificates for TLS connection.
-                description: TLS configuration for connecting Kafka Bridge to the
-                  cluster.
               authentication:
                 type: object
                 properties:
@@ -1113,6 +1093,26 @@ spec:
                 required:
                 - type
                 description: The configuration of tracing in Kafka Bridge.
+              kafkaBridgeTls:
+                type: object
+                properties:
+                  trustedCertificates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the certificate.
+                      required:
+                      - certificate
+                      - secretName
+                    description: Trusted certificates for TLS connection.
+                description: TLS configuration for connecting Kafka Bridge to the
+                  cluster.
             required:
             - bootstrapServers
             description: The specification of the Kafka Bridge.

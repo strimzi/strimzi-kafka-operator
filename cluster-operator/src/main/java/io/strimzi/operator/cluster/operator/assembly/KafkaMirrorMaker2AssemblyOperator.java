@@ -338,7 +338,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         if (cluster.getAuthentication() != null) {
             Map<String, String> authProperties = AuthenticationUtils.getClientAuthenticationProperties(cluster.getAuthentication());
             if (authProperties.containsKey(AuthenticationUtils.SASL_MECHANISM)) {
-                if (cluster.getTls() != null) {
+                if (cluster.getKafkaMirrorMaker2Tls() != null) {
                     securityProtocol = "SASL_SSL";
                 } else {
                     securityProtocol = "SASL_PLAINTEXT";
@@ -412,9 +412,9 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
     private static String addTLSConfigToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {
         String securityProtocol = null;
-        if (cluster.getTls() != null) {
+        if (cluster.getKafkaMirrorMaker2Tls() != null) {
             securityProtocol = "SSL";
-            if (cluster.getTls().getTrustedCertificates() != null && !cluster.getTls().getTrustedCertificates().isEmpty()) {
+            if (cluster.getKafkaMirrorMaker2Tls().getTrustedCertificates() != null && !cluster.getKafkaMirrorMaker2Tls().getTrustedCertificates().isEmpty()) {
                 config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
                 config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, STORE_LOCATION_ROOT + cluster.getAlias() + TRUSTSTORE_SUFFIX);
                 config.put(configPrefix + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, "${file:" + CONNECTORS_CONFIG_FILE + ":" + SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG + "}");

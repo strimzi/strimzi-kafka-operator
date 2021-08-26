@@ -215,11 +215,11 @@ public class KafkaBridgeClusterTest {
     public void testGenerateDeploymentWithTls() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
-                    .editOrNewTls()
+                    .editOrNewKafkaBridgeTls()
                         .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
                         .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("new-cert.crt").build())
                         .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-another-secret").withCertificate("another-cert.crt").build())
-                    .endTls()
+                    .endKafkaBridgeTls()
                 .endSpec()
                 .build();
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
@@ -241,9 +241,9 @@ public class KafkaBridgeClusterTest {
     public void testGenerateDeploymentWithTlsAuth() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
-                    .editOrNewTls()
+                    .editOrNewKafkaBridgeTls()
                         .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-                    .endTls()
+                    .endKafkaBridgeTls()
                     .withAuthentication(
                             new KafkaClientAuthenticationTlsBuilder()
                                     .withNewCertificateAndKey()
@@ -272,9 +272,9 @@ public class KafkaBridgeClusterTest {
     public void testGenerateDeploymentWithTlsSameSecret() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
-                    .editOrNewTls()
+                    .editOrNewKafkaBridgeTls()
                         .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-                    .endTls()
+                    .endKafkaBridgeTls()
                     .withAuthentication(
                             new KafkaClientAuthenticationTlsBuilder()
                                     .withNewCertificateAndKey()

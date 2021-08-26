@@ -300,11 +300,11 @@ public class KafkaConnectClusterTest {
     public void testGenerateDeploymentWithTls() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
-                .editOrNewTls()
+                .editOrNewKafkaConnectTls()
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("new-cert.crt").build())
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-another-secret").withCertificate("another-cert.crt").build())
-                .endTls()
+                .endKafkaConnectTls()
                 .endSpec()
                 .build();
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
@@ -327,9 +327,9 @@ public class KafkaConnectClusterTest {
     public void testGenerateDeploymentWithTlsAuth() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
-                .editOrNewTls()
+                .editOrNewKafkaConnectTls()
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-                .endTls()
+                .endKafkaConnectTls()
                 .withAuthentication(
                         new KafkaClientAuthenticationTlsBuilder()
                                 .withNewCertificateAndKey()
@@ -358,9 +358,9 @@ public class KafkaConnectClusterTest {
     public void testGenerateDeploymentWithTlsSameSecret() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .editSpec()
-                .editOrNewTls()
+                .editOrNewKafkaConnectTls()
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-                .endTls()
+                .endKafkaConnectTls()
                 .withAuthentication(
                         new KafkaClientAuthenticationTlsBuilder()
                                 .withNewCertificateAndKey()
@@ -415,9 +415,9 @@ public class KafkaConnectClusterTest {
     public void testGenerateDeploymentWithScramSha512AuthAndTLSSameSecret() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
             .editSpec()
-                .editOrNewTls()
+                .editOrNewKafkaConnectTls()
                     .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-                .endTls()
+                .endKafkaConnectTls()
                 .withNewKafkaClientAuthenticationScramSha512()
                     .withUsername("user1")
                     .withNewPasswordSecret()
@@ -489,9 +489,9 @@ public class KafkaConnectClusterTest {
     public void testGenerateDeploymentWithPlainAuthAndTLSSameSecret() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
             .editSpec()
-                .editOrNewTls()
+                .editOrNewKafkaConnectTls()
                     .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-                .endTls()
+                .endKafkaConnectTls()
                 .withNewKafkaClientAuthenticationPlain()
                     .withUsername("user1")
                     .withNewPasswordSecret()

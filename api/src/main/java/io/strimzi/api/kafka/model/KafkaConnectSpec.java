@@ -40,7 +40,7 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
     private String clientRackInitImage;
     private Rack rack;
     private String bootstrapServers;
-    private KafkaConnectTls tls;
+    private ClientTls kafkaConnectTls;
     private KafkaClientAuthentication authentication;
     private Build build;
 
@@ -85,12 +85,12 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
 
     @Description("TLS configuration")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public KafkaConnectTls getTls() {
-        return tls;
+    public ClientTls getKafkaConnectTls() {
+        return kafkaConnectTls;
     }
 
-    public void setTls(KafkaConnectTls tls) {
-        this.tls = tls;
+    public void setKafkaConnectTls(ClientTls kafkaConnectTls) {
+        this.kafkaConnectTls = kafkaConnectTls;
     }
 
     @Description("Authentication configuration for Kafka Connect")

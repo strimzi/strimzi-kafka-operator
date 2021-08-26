@@ -318,11 +318,11 @@ public class KafkaMirrorMaker2ClusterTest {
     @ParallelTest
     public void testGenerateDeploymentWithTls() {
         KafkaMirrorMaker2ClusterSpec targetClusterWithTls = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
-                .withNewTls()
+                .withNewKafkaMirrorMaker2Tls()
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("new-cert.crt").build())
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-another-secret").withCertificate("another-cert.crt").build())
-                .endTls()
+                .endKafkaMirrorMaker2Tls()
                 .build();
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editSpec()
@@ -350,8 +350,8 @@ public class KafkaMirrorMaker2ClusterTest {
     @ParallelTest
     public void testGenerateDeploymentWithTlsWithoutCerts() {
         KafkaMirrorMaker2ClusterSpec targetClusterWithTls = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
-                .withNewTls()
-                .endTls()
+                .withNewKafkaMirrorMaker2Tls()
+                .endKafkaMirrorMaker2Tls()
                 .build();
 
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
@@ -376,9 +376,9 @@ public class KafkaMirrorMaker2ClusterTest {
     @ParallelTest
     public void testGenerateDeploymentWithTlsAuth() {
         KafkaMirrorMaker2ClusterSpec targetClusterWithTlsAuth = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
-                .editOrNewTls()
+                .editOrNewKafkaMirrorMaker2Tls()
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-                .endTls()
+                .endKafkaMirrorMaker2Tls()
                 .withAuthentication(
                         new KafkaClientAuthenticationTlsBuilder()
                                 .withNewCertificateAndKey()
@@ -412,9 +412,9 @@ public class KafkaMirrorMaker2ClusterTest {
     @ParallelTest
     public void testGenerateDeploymentWithTlsSameSecret() {
         KafkaMirrorMaker2ClusterSpec targetClusterWithTlsAuth = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
-                .editOrNewTls()
+                .editOrNewKafkaMirrorMaker2Tls()
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-                .endTls()
+                .endKafkaMirrorMaker2Tls()
                 .withAuthentication(
                         new KafkaClientAuthenticationTlsBuilder()
                                 .withNewCertificateAndKey()
@@ -478,9 +478,9 @@ public class KafkaMirrorMaker2ClusterTest {
     @ParallelTest
     public void testGenerateDeploymentWithScramSha512AuthAndTLSSameSecret() {
         KafkaMirrorMaker2ClusterSpec targetClusterWithScramSha512Auth = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
-            .editOrNewTls()
+            .editOrNewKafkaMirrorMaker2Tls()
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-            .endTls()
+            .endKafkaMirrorMaker2Tls()
             .withNewKafkaClientAuthenticationScramSha512()
                 .withUsername("user1")
                 .withNewPasswordSecret()
@@ -534,9 +534,9 @@ public class KafkaMirrorMaker2ClusterTest {
     @ParallelTest
     public void testGenerateDeploymentWithMultipleClustersScramSha512AuthAndTLSSameSecret() {
         KafkaMirrorMaker2ClusterSpec targetClusterWithScramSha512Auth = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
-            .editOrNewTls()
+            .editOrNewKafkaMirrorMaker2Tls()
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-            .endTls()
+            .endKafkaMirrorMaker2Tls()
             .withNewKafkaClientAuthenticationScramSha512()
                 .withUsername("user1")
                 .withNewPasswordSecret()
@@ -632,9 +632,9 @@ public class KafkaMirrorMaker2ClusterTest {
     @ParallelTest
     public void testGenerateDeploymentWithPlainAuthAndTLSSameSecret() {
         KafkaMirrorMaker2ClusterSpec targetClusterWithPlainAuth = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
-            .editOrNewTls()
+            .editOrNewKafkaMirrorMaker2Tls()
                 .addToTrustedCertificates(new CertSecretSourceBuilder().withSecretName("my-secret").withCertificate("cert.crt").build())
-            .endTls()
+            .endKafkaMirrorMaker2Tls()
             .withNewKafkaClientAuthenticationPlain()
                 .withUsername("user1")
                 .withNewPasswordSecret()

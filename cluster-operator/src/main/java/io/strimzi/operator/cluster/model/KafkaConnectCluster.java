@@ -38,12 +38,12 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
+import io.strimzi.api.kafka.model.ClientTls;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
-import io.strimzi.api.kafka.model.KafkaConnectTls;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
@@ -133,7 +133,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected SecurityContext templateInitContainerSecurityContext;
     protected Tracing tracing;
 
-    private KafkaConnectTls tls;
+    private ClientTls kafkaConnectTls;
     private KafkaClientAuthentication authentication;
 
     private boolean isJmxEnabled;
@@ -250,8 +250,8 @@ public class KafkaConnectCluster extends AbstractModel {
 
         kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
 
-        kafkaConnect.setTls(spec.getTls());
-        String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
+        kafkaConnect.setKafkaConnectTls(spec.getKafkaConnectTls());
+        String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getKafkaConnectTls() != null);
         if (!warnMsg.isEmpty()) {
             LOGGER.warnCr(reconciliation, warnMsg);
         }
@@ -342,27 +342,10 @@ public class KafkaConnectCluster extends AbstractModel {
 
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
+
         volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
-
-        if (rack != null) {
-            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "10Ki", "Memory"));
-        }
-
-        if (tls != null) {
-            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
-
-            if (trustedCertificates != null && trustedCertificates.size() > 0) {
-                for (CertSecretSource certSecretSource : trustedCertificates) {
-                    // skipping if a volume with same Secret name was already added
-                    if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeList.add(VolumeUtils.createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
-                    }
-                }
-            }
-        }
-
-        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
+        AuthenticationUtils.getVolumes(authentication, kafkaConnectTls, volumeList, isOpenShift,  rack);
 
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
 
@@ -417,26 +400,7 @@ public class KafkaConnectCluster extends AbstractModel {
         volumeMountList.add(createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
-        if (rack != null) {
-            volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
-        }
-
-        if (tls != null) {
-            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
-
-            if (trustedCertificates != null && trustedCertificates.size() > 0) {
-                for (CertSecretSource certSecretSource : trustedCertificates) {
-                    // skipping if a volume mount with same Secret name was already added
-                    if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeMountList.add(VolumeUtils.createVolumeMount(certSecretSource.getSecretName(),
-                                TLS_CERTS_BASE_VOLUME_MOUNT + certSecretSource.getSecretName()));
-                    }
-                }
-            }
-        }
-
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
-
+        AuthenticationUtils.getVolumeMounts(authentication, kafkaConnectTls, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, rack);
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
 
         return volumeMountList;
@@ -570,7 +534,7 @@ public class KafkaConnectCluster extends AbstractModel {
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
 
-        if (tls != null) {
+        if (kafkaConnectTls != null) {
             populateTLSEnvVars(varList);
         }
 
@@ -601,7 +565,7 @@ public class KafkaConnectCluster extends AbstractModel {
     private void populateTLSEnvVars(final List<EnvVar> varList) {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TLS, "true"));
 
-        List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
+        List<CertSecretSource> trustedCertificates = kafkaConnectTls.getTrustedCertificates();
 
         if (trustedCertificates != null && trustedCertificates.size() > 0) {
             StringBuilder sb = new StringBuilder();
@@ -678,10 +642,10 @@ public class KafkaConnectCluster extends AbstractModel {
     /**
      * Set the tls configuration with the certificate to trust
      *
-     * @param tls trusted certificates list
+     * @param kafkaConnectTls trusted certificates list
      */
-    protected void setTls(KafkaConnectTls tls) {
-        this.tls = tls;
+    protected void setKafkaConnectTls(ClientTls kafkaConnectTls) {
+        this.kafkaConnectTls = kafkaConnectTls;
     }
 
     /**

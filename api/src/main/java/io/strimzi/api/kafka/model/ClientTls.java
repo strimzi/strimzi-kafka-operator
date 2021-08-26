@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
@@ -17,15 +18,16 @@ import java.util.Map;
 import static java.util.Collections.emptyMap;
 
 /**
- * Represents the TLS configuration for a Kafka cluster that MirrorMaker 2.0 communicates with
+ * Represent the TLS configuration for all the Clients
  */
+@DescriptionFile
 @Buildable(
         editableEnabled = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
-public class KafkaMirrorMaker2Tls implements UnknownPropertyPreserving, Serializable {
+public class ClientTls implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private List<CertSecretSource> trustedCertificates;
