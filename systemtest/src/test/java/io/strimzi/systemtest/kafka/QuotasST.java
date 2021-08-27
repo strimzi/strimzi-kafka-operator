@@ -52,7 +52,7 @@ public class QuotasST extends AbstractST {
                     .addToConfig("client.quota.callback.static.storage.soft", "50000000")
                     .addToConfig("client.quota.callback.static.storage.check-interval", "5")
                     .withNewPersistentClaimStorage()
-                        .withNewSize("1Gi")
+                        .withSize("1Gi")
                     .endPersistentClaimStorage()
                 .endKafka()
             .endSpec()

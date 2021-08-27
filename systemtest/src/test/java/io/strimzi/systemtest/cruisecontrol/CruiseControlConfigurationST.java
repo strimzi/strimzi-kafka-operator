@@ -157,7 +157,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
             CruiseControlSpec cruiseControl = new CruiseControlSpecBuilder()
                 .withNewBrokerCapacity()
-                    .withNewDisk("200M")
+                    .withDisk("200M")
                 .endBrokerCapacity()
                 .build();
 

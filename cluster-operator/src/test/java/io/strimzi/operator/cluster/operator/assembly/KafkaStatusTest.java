@@ -123,9 +123,9 @@ public class KafkaStatusTest {
                 .withNewStatus()
                     .withObservedGeneration(1L)
                     .withConditions(new ConditionBuilder()
-                            .withNewLastTransitionTime(StatusUtils.iso8601(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
-                            .withNewType("NotReady")
-                            .withNewStatus("True")
+                            .withLastTransitionTime(StatusUtils.iso8601(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
+                            .withType("NotReady")
+                            .withStatus("True")
                             .build())
                 .endStatus()
                 .build();
@@ -231,14 +231,14 @@ public class KafkaStatusTest {
                         .withType("Ready")
                     .endCondition()
                     .withListeners(new ListenerStatusBuilder()
-                            .withNewType("plain")
+                            .withType("plain")
                             .withAddresses(new ListenerAddressBuilder()
                                     .withHost("my-service.my-namespace.svc")
                                     .withPort(9092)
                                     .build())
                             .build(),
                             new ListenerStatusBuilder()
-                                    .withNewType("external")
+                                    .withType("external")
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost("my-route-address.domain.tld")
                                             .withPort(443)
@@ -340,14 +340,14 @@ public class KafkaStatusTest {
                         .withType("Ready")
                     .endCondition()
                     .withListeners(new ListenerStatusBuilder()
-                                    .withNewType("plain")
+                                    .withType("plain")
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost("my-service.my-namespace.svc")
                                             .withPort(9092)
                                             .build())
                                     .build(),
                             new ListenerStatusBuilder()
-                                    .withNewType("external")
+                                    .withType("external")
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost("my-route-address.domain.tld")
                                             .withPort(443)
@@ -1141,7 +1141,7 @@ public class KafkaStatusTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             ListenerStatus ls = new ListenerStatusBuilder()
-                    .withNewType("plain")
+                    .withType("plain")
                     .withAddresses(new ListenerAddressBuilder()
                             .withHost("my-service.my-namespace.svc")
                             .withPort(9092)
@@ -1149,7 +1149,7 @@ public class KafkaStatusTest {
                     .build();
 
             ListenerStatus ls2 = new ListenerStatusBuilder()
-                    .withNewType("external")
+                    .withType("external")
                     .withAddresses(new ListenerAddressBuilder()
                             .withHost("my-route-address.domain.tld")
                             .withPort(443)
@@ -1178,7 +1178,7 @@ public class KafkaStatusTest {
         @Override
         Future<Void> reconcile(ReconciliationState reconcileState)  {
             ListenerStatus ls = new ListenerStatusBuilder()
-                    .withNewType("plain")
+                    .withType("plain")
                     .withAddresses(new ListenerAddressBuilder()
                             .withHost("my-service.my-namespace.svc")
                             .withPort(9092)

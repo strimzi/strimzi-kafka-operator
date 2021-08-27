@@ -67,7 +67,7 @@ public class KafkaConnectBuildTest {
                     .withNewBuild()
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
-                            .withNewPushSecret("my-docker-credentials")
+                            .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
                                 new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
@@ -90,7 +90,7 @@ public class KafkaConnectBuildTest {
                     .withNewBuild()
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
-                            .withNewPushSecret("my-docker-credentials")
+                            .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                     .endBuild()
                 .endSpec()
@@ -113,7 +113,7 @@ public class KafkaConnectBuildTest {
                     .withNewBuild()
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
-                            .withNewPushSecret("my-docker-credentials")
+                            .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(new PluginBuilder().withName("my-connector").build())
                     .endBuild()
@@ -137,7 +137,7 @@ public class KafkaConnectBuildTest {
                     .withNewBuild()
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
-                            .withNewPushSecret("my-docker-credentials")
+                            .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
                                 new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactNoChecksum).build())
@@ -170,7 +170,7 @@ public class KafkaConnectBuildTest {
                     .withNewBuild()
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
-                            .withNewPushSecret("my-docker-credentials")
+                            .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
                                 new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
@@ -258,7 +258,7 @@ public class KafkaConnectBuildTest {
                     .withNewBuild()
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
-                            .withNewPushSecret("my-docker-credentials")
+                            .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
                                 new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
@@ -298,7 +298,7 @@ public class KafkaConnectBuildTest {
                     .withNewBuild()
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
-                            .withNewPushSecret("my-docker-credentials")
+                            .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
                                 new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
@@ -396,7 +396,7 @@ public class KafkaConnectBuildTest {
                     .withNewBuild()
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
-                            .withNewPushSecret("my-docker-credentials")
+                            .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
                                 new PluginBuilder().withName("my-connector2").withArtifacts(jarArtifactNoChecksum).build())
@@ -468,7 +468,7 @@ public class KafkaConnectBuildTest {
                     .withNewBuild()
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
-                            .withNewPushSecret("my-docker-credentials")
+                            .withPushSecret("my-docker-credentials")
                             .withAdditionalKanikoOptions("--reproducible", "--single-snapshot", "--log-format=json")
                         .endDockerOutput()
                         .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),
@@ -495,7 +495,7 @@ public class KafkaConnectBuildTest {
                     .withNewBuild()
                         .withNewDockerOutput()
                             .withImage("my-image:latest")
-                            .withNewPushSecret("my-docker-credentials")
+                            .withPushSecret("my-docker-credentials")
                             .withAdditionalKanikoOptions("--reproducible", "--reproducible-something", "--build-arg", "--single-snapshot", "--digest-file=/dev/null", "--log-format=json")
                         .endDockerOutput()
                         .withPlugins(new PluginBuilder().withName("my-connector").withArtifacts(jarArtifactWithChecksum).build(),

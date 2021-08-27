@@ -67,7 +67,7 @@ public class KafkaCrdOperatorTest extends AbstractResourceOperatorTest<Kubernete
                     .endZookeeper()
                 .endSpec()
                 .withNewStatus()
-                    .addToConditions(new ConditionBuilder().withNewStatus("Ready").withNewMessage("Kafka is ready").build())
+                    .addToConditions(new ConditionBuilder().withStatus("Ready").withMessage("Kafka is ready").build())
                 .endStatus()
                 .build();
     }
