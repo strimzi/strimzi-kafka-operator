@@ -19,6 +19,10 @@ To get up and running quickly, check our [Quick Start for Minikube, OKD (OpenShi
 
 Documentation to the current _main_ branch as well as all releases can be found on our [website][strimzi].
 
+## Examples
+
+You can find examples folder in /home/praveen/Desktop/strimzi-kafka-operator/examples
+
 ## Getting help
 
 If you encounter any issues while using Strimzi, you can get help using:
