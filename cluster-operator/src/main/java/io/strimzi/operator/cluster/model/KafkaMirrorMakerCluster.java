@@ -163,12 +163,12 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
             kafkaMirrorMakerCluster.setInclude(include != null ? include : whitelist);
 
-            String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getProducer().getAuthentication(), spec.getProducer().getKafkaMirrorMakerTls() != null);
+            String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getProducer().getAuthentication(), spec.getProducer().getTls() != null);
             if (!warnMsg.isEmpty()) {
                 LOGGER.warnCr(reconciliation, warnMsg);
             }
             kafkaMirrorMakerCluster.setProducer(spec.getProducer());
-            warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getConsumer().getAuthentication(), spec.getConsumer().getKafkaMirrorMakerTls() != null);
+            warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getConsumer().getAuthentication(), spec.getConsumer().getTls() != null);
             if (!warnMsg.isEmpty()) {
                 LOGGER.warnCr(reconciliation, warnMsg);
             }
@@ -231,8 +231,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
-        AuthenticationUtils.getVolumes(producer.getAuthentication(), producer.getKafkaMirrorMakerTls(), volumeList, isOpenShift, "producer-oauth-certs", null);
-        AuthenticationUtils.getVolumes(consumer.getAuthentication(), consumer.getKafkaMirrorMakerTls(), volumeList, isOpenShift,  "consumer-oauth-certs", null);
+        AuthenticationUtils.getVolumes(producer.getAuthentication(), producer.getTls(), volumeList, isOpenShift, "producer-oauth-certs", null);
+        AuthenticationUtils.getVolumes(consumer.getAuthentication(), consumer.getTls(), volumeList, isOpenShift,  "consumer-oauth-certs", null);
 
         return volumeList;
     }
@@ -243,9 +243,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         volumeMountList.add(createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
         /** producer auth*/
-        AuthenticationUtils.getVolumeMounts(producer.getAuthentication(), producer.getKafkaMirrorMakerTls(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER, PASSWORD_VOLUME_MOUNT_PRODUCER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER, "producer-oauth-certs", null);
+        AuthenticationUtils.getVolumeMounts(producer.getAuthentication(), producer.getTls(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER, PASSWORD_VOLUME_MOUNT_PRODUCER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER, "producer-oauth-certs", null);
         /** consumer auth*/
-        AuthenticationUtils.getVolumeMounts(consumer.getAuthentication(), consumer.getKafkaMirrorMakerTls(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_CONSUMER, PASSWORD_VOLUME_MOUNT_CONSUMER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_CONSUMER, "consumer-oauth-certs", null);
+        AuthenticationUtils.getVolumeMounts(consumer.getAuthentication(), consumer.getTls(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_CONSUMER, PASSWORD_VOLUME_MOUNT_CONSUMER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_CONSUMER, "consumer-oauth-certs", null);
         return volumeMountList;
     }
 
@@ -370,13 +370,13 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
      * @param varList   List with environment variables
      */
     private void addConsumerEnvVars(List<EnvVar> varList) {
-        if (consumer.getKafkaMirrorMakerTls() != null) {
+        if (consumer.getTls() != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_TLS_CONSUMER, "true"));
 
-            if (consumer.getKafkaMirrorMakerTls().getTrustedCertificates() != null && consumer.getKafkaMirrorMakerTls().getTrustedCertificates().size() > 0) {
+            if (consumer.getTls().getTrustedCertificates() != null && consumer.getTls().getTrustedCertificates().size() > 0) {
                 StringBuilder sb = new StringBuilder();
                 boolean separator = false;
-                for (CertSecretSource certSecretSource : consumer.getKafkaMirrorMakerTls().getTrustedCertificates()) {
+                for (CertSecretSource certSecretSource : consumer.getTls().getTrustedCertificates()) {
                     if (separator) {
                         sb.append(";");
                     }
@@ -396,13 +396,13 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
      * @param varList   List with environment variables
      */
     private void addProducerEnvVars(List<EnvVar> varList) {
-        if (producer.getKafkaMirrorMakerTls() != null) {
+        if (producer.getTls() != null) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_TLS_PRODUCER, "true"));
 
-            if (producer.getKafkaMirrorMakerTls().getTrustedCertificates() != null && producer.getKafkaMirrorMakerTls().getTrustedCertificates().size() > 0) {
+            if (producer.getTls().getTrustedCertificates() != null && producer.getTls().getTrustedCertificates().size() > 0) {
                 StringBuilder sb = new StringBuilder();
                 boolean separator = false;
-                for (CertSecretSource certSecretSource : producer.getKafkaMirrorMakerTls().getTrustedCertificates()) {
+                for (CertSecretSource certSecretSource : producer.getTls().getTrustedCertificates()) {
                     if (separator) {
                         sb.append(";");
                     }

@@ -133,7 +133,7 @@ public class KafkaConnectCluster extends AbstractModel {
     protected SecurityContext templateInitContainerSecurityContext;
     protected Tracing tracing;
 
-    private ClientTls kafkaConnectTls;
+    private ClientTls tls;
     private KafkaClientAuthentication authentication;
 
     private boolean isJmxEnabled;
@@ -250,8 +250,8 @@ public class KafkaConnectCluster extends AbstractModel {
 
         kafkaConnect.setBootstrapServers(spec.getBootstrapServers());
 
-        kafkaConnect.setKafkaConnectTls(spec.getKafkaConnectTls());
-        String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getKafkaConnectTls() != null);
+        kafkaConnect.setTls(spec.getTls());
+        String warnMsg = AuthenticationUtils.validateClientAuthentication(spec.getAuthentication(), spec.getTls() != null);
         if (!warnMsg.isEmpty()) {
             LOGGER.warnCr(reconciliation, warnMsg);
         }
@@ -345,7 +345,7 @@ public class KafkaConnectCluster extends AbstractModel {
 
         volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
-        AuthenticationUtils.getVolumes(authentication, kafkaConnectTls, volumeList, isOpenShift,  rack);
+        AuthenticationUtils.getVolumes(authentication, tls, volumeList, isOpenShift,  rack);
 
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
 
@@ -400,7 +400,7 @@ public class KafkaConnectCluster extends AbstractModel {
         volumeMountList.add(createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
-        AuthenticationUtils.getVolumeMounts(authentication, kafkaConnectTls, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, rack);
+        AuthenticationUtils.getVolumeMounts(authentication, tls, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, rack);
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
 
         return volumeMountList;
@@ -534,7 +534,7 @@ public class KafkaConnectCluster extends AbstractModel {
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
 
-        if (kafkaConnectTls != null) {
+        if (tls != null) {
             populateTLSEnvVars(varList);
         }
 
@@ -565,7 +565,7 @@ public class KafkaConnectCluster extends AbstractModel {
     private void populateTLSEnvVars(final List<EnvVar> varList) {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_TLS, "true"));
 
-        List<CertSecretSource> trustedCertificates = kafkaConnectTls.getTrustedCertificates();
+        List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
 
         if (trustedCertificates != null && trustedCertificates.size() > 0) {
             StringBuilder sb = new StringBuilder();
@@ -642,10 +642,10 @@ public class KafkaConnectCluster extends AbstractModel {
     /**
      * Set the tls configuration with the certificate to trust
      *
-     * @param kafkaConnectTls trusted certificates list
+     * @param tls trusted certificates list
      */
-    protected void setKafkaConnectTls(ClientTls kafkaConnectTls) {
-        this.kafkaConnectTls = kafkaConnectTls;
+    protected void setTls(ClientTls tls) {
+        this.tls = tls;
     }
 
     /**

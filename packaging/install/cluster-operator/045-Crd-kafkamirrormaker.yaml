@@ -254,7 +254,7 @@ spec:
                       group.id, sasl., security., interceptor.classes (with the exception
                       of: ssl.endpoint.identification.algorithm, ssl.cipher.suites,
                       ssl.protocol, ssl.enabled.protocols).'
-                  kafkaMirrorMakerTls:
+                  tls:
                     type: object
                     properties:
                       trustedCertificates:
@@ -457,7 +457,7 @@ spec:
                       sasl., security., interceptor.classes (with the exception of:
                       ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol,
                       ssl.enabled.protocols).'
-                  kafkaMirrorMakerTls:
+                  tls:
                     type: object
                     properties:
                       trustedCertificates:

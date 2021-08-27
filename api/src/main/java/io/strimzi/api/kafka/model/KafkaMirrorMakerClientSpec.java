@@ -29,7 +29,7 @@ public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving, Se
 
     private String bootstrapServers;
     protected Map<String, Object> config = new HashMap<>(0);
-    private ClientTls kafkaMirrorMakerTls;
+    private ClientTls tls;
     private KafkaClientAuthentication authentication;
     private Map<String, Object> additionalProperties;
 
@@ -54,12 +54,12 @@ public class KafkaMirrorMakerClientSpec implements UnknownPropertyPreserving, Se
 
     @Description("TLS configuration for connecting MirrorMaker to the cluster.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public ClientTls getKafkaMirrorMakerTls() {
-        return kafkaMirrorMakerTls;
+    public ClientTls getTls() {
+        return tls;
     }
 
-    public void setKafkaMirrorMakerTls(ClientTls kafkaMirrorMakerTls) {
-        this.kafkaMirrorMakerTls = kafkaMirrorMakerTls;
+    public void setTls(ClientTls tls) {
+        this.tls = tls;
     }
 
     @Description("A list of host:port pairs for establishing the initial connection to the Kafka cluster.")

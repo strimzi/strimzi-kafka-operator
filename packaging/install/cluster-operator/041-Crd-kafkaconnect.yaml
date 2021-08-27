@@ -60,6 +60,25 @@ spec:
                 type: string
                 description: Bootstrap servers to connect to. This should be given
                   as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+              tls:
+                type: object
+                properties:
+                  trustedCertificates:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        certificate:
+                          type: string
+                          description: The name of the file certificate in the Secret.
+                        secretName:
+                          type: string
+                          description: The name of the Secret containing the certificate.
+                      required:
+                      - certificate
+                      - secretName
+                    description: Trusted certificates for TLS connection.
+                description: TLS configuration.
               authentication:
                 type: object
                 properties:
@@ -1974,25 +1993,6 @@ spec:
                 type: string
                 description: The image of the init container used for initializing
                   the `client.rack`.
-              kafkaConnectTls:
-                type: object
-                properties:
-                  trustedCertificates:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        certificate:
-                          type: string
-                          description: The name of the file certificate in the Secret.
-                        secretName:
-                          type: string
-                          description: The name of the Secret containing the certificate.
-                      required:
-                      - certificate
-                      - secretName
-                    description: Trusted certificates for TLS connection.
-                description: TLS configuration.
               metricsConfig:
                 type: object
                 properties:

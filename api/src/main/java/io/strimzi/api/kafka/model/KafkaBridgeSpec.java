@@ -39,7 +39,7 @@ public class KafkaBridgeSpec extends Spec {
     private String image;
     private KafkaBridgeHttpConfig http;
     private String bootstrapServers;
-    private ClientTls kafkaBridgeTls;
+    private ClientTls tls;
     private KafkaClientAuthentication authentication;
     private KafkaBridgeConsumerSpec consumer;
     private KafkaBridgeProducerSpec producer;
@@ -118,12 +118,12 @@ public class KafkaBridgeSpec extends Spec {
 
     @Description("TLS configuration for connecting Kafka Bridge to the cluster.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public ClientTls getKafkaBridgeTls() {
-        return kafkaBridgeTls;
+    public ClientTls getTls() {
+        return tls;
     }
 
-    public void setKafkaBridgeTls(ClientTls kafkaBridgeTls) {
-        this.kafkaBridgeTls = kafkaBridgeTls;
+    public void setTls(ClientTls tls) {
+        this.tls = tls;
     }
 
     @Description("A list of host:port pairs for establishing the initial connection to the Kafka cluster.")
