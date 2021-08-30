@@ -15,9 +15,14 @@ import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class KafkaBasicExampleAdminClient {
+/**
+ * KafkaAdmin Client - initial implementation of test-client,
+ * which supports Topic management operations only.
+ * Create, delete, update topics and partitions increase (in bulk, with offsets).
+ */
+public class KafkaAdminClient {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaBasicExampleAdminClient.class);
+    private static final Logger LOGGER = LogManager.getLogger(KafkaAdminClient.class);
 
     protected String adminName;
     protected String bootstrapAddress;
@@ -30,29 +35,17 @@ public class KafkaBasicExampleAdminClient {
     protected String additionalConfig;
     protected String namespaceName;
 
-    protected KafkaBasicExampleAdminClient(KafkaBasicExampleAdminClient.Builder builder) {
+    protected KafkaAdminClient(KafkaAdminClient.Builder builder) {
         if (builder.topicOperation == null || builder.topicOperation.isEmpty())
             throw new InvalidParameterException("TopicOperation must be set.");
         if (builder.bootstrapAddress == null || builder.bootstrapAddress.isEmpty())
             throw new InvalidParameterException("Bootstrap server is not set.");
         if ((builder.topicName == null || builder.topicName.isEmpty()) && !(builder.topicOperation.equals("help") || builder.topicOperation.equals("list")))
             throw new InvalidParameterException("Topic name (or 'prefix' if topic count > 1) is not set.");
-        if (builder.replicationFactor == 0) {
-            replicationFactor = 1;
-        } else {
-            replicationFactor = builder.replicationFactor;
-        }
-        if (builder.partitions == 0) {
-            partitions = 1;
-        } else {
-            partitions = builder.partitions;
-        }
-        if (builder.topicCount == 0) {
-            topicCount = 1;
-        } else {
-            topicCount = builder.topicCount;
-        }
 
+        replicationFactor = (builder.replicationFactor == 0) ? 1 : builder.replicationFactor;
+        partitions = (builder.partitions == 0) ? 1 : builder.partitions;
+        topicCount = (builder.topicCount == 0) ? 1 : builder.topicCount;
         topicOffset = builder.topicOffset;
         adminName = builder.adminName;
         bootstrapAddress = builder.bootstrapAddress;
@@ -102,11 +95,11 @@ public class KafkaBasicExampleAdminClient {
         return topicOperation;
     }
 
-    protected KafkaBasicExampleAdminClient.Builder newBuilder() {
-        return new KafkaBasicExampleAdminClient.Builder();
+    protected KafkaAdminClient.Builder newBuilder() {
+        return new KafkaAdminClient.Builder();
     }
 
-    protected KafkaBasicExampleAdminClient.Builder updateBuilder(KafkaBasicExampleAdminClient.Builder builder) {
+    protected KafkaAdminClient.Builder updateBuilder(KafkaAdminClient.Builder builder) {
         return builder
                 .withAdditionalConfig(getAdditionalConfig())
                 .withBootstrapAddress(getBootstrapAddress())
@@ -120,15 +113,11 @@ public class KafkaBasicExampleAdminClient {
                 .withNamespaceName(getNamespaceName());
     }
 
-    public KafkaBasicExampleAdminClient.Builder toBuilder() {
+    public KafkaAdminClient.Builder toBuilder() {
         return updateBuilder(newBuilder());
     }
 
-    public JobBuilder adminStrimzi() {
-        return defaultAdminStrimzi();
-    }
-
-    public JobBuilder defaultAdminStrimzi() {
+    public JobBuilder defaultAdmin() {
         if (namespaceName == null || namespaceName.isEmpty()) {
             LOGGER.info("Deploying {} to namespace: {}", adminName, ResourceManager.kubeClient().getNamespace());
             namespaceName = ResourceManager.kubeClient().getNamespace();
@@ -213,58 +202,58 @@ public class KafkaBasicExampleAdminClient {
         private String additionalConfig;
         private String namespaceName;
 
-        public KafkaBasicExampleAdminClient.Builder withAdminName(String adminName) {
+        public KafkaAdminClient.Builder withAdminName(String adminName) {
             this.adminName = adminName;
             return this;
         }
 
-        public KafkaBasicExampleAdminClient.Builder withBootstrapAddress(String bootstrapAddress) {
+        public KafkaAdminClient.Builder withBootstrapAddress(String bootstrapAddress) {
             this.bootstrapAddress = bootstrapAddress;
             return this;
         }
 
-        public KafkaBasicExampleAdminClient.Builder withTopicName(String topicName) {
+        public KafkaAdminClient.Builder withTopicName(String topicName) {
             this.topicName = topicName;
             return this;
         }
 
-        public KafkaBasicExampleAdminClient.Builder withTopicCount(int topicCount) {
+        public KafkaAdminClient.Builder withTopicCount(int topicCount) {
             this.topicCount = topicCount;
             return this;
         }
 
-        public KafkaBasicExampleAdminClient.Builder withTopicOffset(int topicOffset) {
+        public KafkaAdminClient.Builder withTopicOffset(int topicOffset) {
             this.topicOffset = topicOffset;
             return this;
         }
 
-        public KafkaBasicExampleAdminClient.Builder withAdditionalConfig(String additionalConfig) {
+        public KafkaAdminClient.Builder withAdditionalConfig(String additionalConfig) {
             this.additionalConfig = additionalConfig;
             return this;
         }
 
-        public KafkaBasicExampleAdminClient.Builder withNamespaceName(String namespaceName) {
+        public KafkaAdminClient.Builder withNamespaceName(String namespaceName) {
             this.namespaceName = namespaceName;
             return this;
         }
 
-        public KafkaBasicExampleAdminClient.Builder withPartitions(int partitions) {
+        public KafkaAdminClient.Builder withPartitions(int partitions) {
             this.partitions = partitions;
             return this;
         }
 
-        public KafkaBasicExampleAdminClient.Builder withTopicOperation(String topicOperation) {
+        public KafkaAdminClient.Builder withTopicOperation(String topicOperation) {
             this.topicOperation = topicOperation;
             return this;
         }
 
-        public KafkaBasicExampleAdminClient.Builder withReplicationFactor(int replicationFactor) {
+        public KafkaAdminClient.Builder withReplicationFactor(int replicationFactor) {
             this.replicationFactor = replicationFactor;
             return this;
         }
 
-        public KafkaBasicExampleAdminClient build() {
-            return new KafkaBasicExampleAdminClient(this);
+        public KafkaAdminClient build() {
+            return new KafkaAdminClient(this);
         }
     }
 }

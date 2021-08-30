@@ -15,8 +15,6 @@ import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.resources.ResourceManager;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
 
 public class KafkaTopicResource implements ResourceType<KafkaTopic> {
@@ -56,19 +54,5 @@ public class KafkaTopicResource implements ResourceType<KafkaTopic> {
 
     public static void replaceTopicResourceInSpecificNamespace(String resourceName, Consumer<KafkaTopic> editor, String namespaceName) {
         ResourceManager.replaceCrdResource(KafkaTopic.class, KafkaTopicList.class, resourceName, editor, namespaceName);
-    }
-
-    public static KafkaTopicList getAllKafkaTopicsWithPrefix(String namespace, String prefix) {
-        KafkaTopicList topics = KafkaTopicResource.kafkaTopicClient().inNamespace(namespace).list();
-        if (prefix != null) {
-            List<KafkaTopic> subsetTopics = new ArrayList<>();
-            for (KafkaTopic kt : topics.getItems()) {
-                if (kt.getMetadata().getName().startsWith(prefix)) {
-                    subsetTopics.add(kt);
-                }
-            }
-            topics.setItems(subsetTopics);
-        }
-        return topics;
     }
 }

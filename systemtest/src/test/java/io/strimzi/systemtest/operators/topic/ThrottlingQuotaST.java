@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.operators.topic;
 
-import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -16,13 +15,14 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleAdminClient;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaAdminClient;
+import io.strimzi.systemtest.resources.crd.kafkaclients.AdminClientOperations;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -48,9 +48,10 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 @Tag(REGRESSION)
+@Tag(INTERNAL_CLIENTS_USED)
 public class ThrottlingQuotaST extends AbstractST {
 
-    private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
+    private static final Logger LOGGER = LogManager.getLogger(ThrottlingQuotaST.class);
     static final String NAMESPACE = "throttling-quota-cluster-test";
     final String kafkaUsername = "test-quota-user";
     final String classTopicPrefix = "quota-topic-test";
@@ -60,7 +61,6 @@ public class ThrottlingQuotaST extends AbstractST {
      * on creation & deletion of topics and create partition operations.
      */
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testThrottlingQuotasCreateTopic(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
@@ -70,35 +70,33 @@ public class ThrottlingQuotaST extends AbstractST {
 
         setupKafkaInNamespace(extensionContext, clusterName, namespaceName);
 
-        KafkaBasicExampleAdminClient adminClientJob = new KafkaBasicExampleAdminClient.Builder()
+        KafkaAdminClient adminClientJob = new KafkaAdminClient.Builder()
                 .withAdminName(createAdminName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
                 .withTopicName(topicNamePrefix)
                 .withTopicCount(topicsCountOverQuota)
                 .withNamespaceName(namespaceName)
-                .withTopicOperation("create")
+                .withTopicOperation(AdminClientOperations.CREATE_TOPICS.toString())
                 .withAdditionalConfig(getAdminClientConfig(namespaceName))
                 .build();
-        resourceManager.createResource(extensionContext, true, adminClientJob.adminStrimzi().build());
+        resourceManager.createResource(extensionContext, true, adminClientJob.defaultAdmin().build());
 
-        Pod createPod = kubeClient().listPods("job-name", createAdminName).get(0);
+        String createPodName = kubeClient().listPods("job-name", createAdminName).get(0).getMetadata().getName();
         PodUtils.waitUntilMessageIsInPodLogs(
-                createPod.getMetadata().getName(),
+                createPodName,
                 "org.apache.kafka.common.errors.ThrottlingQuotaExceededException: The throttling quota has been exceeded.",
                 Duration.ofMinutes(5).toMillis()
         );
-        LOGGER.debug("=================\n" + kubeClient().logs(createPod.getMetadata().getName()));
         JobUtils.deleteJobWithWait(namespaceName, createAdminName);
 
         // Delete created topics (as they were created in random order, we have to use KafkaTopic instead of this client) (really?)
-        KafkaTopicList ktl = KafkaTopicResource.getAllKafkaTopicsWithPrefix(namespaceName, topicNamePrefix);
+        KafkaTopicList ktl = KafkaTopicUtils.getAllKafkaTopicsWithPrefix(namespaceName, topicNamePrefix);
         for (KafkaTopic kt : ktl.getItems()) {
             cmdKubeClient().deleteByName(KafkaTopic.RESOURCE_SINGULAR, kt.getMetadata().getName());
         }
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testThrottlingQuotasDeleteTopic(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
@@ -110,48 +108,46 @@ public class ThrottlingQuotaST extends AbstractST {
         setupKafkaInNamespace(extensionContext, clusterName, namespaceName);
 
         // Create many topics
-        KafkaBasicExampleAdminClient createAdminClientJob;
-        Pod createPod;
+        KafkaAdminClient createAdminClientJob;
+        String createPodName;
         int offset = 100;
         for (int i = 0, j = 0; i < topicsCountOverQuota; i = i + offset, j++) {
             LOGGER.info("Executing {}/{} iteration.", j + 1, topicsCountOverQuota / offset);
-            createAdminClientJob = new KafkaBasicExampleAdminClient.Builder()
+            createAdminClientJob = new KafkaAdminClient.Builder()
                 .withAdminName(createAdminName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
                 .withTopicName(topicNamePrefix)
                 .withTopicCount(100)
                 .withTopicOffset(i)
                 .withNamespaceName(namespaceName)
-                .withTopicOperation("create")
+                .withTopicOperation(AdminClientOperations.CREATE_TOPICS.toString())
                 .withAdditionalConfig(getAdminClientConfig(namespaceName))
                 .build();
-            resourceManager.createResource(extensionContext, true, createAdminClientJob.adminStrimzi().build());
+            resourceManager.createResource(extensionContext, true, createAdminClientJob.defaultAdmin().build());
             ClientUtils.waitForClientSuccess(createAdminName, namespaceName, 10);
-            createPod = kubeClient().listPods("job-name", createAdminName).get(0);
-            PodUtils.waitUntilMessageIsInPodLogs(createPod.getMetadata().getName(), "All topics created");
-            LOGGER.debug("=================\n" + kubeClient().logs(createPod.getMetadata().getName()));
+            createPodName = kubeClient().listPods("job-name", createAdminName).get(0).getMetadata().getName();
+            PodUtils.waitUntilMessageIsInPodLogs(createPodName, "All topics created");
             JobUtils.deleteJobWithWait(namespaceName, createAdminName);
         }
 
         // Test delete all topics at once - should fail on Throttling Quota limit
-        KafkaBasicExampleAdminClient deleteAdminClientJob = new KafkaBasicExampleAdminClient.Builder()
+        KafkaAdminClient deleteAdminClientJob = new KafkaAdminClient.Builder()
                 .withAdminName(deleteAdminName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
                 .withTopicName(topicNamePrefix)
                 .withTopicCount(topicsCountOverQuota)
                 .withNamespaceName(namespaceName)
-                .withTopicOperation("remove")
+                .withTopicOperation(AdminClientOperations.DELETE_TOPICS.toString())
                 .withAdditionalConfig(getAdminClientConfig(namespaceName))
                 .build();
-        resourceManager.createResource(extensionContext, deleteAdminClientJob.adminStrimzi().build());
+        resourceManager.createResource(extensionContext, deleteAdminClientJob.defaultAdmin().build());
 
-        Pod deletePod = kubeClient().listPods("job-name", deleteAdminName).get(0);
+        String deletePodName = kubeClient().listPods("job-name", deleteAdminName).get(0).getMetadata().getName();
         PodUtils.waitUntilMessageIsInPodLogs(
-                deletePod.getMetadata().getName(),
+                deletePodName,
                 "org.apache.kafka.common.errors.ThrottlingQuotaExceededException: The throttling quota has been exceeded.",
                 Duration.ofMinutes(5).toMillis()
         );
-        LOGGER.debug("=================\n" + kubeClient().logs(deletePod.getMetadata().getName()));
         JobUtils.deleteJobWithWait(namespaceName, deleteAdminName);
 
         // Teardown - delete all (remaining) topics (within Quota limits)
@@ -162,16 +158,13 @@ public class ThrottlingQuotaST extends AbstractST {
                     .withTopicOffset(i)
                     .withTopicCount(100)
                     .build();
-            resourceManager.createResource(extensionContext, deleteAdminClientJob.adminStrimzi().build());
+            resourceManager.createResource(extensionContext, deleteAdminClientJob.defaultAdmin().build());
             ClientUtils.waitForClientSuccess(deleteAdminName, namespaceName, 10);
-            deletePod = kubeClient().listPods("job-name", deleteAdminName).get(0);
-            LOGGER.debug("=================\n" + kubeClient().logs(deletePod.getMetadata().getName()));
             JobUtils.deleteJobWithWait(namespaceName, deleteAdminName);
         }
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testThrottlingQuotasCreateAlterPartitions(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
@@ -183,93 +176,87 @@ public class ThrottlingQuotaST extends AbstractST {
 
         setupKafkaInNamespace(extensionContext, clusterName, namespaceName);
 
-        KafkaBasicExampleAdminClient adminClientJob = new KafkaBasicExampleAdminClient.Builder()
+        KafkaAdminClient adminClientJob = new KafkaAdminClient.Builder()
                 .withAdminName(createAdminName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
                 .withTopicName(topicNamePrefix)
                 .withTopicCount(topicsCount)
                 .withPartitions(topicPartitions)
                 .withNamespaceName(namespaceName)
-                .withTopicOperation("create")
+                .withTopicOperation(AdminClientOperations.CREATE_TOPICS.toString())
                 .withAdditionalConfig(getAdminClientConfig(namespaceName))
                 .build();
-        resourceManager.createResource(extensionContext, true, adminClientJob.adminStrimzi().build());
+        resourceManager.createResource(extensionContext, true, adminClientJob.defaultAdmin().build());
 
-        Pod createPod = kubeClient().listPods("job-name", createAdminName).get(0);
+        String createPodName = kubeClient().listPods("job-name", createAdminName).get(0).getMetadata().getName();
         PodUtils.waitUntilMessageIsInPodLogs(
-                createPod.getMetadata().getName(),
+                createPodName,
                 "org.apache.kafka.common.errors.ThrottlingQuotaExceededException: The throttling quota has been exceeded.",
                 Duration.ofMinutes(5).toMillis()
         );
-        LOGGER.debug("=================\n" + kubeClient().logs(createPod.getMetadata().getName()));
         JobUtils.deleteJobWithWait(namespaceName, createAdminName);
 
         // Delete created topics (as they were created in random order, we have to use KafkaTopic instead of this client)
-        KafkaTopicList ktl = KafkaTopicResource.getAllKafkaTopicsWithPrefix(namespaceName, topicNamePrefix);
+        KafkaTopicList ktl = KafkaTopicUtils.getAllKafkaTopicsWithPrefix(namespaceName, topicNamePrefix);
         for (KafkaTopic kt : ktl.getItems()) {
             cmdKubeClient().deleteByName(KafkaTopic.RESOURCE_SINGULAR, kt.getMetadata().getName());
         }
 
         // Throttling quota after performed 'alter' partitions on existing topic
         int topicAlter = 20;
-        adminClientJob = new KafkaBasicExampleAdminClient.Builder()
+        adminClientJob = new KafkaAdminClient.Builder()
                 .withAdminName(createAdminName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
                 .withTopicName(topicNamePrefix)
                 .withTopicCount(topicAlter)
                 .withPartitions(1)
                 .withNamespaceName(namespaceName)
-                .withTopicOperation("create")
+                .withTopicOperation(AdminClientOperations.CREATE_TOPICS.toString())
                 .withAdditionalConfig(getAdminClientConfig(namespaceName))
                 .build();
-        resourceManager.createResource(extensionContext, true, adminClientJob.adminStrimzi().build());
+        resourceManager.createResource(extensionContext, true, adminClientJob.defaultAdmin().build());
 
-        createPod = kubeClient().listPods("job-name", createAdminName).get(0);
-        PodUtils.waitUntilMessageIsInPodLogs(createPod.getMetadata().getName(), "All topics created");
-        LOGGER.debug("=================\n" + kubeClient().logs(createPod.getMetadata().getName()));
+        createPodName = kubeClient().listPods("job-name", createAdminName).get(0).getMetadata().getName();
+        PodUtils.waitUntilMessageIsInPodLogs(createPodName, "All topics created");
         JobUtils.deleteJobWithWait(namespaceName, createAdminName);
 
         // All topics altered
-        adminClientJob = new KafkaBasicExampleAdminClient.Builder()
+        adminClientJob = new KafkaAdminClient.Builder()
             .withAdminName(alterAdminName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
             .withTopicName(topicNamePrefix)
             .withTopicCount(topicAlter)
             .withPartitions(500)
             .withNamespaceName(namespaceName)
-            .withTopicOperation("alter")
+            .withTopicOperation(AdminClientOperations.UPDATE_TOPICS.toString())
             .withAdditionalConfig(getAdminClientConfig(namespaceName))
             .build();
-        resourceManager.createResource(extensionContext, true, adminClientJob.adminStrimzi().build());
-        Pod alterPod = kubeClient().listPods("job-name", alterAdminName).get(0);
+        resourceManager.createResource(extensionContext, true, adminClientJob.defaultAdmin().build());
+        String alterPodName = kubeClient().listPods("job-name", alterAdminName).get(0).getMetadata().getName();
         PodUtils.waitUntilMessageIsInPodLogs(
-                alterPod.getMetadata().getName(),
+                alterPodName,
                 "org.apache.kafka.common.errors.ThrottlingQuotaExceededException: The throttling quota has been exceeded.",
                 Duration.ofMinutes(5).toMillis()
         );
-        LOGGER.debug("=================\n" + kubeClient().logs(alterPod.getMetadata().getName()));
         JobUtils.deleteJobWithWait(namespaceName, alterAdminName);
 
         // Teardown - delete all (remaining) topics (within Quota limits)
         String teardownClientName = "teardown-delete";
-        KafkaBasicExampleAdminClient deleteAdminClientJob = new KafkaBasicExampleAdminClient.Builder()
+        KafkaAdminClient deleteAdminClientJob = new KafkaAdminClient.Builder()
                 .withAdminName(teardownClientName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
                 .withTopicName(topicNamePrefix)
                 .withTopicCount(topicAlter)
                 .withNamespaceName(namespaceName)
-                .withTopicOperation("delete")
+                .withTopicOperation(AdminClientOperations.DELETE_TOPICS.toString())
                 .withAdditionalConfig(getAdminClientConfig(namespaceName))
                 .build();
-        resourceManager.createResource(extensionContext, deleteAdminClientJob.adminStrimzi().build());
+        resourceManager.createResource(extensionContext, deleteAdminClientJob.defaultAdmin().build());
         ClientUtils.waitForClientSuccess(teardownClientName, namespaceName, 10);
-        Pod deletePod = kubeClient().listPods("job-name", teardownClientName).get(0);
-        LOGGER.debug("=================\n" + kubeClient().logs(deletePod.getMetadata().getName()));
         JobUtils.deleteJobWithWait(namespaceName, teardownClientName);
     }
 
     @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaAdminTopicOperations(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
@@ -281,62 +268,58 @@ public class ThrottlingQuotaST extends AbstractST {
 
         setupKafkaInNamespace(extensionContext, clusterName, namespaceName);
         // Create 'topicsCountBelowQuota' topics
-        KafkaBasicExampleAdminClient adminClientJob = new KafkaBasicExampleAdminClient.Builder()
+        KafkaAdminClient adminClientJob = new KafkaAdminClient.Builder()
                 .withAdminName(createAdminName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
                 .withTopicName(topicNamePrefix)
                 .withTopicCount(topicsCountBelowQuota)
                 .withNamespaceName(namespaceName)
-                .withTopicOperation("create")
+                .withTopicOperation(AdminClientOperations.CREATE_TOPICS.toString())
                 .withAdditionalConfig(getAdminClientConfig(namespaceName))
                 .build();
-        resourceManager.createResource(extensionContext, adminClientJob.adminStrimzi().build());
+        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin().build());
         ClientUtils.waitForClientSuccess(createAdminName, namespaceName, topicsCountBelowQuota);
-        Pod createPod = kubeClient().listPods("job-name", createAdminName).get(0);
-        PodUtils.waitUntilMessageIsInPodLogs(createPod.getMetadata().getName(), "All topics created");
-        LOGGER.debug("=================\n" + kubeClient().logs(createPod.getMetadata().getName()));
+        String createPodName = kubeClient().listPods("job-name", createAdminName).get(0).getMetadata().getName();
+        PodUtils.waitUntilMessageIsInPodLogs(createPodName, "All topics created");
 
         // List 'topicsCountBelowQuota' topics
-        KafkaBasicExampleAdminClient adminClientListJob = new KafkaBasicExampleAdminClient.Builder()
+        KafkaAdminClient adminClientListJob = new KafkaAdminClient.Builder()
                 .withAdminName(listAdminName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
                 .withNamespaceName(namespaceName)
-                .withTopicOperation("list")
+                .withTopicOperation(AdminClientOperations.LIST_TOPICS.toString())
                 .withAdditionalConfig(getAdminClientConfig(namespaceName))
                 .build();
-        resourceManager.createResource(extensionContext, adminClientListJob.adminStrimzi().build());
+        resourceManager.createResource(extensionContext, adminClientListJob.defaultAdmin().build());
 
         ClientUtils.waitForClientSuccess(listAdminName, namespaceName, 0);
-        Pod listPod = kubeClient().listPods("job-name", listAdminName).get(0);
-        PodUtils.waitUntilMessageIsInPodLogs(listPod.getMetadata().getName(), topicNamePrefix + "-" + (topicsCountBelowQuota - 1));
-        LOGGER.debug("=================\n" + kubeClient().logs(listPod.getMetadata().getName()));
+        String listPodName = kubeClient().listPods("job-name", listAdminName).get(0).getMetadata().getName();
+        PodUtils.waitUntilMessageIsInPodLogs(listPodName, topicNamePrefix + "-" + (topicsCountBelowQuota - 1));
         JobUtils.deleteJobWithWait(namespaceName, listAdminName);
 
         // Delete 'topicsCountBelowQuota' topics
-        adminClientJob = new KafkaBasicExampleAdminClient.Builder()
+        adminClientJob = new KafkaAdminClient.Builder()
                 .withAdminName(deleteAdminName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
                 .withTopicName(topicNamePrefix)
                 .withTopicCount(topicsCountBelowQuota)
                 .withNamespaceName(namespaceName)
-                .withTopicOperation("remove")
+                .withTopicOperation(AdminClientOperations.DELETE_TOPICS.toString())
                 .withAdditionalConfig(getAdminClientConfig(namespaceName))
                 .build();
-        resourceManager.createResource(extensionContext, adminClientJob.adminStrimzi().build());
+        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin().build());
 
         ClientUtils.waitForClientSuccess(deleteAdminName, namespaceName, 0);
-        Pod deletePod = kubeClient().listPods("job-name", deleteAdminName).get(0);
-        PodUtils.waitUntilMessageIsInPodLogs(deletePod.getMetadata().getName(), "Successfully removed all " + topicsCountBelowQuota);
-        LOGGER.debug("=================\n" + kubeClient().logs(deletePod.getMetadata().getName()));
+        String deletePodName = kubeClient().listPods("job-name", deleteAdminName).get(0).getMetadata().getName();
+        PodUtils.waitUntilMessageIsInPodLogs(deletePodName, "Successfully removed all " + topicsCountBelowQuota);
 
         // List topics after deletion
-        resourceManager.createResource(extensionContext, adminClientListJob.adminStrimzi().build());
+        resourceManager.createResource(extensionContext, adminClientListJob.defaultAdmin().build());
         ClientUtils.waitForClientSuccess(listAdminName, namespaceName, 0);
-        listPod = kubeClient().listPods("job-name", listAdminName).get(0);
-        String afterDeletePodLogs = kubeClient().logs(listPod.getMetadata().getName());
+        listPodName = kubeClient().listPods("job-name", listAdminName).get(0).getMetadata().getName();
+        String afterDeletePodLogs = kubeClient().logs(listPodName);
         assertThat(afterDeletePodLogs.contains(topicNamePrefix), is(false));
         assertThat(afterDeletePodLogs, not(containsString(topicNamePrefix)));
-        LOGGER.debug("=================\n" + afterDeletePodLogs);
 
         JobUtils.deleteJobWithWait(namespaceName, createAdminName);
         JobUtils.deleteJobWithWait(namespaceName, listAdminName);
@@ -355,53 +338,53 @@ public class ThrottlingQuotaST extends AbstractST {
         // Deploy kafka with ScramSHA512
         LOGGER.info("Deploying shared kafka across all test cases in {} namespace", namespaceName);
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1)
-                .editSpec()
-                .editKafka()
-                .withListeners(
-                        new GenericKafkaListenerBuilder()
-                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-                                .withPort(9092)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(false)
-                                .withNewKafkaListenerAuthenticationScramSha512Auth()
-                                .endKafkaListenerAuthenticationScramSha512Auth()
-                                .build(),
-                        new GenericKafkaListenerBuilder()
-                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                                .withPort(9093)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(true)
-                                .withNewKafkaListenerAuthenticationTlsAuth()
-                                .endKafkaListenerAuthenticationTlsAuth()
-                                .build())
-                .endKafka()
-                .endSpec()
-                .build());
+            .editSpec()
+            .editKafka()
+            .withListeners(
+                new GenericKafkaListenerBuilder()
+                    .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                    .withPort(9092)
+                    .withType(KafkaListenerType.INTERNAL)
+                    .withTls(false)
+                    .withNewKafkaListenerAuthenticationScramSha512Auth()
+                    .endKafkaListenerAuthenticationScramSha512Auth()
+                    .build(),
+                new GenericKafkaListenerBuilder()
+                    .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                    .withPort(9093)
+                    .withType(KafkaListenerType.INTERNAL)
+                    .withTls(true)
+                    .withNewKafkaListenerAuthenticationTlsAuth()
+                .endKafkaListenerAuthenticationTlsAuth()
+                .build())
+            .endKafka()
+            .endSpec()
+            .build());
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
         // Deploy KafkaUser with defined Quotas
         KafkaUser kafkaUserWQuota = KafkaUserTemplates.defaultUser(namespaceName, clusterName, kafkaUsername)
-                .editOrNewSpec()
+            .editOrNewSpec()
                 .withNewQuotas()
-                .withConsumerByteRate(10)
-                .withProducerByteRate(10)
-                .withRequestPercentage(10)
-                .withControllerMutationRate(2.0)
+                    .withConsumerByteRate(10)
+                    .withProducerByteRate(10)
+                    .withRequestPercentage(10)
+                    .withControllerMutationRate(2.0)
                 .endQuotas()
                 .withAuthentication(new KafkaUserScramSha512ClientAuthentication())
-                .endSpec()
-                .build();
+            .endSpec()
+            .build();
         resourceManager.createResource(extensionContext, true, kafkaUserWQuota);
     }
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                .withExtensionContext(extensionContext)
-                .withNamespace(NAMESPACE)
-                .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-                .createInstallation()
-                .runInstallation();
+            .withExtensionContext(extensionContext)
+            .withNamespace(NAMESPACE)
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .createInstallation()
+            .runInstallation();
     }
 
     @AfterEach
@@ -409,7 +392,7 @@ public class ThrottlingQuotaST extends AbstractST {
         LOGGER.info("Tearing down after test resources");
         final String namespace = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         JobUtils.removeAllJobs(namespace);
-        KafkaTopicList ktl = KafkaTopicResource.getAllKafkaTopicsWithPrefix(namespace, classTopicPrefix);
+        KafkaTopicList ktl = KafkaTopicUtils.getAllKafkaTopicsWithPrefix(namespace, classTopicPrefix);
         for (KafkaTopic kt : ktl.getItems()) {
             cmdKubeClient().namespace(namespace).deleteByName(KafkaTopic.RESOURCE_SINGULAR, kt.getMetadata().getName());
         }

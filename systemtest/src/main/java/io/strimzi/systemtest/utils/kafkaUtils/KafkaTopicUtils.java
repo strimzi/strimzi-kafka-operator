@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -14,6 +15,8 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
@@ -188,5 +191,19 @@ public class KafkaTopicUtils {
             LOGGER.info("KafkaTopic's spec gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
             return false;
         });
+    }
+
+    public static KafkaTopicList getAllKafkaTopicsWithPrefix(String namespace, String prefix) {
+        KafkaTopicList topics = KafkaTopicResource.kafkaTopicClient().inNamespace(namespace).list();
+        if (prefix != null) {
+            List<KafkaTopic> subsetTopics = new ArrayList<>();
+            for (KafkaTopic kt : topics.getItems()) {
+                if (kt.getMetadata().getName().startsWith(prefix)) {
+                    subsetTopics.add(kt);
+                }
+            }
+            topics.setItems(subsetTopics);
+        }
+        return topics;
     }
 }

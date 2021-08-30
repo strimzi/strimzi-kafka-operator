@@ -131,7 +131,7 @@ public class Environment {
      * Defaults
      */
     private static final String ST_KAFKA_VERSION_DEFAULT = "2.8.0";
-    public static final String STRIMZI_ORG_DEFAULT = "mtoth";
+    public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_TAG_DEFAULT = "latest";
     public static final String STRIMZI_REGISTRY_DEFAULT = "quay.io";
     private static final String TEST_LOG_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/logs/";
@@ -171,7 +171,7 @@ public class Environment {
     private static final String TEST_PRODUCER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/strimzi-examples/java-kafka-producer:latest";
     private static final String TEST_CONSUMER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/strimzi-examples/java-kafka-consumer:latest";
     private static final String TEST_STREAMS_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/strimzi-examples/java-kafka-streams:latest";
-    private static final String TEST_ADMIN_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/strimzi-examples/java-kafka-admin:latest";
+    private static final String TEST_ADMIN_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/strimzi-test-clients/test-client-kafka-admin:latest";
     public static final String TEST_PRODUCER_IMAGE = getOrDefault(TEST_PRODUCER_IMAGE_ENV, TEST_PRODUCER_IMAGE_DEFAULT);
     public static final String TEST_CONSUMER_IMAGE = getOrDefault(TEST_CONSUMER_IMAGE_ENV, TEST_CONSUMER_IMAGE_DEFAULT);
     public static final String TEST_STREAMS_IMAGE = getOrDefault(TEST_STREAMS_IMAGE_ENV, TEST_STREAMS_IMAGE_DEFAULT);
