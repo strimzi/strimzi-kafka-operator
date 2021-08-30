@@ -345,7 +345,12 @@ public class KafkaConnectCluster extends AbstractModel {
 
         volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
-        AuthenticationUtils.getVolumes(authentication, tls, volumeList, isOpenShift,  rack);
+
+        if (rack != null) {
+            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "10Ki", "Memory"));
+        }
+
+        VolumeUtils.getVolumes(authentication, tls, volumeList, isOpenShift, null);
 
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
 
@@ -400,7 +405,11 @@ public class KafkaConnectCluster extends AbstractModel {
         volumeMountList.add(createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 
-        AuthenticationUtils.getVolumeMounts(authentication, tls, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, rack);
+        if (rack != null) {
+            volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
+        }
+
+        VolumeUtils.getVolumeMounts(authentication, tls, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, rack);
         volumeMountList.addAll(getExternalConfigurationVolumeMounts());
 
         return volumeMountList;

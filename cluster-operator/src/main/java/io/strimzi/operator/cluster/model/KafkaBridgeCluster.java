@@ -283,10 +283,10 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
-        volumeList.add(VolumeUtils.createEmptyDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, "1Mi", "Memory"));
+        volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
-        AuthenticationUtils.getVolumes(authentication, tls, volumeList, isOpenShift, null);
+        VolumeUtils.getVolumes(authentication, tls, volumeList, isOpenShift, null);
         return volumeList;
     }
 
@@ -295,7 +295,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         volumeMountList.add(createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-        AuthenticationUtils.getVolumeMounts(authentication, tls, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, null);
+        VolumeUtils.getVolumeMounts(authentication, tls, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, null);
         return volumeMountList;
     }
 

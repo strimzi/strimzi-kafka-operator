@@ -231,8 +231,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
-        AuthenticationUtils.getVolumes(producer.getAuthentication(), producer.getTls(), volumeList, isOpenShift, "producer-oauth-certs", null);
-        AuthenticationUtils.getVolumes(consumer.getAuthentication(), consumer.getTls(), volumeList, isOpenShift,  "consumer-oauth-certs", null);
+        VolumeUtils.getVolumes(producer.getAuthentication(), producer.getTls(), volumeList, isOpenShift, "producer-oauth-certs", null);
+        VolumeUtils.getVolumes(consumer.getAuthentication(), consumer.getTls(), volumeList, isOpenShift,  "consumer-oauth-certs", null);
 
         return volumeList;
     }
@@ -243,9 +243,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         volumeMountList.add(createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
         /** producer auth*/
-        AuthenticationUtils.getVolumeMounts(producer.getAuthentication(), producer.getTls(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER, PASSWORD_VOLUME_MOUNT_PRODUCER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER, "producer-oauth-certs", null);
+        VolumeUtils.getVolumeMounts(producer.getAuthentication(), producer.getTls(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER, PASSWORD_VOLUME_MOUNT_PRODUCER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER, "producer-oauth-certs", null);
         /** consumer auth*/
-        AuthenticationUtils.getVolumeMounts(consumer.getAuthentication(), consumer.getTls(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_CONSUMER, PASSWORD_VOLUME_MOUNT_CONSUMER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_CONSUMER, "consumer-oauth-certs", null);
+        VolumeUtils.getVolumeMounts(consumer.getAuthentication(), consumer.getTls(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_CONSUMER, PASSWORD_VOLUME_MOUNT_CONSUMER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_CONSUMER, "consumer-oauth-certs", null);
         return volumeMountList;
     }
 

@@ -15,8 +15,6 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
-import io.strimzi.api.kafka.model.ClientTls;
-import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 
@@ -28,8 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
-import static io.strimzi.operator.cluster.model.AbstractModel.INIT_VOLUME_MOUNT;
-import static io.strimzi.operator.cluster.model.AbstractModel.INIT_VOLUME_NAME;
 
 public class AuthenticationUtils {
 
@@ -387,69 +383,5 @@ public class AuthenticationUtils {
         } else {
             zookeeperCluster.setJmxAuthenticated(false);
         }
-    }
-
-    protected static void getVolumes(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift, Rack rack) {
-        getVolumes(authentication, tls, volumeList, isOpenShift, "oauth-certs", "", false, rack);
-    }
-
-    protected static void getVolumes(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String oauthVolumeNamePrefix, Rack rack) {
-        getVolumes(authentication, tls, volumeList, isOpenShift, oauthVolumeNamePrefix, "", false, rack);
-    }
-
-
-    protected static void getVolumes(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean createOAuthSecretVolumes,  Rack rack) {
-
-        if (rack != null) {
-            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "10Ki", "Memory"));
-        }
-
-        if (tls != null) {
-            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
-
-            if (trustedCertificates != null && trustedCertificates.size() > 0) {
-                for (CertSecretSource certSecretSource : trustedCertificates) {
-                    // skipping if a volume with same Secret name was already added
-                    if (!volumeList.stream().anyMatch(v -> v.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeList.add(VolumeUtils.createSecretVolume(certSecretSource.getSecretName(), certSecretSource.getSecretName(), isOpenShift));
-                    }
-                }
-            }
-        }
-
-        configureClientAuthenticationVolumes(authentication, volumeList, oauthVolumeNamePrefix, isOpenShift, volumeNamePrefix, createOAuthSecretVolumes);
-    }
-
-    protected static void getVolumeMounts(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount, Rack rack) {
-        getVolumeMounts(authentication, tls, volumeList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, "oauth-certs", "", false, null, rack);
-    }
-
-    protected static void getVolumeMounts(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount, String oauthVolumeNamePrefix, Rack rack) {
-        getVolumeMounts(authentication, tls, volumeList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, oauthVolumeNamePrefix, "", false, null, rack);
-    }
-
-    protected static List<VolumeMount> getVolumeMounts(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean createOAuthSecretVolumes, String oauthVolumeMountPath,  Rack rack) {
-
-        if (rack != null) {
-            volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
-        }
-
-        if (tls != null) {
-            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
-
-            if (trustedCertificates != null && trustedCertificates.size() > 0) {
-                for (CertSecretSource certSecretSource : trustedCertificates) {
-                    // skipping if a volume mount with same Secret name was already added
-                    if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(certSecretSource.getSecretName()))) {
-                        volumeMountList.add(VolumeUtils.createVolumeMount(certSecretSource.getSecretName(),
-                                tlsCertBasedVolumeMount + certSecretSource.getSecretName()));
-                    }
-                }
-            }
-        }
-
-        configureClientAuthenticationVolumeMounts(authentication, volumeMountList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, oauthVolumeNamePrefix, volumeNamePrefix, createOAuthSecretVolumes, oauthVolumeMountPath);
-
-        return volumeMountList;
     }
 }

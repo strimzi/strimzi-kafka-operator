@@ -31,11 +31,16 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
+import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.ClientTls;
+import io.strimzi.api.kafka.model.Rack;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+
 
 /**
  * Shared methods for working with Volume
@@ -404,5 +409,63 @@ public class VolumeUtils {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Failed to get volume name SHA-1 hash", e);
         }
+    }
+
+    protected static void getVolumes(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String alias) {
+        getVolumes(authentication, tls, volumeList, isOpenShift, "oauth-certs", "", false, alias);
+    }
+
+    protected static void getVolumes(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String oauthVolumeNamePrefix, String alias) {
+        getVolumes(authentication, tls, volumeList, isOpenShift, oauthVolumeNamePrefix, "", false, alias);
+    }
+
+
+    protected static void getVolumes(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean createOAuthSecretVolumes,  String alias) {
+
+        if (tls != null) {
+            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
+
+            if (trustedCertificates != null && trustedCertificates.size() > 0) {
+                for (CertSecretSource certSecretSource : trustedCertificates) {
+                    String volumeName = alias != null ? alias + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
+                    // skipping if a volume with same Secret name was already added
+                    if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeName))) {
+                        volumeList.add(VolumeUtils.createSecretVolume(volumeName, volumeName, isOpenShift));
+                    }
+                }
+            }
+        }
+
+        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, oauthVolumeNamePrefix, isOpenShift, volumeNamePrefix, createOAuthSecretVolumes);
+    }
+
+    protected static void getVolumeMounts(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount, Rack rack) {
+        getVolumeMounts(authentication, tls, volumeList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, "oauth-certs", "", false, null, null);
+    }
+
+    protected static void getVolumeMounts(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount, String oauthVolumeNamePrefix, Rack rack) {
+        getVolumeMounts(authentication, tls, volumeList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, oauthVolumeNamePrefix, "", false, null, null);
+    }
+
+    protected static List<VolumeMount> getVolumeMounts(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean createOAuthSecretVolumes, String oauthVolumeMountPath, String alias) {
+
+        if (tls != null) {
+            List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
+
+            if (trustedCertificates != null && trustedCertificates.size() > 0) {
+                for (CertSecretSource certSecretSource : trustedCertificates) {
+                    String volumeMountName = alias != null ? alias + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
+                    // skipping if a volume mount with same Secret name was already added
+                    if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeMountName))) {
+                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeMountName,
+                                tlsCertBasedVolumeMount + certSecretSource.getSecretName()));
+                    }
+                }
+            }
+        }
+
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, oauthVolumeNamePrefix, volumeNamePrefix, createOAuthSecretVolumes, oauthVolumeMountPath);
+
+        return volumeMountList;
     }
 }
