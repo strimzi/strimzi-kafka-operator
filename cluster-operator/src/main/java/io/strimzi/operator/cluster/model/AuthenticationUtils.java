@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
-
 public class AuthenticationUtils {
 
     public static final String TLS_AUTH_CERT = "TLS_AUTH_CERT";
