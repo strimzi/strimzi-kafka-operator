@@ -31,7 +31,7 @@ parameters:
   displayName: The Kafka version to use
   name: KAFKA_VERSION
   required: true
-  value: "2.8.0"
+  value: "3.0.0"
 - description: The consumer group id to which this consumer belongs
   displayName: The consumer group id
   name: MIRROR_MAKER_GROUP_ID

@@ -104,12 +104,12 @@
         <fasterxml.jackson-databind.version>2.11.3</fasterxml.jackson-databind.version>
         <fasterxml.jackson-dataformat.version>2.10.5</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.11.3</fasterxml.jackson-annotations.version>
-        <kafka.version>2.8.0</kafka.version>
+        <kafka.version>3.0.0</kafka.version>
         <!-- keep in-sync with dataformat-yaml -->
         <json-path.version>4.1.1</json-path.version>
         <zkclient.version>0.11</zkclient.version>
         <scala-library.version>2.13.6</scala-library.version>
-        <zookeeper.version>3.5.9</zookeeper.version>
+        <zookeeper.version>3.6.3</zookeeper.version>
         <mockito.version>2.28.2</mockito.version>
         <jayway-jsonpath.version>2.6.0</jayway-jsonpath.version>
         <slf4j.version>1.7.25</slf4j.version>
@@ -173,6 +173,13 @@
         <module>certificate-manager</module>
         <module>systemtest</module>
     </modules>
+
+    <repositories>
+        <repository>
+            <id>kafka-staging</id>
+            <url>https://repository.apache.org/content/groups/staging/</url>
+        </repository>
+    </repositories>
 
     <dependencyManagement>
         <dependencies>

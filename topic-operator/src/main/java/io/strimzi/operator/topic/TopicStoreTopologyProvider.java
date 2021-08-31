@@ -44,6 +44,7 @@ public class TopicStoreTopologyProvider implements Supplier<Topology> {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public Topology get() {
         StreamsBuilder builder = new StreamsBuilder();
 
@@ -86,6 +87,7 @@ public class TopicStoreTopologyProvider implements Supplier<Topology> {
      * In the case of invalid store update result is not-null.
      * Dispatcher applies the result to a waiting callback CompletionStage.
      */
+    @SuppressWarnings("deprecation")
     private static class TopicCommandTransformer implements Processor<String, TopicCommand> {
         private final String topicStoreName;
         private final ForeachAction<? super String, ? super Integer> dispatcher;

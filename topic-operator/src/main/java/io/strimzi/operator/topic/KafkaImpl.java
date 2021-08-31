@@ -56,7 +56,7 @@ public class KafkaImpl implements Kafka {
         Promise<Void> handler = Promise.promise();
         LOGGER.debugCr(reconciliation, "Deleting topic {}", topicName);
         KafkaFuture<Void> future = adminClient.deleteTopics(
-                singleton(topicName.toString())).values().get(topicName.toString());
+                singleton(topicName.toString())).topicNameValues().get(topicName.toString());
         mapFuture(future).onComplete(ar -> {
             // Complete the result future on the context thread.
             vertx.runOnContext(ignored -> {
