@@ -18,6 +18,7 @@ import kafka.api.ApiVersionValidator$;
 import kafka.server.DynamicBrokerConfig$;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.common.config.ConfigDef;
+import org.apache.kafka.raft.RaftConfig;
 import scala.collection.Iterator;
 
 import java.io.File;
@@ -94,12 +95,12 @@ public class KafkaConfigModelGenerator {
                     versions.add(Pattern.quote(next.version()));
                 }
                 descriptor.setPattern(String.join("|", versions));
-            } else if (key.validator != null
-                    && "class org.apache.kafka.raft.RaftConfig$ControllerQuorumVotersValidator".equals(key.validator.getClass().toString()))   {
+            } else if (key.validator instanceof ConfigDef.NonEmptyString) {
+                descriptor.setPattern(".+");
+            } else if (key.validator instanceof RaftConfig.ControllerQuorumVotersValidator)   {
                 continue;
             } else if (key.validator != null) {
-                System.out.println(key.validator.getClass().toString());
-                throw new IllegalStateException(key.validator.getClass().toString());
+                throw new IllegalStateException("Invalid validator class " + key.validator.getClass() + " for option " + configName);
             }
 
             result.put(configName, descriptor);
@@ -202,24 +203,13 @@ public class KafkaConfigModelGenerator {
     private static ConfigModel range(ConfigDef.ConfigKey key, ConfigModel descriptor) {
         String str = key.validator.toString();
         try {
-            Pattern rangePattern = Pattern.compile("\\[([0-9.e+-]+|\\.\\.\\.),?([0-9.e+-]+|\\.\\.\\.)?\\]", Pattern.CASE_INSENSITIVE);
+            Pattern rangePattern = Pattern.compile("\\[([0-9.e+-]+|\\.\\.\\.),?([0-9.e+-]+|\\.\\.\\.)?,?([0-9.e+-]+|\\.\\.\\.)?\\]", Pattern.CASE_INSENSITIVE);
             Matcher matcher = rangePattern.matcher(str);
             if (matcher.matches()) {
-                if (matcher.groupCount() == 2) {
-                    String maxStr = matcher.group(2);
-                    if (maxStr.contains("e") || maxStr.contains(".") && !maxStr.contains("..")) {
-                        descriptor.setMaximum(Double.parseDouble(maxStr));
-                    } else if (!"...".equals(maxStr)) {
-                        descriptor.setMaximum(Long.parseLong(maxStr));
-                    }
-
-                    String minStr = matcher.group(1);
-                    if (minStr.contains("e") || minStr.contains(".") && !minStr.contains("..")) {
-                        descriptor.setMinimum(Double.parseDouble(minStr));
-                    } else if (!"...".equals(minStr)) {
-                        descriptor.setMinimum(Long.parseLong(minStr));
-                    }
-
+                if (matcher.groupCount() == 3 && matcher.group(3) == null) {
+                    openRange(matcher, descriptor);
+                } else if (matcher.groupCount() == 3) {
+                    closedRange(matcher, descriptor);
                 } else if (matcher.groupCount() != 1) {
                     throw new IllegalStateException(str);
                 }
@@ -228,7 +218,44 @@ public class KafkaConfigModelGenerator {
             }
             return descriptor;
         } catch (RuntimeException e) {
-            throw new RuntimeException("For string: " + str, e);
+            throw new RuntimeException("Invalid range " + str + " for key " + key.name, e);
+        }
+    }
+
+    private static void closedRange(Matcher matcher, ConfigModel descriptor) {
+        String maxStr = matcher.group(3);
+        if (maxStr.contains("e") || maxStr.contains(".") && !maxStr.contains("..")) {
+            descriptor.setMaximum(Double.parseDouble(maxStr));
+        } else if (!"...".equals(maxStr)) {
+            descriptor.setMaximum(Long.parseLong(maxStr));
+        }
+
+        String midStr = matcher.group(2);
+        if (!"...".equals(midStr)) {
+            throw new IllegalStateException();
+        }
+
+        String minStr = matcher.group(1);
+        if (minStr.contains("e") || minStr.contains(".") && !minStr.contains("..")) {
+            descriptor.setMinimum(Double.parseDouble(minStr));
+        } else if (!"...".equals(minStr)) {
+            descriptor.setMinimum(Long.parseLong(minStr));
+        }
+    }
+
+    private static void openRange(Matcher matcher, ConfigModel descriptor) {
+        String maxStr = matcher.group(2);
+        if (maxStr.contains("e") || maxStr.contains(".") && !maxStr.contains("..")) {
+            descriptor.setMaximum(Double.parseDouble(maxStr));
+        } else if (!"...".equals(maxStr)) {
+            descriptor.setMaximum(Long.parseLong(maxStr));
+        }
+
+        String minStr = matcher.group(1);
+        if (minStr.contains("e") || minStr.contains(".") && !minStr.contains("..")) {
+            descriptor.setMinimum(Double.parseDouble(minStr));
+        } else if (!"...".equals(minStr)) {
+            descriptor.setMinimum(Long.parseLong(minStr));
         }
     }
 

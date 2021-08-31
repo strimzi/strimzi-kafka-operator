@@ -385,3 +385,14 @@ make all
 ```
 
 _Note: Strimzi currently does not officially support any other platforms then Linux on `amd64`._
+
+## Adding support for new Kafka versions
+
+Following steps are needed to add support for new Kafka releases:
+* Edit the `kafka-versions.yaml` file
+    * Add a new record with the new Kafka version
+    * Make sure only one version is set as default
+* If needed, set up the new `kafka-thirdparty-libs` directory
+* Run `make all` to regenerate / update all files
+* Update the versions in `attributes.adoc` in `documentation/`
+* Update all example in `packaging/examples/`
