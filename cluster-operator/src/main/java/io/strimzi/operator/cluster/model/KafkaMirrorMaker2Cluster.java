@@ -162,8 +162,9 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         List<Volume> volumeList = super.getVolumes(isOpenShift);
 
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
+            String alias = mirrorMaker2Cluster.getAlias();
             ClientTls tls = mirrorMaker2Cluster.getTls();
-            VolumeUtils.getVolumes(mirrorMaker2Cluster.getAuthentication(), tls, volumeList, isOpenShift, mirrorMaker2Cluster.getAlias() + "-oauth-certs", mirrorMaker2Cluster.getAlias() + '-',  true, null);
+            VolumeUtils.getVolumes(mirrorMaker2Cluster.getAuthentication(), tls, volumeList, isOpenShift, mirrorMaker2Cluster.getAlias() + "-oauth-certs", mirrorMaker2Cluster.getAlias() + '-',  true, alias);
         }
         return volumeList;
     }

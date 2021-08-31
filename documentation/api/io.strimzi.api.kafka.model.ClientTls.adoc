@@ -1,4 +1,4 @@
-Configures TLS trusted certificates for connecting Kafka Connect, KafkaMirror to the cluster.
+Configures TLS trusted certificates for connecting KafkaConnect, KafkaBridge, KafkaMirror, KafkaMirrorMaker-2 to the cluster.
 
 === `trustedCertificates`
 
