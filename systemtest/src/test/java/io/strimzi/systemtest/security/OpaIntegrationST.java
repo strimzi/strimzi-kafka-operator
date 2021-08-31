@@ -147,7 +147,7 @@ public class OpaIntegrationST extends AbstractST {
                 .editKafka()
                     .withNewKafkaAuthorizationOpa()
                         .withUrl("http://opa:8181/v1/data/kafka/simple/authz/allow")
-                        .addNewSuperUser("CN=" + OPA_SUPERUSER)
+                        .addToSuperUsers("CN=" + OPA_SUPERUSER)
                     .endKafkaAuthorizationOpa()
                     .withListeners(new GenericKafkaListenerBuilder()
                             .withName(Constants.TLS_LISTENER_DEFAULT_NAME)

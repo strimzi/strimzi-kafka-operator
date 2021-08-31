@@ -507,7 +507,7 @@ public class MirrorMakerST extends AbstractST {
                 .withNamespace(namespaceName)
             .endMetadata()
             .editSpec()
-                .withNewInclude(topicName)
+                .withInclude(topicName)
             .endSpec().build());
 
         internalKafkaClient = internalKafkaClient.toBuilder()

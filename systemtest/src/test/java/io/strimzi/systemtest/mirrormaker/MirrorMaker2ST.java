@@ -376,7 +376,7 @@ class MirrorMaker2ST extends AbstractST {
             .editSpec()
                 .withClusters(sourceClusterWithTlsAuth, targetClusterWithTlsAuth)
                 .editFirstMirror()
-                    .withNewTopicsPattern(MIRRORMAKER2_TOPIC_NAME + ".*")
+                    .withTopicsPattern(MIRRORMAKER2_TOPIC_NAME + ".*")
                 .endMirror()
             .endSpec()
             .build());

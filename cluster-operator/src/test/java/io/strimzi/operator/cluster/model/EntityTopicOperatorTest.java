@@ -86,7 +86,7 @@ public class EntityTopicOperatorTest {
             .withReadinessProbe(readinessProbe)
             .withLogging(topicOperatorLogging)
             .withNewJvmOptions()
-                    .withNewXms("128m")
+                    .withXms("128m")
                     .addAllToJavaSystemProperties(javaSystemProperties)
             .endJvmOptions()
             .build();

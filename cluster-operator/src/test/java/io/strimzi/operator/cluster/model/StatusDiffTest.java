@@ -27,7 +27,7 @@ public class StatusDiffTest {
     @ParallelTest
     public void testStatusDiff()    {
         ListenerStatus ls1 = new ListenerStatusBuilder()
-                .withNewType("plain")
+                .withType("plain")
                 .withAddresses(new ListenerAddressBuilder()
                         .withHost("my-service.my-namespace.svc")
                         .withPort(9092)
@@ -35,7 +35,7 @@ public class StatusDiffTest {
                 .build();
 
         ListenerStatus ls2 = new ListenerStatusBuilder()
-                .withNewType("tls")
+                .withType("tls")
                 .withAddresses(new ListenerAddressBuilder()
                         .withHost("my-service.my-namespace.svc")
                         .withPort(9093)
@@ -43,7 +43,7 @@ public class StatusDiffTest {
                 .build();
 
         ListenerStatus ls3 = new ListenerStatusBuilder()
-                .withNewType("tls")
+                .withType("tls")
                 .withAddresses(new ListenerAddressBuilder()
                         .withHost("my-service.my-namespace.svc")
                         .withPort(9094)
@@ -51,15 +51,15 @@ public class StatusDiffTest {
                 .build();
 
         Condition condition1 = new ConditionBuilder()
-                .withNewLastTransitionTime(StatusUtils.iso8601(new Date()))
-                .withNewType("Ready")
-                .withNewStatus("True")
+                .withLastTransitionTime(StatusUtils.iso8601(new Date()))
+                .withType("Ready")
+                .withStatus("True")
                 .build();
 
         Condition condition2 = new ConditionBuilder()
-                .withNewLastTransitionTime(StatusUtils.iso8601(new Date()))
-                .withNewType("Ready2")
-                .withNewStatus("True")
+                .withLastTransitionTime(StatusUtils.iso8601(new Date()))
+                .withType("Ready2")
+                .withStatus("True")
                 .build();
 
         KafkaStatus status1 = new KafkaStatusBuilder()
@@ -114,7 +114,7 @@ public class StatusDiffTest {
     @ParallelTest
     public void testTimestampDiff() throws ParseException {
         ListenerStatus ls1 = new ListenerStatusBuilder()
-                .withNewType("plain")
+                .withType("plain")
                 .withAddresses(new ListenerAddressBuilder()
                         .withHost("my-service.my-namespace.svc")
                         .withPort(9092)
@@ -122,7 +122,7 @@ public class StatusDiffTest {
                 .build();
 
         ListenerStatus ls2 = new ListenerStatusBuilder()
-                .withNewType("tls")
+                .withType("tls")
                 .withAddresses(new ListenerAddressBuilder()
                         .withHost("my-service.my-namespace.svc")
                         .withPort(9093)
@@ -130,15 +130,15 @@ public class StatusDiffTest {
                 .build();
 
         Condition condition1 = new ConditionBuilder()
-                .withNewLastTransitionTime(StatusUtils.iso8601(new Date()))
-                .withNewType("Ready")
-                .withNewStatus("True")
+                .withLastTransitionTime(StatusUtils.iso8601(new Date()))
+                .withType("Ready")
+                .withStatus("True")
                 .build();
 
         Condition condition2 = new ConditionBuilder()
-                .withNewLastTransitionTime(StatusUtils.iso8601(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
-                .withNewType("Ready")
-                .withNewStatus("True")
+                .withLastTransitionTime(StatusUtils.iso8601(new SimpleDateFormat("yyyy-MM-dd hh:mm:ss").parse("2011-01-01 00:00:00")))
+                .withType("Ready")
+                .withStatus("True")
                 .build();
 
         KafkaStatus status1 = new KafkaStatusBuilder()

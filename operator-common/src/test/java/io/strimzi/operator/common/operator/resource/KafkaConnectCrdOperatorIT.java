@@ -56,7 +56,7 @@ public class KafkaConnectCrdOperatorIT extends AbstractCustomResourceOperatorIT<
                     .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()
-                    .withNewBootstrapServers("localhost:9092")
+                    .withBootstrapServers("localhost:9092")
                 .endSpec()
                 .withNewStatus()
                 .endStatus()
