@@ -301,7 +301,7 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |string
 |finalizers                    1.2+<.<a|A list of finalizers which will be configured for the `LoadBalancer` type Services created for this listener. If supported by the platform, the finalizer `service.kubernetes.io/load-balancer-cleanup` to make sure that the external load balancer is deleted together with the service.For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers. This field can be used only with `loadbalancer` type listeners.
 |string array
-|maxConnectionCreationRate     1.2+<.<a|The maximum connection creation rate we allow in this listener at any time. New connections will be throttled if the limit is reached.Supported only on Kafka 2.7.0 and newer.
+|maxConnectionCreationRate     1.2+<.<a|The maximum connection creation rate we allow in this listener at any time. New connections will be throttled if the limit is reached.
 |integer
 |maxConnections                1.2+<.<a|The maximum number of connections we allow for this listener in the broker at any time. New connections are blocked if the limit is reached.
 |integer
