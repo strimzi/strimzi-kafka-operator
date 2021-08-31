@@ -20,6 +20,7 @@ import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
+import io.strimzi.test.logs.CollectorElement;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
@@ -93,6 +94,9 @@ public class SetupClusterOperator {
      * Don't use this method in tests, where specific configuration of CO is needed.
      */
     public SetupClusterOperator runInstallation() {
+        String testClassName = extensionContext.getRequiredTestClass().getName();
+        String testMethodName = testClassName.contains(extensionContext.getDisplayName()) ? "" : extensionContext.getDisplayName();
+
         if (Environment.isOlmInstall()) {
             LOGGER.info("Going to install ClusterOperator via OLM");
             // cluster-wide olm co-operator
@@ -101,7 +105,8 @@ public class SetupClusterOperator {
                 if (!Environment.isNamespaceRbacScope()) {
                     if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
                         cluster.setNamespace(namespaceInstallTo);
-                        cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
+
+                        cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
                     }
                     createClusterRoleBindings();
@@ -112,7 +117,7 @@ public class SetupClusterOperator {
             } else {
                 if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
                     cluster.setNamespace(namespaceInstallTo);
-                    cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
+                    cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                     extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
                 }
                 olmResource = new OlmResource(namespaceInstallTo);
@@ -123,7 +128,7 @@ public class SetupClusterOperator {
             helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
             if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
                 cluster.setNamespace(namespaceInstallTo);
-                cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
+                cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                 extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
             }
             helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
@@ -140,9 +145,11 @@ public class SetupClusterOperator {
 
     private void bundleInstallation() {
         LOGGER.info("Going to install ClusterOperator via Yaml bundle");
+        String testClassName = extensionContext.getRequiredTestClass().getName();
+        String testMethodName = testClassName.contains(extensionContext.getDisplayName()) ? "" : extensionContext.getDisplayName();
 
         if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
-            cluster.createNamespaces(extensionContext, namespaceInstallTo, bindingsNamespaces);
+            cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
         } else {
             LOGGER.info("Environment for ClusterOperator was already prepared! Going to install it now.");

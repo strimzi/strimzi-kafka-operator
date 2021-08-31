@@ -1,0 +1,193 @@
+Name:         my-cluster-entity-operator-74f8968d64-nm458
+Namespace:    second-namespace-test
+Priority:     0
+Node:         jakub-ops-wgt74-worker-0-58m4b/192.168.0.69
+Start Time:   Thu, 26 Aug 2021 15:34:27 +0200
+Labels:       app.kubernetes.io/instance=my-cluster
+              app.kubernetes.io/managed-by=strimzi-cluster-operator
+              app.kubernetes.io/name=entity-operator
+              app.kubernetes.io/part-of=strimzi-my-cluster
+              pod-template-hash=74f8968d64
+              strimzi.io/cluster=my-cluster
+              strimzi.io/kind=Kafka
+              strimzi.io/name=my-cluster-entity-operator
+Annotations:  k8s.v1.cni.cncf.io/network-status:
+                [{
+                    "name": "openshift-sdn",
+                    "interface": "eth0",
+                    "ips": [
+                        "10.131.0.116"
+                    ],
+                    "default": true,
+                    "dns": {}
+                }]
+              k8s.v1.cni.cncf.io/networks-status:
+                [{
+                    "name": "openshift-sdn",
+                    "interface": "eth0",
+                    "ips": [
+                        "10.131.0.116"
+                    ],
+                    "default": true,
+                    "dns": {}
+                }]
+              openshift.io/scc: restricted
+              strimzi.io/clients-ca-cert-generation: 0
+              strimzi.io/cluster-ca-cert-generation: 0
+Status:       Running
+IP:           10.131.0.116
+IPs:
+  IP:           10.131.0.116
+Controlled By:  ReplicaSet/my-cluster-entity-operator-74f8968d64
+Containers:
+  topic-operator:
+    Container ID:  cri-o://897ce76816900537bcfaae701ff24e253c94fb470eb811cba62543b6da4cad45
+    Image:         quay.io/strimzi/operator:latest
+    Image ID:      quay.io/strimzi/operator@sha256:c4272473bd722ce9cde3bca974a7f42d28652caf5b224082ed39fe4c3fba3d01
+    Port:          8080/TCP
+    Host Port:     0/TCP
+    Args:
+      /opt/strimzi/bin/topic_operator_run.sh
+    State:          Running
+      Started:      Thu, 26 Aug 2021 15:34:30 +0200
+    Ready:          True
+    Restart Count:  0
+    Liveness:       http-get http://:healthcheck/healthy delay=10s timeout=5s period=10s #success=1 #failure=3
+    Readiness:      http-get http://:healthcheck/ready delay=10s timeout=5s period=10s #success=1 #failure=3
+    Startup:        http-get http://:healthcheck/healthy delay=15s timeout=5s period=10s #success=1 #failure=12
+    Environment:
+      STRIMZI_RESOURCE_LABELS:                  strimzi.io/cluster=my-cluster
+      STRIMZI_KAFKA_BOOTSTRAP_SERVERS:          my-cluster-kafka-bootstrap:9091
+      STRIMZI_ZOOKEEPER_CONNECT:                localhost:2181
+      STRIMZI_NAMESPACE:                        co-namespace-test
+      STRIMZI_FULL_RECONCILIATION_INTERVAL_MS:  120000
+      STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS:     18000
+      STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS:      6
+      STRIMZI_SECURITY_PROTOCOL:                SSL
+      STRIMZI_TLS_ENABLED:                      true
+      STRIMZI_GC_LOG_ENABLED:                   false
+    Mounts:
+      /etc/tls-sidecar/cluster-ca-certs/ from cluster-ca-certs (rw)
+      /etc/tls-sidecar/eo-certs/ from eo-certs (rw)
+      /opt/topic-operator/custom-config/ from entity-topic-operator-metrics-and-logging (rw)
+      /tmp from strimzi-to-tmp (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ctlpq (ro)
+  user-operator:
+    Container ID:  cri-o://542435de824525c00f4a887f30bf0b98f126db133d4d42e019fe78941f5898a6
+    Image:         quay.io/strimzi/operator:latest
+    Image ID:      quay.io/strimzi/operator@sha256:c4272473bd722ce9cde3bca974a7f42d28652caf5b224082ed39fe4c3fba3d01
+    Port:          8081/TCP
+    Host Port:     0/TCP
+    Args:
+      /opt/strimzi/bin/user_operator_run.sh
+    State:          Running
+      Started:      Thu, 26 Aug 2021 15:34:31 +0200
+    Ready:          True
+    Restart Count:  0
+    Liveness:       http-get http://:healthcheck/healthy delay=10s timeout=5s period=10s #success=1 #failure=3
+    Readiness:      http-get http://:healthcheck/ready delay=10s timeout=5s period=10s #success=1 #failure=3
+    Environment:
+      STRIMZI_KAFKA_BOOTSTRAP_SERVERS:          my-cluster-kafka-bootstrap:9091
+      STRIMZI_NAMESPACE:                        second-namespace-test
+      STRIMZI_LABELS:                           strimzi.io/cluster=my-cluster
+      STRIMZI_FULL_RECONCILIATION_INTERVAL_MS:  120000
+      STRIMZI_CA_KEY_NAME:                      my-cluster-clients-ca
+      STRIMZI_CA_CERT_NAME:                     my-cluster-clients-ca-cert
+      STRIMZI_CA_NAMESPACE:                     second-namespace-test
+      STRIMZI_CA_VALIDITY:                      365
+      STRIMZI_CA_RENEWAL:                       30
+      STRIMZI_CLUSTER_CA_CERT_SECRET_NAME:      my-cluster-cluster-ca-cert
+      STRIMZI_EO_KEY_SECRET_NAME:               my-cluster-entity-operator-certs
+      STRIMZI_GC_LOG_ENABLED:                   false
+      STRIMZI_SECRET_PREFIX:                    
+      STRIMZI_ACLS_ADMIN_API_SUPPORTED:         false
+    Mounts:
+      /etc/tls-sidecar/cluster-ca-certs/ from cluster-ca-certs (rw)
+      /etc/tls-sidecar/eo-certs/ from eo-certs (rw)
+      /opt/user-operator/custom-config/ from entity-user-operator-metrics-and-logging (rw)
+      /tmp from strimzi-uo-tmp (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ctlpq (ro)
+  tls-sidecar:
+    Container ID:  cri-o://81c8ef6ba0166d7e1cb0356e4e800bfacc3989ccabc285e0ad65f0fb3048ba41
+    Image:         quay.io/strimzi/kafka:latest-kafka-2.8.0
+    Image ID:      quay.io/strimzi/kafka@sha256:d98891b1e0a9a527b23ea5f9fff3a40c060fe135b2227856eafd867ed884587c
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /opt/stunnel/entity_operator_stunnel_run.sh
+    State:          Running
+      Started:      Thu, 26 Aug 2021 15:34:32 +0200
+    Ready:          True
+    Restart Count:  0
+    Liveness:       exec [/opt/stunnel/stunnel_healthcheck.sh 2181] delay=15s timeout=5s period=10s #success=1 #failure=3
+    Readiness:      exec [/opt/stunnel/stunnel_healthcheck.sh 2181] delay=15s timeout=5s period=10s #success=1 #failure=3
+    Environment:
+      TLS_SIDECAR_LOG_LEVEL:      notice
+      STRIMZI_ZOOKEEPER_CONNECT:  my-cluster-zookeeper-client:2181
+    Mounts:
+      /etc/tls-sidecar/cluster-ca-certs/ from cluster-ca-certs (rw)
+      /etc/tls-sidecar/eo-certs/ from eo-certs (rw)
+      /tmp from strimzi-tls-sidecar-tmp (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ctlpq (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  strimzi-to-tmp:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     Memory
+    SizeLimit:  1Mi
+  entity-topic-operator-metrics-and-logging:
+    Type:      ConfigMap (a volume populated by a ConfigMap)
+    Name:      my-cluster-entity-topic-operator-config
+    Optional:  false
+  strimzi-uo-tmp:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     Memory
+    SizeLimit:  1Mi
+  entity-user-operator-metrics-and-logging:
+    Type:      ConfigMap (a volume populated by a ConfigMap)
+    Name:      my-cluster-entity-user-operator-config
+    Optional:  false
+  strimzi-tls-sidecar-tmp:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     Memory
+    SizeLimit:  1Mi
+  eo-certs:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  my-cluster-entity-operator-certs
+    Optional:    false
+  cluster-ca-certs:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  my-cluster-cluster-ca-cert
+    Optional:    false
+  kube-api-access-ctlpq:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+    ConfigMapName:           openshift-service-ca.crt
+    ConfigMapOptional:       <nil>
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason          Age   From               Message
+  ----     ------          ----  ----               -------
+  Normal   Scheduled       65s   default-scheduler  Successfully assigned second-namespace-test/my-cluster-entity-operator-74f8968d64-nm458 to jakub-ops-wgt74-worker-0-58m4b
+  Normal   AddedInterface  63s   multus             Add eth0 [10.131.0.116/23] from openshift-sdn
+  Normal   Pulled          62s   kubelet            Container image "quay.io/strimzi/operator:latest" already present on machine
+  Normal   Created         62s   kubelet            Created container topic-operator
+  Normal   Started         62s   kubelet            Started container topic-operator
+  Normal   Pulled          62s   kubelet            Container image "quay.io/strimzi/operator:latest" already present on machine
+  Normal   Created         61s   kubelet            Created container user-operator
+  Normal   Started         61s   kubelet            Started container user-operator
+  Normal   Pulled          61s   kubelet            Container image "quay.io/strimzi/kafka:latest-kafka-2.8.0" already present on machine
+  Normal   Created         60s   kubelet            Created container tls-sidecar
+  Normal   Started         60s   kubelet            Started container tls-sidecar
+  Warning  Unhealthy       45s   kubelet            Startup probe failed: Get "http://10.131.0.116:8080/healthy": dial tcp 10.131.0.116:8080: connect: connection refused

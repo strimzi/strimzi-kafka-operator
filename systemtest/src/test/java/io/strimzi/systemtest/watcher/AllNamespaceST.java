@@ -70,6 +70,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(MAIN_NAMESPACE_CLUSTER_NAME, topicName, SECOND_NAMESPACE).build());
         KafkaTopicResource.kafkaTopicClient().inNamespace(SECOND_NAMESPACE).withName(topicName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         cluster.setNamespace(previousNamespace);
+        throw new RuntimeException();
     }
 
     /**
@@ -80,6 +81,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testKafkaInDifferentNsThanClusterOperator() {
         LOGGER.info("Deploying Kafka cluster in different namespace than CO when CO watches all namespaces");
         checkKafkaInDiffNamespaceThanCO(SECOND_CLUSTER_NAME, SECOND_NAMESPACE);
+        throw new RuntimeException();
     }
 
     /**
@@ -90,6 +92,7 @@ class AllNamespaceST extends AbstractNamespaceST {
     void testDeployMirrorMakerAcrossMultipleNamespace(ExtensionContext extensionContext) {
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches all namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(extensionContext, SECOND_CLUSTER_NAME);
+        throw new RuntimeException();
     }
 
     @IsolatedTest
@@ -112,6 +115,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         deployKafkaConnectorWithSink(extensionContext, kafkaConnectName, SECOND_NAMESPACE, TOPIC_NAME, KafkaConnect.RESOURCE_KIND, SECOND_CLUSTER_NAME);
 
         cluster.setNamespace(previousNamespace);
+        throw new RuntimeException();
     }
 
     @IsolatedTest
@@ -121,6 +125,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(MAIN_NAMESPACE_CLUSTER_NAME, USER_NAME).build());
 
         cluster.setNamespace(previousNamespace);
+        throw new RuntimeException();
     }
 
     @IsolatedTest
@@ -173,6 +178,7 @@ class AllNamespaceST extends AbstractNamespaceST {
         assertThat(received, is(MESSAGE_COUNT));
 
         cluster.setNamespace(startingNamespace);
+        throw new RuntimeException();
     }
 
     void copySecret(Secret sourceSecret, String targetNamespace, String targetName) {

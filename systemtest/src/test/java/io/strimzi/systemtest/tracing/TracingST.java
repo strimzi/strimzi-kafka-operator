@@ -63,6 +63,7 @@ import static io.strimzi.systemtest.Constants.TRACING;
 import static io.strimzi.systemtest.bridge.HttpBridgeAbstractST.bridgePort;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
@@ -101,6 +102,7 @@ public class TracingST extends AbstractST {
 
     @ParallelNamespaceTest
     void testProducerService(ExtensionContext extensionContext) {
+        fail();
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE
         assumeFalse(Environment.isNamespaceRbacScope());
 
@@ -127,6 +129,7 @@ public class TracingST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testConnectService(ExtensionContext extensionContext) {
+        fail();
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
         assumeFalse(Environment.isNamespaceRbacScope());
 
@@ -197,6 +200,7 @@ public class TracingST extends AbstractST {
 
     @ParallelNamespaceTest
     void testProducerWithStreamsService(ExtensionContext extensionContext) {
+        fail();
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
         assumeFalse(Environment.isNamespaceRbacScope());
         String targetTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
@@ -270,6 +274,7 @@ public class TracingST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     void testProducerConsumerStreamsService(ExtensionContext extensionContext) {
+        fail();
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
         assumeFalse(Environment.isNamespaceRbacScope());
 
@@ -320,6 +325,7 @@ public class TracingST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(MIRROR_MAKER2)
     void testProducerConsumerMirrorMaker2Service(ExtensionContext extensionContext) {
+        fail();
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
         assumeFalse(Environment.isNamespaceRbacScope());
 
@@ -424,6 +430,7 @@ public class TracingST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(MIRROR_MAKER)
     void testProducerConsumerMirrorMakerService(ExtensionContext extensionContext) {
+        fail();
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
         assumeFalse(Environment.isNamespaceRbacScope());
 
@@ -508,6 +515,7 @@ public class TracingST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerMirrorMakerConnectStreamsService(ExtensionContext extensionContext) {
+        fail();
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
         assumeFalse(Environment.isNamespaceRbacScope());
 
@@ -672,6 +680,7 @@ public class TracingST extends AbstractST {
     @Tag(BRIDGE)
     @ParallelNamespaceTest
     void testKafkaBridgeService(ExtensionContext extensionContext) {
+        fail();
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), 3, 1).build());
         // Deploy http bridge
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString(), KafkaResources.plainBootstrapAddress(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString()), 1)

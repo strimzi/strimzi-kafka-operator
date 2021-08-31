@@ -1,0 +1,177 @@
+apiVersion: v1
+items:
+- apiVersion: kafka.strimzi.io/v1beta2
+  kind: Kafka
+  metadata:
+    creationTimestamp: "2021-08-26T13:32:28Z"
+    generation: 1
+    managedFields:
+    - apiVersion: kafka.strimzi.io/v1beta2
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:spec:
+          .: {}
+          f:entityOperator:
+            .: {}
+            f:topicOperator:
+              .: {}
+              f:logging:
+                .: {}
+                f:loggers:
+                  .: {}
+                  f:rootLogger.level: {}
+                f:type: {}
+              f:watchedNamespace: {}
+            f:userOperator:
+              .: {}
+              f:logging:
+                .: {}
+                f:loggers:
+                  .: {}
+                  f:rootLogger.level: {}
+                f:type: {}
+          f:kafka:
+            .: {}
+            f:config:
+              .: {}
+              f:inter.broker.protocol.version: {}
+              f:log.message.format.version: {}
+              f:offsets.topic.replication.factor: {}
+              f:transaction.state.log.min.isr: {}
+              f:transaction.state.log.replication.factor: {}
+            f:listeners: {}
+            f:logging:
+              .: {}
+              f:loggers:
+                .: {}
+                f:kafka.root.logger.level: {}
+              f:type: {}
+            f:replicas: {}
+            f:storage:
+              .: {}
+              f:type: {}
+            f:version: {}
+          f:zookeeper:
+            .: {}
+            f:logging:
+              .: {}
+              f:loggers:
+                .: {}
+                f:zookeeper.root.logger: {}
+              f:type: {}
+            f:replicas: {}
+            f:storage:
+              .: {}
+              f:type: {}
+        f:status:
+          .: {}
+          f:clusterId: {}
+          f:conditions: {}
+          f:listeners: {}
+          f:observedGeneration: {}
+      manager: okhttp
+      operation: Update
+      time: "2021-08-26T13:34:57Z"
+    name: my-cluster
+    namespace: second-namespace-test
+    resourceVersion: "1882724"
+    uid: 4c54f47f-176d-411b-ab2b-1da3f5ec4086
+  spec:
+    entityOperator:
+      topicOperator:
+        logging:
+          loggers:
+            rootLogger.level: DEBUG
+          type: inline
+        watchedNamespace: co-namespace-test
+      userOperator:
+        logging:
+          loggers:
+            rootLogger.level: DEBUG
+          type: inline
+    kafka:
+      config:
+        inter.broker.protocol.version: "2.8"
+        log.message.format.version: "2.8"
+        offsets.topic.replication.factor: 3
+        transaction.state.log.min.isr: 2
+        transaction.state.log.replication.factor: 3
+      listeners:
+      - name: plain
+        port: 9092
+        tls: false
+        type: internal
+      - name: tls
+        port: 9093
+        tls: true
+        type: internal
+      logging:
+        loggers:
+          kafka.root.logger.level: DEBUG
+        type: inline
+      replicas: 3
+      storage:
+        type: ephemeral
+      version: 2.8.0
+    zookeeper:
+      logging:
+        loggers:
+          zookeeper.root.logger: DEBUG
+        type: inline
+      replicas: 3
+      storage:
+        type: ephemeral
+  status:
+    clusterId: 0IS5hMaVTVCKw61BQfUL4g
+    conditions:
+    - lastTransitionTime: "2021-08-26T13:35:08.180Z"
+      status: "True"
+      type: Ready
+    listeners:
+    - addresses:
+      - host: my-cluster-kafka-bootstrap.second-namespace-test.svc
+        port: 9092
+      bootstrapServers: my-cluster-kafka-bootstrap.second-namespace-test.svc:9092
+      type: plain
+    - addresses:
+      - host: my-cluster-kafka-bootstrap.second-namespace-test.svc
+        port: 9093
+      bootstrapServers: my-cluster-kafka-bootstrap.second-namespace-test.svc:9093
+      certificates:
+      - |
+        -----BEGIN CERTIFICATE-----
+        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
+        -----END CERTIFICATE-----
+      type: tls
+    observedGeneration: 1
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""

@@ -1,0 +1,128 @@
+Name:         my-cluster-zookeeper-1
+Namespace:    second-namespace-test
+Priority:     0
+Node:         jakub-ops-wgt74-worker-0-2sw22/192.168.2.20
+Start Time:   Thu, 26 Aug 2021 15:32:40 +0200
+Labels:       app.kubernetes.io/instance=my-cluster
+              app.kubernetes.io/managed-by=strimzi-cluster-operator
+              app.kubernetes.io/name=zookeeper
+              app.kubernetes.io/part-of=strimzi-my-cluster
+              controller-revision-hash=my-cluster-zookeeper-564c6d776d
+              statefulset.kubernetes.io/pod-name=my-cluster-zookeeper-1
+              strimzi.io/cluster=my-cluster
+              strimzi.io/kind=Kafka
+              strimzi.io/name=my-cluster-zookeeper
+Annotations:  k8s.v1.cni.cncf.io/network-status:
+                [{
+                    "name": "openshift-sdn",
+                    "interface": "eth0",
+                    "ips": [
+                        "10.128.2.81"
+                    ],
+                    "default": true,
+                    "dns": {}
+                }]
+              k8s.v1.cni.cncf.io/networks-status:
+                [{
+                    "name": "openshift-sdn",
+                    "interface": "eth0",
+                    "ips": [
+                        "10.128.2.81"
+                    ],
+                    "default": true,
+                    "dns": {}
+                }]
+              openshift.io/scc: restricted
+              strimzi.io/cluster-ca-cert-generation: 0
+              strimzi.io/generation: 0
+              strimzi.io/logging-hash: 300e75146e7c338a6367c3fe2c3598ae3a2d6d05
+Status:       Running
+IP:           10.128.2.81
+IPs:
+  IP:           10.128.2.81
+Controlled By:  StatefulSet/my-cluster-zookeeper
+Containers:
+  zookeeper:
+    Container ID:  cri-o://54da2c9bc45c4cf352214dc28eed8973a1bd23850e13ed883225a11b2bf4c267
+    Image:         quay.io/strimzi/kafka:latest-kafka-2.8.0
+    Image ID:      quay.io/strimzi/kafka@sha256:d98891b1e0a9a527b23ea5f9fff3a40c060fe135b2227856eafd867ed884587c
+    Ports:         2888/TCP, 3888/TCP, 2181/TCP
+    Host Ports:    0/TCP, 0/TCP, 0/TCP
+    Command:
+      /opt/kafka/zookeeper_run.sh
+    State:          Running
+      Started:      Thu, 26 Aug 2021 15:33:03 +0200
+    Last State:     Terminated
+      Reason:       Error
+      Exit Code:    1
+      Started:      Thu, 26 Aug 2021 15:32:45 +0200
+      Finished:     Thu, 26 Aug 2021 15:32:46 +0200
+    Ready:          True
+    Restart Count:  2
+    Liveness:       exec [/opt/kafka/zookeeper_healthcheck.sh] delay=15s timeout=5s period=10s #success=1 #failure=3
+    Readiness:      exec [/opt/kafka/zookeeper_healthcheck.sh] delay=15s timeout=5s period=10s #success=1 #failure=3
+    Environment:
+      ZOOKEEPER_METRICS_ENABLED:         false
+      ZOOKEEPER_SNAPSHOT_CHECK_ENABLED:  true
+      STRIMZI_KAFKA_GC_LOG_ENABLED:      false
+      KAFKA_HEAP_OPTS:                   -Xms128M
+      ZOOKEEPER_CONFIGURATION:           tickTime=2000
+                                         initLimit=5
+                                         syncLimit=2
+                                         autopurge.purgeInterval=1
+                                         
+    Mounts:
+      /opt/kafka/cluster-ca-certs/ from cluster-ca-certs (rw)
+      /opt/kafka/custom-config/ from zookeeper-metrics-and-logging (rw)
+      /opt/kafka/zookeeper-node-certs/ from zookeeper-nodes (rw)
+      /tmp from strimzi-tmp (rw)
+      /var/lib/zookeeper from data (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-wp6tj (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  data:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     
+    SizeLimit:  <unset>
+  strimzi-tmp:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     Memory
+    SizeLimit:  1Mi
+  zookeeper-metrics-and-logging:
+    Type:      ConfigMap (a volume populated by a ConfigMap)
+    Name:      my-cluster-zookeeper-config
+    Optional:  false
+  zookeeper-nodes:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  my-cluster-zookeeper-nodes
+    Optional:    false
+  cluster-ca-certs:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  my-cluster-cluster-ca-cert
+    Optional:    false
+  kube-api-access-wp6tj:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+    ConfigMapName:           openshift-service-ca.crt
+    ConfigMapOptional:       <nil>
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason          Age                    From               Message
+  ----     ------          ----                   ----               -------
+  Normal   Scheduled       8m5s                   default-scheduler  Successfully assigned second-namespace-test/my-cluster-zookeeper-1 to jakub-ops-wgt74-worker-0-2sw22
+  Normal   AddedInterface  8m15s                  multus             Add eth0 [10.128.2.81/23] from openshift-sdn
+  Warning  BackOff         8m8s (x3 over 8m11s)   kubelet            Back-off restarting failed container
+  Normal   Pulled          7m56s (x3 over 8m15s)  kubelet            Container image "quay.io/strimzi/kafka:latest-kafka-2.8.0" already present on machine
+  Normal   Created         7m55s (x3 over 8m15s)  kubelet            Created container zookeeper
+  Normal   Started         7m55s (x3 over 8m15s)  kubelet            Started container zookeeper

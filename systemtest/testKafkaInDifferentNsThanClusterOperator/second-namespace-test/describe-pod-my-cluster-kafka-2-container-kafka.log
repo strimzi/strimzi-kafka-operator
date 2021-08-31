@@ -1,0 +1,132 @@
+Name:         my-cluster-kafka-2
+Namespace:    second-namespace-test
+Priority:     0
+Node:         jakub-ops-wgt74-worker-0-57cdd/192.168.0.86
+Start Time:   Thu, 26 Aug 2021 15:33:38 +0200
+Labels:       app.kubernetes.io/instance=my-cluster
+              app.kubernetes.io/managed-by=strimzi-cluster-operator
+              app.kubernetes.io/name=kafka
+              app.kubernetes.io/part-of=strimzi-my-cluster
+              controller-revision-hash=my-cluster-kafka-647d8c747
+              statefulset.kubernetes.io/pod-name=my-cluster-kafka-2
+              strimzi.io/cluster=my-cluster
+              strimzi.io/kind=Kafka
+              strimzi.io/name=my-cluster-kafka
+Annotations:  k8s.v1.cni.cncf.io/network-status:
+                [{
+                    "name": "openshift-sdn",
+                    "interface": "eth0",
+                    "ips": [
+                        "10.129.3.196"
+                    ],
+                    "default": true,
+                    "dns": {}
+                }]
+              k8s.v1.cni.cncf.io/networks-status:
+                [{
+                    "name": "openshift-sdn",
+                    "interface": "eth0",
+                    "ips": [
+                        "10.129.3.196"
+                    ],
+                    "default": true,
+                    "dns": {}
+                }]
+              openshift.io/scc: restricted
+              strimzi.io/broker-configuration-hash: afef42fa2b8f0a614e0e5039ac8e4f2fc6ddfd2d746bc35b14fb71bd4fece6315c584caedfdf364d
+              strimzi.io/clients-ca-cert-generation: 0
+              strimzi.io/cluster-ca-cert-generation: 0
+              strimzi.io/generation: 0
+              strimzi.io/inter-broker-protocol-version: 2.8
+              strimzi.io/kafka-version: 2.8.0
+              strimzi.io/log-message-format-version: 2.8
+              strimzi.io/logging-appenders-hash: e893ac9f32f7958042d1c82477e3484b0f8ebad5
+              strimzi.io/storage: {"type":"ephemeral"}
+Status:       Running
+IP:           10.129.3.196
+IPs:
+  IP:           10.129.3.196
+Controlled By:  StatefulSet/my-cluster-kafka
+Containers:
+  kafka:
+    Container ID:  cri-o://798b1ef788a640056e8e0ce11bc3e380a1fdf6984174cc26f99b10b12f964163
+    Image:         quay.io/strimzi/kafka:latest-kafka-2.8.0
+    Image ID:      quay.io/strimzi/kafka@sha256:d98891b1e0a9a527b23ea5f9fff3a40c060fe135b2227856eafd867ed884587c
+    Ports:         9090/TCP, 9091/TCP, 9092/TCP, 9093/TCP
+    Host Ports:    0/TCP, 0/TCP, 0/TCP, 0/TCP
+    Command:
+      /opt/kafka/kafka_run.sh
+    State:          Running
+      Started:      Thu, 26 Aug 2021 15:33:41 +0200
+    Ready:          True
+    Restart Count:  0
+    Liveness:       exec [/opt/kafka/kafka_liveness.sh] delay=15s timeout=5s period=10s #success=1 #failure=3
+    Readiness:      exec [test -f /var/opt/kafka/kafka-ready] delay=15s timeout=5s period=10s #success=1 #failure=3
+    Environment:
+      KAFKA_METRICS_ENABLED:         false
+      STRIMZI_KAFKA_GC_LOG_ENABLED:  false
+      KAFKA_HEAP_OPTS:               -Xms128M
+    Mounts:
+      /opt/kafka/broker-certs from broker-certs (rw)
+      /opt/kafka/client-ca-certs from client-ca-cert (rw)
+      /opt/kafka/cluster-ca-certs from cluster-ca (rw)
+      /opt/kafka/custom-config/ from kafka-metrics-and-logging (rw)
+      /tmp from strimzi-tmp (rw)
+      /var/lib/kafka/data from data (rw)
+      /var/opt/kafka from ready-files (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ph9zd (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  data:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     
+    SizeLimit:  <unset>
+  strimzi-tmp:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     Memory
+    SizeLimit:  1Mi
+  cluster-ca:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  my-cluster-cluster-ca-cert
+    Optional:    false
+  broker-certs:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  my-cluster-kafka-brokers
+    Optional:    false
+  client-ca-cert:
+    Type:        Secret (a volume populated by a Secret)
+    SecretName:  my-cluster-clients-ca-cert
+    Optional:    false
+  kafka-metrics-and-logging:
+    Type:      ConfigMap (a volume populated by a ConfigMap)
+    Name:      my-cluster-kafka-config
+    Optional:  false
+  ready-files:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     Memory
+    SizeLimit:  1Ki
+  kube-api-access-ph9zd:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+    ConfigMapName:           openshift-service-ca.crt
+    ConfigMapOptional:       <nil>
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason          Age   From               Message
+  ----    ------          ----  ----               -------
+  Normal  Scheduled       117s  default-scheduler  Successfully assigned second-namespace-test/my-cluster-kafka-2 to jakub-ops-wgt74-worker-0-57cdd
+  Normal  AddedInterface  116s  multus             Add eth0 [10.129.3.196/23] from openshift-sdn
+  Normal  Pulled          116s  kubelet            Container image "quay.io/strimzi/kafka:latest-kafka-2.8.0" already present on machine
+  Normal  Created         115s  kubelet            Created container kafka
+  Normal  Started         115s  kubelet            Started container kafka

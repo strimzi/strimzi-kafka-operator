@@ -1,0 +1,114 @@
+Name:         my-cluster-mirror-maker-db46866bf-k62qv
+Namespace:    second-namespace-test
+Priority:     0
+Node:         jakub-ops-wgt74-worker-0-2sw22/192.168.2.20
+Start Time:   Thu, 26 Aug 2021 15:39:01 +0200
+Labels:       app.kubernetes.io/instance=my-cluster
+              app.kubernetes.io/managed-by=strimzi-cluster-operator
+              app.kubernetes.io/name=kafka-mirror-maker
+              app.kubernetes.io/part-of=strimzi-my-cluster
+              pod-template-hash=db46866bf
+              strimzi.io/cluster=my-cluster
+              strimzi.io/kind=KafkaMirrorMaker
+              strimzi.io/name=my-cluster-mirror-maker
+Annotations:  k8s.v1.cni.cncf.io/network-status:
+                [{
+                    "name": "openshift-sdn",
+                    "interface": "eth0",
+                    "ips": [
+                        "10.128.2.85"
+                    ],
+                    "default": true,
+                    "dns": {}
+                }]
+              k8s.v1.cni.cncf.io/networks-status:
+                [{
+                    "name": "openshift-sdn",
+                    "interface": "eth0",
+                    "ips": [
+                        "10.128.2.85"
+                    ],
+                    "default": true,
+                    "dns": {}
+                }]
+              openshift.io/scc: restricted
+              strimzi.io/logging:
+                # Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.
+                log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
+                log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout
+                log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n
+                mirrormaker.root.logger=DEBUG
+                log4j.rootLogger=${mirrormaker.root.logger}, CONSOLE
+Status:       Running
+IP:           10.128.2.85
+IPs:
+  IP:           10.128.2.85
+Controlled By:  ReplicaSet/my-cluster-mirror-maker-db46866bf
+Containers:
+  my-cluster-mirror-maker:
+    Container ID:  cri-o://44e2a275027dedfe28f5057f1a3ab6877e7b4f6792e7ea0d1570f61574f62349
+    Image:         quay.io/strimzi/kafka:latest-kafka-2.8.0
+    Image ID:      quay.io/strimzi/kafka@sha256:d98891b1e0a9a527b23ea5f9fff3a40c060fe135b2227856eafd867ed884587c
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      /opt/kafka/kafka_mirror_maker_run.sh
+    State:          Running
+      Started:      Thu, 26 Aug 2021 15:39:04 +0200
+    Ready:          True
+    Restart Count:  0
+    Liveness:       exec [/opt/kafka/kafka_mirror_maker_liveness.sh] delay=60s timeout=5s period=10s #success=1 #failure=3
+    Readiness:      exec [test -f /tmp/mirror-maker-ready] delay=60s timeout=5s period=10s #success=1 #failure=3
+    Environment:
+      KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER:      auto.offset.reset=earliest
+                                                     
+      KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER:      acks=all
+                                                     
+      KAFKA_MIRRORMAKER_METRICS_ENABLED:             false
+      KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_CONSUMER:  my-cluster-kafka-bootstrap:9092
+      KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_PRODUCER:  my-cluster-target-kafka-bootstrap:9092
+      KAFKA_MIRRORMAKER_INCLUDE:                     .*
+      KAFKA_MIRRORMAKER_GROUPID_CONSUMER:            my-group
+      STRIMZI_KAFKA_GC_LOG_ENABLED:                  false
+      KAFKA_HEAP_OPTS:                               -Xms128M
+      STRIMZI_LIVENESS_PERIOD:                       10
+      STRIMZI_READINESS_PERIOD:                      10
+    Mounts:
+      /opt/kafka/custom-config/ from kafka-metrics-and-logging (rw)
+      /tmp from strimzi-tmp (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-jrg85 (ro)
+Conditions:
+  Type              Status
+  Initialized       True 
+  Ready             True 
+  ContainersReady   True 
+  PodScheduled      True 
+Volumes:
+  strimzi-tmp:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     Memory
+    SizeLimit:  1Mi
+  kafka-metrics-and-logging:
+    Type:      ConfigMap (a volume populated by a ConfigMap)
+    Name:      my-cluster-mirror-maker-config
+    Optional:  false
+  kube-api-access-jrg85:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    ConfigMapOptional:       <nil>
+    DownwardAPI:             true
+    ConfigMapName:           openshift-service-ca.crt
+    ConfigMapOptional:       <nil>
+QoS Class:                   BestEffort
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason          Age   From               Message
+  ----    ------          ----  ----               -------
+  Normal  Scheduled       95s   default-scheduler  Successfully assigned second-namespace-test/my-cluster-mirror-maker-db46866bf-k62qv to jakub-ops-wgt74-worker-0-2sw22
+  Normal  AddedInterface  106s  multus             Add eth0 [10.128.2.85/23] from openshift-sdn
+  Normal  Pulled          105s  kubelet            Container image "quay.io/strimzi/kafka:latest-kafka-2.8.0" already present on machine
+  Normal  Created         105s  kubelet            Created container my-cluster-mirror-maker
+  Normal  Started         105s  kubelet            Started container my-cluster-mirror-maker

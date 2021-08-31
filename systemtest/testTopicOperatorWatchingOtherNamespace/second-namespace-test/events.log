@@ -1,0 +1,57 @@
+LAST SEEN   TYPE      REASON              OBJECT                                             MESSAGE
+109s        Normal    Scheduled           pod/my-cluster-entity-operator-74f8968d64-nm458    Successfully assigned second-namespace-test/my-cluster-entity-operator-74f8968d64-nm458 to jakub-ops-wgt74-worker-0-58m4b
+108s        Normal    AddedInterface      pod/my-cluster-entity-operator-74f8968d64-nm458    Add eth0 [10.131.0.116/23] from openshift-sdn
+107s        Normal    Pulled              pod/my-cluster-entity-operator-74f8968d64-nm458    Container image "quay.io/strimzi/operator:latest" already present on machine
+107s        Normal    Created             pod/my-cluster-entity-operator-74f8968d64-nm458    Created container topic-operator
+107s        Normal    Started             pod/my-cluster-entity-operator-74f8968d64-nm458    Started container topic-operator
+107s        Normal    Pulled              pod/my-cluster-entity-operator-74f8968d64-nm458    Container image "quay.io/strimzi/operator:latest" already present on machine
+106s        Normal    Created             pod/my-cluster-entity-operator-74f8968d64-nm458    Created container user-operator
+106s        Normal    Started             pod/my-cluster-entity-operator-74f8968d64-nm458    Started container user-operator
+106s        Normal    Pulled              pod/my-cluster-entity-operator-74f8968d64-nm458    Container image "quay.io/strimzi/kafka:latest-kafka-2.8.0" already present on machine
+105s        Normal    Created             pod/my-cluster-entity-operator-74f8968d64-nm458    Created container tls-sidecar
+105s        Normal    Started             pod/my-cluster-entity-operator-74f8968d64-nm458    Started container tls-sidecar
+90s         Warning   Unhealthy           pod/my-cluster-entity-operator-74f8968d64-nm458    Startup probe failed: Get "http://10.131.0.116:8080/healthy": dial tcp 10.131.0.116:8080: connect: connection refused
+2m2s        Normal    SuccessfulCreate    replicaset/my-cluster-entity-operator-74f8968d64   Created pod: my-cluster-entity-operator-74f8968d64-nm458
+2m2s        Normal    ScalingReplicaSet   deployment/my-cluster-entity-operator              Scaled up replica set my-cluster-entity-operator-74f8968d64 to 1
+2m38s       Normal    Scheduled           pod/my-cluster-kafka-0                             Successfully assigned second-namespace-test/my-cluster-kafka-0 to jakub-ops-wgt74-worker-0-58m4b
+2m36s       Normal    AddedInterface      pod/my-cluster-kafka-0                             Add eth0 [10.131.0.115/23] from openshift-sdn
+2m35s       Normal    Pulled              pod/my-cluster-kafka-0                             Container image "quay.io/strimzi/kafka:latest-kafka-2.8.0" already present on machine
+2m35s       Normal    Created             pod/my-cluster-kafka-0                             Created container kafka
+2m35s       Normal    Started             pod/my-cluster-kafka-0                             Started container kafka
+2m49s       Normal    AddedInterface      pod/my-cluster-kafka-1                             Add eth0 [10.128.2.82/23] from openshift-sdn
+2m28s       Normal    Pulled              pod/my-cluster-kafka-1                             Container image "quay.io/strimzi/kafka:latest-kafka-2.8.0" already present on machine
+2m27s       Normal    Created             pod/my-cluster-kafka-1                             Created container kafka
+2m27s       Normal    Started             pod/my-cluster-kafka-1                             Started container kafka
+2m41s       Warning   BackOff             pod/my-cluster-kafka-1                             Back-off restarting failed container
+2m38s       Normal    Scheduled           pod/my-cluster-kafka-1                             Successfully assigned second-namespace-test/my-cluster-kafka-1 to jakub-ops-wgt74-worker-0-2sw22
+2m38s       Normal    Scheduled           pod/my-cluster-kafka-2                             Successfully assigned second-namespace-test/my-cluster-kafka-2 to jakub-ops-wgt74-worker-0-57cdd
+2m37s       Normal    AddedInterface      pod/my-cluster-kafka-2                             Add eth0 [10.129.3.196/23] from openshift-sdn
+2m37s       Normal    Pulled              pod/my-cluster-kafka-2                             Container image "quay.io/strimzi/kafka:latest-kafka-2.8.0" already present on machine
+2m36s       Normal    Created             pod/my-cluster-kafka-2                             Created container kafka
+2m36s       Normal    Started             pod/my-cluster-kafka-2                             Started container kafka
+2m50s       Normal    NoPods              poddisruptionbudget/my-cluster-kafka               No matching pods found
+2m50s       Normal    SuccessfulCreate    statefulset/my-cluster-kafka                       create Pod my-cluster-kafka-0 in StatefulSet my-cluster-kafka successful
+2m50s       Normal    SuccessfulCreate    statefulset/my-cluster-kafka                       create Pod my-cluster-kafka-1 in StatefulSet my-cluster-kafka successful
+2m50s       Normal    SuccessfulCreate    statefulset/my-cluster-kafka                       create Pod my-cluster-kafka-2 in StatefulSet my-cluster-kafka successful
+2m50s       Warning   FailedCreate        statefulset/my-cluster-kafka                       create Pod my-cluster-kafka-2 in StatefulSet my-cluster-kafka failed error: The POST operation against Pod could not be completed at this time, please try again.
+3m24s       Normal    Scheduled           pod/my-cluster-zookeeper-0                         Successfully assigned second-namespace-test/my-cluster-zookeeper-0 to jakub-ops-wgt74-worker-0-58m4b
+3m22s       Normal    AddedInterface      pod/my-cluster-zookeeper-0                         Add eth0 [10.131.0.113/23] from openshift-sdn
+3m22s       Normal    Pulled              pod/my-cluster-zookeeper-0                         Container image "quay.io/strimzi/kafka:latest-kafka-2.8.0" already present on machine
+3m21s       Normal    Created             pod/my-cluster-zookeeper-0                         Created container zookeeper
+3m21s       Normal    Started             pod/my-cluster-zookeeper-0                         Started container zookeeper
+3m34s       Normal    AddedInterface      pod/my-cluster-zookeeper-1                         Add eth0 [10.128.2.81/23] from openshift-sdn
+3m15s       Normal    Pulled              pod/my-cluster-zookeeper-1                         Container image "quay.io/strimzi/kafka:latest-kafka-2.8.0" already present on machine
+3m14s       Normal    Created             pod/my-cluster-zookeeper-1                         Created container zookeeper
+3m14s       Normal    Started             pod/my-cluster-zookeeper-1                         Started container zookeeper
+3m27s       Warning   BackOff             pod/my-cluster-zookeeper-1                         Back-off restarting failed container
+3m24s       Normal    Scheduled           pod/my-cluster-zookeeper-1                         Successfully assigned second-namespace-test/my-cluster-zookeeper-1 to jakub-ops-wgt74-worker-0-2sw22
+3m24s       Normal    Scheduled           pod/my-cluster-zookeeper-2                         Successfully assigned second-namespace-test/my-cluster-zookeeper-2 to jakub-ops-wgt74-worker-0-57cdd
+3m23s       Normal    AddedInterface      pod/my-cluster-zookeeper-2                         Add eth0 [10.129.3.195/23] from openshift-sdn
+3m22s       Normal    Pulled              pod/my-cluster-zookeeper-2                         Container image "quay.io/strimzi/kafka:latest-kafka-2.8.0" already present on machine
+3m22s       Normal    Created             pod/my-cluster-zookeeper-2                         Created container zookeeper
+3m22s       Normal    Started             pod/my-cluster-zookeeper-2                         Started container zookeeper
+3m36s       Normal    NoPods              poddisruptionbudget/my-cluster-zookeeper           No matching pods found
+3m36s       Normal    SuccessfulCreate    statefulset/my-cluster-zookeeper                   create Pod my-cluster-zookeeper-0 in StatefulSet my-cluster-zookeeper successful
+3m36s       Normal    SuccessfulCreate    statefulset/my-cluster-zookeeper                   create Pod my-cluster-zookeeper-1 in StatefulSet my-cluster-zookeeper successful
+3m36s       Normal    SuccessfulCreate    statefulset/my-cluster-zookeeper                   create Pod my-cluster-zookeeper-2 in StatefulSet my-cluster-zookeeper successful
+4m49s       Normal    CreatedSCCRanges    namespace/second-namespace-test                    created SCC ranges

@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.logs;
 
 import io.strimzi.systemtest.Environment;
+import io.strimzi.test.logs.CollectorElement;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -24,7 +25,9 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         if (!(throwable instanceof TestAbortedException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
             final String testMethod = extensionContext.getRequiredTestMethod().getName();
-            collectLogs(testClass, testMethod);
+            CollectorElement collectorElement = new CollectorElement(testClass, testMethod);
+
+            collectLogs(collectorElement);
         }
         throw throwable;
     }
@@ -33,7 +36,9 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     public void handleBeforeAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         if (!(throwable instanceof TestAbortedException)) {
             String testClass = extensionContext.getRequiredTestClass().getName();
-            collectLogs(testClass, testClass);
+            CollectorElement collectorElement = new CollectorElement(testClass);
+
+            collectLogs(collectorElement);
         }
         throw throwable;
     }
@@ -43,7 +48,10 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         if (!(throwable instanceof TestAbortedException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
             final String testMethod = extensionContext.getRequiredTestMethod().getName();
-            collectLogs(testClass, testMethod);
+
+            CollectorElement collectorElement = new CollectorElement(testClass, testMethod);
+
+            collectLogs(collectorElement);
         }
         throw throwable;
     }
@@ -52,23 +60,29 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     public void handleAfterEachMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         final String testClass = extensionContext.getRequiredTestClass().getName();
         final String testMethod = extensionContext.getRequiredTestMethod().getName();
-        collectLogs(testClass, testMethod);
+
+        CollectorElement collectorElement = new CollectorElement(testClass, testMethod);
+
+        collectLogs(collectorElement);
         throw throwable;
     }
 
     @Override
     public void handleAfterAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         final String testClass = extensionContext.getRequiredTestClass().getName();
-        collectLogs(testClass, "");
+
+        CollectorElement collectorElement = new CollectorElement(testClass);
+
+        collectLogs(collectorElement);
         throw throwable;
     }
 
-    public synchronized static void collectLogs(String testClass, String testMethod) throws IOException {
+    public synchronized static void collectLogs(CollectorElement collectorElement) throws IOException {
         // Stop test execution time counter in case of failures
-        TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION, testClass, testMethod);
+        TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION, collectorElement.getTestClassName(), collectorElement.getTestMethodName());
 
-        testMethod = testMethod.isEmpty() ? "class-context-" + new Random().nextInt(Integer.MAX_VALUE) : testMethod;
-        final LogCollector logCollector = new LogCollector(testClass, testMethod, kubeClient(), Environment.TEST_LOG_DIR);
+        collectorElement.setTestMethodName(collectorElement.getTestMethodName().isEmpty() ? "class-context-" + new Random().nextInt(Integer.MAX_VALUE) : collectorElement.getTestMethodName());
+        final LogCollector logCollector = new LogCollector(collectorElement, kubeClient(), Environment.TEST_LOG_DIR);
         // collecting logs for all resources inside Kubernetes cluster
         logCollector.collect();
     }

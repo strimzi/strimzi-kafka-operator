@@ -1,0 +1,160 @@
+apiVersion: v1
+items:
+- apiVersion: kafka.strimzi.io/v1beta2
+  kind: KafkaTopic
+  metadata:
+    creationTimestamp: "2021-08-26T13:34:39Z"
+    generation: 1
+    labels:
+      strimzi.io/cluster: my-cluster
+    managedFields:
+    - apiVersion: kafka.strimzi.io/v1beta2
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:labels:
+            .: {}
+            f:strimzi.io/cluster: {}
+        f:spec:
+          .: {}
+          f:config:
+            .: {}
+            f:cleanup.policy: {}
+            f:compression.type: {}
+            f:segment.bytes: {}
+          f:partitions: {}
+          f:replicas: {}
+          f:topicName: {}
+        f:status:
+          .: {}
+          f:conditions: {}
+          f:observedGeneration: {}
+          f:topicName: {}
+      manager: okhttp
+      operation: Update
+      time: "2021-08-26T13:34:40Z"
+    name: consumer-offsets---84e7a678d08f4bd226872e5cdd4eb527fadc1c6a
+    namespace: co-namespace-test
+    resourceVersion: "1882608"
+    uid: 52a2da7f-f4c3-4b3b-a10e-9f7bd869b8de
+  spec:
+    config:
+      cleanup.policy: compact
+      compression.type: producer
+      segment.bytes: "104857600"
+    partitions: 50
+    replicas: 3
+    topicName: __consumer_offsets
+  status:
+    conditions:
+    - lastTransitionTime: "2021-08-26T13:34:51.931098Z"
+      status: "True"
+      type: Ready
+    observedGeneration: 1
+    topicName: __consumer_offsets
+- apiVersion: kafka.strimzi.io/v1beta2
+  kind: KafkaTopic
+  metadata:
+    creationTimestamp: "2021-08-26T13:34:39Z"
+    generation: 1
+    labels:
+      strimzi.io/cluster: my-cluster
+    managedFields:
+    - apiVersion: kafka.strimzi.io/v1beta2
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:labels:
+            .: {}
+            f:strimzi.io/cluster: {}
+        f:spec:
+          .: {}
+          f:config:
+            .: {}
+            f:min.insync.replicas: {}
+          f:partitions: {}
+          f:replicas: {}
+          f:topicName: {}
+        f:status:
+          .: {}
+          f:conditions: {}
+          f:observedGeneration: {}
+          f:topicName: {}
+      manager: okhttp
+      operation: Update
+      time: "2021-08-26T13:34:40Z"
+    name: strimzi-store-topic---effb8e3e057afce1ecf67c3f5d8e4e3ff177fc55
+    namespace: co-namespace-test
+    resourceVersion: "1882607"
+    uid: 4794e0b5-bc55-4750-8954-e9170a3518d8
+  spec:
+    config:
+      min.insync.replicas: "2"
+    partitions: 1
+    replicas: 3
+    topicName: __strimzi_store_topic
+  status:
+    conditions:
+    - lastTransitionTime: "2021-08-26T13:34:51.898135Z"
+      status: "True"
+      type: Ready
+    observedGeneration: 1
+    topicName: __strimzi_store_topic
+- apiVersion: kafka.strimzi.io/v1beta2
+  kind: KafkaTopic
+  metadata:
+    creationTimestamp: "2021-08-26T13:34:39Z"
+    generation: 1
+    labels:
+      strimzi.io/cluster: my-cluster
+    managedFields:
+    - apiVersion: kafka.strimzi.io/v1beta2
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:labels:
+            .: {}
+            f:strimzi.io/cluster: {}
+        f:spec:
+          .: {}
+          f:config:
+            .: {}
+            f:cleanup.policy: {}
+            f:message.timestamp.type: {}
+            f:min.compaction.lag.ms: {}
+            f:segment.bytes: {}
+          f:partitions: {}
+          f:replicas: {}
+          f:topicName: {}
+        f:status:
+          .: {}
+          f:conditions: {}
+          f:observedGeneration: {}
+          f:topicName: {}
+      manager: okhttp
+      operation: Update
+      time: "2021-08-26T13:34:40Z"
+    name: strimzi-topic-operator-kstreams-topic-store-changelog---b75e702040b99be8a9263134de3507fc0cc4017b
+    namespace: co-namespace-test
+    resourceVersion: "1882605"
+    uid: 571cbd05-2f25-4bc1-bbd1-777eea0be17b
+  spec:
+    config:
+      cleanup.policy: compact
+      message.timestamp.type: CreateTime
+      min.compaction.lag.ms: "0"
+      segment.bytes: "67108864"
+    partitions: 1
+    replicas: 1
+    topicName: __strimzi-topic-operator-kstreams-topic-store-changelog
+  status:
+    conditions:
+    - lastTransitionTime: "2021-08-26T13:34:51.829538Z"
+      status: "True"
+      type: Ready
+    observedGeneration: 1
+    topicName: __strimzi-topic-operator-kstreams-topic-store-changelog
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""

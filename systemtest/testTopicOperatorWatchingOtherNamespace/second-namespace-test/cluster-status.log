@@ -1,0 +1,740 @@
+Name:               jakub-ops-wgt74-master-0
+Roles:              master
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/instance-type=m1.xlarge
+                    beta.kubernetes.io/os=linux
+                    failure-domain.beta.kubernetes.io/region=regionOne
+                    failure-domain.beta.kubernetes.io/zone=nova
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=jakub-ops-wgt74-master-0
+                    kubernetes.io/os=linux
+                    node-role.kubernetes.io/master=
+                    node.kubernetes.io/instance-type=m1.xlarge
+                    node.openshift.io/os_id=rhcos
+                    topology.cinder.csi.openstack.org/zone=nova
+                    topology.kubernetes.io/region=regionOne
+                    topology.kubernetes.io/zone=nova
+Annotations:        csi.volume.kubernetes.io/nodeid:
+                      {"cinder.csi.openstack.org":"f00144a6-f928-4f34-9b01-d7ceedd027e0","manila.csi.openstack.org":"jakub-ops-wgt74-master-0"}
+                    machine.openshift.io/machine: openshift-machine-api/jakub-ops-wgt74-master-0
+                    machineconfiguration.openshift.io/controlPlaneTopology: HighlyAvailable
+                    machineconfiguration.openshift.io/currentConfig: rendered-master-0d820883a44fe0570bc1f0ac4173d6c2
+                    machineconfiguration.openshift.io/desiredConfig: rendered-master-0d820883a44fe0570bc1f0ac4173d6c2
+                    machineconfiguration.openshift.io/reason: 
+                    machineconfiguration.openshift.io/state: Done
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Mon, 23 Aug 2021 08:33:18 +0200
+Taints:             node-role.kubernetes.io/master:NoSchedule
+Unschedulable:      false
+Lease:
+  HolderIdentity:  jakub-ops-wgt74-master-0
+  AcquireTime:     <unset>
+  RenewTime:       Thu, 26 Aug 2021 15:36:17 +0200
+Conditions:
+  Type             Status  LastHeartbeatTime                 LastTransitionTime                Reason                       Message
+  ----             ------  -----------------                 ------------------                ------                       -------
+  MemoryPressure   False   Thu, 26 Aug 2021 15:35:47 +0200   Mon, 23 Aug 2021 08:33:20 +0200   KubeletHasSufficientMemory   kubelet has sufficient memory available
+  DiskPressure     False   Thu, 26 Aug 2021 15:35:47 +0200   Mon, 23 Aug 2021 08:33:20 +0200   KubeletHasNoDiskPressure     kubelet has no disk pressure
+  PIDPressure      False   Thu, 26 Aug 2021 15:35:47 +0200   Mon, 23 Aug 2021 08:33:20 +0200   KubeletHasSufficientPID      kubelet has sufficient PID available
+  Ready            True    Thu, 26 Aug 2021 15:35:47 +0200   Mon, 23 Aug 2021 08:34:30 +0200   KubeletReady                 kubelet is posting ready status
+Addresses:
+  InternalIP:  192.168.2.34
+  Hostname:    jakub-ops-wgt74-master-0
+Capacity:
+  attachable-volumes-cinder:  256
+  cpu:                        8
+  ephemeral-storage:          83350508Ki
+  hugepages-1Gi:              0
+  hugepages-2Mi:              0
+  memory:                     16408480Ki
+  pods:                       250
+Allocatable:
+  attachable-volumes-cinder:  256
+  cpu:                        7500m
+  ephemeral-storage:          76815828046
+  hugepages-1Gi:              0
+  hugepages-2Mi:              0
+  memory:                     15257504Ki
+  pods:                       250
+System Info:
+  Machine ID:                                       f00144a6f9284f349b01d7ceedd027e0
+  System UUID:                                      f00144a6-f928-4f34-9b01-d7ceedd027e0
+  Boot ID:                                          9a20db49-a468-4b3e-ad8a-f6892955a603
+  Kernel Version:                                   4.18.0-305.10.2.el8_4.x86_64
+  OS Image:                                         Red Hat Enterprise Linux CoreOS 48.84.202108062347-0 (Ootpa)
+  Operating System:                                 linux
+  Architecture:                                     amd64
+  Container Runtime Version:                        cri-o://1.21.2-9.rhaos4.8.git3b87110.el8
+  Kubelet Version:                                  v1.21.1+9807387
+  Kube-Proxy Version:                               v1.21.1+9807387
+ProviderID:                                         openstack:///f00144a6-f928-4f34-9b01-d7ceedd027e0
+Non-terminated Pods:                                (52 in total)
+  Namespace                                         Name                                                       CPU Requests  CPU Limits  Memory Requests  Memory Limits  AGE
+  ---------                                         ----                                                       ------------  ----------  ---------------  -------------  ---
+  openshift-apiserver                               apiserver-795ccd8bb-kljd8                                  110m (1%)     0 (0%)      250Mi (1%)       0 (0%)         3d6h
+  openshift-authentication                          oauth-openshift-76457c7d4f-gbbsf                           10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         2d22h
+  openshift-cluster-csi-drivers                     manila-csi-driver-operator-86586b7f59-fbls4                10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-cluster-csi-drivers                     openstack-cinder-csi-driver-controller-6df97d965f-gmgmm    90m (1%)      0 (0%)      330Mi (2%)       0 (0%)         3d6h
+  openshift-cluster-csi-drivers                     openstack-cinder-csi-driver-node-mpp2j                     20m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d6h
+  openshift-cluster-csi-drivers                     openstack-cinder-csi-driver-operator-6dfc49fdc6-pgxtp      10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-cluster-node-tuning-operator            tuned-67lr8                                                10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d7h
+  openshift-cluster-samples-operator                cluster-samples-operator-7596788875-k6ttd                  20m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d6h
+  openshift-cluster-storage-operator                csi-snapshot-controller-b7b756b4-qj6xg                     10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-cluster-storage-operator                csi-snapshot-webhook-677ff54c6b-5wmkq                      10m (0%)      0 (0%)      20Mi (0%)        0 (0%)         3d6h
+  openshift-config-operator                         openshift-config-operator-bbcd46bd5-q4wkm                  10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-console                                 console-8ddd68d56-dbrq4                                    10m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d6h
+  openshift-controller-manager-operator             openshift-controller-manager-operator-7459cc4fcf-9fd2v     10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-controller-manager                      controller-manager-rftgz                                   100m (1%)     0 (0%)      100Mi (0%)       0 (0%)         2d7h
+  openshift-dns                                     dns-default-6sf2m                                          60m (0%)      0 (0%)      110Mi (0%)       0 (0%)         3d7h
+  openshift-dns                                     node-resolver-lrw86                                        5m (0%)       0 (0%)      21Mi (0%)        0 (0%)         3d7h
+  openshift-etcd                                    etcd-jakub-ops-wgt74-master-0                              400m (5%)     0 (0%)      930Mi (6%)       0 (0%)         3d6h
+  openshift-etcd                                    etcd-quorum-guard-5f698b4cf4-ktk97                         10m (0%)      0 (0%)      5Mi (0%)         0 (0%)         3d6h
+  openshift-image-registry                          cluster-image-registry-operator-6c8d99f4c5-8ngg8           10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-image-registry                          node-ca-spxlv                                              10m (0%)      0 (0%)      10Mi (0%)        0 (0%)         3d6h
+  openshift-insights                                insights-operator-65686884b6-wk7sx                         10m (0%)      0 (0%)      30Mi (0%)        0 (0%)         3d6h
+  openshift-kube-apiserver                          kube-apiserver-jakub-ops-wgt74-master-0                    290m (3%)     0 (0%)      1224Mi (8%)      0 (0%)         2d7h
+  openshift-kube-controller-manager                 kube-controller-manager-jakub-ops-wgt74-master-0           80m (1%)      0 (0%)      500Mi (3%)       0 (0%)         3d6h
+  openshift-kube-scheduler-operator                 openshift-kube-scheduler-operator-d7d5dd5cd-tcgfr          10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-kube-scheduler                          openshift-kube-scheduler-jakub-ops-wgt74-master-0          25m (0%)      0 (0%)      150Mi (1%)       0 (0%)         3d6h
+  openshift-kube-storage-version-migrator-operator  kube-storage-version-migrator-operator-db858fc6f-7lp57     10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-machine-api                             machine-api-controllers-749594cb88-875x4                   70m (0%)      0 (0%)      140Mi (0%)       0 (0%)         3d6h
+  openshift-machine-api                             machine-api-operator-74cbf9bcf6-btbc5                      20m (0%)      0 (0%)      70Mi (0%)        0 (0%)         3d6h
+  openshift-machine-config-operator                 machine-config-controller-689797cdd6-jgl8v                 20m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-machine-config-operator                 machine-config-daemon-fr4q6                                40m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d7h
+  openshift-machine-config-operator                 machine-config-server-r6gj2                                20m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d7h
+  openshift-manila-csi-driver                       csi-nodeplugin-nfsplugin-dt8gp                             10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d7h
+  openshift-manila-csi-driver                       openstack-manila-csi-controllerplugin-66f9c58948-p9h9m     60m (0%)      0 (0%)      240Mi (1%)       0 (0%)         3d6h
+  openshift-manila-csi-driver                       openstack-manila-csi-nodeplugin-j2qp6                      15m (0%)      0 (0%)      70Mi (0%)        0 (0%)         3d7h
+  openshift-marketplace                             marketplace-operator-6955c89c7-f22hk                       10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-monitoring                              node-exporter-drhfk                                        9m (0%)       0 (0%)      47Mi (0%)        0 (0%)         3d7h
+  openshift-monitoring                              prometheus-operator-f769bbcd4-tk224                        6m (0%)       0 (0%)      165Mi (1%)       0 (0%)         3d6h
+  openshift-multus                                  multus-additional-cni-plugins-2zhvw                        10m (0%)      0 (0%)      10Mi (0%)        0 (0%)         3d7h
+  openshift-multus                                  multus-admission-controller-v4mn9                          20m (0%)      0 (0%)      70Mi (0%)        0 (0%)         3d7h
+  openshift-multus                                  multus-n8595                                               10m (0%)      0 (0%)      65Mi (0%)        0 (0%)         3d7h
+  openshift-multus                                  network-metrics-daemon-l2d87                               20m (0%)      0 (0%)      120Mi (0%)       0 (0%)         3d7h
+  openshift-network-diagnostics                     network-check-target-5fqbk                                 10m (0%)      0 (0%)      15Mi (0%)        0 (0%)         3d7h
+  openshift-oauth-apiserver                         apiserver-6d49f8d6f9-rzwzk                                 150m (2%)     0 (0%)      200Mi (1%)       0 (0%)         3d6h
+  openshift-openstack-infra                         coredns-jakub-ops-wgt74-master-0                           200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d7h
+  openshift-openstack-infra                         haproxy-jakub-ops-wgt74-master-0                           200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d7h
+  openshift-openstack-infra                         keepalived-jakub-ops-wgt74-master-0                        200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d7h
+  openshift-operator-lifecycle-manager              catalog-operator-785f4fb7ff-n5ljm                          10m (0%)      0 (0%)      80Mi (0%)        0 (0%)         3d6h
+  openshift-operator-lifecycle-manager              olm-operator-5ddc6d8588-nwwhb                              10m (0%)      0 (0%)      160Mi (1%)       0 (0%)         3d6h
+  openshift-operator-lifecycle-manager              packageserver-79df465f4c-fngrc                             10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-sdn                                     sdn-controller-l2ssd                                       10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d7h
+  openshift-sdn                                     sdn-x8hhv                                                  110m (1%)     0 (0%)      220Mi (1%)       0 (0%)         3d7h
+  openshift-service-ca                              service-ca-7977b9d5d7-hkgsv                                10m (0%)      0 (0%)      120Mi (0%)       0 (0%)         3d6h
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource                   Requests      Limits
+  --------                   --------      ------
+  cpu                        2610m (34%)   0 (0%)
+  memory                     7872Mi (52%)  0 (0%)
+  ephemeral-storage          0 (0%)        0 (0%)
+  hugepages-1Gi              0 (0%)        0 (0%)
+  hugepages-2Mi              0 (0%)        0 (0%)
+  attachable-volumes-cinder  0             0
+Events:                      <none>
+
+
+Name:               jakub-ops-wgt74-master-1
+Roles:              master
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/instance-type=m1.xlarge
+                    beta.kubernetes.io/os=linux
+                    failure-domain.beta.kubernetes.io/region=regionOne
+                    failure-domain.beta.kubernetes.io/zone=nova
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=jakub-ops-wgt74-master-1
+                    kubernetes.io/os=linux
+                    node-role.kubernetes.io/master=
+                    node.kubernetes.io/instance-type=m1.xlarge
+                    node.openshift.io/os_id=rhcos
+                    topology.cinder.csi.openstack.org/zone=nova
+                    topology.kubernetes.io/region=regionOne
+                    topology.kubernetes.io/zone=nova
+Annotations:        csi.volume.kubernetes.io/nodeid:
+                      {"cinder.csi.openstack.org":"cadcff99-0b3f-4e81-8e9d-d0c65030ce64","manila.csi.openstack.org":"jakub-ops-wgt74-master-1"}
+                    machine.openshift.io/machine: openshift-machine-api/jakub-ops-wgt74-master-1
+                    machineconfiguration.openshift.io/controlPlaneTopology: HighlyAvailable
+                    machineconfiguration.openshift.io/currentConfig: rendered-master-0d820883a44fe0570bc1f0ac4173d6c2
+                    machineconfiguration.openshift.io/desiredConfig: rendered-master-0d820883a44fe0570bc1f0ac4173d6c2
+                    machineconfiguration.openshift.io/reason: 
+                    machineconfiguration.openshift.io/state: Done
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Mon, 23 Aug 2021 08:33:40 +0200
+Taints:             node-role.kubernetes.io/master:NoSchedule
+Unschedulable:      false
+Lease:
+  HolderIdentity:  jakub-ops-wgt74-master-1
+  AcquireTime:     <unset>
+  RenewTime:       Thu, 26 Aug 2021 15:36:29 +0200
+Conditions:
+  Type             Status  LastHeartbeatTime                 LastTransitionTime                Reason                       Message
+  ----             ------  -----------------                 ------------------                ------                       -------
+  MemoryPressure   False   Thu, 26 Aug 2021 15:35:19 +0200   Mon, 23 Aug 2021 08:33:41 +0200   KubeletHasSufficientMemory   kubelet has sufficient memory available
+  DiskPressure     False   Thu, 26 Aug 2021 15:35:19 +0200   Mon, 23 Aug 2021 08:33:41 +0200   KubeletHasNoDiskPressure     kubelet has no disk pressure
+  PIDPressure      False   Thu, 26 Aug 2021 15:35:19 +0200   Mon, 23 Aug 2021 08:33:41 +0200   KubeletHasSufficientPID      kubelet has sufficient PID available
+  Ready            True    Thu, 26 Aug 2021 15:35:19 +0200   Mon, 23 Aug 2021 08:34:41 +0200   KubeletReady                 kubelet is posting ready status
+Addresses:
+  InternalIP:  192.168.3.137
+  Hostname:    jakub-ops-wgt74-master-1
+Capacity:
+  attachable-volumes-cinder:  256
+  cpu:                        8
+  ephemeral-storage:          83350508Ki
+  hugepages-1Gi:              0
+  hugepages-2Mi:              0
+  memory:                     16408472Ki
+  pods:                       250
+Allocatable:
+  attachable-volumes-cinder:  256
+  cpu:                        7500m
+  ephemeral-storage:          76815828046
+  hugepages-1Gi:              0
+  hugepages-2Mi:              0
+  memory:                     15257496Ki
+  pods:                       250
+System Info:
+  Machine ID:                                 cadcff990b3f4e818e9dd0c65030ce64
+  System UUID:                                cadcff99-0b3f-4e81-8e9d-d0c65030ce64
+  Boot ID:                                    34d5a7b7-bd12-42b7-bccd-a37070df9d86
+  Kernel Version:                             4.18.0-305.10.2.el8_4.x86_64
+  OS Image:                                   Red Hat Enterprise Linux CoreOS 48.84.202108062347-0 (Ootpa)
+  Operating System:                           linux
+  Architecture:                               amd64
+  Container Runtime Version:                  cri-o://1.21.2-9.rhaos4.8.git3b87110.el8
+  Kubelet Version:                            v1.21.1+9807387
+  Kube-Proxy Version:                         v1.21.1+9807387
+ProviderID:                                   openstack:///cadcff99-0b3f-4e81-8e9d-d0c65030ce64
+Non-terminated Pods:                          (54 in total)
+  Namespace                                   Name                                                 CPU Requests  CPU Limits  Memory Requests  Memory Limits  AGE
+  ---------                                   ----                                                 ------------  ----------  ---------------  -------------  ---
+  openshift-apiserver-operator                openshift-apiserver-operator-7b5b78b5d5-2tktk        10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-apiserver                         apiserver-795ccd8bb-9mf2j                            110m (1%)     0 (0%)      250Mi (1%)       0 (0%)         3d6h
+  openshift-authentication-operator           authentication-operator-74655545fc-nxpfs             20m (0%)      0 (0%)      200Mi (1%)       0 (0%)         3d6h
+  openshift-authentication                    oauth-openshift-76457c7d4f-wztl6                     10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         2d22h
+  openshift-cloud-credential-operator         cloud-credential-operator-7798444576-j9kb6           20m (0%)      0 (0%)      170Mi (1%)       0 (0%)         3d6h
+  openshift-cluster-csi-drivers               openstack-cinder-csi-driver-node-q9jq7               20m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d6h
+  openshift-cluster-machine-approver          machine-approver-5d5f8c5d8d-zvzrf                    20m (0%)      0 (0%)      70Mi (0%)        0 (0%)         3d6h
+  openshift-cluster-node-tuning-operator      cluster-node-tuning-operator-54584bd95d-q8kjh        10m (0%)      0 (0%)      20Mi (0%)        0 (0%)         3d6h
+  openshift-cluster-node-tuning-operator      tuned-hddjj                                          10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d7h
+  openshift-cluster-storage-operator          cluster-storage-operator-8596d6f675-bppbn            10m (0%)      0 (0%)      20Mi (0%)        0 (0%)         3d6h
+  openshift-cluster-storage-operator          csi-snapshot-controller-b7b756b4-dhnvk               10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-cluster-storage-operator          csi-snapshot-controller-operator-55c59c5c6f-v4k9p    10m (0%)      0 (0%)      65Mi (0%)        0 (0%)         3d6h
+  openshift-cluster-storage-operator          csi-snapshot-webhook-677ff54c6b-qvn42                10m (0%)      0 (0%)      20Mi (0%)        0 (0%)         3d6h
+  openshift-cluster-version                   cluster-version-operator-5dd9764f9c-zfljz            20m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-console-operator                  console-operator-794df84867-sqhbh                    10m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d6h
+  openshift-console                           console-8ddd68d56-lk2l9                              10m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d6h
+  openshift-console                           downloads-569c85766d-sgd7h                           10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-controller-manager                controller-manager-7hh5l                             100m (1%)     0 (0%)      100Mi (0%)       0 (0%)         2d7h
+  openshift-dns-operator                      dns-operator-676b96c49f-6pnp2                        20m (0%)      0 (0%)      69Mi (0%)        0 (0%)         3d6h
+  openshift-dns                               dns-default-mp574                                    60m (0%)      0 (0%)      110Mi (0%)       0 (0%)         3d7h
+  openshift-dns                               node-resolver-zfv4q                                  5m (0%)       0 (0%)      21Mi (0%)        0 (0%)         3d7h
+  openshift-etcd-operator                     etcd-operator-57f9486444-8s24v                       10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-etcd                              etcd-jakub-ops-wgt74-master-1                        400m (5%)     0 (0%)      930Mi (6%)       0 (0%)         3d6h
+  openshift-etcd                              etcd-quorum-guard-5f698b4cf4-rs92q                   10m (0%)      0 (0%)      5Mi (0%)         0 (0%)         3d6h
+  openshift-image-registry                    node-ca-fqfjf                                        10m (0%)      0 (0%)      10Mi (0%)        0 (0%)         3d6h
+  openshift-ingress-operator                  ingress-operator-7f58f6857d-zxbd4                    20m (0%)      0 (0%)      96Mi (0%)        0 (0%)         3d6h
+  openshift-kube-apiserver-operator           kube-apiserver-operator-5576dc5646-hl4rd             10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-kube-apiserver                    kube-apiserver-jakub-ops-wgt74-master-1              290m (3%)     0 (0%)      1224Mi (8%)      0 (0%)         2d7h
+  openshift-kube-controller-manager-operator  kube-controller-manager-operator-d9564bcf5-mjgcg     10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-kube-controller-manager           kube-controller-manager-jakub-ops-wgt74-master-1     80m (1%)      0 (0%)      500Mi (3%)       0 (0%)         3d6h
+  openshift-kube-scheduler                    openshift-kube-scheduler-jakub-ops-wgt74-master-1    25m (0%)      0 (0%)      150Mi (1%)       0 (0%)         3d6h
+  openshift-machine-api                       cluster-autoscaler-operator-65f6d669fb-xnpxk         30m (0%)      0 (0%)      70Mi (0%)        0 (0%)         3d6h
+  openshift-machine-api                       cluster-baremetal-operator-695fbf944c-dgxg7          20m (0%)      0 (0%)      70Mi (0%)        0 (0%)         3d6h
+  openshift-machine-config-operator           machine-config-daemon-xpdts                          40m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d7h
+  openshift-machine-config-operator           machine-config-operator-6c84885f55-b76nh             20m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-machine-config-operator           machine-config-server-zdxlv                          20m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d7h
+  openshift-manila-csi-driver                 csi-nodeplugin-nfsplugin-fx6c5                       10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d7h
+  openshift-manila-csi-driver                 openstack-manila-csi-nodeplugin-79fqg                15m (0%)      0 (0%)      70Mi (0%)        0 (0%)         3d7h
+  openshift-monitoring                        cluster-monitoring-operator-5bd49fbd86-s8gf8         11m (0%)      0 (0%)      95Mi (0%)        0 (0%)         3d6h
+  openshift-monitoring                        node-exporter-th99h                                  9m (0%)       0 (0%)      47Mi (0%)        0 (0%)         3d7h
+  openshift-multus                            multus-additional-cni-plugins-p9j9d                  10m (0%)      0 (0%)      10Mi (0%)        0 (0%)         3d7h
+  openshift-multus                            multus-admission-controller-z4flh                    20m (0%)      0 (0%)      70Mi (0%)        0 (0%)         3d7h
+  openshift-multus                            multus-d4spk                                         10m (0%)      0 (0%)      65Mi (0%)        0 (0%)         3d7h
+  openshift-multus                            network-metrics-daemon-5q56x                         20m (0%)      0 (0%)      120Mi (0%)       0 (0%)         3d7h
+  openshift-network-diagnostics               network-check-target-wfzrl                           10m (0%)      0 (0%)      15Mi (0%)        0 (0%)         3d7h
+  openshift-network-operator                  network-operator-8599c5dfd-hqn9s                     10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-oauth-apiserver                   apiserver-6d49f8d6f9-74w5r                           150m (2%)     0 (0%)      200Mi (1%)       0 (0%)         3d6h
+  openshift-openstack-infra                   coredns-jakub-ops-wgt74-master-1                     200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d7h
+  openshift-openstack-infra                   haproxy-jakub-ops-wgt74-master-1                     200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d7h
+  openshift-openstack-infra                   keepalived-jakub-ops-wgt74-master-1                  200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d7h
+  openshift-operator-lifecycle-manager        packageserver-79df465f4c-556j8                       10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-sdn                               sdn-controller-znsnk                                 10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d7h
+  openshift-sdn                               sdn-dmd6c                                            110m (1%)     0 (0%)      220Mi (1%)       0 (0%)         3d7h
+  openshift-service-ca-operator               service-ca-operator-79d99fb9bf-b8nwh                 10m (0%)      0 (0%)      80Mi (0%)        0 (0%)         3d6h
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource                   Requests      Limits
+  --------                   --------      ------
+  cpu                        2515m (33%)   0 (0%)
+  memory                     7512Mi (50%)  0 (0%)
+  ephemeral-storage          0 (0%)        0 (0%)
+  hugepages-1Gi              0 (0%)        0 (0%)
+  hugepages-2Mi              0 (0%)        0 (0%)
+  attachable-volumes-cinder  0             0
+Events:                      <none>
+
+
+Name:               jakub-ops-wgt74-master-2
+Roles:              master
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/instance-type=m1.xlarge
+                    beta.kubernetes.io/os=linux
+                    failure-domain.beta.kubernetes.io/region=regionOne
+                    failure-domain.beta.kubernetes.io/zone=nova
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=jakub-ops-wgt74-master-2
+                    kubernetes.io/os=linux
+                    node-role.kubernetes.io/master=
+                    node.kubernetes.io/instance-type=m1.xlarge
+                    node.openshift.io/os_id=rhcos
+                    topology.cinder.csi.openstack.org/zone=nova
+                    topology.kubernetes.io/region=regionOne
+                    topology.kubernetes.io/zone=nova
+Annotations:        csi.volume.kubernetes.io/nodeid:
+                      {"cinder.csi.openstack.org":"cc63653c-fe6d-4ce6-9229-4d7cd5d28aa5","manila.csi.openstack.org":"jakub-ops-wgt74-master-2"}
+                    machine.openshift.io/machine: openshift-machine-api/jakub-ops-wgt74-master-2
+                    machineconfiguration.openshift.io/controlPlaneTopology: HighlyAvailable
+                    machineconfiguration.openshift.io/currentConfig: rendered-master-0d820883a44fe0570bc1f0ac4173d6c2
+                    machineconfiguration.openshift.io/desiredConfig: rendered-master-0d820883a44fe0570bc1f0ac4173d6c2
+                    machineconfiguration.openshift.io/reason: 
+                    machineconfiguration.openshift.io/state: Done
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Mon, 23 Aug 2021 08:36:05 +0200
+Taints:             node-role.kubernetes.io/master:NoSchedule
+Unschedulable:      false
+Lease:
+  HolderIdentity:  jakub-ops-wgt74-master-2
+  AcquireTime:     <unset>
+  RenewTime:       Thu, 26 Aug 2021 15:36:39 +0200
+Conditions:
+  Type             Status  LastHeartbeatTime                 LastTransitionTime                Reason                       Message
+  ----             ------  -----------------                 ------------------                ------                       -------
+  MemoryPressure   False   Thu, 26 Aug 2021 15:34:49 +0200   Mon, 23 Aug 2021 08:36:06 +0200   KubeletHasSufficientMemory   kubelet has sufficient memory available
+  DiskPressure     False   Thu, 26 Aug 2021 15:34:49 +0200   Mon, 23 Aug 2021 08:36:06 +0200   KubeletHasNoDiskPressure     kubelet has no disk pressure
+  PIDPressure      False   Thu, 26 Aug 2021 15:34:49 +0200   Mon, 23 Aug 2021 08:36:06 +0200   KubeletHasSufficientPID      kubelet has sufficient PID available
+  Ready            True    Thu, 26 Aug 2021 15:34:49 +0200   Mon, 23 Aug 2021 08:37:31 +0200   KubeletReady                 kubelet is posting ready status
+Addresses:
+  InternalIP:  192.168.0.248
+  Hostname:    jakub-ops-wgt74-master-2
+Capacity:
+  attachable-volumes-cinder:  256
+  cpu:                        8
+  ephemeral-storage:          83350508Ki
+  hugepages-1Gi:              0
+  hugepages-2Mi:              0
+  memory:                     16408480Ki
+  pods:                       250
+Allocatable:
+  attachable-volumes-cinder:  256
+  cpu:                        7500m
+  ephemeral-storage:          76815828046
+  hugepages-1Gi:              0
+  hugepages-2Mi:              0
+  memory:                     15257504Ki
+  pods:                       250
+System Info:
+  Machine ID:                             cc63653cfe6d4ce692294d7cd5d28aa5
+  System UUID:                            cc63653c-fe6d-4ce6-9229-4d7cd5d28aa5
+  Boot ID:                                e40962b2-3ef3-4e15-ad29-8c66ea01d445
+  Kernel Version:                         4.18.0-305.10.2.el8_4.x86_64
+  OS Image:                               Red Hat Enterprise Linux CoreOS 48.84.202108062347-0 (Ootpa)
+  Operating System:                       linux
+  Architecture:                           amd64
+  Container Runtime Version:              cri-o://1.21.2-9.rhaos4.8.git3b87110.el8
+  Kubelet Version:                        v1.21.1+9807387
+  Kube-Proxy Version:                     v1.21.1+9807387
+ProviderID:                               openstack:///cc63653c-fe6d-4ce6-9229-4d7cd5d28aa5
+Non-terminated Pods:                      (29 in total)
+  Namespace                               Name                                                 CPU Requests  CPU Limits  Memory Requests  Memory Limits  AGE
+  ---------                               ----                                                 ------------  ----------  ---------------  -------------  ---
+  openshift-apiserver                     apiserver-795ccd8bb-trhx5                            110m (1%)     0 (0%)      250Mi (1%)       0 (0%)         3d6h
+  openshift-authentication                oauth-openshift-76457c7d4f-km7wn                     10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         2d22h
+  openshift-cluster-csi-drivers           openstack-cinder-csi-driver-node-twxhg               20m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d6h
+  openshift-cluster-node-tuning-operator  tuned-lrkhm                                          10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d7h
+  openshift-controller-manager            controller-manager-9rfqn                             100m (1%)     0 (0%)      100Mi (0%)       0 (0%)         2d7h
+  openshift-dns                           dns-default-zvhzb                                    60m (0%)      0 (0%)      110Mi (0%)       0 (0%)         3d6h
+  openshift-dns                           node-resolver-b672n                                  5m (0%)       0 (0%)      21Mi (0%)        0 (0%)         3d7h
+  openshift-etcd                          etcd-jakub-ops-wgt74-master-2                        400m (5%)     0 (0%)      930Mi (6%)       0 (0%)         3d6h
+  openshift-etcd                          etcd-quorum-guard-5f698b4cf4-vpn9g                   10m (0%)      0 (0%)      5Mi (0%)         0 (0%)         3d6h
+  openshift-image-registry                node-ca-rd9kr                                        10m (0%)      0 (0%)      10Mi (0%)        0 (0%)         3d6h
+  openshift-kube-apiserver                kube-apiserver-jakub-ops-wgt74-master-2              290m (3%)     0 (0%)      1224Mi (8%)      0 (0%)         2d6h
+  openshift-kube-controller-manager       kube-controller-manager-jakub-ops-wgt74-master-2     80m (1%)      0 (0%)      500Mi (3%)       0 (0%)         3d6h
+  openshift-kube-scheduler                openshift-kube-scheduler-jakub-ops-wgt74-master-2    25m (0%)      0 (0%)      150Mi (1%)       0 (0%)         3d6h
+  openshift-machine-config-operator       machine-config-daemon-gwwvt                          40m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d7h
+  openshift-machine-config-operator       machine-config-server-6lnhx                          20m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-manila-csi-driver             csi-nodeplugin-nfsplugin-xzkw8                       10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d7h
+  openshift-manila-csi-driver             openstack-manila-csi-nodeplugin-zxhqw                15m (0%)      0 (0%)      70Mi (0%)        0 (0%)         3d7h
+  openshift-monitoring                    node-exporter-lwfxl                                  9m (0%)       0 (0%)      47Mi (0%)        0 (0%)         3d7h
+  openshift-multus                        multus-7225h                                         10m (0%)      0 (0%)      65Mi (0%)        0 (0%)         3d7h
+  openshift-multus                        multus-additional-cni-plugins-fjsll                  10m (0%)      0 (0%)      10Mi (0%)        0 (0%)         3d7h
+  openshift-multus                        multus-admission-controller-jnsl9                    20m (0%)      0 (0%)      70Mi (0%)        0 (0%)         3d6h
+  openshift-multus                        network-metrics-daemon-f8fjl                         20m (0%)      0 (0%)      120Mi (0%)       0 (0%)         3d7h
+  openshift-network-diagnostics           network-check-target-vr6kx                           10m (0%)      0 (0%)      15Mi (0%)        0 (0%)         3d7h
+  openshift-oauth-apiserver               apiserver-6d49f8d6f9-hks4b                           150m (2%)     0 (0%)      200Mi (1%)       0 (0%)         3d6h
+  openshift-openstack-infra               coredns-jakub-ops-wgt74-master-2                     200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d6h
+  openshift-openstack-infra               haproxy-jakub-ops-wgt74-master-2                     200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d6h
+  openshift-openstack-infra               keepalived-jakub-ops-wgt74-master-2                  200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d6h
+  openshift-sdn                           sdn-controller-7n8jw                                 10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d7h
+  openshift-sdn                           sdn-w8sfn                                            110m (1%)     0 (0%)      220Mi (1%)       0 (0%)         3d7h
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource                   Requests      Limits
+  --------                   --------      ------
+  cpu                        2164m (28%)   0 (0%)
+  memory                     5767Mi (38%)  0 (0%)
+  ephemeral-storage          0 (0%)        0 (0%)
+  hugepages-1Gi              0 (0%)        0 (0%)
+  hugepages-2Mi              0 (0%)        0 (0%)
+  attachable-volumes-cinder  0             0
+Events:                      <none>
+
+
+Name:               jakub-ops-wgt74-worker-0-2sw22
+Roles:              worker
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/instance-type=m1.xlarge
+                    beta.kubernetes.io/os=linux
+                    failure-domain.beta.kubernetes.io/region=regionOne
+                    failure-domain.beta.kubernetes.io/zone=nova
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=jakub-ops-wgt74-worker-0-2sw22
+                    kubernetes.io/os=linux
+                    node-role.kubernetes.io/worker=
+                    node.kubernetes.io/instance-type=m1.xlarge
+                    node.openshift.io/os_id=rhcos
+                    topology.cinder.csi.openstack.org/zone=nova
+                    topology.kubernetes.io/region=regionOne
+                    topology.kubernetes.io/zone=nova
+Annotations:        csi.volume.kubernetes.io/nodeid:
+                      {"cinder.csi.openstack.org":"009963ac-fd65-42c1-9c5f-cee9a9d1854c","manila.csi.openstack.org":"jakub-ops-wgt74-worker-0-2sw22"}
+                    machine.openshift.io/machine: openshift-machine-api/jakub-ops-wgt74-worker-0-2sw22
+                    machineconfiguration.openshift.io/controlPlaneTopology: HighlyAvailable
+                    machineconfiguration.openshift.io/currentConfig: rendered-worker-5ade3083cb3296abd8ec315a573c3bd4
+                    machineconfiguration.openshift.io/desiredConfig: rendered-worker-5ade3083cb3296abd8ec315a573c3bd4
+                    machineconfiguration.openshift.io/reason: 
+                    machineconfiguration.openshift.io/state: Done
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Mon, 23 Aug 2021 08:50:31 +0200
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  jakub-ops-wgt74-worker-0-2sw22
+  AcquireTime:     <unset>
+  RenewTime:       Thu, 26 Aug 2021 15:36:25 +0200
+Conditions:
+  Type             Status  LastHeartbeatTime                 LastTransitionTime                Reason                       Message
+  ----             ------  -----------------                 ------------------                ------                       -------
+  MemoryPressure   False   Thu, 26 Aug 2021 15:32:24 +0200   Mon, 23 Aug 2021 08:50:31 +0200   KubeletHasSufficientMemory   kubelet has sufficient memory available
+  DiskPressure     False   Thu, 26 Aug 2021 15:32:24 +0200   Mon, 23 Aug 2021 08:50:31 +0200   KubeletHasNoDiskPressure     kubelet has no disk pressure
+  PIDPressure      False   Thu, 26 Aug 2021 15:32:24 +0200   Mon, 23 Aug 2021 08:50:31 +0200   KubeletHasSufficientPID      kubelet has sufficient PID available
+  Ready            True    Thu, 26 Aug 2021 15:32:24 +0200   Mon, 23 Aug 2021 08:51:31 +0200   KubeletReady                 kubelet is posting ready status
+Addresses:
+  InternalIP:  192.168.2.20
+  Hostname:    jakub-ops-wgt74-worker-0-2sw22
+Capacity:
+  attachable-volumes-cinder:  256
+  cpu:                        8
+  ephemeral-storage:          83350508Ki
+  hugepages-1Gi:              0
+  hugepages-2Mi:              0
+  memory:                     16408480Ki
+  pods:                       250
+Allocatable:
+  attachable-volumes-cinder:  256
+  cpu:                        7500m
+  ephemeral-storage:          76815828046
+  hugepages-1Gi:              0
+  hugepages-2Mi:              0
+  memory:                     15257504Ki
+  pods:                       250
+System Info:
+  Machine ID:                              009963acfd6542c19c5fcee9a9d1854c
+  System UUID:                             009963ac-fd65-42c1-9c5f-cee9a9d1854c
+  Boot ID:                                 dc5d4e27-9d44-45ca-ac15-17603958620a
+  Kernel Version:                          4.18.0-305.10.2.el8_4.x86_64
+  OS Image:                                Red Hat Enterprise Linux CoreOS 48.84.202108062347-0 (Ootpa)
+  Operating System:                        linux
+  Architecture:                            amd64
+  Container Runtime Version:               cri-o://1.21.2-9.rhaos4.8.git3b87110.el8
+  Kubelet Version:                         v1.21.1+9807387
+  Kube-Proxy Version:                      v1.21.1+9807387
+ProviderID:                                openstack:///009963ac-fd65-42c1-9c5f-cee9a9d1854c
+Non-terminated Pods:                       (29 in total)
+  Namespace                                Name                                         CPU Requests  CPU Limits  Memory Requests  Memory Limits  AGE
+  ---------                                ----                                         ------------  ----------  ---------------  -------------  ---
+  openshift-cluster-csi-drivers            openstack-cinder-csi-driver-node-f8v28       20m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d6h
+  openshift-cluster-node-tuning-operator   tuned-vxkz7                                  10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-console                        downloads-569c85766d-lr692                   10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-dns                            dns-default-mfzpp                            60m (0%)      0 (0%)      110Mi (0%)       0 (0%)         3d6h
+  openshift-dns                            node-resolver-vrxj9                          5m (0%)       0 (0%)      21Mi (0%)        0 (0%)         3d6h
+  openshift-image-registry                 image-registry-7b78854b78-5xt2r              100m (1%)     0 (0%)      256Mi (1%)       0 (0%)         3d6h
+  openshift-image-registry                 node-ca-s4w6p                                10m (0%)      0 (0%)      10Mi (0%)        0 (0%)         3d6h
+  openshift-ingress-canary                 ingress-canary-xb77j                         10m (0%)      0 (0%)      20Mi (0%)        0 (0%)         3d6h
+  openshift-ingress                        router-default-76899d5858-f5lh5              100m (1%)     0 (0%)      256Mi (1%)       0 (0%)         3d6h
+  openshift-kube-storage-version-migrator  migrator-5b9ddc4df9-4gg9m                    10m (0%)      0 (0%)      200Mi (1%)       0 (0%)         3d6h
+  openshift-machine-config-operator        machine-config-daemon-45chb                  40m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d6h
+  openshift-manila-csi-driver              csi-nodeplugin-nfsplugin-f654d               10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-manila-csi-driver              openstack-manila-csi-nodeplugin-q92zg        15m (0%)      0 (0%)      70Mi (0%)        0 (0%)         3d6h
+  openshift-monitoring                     alertmanager-main-2                          8m (0%)       0 (0%)      105Mi (0%)       0 (0%)         3d6h
+  openshift-monitoring                     grafana-656bf4cfc-nc4pd                      5m (0%)       0 (0%)      84Mi (0%)        0 (0%)         3d6h
+  openshift-monitoring                     node-exporter-292c8                          9m (0%)       0 (0%)      47Mi (0%)        0 (0%)         3d6h
+  openshift-monitoring                     prometheus-k8s-0                             76m (1%)      0 (0%)      1119Mi (7%)      0 (0%)         3d6h
+  openshift-monitoring                     telemeter-client-59f57b9555-8wxwd            3m (0%)       0 (0%)      70Mi (0%)        0 (0%)         3d6h
+  openshift-monitoring                     thanos-querier-58d494cd58-xkfpm              14m (0%)      0 (0%)      77Mi (0%)        0 (0%)         3d6h
+  openshift-multus                         multus-6sjxc                                 10m (0%)      0 (0%)      65Mi (0%)        0 (0%)         3d6h
+  openshift-multus                         multus-additional-cni-plugins-8t4rg          10m (0%)      0 (0%)      10Mi (0%)        0 (0%)         3d6h
+  openshift-multus                         network-metrics-daemon-tblzx                 20m (0%)      0 (0%)      120Mi (0%)       0 (0%)         3d6h
+  openshift-network-diagnostics            network-check-source-86bdf465b9-k975q        10m (0%)      0 (0%)      40Mi (0%)        0 (0%)         3d6h
+  openshift-network-diagnostics            network-check-target-fqsfj                   10m (0%)      0 (0%)      15Mi (0%)        0 (0%)         3d6h
+  openshift-openstack-infra                coredns-jakub-ops-wgt74-worker-0-2sw22       200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d6h
+  openshift-openstack-infra                keepalived-jakub-ops-wgt74-worker-0-2sw22    200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d6h
+  openshift-sdn                            sdn-vnk6p                                    110m (1%)     0 (0%)      220Mi (1%)       0 (0%)         3d6h
+  second-namespace-test                    my-cluster-kafka-1                           0 (0%)        0 (0%)      0 (0%)           0 (0%)         3m11s
+  second-namespace-test                    my-cluster-zookeeper-1                       0 (0%)        0 (0%)      0 (0%)           0 (0%)         3m57s
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource                   Requests      Limits
+  --------                   --------      ------
+  cpu                        1085m (14%)   0 (0%)
+  memory                     4065Mi (27%)  0 (0%)
+  ephemeral-storage          0 (0%)        0 (0%)
+  hugepages-1Gi              0 (0%)        0 (0%)
+  hugepages-2Mi              0 (0%)        0 (0%)
+  attachable-volumes-cinder  0             0
+Events:                      <none>
+
+
+Name:               jakub-ops-wgt74-worker-0-57cdd
+Roles:              worker
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/instance-type=m1.xlarge
+                    beta.kubernetes.io/os=linux
+                    failure-domain.beta.kubernetes.io/region=regionOne
+                    failure-domain.beta.kubernetes.io/zone=nova
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=jakub-ops-wgt74-worker-0-57cdd
+                    kubernetes.io/os=linux
+                    node-role.kubernetes.io/worker=
+                    node.kubernetes.io/instance-type=m1.xlarge
+                    node.openshift.io/os_id=rhcos
+                    topology.cinder.csi.openstack.org/zone=nova
+                    topology.kubernetes.io/region=regionOne
+                    topology.kubernetes.io/zone=nova
+Annotations:        csi.volume.kubernetes.io/nodeid:
+                      {"cinder.csi.openstack.org":"d308fdd8-f730-4a02-b7a7-7cd1f86fdfa3","manila.csi.openstack.org":"jakub-ops-wgt74-worker-0-57cdd"}
+                    machine.openshift.io/machine: openshift-machine-api/jakub-ops-wgt74-worker-0-57cdd
+                    machineconfiguration.openshift.io/controlPlaneTopology: HighlyAvailable
+                    machineconfiguration.openshift.io/currentConfig: rendered-worker-5ade3083cb3296abd8ec315a573c3bd4
+                    machineconfiguration.openshift.io/desiredConfig: rendered-worker-5ade3083cb3296abd8ec315a573c3bd4
+                    machineconfiguration.openshift.io/reason: 
+                    machineconfiguration.openshift.io/state: Done
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Mon, 23 Aug 2021 08:51:41 +0200
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  jakub-ops-wgt74-worker-0-57cdd
+  AcquireTime:     <unset>
+  RenewTime:       Thu, 26 Aug 2021 15:36:38 +0200
+Conditions:
+  Type             Status  LastHeartbeatTime                 LastTransitionTime                Reason                       Message
+  ----             ------  -----------------                 ------------------                ------                       -------
+  MemoryPressure   False   Thu, 26 Aug 2021 15:33:38 +0200   Mon, 23 Aug 2021 08:51:40 +0200   KubeletHasSufficientMemory   kubelet has sufficient memory available
+  DiskPressure     False   Thu, 26 Aug 2021 15:33:38 +0200   Mon, 23 Aug 2021 08:51:40 +0200   KubeletHasNoDiskPressure     kubelet has no disk pressure
+  PIDPressure      False   Thu, 26 Aug 2021 15:33:38 +0200   Mon, 23 Aug 2021 08:51:40 +0200   KubeletHasSufficientPID      kubelet has sufficient PID available
+  Ready            True    Thu, 26 Aug 2021 15:33:38 +0200   Mon, 23 Aug 2021 08:52:30 +0200   KubeletReady                 kubelet is posting ready status
+Addresses:
+  InternalIP:  192.168.0.86
+  Hostname:    jakub-ops-wgt74-worker-0-57cdd
+Capacity:
+  attachable-volumes-cinder:  256
+  cpu:                        8
+  ephemeral-storage:          83350508Ki
+  hugepages-1Gi:              0
+  hugepages-2Mi:              0
+  memory:                     16408480Ki
+  pods:                       250
+Allocatable:
+  attachable-volumes-cinder:  256
+  cpu:                        7500m
+  ephemeral-storage:          76815828046
+  hugepages-1Gi:              0
+  hugepages-2Mi:              0
+  memory:                     15257504Ki
+  pods:                       250
+System Info:
+  Machine ID:                             d308fdd8f7304a02b7a77cd1f86fdfa3
+  System UUID:                            d308fdd8-f730-4a02-b7a7-7cd1f86fdfa3
+  Boot ID:                                fc00bd6f-1227-4941-acd8-c0da8379eadd
+  Kernel Version:                         4.18.0-305.10.2.el8_4.x86_64
+  OS Image:                               Red Hat Enterprise Linux CoreOS 48.84.202108062347-0 (Ootpa)
+  Operating System:                       linux
+  Architecture:                           amd64
+  Container Runtime Version:              cri-o://1.21.2-9.rhaos4.8.git3b87110.el8
+  Kubelet Version:                        v1.21.1+9807387
+  Kube-Proxy Version:                     v1.21.1+9807387
+ProviderID:                               openstack:///d308fdd8-f730-4a02-b7a7-7cd1f86fdfa3
+Non-terminated Pods:                      (33 in total)
+  Namespace                               Name                                                CPU Requests  CPU Limits  Memory Requests  Memory Limits  AGE
+  ---------                               ----                                                ------------  ----------  ---------------  -------------  ---
+  co-namespace-test                       strimzi-cluster-operator-68cdc5477b-4rd6k           200m (2%)     1 (13%)     384Mi (2%)       384Mi (2%)     4m53s
+  first-co-namespace                      first-strimzi-cluster-operator-b89877899-mpb4k      200m (2%)     1 (13%)     384Mi (2%)       384Mi (2%)     25h
+  openshift-cluster-csi-drivers           openstack-cinder-csi-driver-node-zhqk4              20m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d6h
+  openshift-cluster-node-tuning-operator  tuned-xw77m                                         10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-dns                           dns-default-r84ss                                   60m (0%)      0 (0%)      110Mi (0%)       0 (0%)         3d6h
+  openshift-dns                           node-resolver-8mfqg                                 5m (0%)       0 (0%)      21Mi (0%)        0 (0%)         3d6h
+  openshift-image-registry                node-ca-g99j8                                       10m (0%)      0 (0%)      10Mi (0%)        0 (0%)         3d6h
+  openshift-ingress-canary                ingress-canary-4j2hm                                10m (0%)      0 (0%)      20Mi (0%)        0 (0%)         3d6h
+  openshift-machine-config-operator       machine-config-daemon-5mf56                         40m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d6h
+  openshift-manila-csi-driver             csi-nodeplugin-nfsplugin-wg9fg                      10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-manila-csi-driver             openstack-manila-csi-nodeplugin-89xt6               15m (0%)      0 (0%)      70Mi (0%)        0 (0%)         3d6h
+  openshift-marketplace                   certified-operators-lg7pv                           10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         13h
+  openshift-marketplace                   community-operators-hkw2p                           10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         105m
+  openshift-marketplace                   redhat-marketplace-vt644                            10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         31h
+  openshift-marketplace                   redhat-operators-g4fxs                              10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         172m
+  openshift-monitoring                    node-exporter-4t6pl                                 9m (0%)       0 (0%)      47Mi (0%)        0 (0%)         3d6h
+  openshift-monitoring                    prometheus-adapter-77c9c99ff-rclmm                  1m (0%)       0 (0%)      40Mi (0%)        0 (0%)         2d7h
+  openshift-multus                        multus-64q99                                        10m (0%)      0 (0%)      65Mi (0%)        0 (0%)         3d6h
+  openshift-multus                        multus-additional-cni-plugins-76kwj                 10m (0%)      0 (0%)      10Mi (0%)        0 (0%)         3d6h
+  openshift-multus                        network-metrics-daemon-jhpq7                        20m (0%)      0 (0%)      120Mi (0%)       0 (0%)         3d6h
+  openshift-network-diagnostics           network-check-target-kd25m                          10m (0%)      0 (0%)      15Mi (0%)        0 (0%)         3d6h
+  openshift-openstack-infra               coredns-jakub-ops-wgt74-worker-0-57cdd              200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d6h
+  openshift-openstack-infra               keepalived-jakub-ops-wgt74-worker-0-57cdd           200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d6h
+  openshift-sdn                           sdn-wwk9k                                           110m (1%)     0 (0%)      220Mi (1%)       0 (0%)         3d6h
+  second-co-namespace                     second-strimzi-cluster-operator-668777fb77-6wv76    200m (2%)     1 (13%)     384Mi (2%)       384Mi (2%)     25h
+  second-namespace-test                   my-cluster-kafka-2                                  0 (0%)        0 (0%)      0 (0%)           0 (0%)         3m12s
+  second-namespace-test                   my-cluster-zookeeper-2                              0 (0%)        0 (0%)      0 (0%)           0 (0%)         3m58s
+  third-namespace-test                    my-cluster-entity-operator-6588c64769-5sfhf         0 (0%)        0 (0%)      0 (0%)           0 (0%)         56m
+  third-namespace-test                    my-cluster-kafka-0                                  0 (0%)        0 (0%)      0 (0%)           0 (0%)         57m
+  third-namespace-test                    my-cluster-zookeeper-0                              0 (0%)        0 (0%)      0 (0%)           0 (0%)         57m
+  tracing-cluster-test                    jaeger-operator-556b4c5847-fdtk9                    0 (0%)        0 (0%)      0 (0%)           0 (0%)         27h
+  tracing-cluster-test                    my-jaeger-57f4fbfcbf-jnx4t                          0 (0%)        0 (0%)      0 (0%)           0 (0%)         26h
+  tracing-cluster-test                    strimzi-cluster-operator-7fc6c667dc-mj8dk           200m (2%)     1 (13%)     384Mi (2%)       384Mi (2%)     27h
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource                   Requests      Limits
+  --------                   --------      ------
+  cpu                        1590m (21%)   4 (53%)
+  memory                     3584Mi (24%)  1536Mi (10%)
+  ephemeral-storage          0 (0%)        0 (0%)
+  hugepages-1Gi              0 (0%)        0 (0%)
+  hugepages-2Mi              0 (0%)        0 (0%)
+  attachable-volumes-cinder  0             0
+Events:                      <none>
+
+
+Name:               jakub-ops-wgt74-worker-0-58m4b
+Roles:              worker
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/instance-type=m1.xlarge
+                    beta.kubernetes.io/os=linux
+                    failure-domain.beta.kubernetes.io/region=regionOne
+                    failure-domain.beta.kubernetes.io/zone=nova
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=jakub-ops-wgt74-worker-0-58m4b
+                    kubernetes.io/os=linux
+                    node-role.kubernetes.io/worker=
+                    node.kubernetes.io/instance-type=m1.xlarge
+                    node.openshift.io/os_id=rhcos
+                    topology.cinder.csi.openstack.org/zone=nova
+                    topology.kubernetes.io/region=regionOne
+                    topology.kubernetes.io/zone=nova
+Annotations:        csi.volume.kubernetes.io/nodeid:
+                      {"cinder.csi.openstack.org":"cafdc401-63f5-4c94-958d-5a1fa41f6313","manila.csi.openstack.org":"jakub-ops-wgt74-worker-0-58m4b"}
+                    machine.openshift.io/machine: openshift-machine-api/jakub-ops-wgt74-worker-0-58m4b
+                    machineconfiguration.openshift.io/controlPlaneTopology: HighlyAvailable
+                    machineconfiguration.openshift.io/currentConfig: rendered-worker-5ade3083cb3296abd8ec315a573c3bd4
+                    machineconfiguration.openshift.io/desiredConfig: rendered-worker-5ade3083cb3296abd8ec315a573c3bd4
+                    machineconfiguration.openshift.io/reason: 
+                    machineconfiguration.openshift.io/state: Done
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Mon, 23 Aug 2021 08:47:48 +0200
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  jakub-ops-wgt74-worker-0-58m4b
+  AcquireTime:     <unset>
+  RenewTime:       Thu, 26 Aug 2021 15:36:39 +0200
+Conditions:
+  Type             Status  LastHeartbeatTime                 LastTransitionTime                Reason                       Message
+  ----             ------  -----------------                 ------------------                ------                       -------
+  MemoryPressure   False   Thu, 26 Aug 2021 15:34:47 +0200   Mon, 23 Aug 2021 08:47:47 +0200   KubeletHasSufficientMemory   kubelet has sufficient memory available
+  DiskPressure     False   Thu, 26 Aug 2021 15:34:47 +0200   Mon, 23 Aug 2021 08:47:47 +0200   KubeletHasNoDiskPressure     kubelet has no disk pressure
+  PIDPressure      False   Thu, 26 Aug 2021 15:34:47 +0200   Mon, 23 Aug 2021 08:47:47 +0200   KubeletHasSufficientPID      kubelet has sufficient PID available
+  Ready            True    Thu, 26 Aug 2021 15:34:47 +0200   Mon, 23 Aug 2021 08:48:47 +0200   KubeletReady                 kubelet is posting ready status
+Addresses:
+  InternalIP:  192.168.0.69
+  Hostname:    jakub-ops-wgt74-worker-0-58m4b
+Capacity:
+  attachable-volumes-cinder:  256
+  cpu:                        8
+  ephemeral-storage:          83350508Ki
+  hugepages-1Gi:              0
+  hugepages-2Mi:              0
+  memory:                     16408480Ki
+  pods:                       250
+Allocatable:
+  attachable-volumes-cinder:  256
+  cpu:                        7500m
+  ephemeral-storage:          76815828046
+  hugepages-1Gi:              0
+  hugepages-2Mi:              0
+  memory:                     15257504Ki
+  pods:                       250
+System Info:
+  Machine ID:                             cafdc40163f54c94958d5a1fa41f6313
+  System UUID:                            cafdc401-63f5-4c94-958d-5a1fa41f6313
+  Boot ID:                                7797fe29-a983-4f42-a589-004c040f5dd9
+  Kernel Version:                         4.18.0-305.10.2.el8_4.x86_64
+  OS Image:                               Red Hat Enterprise Linux CoreOS 48.84.202108062347-0 (Ootpa)
+  Operating System:                       linux
+  Architecture:                           amd64
+  Container Runtime Version:              cri-o://1.21.2-9.rhaos4.8.git3b87110.el8
+  Kubelet Version:                        v1.21.1+9807387
+  Kube-Proxy Version:                     v1.21.1+9807387
+ProviderID:                               openstack:///cafdc401-63f5-4c94-958d-5a1fa41f6313
+Non-terminated Pods:                      (29 in total)
+  Namespace                               Name                                           CPU Requests  CPU Limits  Memory Requests  Memory Limits  AGE
+  ---------                               ----                                           ------------  ----------  ---------------  -------------  ---
+  openshift-cluster-csi-drivers           openstack-cinder-csi-driver-node-hj7q7         20m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d6h
+  openshift-cluster-node-tuning-operator  tuned-phchz                                    10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-dns                           dns-default-wpccb                              60m (0%)      0 (0%)      110Mi (0%)       0 (0%)         3d6h
+  openshift-dns                           node-resolver-gbzbk                            5m (0%)       0 (0%)      21Mi (0%)        0 (0%)         3d6h
+  openshift-image-registry                image-registry-7b78854b78-j4x7t                100m (1%)     0 (0%)      256Mi (1%)       0 (0%)         3d6h
+  openshift-image-registry                node-ca-nr7r2                                  10m (0%)      0 (0%)      10Mi (0%)        0 (0%)         3d6h
+  openshift-ingress-canary                ingress-canary-2mr46                           10m (0%)      0 (0%)      20Mi (0%)        0 (0%)         3d6h
+  openshift-ingress                       router-default-76899d5858-g66ww                100m (1%)     0 (0%)      256Mi (1%)       0 (0%)         3d6h
+  openshift-machine-config-operator       machine-config-daemon-r6rmq                    40m (0%)      0 (0%)      100Mi (0%)       0 (0%)         3d6h
+  openshift-manila-csi-driver             csi-nodeplugin-nfsplugin-fpfwm                 10m (0%)      0 (0%)      50Mi (0%)        0 (0%)         3d6h
+  openshift-manila-csi-driver             openstack-manila-csi-nodeplugin-z6ds9          15m (0%)      0 (0%)      70Mi (0%)        0 (0%)         3d6h
+  openshift-monitoring                    alertmanager-main-0                            8m (0%)       0 (0%)      105Mi (0%)       0 (0%)         3d6h
+  openshift-monitoring                    alertmanager-main-1                            8m (0%)       0 (0%)      105Mi (0%)       0 (0%)         3d6h
+  openshift-monitoring                    kube-state-metrics-58dc9447cc-9d4j4            4m (0%)       0 (0%)      110Mi (0%)       0 (0%)         3d6h
+  openshift-monitoring                    node-exporter-lfqp4                            9m (0%)       0 (0%)      47Mi (0%)        0 (0%)         3d6h
+  openshift-monitoring                    openshift-state-metrics-5d5d644bc5-44mhb       3m (0%)       0 (0%)      72Mi (0%)        0 (0%)         3d6h
+  openshift-monitoring                    prometheus-adapter-77c9c99ff-jvvpw             1m (0%)       0 (0%)      40Mi (0%)        0 (0%)         2d7h
+  openshift-monitoring                    prometheus-k8s-1                               76m (1%)      0 (0%)      1119Mi (7%)      0 (0%)         3d6h
+  openshift-monitoring                    thanos-querier-58d494cd58-fms8r                14m (0%)      0 (0%)      77Mi (0%)        0 (0%)         3d6h
+  openshift-multus                        multus-54qpl                                   10m (0%)      0 (0%)      65Mi (0%)        0 (0%)         3d6h
+  openshift-multus                        multus-additional-cni-plugins-4vxcq            10m (0%)      0 (0%)      10Mi (0%)        0 (0%)         3d6h
+  openshift-multus                        network-metrics-daemon-sgwdh                   20m (0%)      0 (0%)      120Mi (0%)       0 (0%)         3d6h
+  openshift-network-diagnostics           network-check-target-9lkz6                     10m (0%)      0 (0%)      15Mi (0%)        0 (0%)         3d6h
+  openshift-openstack-infra               coredns-jakub-ops-wgt74-worker-0-58m4b         200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d6h
+  openshift-openstack-infra               keepalived-jakub-ops-wgt74-worker-0-58m4b      200m (2%)     0 (0%)      400Mi (2%)       0 (0%)         3d6h
+  openshift-sdn                           sdn-8h4db                                      110m (1%)     0 (0%)      220Mi (1%)       0 (0%)         3d6h
+  second-namespace-test                   my-cluster-entity-operator-74f8968d64-nm458    0 (0%)        0 (0%)      0 (0%)           0 (0%)         2m24s
+  second-namespace-test                   my-cluster-kafka-0                             0 (0%)        0 (0%)      0 (0%)           0 (0%)         3m12s
+  second-namespace-test                   my-cluster-zookeeper-0                         0 (0%)        0 (0%)      0 (0%)           0 (0%)         3m58s
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource                   Requests      Limits
+  --------                   --------      ------
+  cpu                        1063m (14%)   0 (0%)
+  memory                     3948Mi (26%)  0 (0%)
+  ephemeral-storage          0 (0%)        0 (0%)
+  hugepages-1Gi              0 (0%)        0 (0%)
+  hugepages-2Mi              0 (0%)        0 (0%)
+  attachable-volumes-cinder  0             0
+Events:                      <none>

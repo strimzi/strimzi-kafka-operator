@@ -45,6 +45,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(MAIN_NAMESPACE_CLUSTER_NAME, topicName, CO_NAMESPACE).build());
         KafkaTopicResource.kafkaTopicClient().inNamespace(CO_NAMESPACE).withName(topicName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        throw new RuntimeException();
     }
 
     /**
@@ -54,6 +55,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     void testKafkaInDifferentNsThanClusterOperator() {
         LOGGER.info("Deploying Kafka in different namespace than CO when CO watches multiple namespaces");
         checkKafkaInDiffNamespaceThanCO(MAIN_NAMESPACE_CLUSTER_NAME, SECOND_NAMESPACE);
+        throw new RuntimeException();
     }
 
     /**
@@ -64,6 +66,7 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     void testDeployMirrorMakerAcrossMultipleNamespace(ExtensionContext extensionContext) {
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO when CO watches multiple namespaces");
         checkMirrorMakerForKafkaInDifNamespaceThanCO(extensionContext, MAIN_NAMESPACE_CLUSTER_NAME);
+        throw new RuntimeException();
     }
 
     @BeforeAll

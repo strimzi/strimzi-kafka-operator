@@ -1,0 +1,10 @@
+LAST SEEN   TYPE     REASON              OBJECT                                           MESSAGE
+10m         Normal   CreatedSCCRanges    namespace/co-namespace-test                      created SCC ranges
+8m39s       Normal   Scheduled           pod/strimzi-cluster-operator-68cdc5477b-qmgqd    Successfully assigned co-namespace-test/strimzi-cluster-operator-68cdc5477b-qmgqd to jakub-ops-wgt74-worker-0-57cdd
+8m38s       Normal   AddedInterface      pod/strimzi-cluster-operator-68cdc5477b-qmgqd    Add eth0 [10.129.3.230/23] from openshift-sdn
+8m37s       Normal   Pulling             pod/strimzi-cluster-operator-68cdc5477b-qmgqd    Pulling image "quay.io/strimzi/operator:latest"
+8m37s       Normal   Pulled              pod/strimzi-cluster-operator-68cdc5477b-qmgqd    Successfully pulled image "quay.io/strimzi/operator:latest" in 363.507471ms
+8m35s       Normal   Created             pod/strimzi-cluster-operator-68cdc5477b-qmgqd    Created container strimzi-cluster-operator
+8m35s       Normal   Started             pod/strimzi-cluster-operator-68cdc5477b-qmgqd    Started container strimzi-cluster-operator
+8m52s       Normal   SuccessfulCreate    replicaset/strimzi-cluster-operator-68cdc5477b   Created pod: strimzi-cluster-operator-68cdc5477b-qmgqd
+8m52s       Normal   ScalingReplicaSet   deployment/strimzi-cluster-operator              Scaled up replica set strimzi-cluster-operator-68cdc5477b to 1

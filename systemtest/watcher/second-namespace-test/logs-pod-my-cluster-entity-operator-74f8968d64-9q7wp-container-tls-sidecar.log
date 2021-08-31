@@ -1,0 +1,34 @@
+Starting Stunnel with configuration:
+pid = /tmp/stunnel.pid
+foreground = yes
+debug = notice
+sslVersion = TLSv1.2
+[zookeeper-2181]
+client = yes
+CAfile = /tmp/cluster-ca.crt
+cert = /etc/tls-sidecar/eo-certs/entity-operator.crt
+key = /etc/tls-sidecar/eo-certs/entity-operator.key
+accept = 127.0.0.1:2181
+connect = my-cluster-zookeeper-client:2181
+delay = yes
+verify = 2
+
+
+2021.08.26 14:22:28 LOG5[ui]: stunnel 5.56 on x86_64-redhat-linux-gnu platform
+2021.08.26 14:22:28 LOG5[ui]: Compiled/running with OpenSSL 1.1.1g FIPS  21 Apr 2020
+2021.08.26 14:22:28 LOG5[ui]: Threading:PTHREAD Sockets:POLL,IPv6 TLS:ENGINE,FIPS,OCSP,PSK,SNI
+2021.08.26 14:22:28 LOG5[ui]: Reading configuration from file /tmp/stunnel.conf
+2021.08.26 14:22:28 LOG5[ui]: UTF-8 byte order mark not detected
+2021.08.26 14:22:28 LOG5[ui]: FIPS mode disabled
+2021.08.26 14:22:28 LOG4[ui]: Service [zookeeper-2181] uses "verifyChain" without subject checks
+2021.08.26 14:22:28 LOG4[ui]: Use "checkHost" or "checkIP" to restrict trusted certificates
+2021.08.26 14:22:28 LOG5[ui]: Configuration successful
+2021.08.26 14:22:32 LOG5[0]: Service [zookeeper-2181] accepted connection from 127.0.0.1:57088
+2021.08.26 14:22:32 LOG5[0]: s_connect: connected 172.30.108.198:2181
+2021.08.26 14:22:32 LOG5[0]: Service [zookeeper-2181] connected remote server from 10.129.3.224:57860
+2021.08.26 14:22:32 LOG5[0]: Certificate accepted at depth=0: O=io.strimzi, CN=my-cluster-zookeeper
+2021.08.26 14:24:33 LOG5[0]: Connection closed: 321 byte(s) sent to TLS, 461 byte(s) sent to socket
+2021.08.26 14:24:40 LOG5[1]: Service [zookeeper-2181] accepted connection from 127.0.0.1:58774
+2021.08.26 14:24:40 LOG5[1]: s_connect: connected 172.30.108.198:2181
+2021.08.26 14:24:40 LOG5[1]: Service [zookeeper-2181] connected remote server from 10.129.3.224:59546
+2021.08.26 14:24:40 LOG5[1]: Certificate accepted at depth=0: O=io.strimzi, CN=my-cluster-zookeeper
