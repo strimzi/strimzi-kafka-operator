@@ -33,7 +33,6 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.ClientTls;
-import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -410,16 +409,47 @@ public class VolumeUtils {
         }
     }
 
-    protected static void getVolumes(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String alias) {
-        getVolumes(authentication, tls, volumeList, isOpenShift, "oauth-certs", "", false, alias);
+    /**
+     * Returns the list of Volume used for authentication of Kafka client based components
+     *
+     * @param authentication    Authentication object from CRD
+     * @param tls    Kafka Client tls object
+     * @param volumeList    List where the volumes will be added
+     * @param isOpenShift   Indicates whether we run on OpenShift or not
+     * @return List of Volume
+     */
+    protected static void getVolumesTls(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift) {
+        getVolumesTls(authentication, tls, volumeList, isOpenShift, "oauth-certs", "", false, null);
     }
 
-    protected static void getVolumes(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String oauthVolumeNamePrefix, String alias) {
-        getVolumes(authentication, tls, volumeList, isOpenShift, oauthVolumeNamePrefix, "", false, alias);
+    /**
+     * Returns the list of Volume used for authentication of Kafka client based components
+     *
+     * @param authentication    Authentication object from CRD
+     * @param tls    Kafka Client tls object
+     * @param volumeList    List where the volumes will be added
+     * @param isOpenShift   Indicates whether we run on OpenShift or not
+     * @param oauthVolumeNamePrefix Prefix used for OAuth volumes
+     * @return List of Volume
+     */
+    protected static void getVolumesTls(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String oauthVolumeNamePrefix) {
+        getVolumesTls(authentication, tls, volumeList, isOpenShift, oauthVolumeNamePrefix, "", false, null);
     }
 
-
-    protected static void getVolumes(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean createOAuthSecretVolumes,  String alias) {
+    /**
+     * Returns the list of Volume for authentication of Kafka client based components
+     *
+     * @param authentication    Authentication object from CRD
+     * @param tls    Kafka Client tls object
+     * @param volumeList    List where the volumes will be added
+     * @param isOpenShift   Indicates whether we run on OpenShift or not
+     * @param oauthVolumeNamePrefix Prefix used for OAuth volumes
+     * @param volumeNamePrefix Prefix used for volume names
+     * @param createOAuthSecretVolumes   Indicates whether OAuth secret volumes will be added to the list
+     * @param alias   Alias to reference the Kafka Cluster
+     * @return List of Volume
+     */
+    protected static void getVolumesTls(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean createOAuthSecretVolumes,  String alias) {
 
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
@@ -429,7 +459,7 @@ public class VolumeUtils {
                     String volumeName = alias != null ? alias + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
                     // skipping if a volume with same Secret name was already added
                     if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeName))) {
-                        volumeList.add(VolumeUtils.createSecretVolume(volumeName, volumeName, isOpenShift));
+                        volumeList.add(VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), isOpenShift));
                     }
                 }
             }
@@ -438,15 +468,54 @@ public class VolumeUtils {
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, oauthVolumeNamePrefix, isOpenShift, volumeNamePrefix, createOAuthSecretVolumes);
     }
 
-    protected static void getVolumeMounts(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount, Rack rack) {
-        getVolumeMounts(authentication, tls, volumeList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, "oauth-certs", "", false, null, null);
+    /**
+     * Returns the list of VolumeMount for authentication of Kafka client based components
+     *
+     * @param authentication    Authentication object from CRD
+     * @param tls    Kafka Client tls object
+     * @param volumeMountList    List where the volume mounts will be added
+     * @param tlsCertBasedVolumeMount    Path where the TLS certs should be mounted
+     * @param passwordVolumeMount   Path where passwords should be mounted
+     * @param oauthTlsCertsBaseVolumeMount Path where the OAuth certificates would be mounted
+     * @return List of VolumeMount.
+     */
+    protected static void getVolumeMountsTls(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount) {
+        getVolumeMountsTls(authentication, tls, volumeMountList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, "oauth-certs", "", false, null, null);
     }
 
-    protected static void getVolumeMounts(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount, String oauthVolumeNamePrefix, Rack rack) {
-        getVolumeMounts(authentication, tls, volumeList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, oauthVolumeNamePrefix, "", false, null, null);
+    /**
+     * Returns the list of VolumeMount for authentication of Kafka client based components
+     *
+     * @param authentication    Authentication object from CRD
+     * @param tls    Kafka Client tls object
+     * @param volumeMountList    List where the volume mounts will be added
+     * @param tlsCertBasedVolumeMount    Path where the TLS certs should be mounted
+     * @param passwordVolumeMount   Path where passwords should be mounted
+     * @param oauthTlsCertsBaseVolumeMount Path where the OAuth certificates would be mounted
+     * @param oauthVolumeNamePrefix Prefix used for OAuth volume names
+     * @return List of VolumeMount.
+     */
+    protected static void getVolumeMountsTls(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount, String oauthVolumeNamePrefix) {
+        getVolumeMountsTls(authentication, tls, volumeMountList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, oauthVolumeNamePrefix, "", false, null, null);
     }
 
-    protected static List<VolumeMount> getVolumeMounts(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean createOAuthSecretVolumes, String oauthVolumeMountPath, String alias) {
+    /**
+     * Returns the list of VolumeMount for authentication of Kafka client based components
+     *
+     * @param authentication    Authentication object from CRD
+     * @param tls    Kafka Client tls object
+     * @param volumeMountList    List where the volume mounts will be added
+     * @param tlsCertBasedVolumeMount   Path where the TLS certs should be mounted
+     * @param passwordVolumeMount   Path where passwords should be mounted
+     * @param oauthTlsCertsBaseVolumeMount Path where the OAuth certificates would be mounted
+     * @param oauthVolumeNamePrefix Prefix used for OAuth volume names
+     * @param volumeNamePrefix Prefix used for volume mount names
+     * @param mountOAuthSecretVolumes Indicates whether OAuth secret volume mounts will be added to the list
+     * @param oauthVolumeMountPath Path where the OAuth secrets would be mounted
+     * @param alias    Alias used to reference the Kafka cluster
+     * @return List of VolumeMount.
+     */
+    protected static List<VolumeMount> getVolumeMountsTls(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean mountOAuthSecretVolumes, String oauthVolumeMountPath, String alias) {
 
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
@@ -463,7 +532,7 @@ public class VolumeUtils {
             }
         }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, oauthVolumeNamePrefix, volumeNamePrefix, createOAuthSecretVolumes, oauthVolumeMountPath);
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, oauthVolumeNamePrefix, volumeNamePrefix, mountOAuthSecretVolumes, oauthVolumeMountPath);
 
         return volumeMountList;
     }
