@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -15,9 +14,9 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -193,17 +192,9 @@ public class KafkaTopicUtils {
         });
     }
 
-    public static KafkaTopicList getAllKafkaTopicsWithPrefix(String namespace, String prefix) {
-        KafkaTopicList topics = KafkaTopicResource.kafkaTopicClient().inNamespace(namespace).list();
-        if (prefix != null) {
-            List<KafkaTopic> subsetTopics = new ArrayList<>();
-            for (KafkaTopic kt : topics.getItems()) {
-                if (kt.getMetadata().getName().startsWith(prefix)) {
-                    subsetTopics.add(kt);
-                }
-            }
-            topics.setItems(subsetTopics);
-        }
-        return topics;
+    public static List<KafkaTopic> getAllKafkaTopicsWithPrefix(String namespace, String prefix) {
+        return KafkaTopicResource.kafkaTopicClient().inNamespace(namespace).list().getItems()
+            .stream().filter(p -> p.getMetadata().getName().startsWith(prefix))
+            .collect(Collectors.toList());
     }
 }
