@@ -25,6 +25,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.interfaces.TestSeparator;
+import io.strimzi.test.logs.CollectorElement;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -536,7 +537,7 @@ public abstract class AbstractST implements TestSeparator {
                     final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
 
                     LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, extensionContext.getDisplayName());
-                    cluster.deleteNamespace(extensionContext, namespaceToDelete);
+                    cluster.deleteNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName()), namespaceToDelete);
                 }
             }
         }
@@ -588,7 +589,7 @@ public abstract class AbstractST implements TestSeparator {
                     // create namespace by
                     LOGGER.info("Creating namespace:{} for test case:{}", namespaceTestCase, testName);
 
-                    cluster.createNamespace(extensionContext, namespaceTestCase);
+                    cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName()), namespaceTestCase);
                     NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
                     if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
                         StUtils.copyImagePullSecret(namespaceTestCase);
