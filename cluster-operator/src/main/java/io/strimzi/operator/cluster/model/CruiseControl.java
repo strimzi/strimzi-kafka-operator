@@ -75,18 +75,15 @@ public class CruiseControl extends AbstractModel {
 
     protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
 
-    public static final String HTTP_SCHEME = "HTTP";
-    public static final String HTTPS_SCHEME = "HTTPS";
-
     // Fields used for Cruise Control API authentication
     public static final String API_ADMIN_NAME = "admin";
-    public static final String API_ADMIN_ROLE = "ADMIN";
-    public static final String API_USER_NAME = "user";
-    public static final String API_USER_PASSWORD = "user";
-    public static final String API_USER_ROLE = "USER";
+    private static final String API_ADMIN_ROLE = "ADMIN";
+    protected static final String API_USER_NAME = "user";
+    private static final String API_USER_ROLE = "USER";
     public static final String API_ADMIN_PASSWORD_KEY = APPLICATION_NAME + ".apiAdminPassword";
-    public static final String API_USER_PASSWORD_KEY = APPLICATION_NAME + ".apiUserPassword";
-    public static final String API_AUTH_FILE_KEY = APPLICATION_NAME + ".apiAuthFile";
+    private static final String API_USER_PASSWORD_KEY = APPLICATION_NAME + ".apiUserPassword";
+    private static final String API_AUTH_FILE_KEY = APPLICATION_NAME + ".apiAuthFile";
+    protected static final String API_HEALTHCHECK_PATH = "/kafkacruisecontrol/state";
 
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
     protected static final String TLS_SIDECAR_CC_CERTS_VOLUME_NAME = "cc-certs";
@@ -116,8 +113,8 @@ public class CruiseControl extends AbstractModel {
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 1;
     public static final boolean DEFAULT_CRUISE_CONTROL_METRICS_ENABLED = false;
-    public static final boolean DEFAULT_WEBSERVER_SECURITY_ENABLED = true;
-    public static final boolean DEFAULT_WEBSERVER_SSL_ENABLED = true;
+    protected static final boolean DEFAULT_WEBSERVER_SECURITY_ENABLED = true;
+    protected static final boolean DEFAULT_WEBSERVER_SSL_ENABLED = true;
 
     // Default probe settings (liveness and readiness) for health checks
     protected static final int DEFAULT_HEALTHCHECK_DELAY = 15;
@@ -131,7 +128,7 @@ public class CruiseControl extends AbstractModel {
     private TlsSidecar tlsSidecar;
     private String tlsSidecarImage;
     private String minInsyncReplicas = "1";
-    private String uriScheme;
+    private boolean authenticationEnabled;
     private boolean authorizationEnabled;
     private Double brokerDiskMiBCapacity;
     private int brokerCpuUtilizationCapacity;
@@ -152,6 +149,12 @@ public class CruiseControl extends AbstractModel {
     protected static final String ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY = "BROKER_CPU_UTILIZATION_CAPACITY";
     protected static final String ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
     protected static final String ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
+
+    protected static final String ENV_VAR_API_AUTHENTICATION_ENABLED = "API_AUTHENTICATION_ENABLED";
+    protected static final String ENV_VAR_API_AUTHORIZATION_ENABLED = "API_AUTHORIZATION_ENABLED";
+    protected static final String ENV_VAR_API_USER = "API_USER";
+    protected static final String ENV_VAR_API_PORT = "API_PORT";
+    protected static final String ENV_VAR_API_HEALTHCHECK_PATH = "API_HEALTHCHECK_PATH";
 
     protected static final String CO_ENV_VAR_CUSTOM_CRUISE_CONTROL_POD_LABELS = "STRIMZI_CUSTOM_CRUISE_CONTROL_LABELS";
 
@@ -184,8 +187,6 @@ public class CruiseControl extends AbstractModel {
         this.serviceName = CruiseControlResources.serviceName(cluster);
         this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
         this.replicas = DEFAULT_REPLICAS;
-        this.readinessPath = "/kafkacruisecontrol/state";
-        this.livenessPath = "/kafkacruisecontrol/state";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.mountPath = "/var/lib/kafka";
@@ -272,13 +273,7 @@ public class CruiseControl extends AbstractModel {
 
             cruiseControl = cruiseControl.updateConfiguration(spec);
             CruiseControlConfiguration c = (CruiseControlConfiguration) cruiseControl.getConfiguration();
-            Boolean sslEnabled = isApiAuthenticationEnabled(c);
-            if (sslEnabled) {
-                cruiseControl.uriScheme = HTTPS_SCHEME;
-            } else {
-                cruiseControl.uriScheme = HTTP_SCHEME;
-            }
-
+            cruiseControl.authenticationEnabled = isApiAuthenticationEnabled(c);
             cruiseControl.authorizationEnabled = isApiAuthorizationEnabled(c);
 
             KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
@@ -415,13 +410,6 @@ public class CruiseControl extends AbstractModel {
         return CruiseControlResources.serviceName(cluster);
     }
 
-    public List<HTTPHeader> getHttpHeaders() {
-        if (this.authorizationEnabled) {
-            return Arrays.asList(generateAuthHttpHeader(API_USER_NAME, API_USER_PASSWORD));
-        }
-        return null;
-    }
-
     public Service generateService() {
         if (!isDeployed()) {
             return null;
@@ -493,8 +481,14 @@ public class CruiseControl extends AbstractModel {
                 .withCommand("/opt/cruise-control/cruise_control_run.sh")
                 .withEnv(getEnvVars())
                 .withPorts(getContainerPortList())
-                .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME, uriScheme, getHttpHeaders()))
-                .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME, uriScheme, getHttpHeaders()))
+                .withLivenessProbe(ProbeGenerator.defaultBuilder(livenessProbeOptions)
+                        .withNewExec()
+                            .withCommand("/opt/cruise-control/cruise_control_healthcheck.sh")
+                        .endExec().build())
+                .withReadinessProbe(ProbeGenerator.defaultBuilder(readinessProbeOptions)
+                        .withNewExec()
+                            .withCommand("/opt/cruise-control/cruise_control_healthcheck.sh")
+                        .endExec().build())
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
@@ -544,6 +538,12 @@ public class CruiseControl extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY, String.valueOf(brokerCpuUtilizationCapacity)));
         varList.add(buildEnvVar(ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY, String.valueOf(brokerInboundNetworkKiBPerSecondCapacity)));
         varList.add(buildEnvVar(ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY,  String.valueOf(brokerOuboundNetworkKiBPerSecondCapacity)));
+
+        varList.add(buildEnvVar(ENV_VAR_API_AUTHENTICATION_ENABLED,  String.valueOf(this.authenticationEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_API_AUTHORIZATION_ENABLED,  String.valueOf(this.authorizationEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_API_USER,  API_USER_NAME));
+        varList.add(buildEnvVar(ENV_VAR_API_PORT,  String.valueOf(REST_API_PORT)));
+        varList.add(buildEnvVar(ENV_VAR_API_HEALTHCHECK_PATH,  String.valueOf(API_HEALTHCHECK_PATH)));
 
         heapOptions(varList, 1.0, 0L);
         jvmPerformanceOptions(varList);
@@ -637,6 +637,7 @@ public class CruiseControl extends AbstractModel {
     public static Map<String, String> generateCruiseControlApiCredentials() {
         PasswordGenerator passwordGenerator = new PasswordGenerator(16);
         String apiAdminPassword = passwordGenerator.generate();
+        String apiUserPassword = passwordGenerator.generate();
 
         /*
          * Create Cruise Control API authorization credentials file following Jetty's
@@ -644,11 +645,11 @@ public class CruiseControl extends AbstractModel {
          */
         String authCredentialsFile =
                 API_ADMIN_NAME + ": " + apiAdminPassword + "," + API_ADMIN_ROLE + "\n" +
-                API_USER_NAME + ": " + API_USER_PASSWORD + "," + API_USER_ROLE + "\n";
+                API_USER_NAME + ": " + apiUserPassword + "," + API_USER_ROLE + "\n";
 
         Map<String, String> data = new HashMap<>(3);
         data.put(API_ADMIN_PASSWORD_KEY, encodeToBase64(apiAdminPassword));
-        data.put(API_USER_PASSWORD_KEY, encodeToBase64(API_USER_PASSWORD));
+        data.put(API_USER_PASSWORD_KEY, encodeToBase64(apiUserPassword));
         data.put(API_AUTH_FILE_KEY, encodeToBase64(authCredentialsFile));
 
         return data;

@@ -10,13 +10,11 @@ import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
-import io.fabric8.kubernetes.api.model.HTTPHeader;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.HostAliasBuilder;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
-import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
@@ -55,7 +53,6 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -68,6 +65,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.operator.cluster.model.CruiseControl.API_HEALTHCHECK_PATH;
+import static io.strimzi.operator.cluster.model.CruiseControl.API_USER_NAME;
+import static io.strimzi.operator.cluster.model.CruiseControl.DEFAULT_WEBSERVER_SECURITY_ENABLED;
+import static io.strimzi.operator.cluster.model.CruiseControl.DEFAULT_WEBSERVER_SSL_ENABLED;
 import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY;
 import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_BROKER_DISK_MIB_CAPACITY;
 import static io.strimzi.operator.cluster.model.CruiseControl.ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
@@ -181,7 +182,12 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY).withValue(Integer.toString(DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY)).build());
         expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY).withValue(Double.toString(DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY)).build());
         expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY).withValue(Double.toString(DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY)).build());
-        expected.add(new EnvVarBuilder().withName(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_HEAP_OPTS).withValue(kafkaHeapOpts).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTHENTICATION_ENABLED).withValue(Boolean.toString(DEFAULT_WEBSERVER_SSL_ENABLED)).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTHORIZATION_ENABLED).withValue(Boolean.toString(DEFAULT_WEBSERVER_SECURITY_ENABLED)).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_USER).withValue(API_USER_NAME).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_PORT).withValue(Integer.toString(CruiseControl.REST_API_PORT)).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_HEALTHCHECK_PATH).withValue(API_HEALTHCHECK_PATH).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_KAFKA_HEAP_OPTS).withValue(kafkaHeapOpts).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION).withValue(ccConfiguration.getConfiguration()).build());
 
         return expected;
@@ -261,7 +267,6 @@ public class CruiseControlTest {
     @ParallelTest
     public void testGenerateDeployment() {
         Deployment dep = cc.generateDeployment(true, null, null, null);
-        HTTPHeader header = CruiseControl.generateAuthHttpHeader(CruiseControl.API_USER_NAME, CruiseControl.API_USER_PASSWORD);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -277,12 +282,8 @@ public class CruiseControlTest {
         assertThat(ccContainer.getImage(), is(cc.image));
         assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(CruiseControl.DEFAULT_HEALTHCHECK_DELAY)));
         assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(CruiseControl.DEFAULT_HEALTHCHECK_TIMEOUT)));
-        assertThat(ccContainer.getLivenessProbe().getHttpGet().getScheme(), is(CruiseControl.HTTPS_SCHEME));
-        assertThat(ccContainer.getLivenessProbe().getHttpGet().getHttpHeaders().contains(header), is(true));
         assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(CruiseControl.DEFAULT_HEALTHCHECK_DELAY)));
         assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(CruiseControl.DEFAULT_HEALTHCHECK_TIMEOUT)));
-        assertThat(ccContainer.getReadinessProbe().getHttpGet().getScheme(), is(CruiseControl.HTTPS_SCHEME));
-        assertThat(ccContainer.getReadinessProbe().getHttpGet().getHttpHeaders().contains(header), is(true));
 
         assertThat(ccContainer.getEnv(), is(getExpectedEnvVars()));
         assertThat(ccContainer.getPorts().size(), is(1));
@@ -663,63 +664,6 @@ public class CruiseControlTest {
         assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
         assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
         assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
-    }
-
-    @ParallelTest
-    public void testApiSecurityEnabled() {
-        Map<String, Object> config = ccConfig;
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SECURITY_ENABLE.getValue(), true);
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), true);
-        testApiSecurity(config, CruiseControl.HTTPS_SCHEME, cc.getHttpHeaders());
-    }
-
-    @ParallelTest
-    public void testApiSecurityDisabled() {
-        Map<String, Object> config = ccConfig;
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SECURITY_ENABLE.getValue(), false);
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), false);
-        testApiSecurity(config, CruiseControl.HTTP_SCHEME, null);
-    }
-
-    @ParallelTest
-    public void testApiSecurityAuthenticationDisabled() {
-        Map<String, Object> config = ccConfig;
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SECURITY_ENABLE.getValue(), true);
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), false);
-        testApiSecurity(config, CruiseControl.HTTP_SCHEME, cc.getHttpHeaders());
-    }
-
-    @ParallelTest
-    public void testApiSecurityAuthorizationDisabled() {
-        Map<String, Object> config = ccConfig;
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SECURITY_ENABLE.getValue(), false);
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), true);
-        testApiSecurity(config, CruiseControl.HTTPS_SCHEME, null);
-    }
-
-    public void testApiSecurity(Map<String, Object> config, String httpScheme, List<HTTPHeader> headers) {
-        CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
-                .withImage(ccImage)
-                .withConfig(config)
-                .build();
-
-        Kafka resource = createKafka(cruiseControlSpec);
-
-        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
-        Deployment dep = cc.generateDeployment(true, null, null, null);
-        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
-
-        // checks on the main Cruise Control container
-        Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().get();
-
-        // Check for headers and URI scheme of probes
-        Probe livenessProbe = ccContainer.getLivenessProbe();
-        assertThat(livenessProbe.getHttpGet().getHttpHeaders(), is(headers));
-        assertThat(livenessProbe.getHttpGet().getScheme(), is(httpScheme));
-
-        Probe readinessProbe = ccContainer.getReadinessProbe();
-        assertThat(readinessProbe.getHttpGet().getHttpHeaders(), is(headers));
-        assertThat(readinessProbe.getHttpGet().getScheme(), is(httpScheme));
     }
 
     @ParallelTest
