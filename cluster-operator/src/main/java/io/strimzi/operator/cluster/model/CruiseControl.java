@@ -67,6 +67,7 @@ import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUIS
 import static io.strimzi.operator.cluster.model.VolumeUtils.createConfigMapVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createSecretVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
+import static java.util.Collections.emptyMap;
 
 public class CruiseControl extends AbstractModel {
     protected static final String APPLICATION_NAME = "cruise-control";
@@ -463,8 +464,8 @@ public class CruiseControl extends AbstractModel {
 
         return createDeployment(
                 updateStrategy,
-                Collections.emptyMap(),
-                Collections.emptyMap(),
+                emptyMap(),
+                emptyMap(),
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
@@ -664,7 +665,7 @@ public class CruiseControl extends AbstractModel {
         if (!isDeployed()) {
             return null;
         }
-        return ModelUtils.createSecret(CruiseControl.apiSecretName(cluster), namespace, labels, createOwnerReference(), generateCruiseControlApiCredentials());
+        return ModelUtils.createSecret(CruiseControl.apiSecretName(cluster), namespace, labels, createOwnerReference(), generateCruiseControlApiCredentials(), emptyMap(), emptyMap());
     }
 
     /**
