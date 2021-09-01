@@ -117,7 +117,7 @@ The plugins are used by the workers that orchestrate the streaming processes.
 Build (`build`) configuration automatically builds a container image with connector plugins.
 
 .Example connector plugin configuration
-[source,yaml,subs="attributes+"]
+[source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaConnectApiVersion}
 kind: KafkaConnect
@@ -136,8 +136,8 @@ spec:
       - name: debezium-postgres-connector
         artifacts:
           - type: tgz
-            url: https://ARTIFACT-ADDRESS.tgz
-            sha512sum: HASH-NUMBER-TO-VERIFY-ARTIFACT
+            url: https://_ARTIFACT-ADDRESS_.tgz
+            sha512sum: _HASH-NUMBER-TO-VERIFY-ARTIFACT_
       # ...
   # ...
 ----
