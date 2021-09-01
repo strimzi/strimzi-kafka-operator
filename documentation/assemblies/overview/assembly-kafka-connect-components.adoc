@@ -1,0 +1,24 @@
+// This assembly is included in:
+//
+// overview/overview.adoc
+
+[id="kafka-connect-components_{context}"]
+= About Kafka Connect
+
+[role="_abstract"]
+Kafka Connect is an integration toolkit for streaming data between Kafka brokers and other systems.
+The other system is typically an external data source or target, such as a database.
+Kafka Connect runs connector instances to connect Kafka to other systems.
+Connector instances provide the pipeline for copying data to and from Kafka.
+Connector plugins allow you to configure the implementation required for the connector instances.
+
+MirrorMaker 2.0 also uses the Kafka Connect framework.
+Specialized connectors manage data replication between source and target Kafka clusters.
+
+[role="_additional-resources"]
+.Additional resources
+
+* http://kafka.apache.org[Apache Kafka documentation^]
+* link:{BookURLUsing}#proc-mirrormaker-replication-str[Synchronizing data between Kafka clusters using MirrorMaker 2.0^]
+
+include::modules/con-key-features-kafka-connect.adoc[leveloffset=+1]
