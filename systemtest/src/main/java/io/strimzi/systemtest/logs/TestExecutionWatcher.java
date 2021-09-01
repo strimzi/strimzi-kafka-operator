@@ -25,9 +25,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         if (!(throwable instanceof TestAbortedException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
             final String testMethod = extensionContext.getRequiredTestMethod().getName();
-            CollectorElement collectorElement = new CollectorElement(testClass, testMethod);
-
-            collectLogs(collectorElement);
+            collectLogs(new CollectorElement(testClass, testMethod));
         }
         throw throwable;
     }
@@ -35,10 +33,8 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     @Override
     public void handleBeforeAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         if (!(throwable instanceof TestAbortedException)) {
-            String testClass = extensionContext.getRequiredTestClass().getName();
-            CollectorElement collectorElement = new CollectorElement(testClass);
-
-            collectLogs(collectorElement);
+            final String testClass = extensionContext.getRequiredTestClass().getName();
+            collectLogs(new CollectorElement(testClass));
         }
         throw throwable;
     }
@@ -48,10 +44,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         if (!(throwable instanceof TestAbortedException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
             final String testMethod = extensionContext.getRequiredTestMethod().getName();
-
-            CollectorElement collectorElement = new CollectorElement(testClass, testMethod);
-
-            collectLogs(collectorElement);
+            collectLogs(new CollectorElement(testClass, testMethod));
         }
         throw throwable;
     }
@@ -61,9 +54,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         final String testClass = extensionContext.getRequiredTestClass().getName();
         final String testMethod = extensionContext.getRequiredTestMethod().getName();
 
-        CollectorElement collectorElement = new CollectorElement(testClass, testMethod);
-
-        collectLogs(collectorElement);
+        collectLogs(new CollectorElement(testClass, testMethod));
         throw throwable;
     }
 
@@ -71,9 +62,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     public void handleAfterAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         final String testClass = extensionContext.getRequiredTestClass().getName();
 
-        CollectorElement collectorElement = new CollectorElement(testClass);
-
-        collectLogs(collectorElement);
+        collectLogs(new CollectorElement(testClass));
         throw throwable;
     }
 
