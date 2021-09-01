@@ -227,7 +227,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .withTopicOperation(AdminClientOperations.UPDATE_TOPICS.toString())
             .withAdditionalConfig(getAdminClientConfig(kafkaUsername))
             .build();
-        resourceManager.createResource(extensionContext, true, adminClientJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, false, adminClientJob.defaultAdmin().build());
         String alterPodName = kubeClient().listPods("job-name", alterAdminName).get(0).getMetadata().getName();
         PodUtils.waitUntilMessageIsInPodLogs(
                 alterPodName,
