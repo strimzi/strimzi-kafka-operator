@@ -81,10 +81,10 @@ spec:
 The group ID identifies the Kafka Connect worker nodes. Kafka Connect clusters cannot share the ID or topics as it will create errors.
 The names of the connectors used by each Kafka Connect instance must also be unique.
 
-You can also deploy connector plugins using the `build` configuration of the `KafkaConnect` resource.
+You can also link:{BookURLDeploying}#creating-new-image-using-kafka-connect-build-str[deploy connector plugins^] using the `build` configuration of the `KafkaConnect` resource.
 Connector plugins provide specific configuration for the creation of connector instances.
 
-After connector plugins have been deployed, you can use Strimzi’s `KafkaConnector` custom resource or the Kafka Connect API to manage connector instances.
+After connector plugins have been added to the Kafka Connect deployment, you can use Strimzi’s `KafkaConnector` custom resource or the Kafka Connect API to manage connector instances.
 You can also create new connector instances using these options.
 
 The Cluster Operator manages Kafka Connect clusters deployed using the `KafkaConnect` resource and connectors created using the `KafkaConnector` resource.
@@ -93,8 +93,8 @@ The Cluster Operator manages Kafka Connect clusters deployed using the `KafkaCon
 == Connector plugin configuration
 
 Connector plugins provide the configuration for connecting to an external data source.
-A set of JAR files or TGZ archives define the implementation required to connect to the data source.
-Connector plugins are readily available for use with many external systems.
+Plugins contain a set of files that define the implementation required to connect to the data source.
+Connector plugins for many external systems are available for use with Kafka Connect.
 You can also create your own connector plugins.
 
 Connector plugins provide the configuration as a set of files that define the implementation required to connect to specific types of external data system.
@@ -245,6 +245,8 @@ curl -X POST \
 If KafkaConnectors are enabled, manual changes made directly using the Kafka Connect REST API are reverted by the Cluster Operator.
 
 The operations supported by the REST API are described in the http://kafka.apache.org[Apache Kafka documentation^].
+
+NOTE: You can expose the Kafka Connect API service outside Kubernetes. Create a service that uses a connection mechanism that provides the access, such as an ingress or route.
 
 [role="_additional-resources"]
 .Additional resources
