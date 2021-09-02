@@ -8,6 +8,7 @@
 
 ### Changes, deprecations and removals
 
+* imageRepositoryOverride,imageRegistryOverride and imageTagOverride are now removed from values.yaml. defaultImageRepository, defaultImageRegistry and defaultImageTag values are introduced in helm charts which sets the default registry, repository and tags for the images. Now the registry, repository and tag for a single image can be configured as per the requirement.
 
 ## 0.25.0
 

@@ -5,11 +5,15 @@
 watchNamespaces: []
 watchAnyNamespace: false
 
+defaultImageRegistry: quay.io
+defaultImageRepository: strimzi
+defaultImageTag: latest
+
 image:
-  registry: quay.io
-  repository: strimzi
+  registry: ""
+  repository: ""
   name: operator
-  tag: latest
+  tag: ""
 logVolume: co-config-volume
 logConfigMap: strimzi-cluster-operator
 logLevel: ${env:STRIMZI_LOG_LEVEL:-INFO}
@@ -32,94 +36,94 @@ securityContext: {}
 # Ex) repository: registry.xyzcorp.com/strimzi/zookeeper
 zookeeper:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository: ""
     name: kafka
-    tagPrefix: latest
+    tagPrefix: ""
 kafka:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository: ""
     name: kafka
-    tagPrefix: latest
+    tagPrefix: ""
 kafkaConnect:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository: ""
     name: kafka
-    tagPrefix: latest
+    tagPrefix: ""
 topicOperator:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository: ""
     name: operator
-    tag: latest
+    tag: ""
 userOperator:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry:
+    repository:
     name: operator
-    tag: latest
+    tag: ""
 kafkaInit:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository: ""
     name: operator
-    tag: latest
+    tag: ""
 tlsSidecarEntityOperator:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository: ""
     name: kafka
-    tagPrefix: latest
+    tagPrefix: ""
 kafkaMirrorMaker:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository: ""
     name: kafka
-    tagPrefix: latest
+    tagPrefix: ""
 kafkaBridge:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository:
     name: kafka-bridge
     tag: 0.20.2
 kafkaExporter:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository: ""
     name: kafka
-    tagPrefix: latest
+    tagPrefix: ""
 jmxTrans:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository: ""
     name: jmxtrans
-    tag: latest
+    tag: ""
 kafkaMirrorMaker2:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository: ""
     name: kafka
-    tagPrefix: latest
+    tagPrefix: ""
 cruiseControl:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository: ""
     name: kafka
-    tagPrefix: latest
+    tagPrefix: ""
 tlsSidecarCruiseControl:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository: ""
     name: kafka
-    tagPrefix: latest
+    tagPrefix: ""
 kanikoExecutor:
   image:
-    registry: quay.io
-    repository: strimzi
+    registry: ""
+    repository: ""
     name: kaniko-executor
-    tag: latest
+    tag: ""
 resources:
   limits:
     memory: 384Mi
@@ -134,12 +138,6 @@ readinessProbe:
   initialDelaySeconds: 10
   periodSeconds: 30
 
-# Override the docker registry used by all Strimzi images
-imageRegistryOverride: ""
-# Override the docker image repository used by all Strimzi images
-imageRepositoryOverride: ""
-# Override the docker image tag used by all Strimzi images
-imageTagOverride: ""
 createGlobalResources: true
 # Override the exclude pattern for exclude some labels
 labelsExclusionPattern: ""
