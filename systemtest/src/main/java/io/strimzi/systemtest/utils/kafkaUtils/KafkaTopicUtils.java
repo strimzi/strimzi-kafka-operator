@@ -197,4 +197,11 @@ public class KafkaTopicUtils {
             .stream().filter(p -> p.getMetadata().getName().startsWith(prefix))
             .collect(Collectors.toList());
     }
+
+    public static void deleteAllKafkaTopicsWithPrefix(String namespace, String prefix) {
+        List<KafkaTopic> ktl = KafkaTopicUtils.getAllKafkaTopicsWithPrefix(namespace, prefix);
+        for (KafkaTopic kt : ktl) {
+            cmdKubeClient().namespace(namespace).deleteByName(KafkaTopic.RESOURCE_SINGULAR, kt.getMetadata().getName());
+        }
+    }
 }
