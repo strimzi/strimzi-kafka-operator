@@ -55,14 +55,15 @@ public class JobUtils {
      * Wait for specific Job Running active status
      * @param jobName job name
      * @param namespace namespace
-     * @param timeout timeout in ms after which we assume that job runs
      */
-    public static void waitForJobRunning(String jobName, String namespace, long timeout) {
+    public static boolean waitForJobRunning(String jobName, String namespace) {
         LOGGER.info("Waiting for job: {} will be in active state", jobName);
-        TestUtils.waitFor("job active", Constants.GLOBAL_POLL_INTERVAL, timeout,
+        TestUtils.waitFor("job active", Constants.GLOBAL_POLL_INTERVAL, ResourceOperation.getTimeoutForResourceReadiness(Constants.JOB),
             () -> {
                 JobStatus jb = kubeClient().namespace(namespace).getJobStatus(jobName);
                 return jb.getActive() > 0;
             });
+
+        return true;
     }
 }
