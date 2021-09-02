@@ -327,7 +327,7 @@ public class NetworkPoliciesST extends AbstractST {
 
         EnvVar networkPolicyGenerationEnv = new EnvVarBuilder()
             .withName("STRIMZI_NETWORK_POLICY_GENERATION")
-            .withValue("true")
+            .withValue("false")
             .build();
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
