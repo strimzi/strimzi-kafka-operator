@@ -6,8 +6,7 @@
 = Broker scaling configuration
 
 [role="_abstract"]
-If your cluster already has topics defined, you can scale clusters by adding and removing brokers.
-You configure the `Kafka.spec.kafka.replicas configuration` to add or reduce the number of brokers.
+You configure the `Kafka.spec.kafka.replicas` configuration to add or reduce the number of brokers.
 
 [discrete]
 == Broker addition
@@ -18,9 +17,9 @@ However, in situations where every broker is constrained by a particular resourc
 Instead, you need to add brokers to the cluster.
 
 When you add an extra broker to the cluster, Kafka does not assign any partitions to it automatically.
-You must decide which partitions to move from the existing brokers to the new broker.
+You must decide which partitions to reassign from the existing brokers to the new broker.
 
-Once the partitions have been redistributed between all the brokers, the resource utilization of each broker should be reduced.
+Once the partitions have been redistributed between all the brokers, the resource utilization of each broker is reduced.
 
 [discrete]
 == Broker removal

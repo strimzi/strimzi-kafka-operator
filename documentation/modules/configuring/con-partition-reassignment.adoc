@@ -24,7 +24,7 @@ For a given partition, once the new broker has caught up and joined the ISR (in-
 
 `--verify`::
 Using the same _reassignment JSON file_ as the `--execute` step, `--verify` checks whether all the partitions in the file have been moved to their intended brokers.
-If the reassignment is complete, ``--verify` also removes any traffic throttles (`--throttle`) that are in effect.
+If the reassignment is complete, `--verify` also removes any traffic throttles (`--throttle`) that are in effect.
 Unless removed, throttles will continue to affect the cluster even after the reassignment has finished.
 
 It is only possible to have one reassignment running in a cluster at any given time, and it is not possible to cancel a running reassignment.
@@ -120,8 +120,8 @@ The value should be either an absolute path to the log directory, or the `any` k
 Partition reassignment can be a slow process because it involves transferring large amounts of data between brokers.
 To avoid a detrimental impact on clients, you can throttle the reassignment process.
 Use the `--throttle` parameter with the `kafka-reassign-partitions.sh` tool to throttle a reassignment.
-You specify a maxiumum threshold for the movement of partitions between brokers in bytes per second.
-For example, `--throttle 5000000` sets a maximum threshold for moving partitions of 50 MBps. 
+You specify a maximum threshold in bytes per second for the movement of partitions between brokers.
+For example, `--throttle 5000000` sets a maximum threshold for moving partitions of 50 MBps.
 
 Throttling might cause the reassignment to take longer to complete.
 
