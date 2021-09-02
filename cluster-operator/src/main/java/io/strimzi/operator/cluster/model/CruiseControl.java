@@ -67,7 +67,6 @@ import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUIS
 import static io.strimzi.operator.cluster.model.VolumeUtils.createConfigMapVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createSecretVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
-import static java.util.Collections.emptyMap;
 
 public class CruiseControl extends AbstractModel {
     protected static final String APPLICATION_NAME = "cruise-control";
@@ -93,9 +92,6 @@ public class CruiseControl extends AbstractModel {
     protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "cruise-control-metrics-and-logging";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
-
-    private static final String CC_AUTH_CREDENTIALS_FILENAME = API_AUTH_FILE_KEY;
-
     protected static final String API_AUTH_CONFIG_VOLUME_NAME = "api-auth-config";
     protected static final String API_AUTH_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/api-auth-config/";
 
@@ -219,7 +215,7 @@ public class CruiseControl extends AbstractModel {
     }
 
     public static String getAuthCredentialsFile() {
-        return API_AUTH_CONFIG_VOLUME_MOUNT + CC_AUTH_CREDENTIALS_FILENAME;
+        return API_AUTH_CONFIG_VOLUME_MOUNT + API_AUTH_FILE_KEY;
     }
 
     private static boolean isEnabledInConfiguration(CruiseControlConfiguration config, String s1, String s2) {
@@ -464,8 +460,8 @@ public class CruiseControl extends AbstractModel {
 
         return createDeployment(
                 updateStrategy,
-                emptyMap(),
-                emptyMap(),
+                Collections.emptyMap(),
+                Collections.emptyMap(),
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
@@ -601,6 +597,7 @@ public class CruiseControl extends AbstractModel {
 
         return varList;
     }
+
     /**
      * Generates the name of the Cruise Control secret with API authorization credentials
      *
@@ -665,7 +662,7 @@ public class CruiseControl extends AbstractModel {
         if (!isDeployed()) {
             return null;
         }
-        return ModelUtils.createSecret(CruiseControl.apiSecretName(cluster), namespace, labels, createOwnerReference(), generateCruiseControlApiCredentials(), emptyMap(), emptyMap());
+        return ModelUtils.createSecret(CruiseControl.apiSecretName(cluster), namespace, labels, createOwnerReference(), generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
     }
 
     /**

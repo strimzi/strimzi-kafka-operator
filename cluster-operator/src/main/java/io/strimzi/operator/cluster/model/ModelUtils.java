@@ -135,7 +135,6 @@ public class ModelUtils {
     public static Secret buildSecret(Reconciliation reconciliation, ClusterCa clusterCa, Secret secret, String namespace, String secretName,
                                      String commonName, String keyCertName, Labels labels, OwnerReference ownerReference, boolean isMaintenanceTimeWindowsSatisfied) {
         Map<String, String> data = new HashMap<>(4);
-
         CertAndKey certAndKey = null;
         boolean shouldBeRegenerated = false;
         List<String> reasons = new ArrayList<>(2);
