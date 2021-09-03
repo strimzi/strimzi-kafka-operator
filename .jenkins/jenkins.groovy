@@ -34,10 +34,11 @@ def buildStrimziImages() {
 }
 
 def runSystemTests(String workspace, String testCases, String testProfile, String testGroups, String excludeGroups, String testsInParallel) {
+    def groupsTag = testGroups.isEmpty() ? "" : "-Dgroups=${testGroups} "
     withMaven(mavenOpts: '-Djansi.force=true') {
         sh(script: "mvn -f ${workspace}/systemtest/pom.xml verify " +
-            "-P ${testProfile}" +
-            "-Dgroups=${testGroups} " +
+            "-P${testProfile} " +
+            "${testGroups}" +
             "-DexcludedGroups=${excludeGroups} " +
             "-Dit.test=${testCases} " +
             "-Djava.net.preferIPv4Stack=true " +
