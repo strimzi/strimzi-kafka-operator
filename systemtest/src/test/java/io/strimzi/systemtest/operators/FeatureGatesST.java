@@ -20,7 +20,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.annotations.IsolatedTest;
@@ -29,7 +28,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -111,7 +109,6 @@ public class FeatureGatesST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
-        JobUtils.waitForJobRunning(consumerName, NAMESPACE, Duration.ofSeconds(20).toMillis());
 
         LOGGER.info("Delete first found Kafka broker pod.");
         kubeClient(NAMESPACE).deletePod(NAMESPACE, kafkaPod);
