@@ -3348,7 +3348,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> entityOperatorReady() {
             if (this.entityOperator != null && isEntityOperatorDeployed()) {
-                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.entityOperator.getName());
                 return withVoid(deploymentOperations.deploymentReadiness(reconciliation, namespace, this.entityOperator.getName(), 1_000, operationTimeoutMs)).map(i -> this);
             }
             return withVoid(Future.succeededFuture());
@@ -3446,7 +3445,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> cruiseControlReady() {
             if (this.cruiseControl != null && ccDeployment != null) {
-                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.cruiseControl.getName());
                 return withVoid(deploymentOperations.deploymentReadiness(reconciliation, namespace, this.cruiseControl.getName(), 1_000, operationTimeoutMs)).map(i -> this);
             }
             return withVoid(Future.succeededFuture());
@@ -3770,7 +3768,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> jmxTransDeploymentReady() {
             if (this.jmxTrans != null && jmxTransDeployment != null) {
-                Future<Deployment> future = deploymentOperations.getAsync(namespace,  this.jmxTrans.getName());
                 return withVoid(deploymentOperations.deploymentReadiness(reconciliation, namespace, this.jmxTrans.getName(), 1_000, operationTimeoutMs)).map(i -> this);
             }
             return withVoid(Future.succeededFuture());
