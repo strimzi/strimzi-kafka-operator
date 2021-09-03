@@ -11,8 +11,9 @@ import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.ForeachAction;
 import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.processor.Processor;
-import org.apache.kafka.streams.processor.ProcessorContext;
+import org.apache.kafka.streams.processor.api.Processor;
+import org.apache.kafka.streams.processor.api.ProcessorContext;
+import org.apache.kafka.streams.processor.api.Record;
 import org.apache.kafka.streams.state.KeyValueStore;
 import org.apache.kafka.streams.state.StoreBuilder;
 import org.apache.kafka.streams.state.Stores;
@@ -44,7 +45,6 @@ public class TopicStoreTopologyProvider implements Supplier<Topology> {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public Topology get() {
         StreamsBuilder builder = new StreamsBuilder();
 
@@ -87,8 +87,7 @@ public class TopicStoreTopologyProvider implements Supplier<Topology> {
      * In the case of invalid store update result is not-null.
      * Dispatcher applies the result to a waiting callback CompletionStage.
      */
-    @SuppressWarnings("deprecation")
-    private static class TopicCommandTransformer implements Processor<String, TopicCommand> {
+    private static class TopicCommandTransformer implements Processor<String, TopicCommand, Void, Void> {
         private final String topicStoreName;
         private final ForeachAction<? super String, ? super Integer> dispatcher;
 
@@ -109,22 +108,22 @@ public class TopicStoreTopologyProvider implements Supplier<Topology> {
         }
 
         @Override
-        public void process(String key, TopicCommand value) {
-            String uuid = value.getUuid();
-            TopicCommand.Type type = value.getType();
+        public void process(final Record<String, TopicCommand> record) {
+            String uuid = record.value().getUuid();
+            TopicCommand.Type type = record.value().getType();
             Integer result = null;
             switch (type) {
                 case CREATE:
-                    Topic previous = store.putIfAbsent(key, value.getTopic());
+                    Topic previous = store.putIfAbsent(record.key(), record.value().getTopic());
                     if (previous != null) {
                         result = KafkaStreamsTopicStore.toIndex(TopicStore.EntityExistsException.class);
                     }
                     break;
                 case UPDATE:
-                    store.put(key, value.getTopic());
+                    store.put(record.key(), record.value().getTopic());
                     break;
                 case DELETE:
-                    previous = store.delete(key);
+                    previous = store.delete(record.key());
                     if (previous == null) {
                         result = KafkaStreamsTopicStore.toIndex(TopicStore.NoSuchEntityExistsException.class);
                     }
