@@ -151,7 +151,7 @@ public class KafkaImplTest {
 
     private void mockDeleteTopics(Admin admin, Map<String, Either<Void, Exception>> result) {
         DeleteTopicsResult deleteTopicsResult = mock(DeleteTopicsResult.class);
-        when(deleteTopicsResult.values()).thenReturn(result.entrySet().stream().collect(toMap(
+        when(deleteTopicsResult.topicNameValues()).thenReturn(result.entrySet().stream().collect(toMap(
             Map.Entry::getKey,
             entry -> {
                 KafkaFutureImpl<Void> kafkaFuture = new KafkaFutureImpl<>();
