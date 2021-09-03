@@ -59,13 +59,18 @@ pipeline {
                         env.TEST_CASE = env.ghprbCommentBody.split('testcase=')[1].split(/\s/)[0]
                     }
                     println("TEST_CASE: ${env.TEST_CASE}")
+
                     if (env.ghprbCommentBody.contains('groups=')) {
                         env.TEST_GROUPS = env.ghprbCommentBody.split('groups=')[1].split(/\s/)[0]
                         if (env.TEST_GROUPS != "flaky") {
                             env.EXCLUDE_GROUPS = env.EXCLUDE_GROUPS + ",flaky"
                         }
+                    } else if (env.ghprbCommentBody.contains('profile=')) {
+                        // in case we want to run specific profile, the -Dgroups should be empty - it overrides the groups from profiles
+                        env.TEST_GROUPS = ""
                     }
                     println("TEST_GROUPS: ${env.TEST_GROUPS}")
+
                     if (env.ghprbCommentBody.contains('profile=')) {
                         env.TEST_PROFILE = env.ghprbCommentBody.split('profile=')[1].split(/\s/)[0]
                     }
