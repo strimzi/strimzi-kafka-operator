@@ -287,5 +287,41 @@
             </properties>
         </profile>
 
+        <profile>
+            <id>operators</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>regression</groups>
+                <it.test>
+                    !kafka/**/*ST,
+                    !mirrormaker/**/*ST,
+                    !connect/**/*ST,
+                    !security/**/*ST,
+                    !operators/**/*ST,
+                    !rollingupdate/**/*ST,
+                    !watcher/**/*ST,
+                    !tracing/**/*ST
+                </it.test>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>components</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>regression</groups>
+                <it.test>
+                    kafka/**/*ST,
+                    mirrormaker/**/*ST,
+                    connect/**/*ST,
+                    security/**/*ST,
+                    operators/**/*ST,
+                    rollingupdate/**/*ST,
+                    watcher/**/*ST,
+                    tracing/**/*ST
+                </it.test>
+            </properties>
+        </profile>
+
     </profiles>
 </project>

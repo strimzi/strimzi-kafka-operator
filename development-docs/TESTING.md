@@ -190,7 +190,7 @@ The following table shows currently used tags:
 
 If your Kubernetes cluster doesn't support for example, Network Policies or NodePort services, you can easily skip those tests with `-DexcludeGroups=networkpolicies,nodeport`.
 
-There is also a mvn profile for the main groups - `acceptance`, `regression`, `smoke`, `bridge` and `all`, but we suggest to use profile with id `all` (default) and then include or exclude specific groups.
+There is also a mvn profile for the main groups - `acceptance`, `regression`, `smoke`, `bridge`, `operators`, `components` and `all`, but we suggest to use profile with id `all` (default) and then include or exclude specific groups.
 If you want specify the profile, use the `-P` flag - for example `-Psmoke`.
 
 All available test groups are listed in [Constants](systemtest/src/main/java/io/strimzi/systemtest/Constants.java) class.
