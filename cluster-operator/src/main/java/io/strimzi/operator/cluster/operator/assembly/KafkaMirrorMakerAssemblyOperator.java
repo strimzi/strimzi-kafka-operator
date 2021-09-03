@@ -97,8 +97,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                 .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirror.getName(), mirror.generatePodDisruptionBudget()))
                 .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, mirror.getName(), mirror.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
                 .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirror.getName(), mirror.getReplicas()))
-                .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, mirror.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> mirrorHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, mirror.getName(), 1_000, operationTimeoutMs))
+                .compose(i -> mirrorHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.deploymentReadiness(reconciliation, namespace, mirror.getName(), 1_000, operationTimeoutMs))
                 .onComplete(reconciliationResult -> {
                         StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, reconciliationResult);
 

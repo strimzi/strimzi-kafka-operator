@@ -66,7 +66,7 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
     public Future<Void> rollingUpdate(Reconciliation reconciliation, String namespace, String name, long operationTimeoutMs) {
         return getAsync(namespace, name)
                 .compose(deployment -> deletePod(reconciliation, namespace, name))
-                .compose(ignored -> readiness(reconciliation, namespace, name, 1_000, operationTimeoutMs));
+                .compose(ignored -> super.readiness(reconciliation, namespace, name, 1_000, operationTimeoutMs));
     }
 
     /**
@@ -103,6 +103,12 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
      */
     public Future<Void> waitForObserved(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
+    }
+
+    public Future<Void> deploymentReadiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+        return getAsync(namespace, name)
+                .compose(observe -> waitForObserved(reconciliation, namespace, name, pollIntervalMs, timeoutMs)
+                .compose(ready -> super.readiness(reconciliation, namespace, name, pollIntervalMs, timeoutMs)));
     }
 
     /**

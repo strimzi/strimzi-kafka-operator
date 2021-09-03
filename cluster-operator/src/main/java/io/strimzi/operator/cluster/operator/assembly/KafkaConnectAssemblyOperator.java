@@ -171,8 +171,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     return deploymentOperations.reconcile(reconciliation, namespace, connect.getName(), dep);
                 })
                 .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, connect.getName(), connect.getReplicas()))
-                .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, connect.getName(), 1_000, operationTimeoutMs))
-                .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, connect.getName(), 1_000, operationTimeoutMs))
+                .compose(i -> connectHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.deploymentReadiness(reconciliation, namespace, connect.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, connectHasZeroReplicas, desiredLogging.get(), connect.getDefaultLogConfig()))
                 .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult);
