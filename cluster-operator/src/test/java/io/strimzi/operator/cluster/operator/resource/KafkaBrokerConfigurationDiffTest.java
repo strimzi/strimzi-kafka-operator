@@ -37,8 +37,6 @@ public class KafkaBrokerConfigurationDiffTest {
     KafkaVersion kafkaVersion = VERSIONS.version(KAFKA_VERSION);
     private int brokerId = 0;
 
-
-
     private ConfigEntry instantiateConfigEntry(String name, String val) {
         // use reflection to instantiate ConfigEntry
         Constructor constructor;
@@ -272,6 +270,7 @@ public class KafkaBrokerConfigurationDiffTest {
     @Test
     public void testChangedMoreProperties() {
         ArrayList<ConfigEntry> ces = new ArrayList<>(3);
+        // change 3 random properties to observe whether diff has 3 entries
         ces.add(new ConfigEntry("inter.broker.listener.name", "david"));
         ces.add(new ConfigEntry("group.min.session.timeout.ms", "42"));
         ces.add(new ConfigEntry("zookeeper.sync.time.ms", "8000"));
