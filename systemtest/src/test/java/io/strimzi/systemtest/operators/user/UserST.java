@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.AclRule;
 import io.strimzi.api.kafka.model.AclRuleBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
@@ -162,7 +163,23 @@ class UserST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
-        createBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA");
+        createBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA", 100);
+    }
+
+    @Tag(SCALABILITY)
+    @ParallelTest
+    void testAlterBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        int numberOfUsers = 100;
+        int producerRate = 1000;
+        int consumerRate = 1500;
+        int requestsPercentage = 42;
+        double mutationRate = 3.0;
+
+        createBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA", numberOfUsers);
+        alterBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA", numberOfUsers,
+                producerRate, consumerRate, requestsPercentage, mutationRate);
     }
 
     @Tag(SCALABILITY)
@@ -171,7 +188,24 @@ class UserST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
-        createBigAmountOfUsers(extensionContext, userName, "TLS");
+        createBigAmountOfUsers(extensionContext, userName, "TLS", 100);
+    }
+
+    @Tag(SCALABILITY)
+    @ParallelTest
+    void testAlterBigAmountOfTlsUsers(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+
+        int numberOfUsers = 100;
+        int producerRate = 1000;
+        int consumerRate = 1500;
+        int requestsPercentage = 42;
+        double mutationRate = 3.0;
+
+        createBigAmountOfUsers(extensionContext, userName, "TLS", numberOfUsers);
+        alterBigAmountOfUsers(extensionContext, userName, "TLS", numberOfUsers,
+                producerRate, consumerRate, requestsPercentage, mutationRate);
     }
 
     @ParallelTest
@@ -441,10 +475,7 @@ class UserST extends AbstractST {
         assertThat(user.getStatus().getUsername(), is("CN=" + userName));
     }
 
-    synchronized void createBigAmountOfUsers(ExtensionContext extensionContext, String userName, String typeOfUser) {
-
-        int numberOfUsers = 100;
-
+    synchronized void createBigAmountOfUsers(ExtensionContext extensionContext, String userName, String typeOfUser, int numberOfUsers) {
         for (int i = 0; i < numberOfUsers; i++) {
             String userNameWithSuffix = userName + "-" + i;
 
@@ -469,6 +500,54 @@ class UserST extends AbstractST {
             LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
             assertThat(kafkaCondition.getType(), is(Ready.toString()));
             LOGGER.info("KafkaUser {} is in desired state: {}", userNameWithSuffix, kafkaCondition.getType());
+        }
+    }
+
+    synchronized void alterBigAmountOfUsers(ExtensionContext extensionContext, String userName, String typeOfUser, int numberOfUsers,
+                                            int producerRate, int consumerRate, int requestsPercentage, double mutationRate) {
+        KafkaUserQuotas kuq = new KafkaUserQuotas();
+        kuq.setConsumerByteRate(consumerRate);
+        kuq.setProducerByteRate(producerRate);
+        kuq.setRequestPercentage(requestsPercentage);
+        kuq.setControllerMutationRate(mutationRate);
+
+        for (int i = 0; i < numberOfUsers; i++) {
+            String userNameWithSuffix = userName + "-" + i;
+            if (typeOfUser.equals("TLS")) {
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userNameWithSuffix)
+                    .editMetadata()
+                        .withNamespace(NAMESPACE)
+                    .endMetadata()
+                        .editSpec()
+                            .withQuotas(kuq)
+                        .endSpec()
+                    .build());
+            } else {
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(userClusterName, userNameWithSuffix)
+                    .editMetadata()
+                        .withNamespace(NAMESPACE)
+                    .endMetadata()
+                        .editSpec()
+                            .withQuotas(kuq)
+                        .endSpec()
+                    .build());
+            }
+
+            LOGGER.info("[After update] Checking status of KafkaUser {}", userNameWithSuffix);
+            Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userNameWithSuffix).get()
+                    .getStatus().getConditions().get(0);
+            LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
+            LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
+            assertThat(kafkaCondition.getType(), is(Ready.toString()));
+            LOGGER.info("KafkaUser {} is in desired state: {}", userNameWithSuffix, kafkaCondition.getType());
+
+            KafkaUserQuotas kuqAfter = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userNameWithSuffix).get().getSpec().getQuotas();
+            LOGGER.info("Check altered KafkaUser {} new quotas.", userNameWithSuffix);
+            assertThat(kuqAfter.getRequestPercentage(), is(requestsPercentage));
+            assertThat(kuqAfter.getConsumerByteRate(), is(consumerRate));
+            assertThat(kuqAfter.getProducerByteRate(), is(producerRate));
+            assertThat(kuqAfter.getControllerMutationRate(), is(mutationRate));
+
         }
     }
 
