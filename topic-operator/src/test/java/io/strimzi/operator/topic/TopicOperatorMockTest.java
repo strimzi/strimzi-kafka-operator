@@ -53,6 +53,7 @@ public class TopicOperatorMockTest {
 
     private KubernetesClient kubeClient;
     private Session session;
+    private EmbeddedKafkaCluster cluster;
     private static Vertx vertx;
     private String deploymentId;
     private AdminClient adminClient;
@@ -82,7 +83,7 @@ public class TopicOperatorMockTest {
         //Create cluster in @BeforeEach instead of @BeforeAll as once the checkpoints causing premature success were fixed,
         //tests were failing due to topic "my-topic" already existing, and trying to delete the topics at the end of the test was timing out occasionally.
         //So works best when the cluster is recreated for each test to avoid shared state
-        EmbeddedKafkaCluster cluster = new EmbeddedKafkaCluster(1);
+        cluster = new EmbeddedKafkaCluster(1);
         cluster.start();
 
         MockKube mockKube = new MockKube();
@@ -152,13 +153,13 @@ public class TopicOperatorMockTest {
                     adminClient.close();
                 }
 
+                cluster.stop();
+                
                 context.completeNow();
             });
         } else {
             context.completeNow();
         }
-
-        kafkaCluster.stop();
     }
 
     private void createInKube(KafkaTopic topic) {
