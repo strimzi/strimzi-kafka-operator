@@ -17,6 +17,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,6 +38,17 @@ public class KafkaBrokerConfigurationDiffTest {
     private static final String KAFKA_VERSION = "3.0.0";
     KafkaVersion kafkaVersion = VERSIONS.version(KAFKA_VERSION);
     private int brokerId = 0;
+
+    // use reflection to instantiate ConfigEntry
+    private Constructor constructor;
+    {
+        try {
+            constructor = ConfigEntry.class.getDeclaredConstructor(String.class, String.class, ConfigEntry.ConfigSource.class, boolean.class, boolean.class, List.class, ConfigEntry.ConfigType.class, String.class);
+            constructor.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            fail();
+        }
+    }
 
     private String getDesiredConfiguration(List<ConfigEntry> additional) {
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("desired-kafka-broker.conf")) {
@@ -61,8 +74,12 @@ public class KafkaBrokerConfigurationDiffTest {
             configList.forEach(entry -> {
                 String[] split = entry.split("=");
                 String val = split.length == 1 ? "" : split[1];
-                ConfigEntry ce = new ConfigEntry(split[0].replace("\n", ""), val);
-                entryList.add(ce);
+                try {
+                    ConfigEntry configEntry = (ConfigEntry) constructor.newInstance(split[0].replace("\n", ""), val, ConfigEntry.ConfigSource.DEFAULT_CONFIG, false, false, emptyList(), ConfigEntry.ConfigType.STRING, "doc");
+                    entryList.add(configEntry);
+                } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+                    fail();
+                }
             });
             for (ConfigEntry ce : additional) {
                 entryList.add(ce);
@@ -254,10 +271,10 @@ public class KafkaBrokerConfigurationDiffTest {
 
     @Test
     public void testChangedMoreProperties() {
-        ArrayList<ConfigEntry> ces = new ArrayList<>();
+        ArrayList<ConfigEntry> ces = new ArrayList<>(3);
         ces.add(new ConfigEntry("inter.broker.listener.name", "david"));
         ces.add(new ConfigEntry("group.min.session.timeout.ms", "42"));
-        ces.add(new ConfigEntry("host.name", "honza"));
+        ces.add(new ConfigEntry("zookeeper.sync.time.ms", "8000"));
         KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(3));
