@@ -39,15 +39,22 @@ public class KafkaBrokerConfigurationDiffTest {
     KafkaVersion kafkaVersion = VERSIONS.version(KAFKA_VERSION);
     private int brokerId = 0;
 
-    // use reflection to instantiate ConfigEntry
-    private Constructor constructor;
-    {
-        try {
-            constructor = ConfigEntry.class.getDeclaredConstructor(String.class, String.class, ConfigEntry.ConfigSource.class, boolean.class, boolean.class, List.class, ConfigEntry.ConfigType.class, String.class);
-            constructor.setAccessible(true);
-        } catch (NoSuchMethodException e) {
-            fail();
+
+
+    private ConfigEntry instantiateConfigEntry(String name, String val) {
+        // use reflection to instantiate ConfigEntry
+        Constructor constructor;
+        ConfigEntry configEntry = null;
+        {
+            try {
+                constructor = ConfigEntry.class.getDeclaredConstructor(String.class, String.class, ConfigEntry.ConfigSource.class, boolean.class, boolean.class, List.class, ConfigEntry.ConfigType.class, String.class);
+                constructor.setAccessible(true);
+                configEntry = (ConfigEntry) constructor.newInstance(name, val, ConfigEntry.ConfigSource.DEFAULT_CONFIG, false, false, emptyList(), ConfigEntry.ConfigType.STRING, "doc");
+            } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                fail();
+            }
         }
+        return configEntry;
     }
 
     private String getDesiredConfiguration(List<ConfigEntry> additional) {
@@ -74,12 +81,7 @@ public class KafkaBrokerConfigurationDiffTest {
             configList.forEach(entry -> {
                 String[] split = entry.split("=");
                 String val = split.length == 1 ? "" : split[1];
-                try {
-                    ConfigEntry configEntry = (ConfigEntry) constructor.newInstance(split[0].replace("\n", ""), val, ConfigEntry.ConfigSource.DEFAULT_CONFIG, false, false, emptyList(), ConfigEntry.ConfigType.STRING, "doc");
-                    entryList.add(configEntry);
-                } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
-                    fail();
-                }
+                entryList.add(instantiateConfigEntry(split[0].replace("\n", ""), val));
             });
             for (ConfigEntry ce : additional) {
                 entryList.add(ce);
