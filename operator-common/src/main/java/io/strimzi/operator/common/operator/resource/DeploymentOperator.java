@@ -105,7 +105,7 @@ public class DeploymentOperator extends AbstractScalableResourceOperator<Kuberne
         return waitFor(reconciliation, namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
     }
 
-    public Future<Void> deploymentReadiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public Future<Void> readiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return getAsync(namespace, name)
                 .compose(observe -> waitForObserved(reconciliation, namespace, name, pollIntervalMs, timeoutMs)
                 .compose(ready -> super.readiness(reconciliation, namespace, name, pollIntervalMs, timeoutMs)));

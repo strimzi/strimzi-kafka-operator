@@ -123,7 +123,6 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -200,7 +199,6 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockServiceOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateService());
         when(mockDcOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateDeployment(Map.of(), true, null, null));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -279,7 +277,6 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockServiceOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateService());
         when(mockDcOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateDeployment(Map.of(), true, null, null));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
@@ -387,7 +384,6 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockServiceOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateService());
         when(mockDcOps.get(kbNamespace, bridge.getName())).thenReturn(bridge.generateDeployment(Map.of(), true, null, null));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -451,7 +447,6 @@ public class KafkaBridgeAssemblyOperatorTest {
         Deployment dep = bridge.generateDeployment(new HashMap<>(), true, null, null);
         when(mockDcOps.get(kbNamespace, bridge.getName())).thenReturn(dep);
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(any(), eq(kbNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -511,7 +506,6 @@ public class KafkaBridgeAssemblyOperatorTest {
         Deployment dep = bridge.generateDeployment(new HashMap<>(), true, null, null);
         when(mockDcOps.get(kbNamespace, bridge.getName())).thenReturn(dep);
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(any(), eq(kbNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
@@ -574,7 +568,6 @@ public class KafkaBridgeAssemblyOperatorTest {
                 List.of(KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar,
                         VERSIONS).generateDeployment(Map.of(), true, null, null)));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // providing the list Deployments for already "existing" Kafka Bridge clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
@@ -638,7 +631,6 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.failedFuture(failureMsg));
         when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
 
@@ -685,7 +677,6 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockDcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         ArgumentCaptor<KafkaBridge> bridgeCaptor = ArgumentCaptor.forClass(KafkaBridge.class);

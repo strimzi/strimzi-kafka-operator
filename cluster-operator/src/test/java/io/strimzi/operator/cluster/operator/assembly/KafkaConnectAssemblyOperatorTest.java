@@ -136,7 +136,6 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
@@ -270,7 +269,6 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockServiceOps.get(kcNamespace, connect.getName())).thenReturn(connect.generateService());
         when(mockDcOps.getAsync(kcNamespace, connect.getName())).thenReturn(Future.succeededFuture(connect.generateDeployment(Map.of(), true, null, null)));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -368,7 +366,6 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockServiceOps.get(kcNamespace, connect.getName())).thenReturn(connect.generateService());
         when(mockDcOps.getAsync(kcNamespace, connect.getName())).thenReturn(Future.succeededFuture(connect.generateDeployment(Map.of(), true, null, null)));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -505,7 +502,6 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockServiceOps.get(kcNamespace, connect.getName())).thenReturn(connect.generateService());
         when(mockDcOps.getAsync(kcNamespace, connect.getName())).thenReturn(Future.succeededFuture(connect.generateDeployment(Map.of(), true, null, null)));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
@@ -571,7 +567,6 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockServiceOps.get(kcNamespace, connect.getName())).thenReturn(connect.generateService());
         when(mockDcOps.getAsync(kcNamespace, connect.getName())).thenReturn(Future.succeededFuture(connect.generateDeployment(Map.of(), true, null, null)));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(Future.succeededFuture());
@@ -644,7 +639,6 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockServiceOps.get(kcNamespace, connect.getName())).thenReturn(connect.generateService());
         when(mockDcOps.getAsync(kcNamespace, connect.getName())).thenReturn(Future.succeededFuture(connect.generateDeployment(Map.of(), true, null, null)));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         when(mockServiceOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(Future.succeededFuture());
@@ -720,8 +714,6 @@ public class KafkaConnectAssemblyOperatorTest {
                 List.of(KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateDeployment(Map.of(), true, null, null))
         );
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-
         when(mockNetPolOps.reconcile(any(), eq(kcNamespace), eq(KafkaConnectResources.deploymentName(bar.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
         when(mockSecretOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(Future.succeededFuture());
         when(mockPdbOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(Future.succeededFuture());
@@ -776,7 +768,6 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt())).thenReturn(Future.failedFuture(failureMsg));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any()))
             .thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
@@ -830,7 +821,6 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
         when(mockServiceOps.get(kcNamespace, connect.getName())).thenReturn(connect.generateService());
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         when(mockCrbOps.reconcile(any(), any(), any())).thenReturn(Future.failedFuture("Message: Forbidden!"));
@@ -881,7 +871,6 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockServiceOps.get(kcNamespace, connect.getName())).thenReturn(connect.generateService());
         when(mockDcOps.getAsync(kcNamespace, connect.getName())).thenReturn(Future.succeededFuture(connect.generateDeployment(Map.of(), true, null, null)));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         when(mockCrbOps.reconcile(any(), any(), any())).thenReturn(Future.failedFuture("Message: Forbidden!"));

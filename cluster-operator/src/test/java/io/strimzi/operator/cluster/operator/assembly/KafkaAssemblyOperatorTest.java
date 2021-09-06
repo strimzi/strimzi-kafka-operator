@@ -627,9 +627,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockDepOps.getAsync(anyString(), anyString())).thenReturn(
                 Future.succeededFuture()
         );
-        when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
-                Future.succeededFuture()
-        );
+//        when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
+//                Future.succeededFuture()
+//        );
         when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
                 Future.succeededFuture()
         );
@@ -1163,9 +1163,6 @@ public class KafkaAssemblyOperatorTest {
             when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
                     Future.succeededFuture(originalEntityOperator.generateDeployment(true, Map.of(), null, null))
             );
-            when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
-                    Future.succeededFuture()
-            );
             when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
                     Future.succeededFuture()
             );
@@ -1178,9 +1175,6 @@ public class KafkaAssemblyOperatorTest {
             when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
                     Future.succeededFuture(originalCruiseControl.generateDeployment(true, Map.of(), null, null))
             );
-            when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
-                    Future.succeededFuture()
-            );
             when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
                     Future.succeededFuture()
             );
@@ -1192,9 +1186,6 @@ public class KafkaAssemblyOperatorTest {
             );
             when(mockDepOps.getAsync(clusterNamespace, KafkaExporter.kafkaExporterName(clusterName))).thenReturn(
                     Future.succeededFuture(originalKafkaExporter.generateDeployment(true, null, null))
-            );
-            when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
-                    Future.succeededFuture()
             );
             when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
                     Future.succeededFuture()

@@ -91,7 +91,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getName(), bridge.generatePodDisruptionBudget()))
             .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, bridge.getName(), bridge.generateDeployment(Collections.emptyMap(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
             .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, bridge.getName(), bridge.getReplicas()))
-            .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.deploymentReadiness(reconciliation, namespace, bridge.getName(), 1_000, operationTimeoutMs))
+            .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, bridge.getName(), 1_000, operationTimeoutMs))
             .onComplete(reconciliationResult -> {
                 StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, reconciliationResult.mapEmpty());
                 if (!bridgeHasZeroReplicas) {
