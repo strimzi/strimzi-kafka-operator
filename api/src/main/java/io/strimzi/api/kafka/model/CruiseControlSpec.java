@@ -34,7 +34,7 @@ public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropert
     public static final String FORBIDDEN_PREFIXES = "bootstrap.servers, client.id, zookeeper., network., security., failed.brokers.zk.path,"
         + "webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,"
         + "metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,"
-        + "capacity.config.file, self.healing., anomaly.detection., ssl.";
+        + "capacity.config.file, self.healing., ssl.";
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, webserver.http.cors.enabled," +
             "webserver.http.cors.origin, webserver.http.cors.exposeheaders";
 
