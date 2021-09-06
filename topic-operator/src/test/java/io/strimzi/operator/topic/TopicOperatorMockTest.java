@@ -157,6 +157,8 @@ public class TopicOperatorMockTest {
         } else {
             context.completeNow();
         }
+
+        kafkaCluster.stop();
     }
 
     private void createInKube(KafkaTopic topic) {

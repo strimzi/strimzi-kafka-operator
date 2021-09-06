@@ -74,6 +74,8 @@ public class KafkaStreamsTopicStoreTest extends TopicStoreTestBase {
         if (service != null) {
             service.stop();
         }
+
+        cluster.stop();
     }
 
     @BeforeEach
