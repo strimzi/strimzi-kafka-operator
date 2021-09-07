@@ -4,6 +4,8 @@
  */
 package io.strimzi;
 
+import io.strimzi.cluster.StrimziKafkaCluster;
+import io.strimzi.container.StrimziKafkaContainer;
 import io.strimzi.utils.TestUtils;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -18,6 +20,8 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.Container;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -45,21 +49,11 @@ public class StrimziKafkaClusterTest {
     private static final Logger LOGGER = LogManager.getLogger(StrimziKafkaContainerTest.class);
 
     private StrimziKafkaCluster systemUnderTest;
+    private int numberOfBrokers;
+    private int numberOfReplicas;
 
     @Test
     void testKafkaClusterStartup() throws IOException, InterruptedException {
-        final int numberOfBrokers = 3;
-        final int numberOfReplicas = 2;
-
-        Map<String, String> kafkaClusterConfiguration = new HashMap<>();
-        kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
-
-        systemUnderTest = new StrimziKafkaCluster(StrimziKafkaContainer.getStrimziVersion() + "-kafka-" + StrimziKafkaContainer.getLatestKafkaVersion(),
-            numberOfBrokers,
-            numberOfReplicas,
-            kafkaClusterConfiguration);
-        systemUnderTest.start();
-
         // exercise (fetch the data)
         Container.ExecResult result = this.systemUnderTest.getZookeeper().execInContainer(
             "sh", "-c",
@@ -72,15 +66,72 @@ public class StrimziKafkaClusterTest {
         assertThat(brokers.split(",").length, is(numberOfBrokers));
 
         LOGGER.info("Brokers are {}", systemUnderTest.getBootstrapServers());
-
-        systemUnderTest.stop();
     }
 
     @Test
-    void testKafkaClusterFunctionality() {
-        final int numberOfBrokers = 3;
-        final int numberOfReplicas = 2;
+    void testKafkaClusterFunctionality() throws InterruptedException, ExecutionException, TimeoutException {
+        AdminClient adminClient = AdminClient.create(ImmutableMap.of(
+            AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, systemUnderTest.getBootstrapServers()
+        ));
 
+        KafkaProducer<String, String> producer = new KafkaProducer<>(
+            ImmutableMap.of(
+                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, systemUnderTest.getBootstrapServers(),
+                ProducerConfig.CLIENT_ID_CONFIG, UUID.randomUUID().toString()
+            ),
+            new StringSerializer(),
+            new StringSerializer()
+        );
+
+        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(
+            ImmutableMap.of(
+                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, systemUnderTest.getBootstrapServers(),
+                ConsumerConfig.GROUP_ID_CONFIG, "tc-" + UUID.randomUUID(),
+                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,  OffsetResetStrategy.EARLIEST.name().toLowerCase(Locale.ROOT)
+            ),
+            new StringDeserializer(),
+            new StringDeserializer()
+        );
+
+        final String topicName = "example-topic";
+        final String recordKey = "strimzi";
+        final String recordValue = "the-best-project-in-the-world";
+
+        Collection<NewTopic> topics = Collections.singletonList(new NewTopic(topicName, numberOfReplicas, (short) numberOfReplicas));
+        adminClient.createTopics(topics).all().get(30, TimeUnit.SECONDS);
+
+        consumer.subscribe(Collections.singletonList(topicName));
+
+        producer.send(new ProducerRecord<>(topicName, recordKey, recordValue)).get();
+
+        TestUtils.waitFor("Consumer records are present", Duration.ofSeconds(10).toMillis(), Duration.ofMinutes(1).toMillis(),
+            () -> {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+
+                if (records.isEmpty()) {
+                    return false;
+                }
+
+                // verify count
+                assertThat(records.count(), is(1));
+
+                ConsumerRecord consumerRecord = records.records(topicName).iterator().next();
+
+                // verify content of the record
+                assertThat(consumerRecord.topic(), is(topicName));
+                assertThat(consumerRecord.key(), is(recordKey));
+                assertThat(consumerRecord.value(), is(recordValue));
+
+                return true;
+            });
+
+        consumer.unsubscribe();
+    }
+
+    @BeforeEach
+    void setUp() {
+        numberOfBrokers = 3;
+        numberOfReplicas = 2;
         Map<String, String> kafkaClusterConfiguration = new HashMap<>();
         kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
 
@@ -89,72 +140,10 @@ public class StrimziKafkaClusterTest {
             numberOfReplicas,
             kafkaClusterConfiguration);
         systemUnderTest.start();
+    }
 
-        try (
-            AdminClient adminClient = AdminClient.create(ImmutableMap.of(
-                AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, systemUnderTest.getBootstrapServers()
-            ));
-
-            KafkaProducer<String, String> producer = new KafkaProducer<>(
-                ImmutableMap.of(
-                    ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, systemUnderTest.getBootstrapServers(),
-                    ProducerConfig.CLIENT_ID_CONFIG, UUID.randomUUID().toString()
-                ),
-                new StringSerializer(),
-                new StringSerializer()
-            );
-
-            KafkaConsumer<String, String> consumer = new KafkaConsumer<>(
-                ImmutableMap.of(
-                    ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, systemUnderTest.getBootstrapServers(),
-                    ConsumerConfig.GROUP_ID_CONFIG, "tc-" + UUID.randomUUID(),
-                    ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,  OffsetResetStrategy.EARLIEST.name().toLowerCase(Locale.ROOT)
-                ),
-                new StringDeserializer(),
-                new StringDeserializer()
-            );
-        ) {
-            final String topicName = "example-topic";
-            final String recordKey = "strimzi";
-            final String recordValue = "the-best-project-in-the-world";
-
-            Collection<NewTopic> topics = Collections.singletonList(new NewTopic(topicName, numberOfReplicas, (short) numberOfReplicas));
-            adminClient.createTopics(topics).all().get(30, TimeUnit.SECONDS);
-
-            consumer.subscribe(Collections.singletonList(topicName));
-
-            producer.send(new ProducerRecord<>(topicName, recordKey, recordValue)).get();
-
-            TestUtils.waitFor("Consumer records are present", Duration.ofSeconds(10).toMillis(), Duration.ofMinutes(1).toMillis(),
-                () -> {
-                    ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
-
-                    if (records.isEmpty()) {
-                        return false;
-                    }
-
-                    // verify count
-                    assertThat(records.count(), is(1));
-
-                    ConsumerRecord consumerRecord = records.records(topicName).iterator().next();
-
-                    // verify content of the record
-                    assertThat(consumerRecord.topic(), is(topicName));
-                    assertThat(consumerRecord.key(), is(recordKey));
-                    assertThat(consumerRecord.value(), is(recordValue));
-
-                    return true;
-                });
-
-            consumer.unsubscribe();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (TimeoutException e) {
-            e.printStackTrace();
-        }
-
+    @AfterEach
+    void tearDown() {
         systemUnderTest.stop();
     }
 }

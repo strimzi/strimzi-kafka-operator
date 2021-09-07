@@ -4,6 +4,7 @@
  */
 package io.strimzi;
 
+import io.strimzi.container.StrimziKafkaContainer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Assumptions;
@@ -33,7 +34,7 @@ public class StrimziKafkaContainerTest {
     @Test
     void testAtLeastOneVersionKafkaIsPresent() {
         assumeDocker();
-        systemUnderTest = new StrimziKafkaContainer();
+        systemUnderTest = StrimziKafkaContainer.create(1);
 
         LOGGER.info("Verifying that at least one kafka version is present.");
 
@@ -49,7 +50,7 @@ public class StrimziKafkaContainerTest {
     @Test
     void testVersions() {
         assumeDocker();
-        systemUnderTest = new StrimziKafkaContainer();
+        systemUnderTest = StrimziKafkaContainer.create(1);
 
         List<String> supportedKafkaVersions = new ArrayList<>();
 
@@ -91,7 +92,7 @@ public class StrimziKafkaContainerTest {
     @Test
     void testStartContainerWithEmptyConfiguration() {
         assumeDocker();
-        systemUnderTest = new StrimziKafkaContainer();
+        systemUnderTest = StrimziKafkaContainer.create(1);
 
         systemUnderTest.start();
 
@@ -109,7 +110,7 @@ public class StrimziKafkaContainerTest {
         kafkaConfiguration.put("ssl.enabled.protocols", "TLSv1");
         kafkaConfiguration.put("log.index.interval.bytes", "2048");
 
-        systemUnderTest = new StrimziKafkaContainer(kafkaConfiguration);
+        systemUnderTest = StrimziKafkaContainer.createWithAdditionalConfiguration(1, kafkaConfiguration);
 
         systemUnderTest.start();
 

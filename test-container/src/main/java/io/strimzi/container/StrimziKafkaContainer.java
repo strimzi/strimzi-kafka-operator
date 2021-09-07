@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi;
+package io.strimzi.container;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.ContainerNetwork;
@@ -25,11 +25,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * StrimziKafkaContainer is a single-node instance of Kafka using the latest image from quay.io/strimzi/kafka.
- * There are two options for how to use it. The first one is using an embedded zookeeper which will run inside Kafka container. The
- * Another option is to use @StrimziZookeeperContainer as an external Zookeeper. The additional configuration for Kafka
- * broker can be injected via constructor. This container is a good fit for integration testing but for more hardcore
- * testing we suggest using @StrimziKafkaCluster.
+ * StrimziKafkaContainer is a single-node instance of Kafka using the image from quay.io/strimzi/kafka with the
+ * given version. There are two options for how to use it. The first one is using an embedded zookeeper which will run
+ * inside Kafka container. The Another option is to use @StrimziZookeeperContainer as an external Zookeeper.
+ * The additional configuration for Kafka broker can be injected via constructor. This container is a good fit for
+ * integration testing but for more hardcore testing we suggest using @StrimziKafkaCluster.
  */
 public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContainer> {
 
@@ -46,6 +46,7 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
     private Map<String, String> kafkaConfigurationMap;
     private String externalZookeeperConnect;
     private int kafkaExposedPort;
+    private int brokerId;
 
     static {
         // Reads the kafka-versions.txt for the supported Kafka versions
@@ -85,11 +86,12 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         LOGGER.info("Supported Strimzi version: {}", STRIMZI_VERSION);
     }
 
-    public StrimziKafkaContainer(final String imageVersion, Map<String, String> additionalKafkaConfiguration) {
+    private StrimziKafkaContainer(final int brokerId, final String imageVersion, Map<String, String> additionalKafkaConfiguration) {
         super("quay.io/strimzi/kafka:" + imageVersion);
         super.withNetwork(Network.SHARED);
 
         kafkaConfigurationMap = new HashMap<>(additionalKafkaConfiguration);
+        kafkaConfigurationMap.put("broker.id", String.valueOf(brokerId));
 
         // exposing kafka port from the container
         withExposedPorts(KAFKA_PORT);
@@ -97,12 +99,16 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         withEnv("LOG_DIR", "/tmp");
     }
 
-    public StrimziKafkaContainer(Map<String, String> additionalKafkaConfiguration) {
-        this(STRIMZI_VERSION + "-kafka-" + LATEST_KAFKA_VERSION, additionalKafkaConfiguration);
+    public static StrimziKafkaContainer createWithAdditionalConfiguration(final int brokerId, final String imageVersion, Map<String, String> additionalKafkaConfiguration) {
+        return new StrimziKafkaContainer(brokerId, imageVersion, additionalKafkaConfiguration);
     }
 
-    public StrimziKafkaContainer() {
-        this(STRIMZI_VERSION + "-kafka-" + LATEST_KAFKA_VERSION, Collections.emptyMap());
+    public static StrimziKafkaContainer createWithAdditionalConfiguration(final int brokerId, Map<String, String> additionalKafkaConfiguration) {
+        return new StrimziKafkaContainer(brokerId, STRIMZI_VERSION + "-kafka-" + LATEST_KAFKA_VERSION, additionalKafkaConfiguration);
+    }
+
+    public static StrimziKafkaContainer create(final int brokerId) {
+        return new StrimziKafkaContainer(brokerId, STRIMZI_VERSION + "-kafka-" + LATEST_KAFKA_VERSION, Collections.emptyMap());
     }
 
     @Override

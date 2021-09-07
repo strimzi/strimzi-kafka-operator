@@ -4,6 +4,8 @@
  */
 package io.strimzi;
 
+import io.strimzi.container.StrimziKafkaContainer;
+import io.strimzi.container.StrimziZookeeperContainer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
@@ -39,7 +41,7 @@ public class StrimziZookeeperContainerTest {
         systemUnderTest = new StrimziZookeeperContainer();
         systemUnderTest.start();
 
-        kafkaContainer = new StrimziKafkaContainer(Collections.singletonMap("zookeeper.connect", "zookeeper:2181"))
+        kafkaContainer = StrimziKafkaContainer.createWithAdditionalConfiguration(1, Collections.singletonMap("zookeeper.connect", "zookeeper:2181"))
             .withExternalZookeeper("zookeeper:" + StrimziKafkaContainer.ZOOKEEPER_PORT);
 
         kafkaContainer.start();

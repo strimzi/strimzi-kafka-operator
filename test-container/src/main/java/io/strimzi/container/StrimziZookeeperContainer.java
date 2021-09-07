@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi;
+package io.strimzi.container;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -18,9 +18,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * StrimziZookeeperContainer is an instance of the Zookeeper encapsulated inside a docker container using the latest image
- * from quay.io/strimzi/kafka. It can be combined with @StrimziKafkaContainer but we suggest to use directly @StrimziKafkaCluster
- * for more complicated testing.
+ * StrimziZookeeperContainer is an instance of the Zookeeper encapsulated inside a docker container using image from
+ * quay.io/strimzi/kafka with the given version. It can be combined with @StrimziKafkaContainer but we suggest to use
+ * directly @StrimziKafkaCluster for more complicated testing.
  */
 @SuppressFBWarnings("EQ_DOESNT_OVERRIDE_EQUALS")
 public class StrimziZookeeperContainer extends GenericContainer<StrimziZookeeperContainer> {

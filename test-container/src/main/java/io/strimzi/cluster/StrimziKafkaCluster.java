@@ -2,9 +2,11 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi;
+package io.strimzi.cluster;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.strimzi.container.StrimziKafkaContainer;
+import io.strimzi.container.StrimziZookeeperContainer;
 import io.strimzi.utils.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,18 +29,18 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * StrimziKafkaCluster is a multi-node instance of the Kafka and Zookeeper using the latest image from quay.io/strimzi/kafka.
+ * A multi-node instance of the Kafka and Zookeeper using the latest image from quay.io/strimzi/kafka with the given version.
  * It perfectly fits for integration/system testing. We always deploy one zookeeper with a specified amount of Kafka instances.
  * Everything is isolated environment and running as a separate container inside Docker. The additional configuration
  * for Kafka brokers can be specified by @additionalKafkaConfiguration parameter in the constructor.
  */
 public class StrimziKafkaCluster implements Startable {
 
-    private static final Logger LOGGER = LogManager.getLogger(StrimziZookeeperContainer.class);
+    private static final Logger LOGGER = LogManager.getLogger(StrimziKafkaCluster.class);
 
     private final int brokersNum;
     private final Network network;
-    private final GenericContainer<?> zookeeper;
+    private final StrimziZookeeperContainer zookeeper;
     private final Collection<StrimziKafkaContainer> brokers;
 
     @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
@@ -72,9 +74,7 @@ public class StrimziKafkaCluster implements Startable {
             .mapToObj(brokerId -> {
                 LOGGER.info("Starting broker with id {}", brokerId);
                 // adding broker id for each kafka container
-                additionalKafkaConfiguration.put("broker.id", String.valueOf(brokerId));
-
-                return new StrimziKafkaContainer(imageVersion, additionalKafkaConfiguration)
+                return StrimziKafkaContainer.createWithAdditionalConfiguration(brokerId, imageVersion, additionalKafkaConfiguration)
                     .withNetwork(this.network)
                     .withNetworkAliases("broker-" + brokerId)
                     .dependsOn(this.zookeeper)
@@ -102,7 +102,7 @@ public class StrimziKafkaCluster implements Startable {
 
     @Override
     public void start() {
-        Stream<Startable> startables = this.brokers.stream().map(Startable.class::cast);
+        Stream<? extends Startable> startables = this.brokers.stream();
         try {
             Startables.deepStart(startables).get(60, TimeUnit.SECONDS);
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
@@ -140,7 +140,7 @@ public class StrimziKafkaCluster implements Startable {
             .forEach(GenericContainer::stop);
     }
 
-    public GenericContainer<?> getZookeeper() {
+    public StrimziZookeeperContainer getZookeeper() {
         return zookeeper;
     }
 }

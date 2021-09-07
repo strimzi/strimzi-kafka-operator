@@ -61,12 +61,12 @@ public class TestUtils {
                 }
                 onTimeout.run();
                 WaitException waitException = new WaitException("Timeout after " + timeoutMs + " ms waiting for " + description);
-                waitException.printStackTrace();
+                waitException.addSuppressed(waitException);
                 throw waitException;
             }
             long sleepTime = Math.min(pollIntervalMs, timeLeft);
             if (LOGGER.isTraceEnabled()) {
-                LOGGER.trace("{} not ready, will try again in {} ms ({}ms till timeout)", description, sleepTime, timeLeft);
+                LOGGER.trace("{} not satisfied, will try again in {} ms ({}ms till timeout)", description, sleepTime, timeLeft);
             }
             try {
                 Thread.sleep(sleepTime);
