@@ -433,7 +433,11 @@ public class SetupClusterOperator {
             // Clear cluster from all created namespaces and configurations files for cluster operator.
             deleteClusterOperatorInstallFiles();
             KubeClusterResource.getInstance().deleteCustomResources(BeforeAllOnce.getSharedExtensionContext());
-            KubeClusterResource.getInstance().deleteNamespace(BeforeAllOnce.getSharedExtensionContext(), Constants.INFRA_NAMESPACE);
+
+            KubeClusterResource.getInstance().deleteNamespace(
+                CollectorElement.createCollectorElement(
+                    BeforeAllOnce.getSharedExtensionContext().getRequiredTestClass().getName(),
+                    BeforeAllOnce.getSharedExtensionContext().getDisplayName()), Constants.INFRA_NAMESPACE);
         }
     }
 

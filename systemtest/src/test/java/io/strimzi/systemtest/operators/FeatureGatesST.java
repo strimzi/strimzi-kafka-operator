@@ -114,7 +114,7 @@ public class FeatureGatesST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
-        JobUtils.waitForJobRunning(consumerName, INFRA_NAMESPACE, Duration.ofSeconds(20).toMillis());
+        JobUtils.waitForJobRunning(consumerName, INFRA_NAMESPACE);
 
         LOGGER.info("Delete first found Kafka broker pod.");
         kubeClient(INFRA_NAMESPACE).deletePod(INFRA_NAMESPACE, kafkaPod);
