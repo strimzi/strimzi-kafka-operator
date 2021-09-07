@@ -6,6 +6,7 @@
 
 = Configuring a Strimzi deployment
 
+[role="_abstract"]
 This chapter describes how to configure different aspects of the supported deployments using custom resources:
 
 * Kafka clusters
@@ -14,10 +15,8 @@ This chapter describes how to configure different aspects of the supported deplo
 * Kafka Bridge
 * Cruise Control
 
-NOTE: Labels applied to a custom resource are also applied to the Kubernetes resources comprising Kafka MirrorMaker.
+NOTE: Labels applied to a custom resource are also applied to the Kubernetes resources making up its cluster.
 This provides a convenient mechanism for resources to be labeled as required.
-
-The _Deploying and Upgrading Strimzi_ guide describes how to link:{BookURLDeploying}#assembly-metrics-str[monitor your Strimzi deployment^].
 
 include::assembly-config-kafka.adoc[leveloffset=+1]
 
@@ -37,3 +36,8 @@ include::assembly-logging-configuration.adoc[leveloffset=+1]
 
 //Procedure to load configuration from external sources for all Kafka components
 include::../../modules/configuring/proc-loading-config-with-provider.adoc[leveloffset=+1]
+
+[role="_additional-resources"]
+.Additional resources
+link:{BookURLDeploying}#deploy-examples-{context}[Example configuration files provided with Strimzi^]
+link:{BookURLDeploying}#assembly-metrics-str[Introduce metrics to monitor your Strimzi deployment^]

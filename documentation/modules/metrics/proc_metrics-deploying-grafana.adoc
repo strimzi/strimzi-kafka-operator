@@ -6,8 +6,13 @@
 
 = Deploying Grafana
 
-To provide visualizations of Prometheus metrics,
-you can use your own Grafana installation or deploy Grafana by applying the `grafana.yaml` file provided in the link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/examples/metrics[examples/metrics] directory.
+[role="_abstract"]
+Use Grafana to provide visualizations of Prometheus metrics.
+
+You can use your own Grafana deployment or deploy Grafana using the xref:ref-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi.
+The example files include a configuration file for a Grafana deployment:
+
+* `examples/metrics/grafana-install/grafana.yaml`
 
 .Prerequisites
 * xref:proc-metrics-kafka-deploy-options-{context}[Metrics are configured for the Kafka cluster resource]
