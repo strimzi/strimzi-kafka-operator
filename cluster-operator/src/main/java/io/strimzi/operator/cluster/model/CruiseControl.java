@@ -220,17 +220,17 @@ public class CruiseControl extends AbstractModel {
         return API_AUTH_CONFIG_VOLUME_MOUNT + CC_AUTH_CREDENTIALS_FILENAME;
     }
 
-    private static boolean isEnabled(CruiseControlConfiguration config, String s1, String s2) {
+    private static boolean isEnabledInConfiguration(CruiseControlConfiguration config, String s1, String s2) {
         String s = config.getConfigOption(s1, s2);
         return Boolean.parseBoolean(s);
     }
 
     public static boolean isApiAuthorizationEnabled(CruiseControlConfiguration config) {
-        return isEnabled(config, CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SECURITY_ENABLE.getValue(), Boolean.toString(DEFAULT_WEBSERVER_SECURITY_ENABLED));
+        return isEnabledInConfiguration(config, CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SECURITY_ENABLE.getValue(), Boolean.toString(DEFAULT_WEBSERVER_SECURITY_ENABLED));
     }
 
     public static boolean isApiAuthenticationEnabled(CruiseControlConfiguration config) {
-        return isEnabled(config, CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), Boolean.toString(DEFAULT_WEBSERVER_SSL_ENABLED));
+        return isEnabledInConfiguration(config, CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), Boolean.toString(DEFAULT_WEBSERVER_SSL_ENABLED));
     }
 
     public static HTTPHeader generateAuthHttpHeader(String user, String password) {

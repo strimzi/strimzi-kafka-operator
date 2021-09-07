@@ -168,13 +168,16 @@ spec:
 
 [[api-security-configuration]]
 [discrete]
-== API security
+== Disabling API security
 
-The Cruise Control API is secured by default to protect the cluster against any potentially destructive Cruise Control operations.
+The Cruise Control REST API is secured by default to protect the cluster against potentially destructive Cruise Control operations, such as decommissioning Kafka brokers.
 
-However, these security settings can be disabled.
+However, you can disable these security settings if needed.
 
-.An example of disabling Cruise Control API authorization.
+* To disable the built-in authorization, set webserver.security.enable to false.
+* To disable the built-in authentication, set webserver.ssl.enable false.
+
+.Example Cruise Control configuration to disable API authorization.
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -189,7 +192,7 @@ spec:
 # ...
 ----
 
-.An example of disabling Cruise Control API authentication.
+.Example Cruise Control configuration to disable API authentication.
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
