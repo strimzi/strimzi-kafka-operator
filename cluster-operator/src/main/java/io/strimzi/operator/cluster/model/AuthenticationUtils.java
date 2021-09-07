@@ -83,6 +83,17 @@ public class AuthenticationUtils {
 
     /**
      * Creates the Volumes used for authentication of Kafka client based components
+     * @param authentication    Authentication object from CRD
+     * @param volumeList    List where the volumes will be added
+     * @param oauthVolumeNamePrefix Prefix used for OAuth volumes
+     * @param isOpenShift   Indicates whether we run on OpenShift or not
+     */
+    public static void configureClientAuthenticationVolumes(KafkaClientAuthentication authentication, List<Volume> volumeList, String oauthVolumeNamePrefix, boolean isOpenShift)   {
+        configureClientAuthenticationVolumes(authentication, volumeList, oauthVolumeNamePrefix, isOpenShift, "", false);
+    }
+
+    /**
+     * Creates the Volumes used for authentication of Kafka client based components
      *
      * @param authentication    Authentication object from CRD
      * @param volumeList    List where the volumes will be added

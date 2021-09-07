@@ -164,7 +164,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
             String alias = mirrorMaker2Cluster.getAlias();
             ClientTls tls = mirrorMaker2Cluster.getTls();
-            VolumeUtils.getVolumesTls(mirrorMaker2Cluster.getAuthentication(), tls, volumeList, isOpenShift, mirrorMaker2Cluster.getAlias() + "-oauth-certs", mirrorMaker2Cluster.getAlias() + '-',  true, alias);
+            VolumeUtils.createClientSecretVolume(tls, volumeList, isOpenShift, alias);
+            AuthenticationUtils.configureClientAuthenticationVolumes(mirrorMaker2Cluster.getAuthentication(), volumeList, mirrorMaker2Cluster.getAlias() + "-oauth-certs", isOpenShift, mirrorMaker2Cluster.getAlias() + '-',  true);
         }
         return volumeList;
     }
@@ -181,7 +182,9 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
             String passwordVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT, alias);
             String oauthTlsVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, alias);
             String oauthVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT, alias);
-            VolumeUtils.getVolumeMountsTls(mirrorMaker2Cluster.getAuthentication(), kafkaMirrorMaker2Tls, volumeMountList, tlsVolumeMountPath, passwordVolumeMountPath, oauthTlsVolumeMountPath, mirrorMaker2Cluster.getAlias() + "-oauth-certs", mirrorMaker2Cluster.getAlias() + '-', true, oauthVolumeMountPath, alias);
+            VolumeUtils.createClientVolumeMounts(kafkaMirrorMaker2Tls, volumeMountList, tlsVolumeMountPath, alias);
+            AuthenticationUtils.configureClientAuthenticationVolumeMounts(mirrorMaker2Cluster.getAuthentication(), volumeMountList, tlsVolumeMountPath, passwordVolumeMountPath, oauthTlsVolumeMountPath, mirrorMaker2Cluster.getAlias() + "-oauth-certs", mirrorMaker2Cluster.getAlias() + '-', true, oauthVolumeMountPath);
+
         }
         return volumeMountList;
     }

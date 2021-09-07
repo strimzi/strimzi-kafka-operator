@@ -286,7 +286,8 @@ public class KafkaBridgeCluster extends AbstractModel {
         volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
-        VolumeUtils.getVolumesTls(authentication, tls, volumeList, isOpenShift);
+        VolumeUtils.createClientSecretVolume(tls, volumeList, isOpenShift);
+        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
         return volumeList;
     }
 
@@ -295,7 +296,8 @@ public class KafkaBridgeCluster extends AbstractModel {
 
         volumeMountList.add(createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
-        VolumeUtils.getVolumeMountsTls(authentication, tls, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT);
+        VolumeUtils.createClientVolumeMounts(tls, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT);
+        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, TLS_CERTS_BASE_VOLUME_MOUNT, PASSWORD_VOLUME_MOUNT, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, "oauth-certs");
         return volumeMountList;
     }
 

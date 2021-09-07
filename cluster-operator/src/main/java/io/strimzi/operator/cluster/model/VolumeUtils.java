@@ -33,7 +33,6 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.ClientTls;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -410,112 +409,66 @@ public class VolumeUtils {
     }
 
     /**
-     * Returns the list of Volume used for authentication of Kafka client based components
-     *
-     * @param authentication    Authentication object from CRD
+     * Creates the Client Secret Volume
      * @param tls    Kafka Client tls object
      * @param volumeList    List where the volumes will be added
      * @param isOpenShift   Indicates whether we run on OpenShift or not
-     * @return List of Volume
      */
-    protected static void getVolumesTls(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift) {
-        getVolumesTls(authentication, tls, volumeList, isOpenShift, "oauth-certs", "", false, null);
+    protected static void createClientSecretVolume(ClientTls tls, List<Volume> volumeList, boolean isOpenShift) {
+        createClientSecretVolume(tls, volumeList, isOpenShift, null);
     }
 
     /**
-     * Returns the list of Volume used for authentication of Kafka client based components
-     *
-     * @param authentication    Authentication object from CRD
+     * Creates the Client Secret Volume
      * @param tls    Kafka Client tls object
      * @param volumeList    List where the volumes will be added
      * @param isOpenShift   Indicates whether we run on OpenShift or not
-     * @param oauthVolumeNamePrefix Prefix used for OAuth volumes
-     * @return List of Volume
-     */
-    protected static void getVolumesTls(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String oauthVolumeNamePrefix) {
-        getVolumesTls(authentication, tls, volumeList, isOpenShift, oauthVolumeNamePrefix, "", false, null);
-    }
-
-    /**
-     * Returns the list of Volume for authentication of Kafka client based components
-     *
-     * @param authentication    Authentication object from CRD
-     * @param tls    Kafka Client tls object
-     * @param volumeList    List where the volumes will be added
-     * @param isOpenShift   Indicates whether we run on OpenShift or not
-     * @param oauthVolumeNamePrefix Prefix used for OAuth volumes
-     * @param volumeNamePrefix Prefix used for volume names
-     * @param createOAuthSecretVolumes   Indicates whether OAuth secret volumes will be added to the list
      * @param alias   Alias to reference the Kafka Cluster
-     * @return List of Volume
      */
-    protected static void getVolumesTls(KafkaClientAuthentication authentication, ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean createOAuthSecretVolumes,  String alias) {
-
+    protected static void createClientSecretVolume(ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String alias) {
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
 
             if (trustedCertificates != null && trustedCertificates.size() > 0) {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
-                    String volumeName = alias != null ? alias + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
-                    // skipping if a volume with same Secret name was already added
-                    if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeName))) {
-                        volumeList.add(VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), isOpenShift));
-                    }
+                    addNewVolume(volumeList, certSecretSource, isOpenShift, alias);
                 }
             }
         }
-
-        AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, oauthVolumeNamePrefix, isOpenShift, volumeNamePrefix, createOAuthSecretVolumes);
     }
 
     /**
-     * Returns the list of VolumeMount for authentication of Kafka client based components
-     *
-     * @param authentication    Authentication object from CRD
-     * @param tls    Kafka Client tls object
-     * @param volumeMountList    List where the volume mounts will be added
-     * @param tlsCertBasedVolumeMount    Path where the TLS certs should be mounted
-     * @param passwordVolumeMount   Path where passwords should be mounted
-     * @param oauthTlsCertsBaseVolumeMount Path where the OAuth certificates would be mounted
-     * @return List of VolumeMount.
+     * Creates the Volumes used for authentication of Kafka client based components, checking that the named volume has not already been
+     * created.
      */
-    protected static void getVolumeMountsTls(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount) {
-        getVolumeMountsTls(authentication, tls, volumeMountList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, "oauth-certs", "", false, null, null);
+    private static void addNewVolume(List<Volume> volumeList, CertSecretSource certSecretSource, boolean isOpenShift, String alias) {
+        String volumeName = alias != null ? alias + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
+        // skipping if a volume with same name was already added
+        if (!volumeList.stream().anyMatch(v -> v.getName().equals(volumeName))) {
+            volumeList.add(VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), isOpenShift));
+        }
     }
 
     /**
-     * Returns the list of VolumeMount for authentication of Kafka client based components
+     * Creates the Client Volume Mounts
      *
-     * @param authentication    Authentication object from CRD
-     * @param tls    Kafka Client tls object
-     * @param volumeMountList    List where the volume mounts will be added
-     * @param tlsCertBasedVolumeMount    Path where the TLS certs should be mounted
-     * @param passwordVolumeMount   Path where passwords should be mounted
-     * @param oauthTlsCertsBaseVolumeMount Path where the OAuth certificates would be mounted
-     * @param oauthVolumeNamePrefix Prefix used for OAuth volume names
-     * @return List of VolumeMount.
-     */
-    protected static void getVolumeMountsTls(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount, String oauthVolumeNamePrefix) {
-        getVolumeMountsTls(authentication, tls, volumeMountList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, oauthVolumeNamePrefix, "", false, null, null);
-    }
-
-    /**
-     * Returns the list of VolumeMount for authentication of Kafka client based components
-     *
-     * @param authentication    Authentication object from CRD
      * @param tls    Kafka Client tls object
      * @param volumeMountList    List where the volume mounts will be added
      * @param tlsCertBasedVolumeMount   Path where the TLS certs should be mounted
-     * @param passwordVolumeMount   Path where passwords should be mounted
-     * @param oauthTlsCertsBaseVolumeMount Path where the OAuth certificates would be mounted
-     * @param oauthVolumeNamePrefix Prefix used for OAuth volume names
-     * @param volumeNamePrefix Prefix used for volume mount names
-     * @param mountOAuthSecretVolumes Indicates whether OAuth secret volume mounts will be added to the list
-     * @param oauthVolumeMountPath Path where the OAuth secrets would be mounted
-     * @param alias    Alias used to reference the Kafka cluster
-     * @return List of VolumeMount.
      */
-    protected static List<VolumeMount> getVolumeMountsTls(KafkaClientAuthentication authentication, ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount, String passwordVolumeMount, String oauthTlsCertsBaseVolumeMount, String oauthVolumeNamePrefix, String volumeNamePrefix, boolean mountOAuthSecretVolumes, String oauthVolumeMountPath, String alias) {
+    protected static void createClientVolumeMounts(ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount) {
+        createClientVolumeMounts(tls, volumeMountList, tlsCertBasedVolumeMount, null);
+    }
+
+    /**
+     * Creates the Client Volume Mounts
+     *
+     * @param tls    Kafka Client tls object
+     * @param volumeMountList    List where the volume mounts will be added
+     * @param tlsCertBasedVolumeMount   Path where the TLS certs should be mounted
+     * @param alias   Alias to reference the Kafka Cluster
+     */
+    protected static void createClientVolumeMounts(ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount, String alias) {
 
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
@@ -523,17 +476,21 @@ public class VolumeUtils {
             if (trustedCertificates != null && trustedCertificates.size() > 0) {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
                     String volumeMountName = alias != null ? alias + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
-                    // skipping if a volume mount with same Secret name was already added
-                    if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeMountName))) {
-                        volumeMountList.add(VolumeUtils.createVolumeMount(volumeMountName,
-                                tlsCertBasedVolumeMount + certSecretSource.getSecretName()));
-                    }
+                    addNewVolumeMounts(volumeMountList, volumeMountName, tlsCertBasedVolumeMount, certSecretSource);
                 }
             }
         }
+    }
 
-        AuthenticationUtils.configureClientAuthenticationVolumeMounts(authentication, volumeMountList, tlsCertBasedVolumeMount, passwordVolumeMount, oauthTlsCertsBaseVolumeMount, oauthVolumeNamePrefix, volumeNamePrefix, mountOAuthSecretVolumes, oauthVolumeMountPath);
-
-        return volumeMountList;
+    /**
+     * Creates the VolumeMounts used for authentication of Kafka client based components, checking that the named volume mount has not already been
+     * created.
+     */
+    protected static void addNewVolumeMounts(List<VolumeMount> volumeMountList, String volumeMountName, String tlsCertBasedVolumeMount, CertSecretSource certSecretSource) {
+        // skipping if a volume mount with same Secret name was already added
+        if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeMountName))) {
+            volumeMountList.add(VolumeUtils.createVolumeMount(volumeMountName,
+                    tlsCertBasedVolumeMount + certSecretSource.getSecretName()));
+        }
     }
 }
