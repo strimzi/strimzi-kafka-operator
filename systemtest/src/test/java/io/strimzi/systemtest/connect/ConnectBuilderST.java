@@ -79,7 +79,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConnectBuilderST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectBuilderST.class);
-    private static final String SHARED_KAFKA_CLUSTER_NAME = INFRA_NAMESPACE;
 
     private static final String ECHO_SINK_CLASS_NAME = "cz.scholz.kafka.connect.echosink.EchoSinkConnector";
     private static final String CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME = "org.apache.camel.kafkaconnector.http.CamelHttpSinkConnector";
@@ -172,7 +171,7 @@ class ConnectBuilderST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         String kafkaClientsPodName = kubeClient(INFRA_NAMESPACE).listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, SHARED_KAFKA_CLUSTER_NAME, 1)
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, INFRA_NAMESPACE, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -234,8 +233,8 @@ class ConnectBuilderST extends AbstractST {
         String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         final String imageName = getImageNameForTestCase();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(SHARED_KAFKA_CLUSTER_NAME, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, SHARED_KAFKA_CLUSTER_NAME, 1, false)
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(INFRA_NAMESPACE, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, INFRA_NAMESPACE, 1, false)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -279,7 +278,7 @@ class ConnectBuilderST extends AbstractST {
             .withUsingPodName(kafkaClientsPodName)
             .withTopicName(topicName)
             .withNamespaceName(INFRA_NAMESPACE)
-            .withClusterName(SHARED_KAFKA_CLUSTER_NAME)
+            .withClusterName(INFRA_NAMESPACE)
             .withMessageCount(MESSAGE_COUNT)
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
@@ -306,7 +305,7 @@ class ConnectBuilderST extends AbstractST {
 
         kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().inNamespace(INFRA_NAMESPACE).create(imageStream);
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterTest, SHARED_KAFKA_CLUSTER_NAME, 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterTest, INFRA_NAMESPACE, 1, false)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -350,12 +349,12 @@ class ConnectBuilderST extends AbstractST {
             .build();
 
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(SHARED_KAFKA_CLUSTER_NAME, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(INFRA_NAMESPACE, topicName).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, SHARED_KAFKA_CLUSTER_NAME, 1, true)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, INFRA_NAMESPACE, 1, true)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -433,10 +432,10 @@ class ConnectBuilderST extends AbstractST {
 
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(SHARED_KAFKA_CLUSTER_NAME, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(INFRA_NAMESPACE, topicName).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, SHARED_KAFKA_CLUSTER_NAME, 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, INFRA_NAMESPACE, 1, false)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -563,6 +562,6 @@ class ConnectBuilderST extends AbstractST {
             Service service = kubeClient("kube-system").getService("registry");
             outputRegistry = service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().orElseThrow().getPort();
         }
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(SHARED_KAFKA_CLUSTER_NAME, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(INFRA_NAMESPACE, 3).build());
     }
 }

@@ -16,16 +16,16 @@ public class ParallelSuiteController {
     private static final long STARTING_DELAY = Duration.ofSeconds(5).toMillis();
 
     private static final Logger LOGGER = LogManager.getLogger(ParallelSuiteController.class);
-    private static int counter;
+    private static int runningTestSuitesInParallelCount;
 
     public synchronized static void addParallelSuite(ExtensionContext extensionContext) {
         if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PARALLEL_CLASS_COUNT) == null) {
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, ++counter);
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, ++runningTestSuitesInParallelCount);
         } else {
-            LOGGER.info("Adding parallel suite {}", extensionContext.getDisplayName());
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, ++counter);
+            LOGGER.debug("Adding parallel suite: {}", extensionContext.getDisplayName());
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, ++runningTestSuitesInParallelCount);
         }
-        LOGGER.debug("Current parallel suites:{}", counter);
+        LOGGER.debug("Current parallel suites: {}", runningTestSuitesInParallelCount);
     }
 
 
@@ -33,11 +33,11 @@ public class ParallelSuiteController {
         if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PARALLEL_CLASS_COUNT) == null) {
             throw new RuntimeException("There is no parallel suite running.");
         } else {
-            LOGGER.info("Removing parallel suite {}", extensionContext.getDisplayName());
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, --counter);
+            LOGGER.debug("Removing parallel suite: {}", extensionContext.getDisplayName());
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, --runningTestSuitesInParallelCount);
         }
 
-        LOGGER.debug("Current parallel suites:{}", counter);
+        LOGGER.debug("Current parallel suites: {}", runningTestSuitesInParallelCount);
     }
 
     public static boolean waitUntilZeroParallelSuites() {
@@ -45,22 +45,22 @@ public class ParallelSuiteController {
         boolean preCondition = true;
 
         while (preCondition) {
-            LOGGER.info("Current number of parallel suites is: {}", counter);
+            LOGGER.debug("Current number of parallel suites is: {}", runningTestSuitesInParallelCount);
             try {
                 Thread.sleep(STARTING_DELAY);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            preCondition = counter > 0;
+            preCondition = runningTestSuitesInParallelCount > 0;
         }
         return false;
     }
 
-    public static int getCounter() {
-        return counter;
+    public static int getRunningTestSuitesInParallelCount() {
+        return runningTestSuitesInParallelCount;
     }
 
     public static void decrementCounter() {
-        counter--;
+        runningTestSuitesInParallelCount--;
     }
 }

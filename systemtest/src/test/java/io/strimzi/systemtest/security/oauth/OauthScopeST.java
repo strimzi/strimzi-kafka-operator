@@ -58,120 +58,120 @@ public class OauthScopeST extends OauthAbstractST {
         "security.protocol = SASL_PLAINTEXT\n" +
         "sasl.jaas.config = org.apache.kafka.common.security.plain.PlainLoginModule required username=\"kafka-client\" password=\"kafka-client-secret\" ;";
 
-//    @ParallelTest
-//    @Tag(CONNECT)
-//    void testScopeKafkaConnectSetIncorrectly(ExtensionContext extensionContext) throws UnexpectedException {
-//        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-//        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-//        final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
-//        final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-//        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-//
-//        // SCOPE TESTING
-//        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-//        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
-//            .withNewSpec()
-//                .withReplicas(1)
-//                .withBootstrapServers(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
-//                .withConfig(connectorConfig)
-//                    .addToConfig("key.converter.schemas.enable", false)
-//                    .addToConfig("value.converter.schemas.enable", false)
-//                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-//                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-//                .withNewKafkaClientAuthenticationOAuth()
-//                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-//                    .withClientId("kafka-client")
-//                    .withNewClientSecret()
-//                        .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
-//                        .withKey(OAUTH_KEY)
-//                    .endClientSecret()
-//                    // scope set in-correctly regarding to the scope-test realm
-//                    .withScope(null)
-//                .endKafkaClientAuthenticationOAuth()
-//                .withTls(null)
-//                .endSpec()
-//            .build());
-//
-//        String kafkaConnectPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(INFRA_NAMESPACE, KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
-//
-//        // we except that "Token validation failed: Custom claim check failed because we specify scope='null'"
-//        StUtils.waitUntilLogFromPodContainsString(INFRA_NAMESPACE, kafkaConnectPodName, KafkaConnectResources.deploymentName(clusterName), "30s", "Token validation failed: Custom claim check failed");
-//    }
-//
-//    @ParallelTest
-//    @Tag(CONNECT)
-//    void testScopeKafkaConnectSetCorrectly(ExtensionContext extensionContext) throws UnexpectedException {
-//        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-//        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-//        final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
-//        final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-//        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-//
-//        // SCOPE TESTING
-//        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-//        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
-//            .withNewSpec()
-//                .withReplicas(1)
-//                .withBootstrapServers(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
-//                .withConfig(connectorConfig)
-//                    .addToConfig("key.converter.schemas.enable", false)
-//                    .addToConfig("value.converter.schemas.enable", false)
-//                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-//                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-//                .withNewKafkaClientAuthenticationOAuth()
-//                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-//                    .withClientId("kafka-client")
-//                    .withNewClientSecret()
-//                        .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
-//                        .withKey(OAUTH_KEY)
-//                    .endClientSecret()
-//                    // scope set correctly regarding to the scope-test realm
-//                    .withScope("test")
-//                .endKafkaClientAuthenticationOAuth()
-//                .withTls(null)
-//                .endSpec()
-//            .build());
-//
-//        // Kafka connect passed the validation process (implicit the KafkaConnect is up)
-//        // explicitly verifying also logs
-//        String kafkaPodName = kubeClient().listPodsByPrefixInName(INFRA_NAMESPACE, KafkaResources.kafkaPodName(oauthClusterName, 0)).get(0).getMetadata().getName();
-//
-//        String kafkaLog = cmdKubeClient().execInCurrentNamespace(false, "logs", kafkaPodName, "--tail", "50").out();
-//        assertThat(kafkaLog, CoreMatchers.containsString("Access token expires at"));
-//        assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: $[*][?]"));
-//        assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: @['scope']"));
-//        assertThat(kafkaLog, CoreMatchers.containsString("User validated"));
-//        assertThat(kafkaLog, CoreMatchers.containsString("Set validated token on callback"));
-//    }
-//
-//    @ParallelTest
-//    void testClientScopeKafkaSetCorrectly(ExtensionContext extensionContext) throws UnexpectedException {
-//        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-//        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-//        final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
-//        final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-//        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-//
-//        KafkaBasicExampleClients oauthInternalClientChecksJob = new KafkaBasicExampleClients.Builder()
-//            .withProducerName(producerName)
-//            .withConsumerName(consumerName)
-//            .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
-//            .withTopicName(topicName)
-//            .withMessageCount(MESSAGE_COUNT)
-//            // configures SASL/PLAIN to be used
-//            .withAdditionalConfig(additionalOauthConfig)
-//            .build();
-//
-//        // clientScope is set to 'test' by default
-//
-//        // verification phase the KafkaClient to authenticate.
-//        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
-//
-//        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi().build());
-//        // client should succeeded because we set to `clientScope=test` and also Kafka has `scope=test`
-//        ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-//        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
-//    }
+    @ParallelTest
+    @Tag(CONNECT)
+    void testScopeKafkaConnectSetIncorrectly(ExtensionContext extensionContext) throws UnexpectedException {
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
+        final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+
+        // SCOPE TESTING
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
+            .withNewSpec()
+                .withReplicas(1)
+                .withBootstrapServers(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
+                .withConfig(connectorConfig)
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .withNewKafkaClientAuthenticationOAuth()
+                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                    .withClientId("kafka-client")
+                    .withNewClientSecret()
+                        .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
+                        .withKey(OAUTH_KEY)
+                    .endClientSecret()
+                    // scope set in-correctly regarding to the scope-test realm
+                    .withScope(null)
+                .endKafkaClientAuthenticationOAuth()
+                .withTls(null)
+                .endSpec()
+            .build());
+
+        String kafkaConnectPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(INFRA_NAMESPACE, KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+
+        // we except that "Token validation failed: Custom claim check failed because we specify scope='null'"
+        StUtils.waitUntilLogFromPodContainsString(INFRA_NAMESPACE, kafkaConnectPodName, KafkaConnectResources.deploymentName(clusterName), "30s", "Token validation failed: Custom claim check failed");
+    }
+
+    @ParallelTest
+    @Tag(CONNECT)
+    void testScopeKafkaConnectSetCorrectly(ExtensionContext extensionContext) throws UnexpectedException {
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
+        final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+
+        // SCOPE TESTING
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
+            .withNewSpec()
+                .withReplicas(1)
+                .withBootstrapServers(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
+                .withConfig(connectorConfig)
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .withNewKafkaClientAuthenticationOAuth()
+                    .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                    .withClientId("kafka-client")
+                    .withNewClientSecret()
+                        .withSecretName(OAUTH_KAFKA_CLIENT_SECRET)
+                        .withKey(OAUTH_KEY)
+                    .endClientSecret()
+                    // scope set correctly regarding to the scope-test realm
+                    .withScope("test")
+                .endKafkaClientAuthenticationOAuth()
+                .withTls(null)
+                .endSpec()
+            .build());
+
+        // Kafka connect passed the validation process (implicit the KafkaConnect is up)
+        // explicitly verifying also logs
+        String kafkaPodName = kubeClient().listPodsByPrefixInName(INFRA_NAMESPACE, KafkaResources.kafkaPodName(oauthClusterName, 0)).get(0).getMetadata().getName();
+
+        String kafkaLog = cmdKubeClient().execInCurrentNamespace(false, "logs", kafkaPodName, "--tail", "50").out();
+        assertThat(kafkaLog, CoreMatchers.containsString("Access token expires at"));
+        assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: $[*][?]"));
+        assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: @['scope']"));
+        assertThat(kafkaLog, CoreMatchers.containsString("User validated"));
+        assertThat(kafkaLog, CoreMatchers.containsString("Set validated token on callback"));
+    }
+
+    @ParallelTest
+    void testClientScopeKafkaSetCorrectly(ExtensionContext extensionContext) throws UnexpectedException {
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
+        final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+
+        KafkaBasicExampleClients oauthInternalClientChecksJob = new KafkaBasicExampleClients.Builder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.bootstrapServiceName(oauthClusterName) + ":" + scopeListenerPort)
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            // configures SASL/PLAIN to be used
+            .withAdditionalConfig(additionalOauthConfig)
+            .build();
+
+        // clientScope is set to 'test' by default
+
+        // verification phase the KafkaClient to authenticate.
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
+
+        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi().build());
+        // client should succeeded because we set to `clientScope=test` and also Kafka has `scope=test`
+        ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
+    }
 
     @IsolatedTest("Modification of shared Kafka cluster")
     void testClientScopeKafkaSetIncorrectly(ExtensionContext extensionContext) throws UnexpectedException {
