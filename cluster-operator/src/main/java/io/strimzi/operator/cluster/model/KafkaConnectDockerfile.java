@@ -294,7 +294,7 @@ public class KafkaConnectDockerfile {
         String artifactHash = Util.sha1Prefix(jar.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String artifactPath = artifactDir + "/" + artifactHash + ".jar";
-        addUnmodifiedArtifact(writer, jar, artifactDir, artifactPath, jar.getUrl());
+        addUnmodifiedArtifact(writer, jar, artifactDir, artifactPath);
     }
 
     /**
@@ -311,21 +311,19 @@ public class KafkaConnectDockerfile {
         String fileName = other.getFileName() != null ? other.getFileName() : artifactHash;
         String artifactPath = artifactDir + "/" + fileName;
 
-        addUnmodifiedArtifact(writer, other, artifactDir, artifactPath, other.getUrl());
+        addUnmodifiedArtifact(writer, other, artifactDir, artifactPath);
     }
 
     /**
      * Adds download command for artifacts which are just downloaded without any unpacking or other processing.
-     *
      * @param writer            Writer for printing the Docker commands
      * @param art               Artifact which should be downloaded
      * @param artifactDir       Directory into which the artifact should be downloaded
      * @param artifactPath      Full path of the artifact
-     * @param url               The url to download from
      */
-    private void addUnmodifiedArtifact(PrintWriter writer, DownloadableArtifact art, String artifactDir, String artifactPath, String url) {
+    private void addUnmodifiedArtifact(PrintWriter writer, DownloadableArtifact art, String artifactDir, String artifactPath) {
         Cmd run = run("mkdir", "-p", artifactDir)
-                .andRun("curl", "-L", "--output", artifactPath, url);
+                .andRun("curl", "-L", "--output", artifactPath, art.getUrl());
 
         if (art.getSha512sum() != null && !art.getSha512sum().isEmpty()) {
             // Checksum exists => we need to check it
