@@ -5390,9 +5390,10 @@ spec:
                       webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers,
                       metric.reporter.topic, partition.metric.sample.store.topic,
                       broker.metric.sample.store.topic,capacity.config.file, self.healing.,
-                      ssl. (with the exception of: ssl.cipher.suites, ssl.protocol,
-                      ssl.enabled.protocols, webserver.http.cors.enabled,webserver.http.cors.origin,
-                      webserver.http.cors.exposeheaders).'
+                      anomaly.detection., ssl. (with the exception of: ssl.cipher.suites,
+                      ssl.protocol, ssl.enabled.protocols, webserver.http.cors.enabled,webserver.http.cors.origin,
+                      webserver.http.cors.exposeheaders, webserver.security.enable,
+                      webserver.ssl.enable).'
                   metricsConfig:
                     type: object
                     properties:
