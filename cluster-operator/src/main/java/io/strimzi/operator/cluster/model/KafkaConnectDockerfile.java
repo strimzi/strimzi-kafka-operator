@@ -4,7 +4,14 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.operator.common.Cmd;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import io.strimzi.api.kafka.model.connect.build.Artifact;
 import io.strimzi.api.kafka.model.connect.build.Build;
 import io.strimzi.api.kafka.model.connect.build.DownloadableArtifact;
@@ -17,13 +24,6 @@ import io.strimzi.api.kafka.model.connect.build.ZipArtifact;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Util;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * This class is used to generate the Dockerfile used by Kafka Connect Build. It takes the API definition with the
@@ -47,6 +47,71 @@ public class KafkaConnectDockerfile {
 
     private static final String DEFAULT_MAVEN_IMAGE = "quay.io/strimzi/maven-builder:latest";
     private final String mavenBuilder;
+
+    public static Cmd run(String cmd, String... args) {
+        return new Cmd(new StringBuilder(), cmd, args);
+    }
+
+    public static class Cmd {
+
+        private final StringBuilder stringBuilder;
+        boolean doneFirst = false;
+
+        private Cmd(StringBuilder stringBuilder, String cmd, String... args) {
+            this.stringBuilder = stringBuilder;
+            append(cmd, args);
+        }
+
+        private Cmd append(String cmd, String[] args) {
+            append(cmd);
+            for (var s : args) {
+                append(s);
+            }
+            return this;
+        }
+
+        private Cmd append(String str) {
+            if (Objects.requireNonNull(str).isEmpty()) {
+                throw new IllegalArgumentException();
+            }
+            if (doneFirst) {
+                stringBuilder.append(' ');
+            }
+            doneFirst = true;
+
+            stringBuilder.append('\'');
+            for (var i = 0; i < str.length(); i++) {
+                char ch = str.charAt(i);
+                if (ch == '\'') {
+                    stringBuilder.append("'\"'\"'");
+                } else {
+                    stringBuilder.append(ch);
+                }
+            }
+            stringBuilder.append('\'');
+            return this;
+        }
+
+        public Cmd redirectTo(String str) {
+            stringBuilder.append(" >");
+            return append(str);
+        }
+
+        public Cmd pipeTo(String cmd, String... args) {
+            stringBuilder.append(" |");
+            return append(cmd, args);
+        }
+
+        public Cmd andRun(String cmd, String... args) {
+            stringBuilder.append(" \\\n      &&");
+            return append(cmd, args);
+        }
+
+        public String toString() {
+            return stringBuilder.toString();
+        }
+
+    }
 
     /**
      * Broker configuration template constructor
@@ -89,12 +154,14 @@ public class KafkaConnectDockerfile {
                     String repo = mvn.getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybeAppendSlash(mvn.getRepository());
                     String artifactHash = Util.sha1Prefix(mvn.getGroup() + "/" + mvn.getArtifact() + "/" + mvn.getVersion());
                     String artifactDir = plugin.getKey() + "/" + artifactHash;
-                    Cmd downloadPomCmd = new Cmd("curl", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"));
-                    Cmd downloadJarCmd = new Cmd("curl", "-L", "--create-dirs", "--output", "/tmp/artifacts/" + artifactDir + "/" + mvn.getArtifact() + "-" + mvn.getVersion() + ".jar", assembleResourceUrl(repo, mvn, "jar"));
 
-                    writer.println("RUN " + downloadPomCmd + " \\");
-                    writer.println("      && " + new Cmd("mvn", "dependency:copy-dependencies", "-DoutputDirectory=/tmp/artifacts/" + artifactDir, "-f", "/tmp/" + artifactDir + "/pom.xml") + " \\");
-                    writer.println("      && " + downloadJarCmd);
+                    Cmd cmd = run("curl", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
+                            .andRun("mvn", "dependency:copy-dependencies",
+                                    "-DoutputDirectory=/tmp/artifacts/" + artifactDir, "-f", "/tmp/" + artifactDir + "/pom.xml")
+                            .andRun("curl", "-L", "--create-dirs", "--output",
+                                    "/tmp/artifacts/" + artifactDir + "/" + mvn.getArtifact() + "-" + mvn.getVersion() + ".jar",
+                                    assembleResourceUrl(repo, mvn, "jar"));
+                    writer.append("RUN ").println(cmd);
                     writer.println();
                 });
             });
@@ -227,9 +294,7 @@ public class KafkaConnectDockerfile {
         String artifactHash = Util.sha1Prefix(jar.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String artifactPath = artifactDir + "/" + artifactHash + ".jar";
-        Cmd downloadCmd =  new Cmd("curl", "-L", "--output", artifactPath, jar.getUrl());
-
-        addUnmodifiedArtifact(writer, jar, artifactDir, downloadCmd, artifactPath);
+        addUnmodifiedArtifact(writer, jar, artifactDir, artifactPath, jar.getUrl());
     }
 
     /**
@@ -245,9 +310,8 @@ public class KafkaConnectDockerfile {
         String artifactDir = connectorPath + "/" + artifactHash;
         String fileName = other.getFileName() != null ? other.getFileName() : artifactHash;
         String artifactPath = artifactDir + "/" + fileName;
-        Cmd downloadCmd =  new Cmd("curl", "-L", "--output", artifactPath, other.getUrl());
 
-        addUnmodifiedArtifact(writer, other, artifactDir, downloadCmd, artifactPath);
+        addUnmodifiedArtifact(writer, other, artifactDir, artifactPath, other.getUrl());
     }
 
     /**
@@ -256,25 +320,22 @@ public class KafkaConnectDockerfile {
      * @param writer            Writer for printing the Docker commands
      * @param art               Artifact which should be downloaded
      * @param artifactDir       Directory into which the artifact should be downloaded
-     * @param downloadCmd       Command for downloading the artifact
      * @param artifactPath      Full path of the artifact
+     * @param url               The url to download from
      */
-    private void addUnmodifiedArtifact(PrintWriter writer, DownloadableArtifact art, String artifactDir, Cmd downloadCmd, String artifactPath)    {
-        writer.println("RUN mkdir -p " + artifactDir + " \\");
+    private void addUnmodifiedArtifact(PrintWriter writer, DownloadableArtifact art, String artifactDir, String artifactPath, String url) {
+        Cmd run = run("mkdir", "-p", artifactDir)
+                .andRun("curl", "-L", "--output", artifactPath, url);
 
-        if (art.getSha512sum() == null || art.getSha512sum().isEmpty()) {
-            // No checksum => we just download the file
-            writer.println("      && " + downloadCmd);
-        } else {
+        if (art.getSha512sum() != null && !art.getSha512sum().isEmpty()) {
             // Checksum exists => we need to check it
-            String checksum = art.getSha512sum() + " " + artifactPath;
-
-            writer.println("      && " + downloadCmd + " \\");
-            writer.println("      && " + new Cmd("echo", checksum) + " > " + artifactPath + ".sha512 \\");
-            writer.println("      && " + new Cmd("sha512sum", "--check", artifactPath + ".sha512") + " \\");
-            writer.println("      && " + new Cmd("rm", "-f", artifactPath + ".sha512"));
+            String shaFile = artifactPath + ".sha512";
+            run.andRun("echo", art.getSha512sum() + " " + artifactPath)
+                    .redirectTo(shaFile)
+                .andRun("sha512sum", "--check", shaFile)
+                .andRun("rm", "-f", shaFile);
         }
-
+        writer.append("RUN ").println(run);
         writer.println();
     }
 
@@ -291,23 +352,20 @@ public class KafkaConnectDockerfile {
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".tgz";
 
-        Cmd downloadCmd =  new Cmd("curl", "-L", "--output", archivePath, tgz.getUrl());
-        Cmd unpackCmd = new Cmd("tar", "xvfz", archivePath, "-C", artifactDir);
-        Cmd deleteCmd =  new Cmd("rm", "-vf", archivePath);
-
-        writer.println("RUN mkdir -p " + artifactDir + " \\");
-        writer.println("      && " + downloadCmd + " \\");
+        Cmd run = run("mkdir", "-p", artifactDir)
+                .andRun("curl", "-L", "--output", archivePath, tgz.getUrl());
 
         if (tgz.getSha512sum() != null && !tgz.getSha512sum().isEmpty()) {
             // Checksum exists => we need to check it
-            String checksum = tgz.getSha512sum() + " " + archivePath;
-            writer.println("      && " + new Cmd("echo", checksum) + " > " + archivePath + ".sha512 \\");
-            writer.println("      && " + new Cmd("sha512sum", "--check", archivePath + ".sha512") + " \\");
-            writer.println("      && " + new Cmd("rm", "-f", archivePath + ".sha512") + " \\");
+            String shaFile = archivePath + ".sha512";
+            run.andRun("echo", tgz.getSha512sum() + " " + archivePath)
+                    .redirectTo(shaFile)
+                .andRun("sha512sum", "--check", shaFile)
+                .andRun("rm", "-f", shaFile);
         }
-        writer.println("      && " + unpackCmd + " \\");
-        writer.println("      && " + deleteCmd);
-
+        run.andRun("tar", "xvfz", archivePath, "-C", artifactDir)
+            .andRun("rm", "-vf", archivePath);
+        writer.append("RUN ").println(run);
         writer.println();
     }
 
@@ -324,27 +382,23 @@ public class KafkaConnectDockerfile {
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".zip";
 
-        Cmd downloadCmd = new Cmd("curl", "-L", "--output", archivePath, zip.getUrl());
-        Cmd unpackCmd = new Cmd("unzip", archivePath, "-d", artifactDir);
-        String deleteSymLinks = new Cmd("find", artifactDir, "-type", "l") + " | " + new Cmd("xargs", "rm", "-f");
-        Cmd deleteCmd = new Cmd("rm", "-vf", archivePath);
-
-        writer.println("RUN mkdir -p " + artifactDir + " \\");
-        writer.println("      && " + downloadCmd + " \\");
+        Cmd run = run("mkdir", "-p", artifactDir)
+                .andRun("curl", "-L", "--output", archivePath, zip.getUrl());
 
         if (zip.getSha512sum() != null && !zip.getSha512sum().isEmpty()) {
             // Checksum exists => we need to check it
-            String checksum = zip.getSha512sum() + " " + archivePath;
-
-            writer.println("      && " + new Cmd("echo", checksum) + " > " + archivePath + ".sha512 \\");
-            writer.println("      && " + new Cmd("sha512sum", "--check", archivePath + ".sha512") + " \\");
-            writer.println("      && " + new Cmd("rm", "-f", archivePath + ".sha512") + " \\");
+            String shaFile = archivePath + ".sha512";
+            run.andRun("echo", zip.getSha512sum() + " " + archivePath)
+                    .redirectTo(shaFile)
+                .andRun("sha512sum", "--check", shaFile)
+                .andRun("rm", "-f", shaFile);
         }
 
-        writer.println("      && " + unpackCmd + " \\");
-        writer.println("      && " + deleteSymLinks + " \\");
-        writer.println("      && " + deleteCmd);
+        run.andRun("unzip", archivePath, "-d", artifactDir)
+            .andRun("find", artifactDir, "-type", "l").pipeTo("xargs", "rm", "-f")
+            .andRun("rm", "-vf", archivePath);
 
+        writer.append("RUN ").println(run);
         writer.println();
     }
 
@@ -359,7 +413,8 @@ public class KafkaConnectDockerfile {
         checkGavIsPresent(mvn);
         String artifactHash = Util.sha1Prefix(mvn.getGroup() + "/" + mvn.getArtifact() + "/" + mvn.getVersion());
 
-        writer.println("COPY --from=downloadArtifacts /tmp/artifacts/" + connectorName + "/" + artifactHash + " " + BASE_PLUGIN_PATH + connectorName + "/" + artifactHash);
+        Cmd run = run("/tmp/artifacts/" + connectorName + "/" + artifactHash, BASE_PLUGIN_PATH + connectorName + "/" + artifactHash);
+        writer.append("COPY --from=downloadArtifacts ").println(run);
         writer.println();
     }
 
@@ -416,4 +471,6 @@ public class KafkaConnectDockerfile {
     public String hashStub()    {
         return Util.sha1Prefix(dockerfile);
     }
+
+
 }
