@@ -52,6 +52,7 @@ import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
+import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -635,6 +636,47 @@ public class CruiseControlTest {
 
         assertThat(ccContainer.getResources().getLimits(), is(limits));
         assertThat(ccContainer.getResources().getRequests(), is(requests));
+    }
+
+    @ParallelTest
+    public void testApiSecurity() {
+        // Test with security enabled
+        testApiSecurity(true, true);
+
+        // Test with security disabled
+        testApiSecurity(false, false);
+    }
+
+    public void testApiSecurity(Boolean apiAuthorizationEnabled, Boolean apiAuthenticationEnabled) {
+        String e1Key = CruiseControl.ENV_VAR_API_AUTHORIZATION_ENABLED;
+        String e1Value = apiAuthorizationEnabled.toString();
+        EnvVar e1 = new EnvVar(e1Key, e1Value, null);
+
+        String e2Key = CruiseControl.ENV_VAR_API_AUTHENTICATION_ENABLED;
+        String e2Value = apiAuthenticationEnabled.toString();
+        EnvVar e2 = new EnvVar(e2Key, e2Value, null);
+
+        Map<String, Object> config = ccConfig;
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SECURITY_ENABLE.getValue(), apiAuthorizationEnabled);
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), apiAuthenticationEnabled);
+
+        CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
+                .withImage(ccImage)
+                .withConfig(config)
+                .build();
+
+        Kafka resource = createKafka(cruiseControlSpec);
+
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        Deployment dep = cc.generateDeployment(true, null, null, null);
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        // checks on the main Cruise Control container
+        Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().get();
+        List<EnvVar> envVarList = ccContainer.getEnv();
+
+        assertThat(envVarList.contains(e1),  is(true));
+        assertThat(envVarList.contains(e2),  is(true));
     }
 
     @ParallelTest

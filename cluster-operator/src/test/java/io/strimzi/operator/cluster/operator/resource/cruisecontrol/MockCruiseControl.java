@@ -7,11 +7,13 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 import io.fabric8.kubernetes.api.model.HTTPHeader;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
-import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.CruiseControl;
+import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.integration.ClientAndServer;
@@ -28,6 +30,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -82,7 +85,8 @@ public class MockCruiseControl {
             .endMetadata()
             .addToData("cruise-control.crt", MockCertManager.clusterCaCert())
             .build();
-    public static final Secret CC_API_SECRET = ResourceUtils.createSecret(CruiseControl.apiSecretName(CLUSTER), NAMESPACE, CruiseControl.generateCruiseControlApiCredentials());
+    public static final Secret CC_API_SECRET = ModelUtils.createSecret(CruiseControlResources.apiSecretName(CLUSTER), NAMESPACE, Labels.EMPTY, null,
+            CruiseControl.generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
 
     private static final Header AUTH_HEADER = getAuthHeader();
 

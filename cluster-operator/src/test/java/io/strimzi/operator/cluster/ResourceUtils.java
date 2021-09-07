@@ -205,16 +205,6 @@ public class ResourceUtils {
                 .build();
     }
 
-    public static Secret createSecret(String name, String namespace, Map<String, String> data) {
-        return new SecretBuilder()
-                .withNewMetadata()
-                    .withName(name)
-                    .withNamespace(namespace)
-                .endMetadata()
-                .withData(data)
-                .build();
-    }
-
     public static List<Secret> createKafkaInitialSecrets(String namespace, String name) {
         List<Secret> secrets = new ArrayList<>();
         secrets.add(createInitialCaCertSecret(namespace, name,

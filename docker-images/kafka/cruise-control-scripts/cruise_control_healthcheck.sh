@@ -5,7 +5,7 @@ SCHEME="http"
 HOST="$(hostname | rev | cut -d "-" -f3- | rev):${API_PORT}"
 ARGS=(--resolve "${HOST}:0.0.0.0")
 
-if [ "$API_AUTHENTICATION_ENABLED" = true ] ; then
+if [ "$STRIMZI_CC_API_AUTHENTICATION_ENABLED" = true ] ; then
   SCHEME="https"
   ARGS+=(
   --cert-type P12
@@ -15,7 +15,7 @@ if [ "$API_AUTHENTICATION_ENABLED" = true ] ; then
   )
 fi
 
-if [ "$API_AUTHORIZATION_ENABLED" = true ] ; then
+if [ "$STRIMZI_CC_API_AUTHORIZATION_ENABLED" = true ] ; then
   ARGS+=(--user "${API_USER}:$(cat /opt/cruise-control/api-auth-config/cruise-control.apiUserPassword)")
 fi
 

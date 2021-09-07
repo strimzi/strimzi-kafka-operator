@@ -95,6 +95,8 @@ public class CruiseControl extends AbstractModel {
     protected static final String API_AUTH_CONFIG_VOLUME_NAME = "api-auth-config";
     protected static final String API_AUTH_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/api-auth-config/";
 
+    protected static final String API_AUTH_CREDENTIALS_FILE = API_AUTH_CONFIG_VOLUME_MOUNT + API_AUTH_FILE_KEY;
+
     private static final String NAME_SUFFIX = "-cruise-control";
 
     // Volume name of the temporary volume used by the TLS sidecar container
@@ -147,8 +149,8 @@ public class CruiseControl extends AbstractModel {
     protected static final String ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
     protected static final String ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
 
-    protected static final String ENV_VAR_API_AUTHENTICATION_ENABLED = "API_AUTHENTICATION_ENABLED";
-    protected static final String ENV_VAR_API_AUTHORIZATION_ENABLED = "API_AUTHORIZATION_ENABLED";
+    protected static final String ENV_VAR_API_AUTHENTICATION_ENABLED = "STRIMZI_CC_API_AUTHENTICATION_ENABLED";
+    protected static final String ENV_VAR_API_AUTHORIZATION_ENABLED = "STRIMZI_CC_API_AUTHORIZATION_ENABLED";
     protected static final String ENV_VAR_API_USER = "API_USER";
     protected static final String ENV_VAR_API_PORT = "API_PORT";
     protected static final String ENV_VAR_API_HEALTHCHECK_PATH = "API_HEALTHCHECK_PATH";
@@ -212,10 +214,6 @@ public class CruiseControl extends AbstractModel {
 
     public static String encodeToBase64(String s) {
         return Base64.getEncoder().encodeToString(s.getBytes(StandardCharsets.US_ASCII));
-    }
-
-    public static String getAuthCredentialsFile() {
-        return API_AUTH_CONFIG_VOLUME_MOUNT + API_AUTH_FILE_KEY;
     }
 
     private static boolean isEnabledInConfiguration(CruiseControlConfiguration config, String s1, String s2) {
@@ -433,7 +431,7 @@ public class CruiseControl extends AbstractModel {
                 createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
                 createSecretVolume(TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.secretName(cluster), isOpenShift),
                 createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
-                createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.apiSecretName(cluster), isOpenShift),
+                createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift),
                 createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
     }
 
@@ -481,11 +479,13 @@ public class CruiseControl extends AbstractModel {
                 .withLivenessProbe(ProbeGenerator.defaultBuilder(livenessProbeOptions)
                         .withNewExec()
                             .withCommand("/opt/cruise-control/cruise_control_healthcheck.sh")
-                        .endExec().build())
+                        .endExec()
+                        .build())
                 .withReadinessProbe(ProbeGenerator.defaultBuilder(readinessProbeOptions)
                         .withNewExec()
                             .withCommand("/opt/cruise-control/cruise_control_healthcheck.sh")
-                        .endExec().build())
+                        .endExec()
+                        .build())
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
@@ -511,7 +511,8 @@ public class CruiseControl extends AbstractModel {
                 .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec()
                         .withCommand("/opt/stunnel/cruise_control_stunnel_pre_stop.sh",
                                 String.valueOf(templateTerminationGracePeriodSeconds))
-                        .endExec().endPreStop().build())
+                        .endExec().endPreStop()
+                        .build())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
                 .withSecurityContext(templateTlsSidecarContainerSecurityContext)
                 .build();
@@ -599,16 +600,6 @@ public class CruiseControl extends AbstractModel {
     }
 
     /**
-     * Generates the name of the Cruise Control secret with API authorization credentials
-     *
-     * @param kafkaCluster  Name of the Kafka Custom Resource
-     * @return  Name of the Cruise Control secret
-     */
-    public static String apiSecretName(String kafkaCluster) {
-        return CruiseControlResources.apiSecretName(kafkaCluster);
-    }
-
-    /**
      * Generates the name of the Cruise Control secret with certificates for connecting to Kafka brokers
      *
      * @param kafkaCluster  Name of the Kafka Custom Resource
@@ -662,7 +653,7 @@ public class CruiseControl extends AbstractModel {
         if (!isDeployed()) {
             return null;
         }
-        return ModelUtils.createSecret(CruiseControl.apiSecretName(cluster), namespace, labels, createOwnerReference(), generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
+        return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, createOwnerReference(), generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
     }
 
     /**

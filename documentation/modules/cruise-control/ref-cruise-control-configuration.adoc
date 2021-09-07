@@ -177,7 +177,7 @@ However, you can disable these security settings if needed.
 * To disable the built-in authorization, set `webserver.security.enable` to `false`.
 * To disable the built-in authentication, set `webserver.ssl.enable` to `false`.
 
-.Example Cruise Control configuration to disable API authorization
+.Example Cruise Control configuration to disable API authorization and authentication
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -189,21 +189,6 @@ spec:
   cruiseControl:
     config:
       webserver.security.enable: false
+      webserver.ssl.enable: false
 # ...
 ----
-
-.Example Cruise Control configuration to disable API authentication
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaApiVersion}
-kind: Kafka
-metadata:
-  name: my-cluster
-spec:
-  # ...
-  cruiseControl:
-    config:
-       webserver.ssl.enable: false
-# ...
-----
-

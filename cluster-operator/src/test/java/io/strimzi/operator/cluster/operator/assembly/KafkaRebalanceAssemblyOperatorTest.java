@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.KafkaRebalanceList;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaRebalance;
@@ -166,7 +167,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .thenReturn(Future.succeededFuture(MockCruiseControl.CO_SECRET));
         when(mockSecretOps.getAsync(CLUSTER_NAMESPACE, CruiseControl.secretName(CLUSTER_NAME)))
                 .thenReturn(Future.succeededFuture(MockCruiseControl.CC_SECRET));
-        when(mockSecretOps.getAsync(CLUSTER_NAMESPACE, CruiseControl.apiSecretName(CLUSTER_NAME)))
+        when(mockSecretOps.getAsync(CLUSTER_NAMESPACE, CruiseControlResources.apiSecretName(CLUSTER_NAME)))
                 .thenReturn(Future.succeededFuture(MockCruiseControl.CC_API_SECRET));
     }
 
