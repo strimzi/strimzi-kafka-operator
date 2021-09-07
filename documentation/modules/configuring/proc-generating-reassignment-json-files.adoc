@@ -6,7 +6,8 @@
 This procedure describes how to generate a reassignment JSON file.
 Use the reassignment file with the `kafka-reassign-partitions.sh` tool to reassign partitions after scaling a Kafka cluster.
 
-Secure the reassignment process using TLS. You'll need a Kafka cluster that uses TLS encryption and authentication.
+The steps describe a secure reassignment process that uses TLS.
+You'll need a Kafka cluster that uses TLS encryption and authentication.
 
 .Prerequisites
 
