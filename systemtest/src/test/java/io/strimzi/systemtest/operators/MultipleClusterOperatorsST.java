@@ -223,6 +223,4 @@ public class MultipleClusterOperatorsST extends AbstractST {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
     }
 
-
-
 }

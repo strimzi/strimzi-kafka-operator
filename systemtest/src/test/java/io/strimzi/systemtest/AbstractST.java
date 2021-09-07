@@ -549,9 +549,8 @@ public abstract class AbstractST implements TestSeparator {
             if (install != null && !SetupClusterOperator.buildDefaultInstallation().equals(install)) {
                 LOGGER.info(String.join("", Collections.nCopies(76, "=")));
                 LOGGER.info("Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.");
-                install = install.rollbackToDefaultConfiguration();
                 LOGGER.info(String.join("", Collections.nCopies(76, "=")));
-
+                install = install.rollbackToDefaultConfiguration();
             }
         }
     }
