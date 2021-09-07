@@ -211,7 +211,7 @@ class UserST extends AbstractST {
     @ParallelTest
     void testTlsUserWithQuotas(ExtensionContext extensionContext) {
         KafkaUser user = KafkaUserTemplates.tlsUser(NAMESPACE, userClusterName, "encrypted-arnost").build();
-
+        resourceManager.createResource(extensionContext, user);
         testUserWithQuotas(extensionContext, user);
     }
 
@@ -226,7 +226,7 @@ class UserST extends AbstractST {
     @ParallelTest
     void testScramUserWithQuotas(ExtensionContext extensionContext) {
         KafkaUser user = KafkaUserTemplates.scramShaUser(NAMESPACE, userClusterName, "scramed-arnost").build();
-
+        resourceManager.createResource(extensionContext, user);
         testUserWithQuotas(extensionContext, user);
     }
 
@@ -547,7 +547,6 @@ class UserST extends AbstractST {
             assertThat(kuqAfter.getConsumerByteRate(), is(consumerRate));
             assertThat(kuqAfter.getProducerByteRate(), is(producerRate));
             assertThat(kuqAfter.getControllerMutationRate(), is(mutationRate));
-
         }
     }
 
