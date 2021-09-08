@@ -16,26 +16,25 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * KafkaAdmin Client - initial implementation of test-client,
- * which supports Topic management operations only.
+ * Initial implementation of test-client, which supports Topic management operations only.
  * Create, delete, update topics and partitions increase (in bulk, with offsets).
  */
 public class KafkaAdminClient {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaAdminClient.class);
 
-    protected String adminName;
-    protected String bootstrapAddress;
-    protected String topicName;
-    protected int topicCount;
-    protected int topicOffset;
-    protected int partitions;
-    protected int replicationFactor;
-    protected String topicOperation;
-    protected String additionalConfig;
-    protected String namespaceName;
+    private final String adminName;
+    private final String bootstrapAddress;
+    private final String topicName;
+    private final int topicCount;
+    private final int topicOffset;
+    private final int partitions;
+    private final int replicationFactor;
+    private final String topicOperation;
+    private final String additionalConfig;
+    private String namespaceName;
 
-    protected KafkaAdminClient(KafkaAdminClient.Builder builder) {
+    public KafkaAdminClient(KafkaAdminClient.Builder builder) {
         if (builder.topicOperation == null || builder.topicOperation.isEmpty())
             throw new InvalidParameterException("TopicOperation must be set.");
         if (builder.bootstrapAddress == null || builder.bootstrapAddress.isEmpty())
@@ -43,9 +42,9 @@ public class KafkaAdminClient {
         if ((builder.topicName == null || builder.topicName.isEmpty()) && !(builder.topicOperation.equals("help") || builder.topicOperation.equals("list")))
             throw new InvalidParameterException("Topic name (or 'prefix' if topic count > 1) is not set.");
 
-        replicationFactor = (builder.replicationFactor == 0) ? 1 : builder.replicationFactor;
-        partitions = (builder.partitions == 0) ? 1 : builder.partitions;
-        topicCount = (builder.topicCount == 0) ? 1 : builder.topicCount;
+        replicationFactor = (builder.replicationFactor <= 0) ? 1 : builder.replicationFactor;
+        partitions = (builder.partitions <= 0) ? 1 : builder.partitions;
+        topicCount = (builder.topicCount <= 0) ? 1 : builder.topicCount;
         topicOffset = builder.topicOffset;
         adminName = builder.adminName;
         bootstrapAddress = builder.bootstrapAddress;
@@ -95,22 +94,22 @@ public class KafkaAdminClient {
         return topicOperation;
     }
 
-    protected KafkaAdminClient.Builder newBuilder() {
+    public KafkaAdminClient.Builder newBuilder() {
         return new KafkaAdminClient.Builder();
     }
 
-    protected KafkaAdminClient.Builder updateBuilder(KafkaAdminClient.Builder builder) {
+    public KafkaAdminClient.Builder updateBuilder(KafkaAdminClient.Builder builder) {
         return builder
-                .withAdditionalConfig(getAdditionalConfig())
-                .withBootstrapAddress(getBootstrapAddress())
-                .withTopicOperation(getTopicOperation())
-                .withTopicCount(getTopicCount())
-                .withTopicOffset(getTopicOffset())
-                .withPartitions(getPartitions())
-                .withReplicationFactor(getReplicationFactor())
-                .withAdminName(getAdminName())
-                .withTopicName(getTopicName())
-                .withNamespaceName(getNamespaceName());
+            .withAdditionalConfig(getAdditionalConfig())
+            .withBootstrapAddress(getBootstrapAddress())
+            .withTopicOperation(getTopicOperation())
+            .withTopicCount(getTopicCount())
+            .withTopicOffset(getTopicOffset())
+            .withPartitions(getPartitions())
+            .withReplicationFactor(getReplicationFactor())
+            .withAdminName(getAdminName())
+            .withTopicName(getTopicName())
+            .withNamespaceName(getNamespaceName());
     }
 
     public KafkaAdminClient.Builder toBuilder() {
@@ -128,72 +127,72 @@ public class KafkaAdminClient {
         adminLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
 
         return new JobBuilder()
-                .withNewMetadata()
-                    .withNamespace(namespaceName)
-                    .withLabels(adminLabels)
-                    .withName(adminName)
-                .endMetadata()
-                .withNewSpec()
-                    .withBackoffLimit(0)
-                    .withNewTemplate()
-                        .withNewMetadata()
-                            .withName(adminName)
-                            .withNamespace(namespaceName)
-                            .withLabels(adminLabels)
-                        .endMetadata()
-                        .withNewSpec()
-                            .withRestartPolicy("Never")
-                                .withContainers()
-                                    .addNewContainer()
-                                    .withName(adminName)
-                                    .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
-                                    .withImage(Environment.TEST_ADMIN_IMAGE)
-                                    .addNewEnv()
-                                        .withName("BOOTSTRAP_SERVERS")
-                                        .withValue(bootstrapAddress)
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("TOPIC")
-                                        .withValue(topicName)
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("TOPIC_OPERATION")
-                                        .withValue(topicOperation)
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("REPLICATION_FACTOR")
-                                        .withValue(String.valueOf(replicationFactor))
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("PARTITIONS")
-                                        .withValue(String.valueOf(partitions))
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("TOPICS_COUNT")
-                                        .withValue(String.valueOf(topicCount))
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("TOPIC_OFFSET")
-                                        .withValue(String.valueOf(topicOffset))
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("LOG_LEVEL")
-                                        .withValue("DEBUG")
-                                    .endEnv()
-                                    .addNewEnv()
-                                        .withName("ADDITIONAL_CONFIG")
-                                        .withValue(additionalConfig)
-                                    .endEnv()
-                            .endContainer()
-                        .endSpec()
-                    .endTemplate()
-                .endSpec();
+            .withNewMetadata()
+                .withNamespace(namespaceName)
+                .withLabels(adminLabels)
+                .withName(adminName)
+            .endMetadata()
+            .withNewSpec()
+                .withBackoffLimit(0)
+                .withNewTemplate()
+                    .withNewMetadata()
+                        .withName(adminName)
+                        .withNamespace(namespaceName)
+                        .withLabels(adminLabels)
+                    .endMetadata()
+                    .withNewSpec()
+                        .withRestartPolicy("Never")
+                            .withContainers()
+                                .addNewContainer()
+                                .withName(adminName)
+                                .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
+                                .withImage(Environment.TEST_ADMIN_IMAGE)
+                                .addNewEnv()
+                                    .withName("BOOTSTRAP_SERVERS")
+                                    .withValue(bootstrapAddress)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("TOPIC")
+                                    .withValue(topicName)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("TOPIC_OPERATION")
+                                    .withValue(topicOperation)
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("REPLICATION_FACTOR")
+                                    .withValue(String.valueOf(replicationFactor))
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("PARTITIONS")
+                                    .withValue(String.valueOf(partitions))
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("TOPICS_COUNT")
+                                    .withValue(String.valueOf(topicCount))
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("TOPIC_OFFSET")
+                                    .withValue(String.valueOf(topicOffset))
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("LOG_LEVEL")
+                                    .withValue("DEBUG")
+                                .endEnv()
+                                .addNewEnv()
+                                    .withName("ADDITIONAL_CONFIG")
+                                    .withValue(additionalConfig)
+                                .endEnv()
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec();
     }
 
     public static class Builder {
-        protected int partitions;
-        protected int replicationFactor;
-        protected String topicOperation;
+        private int partitions;
+        private int replicationFactor;
+        private String topicOperation;
         private String adminName;
         private String bootstrapAddress;
         private String topicName;

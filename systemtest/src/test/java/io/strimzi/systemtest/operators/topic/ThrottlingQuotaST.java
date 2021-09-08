@@ -287,7 +287,7 @@ public class ThrottlingQuotaST extends AbstractST {
         JobUtils.deleteJobWithWait(NAMESPACE, deleteAdminName);
     }
 
-    String getAdminClientConfig(String kafkaUsername) {
+    private String getAdminClientConfig(String kafkaUsername) {
         final String saslJaasConfigEncrypted = kubeClient().getSecret(NAMESPACE, kafkaUsername).getData().get("sasl.jaas.config");
         final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
         return "sasl.mechanism=SCRAM-SHA-512\n" +
