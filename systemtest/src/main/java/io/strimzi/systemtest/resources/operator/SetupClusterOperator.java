@@ -438,9 +438,7 @@ public class SetupClusterOperator {
             KubeClusterResource.getInstance().deleteCustomResources(BeforeAllOnce.getSharedExtensionContext());
 
             KubeClusterResource.getInstance().deleteNamespace(
-                CollectorElement.createCollectorElement(
-                    BeforeAllOnce.getSharedExtensionContext().getRequiredTestClass().getName(),
-                    BeforeAllOnce.getSharedExtensionContext().getDisplayName()), Constants.INFRA_NAMESPACE);
+                CollectorElement.createCollectorElement(testClassName, testMethodName), Constants.INFRA_NAMESPACE);
         }
     }
 
