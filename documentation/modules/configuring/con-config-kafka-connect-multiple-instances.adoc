@@ -23,7 +23,7 @@ spec:
     # ...
 # ...
 ----
-<1> Kafka Connect cluster group that the instance belongs to.
+<1> The consumer group that Kafka Connect workers will use.
 <2> Kafka topic that stores connector offsets.
 <3> Kafka topic that stores connector and task status configurations.
 <4> Kafka topic that stores connector and task status updates.
