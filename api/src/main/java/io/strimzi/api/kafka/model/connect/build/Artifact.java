@@ -46,7 +46,7 @@ public abstract class Artifact implements UnknownPropertyPreserving, Serializabl
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Artifact type. " +
-            "Currently, the supported artifact types are `tgz`, `jar`, `zip` and `maven`.")
+            "Currently, the supported artifact types are `tgz`, `jar`, `zip`, `other` and `maven`.")
     public abstract String getType();
 
     @Override
