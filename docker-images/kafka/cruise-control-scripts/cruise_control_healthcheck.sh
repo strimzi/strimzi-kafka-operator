@@ -3,7 +3,7 @@ set -e
 
 SCHEME="http"
 HOST="$(hostname | rev | cut -d "-" -f3- | rev):${API_PORT}"
-ARGS=(--resolve "${HOST}:0.0.0.0")
+ARGS=(--resolve "${HOST}:127.0.0.1")
 
 if [ "$STRIMZI_CC_API_AUTHENTICATION_ENABLED" = true ] ; then
   SCHEME="https"
