@@ -8,14 +8,22 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.ExternalLogging;
+import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -53,7 +61,9 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class Util {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Util.class);
 
@@ -508,6 +518,68 @@ public class Util {
             loggingCmFut = Future.succeededFuture(null);
         }
         return loggingCmFut;
+    }
+
+    /**
+     * When TLS certificate or Auth certificate (or password) is changed, the has is computed.
+     * It is used for rolling updates.
+     * @param secretOperations Secret operator
+     * @param namespace namespace to get Secrets in
+     * @param auth Authentication object to compute hash from
+     * @param certSecretSources TLS trusted certificates whose hashes are joined to result
+     * @return Future computing hash from TLS + Auth
+     */
+    public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, List<CertSecretSource> certSecretSources) {
+        Future<Integer> tls;
+        if (certSecretSources != null) {
+            // get all TLS trusted certs, compute hash from each of them, sum hashes
+            tls = CompositeFuture.join(certSecretSources.stream().map(certSecretSource ->
+                    secretOperations.getAsync(namespace, certSecretSource.getSecretName())
+                    .compose(secret -> Future.succeededFuture(secret.getData().get(certSecretSource.getCertificate()).hashCode()))).collect(Collectors.toList()))
+                .compose(hashes -> Future.succeededFuture(IntStream.range(0, hashes.size()).map(i -> (int) hashes.resultAt(i)).sum()));
+        } else {
+            tls = Future.succeededFuture(0);
+        }
+
+        if (auth == null) {
+            return tls;
+        } else {
+            // compute hash from Auth
+            if (auth instanceof KafkaClientAuthenticationScramSha512) {
+                // only passwordSecret can be changed
+                return tls.compose(tlsHash -> secretOperations.getAsync(namespace, ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getSecretName())
+                        .compose(secret -> Future.succeededFuture(secret.getData().get(((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getPassword()).hashCode() + tlsHash)));
+            } else if (auth instanceof KafkaClientAuthenticationPlain) {
+                // only passwordSecret can be changed
+                return tls.compose(tlsHash -> secretOperations.getAsync(namespace, ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getSecretName())
+                        .compose(secret -> Future.succeededFuture(secret.getData().get(((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getPassword()).hashCode() + tlsHash)));
+            } else if (auth instanceof KafkaClientAuthenticationTls) {
+                // custom cert can be used (and changed)
+                return ((KafkaClientAuthenticationTls) auth).getCertificateAndKey() == null ? tls :
+                        tls.compose(tlsHash -> secretOperations.getAsync(namespace, ((KafkaClientAuthenticationTls) auth).getCertificateAndKey().getSecretName())
+                                .compose(secret -> Future.succeededFuture(secret.getData().get(((KafkaClientAuthenticationTls) auth).getCertificateAndKey().getCertificate()).hashCode() + secret.getData().get(((KafkaClientAuthenticationTls) auth).getCertificateAndKey().getKey()).hashCode() + tlsHash)));
+            } else if (auth instanceof KafkaClientAuthenticationOAuth) {
+                List<Future> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates().stream().map(certSecretSource ->
+                        secretOperations.getAsync(namespace, certSecretSource.getSecretName())
+                                .compose(secret -> Future.succeededFuture(secret.getData().get(certSecretSource.getCertificate()).hashCode()))).collect(Collectors.toList());
+                futureList.add(tls);
+                futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getAccessToken()));
+                futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getClientSecret()));
+                futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getRefreshToken()));
+                return CompositeFuture.join(futureList).compose(hashes -> Future.succeededFuture(IntStream.range(0, hashes.size()).map(i -> (int) hashes.resultAt(i)).sum()));
+            } else {
+                // unknown Auth type
+                return tls;
+            }
+        }
+    }
+
+    private static Future<Integer> addSecretHash(SecretOperator secretOperations, String namespace, GenericSecretSource genericSecretSource) {
+        if (genericSecretSource != null) {
+            return secretOperations.getAsync(namespace, genericSecretSource.getSecretName())
+                    .compose(secret -> Future.succeededFuture(secret.getData().get(genericSecretSource.getKey()).hashCode()));
+        }
+        return Future.succeededFuture(0);
     }
 
     public static Future<MetricsAndLogging> metricsAndLogging(Reconciliation reconciliation,

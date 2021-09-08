@@ -161,6 +161,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 assertThat(dc.getMetadata().getName(), is(mirror.getName()));
                 Map annotations = new HashMap();
                 annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, LOGGING_CONFIG);
+                annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, "0");
                 assertThat("Deployments are not equal", dc, is(mirror.generateDeployment(annotations, true, null, null)));
 
                 // Verify PodDisruptionBudget
@@ -354,6 +355,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 assertThat(dc.getMetadata().getName(), is(compareTo.getName()));
                 Map<String, String> annotations = new HashMap();
                 annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG));
+                annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, "0");
                 assertThat("Deployments are not equal", dc, is(compareTo.generateDeployment(annotations, true, null, null)));
 
                 // Verify PodDisruptionBudget
