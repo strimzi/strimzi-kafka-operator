@@ -48,7 +48,8 @@ Kafka provides two built-in connectors:
 * `FileStreamSinkConnector` streams data from Kafka to an external system, reading messages from a Kafka topic and creating a line for each in an output file.
 --
 
-You can add other connectors using connector plugins, which are a set of JAR files or TGZ archives that define the implementation required to connect to certain types of external system.
+You can add other connectors using connector plugins, which are a set of JAR files, TGZ or ZIP archives that define the implementation required to connect to certain types of external system.
+You can also specify Maven coordinates to fetch plugins from a Maven repository.
 
 You create a custom Kafka Connect image that uses new connector plugins.
 

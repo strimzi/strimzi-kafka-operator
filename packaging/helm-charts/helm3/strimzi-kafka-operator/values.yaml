@@ -124,6 +124,12 @@ kanikoExecutor:
     repository: ""
     name: kaniko-executor
     tag: ""
+mavenBuilder:
+  image:
+    registry: ""
+    repository: ""
+    name: maven-builder
+    tag: ""
 resources:
   limits:
     memory: 384Mi
