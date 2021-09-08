@@ -1766,7 +1766,7 @@ spec:
                                     - zip
                                     - maven
                                     - other
-                                  description: Artifact type. Currently, the supported artifact types are `tgz`, `jar`, `zip` and `maven`.
+                                  description: Artifact type. Currently, the supported artifact types are `tgz`, `jar`, `zip`, `other` and `maven`.
                                 url:
                                   type: string
                                   pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
