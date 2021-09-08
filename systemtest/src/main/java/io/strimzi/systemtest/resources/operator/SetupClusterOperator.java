@@ -65,6 +65,9 @@ public class SetupClusterOperator {
     private Map<String, String> extraLabels;
     private ClusterOperatorRBACType clusterOperatorRBACType;
 
+    private String testClassName;
+    private String testMethodName;
+
     public SetupClusterOperator() {}
     public SetupClusterOperator(SetupClusterOperatorBuilder builder) {
         this.extensionContext = builder.extensionContext;
@@ -105,8 +108,11 @@ public class SetupClusterOperator {
      * Don't use this method in tests, where specific configuration of CO is needed.
      */
     public SetupClusterOperator runInstallation() {
-        String testClassName = extensionContext.getRequiredTestClass().getName();
-        String testMethodName = testClassName.contains(extensionContext.getDisplayName()) ? "" : extensionContext.getDisplayName();
+        // if it's shared context (before suite) skip
+        if (BeforeAllOnce.getSharedExtensionContext() != extensionContext) {
+            testClassName = extensionContext.getRequiredTestClass() != null ? extensionContext.getRequiredTestClass().getName() : "";
+            testMethodName = extensionContext.getDisplayName() != null ? extensionContext.getDisplayName() : "";
+        }
 
         if (Environment.isOlmInstall()) {
             LOGGER.info("Going to install ClusterOperator via OLM");
@@ -156,9 +162,6 @@ public class SetupClusterOperator {
 
     private void bundleInstallation() {
         LOGGER.info("Going to install ClusterOperator via Yaml bundle");
-        String testClassName = extensionContext.getRequiredTestClass().getName();
-        String testMethodName = testClassName.contains(extensionContext.getDisplayName()) ? "" : extensionContext.getDisplayName();
-
         // check if namespace is already created
         if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
