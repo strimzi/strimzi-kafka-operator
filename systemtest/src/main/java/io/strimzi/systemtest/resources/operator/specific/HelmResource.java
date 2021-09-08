@@ -68,45 +68,15 @@ public class HelmResource implements SpecificResourceType {
 
         Map<String, Object> values = new HashMap<>();
         // image registry config
-        values.put("image.registry", Environment.STRIMZI_REGISTRY);
-        values.put("topicOperator.image.registry", Environment.STRIMZI_REGISTRY);
-        values.put("userOperator.image.registry", Environment.STRIMZI_REGISTRY);
-        values.put("kafkaInit.image.registry", Environment.STRIMZI_REGISTRY);
-        values.put("jmxTrans.image.registry", Environment.STRIMZI_REGISTRY);
-        values.put("kanikoExecutor.image.registry", Environment.STRIMZI_REGISTRY);
-        values.put("tlsSidecarEntityOperator.image.registry", Environment.STRIMZI_REGISTRY);
-        values.put("kafkaExporter.image.registry", Environment.STRIMZI_REGISTRY);
-        values.put("cruiseControl.image.registry", Environment.STRIMZI_REGISTRY);
-        values.put("tlsSidecarCruiseControl.image.registry", Environment.STRIMZI_REGISTRY);
-        values.put("kafka.image.registry", Environment.STRIMZI_REGISTRY);
-        values.put("kafkaConnect.image.registry", Environment.STRIMZI_REGISTRY);
-        values.put("kafkaMirrorMaker.image.registry", Environment.STRIMZI_REGISTRY);
-        values.put("kafkaMirrorMaker2.image.registry", Environment.STRIMZI_REGISTRY);
+        values.put("defaultImageRegistry", Environment.STRIMZI_REGISTRY);
         values.put("kafkaBridge.image.registry", Environment.STRIMZI_REGISTRY_DEFAULT);
 
         // image repository config
-        values.put("image.repository", Environment.STRIMZI_ORG);
-        values.put("topicOperator.image.repository", Environment.STRIMZI_ORG);
-        values.put("userOperator.image.repository", Environment.STRIMZI_ORG);
-        values.put("kafkaInit.image.repository", Environment.STRIMZI_ORG);
-        values.put("jmxTrans.image.repository", Environment.STRIMZI_ORG);
-        values.put("kanikoExecutor.image.repository", Environment.STRIMZI_ORG);
-        values.put("tlsSidecarEntityOperator.image.repository", Environment.STRIMZI_ORG);
-        values.put("kafkaExporter.image.repository", Environment.STRIMZI_ORG);
-        values.put("cruiseControl.image.repository", Environment.STRIMZI_ORG);
-        values.put("tlsSidecarCruiseControl.image.repository", Environment.STRIMZI_ORG);
-        values.put("kafka.image.repository", Environment.STRIMZI_ORG);
-        values.put("kafkaConnect.image.repository", Environment.STRIMZI_ORG);
-        values.put("kafkaMirrorMaker.image.repository", Environment.STRIMZI_ORG);
-        values.put("kafkaMirrorMaker2.image.repository", Environment.STRIMZI_ORG);
+        values.put("defaultImageRepository", Environment.STRIMZI_ORG);
         values.put("kafkaBridge.image.repository", Environment.STRIMZI_ORG_DEFAULT);
 
         // image tags config
-        values.put("image.tag", Environment.STRIMZI_TAG);
-        values.put("topicOperator.image.tag", Environment.STRIMZI_TAG);
-        values.put("userOperator.image.tag", Environment.STRIMZI_TAG);
-        values.put("kafkaInit.image.tag", Environment.STRIMZI_TAG);
-        values.put("jmxTrans.image.tag", Environment.STRIMZI_TAG);
+        values.put("defaultImageTag", Environment.STRIMZI_TAG);
         values.put("kafkaBridge.image.tag", Environment.useLatestReleasedBridge() ? "latest" : BridgeUtils.getBridgeVersion());
 
         // Additional config
