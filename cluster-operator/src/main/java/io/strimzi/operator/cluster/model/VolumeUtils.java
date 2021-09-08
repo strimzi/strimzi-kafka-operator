@@ -409,23 +409,23 @@ public class VolumeUtils {
     }
 
     /**
-     * Creates the Client Secret Volume
+     * Creates the Client Tls encrypted Secret Volume
      * @param tls    Kafka Client tls object
      * @param volumeList    List where the volumes will be added
      * @param isOpenShift   Indicates whether we run on OpenShift or not
      */
-    protected static void createClientSecretVolume(ClientTls tls, List<Volume> volumeList, boolean isOpenShift) {
-        createClientSecretVolume(tls, volumeList, isOpenShift, null);
+    protected static void createTlsEncryptionSecretVolume(ClientTls tls, List<Volume> volumeList, boolean isOpenShift) {
+        createTlsEncryptionSecretVolume(tls, volumeList, isOpenShift, null);
     }
 
     /**
-     * Creates the Client Secret Volume
+     * Creates the Client Tls encrypted Secret Volume
      * @param tls    Kafka Client tls object
      * @param volumeList    List where the volumes will be added
      * @param isOpenShift   Indicates whether we run on OpenShift or not
      * @param alias   Alias to reference the Kafka Cluster
      */
-    protected static void createClientSecretVolume(ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String alias) {
+    protected static void createTlsEncryptionSecretVolume(ClientTls tls, List<Volume> volumeList, boolean isOpenShift, String alias) {
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
 
@@ -440,6 +440,11 @@ public class VolumeUtils {
     /**
      * Creates the Volumes used for authentication of Kafka client based components, checking that the named volume has not already been
      * created.
+     *
+     * @param volumeList    List where the volume will be added
+     * @param certSecretSource   Represents a certificate inside a Secret
+     * @param alias   Path where the TLS certs should be mounted
+     * @param isOpenShift   Indicates whether we run on OpenShift or not
      */
     private static void addNewVolume(List<Volume> volumeList, CertSecretSource certSecretSource, boolean isOpenShift, String alias) {
         String volumeName = alias != null ? alias + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
@@ -450,25 +455,25 @@ public class VolumeUtils {
     }
 
     /**
-     * Creates the Client Volume Mounts
+     * Creates the Client tls encrypted Volume Mounts
      *
      * @param tls    Kafka Client tls object
      * @param volumeMountList    List where the volume mounts will be added
      * @param tlsCertBasedVolumeMount   Path where the TLS certs should be mounted
      */
-    protected static void createClientVolumeMounts(ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount) {
-        createClientVolumeMounts(tls, volumeMountList, tlsCertBasedVolumeMount, null);
+    protected static void createTlsEncryptionVolumeMount(ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount) {
+        createTlsEncryptionVolumeMount(tls, volumeMountList, tlsCertBasedVolumeMount, null);
     }
 
     /**
-     * Creates the Client Volume Mounts
+     * Creates the Client Tls encrypted Volume Mount
      *
      * @param tls    Kafka Client tls object
      * @param volumeMountList    List where the volume mounts will be added
      * @param tlsCertBasedVolumeMount   Path where the TLS certs should be mounted
      * @param alias   Alias to reference the Kafka Cluster
      */
-    protected static void createClientVolumeMounts(ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount, String alias) {
+    protected static void createTlsEncryptionVolumeMount(ClientTls tls, List<VolumeMount> volumeMountList, String tlsCertBasedVolumeMount, String alias) {
 
         if (tls != null) {
             List<CertSecretSource> trustedCertificates = tls.getTrustedCertificates();
@@ -476,20 +481,25 @@ public class VolumeUtils {
             if (trustedCertificates != null && trustedCertificates.size() > 0) {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
                     String volumeMountName = alias != null ? alias + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
-                    addNewVolumeMounts(volumeMountList, volumeMountName, tlsCertBasedVolumeMount, certSecretSource);
+                    addNewVolumeMount(volumeMountList, volumeMountName, tlsCertBasedVolumeMount, certSecretSource);
                 }
             }
         }
     }
 
     /**
-     * Creates the VolumeMounts used for authentication of Kafka client based components, checking that the named volume mount has not already been
+     * Creates the VolumeMount used for authentication of Kafka client based components, checking that the named volume mount has not already been
      * created.
+     *
+     * @param volumeMountList    List where the volume mount will be added
+     * @param volumeMountName    Name of the volume mount to be created
+     * @param certSecretSource   Represents a certificate inside a Secret
+     * @param tlsCertBasedVolumeMount   Path where the TLS certs should be mounted
      */
-    protected static void addNewVolumeMounts(List<VolumeMount> volumeMountList, String volumeMountName, String tlsCertBasedVolumeMount, CertSecretSource certSecretSource) {
+    protected static void addNewVolumeMount(List<VolumeMount> volumeMountList, String volumeMountName, String tlsCertBasedVolumeMount, CertSecretSource certSecretSource) {
         // skipping if a volume mount with same Secret name was already added
         if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeMountName))) {
-            volumeMountList.add(VolumeUtils.createVolumeMount(volumeMountName,
+            volumeMountList.add(createVolumeMount(volumeMountName,
                     tlsCertBasedVolumeMount + certSecretSource.getSecretName()));
         }
     }
