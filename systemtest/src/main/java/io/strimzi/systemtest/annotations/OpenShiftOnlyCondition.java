@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.annotations;
 
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,7 +19,7 @@ public class OpenShiftOnlyCondition implements ExecutionCondition {
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext extensionContext) {
         KubeClusterResource clusterResource = KubeClusterResource.getInstance();
 
-        if (clusterResource.cluster() instanceof OpenShift || clusterResource.cluster() instanceof Minishift) {
+        if (clusterResource.cluster() instanceof OpenShift) {
             return ConditionEvaluationResult.enabled("Test is enabled");
         } else {
             LOGGER.info("{} is @OpenShiftOnly, but the running cluster is not OpenShift: Ignoring {}",

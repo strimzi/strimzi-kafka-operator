@@ -6,7 +6,6 @@ package io.strimzi.test.k8s;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.strimzi.test.k8s.cluster.KubeCluster;
-import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.logs.CollectorElement;
@@ -365,7 +364,7 @@ public class KubeClusterResource {
     }
 
     public boolean isNotKubernetes() {
-        return kubeClusterResource.cluster() instanceof Minishift || kubeClusterResource.cluster() instanceof OpenShift;
+        return kubeClusterResource.cluster() instanceof OpenShift;
     }
 
     /** Returns list of currently deployed resources */

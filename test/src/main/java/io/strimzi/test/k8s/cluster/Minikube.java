@@ -17,7 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A {@link KubeCluster} implementation for {@code minikube} and {@code minishift}.
+ * A {@link KubeCluster} implementation for {@code minikube}.
  */
 public class Minikube implements KubeCluster {
 

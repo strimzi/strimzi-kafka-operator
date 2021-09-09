@@ -58,15 +58,12 @@ public interface KubeCluster {
                 case "kubernetes":
                     clusters = new KubeCluster[]{new Kubernetes()};
                     break;
-                case "minishift":
-                    clusters = new KubeCluster[]{new Minishift()};
-                    break;
                 default:
                     throw new IllegalArgumentException(ENV_VAR_TEST_CLUSTER + "=" + clusterName + " is not a supported cluster type");
             }
         }
         if (clusters == null) {
-            clusters = new KubeCluster[]{new Minikube(), new Kubernetes(), new Minishift(), new OpenShift()};
+            clusters = new KubeCluster[]{new Minikube(), new Kubernetes(), new OpenShift()};
         }
         KubeCluster cluster = null;
         for (KubeCluster kc : clusters) {

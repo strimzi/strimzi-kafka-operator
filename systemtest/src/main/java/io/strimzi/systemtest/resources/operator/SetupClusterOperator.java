@@ -22,7 +22,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.logs.CollectorElement;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.cluster.Minishift;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -265,7 +264,7 @@ public class SetupClusterOperator {
         applyClusterOperatorInstallFiles(clientNamespace);
         NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, namespaces);
 
-        if (cluster.cluster() instanceof Minishift || cluster.cluster() instanceof OpenShift) {
+        if (cluster.cluster() instanceof OpenShift) {
             // This is needed in case you are using internal kubernetes registry and you want to pull images from there
             if (kubeClient().getNamespace(Environment.STRIMZI_ORG) != null) {
                 for (String namespace : namespaces) {
