@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.Locale;
 
 /**
- * Abstraction for a Kubernetes cluster, for example {@code oc cluster up} or {@code minikube}.
+ * Abstraction for a Kubernetes cluster, for example {@code minikube}.
  */
 public interface KubeCluster {
 
