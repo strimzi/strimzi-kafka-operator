@@ -11,9 +11,11 @@ import io.strimzi.api.kafka.model.connect.build.JarArtifact;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.MavenArtifact;
 import io.strimzi.api.kafka.model.connect.build.MavenArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.OtherArtifact;
 import io.strimzi.api.kafka.model.connect.build.OtherArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.ZipArtifact;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifactBuilder;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -453,6 +455,40 @@ public class KafkaConnectDockerfileTest {
 
         e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildOther));
         assertThat(e.getMessage(), is("`other` artifact is missing a URL."));
+    }
+
+    @ParallelTest
+    public void testInsecureArtifacts()   {
+        OtherArtifact art1 = new OtherArtifactBuilder((OtherArtifact) otherArtifactNoChecksum)
+                .withInsecure(true)
+                .build();
+
+        ZipArtifact art2 = new ZipArtifactBuilder((ZipArtifact) zipArtifactWithChecksum)
+                .withInsecure(true)
+                .build();
+
+        Build connectBuild = new BuildBuilder()
+                .withPlugins(new PluginBuilder()
+                        .withName("my-connector-plugin")
+                        .withArtifacts(art1, art2)
+                        .build())
+                .build();
+
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+
+        assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
+                "USER root:root",
+                "RUN 'mkdir' '-p' '/opt/kafka/plugins/my-connector-plugin/90e04094' \\",
+                "      && 'curl' '-k' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip' 'https://mydomain.tld/my2.zip' \\",
+                "      && 'echo' 'sha-512-checksum /opt/kafka/plugins/my-connector-plugin/90e04094.zip' > '/opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512' \\",
+                "      && 'sha512sum' '--check' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512' \\",
+                "      && 'rm' '-f' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip.sha512' \\",
+                "      && 'unzip' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip' '-d' '/opt/kafka/plugins/my-connector-plugin/90e04094' \\",
+                "      && 'find' '/opt/kafka/plugins/my-connector-plugin/90e04094' '-type' 'l' | 'xargs' 'rm' '-f' \\",
+                "      && 'rm' '-vf' '/opt/kafka/plugins/my-connector-plugin/90e04094.zip'",
+                "RUN 'mkdir' '-p' '/opt/kafka/plugins/my-connector-plugin/2c3b64c7' \\",
+                "      && 'curl' '-k' '-L' '--output' '/opt/kafka/plugins/my-connector-plugin/2c3b64c7/my.so' 'https://mydomain.tld/download?artifact=my.so'",
+                "USER 1001"));
     }
 
     @ParallelTest
