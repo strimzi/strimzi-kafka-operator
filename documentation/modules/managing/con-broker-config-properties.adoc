@@ -68,7 +68,7 @@ replica.fetch.max.bytes=1048576
 
 The `auto.create.topics.enable` property is enabled by default so that topics that do not already exist are created automatically when needed by producers and consumers.
 If you are using automatic topic creation, you can set the default number of partitions for topics using `num.partitions`.
-Generally, however, this property is disabled so that more control is provided over topics through explicit topic creation
+Generally, however, this property is disabled so that more control is provided over topics through explicit topic creation.
 For example, you can use the Strimzi `KafkaTopic` resource or applications to create topics.
 
 For high availability environments, it is advisable to increase the replication factor to at least 3 for topics and set the minimum number of in-sync replicas required to 1 less than the replication factor.

@@ -2,40 +2,178 @@
 [id='proc-generating-reassignment-json-files-{context}']
 = Generating reassignment JSON files
 
-This procedure describes how to generate a reassignment JSON file that reassigns all the partitions for a given set of topics using the `kafka-reassign-partitions.sh` tool.
+[role="_abstract"]
+This procedure describes how to generate a reassignment JSON file.
+Use the reassignment file with the `kafka-reassign-partitions.sh` tool to reassign partitions after scaling a Kafka cluster.
+
+The steps describe a secure reassignment process that uses TLS.
+You'll need a Kafka cluster that uses TLS encryption and authentication.
 
 .Prerequisites
 
-* A running Cluster Operator
-* A `Kafka` resource
-* A set of topics to reassign the partitions of
+* You have a running Cluster Operator.
+* You have a running Kafka cluster based on a `Kafka` resource configured with internal TLS authentication and encryption.
++
+.Kafka configuration with TLS
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    listeners:
+      # ...
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true <1>
+        authentication:
+          type: tls <2>
+    # ...
+----
+<1> Enables TLS encryption for the internal listener.
+<2> Listener authentication mechanism xref:assembly-securing-kafka-brokers-str[specified as mutual TLS].
+* The running Kafka cluster contains a set of topics and partitions to reassign.
++
+.Example topic configuration for `my-topic`
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaTopicApiVersion}
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 10
+  replicas: 3
+  config:
+    retention.ms: 7200000
+    segment.bytes: 1073741824
+    # ...
+----
+* You have a `KafkaUser` configured with ACL rules that specify permission to produce and consume topics from the Kafka brokers.
++
+--
+.Example Kafka user configuration with ACL rules for producing and consuming from `my-topic`
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaUserApiVersion}
+kind: KafkaUser
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  authentication: <1>
+    type: tls
+  authorization:
+    type: simple <2>
+    acls:
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Write
+        host: "*"
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Create
+        host: "*"
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Describe
+        host: "*"
+  # ...
+----
+<1> User authentication mechanism defined as mutual `tls`.
+<2> Simple authorization and accompanying list of ACL rules.
+
+NOTE: Permission for a `Describe` operation is required as a minimum for TLS access to a topic.
+--
 
 .Procedure
 
-. Prepare a JSON file named `_topics.json_` that lists the topics to move.
-It must have the following structure:
+. Extract the cluster CA certificate and password from the `_CLUSTER-NAME_-cluster-ca-cert` Secret of the Kafka cluster.
 +
-[source,subs=+quotes]
-----
-{
-  "version": 1,
-  "topics": [
-    _<TopicObjects>_
-  ]
-}
-----
+[source,shell,subs="+quotes"]
+kubectl get secret _CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.p12}' | base64 -d > ca.p12
 +
-where _<TopicObjects>_ is a comma-separated list of objects like:
+[source,shell,subs="+quotes"]
+kubectl get secret _CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.password}' | base64 -d > ca.password
 +
-[source,subs=+quotes]
+Replace _CLUSTER-NAME_ with the name of the Kafka cluster.
+When you deploy Kafka using the `Kafka` resource, a Secret with the cluster CA certificate is created with the Kafka cluster name (`_CLUSTER-NAME_-cluster-ca-cert`).
+For example, `my-cluster-cluster-ca-cert`.
+
+. Run a new interactive pod container using the Strimzi Kafka image to connect to a running Kafka broker.
++
+[source,shell,subs="+quotes,attributes"]
 ----
-{
-  "topic": _<TopicName>_
-}
+kubectl run -ti --restart=Never --image={DockerKafkaImageCurrent} _INTERACTIVE-POD-NAME_ -- /bin/sh -c "sleep 3600"
 ----
 +
-For example if you want to reassign all the partitions of `topic-a` and `topic-b`, you would need to prepare a `_topics.json_` file like this:
+Replace _INTERACTIVE-POD-NAME_ with the name of the pod.
+
+. Copy the cluster CA certificate to the interactive pod container.
 +
+[source,shell,subs=+quotes]
+kubectl cp ca.p12 _INTERACTIVE-POD-NAME_:/tmp
+
+. Extract the user CA certificate and password from the Secret of the Kafka user that has permission to access the Kafka brokers.
++
+[source,shell,subs=+quotes]
+kubectl get secret _KAFKA-USER_ -o jsonpath='{.data.user\.p12}' | base64 -d > user.p12
++
+[source,shell,subs=+quotes]
+kubectl get secret _KAFKA-USER_ -o jsonpath='{.data.user\.password}' | base64 -d > user.password
++
+Replace _KAFKA-USER_ with the name of the Kafka user.
+When you create a Kafka user using the `KafkaUser` resource, a Secret with the user CA certificate is created with the Kafka user name.
+For example, `my-user`.
+
+. Copy the user CA certificate to the interactive pod container.
++
+[source,shell,subs=+quotes]
+kubectl cp user.p12 _INTERACTIVE-POD-NAME_:/tmp
++
+The CA certificates allow the interactive pod container to connect to the Kafka broker using TLS.
+
+. Create a `config.properties` file to specify the truststore and keystore used to authenticate connection to the Kafka cluster.
++
+[source,properties,subs="+quotes,attributes"]
+----
+bootstrap.servers=__KAFKA-CLUSTER-NAME__-kafka-bootstrap:9093 <1>
+security.protocol=SSL <2>
+ssl.truststore.location=/tmp/ca.p12 <3>
+ssl.truststore.password=__TRUSTSTORE-PASSWORD__ <4>
+ssl.keystore.location=/tmp/user.p12 <5>
+ssl.keystore.password=__KEYSTORE-PASSWORD__ <6>
+----
+<1> The bootstrap server address to connect to the Kafka cluster. Use your own Kafka cluster name to replace _KAFKA-CLUSTER-NAME_.
+<2> The security protocol option when using TLS for encryption.
+<3> The truststore location contains the public key certificate (`ca.p12`) for the Kafka cluster.
+<4> The password for accessing the truststore.
+<5> The keystore location contains the public key certificate (`user.p12`) for the Kafka user.
+<6> The password for accessing the keystore.
+
+. Copy the `config.properties` file to the interactive pod container.
++
+[source,shell,subs=+quotes]
+kubectl cp config.properties _INTERACTIVE-POD-NAME_:/tmp/config.properties
+
+. Prepare a JSON file named `topics.json` that specifies the topics to move.
++
+Specify topic names as a comma-separated list.
++
+.Example JSON file to reassign all the partitions of `topic-a` and `topic-b`
 [source,json]
 ----
 {
@@ -47,33 +185,33 @@ For example if you want to reassign all the partitions of `topic-a` and `topic-b
 }
 ----
 
-. Copy the `_topics.json_` file to one of the broker pods:
+. Copy the `_topics.json_` file to the interactive pod container.
 +
-[source,subs=+quotes]
-----
-cat _topics.json_ | kubectl exec -c kafka _<BrokerPod>_ -i -- \
-  /bin/bash -c \
-  'cat > /tmp/topics.json'
-----
+[source,shell,subs=+quotes]
+kubectl cp topics.json _INTERACTIVE-POD-NAME_:/tmp/topics.json
+
+. Start a shell process in the interactive pod container.
++
+[source,shell,subs=+quotes]
+kubectl exec -n _NAMESPACE_ -ti _INTERACTIVE-POD-NAME_ /bin/bash
++
+Replace _NAMESPACE_ with the Kubernetes namespace where the pod is running.
 
 . Use the `kafka-reassign-partitions.sh` command to generate the reassignment JSON.
 +
-[source,subs=+quotes]
-----
-kubectl exec _<BrokerPod>_ -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
-  --topics-to-move-json-file /tmp/topics.json \
-  --broker-list _<BrokerList>_ \
-  --generate
-----
-+
-For example, to move all the partitions of `topic-a` and `topic-b` to brokers `4` and `7`
-+
+.Example command to move all the partitions of `topic-a` and `topic-b` to brokers `0`, `1` and `2`
 [source,shell,subs=+quotes]
 ----
-kubectl exec _<BrokerPod>_ -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
+bin/kafka-reassign-partitions.sh --bootstrap-server my-cluster-kafka-bootstrap:9093 \
+  --command-config /tmp/config.properties \
   --topics-to-move-json-file /tmp/topics.json \
-  --broker-list 4,7 \
+  --broker-list 0,1,2 \
   --generate
 ----
+
+[role="_additional-resources"]
+.Additional resources
+
+* xref:proc-config-kafka-{context}[Configuring Kafka]
+* xref:proc-configuring-kafka-topic-{context}[Configuring a Kafka topic]
+* xref:proc-configuring-kafka-user-{context}[Securing user access to Kafka]
