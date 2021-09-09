@@ -1477,7 +1477,7 @@
         "options": [],
         "query": "query_result(zookeeper_inmemorydatatree_nodecount{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"})",
         "refresh": 1,
-        "regex": "/.*statefulset_kubernetes_io_pod_name=\"$strimzi_cluster_name-([^\"]*).*/",
+        "regex": "/.*pod_name=\"$strimzi_cluster_name-([^\"]*).*/",
         "sort": 0,
         "tagValuesQuery": "",
         "tags": [],
