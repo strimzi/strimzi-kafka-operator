@@ -90,13 +90,21 @@ public class StrimziKafkaContainer extends GenericContainer<StrimziKafkaContaine
         super("quay.io/strimzi/kafka:" + imageVersion);
         super.withNetwork(Network.SHARED);
 
+        this.brokerId = brokerId;
+
         kafkaConfigurationMap = new HashMap<>(additionalKafkaConfiguration);
-        kafkaConfigurationMap.put("broker.id", String.valueOf(brokerId));
+        kafkaConfigurationMap.put("broker.id", String.valueOf(this.brokerId));
 
         // exposing kafka port from the container
         withExposedPorts(KAFKA_PORT);
 
         withEnv("LOG_DIR", "/tmp");
+    }
+
+    public static StrimziKafkaContainer createWithExternalZookeeper(final int brokerId, final String imageVersion,
+                                                                    final String connectString, Map<String, String> additionalKafkaConfiguration) {
+        return new StrimziKafkaContainer(brokerId, imageVersion, additionalKafkaConfiguration)
+            .withExternalZookeeper(connectString);
     }
 
     public static StrimziKafkaContainer createWithAdditionalConfiguration(final int brokerId, final String imageVersion, Map<String, String> additionalKafkaConfiguration) {
