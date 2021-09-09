@@ -2730,7 +2730,7 @@
         "options": [],
         "query": "query_result(kafka_server_replicamanager_leadercount{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"})",
         "refresh": 1,
-        "regex": "/.*pod_name=\"$strimzi_cluster_name-([^\"]*).*/",
+        "regex": "/.*statefulset_kubernetes_io_pod_name=\"$strimzi_cluster_name-([^\"]*).*/",
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
