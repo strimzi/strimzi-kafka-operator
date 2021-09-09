@@ -60,7 +60,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     // TODO: make testUpgradeKafkaWithoutVersion to run upgrade with config from StrimziUpgradeST.json
     // main idea of the test and usage of latestReleasedVersion: upgrade CO from version X, kafka Y, to CO version Z and kafka Y + 1 at the end
-    private final String strimziReleaseWithOlderKafkaVersion = "0.22.1";
+    private final String strimziReleaseWithOlderKafkaVersion = "0.23.0";
     private final String strimziReleaseWithOlderKafka = String.format("https://github.com/strimzi/strimzi-kafka-operator/releases/download/%s/strimzi-%s.zip",
             strimziReleaseWithOlderKafkaVersion, strimziReleaseWithOlderKafkaVersion);
 
@@ -77,8 +77,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
     @Test
     void testUpgradeKafkaWithoutVersion(ExtensionContext extensionContext) throws IOException {
-        JsonObject conversionTool = getConversionToolDataFromUpgradeJSON();
-
         File dir = FileUtils.downloadAndUnzip(strimziReleaseWithOlderKafka);
         File startKafkaPersistent = new File(dir, "strimzi-" + strimziReleaseWithOlderKafkaVersion + "/examples/kafka/kafka-persistent.yaml");
         File startKafkaVersionsYaml = FileUtils.downloadYaml("https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/" + strimziReleaseWithOlderKafkaVersion + "/kafka-versions.yaml");
@@ -93,7 +91,6 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
         // Modify + apply installation files
         copyModifyApply(coDir, NAMESPACE, extensionContext);
-        convertCRDs(conversionTool, NAMESPACE);
         // Apply Kafka Persistent without version
         LOGGER.info("Going to deploy Kafka from: {}", startKafkaPersistent.getPath());
         // Change kafka version of it's empty (null is for remove the version)
