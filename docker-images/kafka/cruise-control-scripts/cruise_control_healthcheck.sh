@@ -1,22 +1,18 @@
 #!/usr/bin/env bash
 set -e
 
-SCHEME="http"
-HOST="$(hostname | rev | cut -d "-" -f3- | rev):${API_PORT}"
-ARGS=(--resolve "${HOST}:127.0.0.1")
+ARGS=()
 
 if [ "$STRIMZI_CC_API_AUTHENTICATION_ENABLED" = true ] ; then
+  # Disable certificate verification
+  ARGS+=("-k")
   SCHEME="https"
-  ARGS+=(
-  --cert-type P12
-  --cert /etc/tls-sidecar/cc-certs/cruise-control.p12
-  --pass "$(cat /etc/tls-sidecar/cc-certs/cruise-control.password)"
-  --cacert /etc/tls-sidecar/cc-certs/cruise-control.crt
-  )
+else
+  SCHEME="http"
 fi
 
 if [ "$STRIMZI_CC_API_AUTHORIZATION_ENABLED" = true ] ; then
   ARGS+=(--user "${API_USER}:$(cat /opt/cruise-control/api-auth-config/cruise-control.apiUserPassword)")
 fi
 
-curl "${ARGS[@]}" "${SCHEME}://${HOST}${API_HEALTHCHECK_PATH}"
+curl "${ARGS[@]}" "${SCHEME}://127.0.0.1:${API_PORT}${API_HEALTHCHECK_PATH}"
