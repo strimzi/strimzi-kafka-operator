@@ -61,6 +61,8 @@ class HelmChartST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
+        install.unInstall();
+
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(NAMESPACE);
         helmResource.create(extensionContext);

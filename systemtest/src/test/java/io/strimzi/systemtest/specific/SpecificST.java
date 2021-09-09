@@ -86,7 +86,7 @@ public class SpecificST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(SpecificST.class);
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @IsolatedTest("UtestRackAwareConnectWrongDeploymentsing more tha one Kafka cluster in one namespace")
     @Tag(REGRESSION)
     @Tag(INTERNAL_CLIENTS_USED)
     void testRackAware(ExtensionContext extensionContext) {
@@ -157,7 +157,7 @@ public class SpecificST extends AbstractST {
         Map<String, String> anno = Collections.singletonMap("my-annotation", "value");
 
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
-        Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
+        Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(INFRA_NAMESPACE, ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
         install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
@@ -168,7 +168,7 @@ public class SpecificST extends AbstractST {
             .createInstallation()
             .runBundleInstallation();
 
-        coSnapshot = DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
+        coSnapshot = DeploymentUtils.waitTillDepHasRolled(INFRA_NAMESPACE, ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         String wrongRackKey = "wrong-key";
         String rackKey = "rack-key";
@@ -185,7 +185,7 @@ public class SpecificST extends AbstractST {
                 .build());
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+        String kafkaClientsPodName = kubeClient(INFRA_NAMESPACE).listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
 
         LOGGER.info("Deploy KafkaConnect with wrong rack-aware topology key: {}", wrongRackKey);
 
@@ -212,26 +212,26 @@ public class SpecificST extends AbstractST {
 
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, kc, KafkaConnectResources.deploymentName(clusterName));
 
-        PodUtils.waitForPendingPod(clusterName + "-connect");
-        List<String> connectWrongPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
+        PodUtils.waitForPendingPod(INFRA_NAMESPACE, clusterName + "-connect");
+        List<String> connectWrongPods = kubeClient().listPodNames(INFRA_NAMESPACE, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         String connectWrongPodName = connectWrongPods.get(0);
         LOGGER.info("Waiting for ClusterOperator to get timeout operation of incorrectly set up KafkaConnect");
         KafkaConnectUtils.waitForKafkaConnectCondition("TimeoutException", "NotReady", INFRA_NAMESPACE, clusterName);
 
-        PodStatus kcWrongStatus = kubeClient().getPod(connectWrongPodName).getStatus();
+        PodStatus kcWrongStatus = kubeClient().getPod(INFRA_NAMESPACE, connectWrongPodName).getStatus();
         assertThat("Unschedulable", is(kcWrongStatus.getConditions().get(0).getReason()));
         assertThat("PodScheduled", is(kcWrongStatus.getConditions().get(0).getType()));
 
-        KafkaConnectResource.replaceKafkaConnectResource(clusterName, kafkaConnect -> {
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kafkaConnect -> {
             kafkaConnect.getSpec().setRack(new Rack(rackKey));
-        });
-        KafkaConnectUtils.waitForConnectReady(clusterName);
+        }, INFRA_NAMESPACE);
+        KafkaConnectUtils.waitForConnectReady(INFRA_NAMESPACE, clusterName);
         LOGGER.info("KafkaConnect is ready with changed rack key: '{}'.", rackKey);
         LOGGER.info("Verify KafkaConnect rack key update");
         kc = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get();
         assertThat(kc.getSpec().getRack().getTopologyKey(), is(rackKey));
 
-        List<String> kcPods = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
+        List<String> kcPods = kubeClient().listPodNames(INFRA_NAMESPACE, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, INFRA_NAMESPACE, clusterName);
 
         // Revert changes for CO deployment
@@ -242,7 +242,7 @@ public class SpecificST extends AbstractST {
             .createInstallation()
             .runBundleInstallation();
 
-        DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(INFRA_NAMESPACE, ResourceManager.getCoDeploymentName(), 1, coSnapshot);
 
         // check the ClusterRoleBinding annotations and labels in Kafka cluster
         Map<String, String> actualLabel = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getSpec().getTemplate().getClusterRoleBinding().getMetadata().getLabels();
@@ -402,7 +402,7 @@ public class SpecificST extends AbstractST {
 
         LOGGER.info("Kafka with version {} deployed.", nonExistingVersion);
 
-        KafkaUtils.waitForKafkaNotReady(clusterName);
+        KafkaUtils.waitForKafkaNotReady(INFRA_NAMESPACE, clusterName);
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, INFRA_NAMESPACE, nonExistingVersionMessage);
 
         KafkaResource.kafkaClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).delete();

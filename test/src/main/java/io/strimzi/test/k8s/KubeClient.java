@@ -931,9 +931,13 @@ public class KubeClient {
      * Method which return name of cluster operator pod
      * @return cluster operator pod name
      */
+    public String getClusterOperatorPodName(final String namespaceName) {
+        LabelSelector selector = kubeClient(namespaceName).getDeploymentSelectors(namespaceName, "strimzi-cluster-operator");
+        return kubeClient(namespaceName).listPods(namespaceName, selector).get(0).getMetadata().getName();
+    }
+
     public String getClusterOperatorPodName() {
-        LabelSelector selector = kubeClient().getDeploymentSelectors("strimzi-cluster-operator");
-        return kubeClient().listPods(selector).get(0).getMetadata().getName();
+        return getClusterOperatorPodName(getNamespace());
     }
 
     /**

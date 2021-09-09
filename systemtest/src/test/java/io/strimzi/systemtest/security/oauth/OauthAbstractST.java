@@ -75,12 +75,12 @@ public class OauthAbstractST extends AbstractST {
 
         KeycloakUtils.deployKeycloak(namespace);
 
-        SecretUtils.waitForSecretReady("credential-example-keycloak");
-        String passwordEncoded = kubeClient().getSecret("credential-example-keycloak").getData().get("ADMIN_PASSWORD");
+        SecretUtils.waitForSecretReady(namespace, "credential-example-keycloak", () -> { });
+        String passwordEncoded = kubeClient(namespace).getSecret(namespace, "credential-example-keycloak").getData().get("ADMIN_PASSWORD");
         String password = new String(Base64.getDecoder().decode(passwordEncoded.getBytes()));
         keycloakInstance = new KeycloakInstance("admin", password, namespace);
 
-        createSecretsForDeployments();
+        createSecretsForDeployments(namespace);
     }
 
     @AfterEach
@@ -101,18 +101,18 @@ public class OauthAbstractST extends AbstractST {
      * Auxiliary method, which creating kubernetes secrets
      * f.e name kafka-broker-secret -> will be encoded to base64 format and use as a key.
      */
-    private void createSecretsForDeployments() {
-        SecretUtils.createSecret(OAUTH_KAFKA_PRODUCER_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0");
-        SecretUtils.createSecret(OAUTH_KAFKA_CONSUMER_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtc3RyZWFtcy1zZWNyZXQ=");
-        SecretUtils.createSecret(OAUTH_TEAM_A_SECRET, OAUTH_KEY, "dGVhbS1hLWNsaWVudC1zZWNyZXQ=");
-        SecretUtils.createSecret(OAUTH_TEAM_B_SECRET, OAUTH_KEY, "dGVhbS1iLWNsaWVudC1zZWNyZXQ=");
-        SecretUtils.createSecret(OAUTH_KAFKA_BROKER_SECRET, OAUTH_KEY, "a2Fma2EtYnJva2VyLXNlY3JldA==");
-        SecretUtils.createSecret(CONNECT_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtY29ubmVjdC1zZWNyZXQ=");
-        SecretUtils.createSecret(MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLXNlY3JldA==");
-        SecretUtils.createSecret(MIRROR_MAKER_2_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLTItc2VjcmV0");
-        SecretUtils.createSecret(BRIDGE_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtYnJpZGdlLXNlY3JldA==");
-        SecretUtils.createSecret(OAUTH_CLIENT_AUDIENCE_SECRET, OAUTH_KEY, "a2Fma2EtYXVkaWVuY2Utc2VjcmV0");
-        SecretUtils.createSecret(OAUTH_KAFKA_CLIENT_SECRET, OAUTH_KEY, "a2Fma2EtY2xpZW50LXNlY3JldA==");
+    private void createSecretsForDeployments(final String namespace) {
+        SecretUtils.createSecret(namespace, OAUTH_KAFKA_PRODUCER_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0");
+        SecretUtils.createSecret(namespace, OAUTH_KAFKA_CONSUMER_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtc3RyZWFtcy1zZWNyZXQ=");
+        SecretUtils.createSecret(namespace, OAUTH_TEAM_A_SECRET, OAUTH_KEY, "dGVhbS1hLWNsaWVudC1zZWNyZXQ=");
+        SecretUtils.createSecret(namespace, OAUTH_TEAM_B_SECRET, OAUTH_KEY, "dGVhbS1iLWNsaWVudC1zZWNyZXQ=");
+        SecretUtils.createSecret(namespace, OAUTH_KAFKA_BROKER_SECRET, OAUTH_KEY, "a2Fma2EtYnJva2VyLXNlY3JldA==");
+        SecretUtils.createSecret(namespace, CONNECT_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtY29ubmVjdC1zZWNyZXQ=");
+        SecretUtils.createSecret(namespace, MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLXNlY3JldA==");
+        SecretUtils.createSecret(namespace, MIRROR_MAKER_2_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLTItc2VjcmV0");
+        SecretUtils.createSecret(namespace, BRIDGE_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtYnJpZGdlLXNlY3JldA==");
+        SecretUtils.createSecret(namespace, OAUTH_CLIENT_AUDIENCE_SECRET, OAUTH_KEY, "a2Fma2EtYXVkaWVuY2Utc2VjcmV0");
+        SecretUtils.createSecret(namespace, OAUTH_KAFKA_CLIENT_SECRET, OAUTH_KEY, "a2Fma2EtY2xpZW50LXNlY3JldA==");
     }
 }
 

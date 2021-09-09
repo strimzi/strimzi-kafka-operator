@@ -58,7 +58,7 @@ public class ClusterOperatorRbacST extends AbstractST {
             .createInstallation()
             .runBundleInstallation();
 
-        String coPodName = kubeClient().getClusterOperatorPodName();
+        String coPodName = kubeClient().getClusterOperatorPodName(INFRA_NAMESPACE);
         LOGGER.info("Deploying Kafka: {}, which should be deployed even the CRBs are not present", clusterName);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -97,6 +97,9 @@ public class ClusterOperatorRbacST extends AbstractST {
 
         LOGGER.info("Deploying Kafka: {}, which should not be deployed and error should be present in CR status message", clusterName);
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
             .editOrNewSpec()
                 .editOrNewKafka()
                     .withNewRack()
