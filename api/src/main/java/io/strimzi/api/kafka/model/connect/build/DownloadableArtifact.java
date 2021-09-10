@@ -55,8 +55,9 @@ public abstract class DownloadableArtifact extends Artifact {
         this.sha512sum = sha512sum;
     }
 
-    @Description("By default, every connection using TLS is verified to be secure - that the server's certificate is trusted and contains the server name. " +
-            "By setting this option to `true`, all TLS verifications wil be disabled and the artifact will be downloaded even from a server otherwise considered insecure.")
+    @Description("By default, connections using TLS are verified to check they are secure. " +
+            "The server certificate used must be valid, trusted, and contain the server name. " +
+            "By setting this option to `true`, all TLS verification is disabled and the artifact will be downloaded, even when the server is considered insecure.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Boolean getInsecure() {
         return insecure;

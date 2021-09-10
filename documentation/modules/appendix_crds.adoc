@@ -2002,7 +2002,7 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 |string
 |sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable to the `maven` artifact type. 
 |string
-|insecure   1.2+<.<a|By default, every connection using TLS is verified to be secure - that the server's certificate is trusted and contains the server name. By setting this option to `true`, all TLS verifications wil be disabled and the artifact will be downloaded even from a server otherwise considered insecure.
+|insecure   1.2+<.<a|By default, connections using TLS are verified to check they are secure. The server certificate used must be valid, trusted, and contain the server name. By setting this option to `true`, all TLS verification is disabled and the artifact will be downloaded, even when the server is considered insecure.
 |boolean
 |type       1.2+<.<a|Must be `jar`.
 |string
@@ -2021,7 +2021,7 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 |string
 |sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable to the `maven` artifact type. 
 |string
-|insecure   1.2+<.<a|By default, every connection using TLS is verified to be secure - that the server's certificate is trusted and contains the server name. By setting this option to `true`, all TLS verifications wil be disabled and the artifact will be downloaded even from a server otherwise considered insecure.
+|insecure   1.2+<.<a|By default, connections using TLS are verified to check they are secure. The server certificate used must be valid, trusted, and contain the server name. By setting this option to `true`, all TLS verification is disabled and the artifact will be downloaded, even when the server is considered insecure.
 |boolean
 |type       1.2+<.<a|Must be `tgz`.
 |string
@@ -2040,7 +2040,7 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 |string
 |sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable to the `maven` artifact type. 
 |string
-|insecure   1.2+<.<a|By default, every connection using TLS is verified to be secure - that the server's certificate is trusted and contains the server name. By setting this option to `true`, all TLS verifications wil be disabled and the artifact will be downloaded even from a server otherwise considered insecure.
+|insecure   1.2+<.<a|By default, connections using TLS are verified to check they are secure. The server certificate used must be valid, trusted, and contain the server name. By setting this option to `true`, all TLS verification is disabled and the artifact will be downloaded, even when the server is considered insecure.
 |boolean
 |type       1.2+<.<a|Must be `zip`.
 |string
@@ -2084,7 +2084,7 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 |string
 |fileName   1.2+<.<a|Name under which the artifact will be stored.
 |string
-|insecure   1.2+<.<a|By default, every connection using TLS is verified to be secure - that the server's certificate is trusted and contains the server name. By setting this option to `true`, all TLS verifications wil be disabled and the artifact will be downloaded even from a server otherwise considered insecure.
+|insecure   1.2+<.<a|By default, connections using TLS are verified to check they are secure. The server certificate used must be valid, trusted, and contain the server name. By setting this option to `true`, all TLS verification is disabled and the artifact will be downloaded, even when the server is considered insecure.
 |boolean
 |type       1.2+<.<a|Must be `other`.
 |string
