@@ -1,13 +1,13 @@
 // Module included in the following assemblies:
 //
-// deploying/assembly-deploy-tasks.adoc
+// deploying/assembly-deploy-tasks-prep.adoc
 
 [id='deploy-examples-{context}']
-= Example configuration files
+= Example configuration and deployment files
 
 [role="_abstract"]
-Use the example configuration files provided with Strimzi to deploy Kafka components and monitor your deployment.
-Example configuration files for custom resources contain key properties and values, which you can extend with additional supported configuration properties for your own deployment.
+Use the example configuration and deployment files provided with Strimzi to deploy Kafka components with different configurations and monitor your deployment.
+Example configuration files for custom resources contain important properties and values, which you can extend with additional supported configuration properties for your own deployment.
 
 == Example files location
 
@@ -59,7 +59,7 @@ examples
 <6> `Kafka` custom resource configuration for a deployment of Mirror Maker. Includes example configuration for replication policy and synchronization frequency.
 <7> xref:ref-metrics-config-files-{context}[Metrics configuration], including Prometheus installation and Grafana dashboard files.
 <8> `Kafka` custom resource configuration for a deployment of Kafka. Includes example configuration for an ephemeral or persistent single or multi-node deployment.
-<9> `KafkaRebalance` custom resource configuration for a deployment of Cruise Control. Includes example configuration to use the default or main optimization goals.
+<9> `Kafka` custom resource with a deployment configuration for Cruise Control. Includes `KafkaRebalance` custom resources to generate optimizations proposals from Cruise Control, with example configurations to use the default or user optimization goals.
 <10> `KafkaConnect` and `KafkaConnector` custom resource configuration for a deployment of Kafka Connect. Includes example configuration for a single or multi-node deployment.
 <11> `KafkaBridge` custom resource configuration for a deployment of Kafka Bridge.
 
