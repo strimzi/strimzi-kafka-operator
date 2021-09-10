@@ -21,7 +21,7 @@ For more information about build process see [Dev guide document](DEV_GUIDE.md).
 ## Pre-requisites
 
 To run any system tests you need a Kubernetes or Openshift cluster available in your active kubernetes context.
-You can use [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/), [minishift](https://www.okd.io/minishift/), [oc cluster up](https://github.com/openshift/origin) or [CodeReady Containers](https://github.com/code-ready/crc) to have access to a cluster on your local machine.
+You can use [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/) to have access to a cluster on your local machine.
 You can also access a remote cluster on any machine you want, but make sure your active kubernetes context points to it.
 For more information about a remote cluster see the [remote cluster](#use-remote-cluster) section.
 
