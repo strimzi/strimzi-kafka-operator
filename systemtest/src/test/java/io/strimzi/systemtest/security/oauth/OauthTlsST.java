@@ -521,7 +521,7 @@ public class OauthTlsST extends OauthAbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(oauthClusterName, OAUTH_CLIENT_NAME).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(INFRA_NAMESPACE, oauthClusterName, OAUTH_CLIENT_NAME).build());
     }
 
     @AfterAll

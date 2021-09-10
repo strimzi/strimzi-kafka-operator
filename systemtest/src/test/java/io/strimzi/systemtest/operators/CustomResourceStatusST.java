@@ -132,7 +132,7 @@ class CustomResourceStatusST extends AbstractST {
             externalKafkaClient.receiveMessagesPlain()
         );
 
-        assertKafkaStatus(1, KafkaResources.bootstrapServiceName(INFRA_NAMESPACE) + ".status-cluster-test.svc");
+        assertKafkaStatus(1, KafkaResources.bootstrapServiceName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME) + "." + INFRA_NAMESPACE + ".svc");
 
         KafkaResource.replaceKafkaResource(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
             k.getSpec().getEntityOperator().getTopicOperator().setResources(new ResourceRequirementsBuilder()
@@ -150,8 +150,8 @@ class CustomResourceStatusST extends AbstractST {
                     .build());
         });
 
-        KafkaUtils.waitForKafkaReady(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
-        assertKafkaStatus(3, KafkaResources.bootstrapServiceName(INFRA_NAMESPACE) + ".status-cluster-test.svc");
+        KafkaUtils.waitForKafkaReady(INFRA_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+        assertKafkaStatus(3, KafkaResources.bootstrapServiceName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME) + "." + INFRA_NAMESPACE + ".svc");
     }
 
     @ParallelTest

@@ -644,8 +644,8 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         LOGGER.info("Setting producer and consumer properties");
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(oauthClusterName, TEAM_A_CLIENT).build());
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(oauthClusterName, TEAM_B_CLIENT).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(INFRA_NAMESPACE, oauthClusterName, TEAM_A_CLIENT).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(INFRA_NAMESPACE, oauthClusterName, TEAM_B_CLIENT).build());
     }
 
     @AfterAll

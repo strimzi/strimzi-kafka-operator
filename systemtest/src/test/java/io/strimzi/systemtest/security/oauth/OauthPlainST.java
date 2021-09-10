@@ -616,6 +616,7 @@ public class OauthPlainST extends OauthAbstractST {
         String bridgeProducerName = "bridge-producer-" + clusterName;
 
         KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
+            .withNamespaceName(INFRA_NAMESPACE)
             .withProducerName(bridgeProducerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(oauthClusterName))
             .withTopicName(topicName)

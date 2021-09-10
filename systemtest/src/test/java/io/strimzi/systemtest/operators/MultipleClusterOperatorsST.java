@@ -18,6 +18,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
@@ -93,34 +94,44 @@ public class MultipleClusterOperatorsST extends AbstractST {
         deployCOInNamespace(extensionContext, FIRST_CO_NAME, FIRST_NAMESPACE, FIRST_CO_SELECTOR_ENV, true);
         deployCOInNamespace(extensionContext, SECOND_CO_NAME, SECOND_NAMESPACE, SECOND_CO_SELECTOR_ENV, true);
 
-        cluster.setNamespace(DEFAULT_NAMESPACE);
         cluster.createNamespace(DEFAULT_NAMESPACE);
+        cluster.setNamespace(DEFAULT_NAMESPACE);
 
         LOGGER.info("Deploying Kafka without CR selector");
-        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3).build());
+        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+            .editMetadata()
+                .withNamespace(DEFAULT_NAMESPACE)
+            .endMetadata()
+            .build());
 
         // checking that no pods with prefix 'clusterName' will be created in some time
-        PodUtils.waitUntilPodStabilityReplicasCount(clusterName, 0);
+        PodUtils.waitUntilPodStabilityReplicasCount(DEFAULT_NAMESPACE, clusterName, 0);
 
         LOGGER.info("Adding {} selector of {} into Kafka CR", FIRST_CO_SELECTOR, FIRST_CO_NAME);
-        KafkaResource.replaceKafkaResource(clusterName, kafka -> kafka.getMetadata().setLabels(FIRST_CO_SELECTOR));
-        KafkaUtils.waitForKafkaReady(clusterName);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().setLabels(FIRST_CO_SELECTOR), DEFAULT_NAMESPACE);
+        KafkaUtils.waitForKafkaReady(DEFAULT_NAMESPACE, clusterName);
 
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(clusterName, topicName).build(),
+            KafkaTopicTemplates.topic(clusterName, topicName)
+                .editMetadata()
+                    .withNamespace(DEFAULT_NAMESPACE)
+                .endMetadata()
+                .build(),
             KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, false)
                 .editOrNewMetadata()
                     .addToLabels(FIRST_CO_SELECTOR)
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                    .withNamespace(DEFAULT_NAMESPACE)
                 .endMetadata()
                 .build());
 
-        String kafkaConnectPodName = kubeClient().listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient(DEFAULT_NAMESPACE).listPods(DEFAULT_NAMESPACE, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
         LOGGER.info("Deploying KafkaConnector with file sink and CR selector - {} - different than selector in Kafka", SECOND_CO_SELECTOR);
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
             .editOrNewMetadata()
                 .addToLabels(SECOND_CO_SELECTOR)
+                .withNamespace(DEFAULT_NAMESPACE)
             .endMetadata()
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
@@ -132,6 +143,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
             .build());
 
         KafkaBasicExampleClients basicClients = new KafkaBasicExampleClients.Builder()
+            .withNamespaceName(DEFAULT_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
@@ -159,21 +171,26 @@ public class MultipleClusterOperatorsST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
             .editOrNewMetadata()
                 .addToLabels(FIRST_CO_SELECTOR)
+                .withNamespace(DEFAULT_NAMESPACE)
             .endMetadata()
             .build());
 
         LOGGER.info("Removing CR selector from Kafka and increasing number of replicas to 4, new pod should not appear");
-        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             kafka.getMetadata().getLabels().clear();
             kafka.getSpec().getKafka().setReplicas(scaleTo);
-        });
+        }, DEFAULT_NAMESPACE);
 
         // because KafkaRebalance is pointing to Kafka with CC cluster, we need to create KR before adding the label back
         // to test if KR will be ignored
         LOGGER.info("Creating KafkaRebalance when CC doesn't have label for CO, the KR should be ignored");
-        resourceManager.createResource(extensionContext, false, KafkaRebalanceTemplates.kafkaRebalance(clusterName).build());
+        resourceManager.createResource(extensionContext, false, KafkaRebalanceTemplates.kafkaRebalance(clusterName)
+            .editMetadata()
+                .withNamespace(DEFAULT_NAMESPACE)
+            .endMetadata()
+            .build());
 
-        KafkaUtils.waitForClusterStability(clusterName);
+        KafkaUtils.waitForClusterStability(DEFAULT_NAMESPACE, clusterName);
 
         LOGGER.info("Checking if KafkaRebalance is still ignored, after the cluster stability wait");
 
@@ -181,12 +198,12 @@ public class MultipleClusterOperatorsST extends AbstractST {
         assertNull(KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(DEFAULT_NAMESPACE).withName(clusterName).get().getStatus());
 
         LOGGER.info("Adding {} selector of {} to Kafka", SECOND_CO_SELECTOR, SECOND_CO_NAME);
-        KafkaResource.replaceKafkaResource(clusterName, kafka -> kafka.getMetadata().setLabels(SECOND_CO_SELECTOR));
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().setLabels(SECOND_CO_SELECTOR), DEFAULT_NAMESPACE);
 
         LOGGER.info("Waiting for Kafka to scales pods to {}", scaleTo);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), scaleTo);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(DEFAULT_NAMESPACE, KafkaResources.kafkaStatefulSetName(clusterName), scaleTo, ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET));
 
-        assertThat(StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName)).size(), is(scaleTo));
+        assertThat(StatefulSetUtils.ssSnapshot(DEFAULT_NAMESPACE, KafkaResources.kafkaStatefulSetName(clusterName)).size(), is(scaleTo));
 
         KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, SECOND_NAMESPACE, clusterName), DEFAULT_NAMESPACE, clusterName);
     }
@@ -206,7 +223,6 @@ public class MultipleClusterOperatorsST extends AbstractST {
         List<EnvVar> envVarList = new ArrayList<>();
         envVarList.add(selectorEnv);
 
-        install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(coNamespace)
@@ -221,5 +237,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
     @BeforeAll
     void setup() {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
+
+        install.unInstall();
     }
 }
