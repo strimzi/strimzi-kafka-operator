@@ -79,7 +79,6 @@ public class KafkaConnectorIT {
     @BeforeEach
     public void beforeEach() throws IOException, InterruptedException {
         String connectClusterName = getClass().getSimpleName();
-        cluster.createTopics(connectClusterName + "-offsets", connectClusterName + "-config", connectClusterName + "-status");
 
         // Start a 3 node connect cluster
         connectCluster = new ConnectCluster()
