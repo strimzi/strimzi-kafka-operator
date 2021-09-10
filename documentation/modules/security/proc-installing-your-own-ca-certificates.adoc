@@ -42,8 +42,8 @@ The Cluster Operator generates the following files for the `_CLUSTER-NAME_-clust
 * `ca.p12` cluster certificate in PKCS #12 format
 * `ca.password` to access the PKCS #12 file
 
-If you are using a service registry, make sure you include all three files in your secret.
-The service registry can then use a certificate in the appropriate format to connect securely with Kafka.
+Some applications cannot use PEM certificates and support only PKCS #12 certificates.
+You can also add your own cluster certificate in PKCS #12 format.
 
 If you don't have a cluster certificate in PKCS #12 format, use the OpenSSL TLS management tool to generate one from your `ca.crt` file.
 
