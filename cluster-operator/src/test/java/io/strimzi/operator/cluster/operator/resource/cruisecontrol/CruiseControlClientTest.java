@@ -51,7 +51,7 @@ public class CruiseControlClientTest {
     }
 
     private CruiseControlApi cruiseControlClientProvider(Vertx vertx) {
-        return new CruiseControlApiImpl(vertx, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, MockCruiseControl.CO_SECRET, API_AUTHORIZATION_ENABLED, API_AUTHENTICATION_ENABLED);
+        return new CruiseControlApiImpl(vertx, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, API_AUTHORIZATION_ENABLED, API_AUTHENTICATION_ENABLED);
     }
 
     @Test

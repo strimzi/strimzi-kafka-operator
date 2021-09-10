@@ -3414,7 +3414,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(CruiseControl.secretName(name), cruiseControl == null ? null : cruiseControl.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+            return updateCertificateSecretWithDiff(CruiseControl.secretName(name), cruiseControl == null ? null : cruiseControl.generateSecret(kafkaAssembly, clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
                     .map(changed -> {
                         existingCruiseControlCertsChanged = changed;
                         return this;
@@ -3464,7 +3464,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlService() {
-            return withVoid(serviceOperations.reconcile(reconciliation, namespace, CruiseControl.cruiseControlServiceName(name), cruiseControl != null ? cruiseControl.generateService() : null));
+            return withVoid(serviceOperations.reconcile(reconciliation, namespace, CruiseControl.serviceName(name), cruiseControl != null ? cruiseControl.generateService() : null));
         }
 
         Future<ReconciliationState> cruiseControlReady() {

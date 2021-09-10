@@ -115,6 +115,38 @@ public class ClusterCa extends Ca {
         return cruiseControlSecret;
     }
 
+    public Map<String, CertAndKey> generateCcCerts(Kafka kafka, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
+        String cluster = kafka.getMetadata().getName();
+        String namespace = kafka.getMetadata().getNamespace();
+
+        DnsNameGenerator ccDnsGenerator = DnsNameGenerator.of(namespace, CruiseControl.serviceName(cluster));
+
+        Function<Integer, Subject> subjectFn = i -> {
+            Subject.Builder subject = new Subject.Builder()
+                    .withOrganizationName("io.strimzi")
+                    .withCommonName(CruiseControl.serviceName(cluster));
+
+            subject.addDnsName(CruiseControl.serviceName(cluster));
+            subject.addDnsName(String.format("%s.%s",  CruiseControl.serviceName(cluster), namespace));
+            subject.addDnsName(ccDnsGenerator.serviceDnsNameWithoutClusterDomain());
+            subject.addDnsName(ccDnsGenerator.serviceDnsName());
+            subject.addDnsName(ccDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
+            subject.addDnsName(ccDnsGenerator.wildcardServiceDnsName());
+            subject.addDnsName(CruiseControl.serviceName(cluster));
+            subject.addDnsName("localhost");
+            return subject.build();
+        };
+
+        LOGGER.debugCr(reconciliation, "{}: Reconciling zookeeper certificates", this);
+        return maybeCopyOrGenerateCerts(
+            reconciliation,
+           1,
+            subjectFn,
+            cruiseControlSecret,
+            podNum -> "cruise-control",
+            isMaintenanceTimeWindowsSatisfied);
+    }
+
     public Map<String, CertAndKey> generateZkCerts(Kafka kafka, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
         String cluster = kafka.getMetadata().getName();
         String namespace = kafka.getMetadata().getNamespace();

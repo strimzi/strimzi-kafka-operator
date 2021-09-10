@@ -23,7 +23,6 @@ import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -144,8 +143,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
             }
 
             @Override
-            public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret, Secret coSecret, boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
-                return new CruiseControlApiImpl(vertx, 1, ccSecret, ccApiSecret, coSecret, true, true);
+            public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret, boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
+                return new CruiseControlApiImpl(vertx, 1, ccSecret, ccApiSecret, true, true);
             }
         };
 
@@ -163,8 +162,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     private void mockSecretResources() {
-        when(mockSecretOps.getAsync(CLUSTER_NAMESPACE, ClusterOperator.secretName(CLUSTER_NAME)))
-                .thenReturn(Future.succeededFuture(MockCruiseControl.CO_SECRET));
         when(mockSecretOps.getAsync(CLUSTER_NAMESPACE, CruiseControl.secretName(CLUSTER_NAME)))
                 .thenReturn(Future.succeededFuture(MockCruiseControl.CC_SECRET));
         when(mockSecretOps.getAsync(CLUSTER_NAMESPACE, CruiseControlResources.apiSecretName(CLUSTER_NAME)))

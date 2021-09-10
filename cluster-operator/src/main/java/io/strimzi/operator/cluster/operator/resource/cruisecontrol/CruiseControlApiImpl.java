@@ -14,7 +14,6 @@ import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.Json;
@@ -36,28 +35,25 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     private final long idleTimeout;
     private Secret ccSecret;
     private Secret ccApiSecret;
-    private Secret coSecret;
     private boolean apiAuthorizationEnabled;
     private boolean apiAuthenticationEnabled;
     private HTTPHeader authHttpHeader;
 
-    public CruiseControlApiImpl(Vertx vertx, Secret ccSecret, Secret ccApiSecret, Secret coSecret, Boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
+    public CruiseControlApiImpl(Vertx vertx, Secret ccSecret, Secret ccApiSecret, Boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
         this.vertx = vertx;
         this.idleTimeout = HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
         this.ccSecret = ccSecret;
         this.ccApiSecret = ccApiSecret;
-        this.coSecret = coSecret;
         this.apiAuthorizationEnabled = apiAuthorizationEnabled;
         this.apiAuthenticationEnabled = apiAuthenticationEnabled;
         this.authHttpHeader = getAuthHttpHeader();
     }
 
-    public CruiseControlApiImpl(Vertx vertx, int idleTimeout, Secret ccSecret, Secret ccApiSecret, Secret coSecret, Boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
+    public CruiseControlApiImpl(Vertx vertx, int idleTimeout, Secret ccSecret, Secret ccApiSecret, Boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
         this.vertx = vertx;
         this.idleTimeout = idleTimeout;
         this.ccSecret = ccSecret;
         this.ccApiSecret = ccApiSecret;
-        this.coSecret = coSecret;
         this.apiAuthorizationEnabled = apiAuthorizationEnabled;
         this.apiAuthenticationEnabled = apiAuthenticationEnabled;
         this.authHttpHeader = getAuthHttpHeader();
@@ -86,12 +82,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                     new PfxOptions()
                         .setPassword(trustStorePassword)
                         .setPath(truststoreFile.getAbsolutePath())
-                    )
-                .setPfxKeyCertOptions(
-                    new PfxOptions()
-                        .setPassword(new String(Util.decodeFromSecret(coSecret, "cluster-operator.password"), StandardCharsets.US_ASCII))
-                        .setValue(Buffer.buffer(Util.decodeFromSecret(coSecret, "cluster-operator.p12")))
-                    );
+                );
         } else {
             return new HttpClientOptions()
                     .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING);

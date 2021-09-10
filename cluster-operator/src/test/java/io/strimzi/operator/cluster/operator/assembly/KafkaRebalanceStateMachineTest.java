@@ -133,7 +133,7 @@ public class KafkaRebalanceStateMachineTest {
                                                          KafkaRebalanceAnnotation initialAnnotation,
                                                          KafkaRebalance kcRebalance) {
 
-        CruiseControlApi client = new CruiseControlApiImpl(vertx, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, MockCruiseControl.CO_SECRET, true, true);
+        CruiseControlApi client = new CruiseControlApiImpl(vertx, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, true, true);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);

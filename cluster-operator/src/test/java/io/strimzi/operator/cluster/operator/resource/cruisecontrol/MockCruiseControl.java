@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.certs.Subject;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.Util;
@@ -70,14 +69,6 @@ public class MockCruiseControl {
     private static final String CLUSTER = "my-cluster";
     private static final String NAMESPACE = "my-project";
 
-    public static final Secret CO_SECRET = new SecretBuilder()
-            .withNewMetadata()
-                .withName(ClusterOperator.secretName(CLUSTER))
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .addToData("cluster-operator.p12", MockCertManager.clientsCaCertStore())
-            .addToData("cluster-operator.password", MockCertManager.certStorePassword())
-            .build();
     public static final Secret CC_SECRET = new SecretBuilder()
             .withNewMetadata()
               .withName(CruiseControl.secretName(CLUSTER))

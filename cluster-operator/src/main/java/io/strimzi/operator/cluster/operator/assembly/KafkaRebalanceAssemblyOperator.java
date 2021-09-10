@@ -27,7 +27,6 @@ import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.CruiseControlConfiguration;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
@@ -178,14 +177,13 @@ public class KafkaRebalanceAssemblyOperator
      *
      * @param ccSecret Cruise Control secret
      * @param ccApiSecret Cruise Control API secret
-     * @param coSecret Cluster Operator secret
      * @param apiAuthorizationEnabled if enabled, configures API authorization
      * @param apiAuthenticationEnabled if enabled, configures API authentication
      * @return Cruise Control API client instance
      */
-    public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret, Secret coSecret,
+    public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret,
                                                            boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
-        return new CruiseControlApiImpl(vertx, ccSecret, ccApiSecret, coSecret, apiAuthorizationEnabled, apiAuthenticationEnabled);
+        return new CruiseControlApiImpl(vertx, ccSecret, ccApiSecret, apiAuthorizationEnabled, apiAuthenticationEnabled);
     }
 
     /**
@@ -1065,13 +1063,11 @@ public class KafkaRebalanceAssemblyOperator
 
                     String ccSecretName =  CruiseControlResources.secretName(clusterName);
                     String ccApiSecretName =  CruiseControlResources.apiSecretName(clusterName);
-                    String coSecretName =  ClusterOperator.secretName(clusterName);
 
                     Future<Secret> ccSecretFuture = secretOperations.getAsync(clusterNamespace, ccSecretName);
                     Future<Secret> ccApiSecretFuture = secretOperations.getAsync(clusterNamespace, ccApiSecretName);
-                    Future<Secret> coSecretFuture = secretOperations.getAsync(clusterNamespace, coSecretName);
 
-                    return CompositeFuture.join(ccSecretFuture, ccApiSecretFuture, coSecretFuture)
+                    return CompositeFuture.join(ccSecretFuture, ccApiSecretFuture)
                             .compose(compositeFuture -> {
 
                                 Secret ccSecret = compositeFuture.resultAt(0);
@@ -1084,15 +1080,10 @@ public class KafkaRebalanceAssemblyOperator
                                     return Future.failedFuture(Util.missingSecretException(clusterNamespace, ccApiSecretName));
                                 }
 
-                                Secret coSecret = compositeFuture.resultAt(2);
-                                if (coSecret == null) {
-                                    return Future.failedFuture(Util.missingSecretException(clusterNamespace, coSecretName));
-                                }
-
                                 CruiseControlConfiguration c = new CruiseControlConfiguration(reconciliation, kafka.getSpec().getCruiseControl().getConfig().entrySet());
                                 boolean apiAuthorizationEnabled = CruiseControl.isApiAuthorizationEnabled(c);
                                 boolean apiAuthenticationEnabled = CruiseControl.isApiAuthenticationEnabled(c);
-                                CruiseControlApi apiClient = cruiseControlClientProvider(ccSecret, ccApiSecret, coSecret, apiAuthorizationEnabled, apiAuthenticationEnabled);
+                                CruiseControlApi apiClient = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthorizationEnabled, apiAuthenticationEnabled);
 
                                 // get latest KafkaRebalance state as it may have changed
                                 return kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())

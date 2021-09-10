@@ -41,6 +41,7 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
+import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
@@ -51,6 +52,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -401,7 +403,7 @@ public class CruiseControl extends AbstractModel {
         return CruiseControlResources.deploymentName(cluster);
     }
 
-    public static String cruiseControlServiceName(String cluster) {
+    public static String serviceName(String cluster) {
         return CruiseControlResources.serviceName(cluster);
     }
 
@@ -661,17 +663,36 @@ public class CruiseControl extends AbstractModel {
      * internal communication with Kafka and Zookeeper.
      * It also contains the related Cruise Control private key.
      *
+     * @param kafka The Kafka custom resource
      * @param clusterCa The cluster CA.
      * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
      *                                          This is used for certificate renewals
      * @return The generated Secret.
      */
-    public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
+    public Secret generateSecret(Kafka kafka, ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         if (!isDeployed()) {
             return null;
         }
-        Secret secret = clusterCa.cruiseControlSecret();
-        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, CruiseControl.secretName(cluster), name, "cruise-control", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
+
+        Map<String, CertAndKey> ccCerts = new HashMap<>(4);
+        LOGGER.debugCr(reconciliation, "Generating certificates");
+        try {
+            ccCerts = clusterCa.generateCcCerts(kafka, isMaintenanceTimeWindowsSatisfied);
+        } catch (IOException e) {
+            LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
+        }
+        LOGGER.debugCr(reconciliation, "End generating certificates");
+
+        String keyCertName = "cruise-control";
+        Map<String, String> data = new HashMap<>(4);
+
+        CertAndKey cert = ccCerts.get(keyCertName);
+        data.put(keyCertName + ".key", cert.keyAsBase64String());
+        data.put(keyCertName + ".crt", cert.certAsBase64String());
+        data.put(keyCertName + ".p12", cert.keyStoreAsBase64String());
+        data.put(keyCertName + ".password", cert.storePasswordAsBase64String());
+
+        return createSecret(CruiseControl.secretName(cluster), data);
     }
 
     /**
