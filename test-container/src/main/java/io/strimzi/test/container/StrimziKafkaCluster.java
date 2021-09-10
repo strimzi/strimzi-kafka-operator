@@ -113,6 +113,7 @@ public class StrimziKafkaCluster implements Startable {
 
                     return brokers != null && brokers.split(",").length == this.brokersNum;
                 } catch (IOException | InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     e.printStackTrace();
                     return false;
                 }
