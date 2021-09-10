@@ -110,6 +110,7 @@ public class Main {
                 "abcdefghijklmnopqrstuvwxyz" +
                         "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
                         "0123456789");
+
         KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa,
                 certManager, passwordGenerator, resourceOperatorSupplier, config);
         KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa,
@@ -140,7 +141,7 @@ public class Main {
                     kafkaMirrorMaker2AssemblyOperator,
                     kafkaBridgeAssemblyOperator,
                     kafkaRebalanceAssemblyOperator,
-                    resourceOperatorSupplier.metricsProvider);
+                    resourceOperatorSupplier);
             vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {

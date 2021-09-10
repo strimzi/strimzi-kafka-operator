@@ -511,7 +511,7 @@ public class Util {
 
             return String.format("%040x", new BigInteger(1, digest)).substring(0, 8);
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Failed to get artifact URL SHA-1 hash", e);
+            throw new RuntimeException("Failed to get SHA-1 hash", e);
         }
     }
 
@@ -615,7 +615,8 @@ public class Util {
     /**
      * Checks if the Kubernetes resource matches LabelSelector. This is useful when you use get/getAsync to retrieve an
      * resource and want to check if it matches the labels from the selector (since get/getAsync is using name and not
-     * labels to identify the resource).
+     * labels to identify the resource). This method currently supports only the matchLabels object. matchExpressions
+     * array is not supported.
      *
      * @param labelSelector The LabelSelector with the labels which should be present in the resource
      * @param cr            The Custom Resource which labels should be checked

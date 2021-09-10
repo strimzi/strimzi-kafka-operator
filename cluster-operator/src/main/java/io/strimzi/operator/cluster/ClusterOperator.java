@@ -12,9 +12,10 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
+import io.strimzi.operator.cluster.operator.assembly.StrimziPodSetController;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
-import io.strimzi.operator.common.MetricsProvider;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -48,8 +49,6 @@ public class ClusterOperator extends AbstractVerticle {
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
-    private final MetricsProvider metricsProvider;
-
     private final KubernetesClient client;
     private final String namespace;
     private final ClusterOperatorConfig config;
@@ -63,6 +62,9 @@ public class ClusterOperator extends AbstractVerticle {
     private final KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator;
     private final KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator;
     private final KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator;
+    private final ResourceOperatorSupplier resourceOperatorSupplier;
+
+    private StrimziPodSetController strimziPodSetController;
 
     public ClusterOperator(String namespace,
                            ClusterOperatorConfig config,
@@ -73,7 +75,7 @@ public class ClusterOperator extends AbstractVerticle {
                            KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator,
                            KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator,
                            KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator,
-                           MetricsProvider metricsProvider) {
+                           ResourceOperatorSupplier resourceOperatorSupplier) {
         LOGGER.info("Creating ClusterOperator for namespace {}", namespace);
         this.namespace = namespace;
         this.config = config;
@@ -84,8 +86,7 @@ public class ClusterOperator extends AbstractVerticle {
         this.kafkaMirrorMaker2AssemblyOperator = kafkaMirrorMaker2AssemblyOperator;
         this.kafkaBridgeAssemblyOperator = kafkaBridgeAssemblyOperator;
         this.kafkaRebalanceAssemblyOperator = kafkaRebalanceAssemblyOperator;
-
-        this.metricsProvider = metricsProvider;
+        this.resourceOperatorSupplier = resourceOperatorSupplier;
     }
 
     @Override
@@ -94,6 +95,10 @@ public class ClusterOperator extends AbstractVerticle {
 
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", config.getOperationsThreadPoolSize(), TimeUnit.SECONDS.toNanos(120));
+
+        strimziPodSetController = new StrimziPodSetController(namespace, config.getCustomResourceSelector(), resourceOperatorSupplier.kafkaOperator, resourceOperatorSupplier.strimziPodSetOperator, resourceOperatorSupplier.podOperations);
+        Thread strimziPodSetControllerThread = new Thread(strimziPodSetController, "StrimziPodSetController");
+        strimziPodSetControllerThread.start();
 
         List<Future> watchFutures = new ArrayList<>(8);
         List<AbstractOperator<?, ?, ?, ?>> operators = new ArrayList<>(asList(
@@ -133,6 +138,7 @@ public class ClusterOperator extends AbstractVerticle {
             }
             // TODO remove the watch from the watchByKind
         }
+        strimziPodSetController.stop();
         client.close();
         stop.complete();
     }
@@ -163,7 +169,7 @@ public class ClusterOperator extends AbstractVerticle {
                     } else if (request.path().equals("/ready")) {
                         request.response().setStatusCode(200).end();
                     } else if (request.path().equals("/metrics")) {
-                        PrometheusMeterRegistry metrics = (PrometheusMeterRegistry) metricsProvider.meterRegistry();
+                        PrometheusMeterRegistry metrics = (PrometheusMeterRegistry) resourceOperatorSupplier.metricsProvider.meterRegistry();
                         request.response().setStatusCode(200)
                                 .end(metrics.scrape());
                     }

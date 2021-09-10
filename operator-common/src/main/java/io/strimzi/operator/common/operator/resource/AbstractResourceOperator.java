@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -441,5 +442,46 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      */
     public Future<Void> deleteAsync(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
         return internalDelete(reconciliation, namespace, name, cascading).map((Void) null);
+    }
+
+    /**
+     * Creates the informer for given resource type to inform on all instances in given namespace (or cluster-wide).
+     *
+     * @param namespace Namespace on which to inform
+     *
+     * @return          Informer instance
+     */
+    public SharedIndexInformer<T> informer(String namespace)   {
+        if (ANY_NAMESPACE.equals(namespace))    {
+            return operation().inAnyNamespace().inform();
+        } else {
+            return operation().inNamespace(namespace).inform();
+        }
+    }
+
+    /**
+     * Creates the informer for given resource type to inform on all instances in given namespace (or cluster-wide)
+     * matching the selector.
+     *
+     * @param namespace         Namespace on which to inform
+     * @param selectorLabels    Selector which should be matched by the resources
+     *
+     * @return                  Informer instance
+     */
+    public SharedIndexInformer<T> informer(String namespace, Map<String, String> selectorLabels)   {
+        if (ANY_NAMESPACE.equals(namespace))    {
+            return operation().inAnyNamespace().withLabels(selectorLabels).inform();
+        } else {
+            return operation().inNamespace(namespace).withLabels(selectorLabels).inform();
+        }
+    }
+
+    /**
+     * Returns the Kubernetes client for given resource type
+     *
+     * @return  Kubernetes client instance for given resource
+     */
+    public MixedOperation<T, L, R> client() {
+        return operation();
     }
 }

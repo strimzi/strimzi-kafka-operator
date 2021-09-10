@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Node;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
@@ -24,12 +25,14 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
@@ -76,6 +79,7 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.KafkaSpecChecker;
+import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZooKeeperRoller;
@@ -178,6 +182,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final StorageClassOperator storageClassOperator;
     private final NodeOperator nodeOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> crdOperator;
+    private final CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator;
     private final ZookeeperScalerProvider zkScalerProvider;
     private final AdminClientProvider adminClientProvider;
     private final ZookeeperLeaderFinder zookeeperLeaderFinder;
@@ -192,8 +197,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      */
     public KafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                  CertManager certManager, PasswordGenerator passwordGenerator,
-                                 ResourceOperatorSupplier supplier,
-                                 ClusterOperatorConfig config) {
+                                 ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
         super(vertx, pfa, Kafka.RESOURCE_KIND, certManager, passwordGenerator,
                 supplier.kafkaOperator, supplier, config);
         this.operationTimeoutMs = config.getOperationTimeoutMs();
@@ -213,6 +217,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.ingressV1Beta1Operations = supplier.ingressV1Beta1Operations;
         this.storageClassOperator = supplier.storageClassOperations;
         this.crdOperator = supplier.kafkaOperator;
+        this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.nodeOperator = supplier.nodeOperator;
         this.zkScalerProvider = supplier.zkScalerProvider;
         this.adminClientProvider = supplier.adminClientProvider;
@@ -285,6 +290,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkNodesSecret())
                 .compose(state -> state.zkPodDisruptionBudget())
                 .compose(state -> state.zkStatefulSet())
+                .compose(state -> state.zkPodSet())
                 .compose(state -> state.zkScalingDown())
                 .compose(state -> state.zkRollingUpdate())
                 .compose(state -> state.zkPodsReady())
@@ -397,7 +403,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /* test */ ZookeeperCluster zkCluster;
         private ConfigMap zkMetricsAndLogsConfigMap;
-        /* test */ ReconcileResult<StatefulSet> zkDiffs;
+        /* test */ ReconcileResult<StatefulSet> zkStsDiffs;
+        /* test */ ReconcileResult<StrimziPodSet> zkPodSetDiffs;
         private Integer zkCurrentReplicas = null;
 
         private KafkaCluster kafkaCluster = null;
@@ -884,35 +891,34 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /**
          * Does manual rolling update of Zoo pods based on an annotation on the StatefulSet or on the Pods. Annotation
-         * on StatefulSet level triggers rolling update of all pods. Annotation on pods trigeres rolling update only of
+         * on StatefulSet level triggers rolling update of all pods. Annotation on pods triggers rolling update only of
          * the selected pods. If the annotation is present on both StatefulSet and one or more pods, only one rolling
          * update of all pods occurs.
          *
          * @return  Future with the result of the rolling update
          */
         Future<ReconciliationState> zkManualRollingUpdate() {
-            Future<StatefulSet> futsts = stsOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
-            if (futsts != null) {
-                return futsts.compose(sts -> {
-                    if (sts != null) {
-                        if (Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, false)) {
-                            // User trigger rolling update of the whole StatefulSet
-                            return maybeRollZooKeeper(pod -> {
-                                LOGGER.debugCr(reconciliation, "Rolling Zookeeper pod {} due to manual rolling update", pod.getMetadata().getName());
-                                return singletonList("manual rolling update");
-                            });
-                        } else {
-                            // The STS is not annotated to roll all pods.
-                            // But maybe the individual pods are annotated to restart only some of them.
-                            return zkManualPodRollingUpdate();
-                        }
-                    } else {
-                        // STS does not exist => nothing to roll
-                        return Future.succeededFuture();
-                    }
-                }).map(i -> this);
+            Future<HasMetadata> futureController;
+            if (featureGates.useStrimziPodSetsEnabled())   {
+                futureController = strimziPodSetOperator.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name)).map(podSet -> (HasMetadata) podSet);
+            } else {
+                futureController = stsOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name)).map(sts -> (HasMetadata) sts);
             }
-            return Future.succeededFuture(this);
+
+            return futureController.compose(controller -> {
+                if (controller != null
+                        && Annotations.booleanAnnotation(controller, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, false)) {
+                    // User trigger rolling update of the whole cluster
+                    return maybeRollZooKeeper(pod -> {
+                        LOGGER.debugCr(reconciliation, "Rolling Zookeeper pod {} due to manual rolling update", pod.getMetadata().getName());
+                        return singletonList("manual rolling update");
+                    });
+                } else {
+                    // The controller does not exist or is not annotated
+                    // But maybe the individual pods are annotated to restart only some of them.
+                    return zkManualPodRollingUpdate();
+                }
+            }).map(i -> this);
         }
 
         Future<ReconciliationState> zkVersionChange() {
@@ -1199,6 +1205,39 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> getZookeeperDescription() {
+            return getZookeeperSetDescription()
+                    .compose(ignore -> Util.metricsAndLogging(reconciliation, configMapOperations, kafkaAssembly.getMetadata().getNamespace(), zkCluster.getLogging(), zkCluster.getMetricsConfigInCm()))
+                    .compose(metricsAndLogging -> {
+                        ConfigMap logAndMetricsConfigMap = zkCluster.generateConfigurationConfigMap(metricsAndLogging);
+                        this.zkMetricsAndLogsConfigMap = logAndMetricsConfigMap;
+
+                        String loggingConfiguration = zkMetricsAndLogsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
+                        this.zkLoggingHash = Util.stringHash(loggingConfiguration);
+
+                        return Future.succeededFuture(this);
+                    });
+        }
+
+        /**
+         * Gets the ZooKeeper cluster description. It checks whether StatefulSets or StrimziPodSets are used and uses the appropriate method to
+         *
+         * @return
+         */
+        Future<Void> getZookeeperSetDescription()   {
+            if (featureGates.useStrimziPodSetsEnabled())   {
+                return getZookeeperPodSetDescription();
+            } else {
+                return getZookeeperStatefulSetDescription();
+            }
+        }
+
+        /**
+         * Gets the ZooKeeper description based on a StatefulSet. This is used when UseStrimziPodSets feature gate is
+         * disabled.
+         *
+         * @return
+         */
+        Future<Void> getZookeeperStatefulSetDescription() {
             return stsOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
                     .compose(sts -> {
                         Storage oldStorage = getOldStorage(sts);
@@ -1223,24 +1262,41 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             zkCluster.getConfiguration().setConfigOption("ssl.enabledProtocols", "TLSv1.2,TLSv1.1,TLSv1");
                         }
 
-                        return Util.metricsAndLogging(reconciliation, configMapOperations, kafkaAssembly.getMetadata().getNamespace(),
-                                zkCluster.getLogging(),
-                                zkCluster.getMetricsConfigInCm());
-                    })
-                    .compose(metricsAndLogging -> {
-                        ConfigMap logAndMetricsConfigMap = zkCluster.generateConfigurationConfigMap(metricsAndLogging);
-                        this.zkMetricsAndLogsConfigMap = logAndMetricsConfigMap;
-
-                        String loggingConfiguration = zkMetricsAndLogsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
-                        this.zkLoggingHash = Util.stringHash(loggingConfiguration);
-
-                        return Future.succeededFuture(this);
+                        return Future.succeededFuture();
                     });
         }
 
-        Future<ReconciliationState> withZkDiff(Future<ReconcileResult<StatefulSet>> r) {
+        /**
+         * Gets the ZooKeeper description based on a StrimziPodSet. This is used when UseStrimziPodSets feature gate is
+         * enabled.
+         *
+         * @return
+         */
+        Future<Void> getZookeeperPodSetDescription() {
+            return strimziPodSetOperator.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+                    .compose(podSet -> {
+                        Storage oldStorage = getOldStorage(podSet);
+
+                        if (podSet != null && podSet.getSpec() != null)   {
+                            this.zkCurrentReplicas = podSet.getSpec().getPods().size();
+                        }
+
+                        this.zkCluster = ZookeeperCluster.fromCrd(reconciliation, kafkaAssembly, versions, oldStorage, zkCurrentReplicas != null ? zkCurrentReplicas : 0);
+
+                        return Future.succeededFuture();
+                    });
+        }
+
+        Future<ReconciliationState> withZkStsDiff(Future<ReconcileResult<StatefulSet>> r) {
             return r.map(rr -> {
-                this.zkDiffs = rr;
+                this.zkStsDiffs = rr;
+                return this;
+            });
+        }
+
+        Future<ReconciliationState> withZkPodSetDiff(Future<ReconcileResult<StrimziPodSet>> r) {
+            return r.map(rr -> {
+                this.zkPodSetDiffs = rr;
                 return this;
             });
         }
@@ -1319,19 +1375,77 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkPodDisruptionBudget() {
-            return withVoid(podDisruptionBudgetOperator.reconcile(reconciliation, namespace, zkCluster.getName(), zkCluster.generatePodDisruptionBudget()));
+            if (featureGates.useStrimziPodSetsEnabled())   {
+                return withVoid(podDisruptionBudgetOperator.reconcile(reconciliation, namespace, zkCluster.getName(), zkCluster.generateCustomControllerPodDisruptionBudget()));
+            } else {
+                return withVoid(podDisruptionBudgetOperator.reconcile(reconciliation, namespace, zkCluster.getName(), zkCluster.generatePodDisruptionBudget()));
+            }
         }
 
         Future<ReconciliationState> zkStatefulSet() {
-            StatefulSet zkSts = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
-            Annotations.annotations(zkSts.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
-            Annotations.annotations(zkSts.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
-            return withZkDiff(stsOperations.reconcile(reconciliation, namespace, zkCluster.getName(), zkSts));
+            if (featureGates.useStrimziPodSetsEnabled())   {
+                // StatefulSets are disabled => delete the StatefulSet if it exists
+                return stsOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+                        .compose(sts -> {
+                            if (sts != null)    {
+                                return withVoid(stsOperations.deleteAsync(reconciliation, namespace, zkCluster.getName(), false));
+                            } else {
+                                return Future.succeededFuture(this);
+                            }
+                        });
+            } else {
+                // StatefulSets are enabled => make sure the StatefulSet exists with the right settings
+                StatefulSet zkSts = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+                Annotations.annotations(zkSts.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
+                Annotations.annotations(zkSts.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
+                return withZkStsDiff(stsOperations.reconcile(reconciliation, namespace, zkCluster.getName(), zkSts));
+            }
+        }
+
+        /**
+         * Create the StrimziPodSet for the ZooKeeper cluster with the default number of pods. That means either the
+         * number of pods the pod set had before or the number of pods based on the Kafka CR if this is a new cluster.
+         * Scale-up and scale-down are down separately.
+         *
+         * @return
+         */
+        Future<ReconciliationState> zkPodSet() {
+            int replicas = zkCurrentReplicas != null ? zkCurrentReplicas : zkCluster.getReplicas();
+            return zkPodSet(replicas);
+        }
+
+        /**
+         * Create the StrimziPodSet for the ZooKeeper cluster with a specific number of pods. This is used directly
+         * during scale-ups or scale-downs.
+         *
+         * @return
+         */
+        Future<ReconciliationState> zkPodSet(int replicas) {
+            if (featureGates.useStrimziPodSetsEnabled())   {
+                Map<String, String> podAnnotations = Map.of(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)), Annotations.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
+
+                StrimziPodSet zkPodSet = zkCluster.generatePodSet(replicas, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, podAnnotations);
+                return withZkPodSetDiff(strimziPodSetOperator.reconcile(reconciliation, namespace, zkCluster.getName(), zkPodSet));
+            } else {
+                return strimziPodSetOperator.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+                        .compose(podSet -> {
+                            if (podSet != null)    {
+                                return withVoid(strimziPodSetOperator.deleteAsync(reconciliation, namespace, zkCluster.getName(), false));
+                            } else {
+                                return Future.succeededFuture(this);
+                            }
+                        });
+            }
         }
 
         Future<ReconciliationState> zkRollingUpdate() {
-            return maybeRollZooKeeper(pod -> getReasonsToRestartPod(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa))
-                    .map(this);
+            if (featureGates.useStrimziPodSetsEnabled())   {
+                return maybeRollZooKeeper(pod -> getReasonsToRestartPod(zkPodSetDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa))
+                        .map(this);
+            } else {
+                return maybeRollZooKeeper(pod -> getReasonsToRestartPod(zkStsDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa))
+                        .map(this);
+            }
         }
 
         /**
@@ -1416,12 +1530,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkScalingUpByOne(ZookeeperScaler zkScaler, int current, int desired) {
             if (current < desired) {
-                return stsOperations.scaleUp(reconciliation, namespace, zkCluster.getName(), current + 1)
+                return zkScaleUpStatefulSetOrPodSet(current + 1)
                         .compose(ignore -> podOperations.readiness(reconciliation, namespace, zkCluster.getPodName(current), 1_000, operationTimeoutMs))
                         .compose(ignore -> zkScaler.scale(current + 1))
                         .compose(ignore -> zkScalingUpByOne(zkScaler, current + 1, desired));
             } else {
                 return Future.succeededFuture(this);
+            }
+        }
+
+        Future<ReconciliationState> zkScaleUpStatefulSetOrPodSet(int desiredScale)   {
+            if (featureGates.useStrimziPodSetsEnabled())   {
+                return zkPodSet(desiredScale);
+            } else {
+                return withVoid(stsOperations.scaleUp(reconciliation, namespace, zkCluster.getName(), desiredScale));
             }
         }
 
@@ -1462,10 +1584,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (current > desired) {
                 return podsReady(zkCluster, current - 1)
                         .compose(ignore -> zkScaler.scale(current - 1))
-                        .compose(ignore -> stsOperations.scaleDown(reconciliation, namespace, zkCluster.getName(), current - 1))
+                        .compose(ignore -> zkScaleDownStatefulSetOrPodSet(current - 1))
                         .compose(ignore -> zkScalingDownByOne(zkScaler, current - 1, desired));
             } else {
                 return Future.succeededFuture(this);
+            }
+        }
+
+        Future<ReconciliationState> zkScaleDownStatefulSetOrPodSet(int desiredScale)   {
+            if (featureGates.useStrimziPodSetsEnabled())   {
+                return zkPodSet(desiredScale);
+            } else {
+                return withVoid(stsOperations.scaleDown(reconciliation, namespace, zkCluster.getName(), desiredScale));
             }
         }
 
@@ -2943,9 +3073,54 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 .filter(pvc -> pvc.getMetadata().getName().endsWith(podName))
                                 .collect(Collectors.toList());
 
-                        return cleanPodPvcAndStatefulSet(ctlrResourceName, podName, createPvcs, deletePvcs);
+                        // ctlrResourceName.endsWith("-zookeeper") is temporary hack while only ZooKeeper supports the UseStrimziPodSets feature gate
+                        // TODO: Remove it one Kafka supports it as well
+                        if (featureGates.useStrimziPodSetsEnabled() && ctlrResourceName.endsWith("-zookeeper")) {
+                            return cleanPodPvcAndPodSet(ctlrResourceName, podName, createPvcs, deletePvcs);
+                        } else {
+                            return cleanPodPvcAndStatefulSet(ctlrResourceName, podName, createPvcs, deletePvcs);
+                        }
                     })
                     .map(this);
+        }
+
+        /**
+         * Handles the deletion and recreation of the StrimziPodSet controlling the pod which should be cleaned. In order
+         * to clean the pod and its PVCs, we first need to delete the StrimziPodSet (non-cascading). Otherwise the
+         * StrimziPodSet will break the process by recreating the pods or PVCs. This method first deletes the StrimziPodSet
+         * and then calls other method to delete the Pod, PVCs and create the new PVCs. Once this method completes, it
+         * will recreate the StrimziPodSet again. The Pod will be then recreated by the StrimziPodSet and this method just
+         * waits for it to become ready.
+         *
+         * The complete flow looks like this
+         *     1. Delete the STS (non-cascading)
+         *     2. Trigger the Pod and PVC deletion and recreation
+         *     3. Recreate the STS
+         *     4. Wait for the Pod to be created and become ready
+         *
+         * @param podSetName    Name of the StrimziPodSet to which this pod belongs
+         * @param podName       Name of the Pod which should be cleaned / deleted
+         * @param desiredPvcs   The list of desired PVCs which should be created after the old Pod and PVCs are deleted
+         * @param currentPvcs   The list of current PVCs which should be deleted
+         *
+         * @return              Future indicating the result of the cleanup
+         */
+        Future<Void> cleanPodPvcAndPodSet(String podSetName, String podName, List<PersistentVolumeClaim> desiredPvcs, List<PersistentVolumeClaim> currentPvcs) {
+            return strimziPodSetOperator.getAsync(namespace, podSetName)
+                    .compose(podSet -> strimziPodSetOperator.deleteAsync(reconciliation, namespace, podSetName, false)
+                            .compose(ignore -> cleanPodAndPvc(podName, desiredPvcs, currentPvcs))
+                            .compose(ignore -> {
+                                // We recreate the StrimziPodSet in its old configuration => any further changes have to be done by rolling update
+                                // These fields need to be cleared before recreating the StatefulSet
+                                podSet.getMetadata().setResourceVersion(null);
+                                podSet.getMetadata().setSelfLink(null);
+                                podSet.getMetadata().setUid(null);
+                                podSet.setStatus(null);
+
+                                return strimziPodSetOperator.reconcile(reconciliation, namespace, podSetName, podSet);
+                            })
+                            .compose(ignore -> podOperations.readiness(reconciliation, namespace, podName, 1_000L, operationTimeoutMs))
+                            .map((Void) null));
         }
 
         /**
@@ -3516,12 +3691,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /**
-         * @param sts Stateful set to which pod belongs
-         * @param pod Pod to restart
-         * @param cas Certificate authorities to be checked for changes
+         * Determines if the Pod needs to be rolled / restarted. And if it does, returns a list of reasons why.
+         *
+         * @param ctrlResource  Controller resource to which pod belongs
+         * @param pod           Pod to restart
+         * @param cas           Certificate authorities to be checked for changes
+         *
          * @return null or empty if the restart is not needed, reason String otherwise
          */
-        private List<String> getReasonsToRestartPod(StatefulSet sts, Pod pod,
+        private List<String> getReasonsToRestartPod(HasMetadata ctrlResource, Pod pod,
                                                            boolean nodeCertsChange,
                                                            Ca... cas) {
             if (pod == null)    {
@@ -3530,10 +3708,25 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return new ArrayList<>();
             }
 
-            boolean isPodUpToDate = isPodUpToDate(sts, pod);
-            boolean areCustomListenerCertsUpToDate = isCustomCertUpToDate(sts, pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS);
-
             List<String> reasons = new ArrayList<>(3);
+
+            if (ctrlResource instanceof StatefulSet) {
+                StatefulSet sts = (StatefulSet) ctrlResource;
+
+                if (!isPodUpToDate(sts, pod)) {
+                    reasons.add("Pod has old generation");
+                }
+
+                if (!isCustomCertUpToDate(sts, pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS)) {
+                    reasons.add("custom certificate one or more listeners changed");
+                }
+            } else if (ctrlResource instanceof StrimziPodSet) {
+                StrimziPodSet podSet = (StrimziPodSet) ctrlResource;
+
+                if (PodRevision.hasChanged(pod, podSet)) {
+                    reasons.add("Pod has old revision");
+                }
+            }
 
             for (Ca ca: cas) {
                 if (ca.certRenewed()) {
@@ -3546,22 +3739,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     reasons.add("Pod has old " + ca + " certificate generation");
                 }
             }
-            if (!isPodUpToDate) {
-                reasons.add("Pod has old generation");
-            }
+
             if (fsResizingRestartRequest.contains(pod.getMetadata().getName()))   {
                 reasons.add("file system needs to be resized");
             }
-            if (!areCustomListenerCertsUpToDate) {
-                reasons.add("custom certificate one or more listeners changed");
-            }
+
             if (nodeCertsChange) {
                 reasons.add("server certificates changed");
             }
+
             if (!reasons.isEmpty()) {
                 LOGGER.debugCr(reconciliation, "Rolling pod {} due to {}",
                         pod.getMetadata().getName(), reasons);
             }
+
             return reasons;
         }
 
@@ -3633,7 +3824,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     secret));
         }
 
-        private Storage getOldStorage(StatefulSet sts)  {
+        private Storage getOldStorage(HasMetadata sts)  {
             Storage storage = null;
 
             if (sts != null)    {

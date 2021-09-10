@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Affinity;
@@ -68,6 +69,8 @@ import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JvmOptions;
+import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
@@ -80,6 +83,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.template.PodManagementPolicy;
+import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -99,6 +103,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
@@ -184,6 +189,9 @@ public abstract class AbstractModel {
             PROXY_ENV_VARS = Collections.emptyList();
         }
     }
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final TypeReference<Map<String, Object>> POD_TYPE = new TypeReference<>() { };
 
     protected final Reconciliation reconciliation;
     protected final String cluster;
@@ -367,6 +375,17 @@ public abstract class AbstractModel {
      */
     protected Labels getLabelsWithStrimziName(String name, Map<String, String> additionalLabels) {
         return labels.withStrimziName(name).withAdditionalLabels(additionalLabels);
+    }
+
+    /**
+     * @param name the value for the {@code strimzi.io/name} key
+     * @param podName the value for the {@code strimzi.io/pod-name} key
+     * @param additionalLabels a nullable map of additional labels to be added to this instance of Labels
+     *
+     * @return Labels object with the default labels merged with the provided additional labels and the new {@code strimzi.io/name} label
+     */
+    protected Labels getLabelsWithStrimziName(String name, String podName, Map<String, String> additionalLabels) {
+        return labels.withStrimziName(name).withStrimziPodName(podName).withAdditionalLabels(additionalLabels);
     }
 
     /**
@@ -1075,6 +1094,137 @@ public abstract class AbstractModel {
         return statefulSet;
     }
 
+    /**
+     * Creates the StrimziPodSet with the Pods which currently correspond to the existing StatefulSet pods.
+     *
+     * @param replicas          Defines how many pods should be generated and stored in this StrimziPodSet
+     * @param setAnnotations    Map with annotations which should be set on the StrimziPodSet
+     * @param podAnnotations    Map with annotation which should be set on the Pods
+     * @param volumes           Function which returns a list of volumes which should be used by the Pod and its containers
+     * @param affinity          Affinity rules for the pods
+     * @param initContainers    List of init containers which should be used in the pods
+     * @param containers        List of containers which should be used in the pods
+     * @param imagePullSecrets  List of image pull secrets with container registry credentials
+     * @param isOpenShift       Flag to specify whether we are on OpenShift or not
+     *
+     * @return                  Generated StrimziPodSet with all pods
+     */
+    protected StrimziPodSet createPodSet(
+            int replicas,
+            Map<String, String> setAnnotations,
+            Map<String, String> podAnnotations,
+            Function<String, List<Volume>> volumes,
+            Affinity affinity,
+            List<Container> initContainers,
+            List<Container> containers,
+            List<LocalObjectReference> imagePullSecrets,
+            boolean isOpenShift)  {
+        List<Map<String, Object>> pods = new ArrayList<>(replicas);
+
+        for (int i = 0; i < replicas; i++)  {
+            String podName = ZookeeperCluster.zookeeperPodName(cluster, i);
+            Pod pod = createStatefulPod(
+                    name,
+                    podName,
+                    podAnnotations,
+                    volumes.apply(podName),
+                    affinity,
+                    initContainers,
+                    containers,
+                    imagePullSecrets,
+                    isOpenShift);
+
+            pods.add(MAPPER.convertValue(pod, POD_TYPE));
+        }
+
+        return new StrimziPodSetBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withLabels(getLabelsWithStrimziName(name, templateStatefulSetLabels).toMap())
+                    .withNamespace(namespace)
+                    .withAnnotations(Util.mergeLabelsOrAnnotations(setAnnotations, templateStatefulSetAnnotations))
+                    .withOwnerReferences(createOwnerReference())
+                .endMetadata()
+                .withNewSpec()
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
+                    .addAllToPods(pods)
+                .endSpec()
+                .build();
+    }
+
+    /**
+     * Generates a stateful Pod. Unlike regular pods or pod templates, it uses some additional fields to configure
+     * things such as subdomain etc. which are normally generated by StatefulSets.
+     *
+     * @param strimziPodSetName Name of the StrimziPodSet which will control this pod. This is used for labeling
+     * @param podName           Name of the pod
+     * @param podAnnotations    Map with annotation which should be set on the Pods
+     * @param volumes           Function which returns a list of volumes which should be used by the Pod and its containers
+     * @param affinity          Affinity rules for the pods
+     * @param initContainers    List of init containers which should be used in the pods
+     * @param containers        List of containers which should be used in the pods
+     * @param imagePullSecrets  List of image pull secrets with container registry credentials
+     * @param isOpenShift       Flag to specify whether we are on OpenShift or not
+     *
+     * @return                  Generated pod for a use within StrimziPodSet
+     */
+    protected Pod createStatefulPod(
+            String strimziPodSetName,
+            String podName,
+            Map<String, String> podAnnotations,
+            List<Volume> volumes,
+            Affinity affinity,
+            List<Container> initContainers,
+            List<Container> containers,
+            List<LocalObjectReference> imagePullSecrets,
+            boolean isOpenShift) {
+
+        PodSecurityContext securityContext = templateSecurityContext;
+
+        // if a persistent volume claim is requested and the running cluster is a Kubernetes one (non-openshift) and we
+        // have no user configured PodSecurityContext we set the podSecurityContext.
+        // This is to give each pod write permissions under a specific group so that if a pod changes users it does not have permission issues.
+        if (ModelUtils.containsPersistentStorage(storage) && !isOpenShift && securityContext == null) {
+            securityContext = new PodSecurityContextBuilder()
+                    .withFsGroup(AbstractModel.DEFAULT_FS_GROUPID)
+                    .build();
+        }
+
+        Pod pod = new PodBuilder()
+                .withNewMetadata()
+                    .withName(podName)
+                    .withLabels(getLabelsWithStrimziName(name, podName, templatePodLabels).withStatefulSetPod(podName).withStrimziPodSetController(strimziPodSetName).toMap())
+                    .withNamespace(namespace)
+                    .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
+                    //.withOwnerReferences(createOwnerReference())
+                .endMetadata()
+                .withNewSpec()
+                    .withRestartPolicy("Always")
+                    .withHostname(podName)
+                    .withSubdomain(headlessServiceName)
+                    .withServiceAccountName(getServiceAccountName())
+                    .withEnableServiceLinks(templatePodEnableServiceLinks)
+                    .withAffinity(affinity)
+                    .withInitContainers(initContainers)
+                    .withContainers(containers)
+                    .withVolumes(volumes)
+                    .withTolerations(getTolerations())
+                    .withTerminationGracePeriodSeconds(Long.valueOf(templateTerminationGracePeriodSeconds))
+                    .withImagePullSecrets(templateImagePullSecrets != null ? templateImagePullSecrets : imagePullSecrets)
+                    .withSecurityContext(securityContext)
+                    .withPriorityClassName(templatePodPriorityClassName)
+                    .withSchedulerName(templatePodSchedulerName != null ? templatePodSchedulerName : "default-scheduler")
+                    .withHostAliases(templatePodHostAliases)
+                    .withTopologySpreadConstraints(templatePodTopologySpreadConstraints)
+                .endSpec()
+                .build();
+
+        // Set the pod revision annotation
+        pod.getMetadata().getAnnotations().put(PodRevision.STRIMZI_REVISION_ANNOTATION, PodRevision.getRevision(reconciliation, pod));
+
+        return pod;
+    }
+
     protected Pod createPod(
             String name,
             Map<String, String> podAnnotations,
@@ -1401,6 +1551,28 @@ public abstract class AbstractModel {
                 .endMetadata()
                 .withNewSpec()
                     .withNewMaxUnavailable(templatePodDisruptionBudgetMaxUnavailable)
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
+                .endSpec()
+                .build();
+    }
+
+    /**
+     * Creates a PodDisruptionBudget for use with Custom pod controller. Custom pod controllers can use only PDBs with
+     * minAvailable in absolute numbers (i.e. no percentages).
+     *
+     * @return The default PodDisruptionBudget
+     */
+    protected PodDisruptionBudget createCustomControllerPodDisruptionBudget()   {
+        return new PodDisruptionBudgetBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withLabels(getLabelsWithStrimziName(name, templatePodDisruptionBudgetLabels).toMap())
+                    .withNamespace(namespace)
+                    .withAnnotations(templatePodDisruptionBudgetAnnotations)
+                    .withOwnerReferences(createOwnerReference())
+                .endMetadata()
+                .withNewSpec()
+                    .withMinAvailable(new IntOrString(replicas - templatePodDisruptionBudgetMaxUnavailable))
                     .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
                 .endSpec()
                 .build();

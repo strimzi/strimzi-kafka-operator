@@ -18,10 +18,12 @@ public class FeatureGates {
 
     private static final String CONTROL_PLANE_LISTENER = "ControlPlaneListener";
     private static final String SERVICE_ACCOUNT_PATCHING = "ServiceAccountPatching";
+    private static final String USE_STRIMZI_POD_SETS = "UseStrimziPodSets";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
     private final FeatureGate controlPlaneListener = new FeatureGate(CONTROL_PLANE_LISTENER, true);
     private final FeatureGate serviceAccountPatching = new FeatureGate(SERVICE_ACCOUNT_PATCHING, true);
+    private final FeatureGate useStrimziPodSets = new FeatureGate(USE_STRIMZI_POD_SETS, false);
 
     /**
      * Constructs the feature gates configuration.
@@ -48,6 +50,9 @@ public class FeatureGates {
                         break;
                     case SERVICE_ACCOUNT_PATCHING:
                         setValueOnlyOnce(serviceAccountPatching, value);
+                        break;
+                    case USE_STRIMZI_POD_SETS:
+                        setValueOnlyOnce(useStrimziPodSets, value);
                         break;
                     default:
                         throw new InvalidConfigurationException("Unknown feature gate " + featureGate + " found in the configuration");
@@ -86,6 +91,13 @@ public class FeatureGates {
     }
 
     /**
+     * @return  Returns true when the UseStrimziPodSets feature gate is enabled
+     */
+    public boolean useStrimziPodSetsEnabled() {
+        return useStrimziPodSets.isEnabled();
+    }
+
+    /**
      * Returns a list of all Feature gates. Used for testing.
      *
      * @return  List of all Feature Gates
@@ -93,7 +105,8 @@ public class FeatureGates {
     /*test*/ List<FeatureGate> allFeatureGates()  {
         return List.of(
                 controlPlaneListener,
-                serviceAccountPatching
+                serviceAccountPatching,
+                useStrimziPodSets
         );
     }
 
@@ -101,7 +114,8 @@ public class FeatureGates {
     public String toString() {
         return "FeatureGates(" +
                 "controlPlaneListener=" + controlPlaneListener.isEnabled() + "," +
-                "ServiceAccountPatching=" + serviceAccountPatching.isEnabled() +
+                "ServiceAccountPatching=" + serviceAccountPatching.isEnabled() + "," +
+                "UseStrimziPodSets=" + useStrimziPodSets.isEnabled() +
                 ")";
     }
 

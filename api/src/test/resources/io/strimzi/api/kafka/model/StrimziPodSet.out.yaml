@@ -1,0 +1,21 @@
+---
+apiVersion: "kafka.strimzi.io/v1beta2"
+kind: "StrimziPodSet"
+metadata:
+  name: "test-strimzi-pod-set"
+spec:
+  pods:
+  - apiVersion: "v1"
+    kind: "Pod"
+    metadata:
+      name: "broker-0"
+      labels:
+        role: "broker"
+    spec:
+      containers:
+      - name: "broker"
+        image: "kafka:latest"
+        ports:
+        - name: "kafka"
+          containerPort: 9092
+          protocol: "TCP"

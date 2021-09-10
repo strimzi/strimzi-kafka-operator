@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -45,7 +46,8 @@ public class Crds {
         KafkaBridge.class,
         KafkaConnector.class,
         KafkaMirrorMaker2.class,
-        KafkaRebalance.class
+        KafkaRebalance.class,
+        StrimziPodSet.class
     };
 
     private Crds() {
@@ -147,6 +149,15 @@ public class Crds {
             kind = KafkaRebalance.RESOURCE_KIND;
             listKind = KafkaRebalance.RESOURCE_LIST_KIND;
             versions = KafkaRebalance.VERSIONS;
+            status = new CustomResourceSubresourceStatus();
+        } else if (cls.equals(StrimziPodSet.class)) {
+            scope = StrimziPodSet.SCOPE;
+            plural = StrimziPodSet.RESOURCE_PLURAL;
+            singular = StrimziPodSet.RESOURCE_SINGULAR;
+            group = StrimziPodSet.RESOURCE_GROUP;
+            kind = StrimziPodSet.RESOURCE_KIND;
+            listKind = StrimziPodSet.RESOURCE_LIST_KIND;
+            versions = StrimziPodSet.VERSIONS;
             status = new CustomResourceSubresourceStatus();
         } else {
             throw new RuntimeException();
@@ -258,6 +269,14 @@ public class Crds {
 
     public static MixedOperation<KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>> kafkaRebalanceOperation(KubernetesClient client) {
         return client.resources(KafkaRebalance.class, KafkaRebalanceList.class);
+    }
+
+    public static CustomResourceDefinition strimziPodSet() {
+        return crd(StrimziPodSet.class);
+    }
+
+    public static MixedOperation<StrimziPodSet, StrimziPodSetList, Resource<StrimziPodSet>> strimziPodSetOperation(KubernetesClient client) {
+        return client.resources(StrimziPodSet.class, StrimziPodSetList.class);
     }
 
     public static <T extends CustomResource, L extends CustomResourceList<T>> MixedOperation<T, L, Resource<T>>
