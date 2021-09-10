@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -158,18 +159,15 @@ class UserST extends AbstractST {
     }
 
     @Tag(SCALABILITY)
-    @ParallelTest
+    @IsolatedTest
     void testBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-
         createBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA", 100);
     }
 
     @Tag(SCALABILITY)
-    @ParallelTest
+    @IsolatedTest
     void testAlterBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         int numberOfUsers = 100;
         int producerRate = 1000;
@@ -183,18 +181,15 @@ class UserST extends AbstractST {
     }
 
     @Tag(SCALABILITY)
-    @ParallelTest
+    @IsolatedTest
     void testBigAmountOfTlsUsers(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-
         createBigAmountOfUsers(extensionContext, userName, "TLS", 100);
     }
 
     @Tag(SCALABILITY)
-    @ParallelTest
+    @IsolatedTest
     void testAlterBigAmountOfTlsUsers(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
         int numberOfUsers = 100;
