@@ -27,10 +27,10 @@
       "continuousClientsMessages": 500
     },
     "environmentInfo": {
-      "maxK8sVersion": "latest",
+      "maxK8sVersion": "1.21",
       "status": "stable",
       "flakyEnvVariable": "none",
-      "reason" : "Test is working on all environment used by QE."
+      "reason" : "Test is working on environment, where k8s server version is < 1.22"
     }
   },
   {
