@@ -6,21 +6,90 @@
 = Kafka Connect configuration
 
 [role="_abstract"]
-You can use the `KafkaConnect` custom resource to configure a Kafka Connect instance.
-Using this resource, you can build a container image that includes the connector plugins used by worker pods.
-You can use the resource to configure the worker pods too.
-You can also enable KafkaConnectors in your `KafkaConnect` configuration to be able to use the `KafkaConnector` resource to manage connector plugins.
-
-[discrete]
-== Kafka Connect configuration
 Use Strimzi’s `KafkaConnect` resource to quickly and easily create new Kafka Connect clusters.
-When you deploy Kafka Connect using the `KafkaConnect` resource, you specify bootstrap server addresses (in `spec.bootstrapServers`) for connecting to the Kafka cluster.
+
+When you deploy Kafka Connect using the `KafkaConnect` resource, you specify bootstrap server addresses (in `spec.bootstrapServers`) for connecting to a Kafka cluster.
 You can specify more than one address in case a server goes down.
 You also specify the authentication credentials and TLS encryption certificates to make a secure connection.
 
 NOTE: The Kafka cluster doesn't need to be managed by Strimzi or deployed to a Kubernetes cluster.
 
-You specify the configuration for workers in the `config` of the `KafkaConnect` resource.
+You can also use the `KafkaConnect` resource to specify the following:
+
+* Plugin configuration to build a container image that includes the plugins to make connections
+* Configuration for the worker pods that belong to the Kafka Connect cluster
+* An annotation to enable use of the `KafkaConnector` resource to manage plugins
+
+The Cluster Operator manages Kafka Connect clusters deployed using the `KafkaConnect` resource and connectors created using the `KafkaConnector` resource.
+
+[discrete]
+== Plugin configuration
+
+Plugins provide the implementation for creating connector instances.
+When a plugin is instantiated, configuration is provided for connection to a specific type of external data system.
+Plugins provide a set of one or more JAR files that define a connector and task implementation for connecting to a given kind of data source.
+Plugins for many external systems are available for use with Kafka Connect.
+You can also create your own plugins.
+
+The configuration describes the source input data and target output data to feed into and out of Kafka Connect.
+The external source data must reference specific topics that will store the messages.
+The plugins might also contain the libraries and files needed to transform the data.
+
+A Kafka Connect deployment can have one or more plugins, but only one version of each plugin.
+
+You can create a custom Kafka Connect image that includes your choice of plugins.
+You can create the image in two ways:
+
+* link:{BookURLDeploying}#creating-new-image-using-kafka-connect-build-str[Automatically using Kafka Connect configuration^]
+* link:{BookURLDeploying}#creating-new-image-from-base-str[Manually using Dockerfile and a Kafka container image from {DockerRepository} as a base image^]
+
+To create the container image automatically, you specify and deploy plugins for your Kafka Connect cluster using the `build` property of the `KafkaConnect` resource.
+Strimzi automatically downloads and adds the plugin artifacts to a new container image.
+
+.Example plugin configuration
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+spec:
+  # ...
+  build: <1>
+    output: <2>
+      type: docker
+      image: my-registry.io/my-org/my-connect-cluster:latest
+      pushSecret: my-registry-credentials
+    plugins: <3>
+      - name: debezium-postgres-connector
+        artifacts:
+          - type: tgz
+            url: https://_ARTIFACT-ADDRESS_.tgz
+            sha512sum: _HASH-NUMBER-TO-VERIFY-ARTIFACT_
+      # ...
+  # ...
+----
+<1> link:{BookURLUsing}#type-Build-reference[Build configuration properties^] for building a container image with plugins automatically.
+<2> Configuration of the container registry where new images are pushed. The `output` properties describe the type and name of the image, and optionally the name of the secret containing the credentials needed to access the container registry.
+<3> List of plugins and their artifacts to add to the new container image. The `plugins` properties describe the type of artifact and the URL from which the artifact is downloaded. Each plugin must be configured with at least one artifact. Additionally, you can specify a SHA-512 checksum to verify the artifact before unpacking it.
+
+If you are using a Dockerfile to build an image, you can use Strimzi’s latest container image as a base image to add your plugin configuration file.
+
+.Example showing manual addition of plugin configuration
+[source,subs="+quotes,attributes"]
+----
+FROM {DockerKafkaConnect}
+USER root:root
+COPY ./_my-plugins_/ /opt/kafka/plugins/
+USER {DockerImageUser}
+----
+
+[discrete]
+== Kafka Connect cluster configuration for workers
+
+You specify the configuration for workers in the `config` property of the `KafkaConnect` resource.
 
 A distributed Kafka Connect cluster has a group ID and a set of internal connector topics.
 
@@ -33,7 +102,7 @@ Kafka Connect clusters are configured by default with the same values for these 
 Kafka Connect clusters cannot share the group ID or topic names as it will create errors.
 If multiple different Kafka Connect clusters are used, these settings must be unique for the workers of each Kafka Connect cluster created.
 
-The names of the connectors used by each Kafka Connect instance must also be unique.
+The names of the connectors used by each Kafka Connect cluster must also be unique.
 
 .Example worker configuration
 [source,yaml,subs="attributes+"]
@@ -57,7 +126,7 @@ spec:
     status.storage.replication.factor: 3 <11>
   # ...
 ----
-<1> The consumer group that Kafka Connect workers will use.
+<1> The Kafka Connect cluster ID within Kafka.
 <2> Kafka topic that stores connector offsets.
 <3> Kafka topic that stores connector and task status configurations.
 <4> Kafka topic that stores connector and task status updates.
@@ -85,82 +154,12 @@ spec:
     status.storage.topic: my-connect-cluster-status
 ----
 
-You can also link:{BookURLDeploying}#creating-new-image-using-kafka-connect-build-str[deploy connector plugins^] using the `build` configuration of the `KafkaConnect` resource.
-Connector plugins provide the implementation to create connector instances.
-When a plugin is instantiated, configuration is provided for connection to an external data system.
-
-After connector plugins have been added to the container image used for the worker pods in a deployment,
-you can use Strimzi’s `KafkaConnector` custom resource or the Kafka Connect API to manage connector instances.
-You can also create new connector instances using these options.
-
-The Cluster Operator manages Kafka Connect clusters deployed using the `KafkaConnect` resource and connectors created using the `KafkaConnector` resource.
-
-[discrete]
-== Connector plugin configuration
-
-Connector plugins provide the implementation for connecting to specific types of external data system.
-Plugins provide a set of one or more jar files that define a connector and task implementation for connecting to a given kind of data source.
-Connector plugins for many external systems are available for use with Kafka Connect.
-You can also create your own connector plugins.
-
-The configuration describes the source input data and target output data to feed into and out of Kafka Connect.
-The external source data must reference specific topics that will store the messages.
-The plugins might also contain the libraries and files needed to transform the data.
-
-A Kafka Connect deployment can have one or more plugins, but only one version of each plugin.
-
-You can create a custom Kafka Connect image that includes your choice of connector plugins.
-You can create the image in two ways:
-
-* link:{BookURLDeploying}#creating-new-image-using-kafka-connect-build-str[Automatically using Kafka Connect configuration^]
-* link:{BookURLDeploying}#creating-new-image-from-base-str[Manually using Dockerfile and a Kafka container image from {DockerRepository} as a base image^]
-
-To create the container image automatically, you specify and deploy plugins for your Kafka Connect cluster using the `build` property of the `KafkaConnect` resource.
-Strimzi automatically downloads and adds the plugin artifacts to a new container image.
-The plugins are used by the workers that orchestrate the streaming processes.
-
-.Example connector plugin configuration
-[source,yaml,subs="+quotes,attributes"]
-----
-apiVersion: {KafkaConnectApiVersion}
-kind: KafkaConnect
-metadata:
-  name: my-connect-cluster
-  annotations:
-    strimzi.io/use-connector-resources: "true"
-spec:
-  # ...
-  build: <1>
-    output: <2>
-      type: docker
-      image: my-registry.io/my-org/my-connect-cluster:latest
-      pushSecret: my-registry-credentials
-    plugins: <3>
-      - name: debezium-postgres-connector
-        artifacts:
-          - type: tgz
-            url: https://_ARTIFACT-ADDRESS_.tgz
-            sha512sum: _HASH-NUMBER-TO-VERIFY-ARTIFACT_
-      # ...
-  # ...
-----
-<1> link:{BookURLUsing}#type-Build-reference[Build configuration properties^] for building a container image with connector plugins automatically.
-<2> Configuration of the container registry where new images are pushed. The `output` properties describe the type and name of the image, and optionally the name of the Secret containing the credentials needed to access the container registry.
-<3> List of connector plugins and their artifacts to add to the new container image. The `plugins` properties describe the type of artifact and the URL from which the artifact is downloaded. Each plugin must be configured with at least one artifact. Additionally, you can specify a SHA-512 checksum to verify the artifact before unpacking it.
-
-If you are using a Dockerfile to build an image, you can use Strimzi’s latest container image as a base image to add your plugin configuration file.
-
-.Example showing manual addition of connector plugin configuration
-[source,subs="+quotes,attributes"]
-----
-FROM {DockerKafkaConnect}
-USER root:root
-COPY ./_my-plugins_/ /opt/kafka/plugins/
-USER {DockerImageUser}
-----
-
 [discrete]
 == `KafkaConnector` management of connectors
+
+After plugins have been added to the container image used for the worker pods in a deployment,
+you can use Strimzi’s `KafkaConnector` custom resource or the Kafka Connect API to manage connector instances.
+You can also create new connector instances using these options.
 
 The `KafkaConnector` resource offers a Kubernetes-native approach to management of connectors by the Cluster Operator.
 To manage connectors with `KafkaConnector` resources, you must specify an annotation in your `KafkaConnect` custom resource.
@@ -179,7 +178,7 @@ metadata:
 
 Setting `use-connector-resources` to `true`  enables KafkaConnectors to create, delete, and reconfigure connectors.
 
-If enabled in your `KafkaConnect` configuration, you must use the `KafkaConnector` resource to define and manage connectors.
+If `use-connector-resources` is enabled in your `KafkaConnect` configuration, you must use the `KafkaConnector` resource to define and manage connectors.
 `KafkaConnector` resources are configured to connect to external systems.
 They are deployed to the same Kubernetes cluster as the Kafka Connect cluster and Kafka cluster interacting with the external data system.
 
@@ -225,7 +224,7 @@ NOTE: You can link:{BookURLUsing}#proc-loading-config-with-provider-str[load con
 == Kafka Connect API
 
 Use the Kafka Connect REST API as an alternative to using `KafkaConnector` resources to manage connectors.
-The Kafka Connect REST API is available as a service running on `_CONNECT-CLUSTER-NAME_-connect-api:8083`, where _CONNECT-CLUSTER-NAME_ is the name of your Kafka Connect cluster.
+The Kafka Connect REST API is available as a service running on `_<connect-cluster-name>_-connect-api:8083`, where _<connect-cluster-name>_ is the name of your Kafka Connect cluster.
 
 You add the connector configuration as a JSON object.
 
@@ -251,14 +250,15 @@ If KafkaConnectors are enabled, manual changes made directly using the Kafka Con
 
 The operations supported by the REST API are described in the http://kafka.apache.org[Apache Kafka documentation^].
 
-NOTE: You can expose the Kafka Connect API service outside Kubernetes. Create a service that uses a connection mechanism that provides the access, such as an ingress or route.
+NOTE: You can expose the Kafka Connect API service outside Kubernetes.
+You do this by creating a service that uses a connection mechanism that provides the access, such as an ingress or route.
 
 [role="_additional-resources"]
 .Additional resources
 
 * link:{BookURLUsing}#assembly-kafka-connect-str[Kafka Connect configuration options^]
 * link:{BookURLUsing}#con-kafka-connect-multiple-instances-str[Kafka Connect configuration for multiple instances^]
-* link:{BookURLDeploying}#using-kafka-connect-with-plug-ins-str[Extending Kafka Connect with connector plug-ins^]
+* link:{BookURLDeploying}#using-kafka-connect-with-plug-ins-str[Extending Kafka Connect with plugins^]
 * link:{BookURLDeploying}#creating-new-image-using-kafka-connect-build-str[Creating a new container image automatically using Strimzi^]
 * link:{BookURLDeploying}#creating-new-image-from-base-str[Creating a Docker image from the Kafka Connect base image^]
 * link:{BookURLUsing}#type-Build-reference[Build schema reference^]
