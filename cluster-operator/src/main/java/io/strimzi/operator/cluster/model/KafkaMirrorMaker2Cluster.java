@@ -164,7 +164,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
         for (KafkaMirrorMaker2ClusterSpec mirrorMaker2Cluster: clusters) {
             String alias = mirrorMaker2Cluster.getAlias();
             ClientTls tls = mirrorMaker2Cluster.getTls();
-            VolumeUtils.createTlsEncryptionSecretVolume(tls, volumeList, isOpenShift, alias);
+            VolumeUtils.createSecretVolume(tls, volumeList, isOpenShift, alias);
             AuthenticationUtils.configureClientAuthenticationVolumes(mirrorMaker2Cluster.getAuthentication(), volumeList, mirrorMaker2Cluster.getAlias() + "-oauth-certs", isOpenShift, mirrorMaker2Cluster.getAlias() + '-',  true);
         }
         return volumeList;
@@ -179,10 +179,10 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
             String tlsVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_TLS_CERTS_BASE_VOLUME_MOUNT, alias);
 
             ClientTls kafkaMirrorMaker2Tls = mirrorMaker2Cluster.getTls();
+            VolumeUtils.createSecretVolumeMount(kafkaMirrorMaker2Tls, volumeMountList, tlsVolumeMountPath, alias);
             String passwordVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_PASSWORD_VOLUME_MOUNT, alias);
             String oauthTlsVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT, alias);
             String oauthVolumeMountPath =  buildClusterVolumeMountPath(MIRRORMAKER_2_OAUTH_SECRETS_BASE_VOLUME_MOUNT, alias);
-            VolumeUtils.createTlsEncryptionVolumeMount(kafkaMirrorMaker2Tls, volumeMountList, tlsVolumeMountPath, alias);
             AuthenticationUtils.configureClientAuthenticationVolumeMounts(mirrorMaker2Cluster.getAuthentication(), volumeMountList, tlsVolumeMountPath, passwordVolumeMountPath, oauthTlsVolumeMountPath, mirrorMaker2Cluster.getAlias() + "-oauth-certs", mirrorMaker2Cluster.getAlias() + '-', true, oauthVolumeMountPath);
 
         }

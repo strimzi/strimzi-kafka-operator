@@ -231,10 +231,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
-        VolumeUtils.createTlsEncryptionSecretVolume(producer.getTls(), volumeList, isOpenShift);
+        VolumeUtils.createSecretVolume(producer.getTls(), volumeList, isOpenShift);
         AuthenticationUtils.configureClientAuthenticationVolumes(producer.getAuthentication(), volumeList, "producer-oauth-certs", isOpenShift);
 
-        VolumeUtils.createTlsEncryptionSecretVolume(consumer.getTls(), volumeList, isOpenShift);
+        VolumeUtils.createSecretVolume(consumer.getTls(), volumeList, isOpenShift);
         AuthenticationUtils.configureClientAuthenticationVolumes(consumer.getAuthentication(), volumeList, "consumer-oauth-certs", isOpenShift);
 
         return volumeList;
@@ -246,11 +246,11 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         volumeMountList.add(createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
         /** producer auth*/
-        VolumeUtils.createTlsEncryptionVolumeMount(producer.getTls(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER);
+        VolumeUtils.createSecretVolumeMount(producer.getTls(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER);
         AuthenticationUtils.configureClientAuthenticationVolumeMounts(producer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_PRODUCER, PASSWORD_VOLUME_MOUNT_PRODUCER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER, "producer-oauth-certs");
 
         /** consumer auth*/
-        VolumeUtils.createTlsEncryptionVolumeMount(consumer.getTls(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_CONSUMER);
+        VolumeUtils.createSecretVolumeMount(consumer.getTls(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_CONSUMER);
         AuthenticationUtils.configureClientAuthenticationVolumeMounts(consumer.getAuthentication(), volumeMountList, TLS_CERTS_VOLUME_MOUNT_CONSUMER, PASSWORD_VOLUME_MOUNT_CONSUMER, OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_CONSUMER, "consumer-oauth-certs");
 
         return volumeMountList;
