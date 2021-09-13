@@ -11,7 +11,7 @@
 ### Changes, deprecations and removals
 
 * imageRepositoryOverride,imageRegistryOverride and imageTagOverride are now removed from values.yaml. defaultImageRepository, defaultImageRegistry and defaultImageTag values are introduced in helm charts which sets the default registry, repository and tags for the images. Now the registry, repository and tag for a single image can be configured as per the requirement.
-* The OpenShift Templates were removed from the examples and are no longer supported.
+* The OpenShift Templates were removed from the examples and are no longer supported (#5548)
 
 ## 0.25.0
 
