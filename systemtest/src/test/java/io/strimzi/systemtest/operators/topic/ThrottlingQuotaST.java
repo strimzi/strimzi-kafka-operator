@@ -72,7 +72,7 @@ public class ThrottlingQuotaST extends AbstractST {
                 .withTopicOperation(AdminClientOperations.CREATE_TOPICS.toString())
                 .withAdditionalConfig(getAdminClientConfig(kafkaUsername, 240000))
                 .build();
-        resourceManager.createResource(extensionContext, true, adminClientJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin().build());
         String createPodName = kubeClient().listPods("job-name", createAdminName).get(0).getMetadata().getName();
         PodUtils.waitUntilMessageIsInPodLogs(
                 createPodName,
@@ -95,23 +95,23 @@ public class ThrottlingQuotaST extends AbstractST {
         setupKafkaUserInNamespace(extensionContext, kafkaUsername);
 
         // Create many topics in multiple rounds using starting offset
-        KafkaAdminClient createAdminClientJob;
+        KafkaAdminClient createAdminClientJob = new KafkaAdminClient.Builder()
+                .withAdminName(createAdminName)
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
+                .withTopicName(topicNamePrefix)
+                .withTopicCount(100)
+                .withNamespaceName(NAMESPACE)
+                .withTopicOperation(AdminClientOperations.CREATE_TOPICS.toString())
+                .withAdditionalConfig(getAdminClientConfig(kafkaUsername, 240000))
+                .build();
         String createPodName;
         int offset = 100;
         int iterations = topicsCountOverQuota / 100;
         for (int i = 0; i < iterations; i++) {
             LOGGER.info("Executing {}/{} iteration.", i + 1, iterations);
-            createAdminClientJob = new KafkaAdminClient.Builder()
-                .withAdminName(createAdminName)
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(CLUSTER_NAME))
-                .withTopicName(topicNamePrefix)
-                .withTopicCount(100)
-                .withTopicOffset(i * offset)
-                .withNamespaceName(NAMESPACE)
-                .withTopicOperation(AdminClientOperations.CREATE_TOPICS.toString())
-                .withAdditionalConfig(getAdminClientConfig(kafkaUsername, 240000))
-                .build();
-            resourceManager.createResource(extensionContext, true, createAdminClientJob.defaultAdmin().build());
+            createAdminClientJob = createAdminClientJob.toBuilder().withTopicOffset(i * offset).build();
+
+            resourceManager.createResource(extensionContext, createAdminClientJob.defaultAdmin().build());
             ClientUtils.waitForClientSuccess(createAdminName, NAMESPACE, 100);
             createPodName = kubeClient().listPods("job-name", createAdminName).get(0).getMetadata().getName();
             PodUtils.waitUntilMessageIsInPodLogs(createPodName, "All topics created", Constants.GLOBAL_TIMEOUT);
@@ -171,7 +171,7 @@ public class ThrottlingQuotaST extends AbstractST {
                 .withTopicOperation(AdminClientOperations.CREATE_TOPICS.toString())
                 .withAdditionalConfig(getAdminClientConfig(kafkaUsername, 240000))
                 .build();
-        resourceManager.createResource(extensionContext, true, adminClientJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin().build());
         String createPodName = kubeClient().listPods("job-name", createAdminName).get(0).getMetadata().getName();
         PodUtils.waitUntilMessageIsInPodLogs(
                 createPodName,
@@ -189,7 +189,7 @@ public class ThrottlingQuotaST extends AbstractST {
                 .withTopicCount(topicAlter)
                 .withPartitions(1)
                 .build();
-        resourceManager.createResource(extensionContext, true, adminClientJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin().build());
         createPodName = kubeClient().listPods("job-name", createAdminName).get(0).getMetadata().getName();
         PodUtils.waitUntilMessageIsInPodLogs(createPodName, "All topics created", GLOBAL_TIMEOUT);
         JobUtils.deleteJobWithWait(NAMESPACE, createAdminName);
@@ -201,7 +201,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .withPartitions(500)
             .withTopicOperation(AdminClientOperations.UPDATE_TOPICS.toString())
             .build();
-        resourceManager.createResource(extensionContext, true, adminClientJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin().build());
         String alterPodName = kubeClient().listPods("job-name", alterAdminName).get(0).getMetadata().getName();
         PodUtils.waitUntilMessageIsInPodLogs(
                 alterPodName,
@@ -302,23 +302,23 @@ public class ThrottlingQuotaST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(CLUSTER_NAME, 1)
             .editSpec()
                 .editKafka()
-                .withListeners(
-                    new GenericKafkaListenerBuilder()
-                        .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-                        .withPort(9092)
-                        .withType(KafkaListenerType.INTERNAL)
-                        .withTls(false)
-                        .withNewKafkaListenerAuthenticationScramSha512Auth()
-                        .endKafkaListenerAuthenticationScramSha512Auth()
-                        .build(),
-                    new GenericKafkaListenerBuilder()
-                        .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                        .withPort(9093)
-                        .withType(KafkaListenerType.INTERNAL)
-                        .withTls(true)
-                        .withNewKafkaListenerAuthenticationTlsAuth()
-                    .endKafkaListenerAuthenticationTlsAuth()
-                    .build())
+                    .withListeners(
+                        new GenericKafkaListenerBuilder()
+                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .withNewKafkaListenerAuthenticationScramSha512Auth()
+                            .endKafkaListenerAuthenticationScramSha512Auth()
+                            .build(),
+                        new GenericKafkaListenerBuilder()
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                        .endKafkaListenerAuthenticationTlsAuth()
+                        .build())
                 .endKafka()
             .endSpec()
             .build());
@@ -335,7 +335,7 @@ public class ThrottlingQuotaST extends AbstractST {
                 .withAuthentication(new KafkaUserScramSha512ClientAuthentication())
             .endSpec()
             .build();
-        resourceManager.createResource(extensionContext, true, kafkaUserWQuota);
+        resourceManager.createResource(extensionContext, kafkaUserWQuota);
     }
 
     @BeforeAll
