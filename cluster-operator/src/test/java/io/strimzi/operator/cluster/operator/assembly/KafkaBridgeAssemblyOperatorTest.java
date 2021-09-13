@@ -157,7 +157,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 assertThat(capturedDc, hasSize(1));
                 Deployment dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(bridge.getName()));
-                assertThat(dc, is(bridge.generateDeployment(Collections.emptyMap(), true, null, null)));
+                assertThat(dc, is(bridge.generateDeployment(Collections.singletonMap(Annotations.ANNO_STRIMZI_AUTH_HASH, "0"), true, null, null)));
 
                 // Verify PodDisruptionBudget
                 List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();

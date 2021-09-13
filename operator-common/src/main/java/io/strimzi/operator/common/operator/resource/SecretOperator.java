@@ -18,6 +18,8 @@ import io.strimzi.certs.CertAndKey;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Operations for {@code Secret}s.
  */
@@ -37,25 +39,27 @@ public class SecretOperator extends AbstractResourceOperator<KubernetesClient, S
         return client.secrets();
     }
 
-
     public Future<String> getCertificateAsync(String namespace, CertSecretSource certSecretSource) {
         return this.getAsync(namespace, certSecretSource.getSecretName())
-                .compose(secret -> Future.succeededFuture(secret.getData().get(certSecretSource.getCertificate())));
+                .compose(secret -> secret == null ? Future.failedFuture("Secret " + certSecretSource.getSecretName() + " not found") : Future.succeededFuture(secret.getData().get(certSecretSource.getCertificate())));
     }
 
     public Future<CertAndKey> getCertificateAndKeyAsync(String namespace, KafkaClientAuthenticationTls auth) {
         return this.getAsync(namespace, auth.getCertificateAndKey().getSecretName())
-                .compose(secret -> Future.succeededFuture(new CertAndKey(secret.getData().get(auth.getCertificateAndKey().getKey()).getBytes(), secret.getData().get(auth.getCertificateAndKey().getCertificate()).getBytes())));
+                .compose(secret -> secret == null ? Future.failedFuture("Secret " + auth.getCertificateAndKey().getSecretName() + " not found") :
+                        Future.succeededFuture(new CertAndKey(secret.getData().get(auth.getCertificateAndKey().getKey()).getBytes(StandardCharsets.UTF_8), secret.getData().get(auth.getCertificateAndKey().getCertificate()).getBytes(StandardCharsets.UTF_8))));
     }
 
     public Future<String> getPasswordAsync(String namespace, KafkaClientAuthentication auth) {
         if (auth instanceof KafkaClientAuthenticationPlain) {
             return this.getAsync(namespace, ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getSecretName())
-                    .compose(secret -> Future.succeededFuture(secret.getData().get(((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getPassword())));
+                    .compose(secret -> secret == null ? Future.failedFuture("Secret " + ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getSecretName() + " not found") :
+                            Future.succeededFuture(secret.getData().get(((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getPassword())));
         }
         if (auth instanceof KafkaClientAuthenticationScramSha512) {
             return this.getAsync(namespace, ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getSecretName())
-                    .compose(secret -> Future.succeededFuture(secret.getData().get(((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getPassword())));
+                    .compose(secret -> secret == null ? Future.failedFuture("Secret " + ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getSecretName() + " not found") :
+                            Future.succeededFuture(secret.getData().get(((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getPassword())));
         } else {
             return Future.failedFuture("Auth type " + auth.getType() + " does not have a password property");
         }

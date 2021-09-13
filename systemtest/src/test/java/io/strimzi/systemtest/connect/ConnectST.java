@@ -51,7 +51,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -1242,14 +1241,12 @@ class ConnectST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     // changing the password in secret should cause the RU of connect pod
-    void testKafkaConnectWithPlainAndScramShaAuthenticationRolledAfterPasswordChanged(ExtensionContext extensionContext) {
+    void testKafkaConnectWithScramShaAuthenticationRolledAfterPasswordChanged(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-
-        // Use a Kafka with plain listener disabled
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
                 .editSpec()
@@ -1265,7 +1262,28 @@ class ConnectST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaUser kafkaUser =  KafkaUserTemplates.scramShaUser(clusterName, userName).build();
+        Secret passwordSecret = new SecretBuilder()
+                .withNewMetadata()
+                .withName("custom-pwd-secret")
+                .endMetadata()
+                .addToData("pwd", "MTIzNDU2Nzg5")
+                .build();
+
+        kubeClient(namespaceName).createSecret(passwordSecret);
+
+        KafkaUser kafkaUser =  KafkaUserTemplates.scramShaUser(clusterName, userName)
+                .editSpec()
+                    .withNewKafkaUserScramSha512ClientAuthentication()
+                        .withNewPassword()
+                            .withNewValueFrom()
+                                .withNewSecretKeyRef("pwd", "custom-pwd-secret", false)
+                            .endValueFrom()
+                        .endPassword()
+                    .endKafkaUserScramSha512ClientAuthentication()
+                .endSpec()
+                .build();
+
+        resourceManager.createResource(extensionContext, kafkaUser);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, userName).build());
@@ -1295,16 +1313,28 @@ class ConnectST extends AbstractST {
 
         Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaConnectResources.deploymentName(clusterName));
         String newPassword = "bmVjb0ppbmVob05lelNwcmF2bnlQYXNzd29yZA==";
-        Secret passwordSecret = new SecretBuilder()
+        Secret newPasswordSecret = new SecretBuilder()
                 .withNewMetadata()
-                    .withName(userName)
+                    .withName("new-custom-pwd-secret")
                 .endMetadata()
-                .addToData("password", newPassword)
+                .addToData("pwd", newPassword)
                 .build();
 
-        // update the secret
-        kubeClient().namespace(namespaceName).createSecret(passwordSecret);
-        SecretUtils.waitForUserPasswordChange(namespaceName, userName, newPassword);
+        kubeClient(namespaceName).createSecret(newPasswordSecret);
+
+        kafkaUser =  KafkaUserTemplates.scramShaUser(clusterName, userName)
+                .editSpec()
+                    .withNewKafkaUserScramSha512ClientAuthentication()
+                        .withNewPassword()
+                            .withNewValueFrom()
+                                .withNewSecretKeyRef("pwd", "new-custom-pwd-secret", false)
+                            .endValueFrom()
+                        .endPassword()
+                    .endKafkaUserScramSha512ClientAuthentication()
+                .endSpec()
+                .build();
+
+        resourceManager.createResource(extensionContext, kafkaUser);
 
         DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaConnectResources.deploymentName(clusterName), 1, connectSnapshot);
 
