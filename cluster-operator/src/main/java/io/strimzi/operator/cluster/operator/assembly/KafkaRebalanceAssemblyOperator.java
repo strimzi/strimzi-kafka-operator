@@ -71,6 +71,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
 
 /**
@@ -183,7 +184,7 @@ public class KafkaRebalanceAssemblyOperator
      */
     public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret,
                                                            boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
-        return new CruiseControlApiImpl(vertx, ccSecret, ccApiSecret, apiAuthorizationEnabled, apiAuthenticationEnabled);
+        return new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, ccSecret, ccApiSecret, apiAuthorizationEnabled, apiAuthenticationEnabled);
     }
 
     /**

@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -133,7 +134,7 @@ public class KafkaRebalanceStateMachineTest {
                                                          KafkaRebalanceAnnotation initialAnnotation,
                                                          KafkaRebalance kcRebalance) {
 
-        CruiseControlApi client = new CruiseControlApiImpl(vertx, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, true, true);
+        CruiseControlApi client = new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, true, true);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);

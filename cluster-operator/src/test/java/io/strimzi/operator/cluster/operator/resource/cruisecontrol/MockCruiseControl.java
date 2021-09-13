@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ModelUtils;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import org.mockserver.configuration.ConfigurationProperties;
@@ -26,7 +25,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -79,7 +77,7 @@ public class MockCruiseControl {
     public static final Secret CC_API_SECRET = ModelUtils.createSecret(CruiseControlResources.apiSecretName(CLUSTER), NAMESPACE, Labels.EMPTY, null,
             CruiseControl.generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
 
-    private static final Header AUTH_HEADER = getAuthHeader();
+    private static final Header AUTH_HEADER = convertToHeader(CruiseControlApiImpl.getAuthHttpHeader(true, CC_API_SECRET));
 
     /**
      * Sets up and returns the Cruise Control MockSever.
@@ -112,10 +110,12 @@ public class MockCruiseControl {
         return new ClientAndServer(port);
     }
 
-    public static Header getAuthHeader() {
-        String password = new String(Util.decodeFromSecret(CC_API_SECRET, CruiseControl.API_ADMIN_PASSWORD_KEY), StandardCharsets.US_ASCII);
-        HTTPHeader header = CruiseControl.generateAuthHttpHeader(CruiseControl.API_ADMIN_NAME, password);
-        return new Header(header.getName(), header.getValue());
+    private static Header convertToHeader(HTTPHeader httpHeader) {
+        if (httpHeader == null) {
+            return null;
+        } else {
+            return new Header(httpHeader.getName(), httpHeader.getValue());
+        }
     }
 
     private static JsonBody getJsonFromResource(String resource) throws URISyntaxException, IOException {

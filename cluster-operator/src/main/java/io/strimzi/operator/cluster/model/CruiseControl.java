@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.HTTPHeader;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
@@ -229,13 +228,6 @@ public class CruiseControl extends AbstractModel {
 
     public static boolean isApiAuthenticationEnabled(CruiseControlConfiguration config) {
         return isEnabledInConfiguration(config, CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), Boolean.toString(DEFAULT_WEBSERVER_SSL_ENABLED));
-    }
-
-    public static HTTPHeader generateAuthHttpHeader(String user, String password) {
-        String headerName = "Authorization";
-        String headerValue = "Basic " + encodeToBase64(String.join(":", user, password));
-
-        return new HTTPHeader(headerName, headerValue);
     }
 
     public static CruiseControl fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {

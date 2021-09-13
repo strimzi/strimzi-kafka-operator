@@ -20,6 +20,7 @@ import java.net.URISyntaxException;
 
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasEntry;
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasKeys;
+import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
@@ -51,7 +52,7 @@ public class CruiseControlClientTest {
     }
 
     private CruiseControlApi cruiseControlClientProvider(Vertx vertx) {
-        return new CruiseControlApiImpl(vertx, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, API_AUTHORIZATION_ENABLED, API_AUTHENTICATION_ENABLED);
+        return new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, API_AUTHORIZATION_ENABLED, API_AUTHENTICATION_ENABLED);
     }
 
     @Test

@@ -19,6 +19,7 @@ import org.mockserver.integration.ClientAndServer;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
+import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -47,7 +48,7 @@ public class MockCruiseControlTest {
 
     
     private CruiseControlApi cruiseControlClientProvider(Vertx vertx) {
-        return new CruiseControlApiImpl(vertx, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, true, true);
+        return new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, true, true);
     }
 
     private void runTest(Vertx vertx, VertxTestContext context, String userTaskID, int pendingCalls) throws IOException, URISyntaxException {

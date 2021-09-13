@@ -444,7 +444,7 @@ public class CruiseControlTest {
         try {
             assertThat(cc.generateDeployment(true, null, null, null), is(nullValue()));
             assertThat(cc.generateService(), is(nullValue()));
-            assertThat(cc.generateSecret(null, true), is(nullValue()));
+            assertThat(cc.generateSecret(resource, null, true), is(nullValue()));
         } catch (Throwable expected) {
             assertEquals(NullPointerException.class, expected.getClass());
         }

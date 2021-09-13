@@ -25,38 +25,28 @@ import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
 
+import static io.strimzi.operator.cluster.model.CruiseControl.encodeToBase64;
+
 public class CruiseControlApiImpl implements CruiseControlApi {
 
     private static final boolean HTTP_CLIENT_ACTIVITY_LOGGING = false;
-    private static final int HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS = -1; // use default internal HTTP client timeout
+    public static final int HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS = -1; // use default internal HTTP client timeout
     private static final String STATUS_KEY = "Status";
 
     private final Vertx vertx;
     private final long idleTimeout;
-    private Secret ccSecret;
-    private Secret ccApiSecret;
-    private boolean apiAuthorizationEnabled;
     private boolean apiAuthenticationEnabled;
     private HTTPHeader authHttpHeader;
-
-    public CruiseControlApiImpl(Vertx vertx, Secret ccSecret, Secret ccApiSecret, Boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
-        this.vertx = vertx;
-        this.idleTimeout = HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
-        this.ccSecret = ccSecret;
-        this.ccApiSecret = ccApiSecret;
-        this.apiAuthorizationEnabled = apiAuthorizationEnabled;
-        this.apiAuthenticationEnabled = apiAuthenticationEnabled;
-        this.authHttpHeader = getAuthHttpHeader();
-    }
+    private File truststoreFile;
+    private String trustStorePassword;
 
     public CruiseControlApiImpl(Vertx vertx, int idleTimeout, Secret ccSecret, Secret ccApiSecret, Boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
         this.vertx = vertx;
         this.idleTimeout = idleTimeout;
-        this.ccSecret = ccSecret;
-        this.ccApiSecret = ccApiSecret;
-        this.apiAuthorizationEnabled = apiAuthorizationEnabled;
         this.apiAuthenticationEnabled = apiAuthenticationEnabled;
-        this.authHttpHeader = getAuthHttpHeader();
+        this.authHttpHeader = getAuthHttpHeader(apiAuthorizationEnabled, ccApiSecret);
+        this.trustStorePassword = new PasswordGenerator(12).generate();
+        this.truststoreFile = Util.createFileTrustStore(getClass().getName(), "ts", Ca.cert(ccSecret, "cruise-control.crt"), trustStorePassword.toCharArray());
     }
 
     @Override
@@ -65,15 +55,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     public HttpClientOptions getHttpClientOptions() {
-
         if (apiAuthenticationEnabled) {
-            String trustStorePassword = null;
-            File truststoreFile = null;
-
-            PasswordGenerator pg = new PasswordGenerator(12);
-            trustStorePassword = pg.generate();
-            truststoreFile = Util.createFileTrustStore(getClass().getName(), "ts", Ca.cert(ccSecret, "cruise-control.crt"), trustStorePassword.toCharArray());
-
             return new HttpClientOptions()
                 .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING)
                 .setSsl(true)
@@ -89,10 +71,17 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         }
     }
 
-    public HTTPHeader getAuthHttpHeader() {
+    private static HTTPHeader generateAuthHttpHeader(String user, String password) {
+        String headerName = "Authorization";
+        String headerValue = "Basic " + encodeToBase64(String.join(":", user, password));
+
+        return new HTTPHeader(headerName, headerValue);
+    }
+
+    public static HTTPHeader getAuthHttpHeader(boolean apiAuthorizationEnabled, Secret apiSecret) {
         if (apiAuthorizationEnabled) {
-            String password = new String(Util.decodeFromSecret(ccApiSecret, CruiseControl.API_ADMIN_PASSWORD_KEY), StandardCharsets.US_ASCII);
-            HTTPHeader header = CruiseControl.generateAuthHttpHeader(CruiseControl.API_ADMIN_NAME, password);
+            String password = new String(Util.decodeFromSecret(apiSecret, CruiseControl.API_ADMIN_PASSWORD_KEY), StandardCharsets.US_ASCII);
+            HTTPHeader header = generateAuthHttpHeader(CruiseControl.API_ADMIN_NAME, password);
             return header;
         } else {
             return null;
