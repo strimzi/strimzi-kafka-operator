@@ -25,6 +25,7 @@ public abstract class DownloadableArtifact extends Artifact {
 
     private String url;
     private String sha512sum;
+    private Boolean insecure;
 
     @Description("URL of the artifact which will be downloaded. " +
             "Strimzi does not do any security scanning of the downloaded artifacts. " +
@@ -52,5 +53,17 @@ public abstract class DownloadableArtifact extends Artifact {
 
     public void setSha512sum(String sha512sum) {
         this.sha512sum = sha512sum;
+    }
+
+    @Description("By default, connections using TLS are verified to check they are secure. " +
+            "The server certificate used must be valid, trusted, and contain the server name. " +
+            "By setting this option to `true`, all TLS verification is disabled and the artifact will be downloaded, even when the server is considered insecure.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getInsecure() {
+        return insecure;
+    }
+
+    public void setInsecure(Boolean insecure) {
+        this.insecure = insecure;
     }
 }

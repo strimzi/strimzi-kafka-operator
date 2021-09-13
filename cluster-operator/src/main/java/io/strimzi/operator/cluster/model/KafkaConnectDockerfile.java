@@ -282,6 +282,16 @@ public class KafkaConnectDockerfile {
         }
     }
 
+    private Cmd downloadArtifact(String artifactDir, String artifactPath, DownloadableArtifact artifact)  {
+        Cmd cmd = run("mkdir", "-p", artifactDir);
+
+        if (Boolean.TRUE.equals(artifact.getInsecure()))    {
+            return cmd.andRun("curl", "-k", "-L", "--output", artifactPath, artifact.getUrl());
+        } else {
+            return cmd.andRun("curl", "-L", "--output", artifactPath, artifact.getUrl());
+        }
+    }
+
     /**
      * Add command sequence for downloading files and checking their checksums.
      *
@@ -322,8 +332,7 @@ public class KafkaConnectDockerfile {
      * @param artifactPath      Full path of the artifact
      */
     private void addUnmodifiedArtifact(PrintWriter writer, DownloadableArtifact art, String artifactDir, String artifactPath) {
-        Cmd run = run("mkdir", "-p", artifactDir)
-                .andRun("curl", "-L", "--output", artifactPath, art.getUrl());
+        Cmd run = downloadArtifact(artifactDir, artifactPath, art);
 
         if (art.getSha512sum() != null && !art.getSha512sum().isEmpty()) {
             // Checksum exists => we need to check it
@@ -350,8 +359,7 @@ public class KafkaConnectDockerfile {
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".tgz";
 
-        Cmd run = run("mkdir", "-p", artifactDir)
-                .andRun("curl", "-L", "--output", archivePath, tgz.getUrl());
+        Cmd run = downloadArtifact(artifactDir, archivePath, tgz);
 
         if (tgz.getSha512sum() != null && !tgz.getSha512sum().isEmpty()) {
             // Checksum exists => we need to check it
@@ -380,8 +388,7 @@ public class KafkaConnectDockerfile {
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".zip";
 
-        Cmd run = run("mkdir", "-p", artifactDir)
-                .andRun("curl", "-L", "--output", archivePath, zip.getUrl());
+        Cmd run = downloadArtifact(artifactDir, archivePath, zip);
 
         if (zip.getSha512sum() != null && !zip.getSha512sum().isEmpty()) {
             // Checksum exists => we need to check it
