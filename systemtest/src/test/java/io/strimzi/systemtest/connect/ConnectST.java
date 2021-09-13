@@ -51,6 +51,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -1236,6 +1237,79 @@ class ConnectST extends AbstractST {
         assertThat(kafkaConnect.getStatus().getObservedGeneration(), is(2L));
         assertThat(kafkaConnect.getMetadata().getLabels().toString(), containsString("another=label"));
         assertThat(kafkaConnect.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
+    }
+
+    @ParallelNamespaceTest
+    @Tag(INTERNAL_CLIENTS_USED)
+    // changing the password in secret should cause the RU of connect pod
+    void testKafkaConnectWithPlainAndScramShaAuthenticationRolledAfterPasswordChanged(ExtensionContext extensionContext) {
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+
+        // Use a Kafka with plain listener disabled
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                        .withPort(9092)
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withTls(false)
+                        .withAuth(new KafkaListenerAuthenticationScramSha512())
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build());
+
+        KafkaUser kafkaUser =  KafkaUserTemplates.scramShaUser(clusterName, userName).build();
+
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, userName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
+                .withNewSpec()
+                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(clusterName))
+                    .withNewKafkaClientAuthenticationScramSha512()
+                        .withUsername(userName)
+                        .withPasswordSecret(new PasswordSecretSourceBuilder()
+                            .withSecretName(userName)
+                            .withPassword("password")
+                            .build())
+                    .endKafkaClientAuthenticationScramSha512()
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .withVersion(Environment.ST_KAFKA_VERSION)
+                    .withReplicas(1)
+                .endSpec()
+                .build());
+
+        final String kafkaConnectPodName = kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespaceName, kafkaConnectPodName);
+
+        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaConnectResources.deploymentName(clusterName));
+        String newPassword = "bmVjb0ppbmVob05lelNwcmF2bnlQYXNzd29yZA==";
+        Secret passwordSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(userName)
+                .endMetadata()
+                .addToData("password", newPassword)
+                .build();
+
+        // update the secret
+        kubeClient().namespace(namespaceName).createSecret(passwordSecret);
+        SecretUtils.waitForUserPasswordChange(namespaceName, userName, newPassword);
+
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaConnectResources.deploymentName(clusterName), 1, connectSnapshot);
+
+        final String kafkaConnectPodNameAfterRU = kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespaceName, kafkaConnectPodNameAfterRU);
     }
 
     @BeforeAll
