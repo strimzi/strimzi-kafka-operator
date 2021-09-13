@@ -1982,7 +1982,7 @@ spec:
                                   and `maven`.
                               url:
                                 type: string
-                                pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
+                                pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]$
                                 description: URL of the artifact which will be downloaded.
                                   Strimzi does not do any security scanning of the
                                   downloaded artifacts. For security reasons, you
