@@ -11,9 +11,9 @@ This procedure describes how to install your own CA certificates and keys instea
 The Cluster Operator automatically generates and renews the following secrets:
 
 `_CLUSTER-NAME_-cluster-ca`:: The cluster secret that contains the private key for the cluster CA.
-`_CLUSTER-NAME_-cluster-ca-cert`:: The cluster secret contains a cluster CA certificate. The certificate contains a public key to validate the identity of Kafka brokers.
+`_CLUSTER-NAME_-cluster-ca-cert`:: The cluster secret that contains a cluster CA certificate. The certificate contains a public key to validate the identity of Kafka brokers.
 `_CLUSTER-NAME_-clients-ca`:: The client secret that contains the private key for the client CA.
-`_CLUSTER-NAME_-clients-ca-cert`:: The client secret contains a client CA certificate. The certificate contains a public key to validate the identity of clients accessing the Kafka brokers.
+`_CLUSTER-NAME_-clients-ca-cert`:: The client secret that contains a client CA certificate. The certificate contains a public key to validate the identity of clients accessing the Kafka brokers.
 
 Strimzi uses these secrets by default.
 
