@@ -37,31 +37,26 @@ The release artifacts include an `examples` directory that contains the configur
 examples
 ├── user <1>
 ├── topic <2>
-├── templates
-│   ├── topic-operator <3>
-│   └── cluster-operator <4>
-├── security <5>
+├── security <3>
 │   ├── tls-auth
 │   ├── scram-sha-512-auth
 │   └── keycloak-authorization
-├── mirror-maker <6>
-├── metrics <7>
-├── kafka <8>
-├── cruise-control <9>
-├── connect <10>
-└── bridge <11>
+├── mirror-maker <4>
+├── metrics <5>
+├── kafka <6>
+├── cruise-control <7>
+├── connect <8>
+└── bridge <9>
 --
 <1> `KafkaUser` custom resource configuration, which is managed by the User Operator.
 <2> `KafkaTopic` custom resource configuration, which is managed by Topic Operator.
-<3> Topic Operator template configuration for creating topics.
-<4> Cluster Operator template configuration for deploying Kafka components. Each supported Kafka component has a template configuration file. Includes templates for an ephemeral or persistent Kafka deployment.
-<5> Authentication and authorization configuration for Kafka components. Includes example configuration for TLS and SCRAM-SHA-512 authentication. The Keycloak example includes `Kafka` custom resource configuration and a Keycloak realm specification. You can use the example to try Keycloak authorization services.
-<6> `Kafka` custom resource configuration for a deployment of Mirror Maker. Includes example configuration for replication policy and synchronization frequency.
-<7> xref:ref-metrics-config-files-{context}[Metrics configuration], including Prometheus installation and Grafana dashboard files.
-<8> `Kafka` custom resource configuration for a deployment of Kafka. Includes example configuration for an ephemeral or persistent single or multi-node deployment.
-<9> `Kafka` custom resource with a deployment configuration for Cruise Control. Includes `KafkaRebalance` custom resources to generate optimizations proposals from Cruise Control, with example configurations to use the default or user optimization goals.
-<10> `KafkaConnect` and `KafkaConnector` custom resource configuration for a deployment of Kafka Connect. Includes example configuration for a single or multi-node deployment.
-<11> `KafkaBridge` custom resource configuration for a deployment of Kafka Bridge.
+<3> Authentication and authorization configuration for Kafka components. Includes example configuration for TLS and SCRAM-SHA-512 authentication. The Keycloak example includes `Kafka` custom resource configuration and a Keycloak realm specification. You can use the example to try Keycloak authorization services.
+<4> `Kafka` custom resource configuration for a deployment of Mirror Maker. Includes example configuration for replication policy and synchronization frequency.
+<5> xref:ref-metrics-config-files-{context}[Metrics configuration], including Prometheus installation and Grafana dashboard files.
+<6> `Kafka` custom resource configuration for a deployment of Kafka. Includes example configuration for an ephemeral or persistent single or multi-node deployment.
+<7> `Kafka` custom resource with a deployment configuration for Cruise Control. Includes `KafkaRebalance` custom resources to generate optimizations proposals from Cruise Control, with example configurations to use the default or user optimization goals.
+<8> `KafkaConnect` and `KafkaConnector` custom resource configuration for a deployment of Kafka Connect. Includes example configuration for a single or multi-node deployment.
+<9> `KafkaBridge` custom resource configuration for a deployment of Kafka Bridge.
 
 [role="_additional-resources"]
 .Additional resources
