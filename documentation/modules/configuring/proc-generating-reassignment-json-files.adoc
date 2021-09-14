@@ -61,7 +61,7 @@ spec:
 * You have a `KafkaUser` configured with ACL rules that specify permission to produce and consume topics from the Kafka brokers.
 +
 --
-.Example Kafka user configuration with ACL rules to allow all operations on `my-topic` and `my-cluster`
+.Example Kafka user configuration with ACL rules to allow operations on `my-topic` and `my-cluster`
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -80,13 +80,25 @@ spec:
           type: topic
           name: my-topic
           patternType: literal
-        operation: All
+        operation: Write
+        host: "*"
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Create
+        host: "*"
+      - resource:
+          type: topic
+          name: my-topic
+          patternType: literal
+        operation: Describe
         host: "*"
       - resource:
           type: cluster
           name: my-cluster
           patternType: literal
-        operation: All
+        operation: Alter
         host: "*"
       # ...
   # ...

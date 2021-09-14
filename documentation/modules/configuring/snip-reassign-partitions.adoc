@@ -13,7 +13,8 @@ kubectl cp reassignment.json kafka-client-shell:/tmp/reassignment.json
 [source,shell,subs=+quotes]
 ----
 bin/kafka-reassign-partitions.sh --bootstrap-server
- _<cluster_name>_-kafka-bootstrap:9093 --command-config \
+ _<cluster_name>_-kafka-bootstrap:9093 \
+ --command-config /tmp/config.properties \
  --reassignment-json-file /tmp/reassignment.json \
  --execute
 ----
@@ -26,7 +27,8 @@ If you are going to throttle replication, you can also pass the `--throttle` opt
 [source,shell,subs=+quotes]
 ----
 bin/kafka-reassign-partitions.sh --bootstrap-server
-  _<cluster_name>_-kafka-bootstrap:9093 --command-config \
+  _<cluster_name>_-kafka-bootstrap:9093 \
+  --command-config /tmp/config.properties \
   --reassignment-json-file /tmp/reassignment.json \
   --throttle 5000000 \
   --execute
@@ -42,7 +44,8 @@ If you need to change the throttle during reassignment, you can use the same com
 [source,shell,subs=+quotes]
 ----
 bin/kafka-reassign-partitions.sh --bootstrap-server
-  _<cluster_name>_-kafka-bootstrap:9093 --command-config \
+  _<cluster_name>_-kafka-bootstrap:9093 \
+  --command-config /tmp/config.properties \
   --reassignment-json-file /tmp/reassignment.json \
   --throttle 10000000 \
   --execute
@@ -54,9 +57,10 @@ This is the same command as the previous step, but with the `--verify` option in
 [source,shell,subs=+quotes]
 ----
 bin/kafka-reassign-partitions.sh --bootstrap-server
- _<cluster_name>_-kafka-bootstrap:9093 --command-config \
- --reassignment-json-file /tmp/reassignment.json
- --verify
+  _<cluster_name>_-kafka-bootstrap:9093 \
+  --command-config /tmp/config.properties \
+  --reassignment-json-file /tmp/reassignment.json \
+  --verify
 ----
 +
 The reassignment has finished when the `--verify` command reports that each of the partitions being moved has completed successfully.
