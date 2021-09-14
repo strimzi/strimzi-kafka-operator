@@ -4,7 +4,14 @@
  */
 package io.strimzi.systemtest.resources.operator;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
@@ -37,10 +44,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Stack;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -50,7 +55,6 @@ public class SetupClusterOperator {
     public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../packaging/install/cluster-operator";
 
     private KubeClusterResource cluster = KubeClusterResource.getInstance();
-    private Stack<String> clusterOperatorConfigs = new Stack<>();
     private HelmResource helmResource;
     private OlmResource olmResource;
 
@@ -304,7 +308,7 @@ public class SetupClusterOperator {
      * Perform application of ServiceAccount, Roles and CRDs needed for proper cluster operator deployment.
      * Configuration files are loaded from packaging/install/cluster-operator directory.
      */
-    public void applyClusterOperatorInstallFiles(String namespace) {
+    public <T extends HasMetadata> void applyClusterOperatorInstallFiles(String namespace) {
         List<File> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted()
             .filter(File::isFile)
             .filter(file ->
@@ -317,9 +321,28 @@ public class SetupClusterOperator {
                 createFile = switchClusterRolesToRolesIfNeeded(createFile);
             }
 
-            LOGGER.info("Creating configuration file: {}", createFile.getAbsolutePath());
-            cmdKubeClient().namespace(namespace).createOrReplace(createFile);
-            clusterOperatorConfigs.push(createFile.getPath());
+            if (operatorFile.getName().contains("ClusterRole")) {
+                ClusterRole clusterRole = TestUtils.configFromYaml(createFile, ClusterRole.class);
+                ResourceManager.getInstance().createResource(extensionContext, clusterRole);
+            } else if (operatorFile.getName().contains("ServiceAccount")) {
+                ServiceAccount serviceAccount = TestUtils.configFromYaml(createFile, ServiceAccount.class);
+                ResourceManager.getInstance().createResource(extensionContext, new ServiceAccountBuilder(serviceAccount)
+                    .editMetadata()
+                        .withNamespace(namespace)
+                    .endMetadata()
+                    .build());
+            } else if (operatorFile.getName().contains("ConfigMap")) {
+                ConfigMap configMap = TestUtils.configFromYaml(createFile, ConfigMap.class);
+                ResourceManager.getInstance().createResource(extensionContext, new ConfigMapBuilder(configMap)
+                    .editMetadata()
+                        .withNamespace(namespace)
+                    .endMetadata()
+                    .build());
+            } else {
+                // CRDs
+                CustomResourceDefinition customResourceDefinition = TestUtils.configFromYaml(createFile, CustomResourceDefinition.class);
+                ResourceManager.getInstance().createResource(extensionContext, customResourceDefinition);
+            }
         }
     }
 
@@ -410,17 +433,6 @@ public class SetupClusterOperator {
         ClusterRoleBindingResource.clusterRoleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
     }
 
-    /**
-     * Delete ServiceAccount, Roles and CRDs from kubernetes cluster.
-     */
-    public void deleteClusterOperatorInstallFiles() {
-        while (!clusterOperatorConfigs.empty()) {
-            String clusterOperatorConfig = clusterOperatorConfigs.pop();
-            LOGGER.info("Deleting configuration file: {}", clusterOperatorConfig);
-            cmdKubeClient().delete(clusterOperatorConfig);
-        }
-    }
-
     public void unInstall() {
         LOGGER.info(String.join("", Collections.nCopies(76, "=")));
         LOGGER.info("Un-installing cluster operator from {} namespace", Constants.INFRA_NAMESPACE);
@@ -433,16 +445,13 @@ public class SetupClusterOperator {
         } else if (Environment.isOlmInstall()) {
             olmResource.delete();
         } else {
-//          clear all resources related to the extension context
+            // clear all resources related to the extension context
             try {
                 ResourceManager.getInstance().deleteResources(BeforeAllOnce.getSharedExtensionContext());
             } catch (Exception e) {
                 Thread.currentThread().interrupt();
                 e.printStackTrace();
             }
-
-            // Clear cluster from all created namespaces and configurations files for cluster operator.
-            deleteClusterOperatorInstallFiles();
 
             KubeClusterResource.getInstance().deleteNamespace(
                 CollectorElement.createCollectorElement(testClassName, testMethodName), Constants.INFRA_NAMESPACE);
@@ -470,7 +479,6 @@ public class SetupClusterOperator {
         return operationTimeout == that.operationTimeout &&
             reconciliationInterval == that.reconciliationInterval &&
             Objects.equals(cluster, that.cluster) &&
-            Objects.equals(clusterOperatorConfigs, that.clusterOperatorConfigs) &&
             Objects.equals(helmResource, that.helmResource) &&
             Objects.equals(olmResource, that.olmResource) &&
             Objects.equals(clusterOperatorName, that.clusterOperatorName) &&
@@ -483,7 +491,7 @@ public class SetupClusterOperator {
     }
     @Override
     public int hashCode() {
-        return Objects.hash(cluster, clusterOperatorConfigs, helmResource, olmResource, extensionContext,
+        return Objects.hash(cluster, helmResource, olmResource, extensionContext,
             clusterOperatorName, namespaceInstallTo, namespaceToWatch, bindingsNamespaces, operationTimeout,
             extraEnvVars, extraLabels, clusterOperatorRBACType);
     }

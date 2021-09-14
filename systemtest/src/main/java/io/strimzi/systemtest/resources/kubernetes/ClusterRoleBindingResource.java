@@ -14,6 +14,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+
 public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBinding> {
 
     private static final Logger LOGGER = LogManager.getLogger(ClusterRoleBindingResource.class);
@@ -24,15 +26,16 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
     }
     @Override
     public ClusterRoleBinding get(String namespace, String name) {
-        return ResourceManager.kubeClient().namespace(namespace).getClusterRoleBinding(name);
+        return kubeClient().namespace("default").getClusterRoleBinding(name);
     }
     @Override
     public void create(ClusterRoleBinding resource) {
-        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createOrReplaceClusterRoleBinding(resource);
+        kubeClient().createOrReplaceClusterRoleBinding(resource);
     }
     @Override
     public void delete(ClusterRoleBinding resource) {
-        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteClusterRoleBinding(resource);
+        resource.getMetadata().setNamespace("default");
+        kubeClient().deleteClusterRoleBinding(resource);
     }
     @Override
     public boolean waitForReadiness(ClusterRoleBinding resource) {

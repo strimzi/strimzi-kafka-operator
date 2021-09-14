@@ -121,6 +121,14 @@ public class KubeClient {
     // ---------> CONFIG MAP <---------
     // ================================
 
+    public ConfigMap createOrReplaceConfigMap(ConfigMap configMap) {
+        return client.configMaps().inNamespace(configMap.getMetadata().getNamespace()).create(configMap);
+    }
+
+    public Boolean deleteConfigMap(ConfigMap configMap) {
+        return client.configMaps().inNamespace(configMap.getMetadata().getNamespace()).delete(configMap);
+    }
+
     public void deleteConfigMap(String configMapName) {
         client.configMaps().inNamespace(getNamespace()).withName(configMapName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
@@ -749,6 +757,18 @@ public class KubeClient {
         return listServiceAccounts(getNamespace());
     }
 
+    public ServiceAccount createOrReplaceServiceAccount(ServiceAccount serviceAccount) {
+        return client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).createOrReplace(serviceAccount);
+    }
+
+    public Boolean deleteServiceAccount(ServiceAccount serviceAccount) {
+        return client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).delete(serviceAccount);
+    }
+
+    public ServiceAccount getServiceAccount(String namespaceName, String name) {
+        return client.serviceAccounts().inNamespace(namespaceName).withName(name).get();
+    }
+
     // =========================
     // ---------> LOG <---------
     // =========================
@@ -807,6 +827,18 @@ public class KubeClient {
 
     public List<ClusterRole> listClusterRoles() {
         return client.rbac().clusterRoles().list().getItems();
+    }
+
+    public ClusterRole createOrReplaceClusterRoles(ClusterRole clusterRole) {
+        return client.rbac().clusterRoles().createOrReplace(clusterRole);
+    }
+
+    public Boolean deleteClusterRole(ClusterRole clusterRole) {
+        return client.rbac().clusterRoles().delete(clusterRole);
+    }
+
+    public ClusterRole getClusterRole(String name) {
+        return client.rbac().clusterRoles().withName(name).get();
     }
 
     // ==================================
@@ -911,7 +943,21 @@ public class KubeClient {
         client.network().networkPolicies().inNamespace(getNamespace()).withName(name).delete();
     }
 
+    // =====================================
+    // ---> CUSTOM RESOURCE DEFINITIONS <---
+    // =====================================
 
+    public CustomResourceDefinition createOrReplaceCustomResourceDefinition(CustomResourceDefinition resourceDefinition) {
+        return client.apiextensions().v1().customResourceDefinitions().createOrReplace(resourceDefinition);
+    }
+
+    public Boolean deleteCustomResourceDefinition(CustomResourceDefinition resourceDefinition) {
+        return client.apiextensions().v1().customResourceDefinitions().delete(resourceDefinition);
+    }
+
+    public CustomResourceDefinition getCustomResourceDefinition(String name) {
+        return client.apiextensions().v1().customResourceDefinitions().withName(name).get();
+    }
 
     // ======================================
     // ---------> CLUSTER SPECIFIC <---------

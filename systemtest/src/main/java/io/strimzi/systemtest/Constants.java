@@ -86,7 +86,11 @@ public interface Constants {
     String DEPLOYMENT = "Deployment";
     String DEPLOYMENT_TYPE = "deployment-type";
     String SERVICE = "Service";
+    String CONFIG_MAP = "ConfigMap";
+    String SERVICE_ACCOUNT = "ServiceAccount";
+    String CLUSTER_ROLE = "ClusterRole";
     String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
+    String CUSTOM_RESOURCE_DEFINITION = "CustomResourceDefinition";
     String ROLE_BINDING = "RoleBinding";
     String ROLE = "Role";
     String DEPLOYMENT_CONFIG = "DeploymentConfig";
