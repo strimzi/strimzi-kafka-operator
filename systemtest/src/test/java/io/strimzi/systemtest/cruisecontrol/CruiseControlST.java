@@ -131,12 +131,12 @@ public class CruiseControlST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .endMetadata()
             .build());
         resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(INFRA_NAMESPACE)
             .endMetadata()
             .build());
 
@@ -192,7 +192,7 @@ public class CruiseControlST extends AbstractST {
 
         resourceManager.createResource(extensionContext,  KafkaRebalanceTemplates.kafkaRebalance(clusterName)
             .editOrNewSpec()
-                .withExcludedTopics("excluded-.*")
+            .withExcludedTopics("excluded-.*")
             .endSpec()
             .build());
 
@@ -216,8 +216,8 @@ public class CruiseControlST extends AbstractST {
 
         final String replicaMovementStrategies = "default.replica.movement.strategies";
         final String newReplicaMovementStrategies = "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeSmallReplicaMovementStrategy," +
-                "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeLargeReplicaMovementStrategy," +
-                "com.linkedin.kafka.cruisecontrol.executor.strategy.PostponeUrpReplicaMovementStrategy";
+            "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeLargeReplicaMovementStrategy," +
+            "com.linkedin.kafka.cruisecontrol.executor.strategy.PostponeUrpReplicaMovementStrategy";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(kafkaClientsName).build());
