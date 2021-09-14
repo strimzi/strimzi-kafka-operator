@@ -66,7 +66,7 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Pattern("[0-9]+([KMG]i?)?B/s")
+    @Pattern("^[0-9]+([KMG]i?)?B/s$")
     @Description("Broker capacity for inbound network throughput in bytes per second, for example, 10000KB/s")
     public String getInboundNetwork() {
         return inboundNetwork;
@@ -77,7 +77,7 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
     }
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Pattern("[0-9]+([KMG]i?)?B/s")
+    @Pattern("^[0-9]+([KMG]i?)?B/s$")
     @Description("Broker capacity for outbound network throughput in bytes per second, for example 10000KB/s")
     public String getOutboundNetwork() {
         return outboundNetwork;

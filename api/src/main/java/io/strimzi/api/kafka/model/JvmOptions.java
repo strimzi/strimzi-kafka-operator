@@ -37,7 +37,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @JsonProperty("-Xmx")
-    @Pattern("[0-9]+[mMgG]?")
+    @Pattern("^[0-9]+[mMgG]?$")
     @Description("-Xmx option to to the JVM")
     public String getXmx() {
         return xmx;
@@ -48,7 +48,7 @@ public class JvmOptions implements UnknownPropertyPreserving, Serializable {
     }
 
     @JsonProperty("-Xms")
-    @Pattern("[0-9]+[mMgG]?")
+    @Pattern("^[0-9]+[mMgG]?$")
     @Description("-Xms option to to the JVM")
     public String getXms() {
         return xms;
