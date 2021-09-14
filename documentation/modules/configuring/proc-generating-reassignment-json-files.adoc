@@ -1,3 +1,6 @@
+// Module included in the following assemblies:
+//
+// configuring/assembly-scaling-clusters.adoc
 
 [id='proc-generating-reassignment-json-files-{context}']
 = Generating reassignment JSON files
@@ -58,7 +61,7 @@ spec:
 * You have a `KafkaUser` configured with ACL rules that specify permission to produce and consume topics from the Kafka brokers.
 +
 --
-.Example Kafka user configuration with ACL rules for producing and consuming from `my-topic`
+.Example Kafka user configuration with ACL rules to allow all operations on `my-topic` and `my-cluster`
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -77,20 +80,15 @@ spec:
           type: topic
           name: my-topic
           patternType: literal
-        operation: Write
+        operation: All
         host: "*"
       - resource:
-          type: topic
-          name: my-topic
+          type: cluster
+          name: my-cluster
           patternType: literal
-        operation: Create
+        operation: All
         host: "*"
-      - resource:
-          type: topic
-          name: my-topic
-          patternType: literal
-        operation: Describe
-        host: "*"
+      # ...
   # ...
 ----
 <1> User authentication mechanism defined as mutual `tls`.
@@ -101,48 +99,48 @@ NOTE: Permission for a `Describe` operation is required as a minimum for TLS acc
 
 .Procedure
 
-. Extract the cluster CA certificate and password from the `_CLUSTER-NAME_-cluster-ca-cert` Secret of the Kafka cluster.
+. Extract the cluster CA certificate and password from the `_<cluster_name>_-cluster-ca-cert` Secret of the Kafka cluster.
 +
 [source,shell,subs="+quotes"]
-kubectl get secret _CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.p12}' | base64 -d > ca.p12
+kubectl get secret _<cluster_name>_-cluster-ca-cert -o jsonpath='{.data.ca\.p12}' | base64 -d > ca.p12
 +
 [source,shell,subs="+quotes"]
-kubectl get secret _CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.password}' | base64 -d > ca.password
+kubectl get secret _<cluster_name>_-cluster-ca-cert -o jsonpath='{.data.ca\.password}' | base64 -d > ca.password
 +
-Replace _CLUSTER-NAME_ with the name of the Kafka cluster.
-When you deploy Kafka using the `Kafka` resource, a Secret with the cluster CA certificate is created with the Kafka cluster name (`_CLUSTER-NAME_-cluster-ca-cert`).
+Replace _<cluster_name>_ with the name of the Kafka cluster.
+When you deploy Kafka using the `Kafka` resource, a Secret with the cluster CA certificate is created with the Kafka cluster name (`_<cluster_name>_-cluster-ca-cert`).
 For example, `my-cluster-cluster-ca-cert`.
 
 . Run a new interactive pod container using the Strimzi Kafka image to connect to a running Kafka broker.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl run -ti --restart=Never --image={DockerKafkaImageCurrent} _INTERACTIVE-POD-NAME_ -- /bin/sh -c "sleep 3600"
+kubectl run -ti --restart=Never --image={DockerKafkaImageCurrent} _<interactive_pod_name>_ -- /bin/sh -c "sleep 3600"
 ----
 +
-Replace _INTERACTIVE-POD-NAME_ with the name of the pod.
+Replace _<interactive_pod_name>_ with the name of the pod.
 
 . Copy the cluster CA certificate to the interactive pod container.
 +
 [source,shell,subs=+quotes]
-kubectl cp ca.p12 _INTERACTIVE-POD-NAME_:/tmp
+kubectl cp ca.p12 _<interactive_pod_name>_:/tmp
 
 . Extract the user CA certificate and password from the Secret of the Kafka user that has permission to access the Kafka brokers.
 +
 [source,shell,subs=+quotes]
-kubectl get secret _KAFKA-USER_ -o jsonpath='{.data.user\.p12}' | base64 -d > user.p12
+kubectl get secret _<kafka_user>_ -o jsonpath='{.data.user\.p12}' | base64 -d > user.p12
 +
 [source,shell,subs=+quotes]
-kubectl get secret _KAFKA-USER_ -o jsonpath='{.data.user\.password}' | base64 -d > user.password
+kubectl get secret _<kafka_user>_ -o jsonpath='{.data.user\.password}' | base64 -d > user.password
 +
-Replace _KAFKA-USER_ with the name of the Kafka user.
+Replace _<kafka_user>_ with the name of the Kafka user.
 When you create a Kafka user using the `KafkaUser` resource, a Secret with the user CA certificate is created with the Kafka user name.
 For example, `my-user`.
 
 . Copy the user CA certificate to the interactive pod container.
 +
 [source,shell,subs=+quotes]
-kubectl cp user.p12 _INTERACTIVE-POD-NAME_:/tmp
+kubectl cp user.p12 _<interactive_pod_name>_:/tmp
 +
 The CA certificates allow the interactive pod container to connect to the Kafka broker using TLS.
 
@@ -150,14 +148,14 @@ The CA certificates allow the interactive pod container to connect to the Kafka 
 +
 [source,properties,subs="+quotes,attributes"]
 ----
-bootstrap.servers=__KAFKA-CLUSTER-NAME__-kafka-bootstrap:9093 <1>
+bootstrap.servers=__<kafka_cluster_name>__-kafka-bootstrap:9093 <1>
 security.protocol=SSL <2>
 ssl.truststore.location=/tmp/ca.p12 <3>
-ssl.truststore.password=__TRUSTSTORE-PASSWORD__ <4>
+ssl.truststore.password=__<truststore_password>__ <4>
 ssl.keystore.location=/tmp/user.p12 <5>
-ssl.keystore.password=__KEYSTORE-PASSWORD__ <6>
+ssl.keystore.password=__<keystore_password>__ <6>
 ----
-<1> The bootstrap server address to connect to the Kafka cluster. Use your own Kafka cluster name to replace _KAFKA-CLUSTER-NAME_.
+<1> The bootstrap server address to connect to the Kafka cluster. Use your own Kafka cluster name to replace _<kafka_cluster_name>_.
 <2> The security protocol option when using TLS for encryption.
 <3> The truststore location contains the public key certificate (`ca.p12`) for the Kafka cluster.
 <4> The password for accessing the truststore.
@@ -167,7 +165,7 @@ ssl.keystore.password=__KEYSTORE-PASSWORD__ <6>
 . Copy the `config.properties` file to the interactive pod container.
 +
 [source,shell,subs=+quotes]
-kubectl cp config.properties _INTERACTIVE-POD-NAME_:/tmp/config.properties
+kubectl cp config.properties _<interactive_pod_name>_:/tmp/config.properties
 
 . Prepare a JSON file named `topics.json` that specifies the topics to move.
 +
@@ -188,14 +186,14 @@ Specify topic names as a comma-separated list.
 . Copy the `_topics.json_` file to the interactive pod container.
 +
 [source,shell,subs=+quotes]
-kubectl cp topics.json _INTERACTIVE-POD-NAME_:/tmp/topics.json
+kubectl cp topics.json _<interactive_pod_name>_:/tmp/topics.json
 
 . Start a shell process in the interactive pod container.
 +
 [source,shell,subs=+quotes]
-kubectl exec -n _NAMESPACE_ -ti _INTERACTIVE-POD-NAME_ /bin/bash
+kubectl exec -n _<namespace>_ -ti _<interactive_pod_name>_ /bin/bash
 +
-Replace _NAMESPACE_ with the Kubernetes namespace where the pod is running.
+Replace _<namespace>_ with the Kubernetes namespace where the pod is running.
 
 . Use the `kafka-reassign-partitions.sh` command to generate the reassignment JSON.
 +
