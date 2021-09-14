@@ -493,8 +493,8 @@ class ConnectBuilderST extends AbstractST {
         final String consumerName = mapWithKafkaClientNames.get(extensionContext.getDisplayName()) + "-consumer";
 
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(SHARED_KAFKA_CLUSTER_NAME, topicName).build(),
-            KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, SHARED_KAFKA_CLUSTER_NAME, 1, false)
+            KafkaTopicTemplates.topic(INFRA_NAMESPACE, topicName).build(),
+            KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, INFRA_NAMESPACE, 1, false)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -525,14 +525,14 @@ class ConnectBuilderST extends AbstractST {
 
         KafkaBasicExampleClients kafkaClient = new KafkaBasicExampleClients.Builder()
             .withConsumerName(consumerName)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(SHARED_KAFKA_CLUSTER_NAME))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(INFRA_NAMESPACE))
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
             .withDelayMs(0)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClient.consumerStrimzi().build());
-        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 
     private String getPluginFileNameFromConnectPod(String connectPodName) {
