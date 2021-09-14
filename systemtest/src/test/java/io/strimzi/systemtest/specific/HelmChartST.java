@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.HELM;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 
 @Tag(HELM)
@@ -32,8 +33,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 class HelmChartST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);
-    static final String NAMESPACE = "helm-chart-cluster-test";
-    private HelmResource helmResource = new HelmResource(NAMESPACE);
+    private HelmResource helmResource = new HelmResource(INFRA_NAMESPACE);
 
     @IsolatedTest
     void testStrimziComponentsViaHelmChart(ExtensionContext extensionContext) {
@@ -64,12 +64,13 @@ class HelmChartST extends AbstractST {
         install.unInstall();
 
         LOGGER.info("Creating resources before the test class");
-        cluster.createNamespace(NAMESPACE);
+        cluster.createNamespace(INFRA_NAMESPACE);
         helmResource.create(extensionContext);
     }
 
     @AfterAll
     protected void tearDownEnvironmentAfterAll() {
+        helmResource.delete();
         cluster.deleteNamespaces();
     }
 }

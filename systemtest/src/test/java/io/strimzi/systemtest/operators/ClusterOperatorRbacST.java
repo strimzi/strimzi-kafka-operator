@@ -97,9 +97,6 @@ public class ClusterOperatorRbacST extends AbstractST {
 
         LOGGER.info("Deploying Kafka: {}, which should not be deployed and error should be present in CR status message", clusterName);
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
-            .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
-            .endMetadata()
             .editOrNewSpec()
                 .editOrNewKafka()
                     .withNewRack()

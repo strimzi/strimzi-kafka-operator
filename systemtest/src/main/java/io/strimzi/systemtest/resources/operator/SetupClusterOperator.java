@@ -433,9 +433,16 @@ public class SetupClusterOperator {
         } else if (Environment.isOlmInstall()) {
             olmResource.delete();
         } else {
+//          clear all resources related to the extension context
+            try {
+                ResourceManager.getInstance().deleteResources(BeforeAllOnce.getSharedExtensionContext());
+            } catch (Exception e) {
+                Thread.currentThread().interrupt();
+                e.printStackTrace();
+            }
+
             // Clear cluster from all created namespaces and configurations files for cluster operator.
             deleteClusterOperatorInstallFiles();
-            KubeClusterResource.getInstance().deleteCustomResources(BeforeAllOnce.getSharedExtensionContext());
 
             KubeClusterResource.getInstance().deleteNamespace(
                 CollectorElement.createCollectorElement(testClassName, testMethodName), Constants.INFRA_NAMESPACE);

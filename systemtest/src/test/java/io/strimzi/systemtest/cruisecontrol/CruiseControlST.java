@@ -106,7 +106,7 @@ public class CruiseControlST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
                 .editMetadata()
-                .withNamespace(NAMESPACE)
+                .withNamespace(INFRA_NAMESPACE)
                 .endMetadata()
                 .editOrNewSpec()
                     .editCruiseControl()
@@ -116,14 +116,13 @@ public class CruiseControlST extends AbstractST {
                 .endSpec()
                 .build());
         resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName)
-                .editMetadata()
-                .withNamespace(NAMESPACE)
-                .endMetadata()
-                .build());
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
+            .build());
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(NAMESPACE, clusterName, KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(INFRA_NAMESPACE, clusterName, KafkaRebalanceState.ProposalReady);
     }
-
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ACCEPTANCE)
