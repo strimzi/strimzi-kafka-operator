@@ -117,7 +117,7 @@ For example, `my-cluster-cluster-ca-cert`.
 +
 [source,shell,subs="+quotes,attributes"]
 ----
-kubectl run -ti --restart=Never --image={DockerKafkaImageCurrent} _INTERACTIVE-POD-NAME_ -- /bin/sh -c "sleep 3600"
+kubectl run --restart=Never --image={DockerKafkaImageCurrent} _INTERACTIVE-POD-NAME_ -- /bin/sh -c "sleep 3600"
 ----
 +
 Replace _INTERACTIVE-POD-NAME_ with the name of the pod.
