@@ -5,11 +5,13 @@
 [id='deploying-kafka-cluster-{context}']
 = Deploying the Kafka cluster
 
+[role="_abstract"]
 This procedure shows how to deploy a Kafka cluster to your Kubernetes using the Cluster Operator.
 
 The deployment uses a YAML file to provide the specification to create a `Kafka` resource.
 
-Strimzi provides example YAMLs files for deployment in `examples/kafka/`:
+Strimzi provides xref:deploy-examples-{context}[example configuration files].
+For a Kafka deployment, the following examples are provided:
 
 `kafka-persistent.yaml`:: Deploys a persistent cluster with three ZooKeeper and three Kafka nodes.
 `kafka-jbod.yaml`:: Deploys a persistent cluster with three ZooKeeper and three Kafka nodes (each using multiple persistent volumes).
@@ -17,7 +19,7 @@ Strimzi provides example YAMLs files for deployment in `examples/kafka/`:
 `kafka-ephemeral.yaml`:: Deploys an ephemeral cluster with three ZooKeeper and three Kafka nodes.
 `kafka-ephemeral-single.yaml`:: Deploys an ephemeral cluster with three ZooKeeper nodes and a single Kafka node.
 
-In this procedure, we use the examples for an _ephemeral_ and _persistent_ Kafka cluster deployment:
+In this procedure, we use the examples for an _ephemeral_ and _persistent_ Kafka cluster deployment.
 
 Ephemeral cluster:: In general, an ephemeral (or temporary) Kafka cluster is suitable for development and testing purposes, not for production. This deployment uses `emptyDir` volumes for storing broker information (for ZooKeeper) and topics or partitions (for Kafka). Using an `emptyDir` volume means that its content is strictly related to the pod life cycle and is deleted when the pod goes down.
 Persistent cluster:: A persistent Kafka cluster uses `PersistentVolumes` to store ZooKeeper and Kafka data. The `PersistentVolume` is
@@ -50,8 +52,6 @@ spec:
   # ...
 ----
 
-For more information about configuring the `Kafka` resource, see link:{BookURLUsing}#assembly-config-kafka-str[Kafka cluster configuration^] in the _Using Strimzi_ guide.
-
 .Prerequisites
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
@@ -79,3 +79,7 @@ kubectl apply -f examples/kafka/kafka-persistent.yaml
 ----
 kubectl get deployments
 ----
+
+[role="_additional-resources"]
+.Additional resources
+link:{BookURLUsing}#assembly-config-kafka-str[Kafka cluster configuration^]

@@ -4,6 +4,7 @@
 
 [id='con-creating-managing-connectors-{context}']
 
+[role="_abstract"]
 = Creating and managing connectors
 
 When you have created a container image for your connector plug-in, you need to create a connector instance in your Kafka Connect cluster.
@@ -39,8 +40,8 @@ KafkaConnectors allow you to create and manage connector instances for Kafka Con
 Like other Kafka resources, you declare a connector’s desired state in a KafkaConnector YAML file that is deployed to your Kubernetes cluster to create the connector instance.
 KafkaConnector resources must be deployed to the same namespace as the Kafka Connect cluster they link to.
 
-You manage a running connector instance by updating its corresponding KafkaConnector resource, and then applying the updates. 
-Annotations are used to manually restart connector instances and connector tasks. 
+You manage a running connector instance by updating its corresponding KafkaConnector resource, and then applying the updates.
+Annotations are used to manually restart connector instances and connector tasks.
 You remove a connector by deleting its corresponding KafkaConnector.
 
 To ensure compatibility with earlier versions of Strimzi, KafkaConnectors are disabled by default. To enable them for a Kafka Connect cluster, you must use annotations on the `KafkaConnect` resource.
@@ -48,7 +49,11 @@ For instructions, see link:{BookURLUsing}#proc-kafka-connect-config-str[Configur
 
 When KafkaConnectors are enabled, the Cluster Operator begins to watch for them. It updates the configurations of running connector instances to match the configurations defined in their KafkaConnectors.
 
-Strimzi includes an example `KafkaConnector`, named `examples/connect/source-connector.yaml`. You can use this example to create and manage a `FileStreamSourceConnector` and a `FileStreamSinkConnector` as described in xref:proc-deploying-kafkaconnector-{context}[]. 
+Strimzi provides xref:deploy-examples-{context}[example configuration files], including the following example `KafkaConnector` file:
+
+* `examples/connect/source-connector.yaml`.
+
+You can use this example to create and manage a `FileStreamSourceConnector` and a `FileStreamSinkConnector` as described in xref:proc-deploying-kafkaconnector-{context}[].
 
 == Availability of the Kafka Connect REST API
 

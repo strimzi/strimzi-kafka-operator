@@ -5,14 +5,18 @@
 [id='proc-deploying-kafkaconnector-{context}']
 = Deploying the example KafkaConnector resources
 
-Strimzi includes an example `KafkaConnector` in `examples/connect/source-connector.yaml`.
-This creates a basic `FileStreamSourceConnector` instance that sends each line of the Kafka license file (an example file source) to a single Kafka topic.
+[role="_abstract"]
+Use KafkaConnectors with Kafka Connect to stream data to and from a Kafka cluster.
 
-This procedure describes how to create:
+Strimzi provides xref:deploy-examples-{context}[example configuration files].
+In this procedure, we use the following example file:
 
-* A `FileStreamSourceConnector` that reads data from the Kafka license file (the source) and writes the data as messages to a Kafka topic.
+* `examples/connect/source-connector.yaml`.
 
-* A `FileStreamSinkConnector` that reads messages from the Kafka topic and writes the messages to a temporary file (the sink).
+The file is used to create the following connector instances:
+
+* A `FileStreamSourceConnector` instance that reads each line from the Kafka license file (the source) and writes the data as messages to a single Kafka topic.
+* A `FileStreamSinkConnector` instance that reads messages from the Kafka topic and writes the messages to a temporary file (the sink).
 
 [NOTE]
 ====
@@ -175,6 +179,7 @@ m¦topics.regex
 
 |===
 
+[role="_additional-resources"]
 .Additional resources
 
 * xref:con-creating-managing-connectors-{context}[]
