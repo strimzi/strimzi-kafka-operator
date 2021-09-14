@@ -248,6 +248,8 @@ public class BundleResource implements ResourceType<Deployment> {
                             .withImage(StUtils.changeOrgAndTag(coImage))
                             .withImagePullPolicy(Environment.OPERATOR_IMAGE_PULL_POLICY)
                             .editResources()
+                                 // in case we execute more than 5 test cases in parallel we at least these configuration
+                                 // (because if we use default configuration, the Cluster Operator Pod occasionally restarting because of OOM)
                                 .addToLimits("memory", new Quantity("2048Mi"))
                                 .addToLimits("cpu", new Quantity("1000m"))
                                 .addToRequests("memory", new Quantity("1024Mi"))
@@ -256,6 +258,7 @@ public class BundleResource implements ResourceType<Deployment> {
                         .endContainer()
                         .editFirstVolume()
                             .editEmptyDir()
+                                // in case we execute more than 10 test cases in parallel we at least 2Mi storage
                                 .withNewSizeLimit("2Mi")
                             .endEmptyDir()
                         .endVolume()

@@ -86,16 +86,34 @@ public class SetupClusterOperator {
         this.clusterOperatorRBACType = builder.clusterOperatorRBACType;
 
         // assign defaults is something is not specified
-        if (this.clusterOperatorName == null || this.clusterOperatorName.isEmpty()) this.clusterOperatorName = Constants.STRIMZI_DEPLOYMENT_NAME;
+        if (this.clusterOperatorName == null || this.clusterOperatorName.isEmpty()) {
+            this.clusterOperatorName = Constants.STRIMZI_DEPLOYMENT_NAME;
+        }
         // if namespace is not set we install operator to 'infra-namespace'
-        if (this.namespaceInstallTo == null || this.namespaceInstallTo.isEmpty()) this.namespaceInstallTo = Constants.INFRA_NAMESPACE;
-        if (this.namespaceToWatch == null) this.namespaceToWatch = this.namespaceInstallTo;
-        if (this.bindingsNamespaces == null) this.bindingsNamespaces = Collections.singletonList(this.namespaceInstallTo);
-        if (this.operationTimeout == 0) this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
-        if (this.reconciliationInterval == 0) this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
-        if (this.extraEnvVars == null) this.extraEnvVars = new ArrayList<>();
-        if (this.extraLabels == null) this.extraLabels = new HashMap<>();
-        if (this.clusterOperatorRBACType == null) this.clusterOperatorRBACType = ClusterOperatorRBACType.CLUSTER;
+        if (this.namespaceInstallTo == null || this.namespaceInstallTo.isEmpty()) {
+            this.namespaceInstallTo = Constants.INFRA_NAMESPACE;
+        }
+        if (this.namespaceToWatch == null) {
+            this.namespaceToWatch = this.namespaceInstallTo;
+        }
+        if (this.bindingsNamespaces == null) {
+            this.bindingsNamespaces = Collections.singletonList(this.namespaceInstallTo);
+        }
+        if (this.operationTimeout == 0) {
+            this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
+        }
+        if (this.reconciliationInterval == 0) {
+            this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
+        }
+        if (this.extraEnvVars == null) {
+            this.extraEnvVars = new ArrayList<>();
+        }
+        if (this.extraLabels == null) {
+            this.extraLabels = new HashMap<>();
+        }
+        if (this.clusterOperatorRBACType == null) {
+            this.clusterOperatorRBACType = ClusterOperatorRBACType.CLUSTER;
+        }
     }
 
     public static SetupClusterOperator buildDefaultInstallation() {

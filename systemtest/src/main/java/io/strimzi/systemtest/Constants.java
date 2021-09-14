@@ -293,7 +293,9 @@ public interface Constants {
      * Tag for tests which executing in parallel namespaces
      */
     String PARALLEL_NAMESPACE = "parallelnamespace";
+    // label for test case used for parallel execution of test suites
     String PARALLEL_SUITE = "parallelsuite";
+    // label for test case used for isolation of test suites
     String ISOLATED_SUITE = "isolatedsuite";
 
     /**
