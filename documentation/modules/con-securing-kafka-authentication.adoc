@@ -108,7 +108,7 @@ use the `networkPolicyPeers` property.
 Use network policies as part of the listener authentication configuration.
 Each listener can have a different xref:configuration-listener-network-policy-reference[`networkPolicyPeers`] configuration.
 
-For more information, refer to the xref:configuration-listener-network-policy-reference[`networkPolicyPeers`] section and the {K8sNetworkPolicyPeerAPI}.
+For more information on network policy peers, refer to the {K8sNetworkPolicyPeerAPI}.
 
 If you want to use custom network policies, you can set the `STRIMZI_NETWORK_POLICY_GENERATION` environment variable to `false`, in the Cluster Operator configuration.
 For more information, see xref:ref-operator-cluster-{context}[Cluster Operator configuration]. 
