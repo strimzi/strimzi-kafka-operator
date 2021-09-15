@@ -130,14 +130,12 @@ public class ClusterCa extends Ca {
             subject.addDnsName(String.format("%s.%s",  CruiseControl.serviceName(cluster), namespace));
             subject.addDnsName(ccDnsGenerator.serviceDnsNameWithoutClusterDomain());
             subject.addDnsName(ccDnsGenerator.serviceDnsName());
-            subject.addDnsName(ccDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
-            subject.addDnsName(ccDnsGenerator.wildcardServiceDnsName());
             subject.addDnsName(CruiseControl.serviceName(cluster));
             subject.addDnsName("localhost");
             return subject.build();
         };
 
-        LOGGER.debugCr(reconciliation, "{}: Reconciling zookeeper certificates", this);
+        LOGGER.debugCr(reconciliation, "{}: Reconciling Cruise Control certificates", this);
         return maybeCopyOrGenerateCerts(
             reconciliation,
            1,
