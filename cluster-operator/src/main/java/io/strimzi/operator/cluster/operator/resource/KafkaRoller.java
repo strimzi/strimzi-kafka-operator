@@ -346,11 +346,12 @@ public class KafkaRoller {
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     private void restartIfNecessary(int podId, RestartContext restartContext)
             throws Exception {
+        String podName = podName(podId);
         Pod pod;
         try {
-            pod = podOperations.get(namespace, KafkaCluster.kafkaPodName(cluster, podId));
+            pod = podOperations.get(namespace, podName);
         } catch (KubernetesClientException e) {
-            throw new UnforceableProblem("Error getting pod " + podName(podId), e);
+            throw new UnforceableProblem("Error getting pod " + podName, e);
         }
 
         try {
@@ -358,7 +359,7 @@ public class KafkaRoller {
             if (restartPlan.forceRestart || restartPlan.needsRestart || restartPlan.needsReconfig) {
                 if (!restartPlan.forceRestart && deferController(podId, restartContext)) {
                     LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to roll", podId);
-                    throw new ForceableProblem("Pod " + podName(podId) + " is currently the controller and there are other pods still to roll");
+                    throw new ForceableProblem("Pod " + podName + " is currently the controller and there are other pods still to roll");
                 } else {
                     if (restartPlan.forceRestart || canRoll(podId, 60_000, TimeUnit.MILLISECONDS, false)) {
                         // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
@@ -366,11 +367,11 @@ public class KafkaRoller {
                             LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", podId);
                             restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                         } else {
-                            awaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
+                            awaitReadinessAndPreferredLeadership(podName, operationTimeoutMs, TimeUnit.MILLISECONDS);
                         }
                     } else {
                         LOGGER.debugCr(reconciliation, "Pod {} cannot be rolled right now", podId);
-                        throw new UnforceableProblem("Pod " + podName(podId) + " is currently not rollable");
+                        throw new UnforceableProblem("Pod " + podName + " is currently not rollable");
                     }
                 }
             } else {
@@ -378,17 +379,15 @@ public class KafkaRoller {
                 // from taking out a pod each time (due, e.g. to a configuration error).
                 // We rely on Kube to try restarting such pods.
                 LOGGER.debugCr(reconciliation, "Pod {} does not need to be restarted", podId);
-                LOGGER.debugCr(reconciliation, "Waiting for non-restarted pod {} to become ready", podId);
-                await(isReady(namespace, KafkaCluster.kafkaPodName(cluster, podId)), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new FatalProblem("Error while waiting for non-restarted pod " + podName(podId) + " to become ready", e));
-                LOGGER.debugCr(reconciliation, "Pod {} is now ready", podId);
+                awaitReadinessAndPreferredLeadership(podName, operationTimeoutMs, TimeUnit.MILLISECONDS);
             }
         } catch (ForceableProblem e) {
             if (isPodStuck(pod) || restartContext.backOff.done() || e.forceNow) {
                 if (canRoll(podId, 60_000, TimeUnit.MILLISECONDS, true)) {
-                    LOGGER.warnCr(reconciliation, "Pod {} will be force-rolled, due to error: {}", podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+                    LOGGER.warnCr(reconciliation, "Pod {} will be force-rolled, due to error: {}", podName, e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                 } else {
-                    LOGGER.warnCr(reconciliation, "Pod {} can't be safely force-rolled; original error: ", podName(podId), e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
+                    LOGGER.warnCr(reconciliation, "Pod {} can't be safely force-rolled; original error: ", podName, e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
                     throw e;
                 }
             } else {
@@ -670,18 +669,21 @@ public class KafkaRoller {
      * @param unit The timeout unit.
      */
     private void restartAndAwaitReadiness(Pod pod, long timeout, TimeUnit unit)
-            throws InterruptedException, UnforceableProblem, FatalProblem {
+            throws InterruptedException, UnforceableProblem, FatalProblem, ForceableProblem {
         String podName = pod.getMetadata().getName();
         LOGGER.debugCr(reconciliation, "Rolling pod {}", podName);
         await(restart(pod), timeout, unit, e -> new UnforceableProblem("Error while trying to restart pod " + podName + " to become ready", e));
-        awaitReadiness(pod, timeout, unit);
+        awaitReadinessAndPreferredLeadership(podName, timeout, unit);
     }
 
-    private void awaitReadiness(Pod pod, long timeout, TimeUnit unit) throws FatalProblem, InterruptedException {
-        String podName = pod.getMetadata().getName();
+    /* Block until the pod is ready, then block again until the broker is the leader for all partitions where
+       it's the preferred leader */
+    private void awaitReadinessAndPreferredLeadership(String podName, long timeout, TimeUnit unit) throws FatalProblem, InterruptedException, ForceableProblem {
         LOGGER.debugCr(reconciliation, "Waiting for restarted pod {} to become ready", podName);
-        await(isReady(pod), timeout, unit, e -> new FatalProblem("Error while waiting for restarted pod " + podName + " to become ready", e));
-        LOGGER.debugCr(reconciliation, "Pod {} is now ready", podName);
+        await(isReady(namespace, podName), timeout, unit, e -> new FatalProblem("Error while waiting for restarted pod " + podName + " to become ready", e));
+        LOGGER.debugCr(reconciliation, "Pod {} is now ready, waiting for leadership", podName);
+        electWherePreferredLeader(Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1)));
+        LOGGER.debugCr(reconciliation, "Pod is ready and has leadership", podName);
     }
 
     /**
@@ -770,26 +772,23 @@ public class KafkaRoller {
     /**
      * Completes the returned future <strong>on the context thread</strong> with the id of the controller of the cluster.
      * This will be -1 if there is not currently a controller.
-     * @return A future which completes the the node id of the controller of the cluster,
+     * @return A future which completes the node id of the controller of the cluster,
      * or -1 if there is not currently a controller.
      */
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // seems to be completely spurious
     int controller(int podId, long timeout, TimeUnit unit, RestartContext restartContext) throws Exception {
-        // Don't use all allClient here, because it will have cache metadata about which is the controller.
-        try (Admin ac = adminClient(singletonList(podId), false)) {
-            Node controllerNode = null;
-            try {
-                DescribeClusterResult describeClusterResult = ac.describeCluster();
-                KafkaFuture<Node> controller = describeClusterResult.controller();
-                controllerNode = controller.get(timeout, unit);
-                restartContext.clearConnectionError();
-            } catch (ExecutionException | TimeoutException e) {
-                maybeTcpProbe(podId, e, restartContext);
-            }
-            int id = controllerNode == null || Node.noNode().equals(controllerNode) ? -1 : controllerNode.id();
-            LOGGER.debugCr(reconciliation, "Controller is {}", id);
-            return id;
+        Node controllerNode = null;
+        try {
+            DescribeClusterResult describeClusterResult = allClient.describeCluster();
+            KafkaFuture<Node> controller = describeClusterResult.controller();
+            controllerNode = controller.get(timeout, unit);
+            restartContext.clearConnectionError();
+        } catch (ExecutionException | TimeoutException e) {
+            maybeTcpProbe(podId, e, restartContext);
         }
+        int id = controllerNode == null || Node.noNode().equals(controllerNode) ? -1 : controllerNode.id();
+        LOGGER.debugCr(reconciliation, "Controller is {}", id);
+        return id;
     }
 
     /**
@@ -833,11 +832,7 @@ public class KafkaRoller {
         return podToContext.toString();
     }
 
-    protected Future<Void> isReady(Pod pod) {
-        return isReady(pod.getMetadata().getNamespace(), pod.getMetadata().getName());
-    }
-
-    protected Future<Void> isReady(String namespace, String podName) {
+    private Future<Void> isReady(String namespace, String podName) {
         return podOperations.readiness(reconciliation, namespace, podName, pollingIntervalMs, operationTimeoutMs)
             .recover(error -> {
                 LOGGER.warnCr(reconciliation, "Error waiting for pod {}/{} to become ready: {}", namespace, podName, error);

@@ -4,6 +4,18 @@
  */
 package io.strimzi.operator.cluster;
 
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LoadBalancerIngressBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -56,13 +68,13 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
-import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
+import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -102,22 +114,9 @@ import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
 import org.apache.kafka.clients.admin.ElectLeadersResult;
 import org.apache.kafka.clients.admin.ListTopicsResult;
-import org.apache.kafka.clients.admin.TopicListing;
-import org.apache.kafka.common.ElectionType;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
-
-import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
@@ -583,51 +582,36 @@ public class ResourceUtils {
             @Override
             public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
                 Admin mock = mock(AdminClient.class);
-                DescribeClusterResult dcr;
-                try {
-                    Constructor<DescribeClusterResult> declaredConstructor = DescribeClusterResult.class.getDeclaredConstructor(KafkaFuture.class, KafkaFuture.class, KafkaFuture.class, KafkaFuture.class);
-                    declaredConstructor.setAccessible(true);
-                    KafkaFuture<Node> objectKafkaFuture = KafkaFutureImpl.completedFuture(new Node(0, "localhost", 9091));
-                    KafkaFuture<String> stringKafkaFuture = KafkaFutureImpl.completedFuture("CLUSTERID");
-                    dcr = declaredConstructor.newInstance(null, objectKafkaFuture, stringKafkaFuture, null);
-                } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException(e);
-                }
+                DescribeClusterResult dcr = mock(DescribeClusterResult.class);
+                when(dcr.controller()).thenReturn(KafkaFutureImpl.completedFuture(new Node(0, "localhost", 9091)));
+                when(dcr.clusterId()).thenReturn(KafkaFutureImpl.completedFuture("CLUSTERID"));
                 when(mock.describeCluster()).thenReturn(dcr);
 
-                ListTopicsResult ltr;
-                try {
-                    Constructor<ListTopicsResult> declaredConstructor = ListTopicsResult.class.getDeclaredConstructor(KafkaFuture.class);
-                    declaredConstructor.setAccessible(true);
-                    KafkaFuture<Map<String, TopicListing>> future = KafkaFutureImpl.completedFuture(emptyMap());
-                    ltr = declaredConstructor.newInstance(future);
-                } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException(e);
-                }
+                ListTopicsResult ltr = mock(ListTopicsResult.class);
+                when(ltr.listings()).thenReturn(KafkaFuture.completedFuture(Set.of()));
+                when(ltr.names()).thenReturn(KafkaFuture.completedFuture(Set.of()));
+                when(ltr.namesToListings()).thenReturn(KafkaFuture.completedFuture(Map.of()));
                 when(mock.listTopics(any())).thenReturn(ltr);
 
-                DescribeTopicsResult dtr;
-                try {
-                    Constructor<DescribeTopicsResult> declaredConstructor = DescribeTopicsResult.class.getDeclaredConstructor(Map.class);
-                    declaredConstructor.setAccessible(true);
-                    dtr = declaredConstructor.newInstance(emptyMap());
-                } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException(e);
-                }
+                DescribeTopicsResult dtr = mock(DescribeTopicsResult.class);
+                when(dtr.all()).thenReturn(KafkaFuture.completedFuture(Map.of()));
+                when(dtr.values()).thenReturn(Map.of());
                 when(mock.describeTopics(any())).thenReturn(dtr);
 
-                DescribeConfigsResult dcfr;
+                DescribeConfigsResult dcfr = mock(DescribeConfigsResult.class);
+                when(dcfr.all()).thenReturn(KafkaFuture.completedFuture(Map.of()));
+                when(dcfr.values()).thenReturn(Map.of());
+                when(mock.describeConfigs(any())).thenReturn(dcfr);
+
+                // ElectLeadersResult is final, so mockito cannot mock it.
+                ElectLeadersResult electLeadersMock;
                 try {
-                    Constructor<DescribeConfigsResult> declaredConstructor = DescribeConfigsResult.class.getDeclaredConstructor(Map.class);
+                    Constructor<ElectLeadersResult> declaredConstructor = ElectLeadersResult.class.getDeclaredConstructor(KafkaFutureImpl.class);
                     declaredConstructor.setAccessible(true);
-                    dcfr = declaredConstructor.newInstance(emptyMap());
+                    electLeadersMock = declaredConstructor.newInstance(KafkaFuture.completedFuture(Map.of()));
                 } catch (ReflectiveOperationException e) {
                     throw new RuntimeException(e);
                 }
-                when(mock.describeConfigs(any())).thenReturn(dcfr);
-
-                ElectLeadersResult electLeadersMock = mock(ElectLeadersResult.class);
-                when(electLeadersMock.partitions()).thenReturn(KafkaFuture.completedFuture(Map.of()));
                 when(mock.electLeaders(any(), any())).thenReturn(electLeadersMock);
                 return mock;
             }
