@@ -110,7 +110,7 @@ Each listener can have a different xref:configuration-listener-network-policy-re
 
 For more information on network policy peers, refer to the {K8sNetworkPolicyPeerAPI}.
 
-If you want to use custom network policies, you can set the `STRIMZI_NETWORK_POLICY_GENERATION` environment variable to `false`, in the Cluster Operator configuration.
+If you want to use custom network policies, you can set the `STRIMZI_NETWORK_POLICY_GENERATION` environment variable to `false` in the Cluster Operator configuration.
 For more information, see xref:ref-operator-cluster-{context}[Cluster Operator configuration]. 
 
 NOTE: Your configuration of Kubernetes must support ingress `NetworkPolicies` in order to use network policies in Strimzi.
