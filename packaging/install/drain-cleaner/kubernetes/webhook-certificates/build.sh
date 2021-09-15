@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+function check_command_present() {
+    command -v "${1}" >/dev/null 2>&1 || { echo -e >&2 "${RED}${1} is required but it's not installed.${NO_COLOUR}"; exit 1; }
+}
+
+check_command_present cfssl
+check_command_present openssl
+
 # Generate CA
 cfssl genkey -initca ca.json | cfssljson -bare ca
 
