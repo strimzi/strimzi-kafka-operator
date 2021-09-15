@@ -111,8 +111,10 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.ElectLeadersResult;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.TopicListing;
+import org.apache.kafka.common.ElectionType;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
@@ -634,6 +636,10 @@ public class ResourceUtils {
                     throw new RuntimeException(e);
                 }
                 when(mock.describeConfigs(any())).thenReturn(dcfr);
+
+                ElectLeadersResult electLeadersMock = mock(ElectLeadersResult.class);
+                when(electLeadersMock.partitions()).thenReturn(KafkaFuture.completedFuture(Map.of()));
+                when(mock.electLeaders(any(), any())).thenReturn(electLeadersMock);
                 return mock;
             }
         };

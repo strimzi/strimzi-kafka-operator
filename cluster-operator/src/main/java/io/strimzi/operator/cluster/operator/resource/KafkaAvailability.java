@@ -14,6 +14,7 @@ import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.Node;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
@@ -62,6 +63,24 @@ class KafkaAvailability {
         LOGGER.debugCr(reconciliation, "Determining whether broker {} can be rolled", podId);
         return canRollBroker(descriptions, podId);
     }
+
+   /**
+     * Return a Future which completes with the set of partitions which have the given
+     * {@code broker} as their preferred leader, but which aren't currently being led by that broker.
+     * @param broker The broker
+     * @return a Future.
+     */
+    Future<Set<TopicPartition>> partitionsWithPreferredButNotCurrentLeader(int broker) {
+        return descriptions.map(d -> d.stream().flatMap(td -> {
+            String topic = td.name();
+            return td.partitions().stream()
+                    .filter(pd -> pd.replicas().size() > 0
+                            && pd.replicas().get(0).id() == broker
+                            && broker != pd.leader().id())
+                    .map(pd -> new TopicPartition(topic, pd.partition()));
+        }).collect(Collectors.toSet()));
+    }
+
 
     private Future<Boolean> canRollBroker(Future<Collection<TopicDescription>> descriptions, int podId) {
         Future<Set<TopicDescription>> topicsOnGivenBroker = descriptions

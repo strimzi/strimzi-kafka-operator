@@ -37,6 +37,7 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -635,6 +636,11 @@ public class KafkaRollerTest {
                 @Override
                 Future<Boolean> canRoll(int podId) {
                     return canRollFn.apply(podId);
+                }
+
+                @Override
+                Future<Set<TopicPartition>> partitionsWithPreferredButNotCurrentLeader(int broker) {
+                    return Future.succeededFuture(Set.of());
                 }
             };
         }

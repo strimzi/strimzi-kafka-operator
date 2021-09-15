@@ -55,9 +55,11 @@ import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
+import org.apache.kafka.common.ElectionType;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.SslAuthenticationException;
@@ -296,6 +298,7 @@ public class KafkaRoller {
                             e);
                 } else {
                     long delay1 = ctx.backOff.delayMs();
+                    e.printStackTrace();
                     LOGGER.infoCr(reconciliation, "Could not roll pod {} due to {}, retrying after at least {}ms",
                             podId, e, delay1);
                     schedule(podId, delay1, TimeUnit.MILLISECONDS);
@@ -392,6 +395,40 @@ public class KafkaRoller {
                 throw e;
             }
         }
+    }
+
+    private void electWherePreferredLeader(int podId) throws ForceableProblem, InterruptedException {
+        initAdminClient();
+        Set<TopicPartition> partitions = partitionsToElect(podId);
+        while (!partitions.isEmpty()) {
+            // TODO this loop needs a timeout
+            LOGGER.debugCr(reconciliation, "{}: Electing broker {} as preferred leader of partitions {}", reconciliation, podId, partitions);
+            final Set<TopicPartition> finalPartitions = partitions;
+            Map<Integer, Set<TopicPartition>> batches = partitions.stream().collect(
+                    Collectors.groupingBy(tp -> tp.hashCode() % finalPartitions.size() / 50, Collectors.toSet()));
+            for (Set<TopicPartition> batch : batches.values()) {
+                LOGGER.debugCr(reconciliation, "{}: Electing broker {} as preferred leader for partition batch {}", reconciliation, podId, batch);
+                Map<TopicPartition, Optional<Throwable>> electionResult = await(Util.kafkaFutureToVertxFuture(vertx,
+                        allClient.electLeaders(ElectionType.PREFERRED, batch).partitions()), operationTimeoutMs, TimeUnit.MILLISECONDS,
+                    t -> new ForceableProblem("An error while trying to perform post-restart preferred leader election", t));
+                electionResult.forEach((key, errOption) -> {
+                    if (errOption.isPresent()) {
+                        Throwable cause = errOption.get();
+                        LOGGER.traceCr(reconciliation, "{}: Failed to elect preferred leader {} for partition {} due to {}", reconciliation, podId, key, cause);
+                    }
+                });
+            }
+            partitions = partitionsToElect(podId);
+            if (!partitions.isEmpty()) {
+                Thread.sleep(30_000);
+            }
+        }
+    }
+
+    private Set<TopicPartition> partitionsToElect(int podId) throws ForceableProblem, InterruptedException {
+        return await(availability(allClient).partitionsWithPreferredButNotCurrentLeader(podId),
+                operationTimeoutMs, TimeUnit.MILLISECONDS,
+            t -> new ForceableProblem("An error while trying to determine post-restart preferred leaders", t));
     }
 
     private boolean podWaitingBecauseOfAnyReasons(Pod pod, Set<String> reasons) {
@@ -711,7 +748,7 @@ public class KafkaRoller {
         }
     }
 
-    protected KafkaAvailability availability(Admin ac) {
+    /* test */ protected KafkaAvailability availability(Admin ac) {
         return new KafkaAvailability(reconciliation, ac);
     }
 
