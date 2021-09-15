@@ -459,7 +459,7 @@ public class VolumeUtils {
      * @param tlsVolumeMountPath   Path where the TLS certs should be mounted
      */
     public static void createSecretVolumeMount(List<VolumeMount> volumeMountList, List<CertSecretSource> trustedCertificates, String tlsVolumeMountPath) {
-        createSecretVolumeMount(volumeMountList,trustedCertificates, tlsVolumeMountPath, null);
+        createSecretVolumeMount(volumeMountList, trustedCertificates, tlsVolumeMountPath, null);
     }
 
     /**
@@ -472,12 +472,12 @@ public class VolumeUtils {
      */
     public static void createSecretVolumeMount(List<VolumeMount> volumeMountList, List<CertSecretSource> trustedCertificates, String tlsVolumeMountPath, String alias) {
 
-            if (trustedCertificates != null && trustedCertificates.size() > 0) {
-                for (CertSecretSource certSecretSource : trustedCertificates) {
-                    addSecretVolumeMount(volumeMountList, certSecretSource, tlsVolumeMountPath, alias);
-                }
+        if (trustedCertificates != null && trustedCertificates.size() > 0) {
+            for (CertSecretSource certSecretSource : trustedCertificates) {
+                addSecretVolumeMount(volumeMountList, certSecretSource, tlsVolumeMountPath, alias);
             }
         }
+    }
 
     /**
      * Creates the VolumeMount used for authentication of Kafka client based components, checking that the named volume mount has not already been
