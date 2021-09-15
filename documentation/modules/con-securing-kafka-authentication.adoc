@@ -106,7 +106,7 @@ If you want to restrict access to a listener at the network level to only select
 use the `networkPolicyPeers` property.
 
 Use network policies as part of the listener authentication configuration.
-Each listener can have a different `networkPolicyPeers` configuration.
+Each listener can have a different xref:configuration-listener-network-policy-reference[`networkPolicyPeers`] configuration.
 
 For more information, refer to the xref:configuration-listener-network-policy-reference[`networkPolicyPeers`] section and the {K8sNetworkPolicyPeerAPI}.
 
