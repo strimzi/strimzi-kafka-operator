@@ -32,7 +32,6 @@ import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.ClientTls;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -44,6 +43,8 @@ import io.strimzi.api.kafka.model.storage.Storage;
  */
 public class VolumeUtils {
     private static Pattern volumeNamePattern = Pattern.compile("^([a-z0-9]{1}[a-z0-9-]{0,61}[a-z0-9]{1})$");
+
+    private VolumeUtils() { }
 
     /**
      * Creates a Kubernetes volume which will map to ConfigMap with specific items mounted
@@ -414,7 +415,7 @@ public class VolumeUtils {
      * @param trustedCertificates   Trusted certificates for TLS connection
      * @param isOpenShift   Indicates whether we run on OpenShift or not
      */
-    protected static void createSecretVolume(List<Volume> volumeList, List<CertSecretSource> trustedCertificates, boolean isOpenShift) {
+    public static void createSecretVolume(List<Volume> volumeList, List<CertSecretSource> trustedCertificates, boolean isOpenShift) {
         createSecretVolume(volumeList, trustedCertificates, isOpenShift, null);
     }
 
@@ -425,7 +426,7 @@ public class VolumeUtils {
      * @param isOpenShift   Indicates whether we run on OpenShift or not
      * @param alias   Alias to reference the Kafka Cluster
      */
-    protected static void createSecretVolume(List<Volume> volumeList, List<CertSecretSource> trustedCertificates, boolean isOpenShift, String alias) {
+    public static void createSecretVolume(List<Volume> volumeList, List<CertSecretSource> trustedCertificates, boolean isOpenShift, String alias) {
 
         if (trustedCertificates != null && trustedCertificates.size() > 0) {
             for (CertSecretSource certSecretSource : trustedCertificates) {
@@ -457,7 +458,7 @@ public class VolumeUtils {
      * @param trustedCertificates   Trusted certificates for TLS connection
      * @param tlsVolumeMountPath   Path where the TLS certs should be mounted
      */
-    protected static void createSecretVolumeMount(List<VolumeMount> volumeMountList, List<CertSecretSource> trustedCertificates, String tlsVolumeMountPath) {
+    public static void createSecretVolumeMount(List<VolumeMount> volumeMountList, List<CertSecretSource> trustedCertificates, String tlsVolumeMountPath) {
         createSecretVolumeMount(volumeMountList,trustedCertificates, tlsVolumeMountPath, null);
     }
 
@@ -469,7 +470,7 @@ public class VolumeUtils {
      * @param tlsVolumeMountPath  Path where the TLS certs should be mounted
      * @param alias   Alias to reference the Kafka Cluster
      */
-    protected static void createSecretVolumeMount(List<VolumeMount> volumeMountList, List<CertSecretSource> trustedCertificates, String tlsVolumeMountPath, String alias) {
+    public static void createSecretVolumeMount(List<VolumeMount> volumeMountList, List<CertSecretSource> trustedCertificates, String tlsVolumeMountPath, String alias) {
 
             if (trustedCertificates != null && trustedCertificates.size() > 0) {
                 for (CertSecretSource certSecretSource : trustedCertificates) {
@@ -487,7 +488,7 @@ public class VolumeUtils {
      * @param tlsVolumeMountPath   Path where the TLS certs should be mounted
      * @param alias   Alias to reference the Kafka Cluster
      */
-    protected static void addSecretVolumeMount(List<VolumeMount> volumeMountList,  CertSecretSource certSecretSource, String tlsVolumeMountPath, String alias) {
+    private static void addSecretVolumeMount(List<VolumeMount> volumeMountList,  CertSecretSource certSecretSource, String tlsVolumeMountPath, String alias) {
         String volumeMountName = alias != null ? alias + '-' + certSecretSource.getSecretName() : certSecretSource.getSecretName();
         // skipping if a volume mount with same Secret name was already added
         if (!volumeMountList.stream().anyMatch(vm -> vm.getName().equals(volumeMountName))) {
