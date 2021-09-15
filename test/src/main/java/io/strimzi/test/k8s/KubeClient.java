@@ -122,7 +122,7 @@ public class KubeClient {
     // ================================
 
     public ConfigMap createOrReplaceConfigMap(ConfigMap configMap) {
-        return client.configMaps().inNamespace(configMap.getMetadata().getNamespace()).create(configMap);
+        return client.configMaps().inNamespace(configMap.getMetadata().getNamespace()).createOrReplace(configMap);
     }
 
     public Boolean deleteConfigMap(ConfigMap configMap) {

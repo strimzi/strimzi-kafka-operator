@@ -24,6 +24,7 @@ import io.vertx.core.json.JsonArray;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -300,6 +301,11 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
     protected void tearDownEnvironmentAfterEach() {
         deleteInstalledYamls(coDir, INFRA_NAMESPACE);
         cluster.deleteNamespaces();
+    }
+
+    @BeforeAll
+    void setUp() {
+        install.unInstall();
     }
 
     // There is no value of having teardown logic for class resources due to the fact that
