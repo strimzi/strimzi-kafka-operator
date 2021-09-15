@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
+import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -235,7 +236,7 @@ public class Util {
      * Decode binary item from Kubernetes Secret from base64 into byte array
      *
      * @param secret    Kubernetes Secret
-     * @param key       Key which should be retrived and decoded
+     * @param key       Key which should be retrieved and decoded
      * @return          Decoded bytes
      */
     public static byte[] decodeFromSecret(Secret secret, String key) {
@@ -533,7 +534,7 @@ public class Util {
         if (certSecretSources != null) {
             // get all TLS trusted certs, compute hash from each of them, sum hashes
             tls = CompositeFuture.join(certSecretSources.stream().map(certSecretSource ->
-                    secretOperations.getCertificateAsync(namespace, certSecretSource)
+                    getCertificateAsync(secretOperations, namespace, certSecretSource)
                     .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList()))
                 .compose(hashes -> Future.succeededFuture(hashes.list().stream().collect(Collectors.summingInt(e -> (int) e))));
         } else {
@@ -546,20 +547,20 @@ public class Util {
             // compute hash from Auth
             if (auth instanceof KafkaClientAuthenticationScramSha512) {
                 // only passwordSecret can be changed
-                return tls.compose(tlsHash -> secretOperations.getPasswordAsync(namespace, auth)
+                return tls.compose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
                         .compose(password -> Future.succeededFuture(password.hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationPlain) {
                 // only passwordSecret can be changed
-                return tls.compose(tlsHash -> secretOperations.getPasswordAsync(namespace, auth)
+                return tls.compose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
                         .compose(password -> Future.succeededFuture(password.hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationTls) {
                 // custom cert can be used (and changed)
                 return ((KafkaClientAuthenticationTls) auth).getCertificateAndKey() == null ? tls :
-                        tls.compose(tlsHash -> secretOperations.getCertificateAndKeyAsync(namespace, (KafkaClientAuthenticationTls) auth)
+                        tls.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, (KafkaClientAuthenticationTls) auth)
                         .compose(crtAndKey -> Future.succeededFuture(crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationOAuth) {
                 List<Future> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates().stream().map(certSecretSource ->
-                        secretOperations.getCertificateAsync(namespace, certSecretSource)
+                        getCertificateAsync(secretOperations, namespace, certSecretSource)
                                 .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList());
                 futureList.add(tls);
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getAccessToken()));
@@ -632,6 +633,32 @@ public class Util {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private static Future<String> getCertificateAsync(SecretOperator secretOperator, String namespace, CertSecretSource certSecretSource) {
+        return secretOperator.getAsync(namespace, certSecretSource.getSecretName())
+                .compose(secret -> secret == null ? Future.failedFuture("Secret " + certSecretSource.getSecretName() + " not found") : Future.succeededFuture(secret.getData().get(certSecretSource.getCertificate())));
+    }
+
+    private static Future<CertAndKey> getCertificateAndKeyAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthenticationTls auth) {
+        return secretOperator.getAsync(namespace, auth.getCertificateAndKey().getSecretName())
+                .compose(secret -> secret == null ? Future.failedFuture("Secret " + auth.getCertificateAndKey().getSecretName() + " not found") :
+                        Future.succeededFuture(new CertAndKey(secret.getData().get(auth.getCertificateAndKey().getKey()).getBytes(StandardCharsets.UTF_8), secret.getData().get(auth.getCertificateAndKey().getCertificate()).getBytes(StandardCharsets.UTF_8))));
+    }
+
+    private static Future<String> getPasswordAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthentication auth) {
+        if (auth instanceof KafkaClientAuthenticationPlain) {
+            return secretOperator.getAsync(namespace, ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getSecretName())
+                    .compose(secret -> secret == null ? Future.failedFuture("Secret " + ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getSecretName() + " not found") :
+                            Future.succeededFuture(secret.getData().get(((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getPassword())));
+        }
+        if (auth instanceof KafkaClientAuthenticationScramSha512) {
+            return secretOperator.getAsync(namespace, ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getSecretName())
+                    .compose(secret -> secret == null ? Future.failedFuture("Secret " + ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getSecretName() + " not found") :
+                            Future.succeededFuture(secret.getData().get(((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getPassword())));
+        } else {
+            return Future.failedFuture("Auth type " + auth.getType() + " does not have a password property");
         }
     }
 }
