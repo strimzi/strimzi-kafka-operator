@@ -52,7 +52,6 @@ import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -272,7 +271,6 @@ public class MetricsST extends AbstractST {
     }
 
     @ParallelTest
-    @Disabled("Because of this PR https://github.com/strimzi/strimzi-kafka-operator/pull/5137.")
     @Tag(ACCEPTANCE)
     void testClusterOperatorMetrics(ExtensionContext extensionContext) {
         clusterOperatorMetricsData = collector.toBuilder()
@@ -294,26 +292,33 @@ public class MetricsST extends AbstractST {
             assertCoMetricNotNull("strimzi_reconciliations_failed_total", resource, clusterOperatorMetricsData);
         }
 
-        assertCoMetricResources(Kafka.RESOURCE_KIND, 2);
+        assertCoMetricResources(Kafka.RESOURCE_KIND, FIRST_NAMESPACE, 1);
+        assertCoMetricResources(Kafka.RESOURCE_KIND, SECOND_NAMESPACE, 1);
         assertCoMetricResourceState(Kafka.RESOURCE_KIND, metricsClusterName, FIRST_NAMESPACE, 1, "none");
         assertCoMetricResourceState(Kafka.RESOURCE_KIND, SECOND_CLUSTER, SECOND_NAMESPACE, 1, "none");
 
-        assertCoMetricResources(KafkaBridge.RESOURCE_KIND, 1);
+        assertCoMetricResources(KafkaBridge.RESOURCE_KIND, FIRST_NAMESPACE, 1);
+        assertCoMetricResources(KafkaBridge.RESOURCE_KIND, SECOND_NAMESPACE, 0);
         assertCoMetricResourceState(KafkaBridge.RESOURCE_KIND, BRIDGE_CLUSTER, FIRST_NAMESPACE, 1, "none");
 
-        assertCoMetricResources(KafkaConnect.RESOURCE_KIND, 1);
+        assertCoMetricResources(KafkaConnect.RESOURCE_KIND, FIRST_NAMESPACE, 1);
+        assertCoMetricResources(KafkaConnect.RESOURCE_KIND, SECOND_NAMESPACE, 0);
         assertCoMetricResourceState(KafkaConnect.RESOURCE_KIND, metricsClusterName, FIRST_NAMESPACE, 1, "none");
 
-        assertCoMetricResources(KafkaMirrorMaker.RESOURCE_KIND, 0);
+        assertCoMetricResources(KafkaMirrorMaker.RESOURCE_KIND, FIRST_NAMESPACE, 0);
+        assertCoMetricResources(KafkaMirrorMaker.RESOURCE_KIND, SECOND_NAMESPACE, 0);
         assertCoMetricResourceStateNotExists(KafkaMirrorMaker.RESOURCE_KIND, FIRST_NAMESPACE, metricsClusterName);
 
-        assertCoMetricResources(KafkaMirrorMaker2.RESOURCE_KIND, 1);
+        assertCoMetricResources(KafkaMirrorMaker2.RESOURCE_KIND, FIRST_NAMESPACE, 1);
+        assertCoMetricResources(KafkaMirrorMaker2.RESOURCE_KIND, SECOND_NAMESPACE, 0);
         assertCoMetricResourceState(KafkaMirrorMaker2.RESOURCE_KIND, MIRROR_MAKER_CLUSTER, FIRST_NAMESPACE, 1, "none");
 
-        assertCoMetricResources(KafkaConnector.RESOURCE_KIND, 0);
+        assertCoMetricResources(KafkaConnector.RESOURCE_KIND, FIRST_NAMESPACE, 0);
+        assertCoMetricResources(KafkaConnector.RESOURCE_KIND, SECOND_NAMESPACE, 0);
         assertCoMetricResourceStateNotExists(KafkaConnector.RESOURCE_KIND, FIRST_NAMESPACE, metricsClusterName);
 
-        assertCoMetricResources(KafkaRebalance.RESOURCE_KIND, 0);
+        assertCoMetricResources(KafkaRebalance.RESOURCE_KIND, FIRST_NAMESPACE, 0);
+        assertCoMetricResources(KafkaRebalance.RESOURCE_KIND, SECOND_NAMESPACE, 0);
         assertCoMetricResourceStateNotExists(KafkaRebalance.RESOURCE_KIND, FIRST_NAMESPACE, metricsClusterName);
     }
 
@@ -628,8 +633,8 @@ public class MetricsST extends AbstractST {
         assertThat("strimzi_resource_state for " + kind + " is not " + value, values.stream().mapToDouble(i -> i).sum(), is((double) value));
     }
 
-    private void assertCoMetricResources(String kind, int value) {
-        Pattern pattern = Pattern.compile("strimzi_resources\\{kind=\"" + kind + "\",.*} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
+    private void assertCoMetricResources(String kind, String namespace, int value) {
+        Pattern pattern = Pattern.compile("strimzi_resources\\{kind=\"" + kind + "\",namespace=\"" + namespace + "\",.*} ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsCollector.collectSpecificMetric(pattern, clusterOperatorMetricsData);
         assertThat("strimzi_resources for " + kind + " is not " + value, values.stream().mapToDouble(i -> i).sum(), is((double) value));
     }

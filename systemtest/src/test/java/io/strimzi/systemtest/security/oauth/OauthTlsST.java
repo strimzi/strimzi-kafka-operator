@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
@@ -57,6 +58,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
@@ -254,6 +256,8 @@ public class OauthTlsST extends OauthAbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMirrorMaker(ExtensionContext extensionContext) {
+        // Nodeport needs cluster wide rights to work properly which is not possible with STRIMZI_RBAC_SCOPE=NAMESPACE
+        assumeFalse(Environment.isNamespaceRbacScope());
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
@@ -342,7 +346,7 @@ public class OauthTlsST extends OauthAbstractST {
                         .withGroupId(ClientUtils.generateRandomConsumerGroup())
                         .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                         .withNewKafkaClientAuthenticationOAuth()
-                            .withNewTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                            .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                             .withClientId("kafka-mirror-maker")
                             .withNewClientSecret()
                                 .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
@@ -366,7 +370,7 @@ public class OauthTlsST extends OauthAbstractST {
                                 .build())
                         .endTls()
                         .withNewKafkaClientAuthenticationOAuth()
-                            .withNewTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                            .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                             .withClientId("kafka-mirror-maker")
                             .withNewClientSecret()
                                 .withSecretName(MIRROR_MAKER_OAUTH_SECRET)

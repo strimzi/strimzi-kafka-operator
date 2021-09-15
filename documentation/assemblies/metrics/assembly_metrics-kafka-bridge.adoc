@@ -38,9 +38,12 @@ spec:
 
 == Enabling the Kafka Bridge Grafana dashboard
 
+[role="_abstract"]
+Use a Grafana dashboard to visualize Kafka Bridge data.
 If you deployed Kafka Bridge with your Kafka cluster, you can enable Grafana to present the metrics data it exposes.
 
-A Kafka Bridge dashboard is provided in the link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/examples/metrics[examples/metrics] directory as a JSON file:
+Strimzi provides xref:ref-metrics-config-files-{context}[example dashboard configuration files for Kafka Bridge].
+The following Kafka Bridge dashboard is provided as a JSON file:
 
 * `strimzi-kafka-bridge.json`
 

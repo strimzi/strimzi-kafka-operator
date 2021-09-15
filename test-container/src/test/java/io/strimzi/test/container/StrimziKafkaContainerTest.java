@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi;
+package io.strimzi.test.container;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,8 +14,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -30,11 +33,13 @@ public class StrimziKafkaContainerTest {
     @Test
     void testAtLeastOneVersionKafkaIsPresent() {
         assumeDocker();
-        systemUnderTest = new StrimziKafkaContainer();
+        systemUnderTest = StrimziKafkaContainer.create(1);
 
         LOGGER.info("Verifying that at least one kafka version is present.");
 
         assertThat(StrimziKafkaContainer.getSupportedKafkaVersions(), is(not(nullValue())));
+
+        systemUnderTest.stop();
     }
 
     private void assumeDocker() {
@@ -44,7 +49,7 @@ public class StrimziKafkaContainerTest {
     @Test
     void testVersions() {
         assumeDocker();
-        systemUnderTest = new StrimziKafkaContainer();
+        systemUnderTest = StrimziKafkaContainer.create(1);
 
         List<String> supportedKafkaVersions = new ArrayList<>();
 
@@ -79,15 +84,42 @@ public class StrimziKafkaContainerTest {
 
         LOGGER.info("Asserting Strimzi version: {}", strimziVersion);
         assertThat(strimziVersion, is(StrimziKafkaContainer.getStrimziVersion()));
+
+        systemUnderTest.stop();
     }
 
     @Test
-    void testStartContainer() {
+    void testStartContainerWithEmptyConfiguration() {
         assumeDocker();
-        systemUnderTest = new StrimziKafkaContainer();
+        systemUnderTest = StrimziKafkaContainer.create(1);
 
         systemUnderTest.start();
 
         assertThat(systemUnderTest.getBootstrapServers(), is("PLAINTEXT://localhost:" + systemUnderTest.getMappedPort(9092)));
+    }
+
+    @Test
+    void testStartContainerWithSomeConfiguration() {
+        assumeDocker();
+
+        Map<String, String> kafkaConfiguration = new HashMap<>();
+
+        kafkaConfiguration.put("log.cleaner.enable", "false");
+        kafkaConfiguration.put("log.cleaner.backoff.ms", "1000");
+        kafkaConfiguration.put("ssl.enabled.protocols", "TLSv1");
+        kafkaConfiguration.put("log.index.interval.bytes", "2048");
+
+        systemUnderTest = StrimziKafkaContainer.createWithAdditionalConfiguration(1, kafkaConfiguration);
+
+        systemUnderTest.start();
+
+        String logsFromKafka = systemUnderTest.getLogs();
+
+        assertThat(logsFromKafka, containsString("log.cleaner.enable = false"));
+        assertThat(logsFromKafka, containsString("log.cleaner.backoff.ms = 1000"));
+        assertThat(logsFromKafka, containsString("ssl.enabled.protocols = [TLSv1]"));
+        assertThat(logsFromKafka, containsString("log.index.interval.bytes = 2048"));
+
+        systemUnderTest.stop();
     }
 }

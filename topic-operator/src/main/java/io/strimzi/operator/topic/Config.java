@@ -128,7 +128,6 @@ public class Config {
     public static final String TC_STORE_TOPIC = "STRIMZI_STORE_TOPIC";
     public static final String TC_STORE_NAME = "STRIMZI_STORE_NAME";
     public static final String TC_APPLICATION_ID = "STRIMZI_APPLICATION_ID";
-    public static final String TC_APPLICATION_SERVER = "STRIMZI_APPLICATION_SERVER";
     public static final String TC_STALE_RESULT_TIMEOUT_MS = "STRIMZI_STALE_RESULT_TIMEOUT_MS";
 
     public static final String TC_USE_ZOOKEEPER_TOPIC_STORE = "STRIMZI_USE_ZOOKEEPER_TOPIC_STORE";
@@ -205,8 +204,6 @@ public class Config {
     public static final Value<String> STORE_NAME = new Value<>(TC_STORE_NAME, STRING, "topic-store");
     /** The application id for the Kafka Streams based TopicStore */
     public static final Value<String> APPLICATION_ID = new Value<>(TC_APPLICATION_ID, STRING, "__strimzi-topic-operator-kstreams");
-    /** The (gRPC) application server for the Kafka Streams based TopicStore */
-    public static final Value<String> APPLICATION_SERVER = new Value<>(TC_APPLICATION_SERVER, STRING, "localhost:9000");
     /** The stale timeout for the Kafka Streams based TopicStore */
     public static final Value<Long> STALE_RESULT_TIMEOUT_MS = new Value<>(TC_STALE_RESULT_TIMEOUT_MS, DURATION, "5000");
 
@@ -241,7 +238,6 @@ public class Config {
         addConfigValue(configValues, STORE_TOPIC);
         addConfigValue(configValues, STORE_NAME);
         addConfigValue(configValues, APPLICATION_ID);
-        addConfigValue(configValues, APPLICATION_SERVER);
         addConfigValue(configValues, STALE_RESULT_TIMEOUT_MS);
         addConfigValue(configValues, USE_ZOOKEEPER_TOPIC_STORE);
     }

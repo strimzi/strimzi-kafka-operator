@@ -34,13 +34,10 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
-import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -81,11 +78,9 @@ import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.STATEFUL_SET;
 import static io.strimzi.systemtest.utils.StUtils.configMap2Properties;
 import static io.strimzi.systemtest.utils.StUtils.stringToProperties;
 import static io.strimzi.test.TestUtils.fromYamlString;
-import static io.strimzi.test.TestUtils.map;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
@@ -99,48 +94,13 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 class KafkaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaST.class);
-    private static final String TEMPLATE_PATH = TestUtils.USER_PATH + "/../packaging/examples/templates/cluster-operator";
     public static final String NAMESPACE = "kafka-cluster-test";
     private static final String OPENSHIFT_CLUSTER_NAME = "openshift-my-cluster";
-
-    @ParallelNamespaceTest
-    @OpenShiftOnly
-    void testDeployKafkaClusterViaTemplate(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
-
-        cluster.createCustomResources(extensionContext, TEMPLATE_PATH);
-        String templateName = "strimzi-ephemeral";
-        cmdKubeClient(namespaceName).createResourceAndApply(templateName, map("CLUSTER_NAME", OPENSHIFT_CLUSTER_NAME));
-
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, KafkaResources.zookeeperStatefulSetName(OPENSHIFT_CLUSTER_NAME), 3, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, KafkaResources.kafkaStatefulSetName(OPENSHIFT_CLUSTER_NAME), 3, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(OPENSHIFT_CLUSTER_NAME), 1);
-
-        //Testing docker images
-        testDockerImagesForKafkaCluster(OPENSHIFT_CLUSTER_NAME, NAMESPACE, namespaceName, 3, 3, false);
-
-        //Testing labels
-        verifyLabelsForKafkaCluster(NAMESPACE, namespaceName, OPENSHIFT_CLUSTER_NAME, templateName);
-
-        LOGGER.info("Deleting Kafka cluster {} after test", OPENSHIFT_CLUSTER_NAME);
-        cmdKubeClient(namespaceName).deleteByName("Kafka", OPENSHIFT_CLUSTER_NAME);
-
-        //Wait for kafka deletion
-        cmdKubeClient(namespaceName).waitForResourceDeletion(Kafka.RESOURCE_KIND, OPENSHIFT_CLUSTER_NAME);
-        kubeClient(namespaceName).listPods(namespaceName).stream()
-            .filter(p -> p.getMetadata().getName().startsWith(OPENSHIFT_CLUSTER_NAME))
-            .forEach(p -> PodUtils.deletePodWithWait(p.getMetadata().getName()));
-
-        StatefulSetUtils.waitForStatefulSetDeletion(namespaceName, KafkaResources.kafkaStatefulSetName(OPENSHIFT_CLUSTER_NAME));
-        StatefulSetUtils.waitForStatefulSetDeletion(namespaceName, KafkaResources.zookeeperStatefulSetName(OPENSHIFT_CLUSTER_NAME));
-        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaResources.entityOperatorDeploymentName(OPENSHIFT_CLUSTER_NAME));
-    }
 
     @ParallelNamespaceTest
     void testEODeletion(ExtensionContext extensionContext) {
@@ -742,11 +702,6 @@ class KafkaST extends AbstractST {
     void testRemoveUserAndTopicOperatorsFromEntityOperator(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        // TODO issue #4152 - temporarily disabled for Namespace RBAC scoped
-        assumeFalse(Environment.isNamespaceRbacScope());
-
-        LOGGER.info("Deploying Kafka cluster {}", clusterName);
 
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -1802,10 +1757,6 @@ class KafkaST extends AbstractST {
         resourceManager.deleteResources(extensionContext);
 
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
-
-        if (cluster.getListOfDeployedResources().contains(TEMPLATE_PATH)) {
-            cluster.deleteCustomResources(extensionContext, TEMPLATE_PATH);
-        }
 
         if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(OPENSHIFT_CLUSTER_NAME).get() != null) {
             cmdKubeClient(namespaceName).deleteByName(Kafka.RESOURCE_KIND, OPENSHIFT_CLUSTER_NAME);

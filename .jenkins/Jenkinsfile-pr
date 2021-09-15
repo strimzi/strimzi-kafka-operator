@@ -12,7 +12,8 @@ pipeline {
     }
     parameters {
         string(name: 'TEST_CASE', defaultValue: '*ST', description: 'maven parameter for executing specific tests')
-        string(name: 'TEST_PROFILE', defaultValue: 'acceptance', description: 'maven parameter for executing specific test profile')
+        string(name: 'TEST_PROFILE', defaultValue: 'all', description: 'maven parameter for executing specific test profile')
+        string(name: 'TEST_GROUPS', defaultValue: 'acceptance', description: 'maven parameter for executing specific test groups')
         string(name: 'EXCLUDE', defaultValue: "${DEFAULT_EXCLUDED_GROUPS}", description: 'maven parameter for exclude specific test tag')
         string(name: 'ENV_VARS', defaultValue: "", description: 'maven parameter for setting values of environment variables used in STs')
     }
@@ -51,17 +52,27 @@ pipeline {
                     println("Comment body: ${env.ghprbCommentBody}")
                     env.TEST_CASE = params.TEST_CASE
                     env.TEST_PROFILE = params.TEST_PROFILE
+                    env.TEST_GROUPS = params.TEST_GROUPS
                     env.ENV_VARS = params.ENV_VARS
                     env.EXCLUDE_GROUPS = DEFAULT_EXCLUDED_GROUPS
                     if (env.ghprbCommentBody.contains('testcase=')) {
                         env.TEST_CASE = env.ghprbCommentBody.split('testcase=')[1].split(/\s/)[0]
                     }
                     println("TEST_CASE: ${env.TEST_CASE}")
-                    if (env.ghprbCommentBody.contains('profile=')) {
-                        env.TEST_PROFILE = env.ghprbCommentBody.split('profile=')[1].split(/\s/)[0]
-                        if (env.TEST_PROFILE != "flaky") {
+
+                    if (env.ghprbCommentBody.contains('groups=')) {
+                        env.TEST_GROUPS = env.ghprbCommentBody.split('groups=')[1].split(/\s/)[0]
+                        if (env.TEST_GROUPS != "flaky") {
                             env.EXCLUDE_GROUPS = env.EXCLUDE_GROUPS + ",flaky"
                         }
+                    } else if (env.ghprbCommentBody.contains('profile=')) {
+                        // in case we want to run specific profile, the -Dgroups should be empty - it overrides the groups from profiles
+                        env.TEST_GROUPS = ""
+                    }
+                    println("TEST_GROUPS: ${env.TEST_GROUPS}")
+
+                    if (env.ghprbCommentBody.contains('profile=')) {
+                        env.TEST_PROFILE = env.ghprbCommentBody.split('profile=')[1].split(/\s/)[0]
                     }
                     println("TEST_PROFILE: ${env.TEST_PROFILE}")
                     if (env.ghprbCommentBody.contains('exclude=')) {
@@ -189,7 +200,7 @@ pipeline {
                             sh(script: "cat ${env.WORKSPACE}/systemtest/src/test/resources/upgrade/StrimziUpgradeST.json")
                             sh(script: "cat ${env.WORKSPACE}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml")
                         }
-                        lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.EXCLUDE_GROUPS, env.TEST_COUNT_RUNNING_IN_PARALLEL)
+                        lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.TEST_GROUPS, env.EXCLUDE_GROUPS, env.TEST_COUNT_RUNNING_IN_PARALLEL)
                     }
                 }
             }

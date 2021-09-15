@@ -3203,7 +3203,7 @@ public class KafkaClusterTest {
                     .editKafka()
                         // Set a rack to force init-container to be templated
                         .withNewRack()
-                            .withNewTopologyKey("a-topology")
+                            .withTopologyKey("a-topology")
                         .endRack()
                         .withNewTemplate()
                             .withNewInitContainer()

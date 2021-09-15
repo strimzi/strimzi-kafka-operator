@@ -71,7 +71,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
 
         KafkaBridgeSpec bridgeSpec = new KafkaBridgeSpecBuilder()
             .withNewKafkaClientAuthenticationScramSha512()
-                .withNewUsername(weirdUserName)
+                .withUsername(weirdUserName)
                 .withPasswordSecret(passwordSecret)
             .endKafkaClientAuthenticationScramSha512()
             .withNewTls()

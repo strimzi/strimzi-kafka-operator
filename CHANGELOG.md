@@ -5,9 +5,14 @@
 * Update the Open Policy Agent Authorizer to version [1.1.0](https://github.com/Bisnode/opa-kafka-plugin/releases/tag/v1.1.0)
 * Expose JMX port on Zookeeper nodes via a headless service.
 * Allow configuring labels and annotations for JMX authentication secrets
+* Enable Cruise Control anomaly.detection configurations
+* Add support for building connector images from the Maven coordinates
+* Allow Kafka Connect Build artifacts to be downloaded from insecure servers (#5542)
 
 ### Changes, deprecations and removals
 
+* imageRepositoryOverride,imageRegistryOverride and imageTagOverride are now removed from values.yaml. defaultImageRepository, defaultImageRegistry and defaultImageTag values are introduced in helm charts which sets the default registry, repository and tags for the images. Now the registry, repository and tag for a single image can be configured as per the requirement.
+* The OpenShift Templates were removed from the examples and are no longer supported (#5548)
 
 ## 0.25.0
 

@@ -16,10 +16,6 @@ Default is the namespace where the Kafka cluster is deployed.
 The interval between periodic reconciliations in seconds.
 Default `120`.
 
-`zookeeperSessionTimeoutSeconds`::
-The ZooKeeper session timeout in seconds.
-Default `18`.
-
 `image`::
 The `image` property can be used to configure the container image which will be used.
 For more details about configuring custom container images, see xref:con-common-configuration-images-reference[].

@@ -6,6 +6,7 @@
 = Key features
 
 //standard introduction
+[role="_abstract"]
 include::../../shared/snip-intro-text.adoc[leveloffset=+1]
 
 This guide is intended as a starting point for building an understanding of Strimzi.
@@ -14,6 +15,10 @@ Configuration points are outlined, including options to secure and monitor Kafka
 A distribution of Strimzi provides the files to deploy and manage a Kafka cluster, as well as example files for configuration and monitoring of your deployment.
 
 A typical Kafka deployment is described, as well as the tools used to deploy and manage Kafka.
+
+[role="_additional-resources"]
+.Additional resources
+link:{BookURLDeploying}#deploy-examples-{context}[Example configuration files provided with Strimzi^]
 
 //description of Kafka features and concepts
 include::modules/con-key-features-kafka.adoc[leveloffset=+1]

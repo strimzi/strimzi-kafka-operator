@@ -20,7 +20,7 @@ import lombok.EqualsAndHashCode;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "url", "sha512sum", "fileName" })
+@JsonPropertyOrder({ "url", "sha512sum", "fileName", "insecure" })
 @EqualsAndHashCode
 public class OtherArtifact extends DownloadableArtifact {
     private static final long serialVersionUID = 1L;

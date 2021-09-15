@@ -664,7 +664,7 @@ class SecurityST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
             .editSpec()
-                .addNewMaintenanceTimeWindow(maintenanceWindowCron)
+                .addToMaintenanceTimeWindows(maintenanceWindowCron)
             .endSpec()
             .build());
 

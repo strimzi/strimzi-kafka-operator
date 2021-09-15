@@ -81,7 +81,7 @@ public class JmxTransTest {
             .withKafkaQueries(new JmxTransQueryTemplateBuilder()
                     .withOutputs("name")
                     .withAttributes("attributes")
-                    .withNewTargetMBean("mbean")
+                    .withTargetMBean("mbean")
                     .build())
             .build();
 

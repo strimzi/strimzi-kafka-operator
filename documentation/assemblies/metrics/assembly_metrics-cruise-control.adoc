@@ -5,6 +5,7 @@
 [id='assembly-cruise-control-{context}']
 = Monitor Cruise Control
 
+[role="_abstract"]
 If you are already using Prometheus and Grafana for monitoring of built-in Kafka metrics, you can configure Prometheus to also scrape the Cruise Control Prometheus endpoint.
 
 The example Grafana dashboard for Cruise Control provides:
@@ -43,7 +44,8 @@ spec:
 
 If you deployed Cruise Control with your Kafka cluster with the metrics enabled, you can enable Grafana to present the metrics data it exposes.
 
-A Cruise Control dashboard is provided in the link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/examples/metrics[examples/metrics] directory as a JSON file:
+Strimzi provides xref:ref-metrics-config-files-{context}[example dashboard configuration files for Cruise Control].
+The following Cruise Control dashboard is provided as a JSON file:
 
 * `strimzi-cruise-control.json`
 

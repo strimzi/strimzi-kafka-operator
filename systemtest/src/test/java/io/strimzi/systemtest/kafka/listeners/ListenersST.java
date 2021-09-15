@@ -7,6 +7,7 @@ package io.strimzi.systemtest.kafka.listeners;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
@@ -75,6 +76,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
 public class ListenersST extends AbstractST {
@@ -308,6 +310,7 @@ public class ListenersST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String kafkaUsername = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final int passwordLength = 25;
 
         // Use a Kafka with plain listener disabled
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
@@ -322,6 +325,17 @@ public class ListenersST extends AbstractST {
                             .endKafkaListenerAuthenticationScramSha512Auth()
                         .build())
                 .endKafka()
+                .editEntityOperator()
+                    .editOrNewTemplate()
+                        .editOrNewUserOperatorContainer()
+                            .addToEnv(
+                                new ContainerEnvVarBuilder()
+                                    .withName("STRIMZI_SCRAM_SHA_PASSWORD_LENGTH")
+                                    .withValue(String.valueOf(passwordLength))
+                                    .build())
+                        .endUserOperatorContainer()
+                    .endTemplate()
+                .endEntityOperator()
             .endSpec()
             .build());
 
@@ -352,6 +366,12 @@ public class ListenersST extends AbstractST {
             internalKafkaClient.sendMessagesTls(),
             internalKafkaClient.receiveMessagesTls()
         );
+
+        LOGGER.info("Checking if generated password has {} characters", passwordLength);
+        String password = kubeClient().namespace(namespaceName).getSecret(kafkaUsername).getData().get("password");
+        String decodedPassword = new String(Base64.getDecoder().decode(password));
+
+        assertEquals(decodedPassword.length(), passwordLength);
 
         Service kafkaService = kubeClient(namespaceName).getService(namespaceName, KafkaResources.bootstrapServiceName(clusterName));
         String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");

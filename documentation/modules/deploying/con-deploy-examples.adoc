@@ -1,0 +1,63 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly-deploy-tasks-prep.adoc
+
+[id='deploy-examples-{context}']
+= Example configuration and deployment files
+
+[role="_abstract"]
+Use the example configuration and deployment files provided with Strimzi to deploy Kafka components with different configurations and monitor your deployment.
+Example configuration files for custom resources contain important properties and values, which you can extend with additional supported configuration properties for your own deployment.
+
+== Example files location
+
+ifdef::Downloading[]
+The example files are provided with the downloadable release artifacts from {ReleaseDownload}.
+
+You can also access the example files directly from the
+link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/examples/[`examples` directory^].
+endif::Downloading[]
+
+ifndef::Downloading[]
+The example files are provided with the downloadable release artifacts from the {ZipDownload}.
+endif::Downloading[]
+
+You can download and apply the examples using the `kubectl` command-line tool.
+The examples can serve as a starting point when building your own Kafka component configuration for deployment.
+
+NOTE: If you installed Strimzi using the Operator, you can still download the example files and use them to upload configuration.
+
+== Example files provided with Strimzi
+
+The release artifacts include an `examples` directory that contains the configuration examples.
+
+.Examples directory
+[source]
+--
+examples
+├── user <1>
+├── topic <2>
+├── security <3>
+│   ├── tls-auth
+│   ├── scram-sha-512-auth
+│   └── keycloak-authorization
+├── mirror-maker <4>
+├── metrics <5>
+├── kafka <6>
+├── cruise-control <7>
+├── connect <8>
+└── bridge <9>
+--
+<1> `KafkaUser` custom resource configuration, which is managed by the User Operator.
+<2> `KafkaTopic` custom resource configuration, which is managed by Topic Operator.
+<3> Authentication and authorization configuration for Kafka components. Includes example configuration for TLS and SCRAM-SHA-512 authentication. The Keycloak example includes `Kafka` custom resource configuration and a Keycloak realm specification. You can use the example to try Keycloak authorization services.
+<4> `Kafka` custom resource configuration for a deployment of Mirror Maker. Includes example configuration for replication policy and synchronization frequency.
+<5> xref:ref-metrics-config-files-{context}[Metrics configuration], including Prometheus installation and Grafana dashboard files.
+<6> `Kafka` custom resource configuration for a deployment of Kafka. Includes example configuration for an ephemeral or persistent single or multi-node deployment.
+<7> `Kafka` custom resource with a deployment configuration for Cruise Control. Includes `KafkaRebalance` custom resources to generate optimizations proposals from Cruise Control, with example configurations to use the default or user optimization goals.
+<8> `KafkaConnect` and `KafkaConnector` custom resource configuration for a deployment of Kafka Connect. Includes example configuration for a single or multi-node deployment.
+<9> `KafkaBridge` custom resource configuration for a deployment of Kafka Bridge.
+
+[role="_additional-resources"]
+.Additional resources
+* link:{BookURLUsing}#assembly-deployment-configuration-str[Configuring a Strimzi deployment^]

@@ -7,7 +7,8 @@
 
 = Example metrics files
 
-You can find example Grafana dashboards and other metrics configuration files in the link:https://github.com/strimzi/strimzi-kafka-operator/tree/{GithubVersion}/examples/metrics[examples/metrics] directory.
+[role="_abstract"]
+You can find example Grafana dashboards and other metrics configuration files in the xref:deploy-examples-{context}[example configuration files] provided by Strimzi.
 
 .Example metrics files provided with Strimzi
 [source]
@@ -111,6 +112,7 @@ When deploying Prometheus metrics configuration, you can can deploy the example 
 |`kafka-cruise-control-metrics.yaml`
 |===
 
+ [role="_additional-resources"] 
 .Additional resources
 
 For more information on the use of relabeling, see {PrometheusConfig} in the Prometheus documentation.

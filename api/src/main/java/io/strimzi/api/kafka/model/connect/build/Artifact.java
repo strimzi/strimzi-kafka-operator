@@ -28,6 +28,7 @@ import java.util.Map;
             @JsonSubTypes.Type(value = JarArtifact.class, name = Artifact.TYPE_JAR),
             @JsonSubTypes.Type(value = TgzArtifact.class, name = Artifact.TYPE_TGZ),
             @JsonSubTypes.Type(value = ZipArtifact.class, name = Artifact.TYPE_ZIP),
+            @JsonSubTypes.Type(value = MavenArtifact.class, name = Artifact.TYPE_MVN),
             @JsonSubTypes.Type(value = OtherArtifact.class, name = Artifact.TYPE_OTHER)
         }
 )
@@ -39,12 +40,13 @@ public abstract class Artifact implements UnknownPropertyPreserving, Serializabl
     public static final String TYPE_JAR = "jar";
     public static final String TYPE_TGZ = "tgz";
     public static final String TYPE_ZIP = "zip";
+    public static final String TYPE_MVN = "maven";
     public static final String TYPE_OTHER = "other";
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Artifact type. " +
-            "Currently, the supported artifact types are `tgz`, `jar`, and `zip`.")
+            "Currently, the supported artifact types are `tgz`, `jar`, `zip`, `other` and `maven`.")
     public abstract String getType();
 
     @Override

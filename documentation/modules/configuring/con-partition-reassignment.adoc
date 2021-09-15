@@ -1,14 +1,15 @@
 // Module included in the following assemblies:
 //
-// assembly-scaling-clusters.adoc
+// configuring/assembly-scaling-clusters.adoc
 
 [id='con-partition-reassignment-{context}']
 
-= Partition reassignment
+= Partition reassignment tool
 
+[role="_abstract"]
 The Topic Operator does not currently support reassigning replicas to different brokers, so it is necessary to connect directly to broker pods to reassign replicas to brokers.
 
-Within a broker pod, the `kafka-reassign-partitions.sh` utility allows you to reassign partitions to different brokers.
+Within a broker pod, the `kafka-reassign-partitions.sh` tool allows you to reassign partitions to different brokers.
 
 It has three different modes:
 
@@ -23,7 +24,7 @@ For a given partition, once the new broker has caught up and joined the ISR (in-
 
 `--verify`::
 Using the same _reassignment JSON file_ as the `--execute` step, `--verify` checks whether all the partitions in the file have been moved to their intended brokers.
-If the reassignment is complete, --verify also removes any xref:con-reassignment-throttles-{context}[throttles] that are in effect.
+If the reassignment is complete, `--verify` also removes any traffic throttles (`--throttle`) that are in effect.
 Unless removed, throttles will continue to affect the cluster even after the reassignment has finished.
 
 It is only possible to have one reassignment running in a cluster at any given time, and it is not possible to cancel a running reassignment.
@@ -31,7 +32,8 @@ If you need to cancel a reassignment, wait for it to complete and then perform a
 The `kafka-reassign-partitions.sh` will print the reassignment JSON for this reversion as part of its output.
 Very large reassignments should be broken down into a number of smaller reassignments in case there is a need to stop in-progress reassignment.
 
-== Reassignment JSON file
+[discrete]
+== Partition reassignment JSON file
 
 The _reassignment JSON file_ has a specific structure:
 
@@ -60,6 +62,7 @@ NOTE: Although Kafka also supports a `"log_dirs"` property this should not be us
 
 The following is an example reassignment JSON file that assigns partition `4` of topic `topic-a` to brokers `2`, `4` and `7`, and partition `2` of topic `topic-b` to brokers `1`, `5` and `7`:
 
+.Example partition reassignment file
 [source,json]
 ----
 {
@@ -81,7 +84,8 @@ The following is an example reassignment JSON file that assigns partition `4` of
 
 Partitions not included in the JSON are not changed.
 
-== Reassigning partitions between JBOD volumes
+[discrete]
+== Partition reassignment between JBOD volumes
 
 When using JBOD storage in your Kafka cluster, you can choose to reassign the partitions between specific volumes and their log directories (each volume has a single log directory).
 To reassign a partition to a specific volume, add the `log_dirs` option to _<PartitionObjects>_ in the reassignment JSON file.
@@ -99,8 +103,7 @@ To reassign a partition to a specific volume, add the `log_dirs` option to _<Par
 The `log_dirs` object should contain the same number of log directories as the number of replicas specified in the `replicas` object.
 The value should be either an absolute path to the log directory, or the `any` keyword.
 
-For example:
-
+.Example partition reassignment file specifying log directories
 [source,subs=+quotes]
 ----
 {
@@ -110,3 +113,20 @@ For example:
       "log_dirs": [ "/var/lib/kafka/data-0/kafka-log2", "/var/lib/kafka/data-0/kafka-log4", "/var/lib/kafka/data-0/kafka-log7" ]
 }
 ----
+
+[discrete]
+= Partition reassignment throttles
+
+Partition reassignment can be a slow process because it involves transferring large amounts of data between brokers.
+To avoid a detrimental impact on clients, you can throttle the reassignment process.
+Use the `--throttle` parameter with the `kafka-reassign-partitions.sh` tool to throttle a reassignment.
+You specify a maximum threshold in bytes per second for the movement of partitions between brokers.
+For example, `--throttle 5000000` sets a maximum threshold for moving partitions of 50 MBps.
+
+Throttling might cause the reassignment to take longer to complete.
+
+* If the throttle is too low, the newly assigned brokers will not be able to keep up with records being published and the reassignment will never complete.
+* If the throttle is too high, clients will be impacted.
+
+For example, for producers, this could manifest as higher than normal latency waiting for acknowledgment.
+For consumers, this could manifest as a drop in throughput caused by higher latency between polls.

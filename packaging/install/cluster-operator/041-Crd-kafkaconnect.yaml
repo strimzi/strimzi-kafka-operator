@@ -325,11 +325,11 @@ spec:
                     description: A map of -XX options to the JVM.
                   "-Xms":
                     type: string
-                    pattern: '[0-9]+[mMgG]?'
+                    pattern: ^[0-9]+[mMgG]?$
                     description: -Xms option to to the JVM.
                   "-Xmx":
                     type: string
-                    pattern: '[0-9]+[mMgG]?'
+                    pattern: ^[0-9]+[mMgG]?$
                     description: -Xmx option to to the JVM.
                   gcLoggingEnabled:
                     type: boolean
@@ -1946,37 +1946,65 @@ spec:
                           items:
                             type: object
                             properties:
+                              artifact:
+                                type: string
+                                description: Maven artifact id. Applicable to the
+                                  `maven` artifact type only.
                               fileName:
                                 type: string
                                 description: Name under which the artifact will be
                                   stored.
+                              group:
+                                type: string
+                                description: Maven group id. Applicable to the `maven`
+                                  artifact type only.
+                              insecure:
+                                type: boolean
+                                description: By default, connections using TLS are
+                                  verified to check they are secure. The server certificate
+                                  used must be valid, trusted, and contain the server
+                                  name. By setting this option to `true`, all TLS
+                                  verification is disabled and the artifact will be
+                                  downloaded, even when the server is considered insecure.
+                              repository:
+                                type: string
+                                description: Maven repository to download the artifact
+                                  from. Applicable to the `maven` artifact type only.
                               sha512sum:
                                 type: string
-                                description: SHA512 checksum of the artifact. Optional.
+                                description: 'SHA512 checksum of the artifact. Optional.
                                   If specified, the checksum will be verified while
                                   building the new container. If not specified, the
-                                  downloaded artifact will not be verified.
+                                  downloaded artifact will not be verified. Not applicable
+                                  to the `maven` artifact type. '
                               type:
                                 type: string
                                 enum:
                                 - jar
                                 - tgz
                                 - zip
+                                - maven
                                 - other
                                 description: Artifact type. Currently, the supported
-                                  artifact types are `tgz`, `jar`, and `zip`.
+                                  artifact types are `tgz`, `jar`, `zip`, `other`
+                                  and `maven`.
                               url:
                                 type: string
-                                pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
+                                pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]$
                                 description: URL of the artifact which will be downloaded.
                                   Strimzi does not do any security scanning of the
                                   downloaded artifacts. For security reasons, you
                                   should first verify the artifacts manually and configure
                                   the checksum verification to make sure the same
-                                  artifact is used in the automated build. Required.
+                                  artifact is used in the automated build. Required
+                                  for `jar`, `zip`, `tgz` and `other` artifacts. Not
+                                  applicable to the `maven` artifact type.
+                              version:
+                                type: string
+                                description: Maven version number. Applicable to the
+                                  `maven` artifact type only.
                             required:
                             - type
-                            - url
                           description: List of artifacts which belong to this connector
                             plugin. Required.
                       required:

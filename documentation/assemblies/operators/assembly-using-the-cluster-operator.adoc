@@ -11,8 +11,6 @@ The Cluster Operator is used to deploy a Kafka cluster and other Kafka component
 
 The Cluster Operator is deployed using YAML installation files.
 
-NOTE: On OpenShift, a Kafka Connect deployment can incorporate a Source2Image feature to provide a convenient way to add additional connectors.
-
 [role="_additional-resources"]
 .Additional resources
 * link:{BookURLDeploying}#cluster-operator-str[Deploying the Cluster Operator^] in the _Deploying and Upgrading Strimzi_ guide.

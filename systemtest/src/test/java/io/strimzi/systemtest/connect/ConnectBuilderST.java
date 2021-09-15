@@ -11,7 +11,9 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnector;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.MavenArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.OtherArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
@@ -23,6 +25,7 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -35,6 +38,7 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -75,7 +79,8 @@ class ConnectBuilderST extends AbstractST {
     private static final String SHARED_KAFKA_CLUSTER_NAME = NAMESPACE;
 
     private static final String ECHO_SINK_CLASS_NAME = "cz.scholz.kafka.connect.echosink.EchoSinkConnector";
-    private static final String CAMEL_CONNECTOR_CLASS_NAME = "org.apache.camel.kafkaconnector.http.CamelHttpSinkConnector";
+    private static final String CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME = "org.apache.camel.kafkaconnector.http.CamelHttpSinkConnector";
+    private static final String CAMEL_CONNECTOR_TIMER_CLASS_NAME = "org.apache.camel.kafkaconnector.timer.CamelTimerSourceConnector";
 
     private static final String ECHO_SINK_JAR_URL = "https://github.com/scholzj/echo-sink/releases/download/1.1.0/echo-sink-1.1.0.jar";
     private static final String ECHO_SINK_JAR_CHECKSUM = "b7da48d5ecd1e4199886d169ced1bf702ffbdfd704d69e0da97e78ff63c1bcece2f59c2c6c751f9c20be73472b8cb6a31b6fd4f75558c1cb9d96daa9e9e603d2";
@@ -92,12 +97,19 @@ class ConnectBuilderST extends AbstractST {
     private static final String CAMEL_CONNECTOR_ZIP_URL = "https://repo.maven.apache.org/maven2/org/apache/camel/kafkaconnector/camel-http-kafka-connector/0.7.0/camel-http-kafka-connector-0.7.0-package.zip";
     private static final String CAMEL_CONNECTOR_ZIP_CHECKSUM = "bc15135b8ef7faccd073508da0510c023c0f6fa3ec7e48c98ad880dd112b53bf106ad0a47bcb353eed3ec03bb3d273da7de356f3f7f1766a13a234a6bc28d602";
 
+    private static final String CAMEL_CONNECTOR_MAVEN_GROUP_ID = "org.apache.camel.kafkaconnector";
+    private static final String CAMEL_CONNECTOR_MAVEN_ARTIFACT_ID = "camel-timer-kafka-connector";
+    private static final String CAMEL_CONNECTOR_MAVEN_VERSION = "0.9.0";
+
+    private static final String PLUGIN_WITH_TAR_AND_JAR_NAME = "connector-with-tar-and-jar";
+    private static final String PLUGIN_WITH_ZIP_NAME = "connector-from-zip";
     private static final String PLUGIN_WITH_OTHER_TYPE_NAME = "plugin-with-other-type";
+    private static final String PLUGIN_WITH_MAVEN_NAME = "connector-from-maven";
 
     private String outputRegistry = "";
 
     private static final Plugin PLUGIN_WITH_TAR_AND_JAR = new PluginBuilder()
-        .withName("connector-with-tar-and-jar")
+        .withName(PLUGIN_WITH_TAR_AND_JAR_NAME)
         .withArtifacts(
             new JarArtifactBuilder()
                 .withUrl(ECHO_SINK_JAR_URL)
@@ -110,7 +122,7 @@ class ConnectBuilderST extends AbstractST {
         .build();
 
     private static final Plugin PLUGIN_WITH_ZIP = new PluginBuilder()
-        .withName("connector-from-zip")
+        .withName(PLUGIN_WITH_ZIP_NAME)
         .withArtifacts(
             new ZipArtifactBuilder()
                 .withUrl(CAMEL_CONNECTOR_ZIP_URL)
@@ -125,6 +137,17 @@ class ConnectBuilderST extends AbstractST {
                 .withUrl(ECHO_SINK_JAR_URL)
                 .withFileName(ECHO_SINK_FILE_NAME)
                 .withSha512sum(ECHO_SINK_JAR_CHECKSUM)
+                .build()
+        )
+        .build();
+
+    private static final Plugin PLUGIN_WITH_MAVEN_TYPE = new PluginBuilder()
+        .withName(PLUGIN_WITH_MAVEN_NAME)
+        .withArtifacts(
+            new MavenArtifactBuilder()
+                .withVersion(CAMEL_CONNECTOR_MAVEN_VERSION)
+                .withArtifact(CAMEL_CONNECTOR_MAVEN_ARTIFACT_ID)
+                .withGroup(CAMEL_CONNECTOR_MAVEN_GROUP_ID)
                 .build()
         )
         .build();
@@ -368,7 +391,7 @@ class ConnectBuilderST extends AbstractST {
         LOGGER.info("Checking that KafkaConnect API contains EchoSink connector and not Camel-Telegram Connector class name");
         String plugins = cmdKubeClient().execInPod(kafkaClientsPodName, "curl", "-X", "GET", "http://" + KafkaConnectResources.serviceName(connectClusterName) + ":8083/connector-plugins").out();
 
-        assertFalse(plugins.contains(CAMEL_CONNECTOR_CLASS_NAME));
+        assertFalse(plugins.contains(CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME));
         assertTrue(plugins.contains(ECHO_SINK_CLASS_NAME));
 
         LOGGER.info("Adding one more connector to the KafkaConnect");
@@ -385,7 +408,7 @@ class ConnectBuilderST extends AbstractST {
         LOGGER.info("Creating Camel-HTTP-Sink connector");
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(camelConnector, connectClusterName)
             .editOrNewSpec()
-                .withClassName(CAMEL_CONNECTOR_CLASS_NAME)
+                .withClassName(CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME)
                 .withConfig(camelHttpConfig)
             .endSpec()
             .build());
@@ -396,7 +419,7 @@ class ConnectBuilderST extends AbstractST {
         assertThat(kafkaConnect.getSpec().getBuild().getPlugins().size(), is(2));
 
         assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(ECHO_SINK_CLASS_NAME)));
-        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(CAMEL_CONNECTOR_CLASS_NAME)));
+        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME)));
     }
 
     @ParallelTest
@@ -457,6 +480,57 @@ class ConnectBuilderST extends AbstractST {
         String fileName = getPluginFileNameFromConnectPod(connectPodName);
         assertNotEquals(fileName, ECHO_SINK_FILE_NAME);
         assertEquals(fileName, Util.sha1Prefix(ECHO_SINK_JAR_URL));
+    }
+
+    @ParallelTest
+    void testBuildPluginUsingMavenCoordinatesArtifacts(ExtensionContext extensionContext) {
+        final String connectClusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String imageName = getImageNameForTestCase();
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String connectorName = connectClusterName + "-camel-connector";
+        final String consumerName = mapWithKafkaClientNames.get(extensionContext.getDisplayName()) + "-consumer";
+
+        resourceManager.createResource(extensionContext,
+            KafkaTopicTemplates.topic(SHARED_KAFKA_CLUSTER_NAME, topicName).build(),
+            KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, SHARED_KAFKA_CLUSTER_NAME, 1, false)
+                .editMetadata()
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .editOrNewSpec()
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .withNewBuild()
+                        .withPlugins(PLUGIN_WITH_MAVEN_TYPE)
+                        .withNewDockerOutput()
+                            .withImage(imageName)
+                        .endDockerOutput()
+                    .endBuild()
+                .endSpec()
+                .build());
+
+        Map<String, Object> connectorConfig = new HashMap<>();
+        connectorConfig.put("topics", topicName);
+        connectorConfig.put("camel.source.path.timerName", "timer");
+
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(connectorName, connectClusterName)
+            .editOrNewSpec()
+                .withClassName(CAMEL_CONNECTOR_TIMER_CLASS_NAME)
+                .withConfig(connectorConfig)
+            .endSpec()
+            .build());
+
+        KafkaBasicExampleClients kafkaClient = new KafkaBasicExampleClients.Builder()
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(SHARED_KAFKA_CLUSTER_NAME))
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withDelayMs(0)
+            .build();
+
+        resourceManager.createResource(extensionContext, kafkaClient.consumerStrimzi().build());
+        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
     }
 
     private String getPluginFileNameFromConnectPod(String connectPodName) {

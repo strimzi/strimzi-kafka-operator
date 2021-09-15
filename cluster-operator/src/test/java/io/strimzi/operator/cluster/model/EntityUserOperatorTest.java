@@ -97,7 +97,7 @@ public class EntityUserOperatorTest {
             .withLogging(userOperatorLogging)
             .withNewJvmOptions()
                 .addAllToJavaSystemProperties(javaSystemProperties)
-                .withNewXmx("256m")
+                .withXmx("256m")
             .endJvmOptions()
             .build();
 

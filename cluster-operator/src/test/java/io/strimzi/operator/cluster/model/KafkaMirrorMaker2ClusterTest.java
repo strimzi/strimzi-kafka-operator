@@ -1227,8 +1227,8 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
                 .editSpec()
                     .withNewJvmOptions()
-                        .withNewXms("512m")
-                        .withNewXmx("1024m")
+                        .withXms("512m")
+                        .withXmx("1024m")
                         .withXx(xx)
                     .endJvmOptions()
                 .endSpec()
@@ -1536,19 +1536,6 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "oauth-certs-2".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "oauth-certs-2".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("ca2.crt"));
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "oauth-certs-2".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("tls.crt"));
-    }
-
-    @ParallelTest
-    public void testGenerateDeploymentWithOldVersion() {
-        assertThrows(InvalidResourceException.class, () -> {
-            KafkaMirrorMaker2 resource = new KafkaMirrorMaker2Builder(this.resource)
-                    .editSpec()
-                        .withVersion("2.3.1")
-                    .endSpec()
-                    .build();
-
-            KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
-        });
     }
 
     @ParallelTest

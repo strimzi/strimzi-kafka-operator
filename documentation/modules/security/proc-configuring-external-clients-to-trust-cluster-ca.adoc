@@ -25,13 +25,15 @@ Clients must add _all_ of them to their truststores.
 
 .Using PKCS #12 format (.p12)
 
-. Extract the cluster CA certificate and password from the generated `_<cluster-name>_-cluster-ca-cert` Secret.
+. Extract the cluster CA certificate and password from the `_CLUSTER-NAME_-cluster-ca-cert` Secret of the Kafka cluster.
 +
 [source,shell,subs="+quotes"]
-kubectl get secret _<cluster-name>_-cluster-ca-cert -o jsonpath='{.data.ca\.p12}' | base64 -d > ca.p12
+kubectl get secret _CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.p12}' | base64 -d > ca.p12
 +
 [source,shell,subs="+quotes"]
-kubectl get secret _<cluster-name>_-cluster-ca-cert -o jsonpath='{.data.ca\.password}' | base64 -d > ca.password
+kubectl get secret _CLUSTER-NAME_-cluster-ca-cert -o jsonpath='{.data.ca\.password}' | base64 -d > ca.password
++
+Replace _CLUSTER-NAME_ with the name of the Kafka cluster.
 
 . Configure the Kafka client with the following properties:
 +
@@ -44,9 +46,9 @@ kubectl get secret _<cluster-name>_-cluster-ca-cert -o jsonpath='{.data.ca\.pass
 
 .Using PEM format (.crt)
 
-. Extract the cluster CA certificate from the generated `_<cluster-name>_-cluster-ca-cert` Secret.
+. Extract the cluster CA certificate from the `_CLUSTER-NAME_-cluster-ca-cert` Secret of the Kafka cluster.
 +
 [source,shell,subs="+quotes"]
-kubectl get secret _<cluster-name>_-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
+kubectl get secret __CLUSTER-NAME__-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | base64 -d > ca.crt
 
 . Use the certificate with clients that use certificates in X.509 format.
