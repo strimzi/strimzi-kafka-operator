@@ -158,7 +158,7 @@
         <module>mirror-maker-agent</module>
         <module>tracing-agent</module>
         <module>test</module>
-        <module>test-container</module>
+        <!-- <module>test-container</module> -->
         <module>crd-annotations</module>
         <module>crd-generator</module>
         <module>api</module>
