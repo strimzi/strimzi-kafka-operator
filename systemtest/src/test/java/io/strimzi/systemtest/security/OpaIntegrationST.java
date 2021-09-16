@@ -55,14 +55,18 @@ public class OpaIntegrationST extends AbstractST {
         final String kafkaClientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
 
-        KafkaUser goodUser = KafkaUserTemplates.tlsUser(CLUSTER_NAME, OPA_GOOD_USER).build();
-        KafkaUser badUser = KafkaUserTemplates.tlsUser(CLUSTER_NAME, OPA_BAD_USER).build();
+        KafkaUser goodUser = KafkaUserTemplates.tlsUser(INFRA_NAMESPACE, CLUSTER_NAME, OPA_GOOD_USER).build();
+        KafkaUser badUser = KafkaUserTemplates.tlsUser(INFRA_NAMESPACE, CLUSTER_NAME, OPA_BAD_USER).build();
 
         resourceManager.createResource(extensionContext, goodUser);
         resourceManager.createResource(extensionContext, badUser);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsDeploymentName, false, goodUser, badUser).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsDeploymentName, false, goodUser, badUser)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
+            .build());
 
-        String clientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsDeploymentName).get(0).getMetadata().getName();
+        String clientsPodName = kubeClient(INFRA_NAMESPACE).listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsDeploymentName).get(0).getMetadata().getName();
 
         LOGGER.info("Checking KafkaUser {} that is able to send and receive messages to/from topic '{}'", OPA_GOOD_USER, topicName);
 
@@ -101,14 +105,18 @@ public class OpaIntegrationST extends AbstractST {
         final String consumerGroupName = "consumer-group-name-2";
         final String kafkaClientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
 
-        KafkaUser superuser = KafkaUserTemplates.tlsUser(CLUSTER_NAME, OPA_SUPERUSER).build();
+        KafkaUser superuser = KafkaUserTemplates.tlsUser(INFRA_NAMESPACE, CLUSTER_NAME, OPA_SUPERUSER).build();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, topicName, INFRA_NAMESPACE).build());
         resourceManager.createResource(extensionContext, superuser);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsDeploymentName, false, superuser).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsDeploymentName, false, superuser)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
+            .build());
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        String clientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsDeploymentName).get(0).getMetadata().getName();
+        String clientsPodName = kubeClient(INFRA_NAMESPACE).listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsDeploymentName).get(0).getMetadata().getName();
 
 
         LOGGER.info("Checking KafkaUser {} that is able to send and receive messages to/from topic '{}'", OPA_GOOD_USER, topicName);
@@ -138,6 +146,9 @@ public class OpaIntegrationST extends AbstractST {
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", INFRA_NAMESPACE));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationOpa()

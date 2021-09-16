@@ -174,6 +174,9 @@ public class SpecificST extends AbstractST {
         String rackKey = "rack-key";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
             .editSpec()
                     .editKafka()
                         .withNewRack()
@@ -190,6 +193,9 @@ public class SpecificST extends AbstractST {
         LOGGER.info("Deploy KafkaConnect with wrong rack-aware topology key: {}", wrongRackKey);
 
         KafkaConnect kc = KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, clusterName, 1)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
             .editSpec()
                 .withNewRack()
                     .withTopologyKey(wrongRackKey)
@@ -213,7 +219,7 @@ public class SpecificST extends AbstractST {
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, kc, KafkaConnectResources.deploymentName(clusterName));
 
         PodUtils.waitForPendingPod(INFRA_NAMESPACE, clusterName + "-connect");
-        List<String> connectWrongPods = kubeClient().listPodNames(INFRA_NAMESPACE, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
+        List<String> connectWrongPods = kubeClient(INFRA_NAMESPACE).listPodNames(INFRA_NAMESPACE, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         String connectWrongPodName = connectWrongPods.get(0);
         LOGGER.info("Waiting for ClusterOperator to get timeout operation of incorrectly set up KafkaConnect");
         KafkaConnectUtils.waitForKafkaConnectCondition("TimeoutException", "NotReady", INFRA_NAMESPACE, clusterName);
@@ -231,7 +237,7 @@ public class SpecificST extends AbstractST {
         kc = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get();
         assertThat(kc.getSpec().getRack().getTopologyKey(), is(rackKey));
 
-        List<String> kcPods = kubeClient().listPodNames(INFRA_NAMESPACE, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
+        List<String> kcPods = kubeClient(INFRA_NAMESPACE).listPodNames(INFRA_NAMESPACE, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, INFRA_NAMESPACE, clusterName);
 
         // Revert changes for CO deployment

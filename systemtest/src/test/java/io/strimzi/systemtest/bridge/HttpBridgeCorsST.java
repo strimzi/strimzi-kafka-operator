@@ -139,7 +139,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
             .endMetadata()
             .build());
 
-        kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
+        kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName + new Random().nextInt(Integer.MAX_VALUE))
             .withConsumerName(consumerName + new Random().nextInt(Integer.MAX_VALUE))
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeCorsClusterName))

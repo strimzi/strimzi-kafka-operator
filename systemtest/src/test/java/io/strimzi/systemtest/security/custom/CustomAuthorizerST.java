@@ -50,9 +50,9 @@ public class CustomAuthorizerST extends AbstractST {
         final String consumerGroupName = "consumer-group-name-1";
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, topicName, INFRA_NAMESPACE).build());
 
-        KafkaUser writeUser = KafkaUserTemplates.tlsUser(CLUSTER_NAME, kafkaUserWrite)
+        KafkaUser writeUser = KafkaUserTemplates.tlsUser(INFRA_NAMESPACE, CLUSTER_NAME, kafkaUserWrite)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -71,7 +71,7 @@ public class CustomAuthorizerST extends AbstractST {
             .endSpec()
             .build();
 
-        KafkaUser readUser = KafkaUserTemplates.tlsUser(CLUSTER_NAME, kafkaUserRead)
+        KafkaUser readUser = KafkaUserTemplates.tlsUser(INFRA_NAMESPACE, CLUSTER_NAME, kafkaUserRead)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -101,9 +101,9 @@ public class CustomAuthorizerST extends AbstractST {
 
         LOGGER.info("Checking KafkaUser {} that is able to send messages to topic '{}'", kafkaUserWrite, topicName);
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName, writeUser, readUser).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, true, kafkaClientsName, writeUser, readUser).build());
 
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+        String kafkaClientsPodName = kubeClient(INFRA_NAMESPACE).listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
 
         InternalKafkaClient writeKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(topicName)
@@ -141,9 +141,9 @@ public class CustomAuthorizerST extends AbstractST {
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, topicName, INFRA_NAMESPACE).build());
 
-        KafkaUser adminUser = KafkaUserTemplates.tlsUser(CLUSTER_NAME, ADMIN)
+        KafkaUser adminUser = KafkaUserTemplates.tlsUser(INFRA_NAMESPACE, CLUSTER_NAME, ADMIN)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -163,9 +163,9 @@ public class CustomAuthorizerST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, adminUser);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName, adminUser).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, true, kafkaClientsName, adminUser).build());
 
-        String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+        String kafkaClientsPodName = kubeClient(INFRA_NAMESPACE).listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
 
         LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", ADMIN, topicName);
 
@@ -190,6 +190,9 @@ public class CustomAuthorizerST extends AbstractST {
     @BeforeAll
     public void setup(ExtensionContext extensionContext) {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(CLUSTER_NAME, 1, 1)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationCustom()

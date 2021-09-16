@@ -81,9 +81,10 @@ public class OauthTlsST extends OauthAbstractST {
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
 
         KafkaOauthExampleClients oauthExampleClients = new KafkaOauthExampleClients.Builder()
+            .withNamespaceName(INFRA_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(oauthClusterName))
@@ -111,9 +112,10 @@ public class OauthTlsST extends OauthAbstractST {
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
 
         KafkaOauthExampleClients oauthExampleClients = new KafkaOauthExampleClients.Builder()
+            .withNamespaceName(INFRA_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(oauthClusterName))
@@ -132,12 +134,15 @@ public class OauthTlsST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, oauthClusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, oauthClusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
         String defaultKafkaClientsPodName =
-                ResourceManager.kubeClient().listPodsByPrefixInName(oauthClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+                ResourceManager.kubeClient().listPodsByPrefixInName(INFRA_NAMESPACE, oauthClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, oauthClusterName, 1)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
             .editSpec()
                 .withConfig(connectorConfig)
                 .addToConfig("key.converter.schemas.enable", false)
@@ -188,9 +193,10 @@ public class OauthTlsST extends OauthAbstractST {
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
 
         KafkaOauthExampleClients oauthExampleClients = new KafkaOauthExampleClients.Builder()
+            .withNamespaceName(INFRA_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(oauthClusterName))
@@ -209,9 +215,12 @@ public class OauthTlsST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, true, kafkaClientsName).build());
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(oauthClusterName, KafkaResources.tlsBootstrapAddress(oauthClusterName), 1)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
             .editSpec()
                 .withNewTls()
                     .withTrustedCertificates(
@@ -266,9 +275,10 @@ public class OauthTlsST extends OauthAbstractST {
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
 
         KafkaOauthExampleClients oauthExampleClients = new KafkaOauthExampleClients.Builder()
+            .withNamespaceName(INFRA_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(oauthClusterName))
@@ -290,6 +300,9 @@ public class OauthTlsST extends OauthAbstractST {
         String targetKafkaCluster = oauthClusterName + "-target";
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(targetKafkaCluster, 1, 1)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -336,6 +349,9 @@ public class OauthTlsST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(oauthClusterName, oauthClusterName, targetKafkaCluster,
             ClientUtils.generateRandomConsumerGroup(), 1, true)
+                .editMetadata()
+                    .withNamespace(INFRA_NAMESPACE)
+                .endMetadata()
                 .editSpec()
                     .withNewConsumer()
                         // this is for kafka tls connection
@@ -391,18 +407,19 @@ public class OauthTlsST extends OauthAbstractST {
                 .endSpec()
                 .build());
 
-        String mirrorMakerPodName = kubeClient().listPodsByPrefixInName(KafkaMirrorMakerResources.deploymentName(oauthClusterName)).get(0).getMetadata().getName();
-        String kafkaMirrorMakerLogs = kubeClient().logs(mirrorMakerPodName);
+        String mirrorMakerPodName = kubeClient().listPodsByPrefixInName(INFRA_NAMESPACE, KafkaMirrorMakerResources.deploymentName(oauthClusterName)).get(0).getMetadata().getName();
+        String kafkaMirrorMakerLogs = kubeClient().logs(INFRA_NAMESPACE, mirrorMakerPodName);
 
         assertThat(kafkaMirrorMakerLogs,
             not(containsString("keytool error: java.io.FileNotFoundException: /opt/kafka/consumer-oauth-certs/**/* (No such file or directory)")));
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(oauthClusterName, USER_NAME).build());
-        KafkaUserUtils.waitForKafkaUserCreation(USER_NAME);
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(oauthClusterName, USER_NAME, INFRA_NAMESPACE).build());
+        KafkaUserUtils.waitForKafkaUserCreation(INFRA_NAMESPACE, USER_NAME);
 
         LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
 
         KafkaOauthExampleClients kafkaOauthClientJob = new KafkaOauthExampleClients.Builder()
+            .withNamespaceName(INFRA_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withUserName(USER_NAME)
@@ -427,7 +444,7 @@ public class OauthTlsST extends OauthAbstractST {
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
 
         LOGGER.info("Deploying kafka...");
 
@@ -440,6 +457,9 @@ public class OauthTlsST extends OauthAbstractST {
                 .build();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(introspectionKafka, 1)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -465,6 +485,7 @@ public class OauthTlsST extends OauthAbstractST {
             .build());
 
         KafkaOauthExampleClients oauthInternalClientIntrospectionJob = new KafkaOauthExampleClients.Builder()
+                .withNamespaceName(INFRA_NAMESPACE)
                 .withProducerName(producerName)
                 .withConsumerName(consumerName)
                 .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(introspectionKafka))
