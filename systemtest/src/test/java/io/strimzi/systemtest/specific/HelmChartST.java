@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -68,9 +69,14 @@ class HelmChartST extends AbstractST {
         helmResource.create(extensionContext);
     }
 
-    @AfterAll
-    protected void tearDownEnvironmentAfterAll() {
+    @Override
+    protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
         helmResource.delete();
         cluster.deleteNamespaces();
+
+        super.afterAllMayOverride(extensionContext);
+
+        // create shared CO for the following TestSuites
+        install = SetupClusterOperator.buildDefaultInstallation().runInstallation();
     }
 }

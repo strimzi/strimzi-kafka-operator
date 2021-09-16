@@ -17,6 +17,7 @@ import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.test.annotations.IsolatedSuite;
+import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -37,14 +38,18 @@ public class ColdBackupScriptST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ColdBackupScriptST.class);
 
-    @Test
+    @IsolatedTest
     void backupAndRestore(ExtensionContext context) {
         String clusterName = mapWithClusterNames.get(context.getDisplayName());
         String groupName = "my-group", newGroupName = "new-group";
         int firstBatchSize = 100, secondBatchSize = 10;
         String backupFilePath = USER_PATH + "/target/" + clusterName + ".zip";
 
-        resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(clusterName, 1, 1).build());
+        resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(clusterName, 1, 1)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
+            .build());
         String clientsPodName = deployAndGetInternalClientsPodName(context);
         InternalKafkaClient clients = buildInternalClients(context, clientsPodName, groupName, firstBatchSize);
 
@@ -101,8 +106,8 @@ public class ColdBackupScriptST extends AbstractST {
 
     private String deployAndGetInternalClientsPodName(ExtensionContext context) {
         final String kafkaClientsName = mapWithKafkaClientNames.get(context.getDisplayName());
-        resourceManager.createResource(context, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-        return ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+        resourceManager.createResource(context, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, kafkaClientsName).build());
+        return ResourceManager.kubeClient().listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
     }
 
     private InternalKafkaClient buildInternalClients(ExtensionContext context, String podName, String groupName, int batchSize) {

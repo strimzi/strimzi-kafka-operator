@@ -191,12 +191,6 @@ public class CustomAuthorizerST extends AbstractST {
 
     @BeforeAll
     public void setup(ExtensionContext extensionContext) {
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
-            .createInstallation()
-            .runInstallation();
-
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
