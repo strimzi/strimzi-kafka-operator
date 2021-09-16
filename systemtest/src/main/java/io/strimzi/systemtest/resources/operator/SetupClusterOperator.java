@@ -13,6 +13,8 @@ import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -335,31 +337,50 @@ public class SetupClusterOperator {
 
         for (File operatorFile : operatorFiles) {
             File createFile = operatorFile;
-            if (operatorFile.getName().contains("ClusterRole-")) {
+
+            if (createFile.getName().contains(Constants.CLUSTER_ROLE + "-")) {
                 createFile = switchClusterRolesToRolesIfNeeded(createFile);
             }
 
-            if (operatorFile.getName().contains("ClusterRole")) {
-                ClusterRole clusterRole = TestUtils.configFromYaml(createFile, ClusterRole.class);
-                ResourceManager.getInstance().createResource(extensionContext, clusterRole);
-            } else if (operatorFile.getName().contains("ServiceAccount")) {
-                ServiceAccount serviceAccount = TestUtils.configFromYaml(createFile, ServiceAccount.class);
-                ResourceManager.getInstance().createResource(extensionContext, new ServiceAccountBuilder(serviceAccount)
-                    .editMetadata()
-                        .withNamespace(namespace)
-                    .endMetadata()
-                    .build());
-            } else if (operatorFile.getName().contains("ConfigMap")) {
-                ConfigMap configMap = TestUtils.configFromYaml(createFile, ConfigMap.class);
-                ResourceManager.getInstance().createResource(extensionContext, new ConfigMapBuilder(configMap)
-                    .editMetadata()
-                        .withNamespace(namespace)
-                    .endMetadata()
-                    .build());
-            } else {
-                // CRDs
-                CustomResourceDefinition customResourceDefinition = TestUtils.configFromYaml(createFile, CustomResourceDefinition.class);
-                ResourceManager.getInstance().createResource(extensionContext, customResourceDefinition);
+            final String resourceType = createFile.getName().split("-")[1];
+            LOGGER.debug("Installation resource type: {}", resourceType);
+
+            switch (resourceType) {
+                case Constants.ROLE:
+                    Role role = TestUtils.configFromYaml(createFile, Role.class);
+                    ResourceManager.getInstance().createResource(extensionContext, new RoleBuilder(role)
+                        .editMetadata()
+                            .withNamespace(namespace)
+                        .endMetadata()
+                        .build());
+                    break;
+                case Constants.CLUSTER_ROLE:
+                    ClusterRole clusterRole = TestUtils.configFromYaml(createFile, ClusterRole.class);
+                    ResourceManager.getInstance().createResource(extensionContext, clusterRole);
+                    break;
+                case Constants.SERVICE_ACCOUNT:
+                    ServiceAccount serviceAccount = TestUtils.configFromYaml(createFile, ServiceAccount.class);
+                    ResourceManager.getInstance().createResource(extensionContext, new ServiceAccountBuilder(serviceAccount)
+                        .editMetadata()
+                            .withNamespace(namespace)
+                        .endMetadata()
+                        .build());
+                    break;
+                case Constants.CONFIG_MAP:
+                    ConfigMap configMap = TestUtils.configFromYaml(createFile, ConfigMap.class);
+                    ResourceManager.getInstance().createResource(extensionContext, new ConfigMapBuilder(configMap)
+                        .editMetadata()
+                            .withNamespace(namespace)
+                        .endMetadata()
+                        .build());
+                    break;
+                case Constants.CUSTOM_RESOURCE_DEFINITION_SHORT:
+                    CustomResourceDefinition customResourceDefinition = TestUtils.configFromYaml(createFile, CustomResourceDefinition.class);
+                    ResourceManager.getInstance().createResource(extensionContext, customResourceDefinition);
+                    break;
+                default:
+                    LOGGER.error("Not known installation resource type: {}", resourceType);
+                    throw new RuntimeException("Not known installation resource type:" + resourceType);
             }
         }
     }
@@ -373,7 +394,11 @@ public class SetupClusterOperator {
 
         if (Environment.isNamespaceRbacScope() || isRbacScope || this.clusterOperatorRBACType == ClusterOperatorRBACType.NAMESPACE) {
             try {
-                File tmpFile = File.createTempFile("rbac-" + oldFile.getName().replace(".yaml", ""), ".yaml");
+                final String[] fileNameArr = oldFile.getName().split("-");
+                // change ClusterRole to Role
+                fileNameArr[1] = "Role";
+                final String changeFileName = Arrays.stream(fileNameArr).map(item -> "-" + item).collect(Collectors.joining()).substring(1);
+                File tmpFile = File.createTempFile(changeFileName.replace(".yaml", ""), ".yaml");
                 TestUtils.writeFile(tmpFile.getAbsolutePath(), TestUtils.readFile(oldFile).replace("ClusterRole", "Role"));
                 LOGGER.info("Replaced ClusterRole for Role in {}", oldFile.getAbsolutePath());
 

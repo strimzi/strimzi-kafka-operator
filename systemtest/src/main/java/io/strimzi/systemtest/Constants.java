@@ -91,6 +91,7 @@ public interface Constants {
     String CLUSTER_ROLE = "ClusterRole";
     String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
     String CUSTOM_RESOURCE_DEFINITION = "CustomResourceDefinition";
+    String CUSTOM_RESOURCE_DEFINITION_SHORT = "Crd";
     String ROLE_BINDING = "RoleBinding";
     String ROLE = "Role";
     String DEPLOYMENT_CONFIG = "DeploymentConfig";
