@@ -12,8 +12,6 @@ import io.strimzi.api.kafka.model.AclRule;
 import io.strimzi.api.kafka.model.AclRuleBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
-import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
@@ -40,8 +38,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
-
-import java.util.List;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -407,7 +403,6 @@ class UserST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationSimple()
-                        .withSuperUsers("CN=" + userName)
                     .endKafkaAuthorizationSimple()
                 .endKafka()
             .endSpec()
@@ -440,24 +435,10 @@ class UserST extends AbstractST {
         KafkaUserUtils.waitForKafkaUserReady(namespaceName, userName);
         assertThat(kubeClient().getSecret(namespaceName, userName), nullValue());
 
-        // verify (b) - Quotas are correctly set for CN=<username>
+        // verify (b) -  if the operator has the right username in the status, that is what it also used in the ACLs and Quotas
         KafkaUser user = KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(userName).get();
 
         assertThat(user.getStatus().getUsername(), is("CN=" + userName));
-
-        KafkaUserQuotas quotas = user.getSpec().getQuotas();
-
-        assertThat(quotas.getProducerByteRate(), is(prodRate));
-        assertThat(quotas.getConsumerByteRate(), is(consRate));
-        assertThat(quotas.getRequestPercentage(), is(requestPerc));
-        assertThat(quotas.getControllerMutationRate(), is(mutRate));
-
-        // verify (c) - ACLs are correctly set for CN=<username>
-        List<AclRule> acls = ((KafkaUserAuthorizationSimple) user.getSpec().getAuthorization()).getAcls();
-
-        assertThat(acls.size(), is(2));
-        assertThat(acls.get(0), is(writeRule));
-        assertThat(acls.get(1), is(describeRule));
     }
 
     synchronized void createBigAmountOfUsers(ExtensionContext extensionContext, String userName, String typeOfUser) {
