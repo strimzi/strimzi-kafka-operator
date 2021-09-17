@@ -47,6 +47,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
@@ -177,6 +178,16 @@ class UserST extends AbstractST {
         resourceManager.createResource(extensionContext, user);
 
         testUserWithQuotas(extensionContext, user);
+    }
+
+    @ParallelTest
+    void testTlsExternalUserWithQuotas(ExtensionContext extensionContext) {
+        final String kafkaUserName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(NAMESPACE, userClusterName, kafkaUserName).build();
+
+        resourceManager.createResource(extensionContext, tlsExternalUser);
+
+        testUserWithQuotas(extensionContext, tlsExternalUser);
     }
 
     @ParallelTest
@@ -367,6 +378,18 @@ class UserST extends AbstractST {
         SecretUtils.waitForSecretDeletion(scramShaSecret.getMetadata().getName());
         assertNull(kubeClient(namespaceName).getSecret(tlsSecret.getMetadata().getName()));
         assertNull(kubeClient(namespaceName).getSecret(scramShaSecret.getMetadata().getName()));
+    }
+
+    @ParallelTest
+    void testTlsExternalUserNotGeneratingSecret(ExtensionContext extensionContext) {
+        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+
+        // exercise - create the KafkaUser with tls external client authentication
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsExternalUser(NAMESPACE, userClusterName, userName).build());
+
+        // verify - that secrets are not generated and KafkaUser is created
+        KafkaUserUtils.waitForKafkaUserReady(NAMESPACE, userName);
+        assertThat(kubeClient().getSecret(NAMESPACE, userName), nullValue());
     }
 
     synchronized void createBigAmountOfUsers(ExtensionContext extensionContext, String userName, String typeOfUser) {
