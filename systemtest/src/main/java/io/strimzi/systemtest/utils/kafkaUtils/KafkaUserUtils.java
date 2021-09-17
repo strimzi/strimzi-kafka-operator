@@ -14,7 +14,6 @@ import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
-import kafka.security.auth.Read;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
