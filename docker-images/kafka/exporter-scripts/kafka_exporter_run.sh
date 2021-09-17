@@ -21,7 +21,7 @@ if [ "$KAFKA_EXPORTER_ENABLE_SARAMA" = "true" ]; then
 fi
 
 if [ -n "$KAFKA_EXPORTER_LOGGING" ]; then
-    loglevel="--log.level=${KAFKA_EXPORTER_LOGGING}"
+    loglevel="--verbosity=${KAFKA_EXPORTER_LOGGING}"
 fi
 
 # shellcheck disable=SC2027
@@ -31,7 +31,7 @@ kafkaserver="--kafka.server="$KAFKA_EXPORTER_KAFKA_SERVER
 
 listenaddress="--web.listen-address=:9404"
 
-allgroups="--legacy.partitions"
+allgroups="--offset.show-all"
 
 tls="--tls.enabled --tls.ca-file=/etc/kafka-exporter/cluster-ca-certs/ca.crt --tls.cert-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.crt  --tls.key-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.key"
 
