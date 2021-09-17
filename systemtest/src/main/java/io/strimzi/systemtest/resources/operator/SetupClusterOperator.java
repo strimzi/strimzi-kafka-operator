@@ -328,7 +328,7 @@ public class SetupClusterOperator {
      * Perform application of ServiceAccount, Roles and CRDs needed for proper cluster operator deployment.
      * Configuration files are loaded from packaging/install/cluster-operator directory.
      */
-    public <T extends HasMetadata> void applyClusterOperatorInstallFiles(String namespace) {
+    public void applyClusterOperatorInstallFiles(String namespace) {
         List<File> operatorFiles = Arrays.stream(new File(CO_INSTALL_DIR).listFiles()).sorted()
             .filter(File::isFile)
             .filter(file ->
