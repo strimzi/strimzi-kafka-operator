@@ -173,14 +173,13 @@ public class OauthTlsST extends OauthAbstractST {
             .endSpec()
             .build());
 
-        String kafkaConnectPodName = kubeClient().listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient(INFRA_NAMESPACE).listPods(INFRA_NAMESPACE, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
-        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(kafkaConnectPodName);
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(INFRA_NAMESPACE, kafkaConnectPodName);
 
-        KafkaConnectorUtils.createFileSinkConnector(defaultKafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, INFRA_NAMESPACE, 8083));
+        KafkaConnectorUtils.createFileSinkConnector(INFRA_NAMESPACE, defaultKafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, INFRA_NAMESPACE, 8083));
 
-
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(INFRA_NAMESPACE, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 99\"");
     }
 
     @Description("As a oauth bridge, i am able to send messages to bridge endpoint using encrypted communication")

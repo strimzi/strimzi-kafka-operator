@@ -312,7 +312,7 @@ public class OauthPlainST extends OauthAbstractST {
 
         KafkaConnectorUtils.createFileSinkConnector(INFRA_NAMESPACE, kafkaConnectPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, "http://localhost:8083");
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(INFRA_NAMESPACE, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(INFRA_NAMESPACE, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 99\"");
     }
 
     @Description("As an oauth mirror maker, I should be able to replicate topic data between kafka clusters")

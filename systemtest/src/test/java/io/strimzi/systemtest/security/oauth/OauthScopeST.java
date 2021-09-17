@@ -181,7 +181,7 @@ public class OauthScopeST extends OauthAbstractST {
     }
 
     @IsolatedTest("Modification of shared Kafka cluster")
-    void testClientScopeKafkaSetIncorrectly(ExtensionContext extensionContext) throws UnexpectedException {
+    void    xctestClientScopeKafkaSetIncorrectly(ExtensionContext extensionContext) throws UnexpectedException {
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;

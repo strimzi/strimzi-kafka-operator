@@ -66,7 +66,7 @@ public class OpaIntegrationST extends AbstractST {
             .endMetadata()
             .build());
 
-        String clientsPodName = kubeClient(INFRA_NAMESPACE).listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsDeploymentName).get(0).getMetadata().getName();
+        final String clientsPodName = kubeClient(INFRA_NAMESPACE).listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsDeploymentName).get(0).getMetadata().getName();
 
         LOGGER.info("Checking KafkaUser {} that is able to send and receive messages to/from topic '{}'", OPA_GOOD_USER, topicName);
 
@@ -83,10 +83,7 @@ public class OpaIntegrationST extends AbstractST {
             .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
             .build();
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesTls(),
-            internalKafkaClient.receiveMessagesTls()
-        );
+        internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
 
         LOGGER.info("Checking KafkaUser {} that is not able to send or receive messages to/from topic '{}'", OPA_BAD_USER, topicName);
 

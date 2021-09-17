@@ -158,7 +158,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
         // Team A can not create topic starting with 'x-' only write to existing on
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, INFRA_NAMESPACE).build());
         resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
@@ -384,7 +384,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         JobUtils.waitForJobFailure(teamAConsumerName, INFRA_NAMESPACE, 30_000);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAConsumerName);
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(oauthClusterName));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(INFRA_NAMESPACE, KafkaResources.kafkaStatefulSetName(oauthClusterName));
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
 
@@ -490,21 +490,21 @@ public class OauthAuthorizationST extends OauthAbstractST {
         LOGGER.info("Setting the master realm token's lifespan to 3600s");
 
         // get admin token for all operation on realms
-        String userName =  new String(Base64.getDecoder().decode(kubeClient().getSecret("credential-example-keycloak").getData().get("ADMIN_USERNAME").getBytes()));
-        String password = new String(Base64.getDecoder().decode(kubeClient().getSecret("credential-example-keycloak").getData().get("ADMIN_PASSWORD").getBytes()));
-        String token = KeycloakUtils.getToken(baseUri, userName, password);
+        String userName =  new String(Base64.getDecoder().decode(kubeClient().getSecret(INFRA_NAMESPACE, "credential-example-keycloak").getData().get("ADMIN_USERNAME").getBytes()));
+        String password = new String(Base64.getDecoder().decode(kubeClient().getSecret(INFRA_NAMESPACE, "credential-example-keycloak").getData().get("ADMIN_PASSWORD").getBytes()));
+        String token = KeycloakUtils.getToken(INFRA_NAMESPACE, baseUri, userName, password);
 
         // firstly we will increase token lifespan
-        JsonObject masterRealm = KeycloakUtils.getKeycloakRealm(baseUri, token, "master");
+        JsonObject masterRealm = KeycloakUtils.getKeycloakRealm(INFRA_NAMESPACE, baseUri, token, "master");
         masterRealm.put("accessTokenLifespan", "3600");
-        KeycloakUtils.putConfigurationToRealm(baseUri, token, masterRealm, "master");
+        KeycloakUtils.putConfigurationToRealm(INFRA_NAMESPACE, baseUri, token, masterRealm, "master");
 
         // now we need to get the token with new lifespan
-        token = KeycloakUtils.getToken(baseUri, userName, password);
+        token = KeycloakUtils.getToken(INFRA_NAMESPACE, baseUri, userName, password);
 
         LOGGER.info("Getting the {} kafka client for obtaining the Dev A Team policy for the x topics", TEST_REALM);
         // we need to get clients for kafka-authz realm to access auth policies in kafka client
-        JsonArray kafkaAuthzRealm = KeycloakUtils.getKeycloakRealmClients(baseUri, token, TEST_REALM);
+        JsonArray kafkaAuthzRealm = KeycloakUtils.getKeycloakRealmClients(INFRA_NAMESPACE, baseUri, token, TEST_REALM);
 
         String kafkaClientId = "";
         for (Object client : kafkaAuthzRealm) {
@@ -514,7 +514,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             }
         }
 
-        JsonArray kafkaAuthzRealmPolicies = KeycloakUtils.getPoliciesFromRealmClient(baseUri, token, TEST_REALM, kafkaClientId);
+        JsonArray kafkaAuthzRealmPolicies = KeycloakUtils.getPoliciesFromRealmClient(INFRA_NAMESPACE, baseUri, token, TEST_REALM, kafkaClientId);
 
         JsonObject devAPolicy = new JsonObject();
         for (Object resource : kafkaAuthzRealmPolicies) {
@@ -534,7 +534,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         newDevAPolicy.put("config", config);
 
         LOGGER.info("Changing the Dev Team A policy for topics starting with x- and checking that job will not be successful");
-        KeycloakUtils.updatePolicyOfRealmClient(baseUri, token, newDevAPolicy, TEST_REALM, kafkaClientId);
+        KeycloakUtils.updatePolicyOfRealmClient(INFRA_NAMESPACE, baseUri, token, newDevAPolicy, TEST_REALM, kafkaClientId);
         assertThrows(WaitException.class, () -> ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT));
 
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
@@ -554,7 +554,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         config.put("scopes", "[\"Describe\",\"Write\"]");
         newDevAPolicy.put("config", config);
 
-        KeycloakUtils.updatePolicyOfRealmClient(baseUri, token, newDevAPolicy, TEST_REALM, kafkaClientId);
+        KeycloakUtils.updatePolicyOfRealmClient(INFRA_NAMESPACE, baseUri, token, newDevAPolicy, TEST_REALM, kafkaClientId);
         teamAOauthClientJob = teamAOauthClientJob.toBuilder()
             .withTopicName(topicXName)
             .withDelayMs(1000)
