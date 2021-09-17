@@ -408,12 +408,12 @@ public class OauthTlsST extends OauthAbstractST {
                 .build());
 
         String mirrorMakerPodName = kubeClient().listPodsByPrefixInName(INFRA_NAMESPACE, KafkaMirrorMakerResources.deploymentName(oauthClusterName)).get(0).getMetadata().getName();
-        String kafkaMirrorMakerLogs = kubeClient().logs(INFRA_NAMESPACE, mirrorMakerPodName);
+        String kafkaMirrorMakerLogs = kubeClient().logsInSpecificNamespace(INFRA_NAMESPACE, mirrorMakerPodName);
 
         assertThat(kafkaMirrorMakerLogs,
             not(containsString("keytool error: java.io.FileNotFoundException: /opt/kafka/consumer-oauth-certs/**/* (No such file or directory)")));
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(oauthClusterName, USER_NAME, INFRA_NAMESPACE).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(INFRA_NAMESPACE, oauthClusterName, USER_NAME).build());
         KafkaUserUtils.waitForKafkaUserCreation(INFRA_NAMESPACE, USER_NAME);
 
         LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
