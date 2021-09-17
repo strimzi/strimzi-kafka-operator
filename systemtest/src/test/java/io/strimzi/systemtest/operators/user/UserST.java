@@ -233,7 +233,7 @@ class UserST extends AbstractST {
             .endMetadata()
             .build());
 
-        String command = "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type users";
+        String command = "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --user " + userName;
         LOGGER.debug("Command for kafka-configs.sh {}", command);
 
         ExecResult result = cmdKubeClient(NAMESPACE).execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
