@@ -117,6 +117,10 @@ public class SetupClusterOperator {
         }
     }
 
+    private boolean isClusterOperatorNamespaceAlreadyCreated() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null;
+    }
+
     public static SetupClusterOperator buildDefaultInstallation() {
         return new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
@@ -143,7 +147,7 @@ public class SetupClusterOperator {
             if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
                 // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
                 if (!Environment.isNamespaceRbacScope()) {
-                    if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
+                    if (isClusterOperatorNamespaceAlreadyCreated()) {
                         cluster.setNamespace(namespaceInstallTo);
 
                         cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
@@ -155,7 +159,7 @@ public class SetupClusterOperator {
                 }
                 // single-namespace olm co-operator
             } else {
-                if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
+                if (isClusterOperatorNamespaceAlreadyCreated()) {
                     cluster.setNamespace(namespaceInstallTo);
                     cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                     extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
@@ -166,7 +170,7 @@ public class SetupClusterOperator {
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
             helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
-            if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
+            if (isClusterOperatorNamespaceAlreadyCreated()) {
                 cluster.setNamespace(namespaceInstallTo);
                 cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                 extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
@@ -186,7 +190,7 @@ public class SetupClusterOperator {
     private void bundleInstallation() {
         LOGGER.info("Going to install ClusterOperator via Yaml bundle");
         // check if namespace is already created
-        if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
+        if (isClusterOperatorNamespaceAlreadyCreated()) {
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
         } else {
