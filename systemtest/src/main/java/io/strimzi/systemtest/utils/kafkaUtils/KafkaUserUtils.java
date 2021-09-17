@@ -92,7 +92,7 @@ public class KafkaUserUtils {
 
     /**
      * Wait until KafkaUser is in desired state
-     * @param namespaceNAme Namespace name
+     * @param namespaceName Namespace name
      * @param userName name of KafkaUser
      * @param state desired state
      */

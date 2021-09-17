@@ -182,7 +182,7 @@ class UserST extends AbstractST {
     void testTlsUserWithQuotas(ExtensionContext extensionContext) {
         KafkaUser user = KafkaUserTemplates.tlsUser(NAMESPACE, userClusterName, "encrypted-arnost").build();
 
-        testUserWithQuotas(extensionContext, user, userClusterName);
+        testUserWithQuotas(extensionContext, user);
     }
 
     @ParallelTest
@@ -190,14 +190,14 @@ class UserST extends AbstractST {
         final String kafkaUserName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(NAMESPACE, userClusterName, kafkaUserName).build();
 
-        testUserWithQuotas(extensionContext, tlsExternalUser, userClusterName);
+        testUserWithQuotas(extensionContext, tlsExternalUser);
     }
 
     @ParallelTest
     void testScramUserWithQuotas(ExtensionContext extensionContext) {
         KafkaUser user = KafkaUserTemplates.scramShaUser(NAMESPACE, userClusterName, "scramed-arnost").build();
 
-        testUserWithQuotas(extensionContext, user, userClusterName);
+        testUserWithQuotas(extensionContext, user);
     }
 
     @ParallelTest
@@ -230,9 +230,7 @@ class UserST extends AbstractST {
         assertThat(userSecret.getMetadata().getAnnotations().get(annotationKey), is(annotationValue));
     }
 
-    synchronized void testUserWithQuotas(ExtensionContext extensionContext, KafkaUser user, String clusterName) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
-
+    synchronized void testUserWithQuotas(ExtensionContext extensionContext, KafkaUser user) {
         final Integer prodRate = 1111;
         final Integer consRate = 2222;
         final Integer reqPerc = 42;
@@ -241,16 +239,16 @@ class UserST extends AbstractST {
         // Create user with correct name
         resourceManager.createResource(extensionContext, KafkaUserTemplates.userWithQuotas(user, prodRate, consRate, reqPerc, mutRate)
             .editMetadata()
-                .withNamespace(namespaceName)
+                .withNamespace(NAMESPACE)
             .endMetadata()
             .build());
 
-        final String userName = KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(user.getMetadata().getName()).get().getStatus().getUsername();
+        final String userName = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(user.getMetadata().getName()).get().getStatus().getUsername();
 
         String command = "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --user " + userName;
         LOGGER.debug("Command for kafka-configs.sh {}", command);
 
-        ExecResult result = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", command);
+        ExecResult result = cmdKubeClient(NAMESPACE).execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
         assertThat(result.out().contains("Quota configs for user-principal '" + userName + "' are"), is(true));
         assertThat(result.out().contains("request_percentage=" + reqPerc), is(true));
         assertThat(result.out().contains("producer_byte_rate=" + prodRate), is(true));
@@ -258,12 +256,12 @@ class UserST extends AbstractST {
         assertThat(result.out().contains("controller_mutation_rate=" + mutRate), is(true));
 
         // delete user
-        KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(user.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(user.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(user.getMetadata().getName());
 
         TestUtils.waitFor("all KafkaUser " + userName + " attributes will be cleaned", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                ExecResult resultAfterDelete = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", command);
+                ExecResult resultAfterDelete = cmdKubeClient(NAMESPACE).execInPod(KafkaResources.kafkaPodName(userClusterName, 0), "/bin/bash", "-c", command);
 
                 return
                     !resultAfterDelete.out().contains(userName) &&
@@ -461,7 +459,6 @@ class UserST extends AbstractST {
         assertThat(acls.get(0), is(writeRule));
         assertThat(acls.get(1), is(describeRule));
     }
-
 
     synchronized void createBigAmountOfUsers(ExtensionContext extensionContext, String userName, String typeOfUser) {
 
