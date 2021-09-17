@@ -545,7 +545,6 @@ public abstract class AbstractST implements TestSeparator {
         // contract that always we always change configuration of CO when we annotate suite to 'isolated' and therefore
         // we need to rollback to default configuration, which most of the suites use.
         if (StUtils.isIsolatedSuite(extensionContext)) {
-            cluster.setNamespace(Constants.INFRA_NAMESPACE);
             // install configuration differs from default one we are gonna roll-back
             if (install != null && !SetupClusterOperator.buildDefaultInstallation().equals(install)) {
                 LOGGER.info(String.join("", Collections.nCopies(76, "=")));
@@ -619,6 +618,7 @@ public abstract class AbstractST implements TestSeparator {
             ParallelSuiteController.addParallelSuite(extensionContext);
         }
         if (StUtils.isIsolatedSuite(extensionContext)) {
+            cluster.setNamespace(Constants.INFRA_NAMESPACE);
             ParallelSuiteController.waitUntilZeroParallelSuites();
         }
     }
