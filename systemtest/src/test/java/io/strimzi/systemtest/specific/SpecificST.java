@@ -187,7 +187,7 @@ public class SpecificST extends AbstractST {
                 .endSpec()
                 .build());
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, kafkaClientsName).build());
         String kafkaClientsPodName = kubeClient(INFRA_NAMESPACE).listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
 
         LOGGER.info("Deploy KafkaConnect with wrong rack-aware topology key: {}", wrongRackKey);
@@ -240,6 +240,13 @@ public class SpecificST extends AbstractST {
         List<String> kcPods = kubeClient(INFRA_NAMESPACE).listPodNames(INFRA_NAMESPACE, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, INFRA_NAMESPACE, clusterName);
 
+        // check the ClusterRoleBinding annotations and labels in Kafka cluster
+        Map<String, String> actualLabel = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getSpec().getTemplate().getClusterRoleBinding().getMetadata().getLabels();
+        Map<String, String> actualAnno = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getSpec().getTemplate().getClusterRoleBinding().getMetadata().getAnnotations();
+
+        assertThat(actualLabel, is(label));
+        assertThat(actualAnno, is(anno));
+
         // Revert changes for CO deployment
         install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
@@ -249,13 +256,6 @@ public class SpecificST extends AbstractST {
             .runBundleInstallation();
 
         DeploymentUtils.waitTillDepHasRolled(INFRA_NAMESPACE, ResourceManager.getCoDeploymentName(), 1, coSnapshot);
-
-        // check the ClusterRoleBinding annotations and labels in Kafka cluster
-        Map<String, String> actualLabel = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getSpec().getTemplate().getClusterRoleBinding().getMetadata().getLabels();
-        Map<String, String> actualAnno = KafkaConnectResource.kafkaConnectClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getSpec().getTemplate().getClusterRoleBinding().getMetadata().getAnnotations();
-
-        assertThat(actualLabel, is(label));
-        assertThat(actualAnno, is(anno));
     }
 
     @IsolatedTest("Modification of shared Cluster Operator configuration")
