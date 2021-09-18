@@ -51,6 +51,14 @@ public class KafkaUserTemplates {
         return scramShaUser(ResourceManager.kubeClient().getNamespace(), clusterName, name);
     }
 
+    public static KafkaUserBuilder tlsExternalUser(final String namespaceName, final String clusterName, final String name) {
+        return defaultUser(namespaceName, clusterName, name)
+            .withNewSpec()
+                .withNewKafkaUserTlsExternalClientAuthentication()
+                .endKafkaUserTlsExternalClientAuthentication()
+            .endSpec();
+    }
+
     public static KafkaUserBuilder defaultUser(String namespaceName, String clusterName, String name) {
         return new KafkaUserBuilder()
             .withNewMetadata()
