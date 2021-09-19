@@ -18,6 +18,7 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
+import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
@@ -122,11 +123,20 @@ public class SetupClusterOperator {
     }
 
     public static SetupClusterOperator buildDefaultInstallation() {
+        if (Environment.isNamespaceRbacScope()) {
+            return new SetupClusterOperator.SetupClusterOperatorBuilder()
+                .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+                .withNamespace(Constants.INFRA_NAMESPACE)
+                .withWatchingNamespaces(ParallelNamespacesSuitesNames.getRbacNamespacesToWatch())
+                .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
+                .createInstallation();
+        }
         return new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(Constants.INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .createInstallation();
+
     }
 
     /**
@@ -423,7 +433,7 @@ public class SetupClusterOperator {
         RoleBindingResource.roleBinding(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace, bindingsNamespace);
     }
 
-    public void applyRoles(String namespace) {
+    public void applyRoles(ExtensionContext extensionContext, String namespace) {
         File roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml");
         RoleResource.role(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
 
@@ -447,7 +457,7 @@ public class SetupClusterOperator {
         if (Environment.isNamespaceRbacScope() || this.clusterOperatorRBACType.equals(ClusterOperatorRBACType.NAMESPACE)) {
             // if roles only, only deploy the rolebindings
             for (String bindingsNamespace : bindingsNamespaces) {
-                applyRoles(bindingsNamespace);
+                applyRoles(extensionContext, bindingsNamespace);
                 applyRoleBindings(extensionContext, namespaceInstallTo, bindingsNamespace);
             }
             applyRoleBindings(extensionContext, namespaceInstallTo, namespaceInstallTo);

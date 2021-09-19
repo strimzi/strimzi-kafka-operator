@@ -15,7 +15,9 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -32,6 +34,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.Collections;
 import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
@@ -47,8 +50,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ParallelSuite
 class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
-    private static final String NAMESPACE = "bridge-scram-sha-namespace";
     private final String httpBridgeScramShaClusterName = "http-bridge-scram-sha-cluster-name";
+    private static final String NAMESPACE = ParallelNamespacesSuitesNames.BRIDGE_SCRAM_SHA_NAMESPACE;
 
     private String kafkaClientsPodName;
     private KafkaBridgeExampleClients kafkaBridgeClientJob;
@@ -126,6 +129,8 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
         cluster.createNamespace(CollectorElement.createCollectorElement(
             extensionContext.getRequiredTestClass().getName(),
             extensionContext.getDisplayName()), NAMESPACE);
+
+        NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(NAMESPACE));
 
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 

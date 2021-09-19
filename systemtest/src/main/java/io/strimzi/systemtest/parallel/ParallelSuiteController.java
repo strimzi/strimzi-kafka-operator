@@ -11,6 +11,11 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
 
+/**
+ * Class responsible for synchronization of ParallelSuites. When ThreadPoolJoin run several tests in parallel, we
+ * increment counter (runningTestSuitesInParallelCount) using shared extension context. If a counter is zero, we can proceed
+ * with the IsolationSuite. If the counter is higher than zero, there is always a running ParallelSuite.
+ */
 public class ParallelSuiteController {
 
     private static final long STARTING_DELAY = Duration.ofSeconds(5).toMillis();

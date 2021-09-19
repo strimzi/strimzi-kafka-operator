@@ -14,7 +14,9 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
+import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -31,6 +33,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.Collections;
 import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
@@ -48,10 +51,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ParallelSuite
 class HttpBridgeTlsST extends HttpBridgeAbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);
-    private static final String NAMESPACE = "http-bridge-tls-namespace";
     private final String httpBridgeTlsClusterName = "http-bridge-tls-cluster-name";
     private KafkaBridgeExampleClients kafkaBridgeClientJob;
     private String kafkaClientsPodName;
+    private static final String NAMESPACE = ParallelNamespacesSuitesNames.BRIDGE_HTTP_TLS_NAMESPACE;
 
     private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
     private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
@@ -93,6 +96,8 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
     void testReceiveSimpleMessageTls(ExtensionContext extensionContext) {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaBridgeExampleClients kafkaBridgeClientJobConsume = kafkaBridgeClientJob.toBuilder().withTopicName(topicName).build();
+
+        NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(NAMESPACE));
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeTlsClusterName, topicName)
             .editMetadata()

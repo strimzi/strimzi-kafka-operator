@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
 import io.strimzi.systemtest.parallel.ParallelSuiteController;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +37,20 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
             systemReady = true;
             LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
             LOGGER.debug("{} - [BEFORE SUITE] has been called", BeforeAllOnce.class.getName());
+
+            if (Environment.isNamespaceRbacScope()) {
+                LOGGER.debug("Cluster Operator is gonna see to these namespaces :\n{}", ParallelNamespacesSuitesNames.getRbacNamespacesToWatch());
+
+                // setup cluster operator before all suites only once
+                install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+                    .withExtensionContext(sharedExtensionContext)
+                    .withNamespace(Constants.INFRA_NAMESPACE)
+                    .withWatchingNamespaces(ParallelNamespacesSuitesNames.getRbacNamespacesToWatch())
+                    .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
+                    .createInstallation()
+                    .runInstallation();
+                return;
+            }
 
             // setup cluster operator before all suites only once
             install = new SetupClusterOperator.SetupClusterOperatorBuilder()

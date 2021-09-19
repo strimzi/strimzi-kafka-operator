@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -44,7 +45,7 @@ import static org.hamcrest.Matchers.containsString;
 public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeCorsST.class);
-    private static final String NAMESPACE = "bridge-kafka-cors-namespace";
+    private static final String NAMESPACE = ParallelNamespacesSuitesNames.BRIDGE_KAFKA_CORS_NAMESPACE;
     private final String httpBridgeCorsClusterName = "http-bridge-cors-cluster-name";
 
     private static final String ALLOWED_ORIGIN = "https://strimzi.io";
