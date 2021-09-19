@@ -219,7 +219,7 @@ class UserST extends AbstractST {
     @ParallelTest
     void testTlsExternalUserWithQuotas(ExtensionContext extensionContext) {
         final String kafkaUserName = mapWithTestUsers.get(extensionContext.getDisplayName());
-        final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(NAMESPACE, userClusterName, kafkaUserName).build();
+        final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(INFRA_NAMESPACE, userClusterName, kafkaUserName).build();
 
         testUserWithQuotas(extensionContext, tlsExternalUser);
     }
@@ -274,7 +274,7 @@ class UserST extends AbstractST {
             .endMetadata()
             .build());
 
-        final String userName = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(user.getMetadata().getName()).get().getStatus().getUsername();
+        final String userName = KafkaUserResource.kafkaUserClient().inNamespace(INFRA_NAMESPACE).withName(user.getMetadata().getName()).get().getStatus().getUsername();
 
         String command = "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --user " + userName;
         LOGGER.debug("Command for kafka-configs.sh {}", command);
@@ -414,7 +414,7 @@ class UserST extends AbstractST {
 
     @ParallelNamespaceTest
     void testTlsExternalUser(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
