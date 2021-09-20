@@ -38,7 +38,8 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
             LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
             LOGGER.debug("{} - [BEFORE SUITE] has been called", BeforeAllOnce.class.getName());
 
-            if (Environment.isNamespaceRbacScope()) {
+            // When we set RBAC policy to NAMESPACE, we must copy all Roles to other (parallel) namespaces.
+            if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
                 LOGGER.debug("Cluster Operator is gonna see to these namespaces :\n{}", ParallelNamespacesSuitesNames.getRbacNamespacesToWatch());
 
                 // setup cluster operator before all suites only once

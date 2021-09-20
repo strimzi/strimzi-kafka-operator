@@ -123,7 +123,7 @@ public class SetupClusterOperator {
     }
 
     public static SetupClusterOperator buildDefaultInstallation() {
-        if (Environment.isNamespaceRbacScope()) {
+        if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
             return new SetupClusterOperator.SetupClusterOperatorBuilder()
                 .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
                 .withNamespace(Constants.INFRA_NAMESPACE)
