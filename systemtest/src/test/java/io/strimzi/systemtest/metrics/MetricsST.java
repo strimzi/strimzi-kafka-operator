@@ -24,10 +24,9 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -51,6 +50,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
+import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -99,7 +99,7 @@ public class MetricsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsST.class);
 
-    public static final String SECOND_NAMESPACE = "second-metrics-cluster-test";
+    public static final String SECOND_NAMESPACE = ParallelNamespacesSuitesNames.METRICS_SECOND_NAMESPACE;
     public static final String SECOND_CLUSTER = "second-kafka-cluster";
     public static final String MIRROR_MAKER_CLUSTER = "mm2-cluster";
     private static final String BRIDGE_CLUSTER = "my-bridge";
@@ -646,25 +646,16 @@ public class MetricsST extends AbstractST {
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
         LOGGER.info("Setting up Environment for MetricsST");
-
-        cluster.createNamespace(SECOND_NAMESPACE);
-        cluster.setNamespace(SECOND_NAMESPACE);
+        cluster.createNamespace(CollectorElement.createCollectorElement(
+            extensionContext.getRequiredTestClass().getName(),
+            extensionContext.getDisplayName()), SECOND_NAMESPACE);
 
         NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(SECOND_NAMESPACE));
 
-        cluster.setNamespace(INFRA_NAMESPACE);
-
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
-            .withWatchingNamespaces(INFRA_NAMESPACE + "," + SECOND_NAMESPACE)
-            .withBindingsNamespaces(Arrays.asList(INFRA_NAMESPACE, SECOND_NAMESPACE))
-            .createInstallation()
-            .runInstallation();
-
         final String firstKafkaClientsName = INFRA_NAMESPACE + "-" + Constants.KAFKA_CLIENTS;
         final String secondKafkaClientsName = SECOND_NAMESPACE + "-" + Constants.KAFKA_CLIENTS;
+
+        cluster.setNamespace(INFRA_NAMESPACE);
 
         // create resources without wait to deploy them simultaneously
         resourceManager.createResource(extensionContext, false,
@@ -697,7 +688,7 @@ public class MetricsST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithMetrics(metricsClusterName, 1).build());
 
-        kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName(firstKafkaClientsName).get(0).getMetadata().getName();
+        kafkaClientsPodName = ResourceManager.kubeClient().listPodsByPrefixInName(INFRA_NAMESPACE, firstKafkaClientsName).get(0).getMetadata().getName();
 
         // Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
         NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(extensionContext);
