@@ -48,11 +48,17 @@ public class CruiseControlUtils {
 
     @SuppressWarnings("Regexp")
     @SuppressFBWarnings("DM_CONVERT_CASE")
-    public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint) {
+    public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, Boolean withCredentials) {
         String ccPodName = PodUtils.getFirstPodNameContaining(CONTAINER_NAME);
+        String args = " -k ";
+
+        if (withCredentials) {
+            args = " --cacert /etc/tls-sidecar/cc-certs/cruise-control.crt"
+                + " --user admin:$(cat /opt/cruise-control/api-auth-config/cruise-control.apiAdminPassword) ";
+        }
 
         return cmdKubeClient(namespaceName).execInPodContainer(false, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
-            "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString()).out();
+            "curl -X" + method.name() + args + " https://localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString()).out();
     }
 
     @SuppressWarnings("Regexp")
@@ -152,7 +158,7 @@ public class CruiseControlUtils {
     public static void waitForRebalanceEndpointIsReady(String namespaceName) {
         TestUtils.waitFor("Wait for rebalance endpoint is ready",
             Constants.API_CRUISE_CONTROL_POLL, Constants.API_CRUISE_CONTROL_TIMEOUT, () -> {
-                String response = callApi(namespaceName, SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE);
+                String response = callApi(namespaceName, SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE, true);
                 LOGGER.debug("API response {}", response);
                 return !response.contains("Error processing POST request '/rebalance' due to: " +
                     "'com.linkedin.kafka.cruisecontrol.exception.KafkaCruiseControlException: " +
