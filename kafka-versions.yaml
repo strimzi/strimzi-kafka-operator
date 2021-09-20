@@ -138,6 +138,15 @@
   third-party-libs: 2.8.x
   supported: true
   default: false
+- version: 2.8.1
+  format: 2.8
+  protocol: 2.8
+  url: https://archive.apache.org/dist/kafka/2.8.1/kafka_2.13-2.8.1.tgz
+  checksum: 91FCD1061247AD0DDB63FA2B5C0251EE0E58E60CC9E1A3EBE2E84E9A31872448A36622DD15868DE2C6D3F7E26020A8C61477BC764E2FB6776A25E4344EB8892D
+  zookeeper: 3.5.9
+  third-party-libs: 2.8.x
+  supported: true
+  default: false
 - version: 3.0.0
   format: 3.0
   protocol: 3.0

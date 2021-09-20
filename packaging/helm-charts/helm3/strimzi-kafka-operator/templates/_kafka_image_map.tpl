@@ -16,17 +16,21 @@
             - name: STRIMZI_KAFKA_IMAGES
               value: |                 
                 2.8.0={{ default .Values.defaultImageRegistry .Values.kafka.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafka.image.repository }}/{{ .Values.kafka.image.name }}:{{ default .Values.defaultImageTag .Values.kafka.image.tagPrefix }}-kafka-2.8.0
+                2.8.1={{ default .Values.defaultImageRegistry .Values.kafka.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafka.image.repository }}/{{ .Values.kafka.image.name }}:{{ default .Values.defaultImageTag .Values.kafka.image.tagPrefix }}-kafka-2.8.1
                 3.0.0={{ default .Values.defaultImageRegistry .Values.kafka.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafka.image.repository }}/{{ .Values.kafka.image.name }}:{{ default .Values.defaultImageTag .Values.kafka.image.tagPrefix }}-kafka-3.0.0
             - name: STRIMZI_KAFKA_CONNECT_IMAGES
               value: |                 
                 2.8.0={{ default .Values.defaultImageRegistry .Values.kafkaConnect.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaConnect.image.repository }}/{{ .Values.kafkaConnect.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaConnect.image.tagPrefix }}-kafka-2.8.0
+                2.8.1={{ default .Values.defaultImageRegistry .Values.kafkaConnect.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaConnect.image.repository }}/{{ .Values.kafkaConnect.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaConnect.image.tagPrefix }}-kafka-2.8.1
                 3.0.0={{ default .Values.defaultImageRegistry .Values.kafkaConnect.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaConnect.image.repository }}/{{ .Values.kafkaConnect.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaConnect.image.tagPrefix }}-kafka-3.0.0
             - name: STRIMZI_KAFKA_MIRROR_MAKER_IMAGES
               value: |                 
                 2.8.0={{ default .Values.defaultImageRegistry .Values.kafkaMirrorMaker.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaMirrorMaker.image.repository }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaMirrorMaker.image.tagPrefix }}-kafka-2.8.0
+                2.8.1={{ default .Values.defaultImageRegistry .Values.kafkaMirrorMaker.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaMirrorMaker.image.repository }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaMirrorMaker.image.tagPrefix }}-kafka-2.8.1
                 3.0.0={{ default .Values.defaultImageRegistry .Values.kafkaMirrorMaker.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaMirrorMaker.image.repository }}/{{ .Values.kafkaMirrorMaker.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaMirrorMaker.image.tagPrefix }}-kafka-3.0.0
             - name: STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES
               value: |                 
                 2.8.0={{ default .Values.defaultImageRegistry .Values.kafkaMirrorMaker2.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaMirrorMaker2.image.repository }}/{{ .Values.kafkaMirrorMaker2.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaMirrorMaker2.image.tagPrefix }}-kafka-2.8.0
+                2.8.1={{ default .Values.defaultImageRegistry .Values.kafkaMirrorMaker2.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaMirrorMaker2.image.repository }}/{{ .Values.kafkaMirrorMaker2.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaMirrorMaker2.image.tagPrefix }}-kafka-2.8.1
                 3.0.0={{ default .Values.defaultImageRegistry .Values.kafkaMirrorMaker2.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaMirrorMaker2.image.repository }}/{{ .Values.kafkaMirrorMaker2.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaMirrorMaker2.image.tagPrefix }}-kafka-3.0.0
 {{- end -}}
