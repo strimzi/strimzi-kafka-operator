@@ -1,9 +1,9 @@
 
 // This assembly is included in the following assemblies:
 //
-// metrics/assembly_metrics-prometheus-setup.adoc
+// metrics/assembly_metrics.adoc
 
-[id='ref-metrics-config-files-{context}']
+[id='assembly-metrics-config-files-{context}']
 
 = Example metrics files
 
@@ -54,65 +54,10 @@ metrics
 <12> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and ZooKeeper.
 <13> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Mirror Maker 2.0.
 
-== Example Grafana dashboards
-
-Example Grafana dashboards are provided for monitoring:
-
-* Strimzi Operators
-* Kafka
-* Kafka ZooKeeper
-* Kafka Connect
-* Kafka MirrorMaker 2.0
-* xref:assembly-kafka-bridge-{context}[Kafka Bridge]
-* xref:assembly-cruise-control-{context}[Cruise Control]
-* xref:assembly-kafka-exporter-{context}[Kafka Exporter]
-
-All dashboards provide JVM metrics, as well as metrics specific to the component.
-For example, the Grafana dashboard for Strimzi Operators provides information on the number of reconciliations or custom resources they are processing.
-
-[id='ref-metrics-yaml-files-{context}']
-== Example Prometheus metrics configuration
-
-Strimzi uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter^] to expose JMX metrics using an HTTP endpoint, which is then scraped by the Prometheus server.
-
-Grafana dashboards are dependent on Prometheus JMX Exporter relabeling rules, which are defined for Strimzi components as custom resource configuration.
-
-A label is a name-value pair.
-Relabeling is the process of writing a label dynamically.
-For example, the value of a label may be derived from the name of a Kafka server and client ID.
-
-Strimzi provides example custom resource configuration YAML files with relabeling rules.
-When deploying Prometheus metrics configuration, you can can deploy the example custom resource or copy the metrics configuration to your own custom resource definition.
-
-.Example custom resources with metrics configuration
-[cols="3*",options="header",stripes="none"]
-|===
-|Component
-|Custom resource
-|Example YAML file
-
-|Kafka and ZooKeeper
-|`Kafka`
-|`kafka-metrics.yaml`
-
-|Kafka Connect
-|`KafkaConnect`
-|`kafka-connect-metrics.yaml`
-
-|Kafka MirrorMaker 2.0
-|`KafkaMirrorMaker2`
-|`kafka-mirror-maker-2-metrics.yaml`
-
-|Kafka Bridge
-|`KafkaBridge`
-|`kafka-bridge-metrics.yaml`
-
-|Cruise Control
-|`Kafka`
-|`kafka-cruise-control-metrics.yaml`
-|===
-
- [role="_additional-resources"] 
-.Additional resources
-
-For more information on the use of relabeling, see {PrometheusConfig} in the Prometheus documentation.
+//Example metrics files
+include::modules/ref-prometheus-metrics-config.adoc[leveloffset=+1]
+//Example dashboards
+include::modules/ref_metrics-dashboards.adoc[leveloffset=+1]
+//Kafka Exporter metrics
+include::modules/kafka-exporter/con_kafka-exporter-alerts.adoc[leveloffset=+1]
+include::modules/kafka-exporter/ref_kafka-exporter-metrics.adoc[leveloffset=+1]

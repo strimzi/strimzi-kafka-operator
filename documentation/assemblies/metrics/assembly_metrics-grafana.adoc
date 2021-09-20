@@ -6,10 +6,16 @@
 
 = Setting up Grafana
 
+[role="_abstract"]
 Grafana provides visualizations of Prometheus metrics.
 
 You can deploy and enable the example Grafana dashboards provided with Strimzi.
 
-include::modules/proc_metrics-deploying-grafana.adoc[leveloffset=+1]
-
+//Enable example dashboards
 include::modules/proc_metrics-grafana-dashboard.adoc[leveloffset=+1]
+//How to set up Kafka Bridge monitoring
+include::modules/proc-metrics-kafka-bridge.adoc[leveloffset=+1]
+//How to set up Cruise Control monitoring
+include::modules/proc-metrics-cruise-control.adoc[leveloffset=+1]
+//How to set up Kafka Exporter monitoring
+include::modules/kafka-exporter/proc-metrics-kafka-exporter.adoc[leveloffset=+1]

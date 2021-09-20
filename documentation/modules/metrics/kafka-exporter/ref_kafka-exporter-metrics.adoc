@@ -1,14 +1,15 @@
 // Module included in the following assemblies:
 //
-// metrics/assembly_metrics-kafka-exporter.adoc
+// metrics/assembly-metrics-config-files.adoc
 
 [id='ref-metrics-kafka-exporter-{context}']
 
-= Exposing Kafka Exporter metrics
+= Example Kafka Exporter metrics
 
-Lag information is exposed by Kafka Exporter as Prometheus metrics for presentation in Grafana. 
+[role="_abstract"]
+Consumer lag information is exposed by Kafka Exporter as Prometheus metrics for presentation in Grafana.
 
-Kafka Exporter exposes metrics data for brokers, topics and consumer groups. 
+Kafka Exporter exposes metrics data for brokers, topics and consumer groups.
 These metrics are displayed on the example `strimzi-kafka-exporter` dashboard.
 
 The data extracted is described here.

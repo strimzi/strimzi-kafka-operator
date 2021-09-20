@@ -5,7 +5,7 @@
 [id='proc-metrics-kafka-deploy-options-{context}']
 = Deploying Prometheus metrics configuration
 
-Strimzi provides xref:ref-metrics-yaml-files-{context}[example custom resource configuration YAML files] with relabeling rules.
+Strimzi provides xref:ref-metrics-prometheus-metrics-config-{context}[example custom resource configuration YAML files] with relabeling rules.
 
 To apply metrics configuration of relabeling rules, do one of the following:
 
@@ -15,7 +15,7 @@ To apply metrics configuration of relabeling rules, do one of the following:
 [id='proc-metrics-kafka-{context}']
 == Copying Prometheus metrics configuration to a custom resource
 
-To use Grafana dashboards for monitoring, copy xref:ref-metrics-yaml-files-{context}[the example metrics configuration to a custom resource].
+To use Grafana dashboards for monitoring, copy xref:ref-metrics-prometheus-metrics-config-{context}[the example metrics configuration to a custom resource].
 
 In this procedure, the `Kafka` resource is updated, but the procedure is the same for all components that support monitoring.
 
@@ -29,19 +29,19 @@ Perform the following steps for each `Kafka` resource in your deployment.
 kubectl edit kafka _KAFKA-CONFIG-FILE_
 ----
 
-. Copy the xref:ref-metrics-yaml-files-{context}[example configuration in `kafka-metrics.yaml`] to your own `Kafka` resource definition.
+. Copy the xref:ref-metrics-prometheus-metrics-config-{context}[example configuration in `kafka-metrics.yaml`] to your own `Kafka` resource definition.
 . Save the file, and wait for the updated resource to be reconciled.
 
 [id='proc-metrics-deploying-kafka-{context}']
 == Deploying a Kafka cluster with Prometheus metrics configuration
 
-To use Grafana dashboards for monitoring, you can deploy xref:ref-metrics-config-files-{context}[an example Kafka cluster with metrics configuration].
+To use Grafana dashboards for monitoring, you can deploy xref:assembly-metrics-config-files-{context}[an example Kafka cluster with metrics configuration].
 
 In this procedure, The `kafka-metrics.yaml` file is used for the `Kafka` resource.
 
 .Procedure
 
-* Deploy the Kafka cluster with the xref:ref-metrics-yaml-files-{context}[example metrics configuration].
+* Deploy the Kafka cluster with the xref:ref-metrics-prometheus-metrics-config-{context}[example metrics configuration].
 +
 [source,shell,subs="+attributes"]
 ----

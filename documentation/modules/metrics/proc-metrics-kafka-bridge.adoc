@@ -1,0 +1,56 @@
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly-metrics.adoc
+
+[id='kafka-bridge-monitoring-{context}']
+= Presenting Kafka Bridge metrics in Grafana
+
+[role="_abstract"]
+If you are using Prometheus and Grafana to monitor built-in Kafka metrics,
+you can configure Prometheus to also scrape the Kafka Bridge endpoint.
+You can then present the Kafka Bridge metrics in Grafana.
+
+Strimzi provides xref:ref-metrics-dashboards-{context}[example Grafana dashboard configuration files for Kafka Bridge].
+The following Kafka Bridge dashboard is provided as a JSON file:
+
+* `strimzi-kafka-bridge.json`
+
+This procedure uses the example dashboard to present metrics data in Grafana.
+
+.Prerequisites
+* xref:assembly-metrics-prometheus-{context}[Prometheus and Prometheus Alertmanager are deployed]
+* xref:proc-metrics-grafana-dashboard-{context}[Grafana is deployed and connected with Prometheus]
+
+.Procedure
+
+. Enable Kafka Bridge metrics in the `KafkaBridge` resource using the `enableMetrics` property.
++
+For example:
++
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  bootstrapServers: my-cluster-kafka:9092
+  http:
+    # ...
+  enableMetrics: true
+  # ...
+----
+
+. Create or update the resource.
++
+[source,shell,subs="+quotes"]
+----
+kubectl apply -f _<kafka_bridge_config_file>_
+----
+
+. Upload the Kafka Bridge dashboard file (`strimzi-kafka-bridge.json`) to Grafana.
++
+For more information on uploading dashboards, see xref:proc-metrics-grafana-dashboard-{context}[Enabling the example Grafana dashboards].
++
+When the Prometheus server has been collecting Kafka Bridge metrics for some time, the dashboard is populated.

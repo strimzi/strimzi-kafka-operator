@@ -6,7 +6,7 @@
 
 = Prometheus configuration
 
-Strimzi provides xref:ref-metrics-config-files-{context}[example configuration files for the Prometheus server].
+Strimzi provides xref:assembly-metrics-config-files-{context}[example configuration files for the Prometheus server].
 
 A Prometheus image is provided for deployment:
 

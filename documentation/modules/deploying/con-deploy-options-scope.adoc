@@ -28,5 +28,5 @@ Strimzi provides additional configuration options for _encryption_, _authenticat
 Strimzi supports additional deployment options to monitor your deployment.
 
 * Extract metrics and monitor Kafka components by xref:assembly-metrics-setup-str[deploying Prometheus and Grafana with your Kafka cluster].
-* Extract additional metrics, particularly related to monitoring consumer lag, by xref:assembly-kafka-exporter-{context}[deploying Kafka Exporter with your Kafka cluster].
+* Extract additional metrics, particularly related to monitoring consumer lag, by xref:proc-kafka-exporter-monitoring-{context}[deploying Kafka Exporter with your Kafka cluster].
 * Track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^], as described in the _Using Strimzi_ guide.

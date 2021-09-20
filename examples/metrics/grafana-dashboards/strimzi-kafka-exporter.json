@@ -464,7 +464,7 @@
         "#F2495C",
         "#d44a3a"
       ],
-      "description": "Number of partitions which are at their minimum in sync replica count (| ISR | == | min.insync.replicas |).",
+      "description": "Number of partitions which are at their minimum in sync replica count (| ISR | == | min.insync.replicas |)",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -546,7 +546,7 @@
         "#F2495C",
         "#d44a3a"
       ],
-      "description": "Number of partitions which are under their minimum in sync replica count (| ISR | < | min.insync.replicas |).",
+      "description": "Number of partitions which are under their minimum in sync replica count (| ISR | < | min.insync.replicas |)",
       "format": "none",
       "gauge": {
         "maxValue": 100,

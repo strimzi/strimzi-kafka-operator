@@ -1,22 +1,25 @@
 // Module included in the following assemblies:
 //
-// metrics/assembly_metrics-kafka-exporter.adoc
+// metrics/assembly-metrics.adoc
 
-[id='proc-kafka-exporter-configuring-{context}']
-= Configuring Kafka Exporter
+[id='proc-kafka-exporter-monitoring-{context}']
+= Presenting Kafka Exporter metrics in Grafana
 
-This procedure shows how to configure Kafka Exporter in the `Kafka` resource through `KafkaExporter` properties.
+[role="_abstract"]
+If you are using Prometheus and Grafana to monitor built-in Kafka metrics,
+you can configure Prometheus to also scrape the Kafka Exporter endpoint.
+You can then present Kafka Exporter metrics in Grafana.
 
-For more information about configuring the `Kafka` resource, see link:{BookURLUsing}#assembly-config-kafka-str[Kafka cluster configuration^] in the _Using Strimzi_ guide.
+Strimzi provides xref:ref-metrics-dashboards-{context}[example Grafana dashboard configuration files for Kafka Exporter].
+The following Kafka Exporter dashboard is provided as a JSON file:
 
-The properties relevant to the Kafka Exporter configuration are shown in this procedure.
+* `strimzi-kafka-exporter.json`
 
-You can configure these properties as part of a deployment or redeployment of the Kafka cluster.
+This procedure uses the example dashboard to present metrics data in Grafana.
 
 .Prerequisites
-
-* A Kubernetes cluster
-* A running Cluster Operator
+* xref:assembly-metrics-prometheus-{context}[Prometheus and Prometheus Alertmanager are deployed]
+* xref:proc-metrics-grafana-dashboard-{context}[Grafana is deployed and connected with Prometheus]
 
 .Procedure
 
@@ -74,17 +77,23 @@ spec:
 <8> link:{BookURLUsing}#con-common-configuration-healthchecks-reference[Healthcheck readiness probes].
 <9> link:{BookURLUsing}#con-common-configuration-healthchecks-reference[Healthcheck liveness probes].
 
-. Create or update the resource:
+. Create or update the resource.
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl apply -f _kafka.yaml_
+kubectl apply -f _<kafka_config_file>_
 ----
 
-.What to do next
+. Upload the Kafka Exporter dashboard file (`strimzi-kafka-exporter.json`) to Grafana.
++
+For more information on uploading dashboards, see xref:proc-metrics-grafana-dashboard-{context}[Enabling the example Grafana dashboards].
++
+When the Prometheus server has been collecting Kafka Exporter metrics for some time, the dashboard is populated.
++
+Use the Grafana charts to analyze lag and to check if actions to reduce lag are having an impact on an affected consumer group.
+If, for example, Kafka brokers are adjusted to reduce lag, the dashboard will show the  _Lag by consumer group_ chart going down and the _Messages consumed per minute_ chart going up.
 
-After configuring and deploying Kafka Exporter, you can xref:proc-kafka-exporter-enabling-{context}[enable Grafana to present the Kafka Exporter dashboards].
-
+[role="_additional-resources"]
 .Additional resources
 
-link:{BookURLUsing}#type-KafkaExporterTemplate-reference[`KafkaExporterTemplate` schema reference].
+* link:{BookURLUsing}#type-KafkaExporterTemplate-reference[`KafkaExporterTemplate` schema reference].

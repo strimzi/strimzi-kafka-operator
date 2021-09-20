@@ -3,34 +3,36 @@
 // deploying/deploying.adoc
 
 [id='assembly-metrics-{context}']
-= Introducing Metrics to Kafka
+= Introducing metrics to Kafka
 
-This section describes how to monitor your Strimzi deployment.
+[role="_abstract"]
+You can use Prometheus and Grafana to monitor your Strimzi deployment.
 
 Depending on your requirements, you can:
 
-* xref:assembly-metrics-setup-{context}[Set up and deploy Prometheus and Grafana]
-* xref:assembly-kafka-exporter-{context}[Configure the `Kafka` resource to deploy Kafka Exporter with your Kafka cluster]
-+
-Kafka Exporter provides additional monitoring related to consumer lag.
+* xref:assembly-metrics-setup-{context}[Set up and deploy Prometheus to expose metrics]
+* xref:assembly-metrics-grafana-{context}[Use Grafana to present the Prometheus metrics]
+* xref:con-metrics-kafka-exporter-lag-str[Deploy Kafka Exporter to provide additional metrics]
 
 With Prometheus and Grafana set up, you can use the example Grafana dashboards provided by Strimzi for monitoring.
 
 Additionally, you can configure your deployment to track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^], as described in the _Using Strimzi_ guide.
 
+NOTE: The resources referenced in this section are intended as a starting point for setting up monitoring, but they are provided as examples only.
+If you require further support on configuring and running Prometheus or Grafana in production, try reaching out to their respective communities.
+
+[role="_additional-resources"]
 .Additional resources
 * link:https://prometheus.io/docs/introduction/overview/[Prometheus documentation]
 * link:https://grafana.com/docs/guides/getting_started/[Grafana documentation]
 * link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring] describes JMX metrics exposed by Apache Kafka
 * link:https://zookeeper.apache.org/doc/current/zookeeperJMX.html[ZooKeeper JMX] describes JMX metrics exposed by Apache ZooKeeper
 
+//what is Consumer lag?
+include::modules/kafka-exporter/con_kafka-exporter-lag.adoc[leveloffset=+1]
 //Example metrics files
-include::modules/ref_metrics-config-files.adoc[leveloffset=+1]
-//How to set up Prometheus and Grafana
+include::assembly-metrics-config-files.adoc[leveloffset=+1]
+//How to set up Prometheus
 include::assembly_metrics-prometheus-setup.adoc[leveloffset=+1]
-//How to set up Kafka Exporter
-include::assembly_metrics-kafka-exporter.adoc[leveloffset=+1]
-//How to set up Kafka Bridge
-include::assembly_metrics-kafka-bridge.adoc[leveloffset=+1]
-//How to set up Cruise Control
-include::assembly_metrics-cruise-control.adoc[leveloffset=+1]
+//How to add Grafana dashboards
+include::assembly_metrics-grafana.adoc[leveloffset=+1]

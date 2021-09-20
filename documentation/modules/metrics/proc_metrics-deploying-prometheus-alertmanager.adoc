@@ -9,7 +9,7 @@
 [role="_abstract"]
 Use Alertmanager to route alerts to a notification service.
 
-You can use the xref:ref-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi to deploy Alertmanager to send notifications to a Slack channel.
+You can use the xref:assembly-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi to deploy Alertmanager to send notifications to a Slack channel.
 A configuration file defines the resources for deploying Alertmanager:
 
 * `examples/metrics/prometheus-install/alert-manager.yaml`
