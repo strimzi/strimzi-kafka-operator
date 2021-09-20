@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-drain-cleaner
+  labels:
+    app: strimzi-drain-cleaner
+  namespace: strimzi-drain-cleaner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: strimzi-drain-cleaner
+  template:
+    metadata:
+      labels:
+        app: strimzi-drain-cleaner
+    spec:
+      serviceAccountName: strimzi-drain-cleaner
+      containers:
+        - name: strimzi-drain-cleaner
+          image: quay.io/strimzi/drain-cleaner:0.1.0
+          ports:
+            - containerPort: 8080
+              name: http
+            - containerPort: 8443
+              name: https
+          command:
+            - "/application"
+            - "-Dquarkus.http.host=0.0.0.0"
+            - "--kafka"
+            - "--zookeeper"
+          volumeMounts:
+            - name: webhook-certificates
+              mountPath: "/etc/webhook-certificates"
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+      volumes:
+        - name: webhook-certificates
+          secret:
+            secretName: strimzi-drain-cleaner
+  strategy:
+    type: RollingUpdate
