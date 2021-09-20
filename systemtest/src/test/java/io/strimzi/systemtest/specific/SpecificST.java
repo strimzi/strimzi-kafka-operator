@@ -22,9 +22,9 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -366,7 +366,7 @@ public class SpecificST extends AbstractST {
         assertThat("Kafka External bootstrap doesn't contain correct loadBalancer address", kubeClient().getService(KafkaResources.externalBootstrapServiceName(clusterName)).getSpec().getLoadBalancerIP(), is(bootstrapOverrideIP));
         assertThat("Kafka Broker-0 service doesn't contain correct loadBalancer address", kubeClient().getService(KafkaResources.brokerSpecificService(clusterName, 0)).getSpec().getLoadBalancerIP(), is(brokerOverrideIP));
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+        ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(clusterName)
@@ -374,9 +374,9 @@ public class SpecificST extends AbstractST {
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesPlain(),
-            basicExternalKafkaClient.receiveMessagesPlain()
+        externalKafkaClient.verifyProducedAndConsumedMessages(
+            externalKafkaClient.sendMessagesPlain(),
+            externalKafkaClient.receiveMessagesPlain()
         );
     }
 
@@ -438,7 +438,7 @@ public class SpecificST extends AbstractST {
             .endSpec()
             .build());
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+        ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(TOPIC_NAME)
             .withNamespaceName(NAMESPACE)
             .withClusterName(clusterName)
@@ -446,9 +446,9 @@ public class SpecificST extends AbstractST {
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
-        basicExternalKafkaClient.verifyProducedAndConsumedMessages(
-            basicExternalKafkaClient.sendMessagesPlain(),
-            basicExternalKafkaClient.receiveMessagesPlain()
+        externalKafkaClient.verifyProducedAndConsumedMessages(
+            externalKafkaClient.sendMessagesPlain(),
+            externalKafkaClient.receiveMessagesPlain()
         );
 
         String invalidNetworkAddress = "255.255.255.111/30";
@@ -470,15 +470,15 @@ public class SpecificST extends AbstractST {
 
         LOGGER.info("Expecting that clients will not be able to connect to external load-balancer service cause of invalid load-balancer source range.");
 
-        BasicExternalKafkaClient newBasicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
+        ExternalKafkaClient newExternalKafkaClient = externalKafkaClient.toBuilder()
             .withMessageCount(2 * MESSAGE_COUNT)
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
             .build();
 
         assertThrows(TimeoutException.class, () ->
-            newBasicExternalKafkaClient.verifyProducedAndConsumedMessages(
-                newBasicExternalKafkaClient.sendMessagesPlain(),
-                newBasicExternalKafkaClient.receiveMessagesPlain()
+            newExternalKafkaClient.verifyProducedAndConsumedMessages(
+                newExternalKafkaClient.sendMessagesPlain(),
+                newExternalKafkaClient.receiveMessagesPlain()
             ));
     }
 

@@ -17,9 +17,9 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -174,7 +174,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge().build());
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+        ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withClusterName(clusterName)
             .withNamespaceName(NAMESPACE)
             .withTopicName(topicName)
@@ -184,7 +184,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
-        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
+        assertThat(externalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
         ClientUtils.waitForClientSuccess(clusterName + "-" + consumerName, NAMESPACE, MESSAGE_COUNT);
     }
 

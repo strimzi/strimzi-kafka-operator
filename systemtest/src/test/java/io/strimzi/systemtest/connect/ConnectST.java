@@ -34,9 +34,9 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
@@ -871,7 +871,7 @@ class ConnectST extends AbstractST {
             .endSpec()
             .build());
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+        ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
             .withKafkaUsername(userName)
@@ -881,7 +881,7 @@ class ConnectST extends AbstractST {
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
-        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
+        assertThat(externalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 99\"");
     }

@@ -39,11 +39,9 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * Class KafkaClientProperties, which holds inner class builder for fluent way to invoke objects. It is used inside
- * all our external clients such as BasicExternalKafkaClient or OauthExternalKafkaClient.
+ * all our external clients such as ExternalKafkaClient.
  *
- * @see io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient
- * @see io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient
- * @see io.strimzi.systemtest.kafkaclients.externalClients.TracingExternalKafkaClient
+ * @see io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient
  */
 //  This practically means, always make sure that before invoking this withSharedProperties(), you need first execute withCaSecretName().
 @SuppressFBWarnings({"NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR", "UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"})
