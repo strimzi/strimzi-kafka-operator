@@ -12,7 +12,7 @@ you can use Strimzi's example Grafana dashboards to monitor the following compon
 
 * Strimzi Operators
 * Kafka
-* Kafka ZooKeeper
+* ZooKeeper
 * Kafka Connect
 * Kafka MirrorMaker 2.0
 * Kafka Bridge
