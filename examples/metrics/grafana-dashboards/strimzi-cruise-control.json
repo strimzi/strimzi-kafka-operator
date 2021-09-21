@@ -1797,7 +1797,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Kafka broker pods memory usage",
+      "description": "Kafka Broker Pods Memory Usage",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1889,7 +1889,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Aggregated Kafka broker pods CPU usage",
+      "description": "Aggregated Kafka Broker Pods CPU Usage",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {

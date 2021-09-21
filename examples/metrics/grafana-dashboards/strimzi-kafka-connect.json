@@ -662,7 +662,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "JVM thread count",
+      "description": "JVM Thread Count",
       "fill": 1,
       "gridPos": {
         "h": 7,

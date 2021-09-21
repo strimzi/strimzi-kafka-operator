@@ -67,7 +67,7 @@
       },
       "id": 26,
       "panels": [],
-      "title": "ZooKeeper",
+      "title": "Zookeeper",
       "type": "row"
     },
     {
@@ -80,7 +80,7 @@
         "#299c46"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Quorum size of ZooKeeper ensemble",
+      "description": "Quorum Size of Zookeeper ensemble",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -161,7 +161,7 @@
         "#d44a3a"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Number of active connections",
+      "description": "Number of Alive Connections",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -220,7 +220,7 @@
         }
       ],
       "thresholds": "60,120",
-      "title": "Active Connections",
+      "title": "Alive Connections",
       "type": "singlestat",
       "valueFontSize": "200%",
       "valueMaps": [
@@ -408,7 +408,7 @@
         "#d44a3a"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Number of watchers",
+      "description": "Number of Watchers",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -467,7 +467,7 @@
         }
       ],
       "thresholds": "100,200",
-      "title": "Number of watchers",
+      "title": "Number of Watchers",
       "type": "singlestat",
       "valueFontSize": "200%",
       "valueMaps": [
@@ -485,7 +485,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "ZooKeeper pods memory usage",
+      "description": "ZooKeeper Pods Memory Usage",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -570,7 +570,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Aggregated ZooKeeper pods CPU usage",
+      "description": "Aggregated ZooKeeper Pods CPU Usage",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -655,7 +655,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Kafka broker pods disk usage",
+      "description": "Kafka Broker Pods Disk Usage",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1079,7 +1079,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "JVM thread count",
+      "description": "JVM Thread Count",
       "fill": 1,
       "gridPos": {
         "h": 7,

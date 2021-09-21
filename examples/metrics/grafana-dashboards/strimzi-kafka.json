@@ -64,7 +64,7 @@
         "#299c46"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Number of brokers online",
+      "description": "Number of Brokers Online",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -149,7 +149,7 @@
         "#bf1b00"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Number of active controllers in the cluster",
+      "description": "Number of active controllers in the cluster.",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -476,7 +476,7 @@
         "#bf1b00"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Number of partitions which are at their minimum in sync replica count (| ISR | == | min.insync.replicas |)",
+      "description": "Number of partitions which are at their minimum in sync replica count (| ISR | == | min.insync.replicas |).",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -558,7 +558,7 @@
         "#bf1b00"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Number of partitions which are under their minimum in sync replica count (| ISR | < | min.insync.replicas |)",
+      "description": "Number of partitions which are under their minimum in sync replica count (| ISR | < | min.insync.replicas |).",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -640,7 +640,7 @@
         "#bf1b00"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Number of partitions that don’t have an active leader and are hence not writable or readable",
+      "description": "Number of partitions that don’t have an active leader and are hence not writable or readable.",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -731,7 +731,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Kafka broker pods memory usage",
+      "description": "Kafka Broker Pods Memory Usage",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -819,7 +819,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Aggregated Kafka broker pods CPU usage",
+      "description": "Aggregated Kafka Broker Pods CPU Usage",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -907,7 +907,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Kafka broker pods disk usage",
+      "description": "Kafka Broker Pods Disk Usage",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1341,7 +1341,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "JVM thread count",
+      "description": "JVM Thread Count",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1432,7 +1432,7 @@
         "#299c46"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Total incoming byte rate",
+      "description": "Total Incoming Byte Rate",
       "format": "Bps",
       "gauge": {
         "maxValue": 100,
@@ -1516,7 +1516,7 @@
         "#299c46"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Total outgoing byte rate",
+      "description": "Total Outgoing Byte Rate",
       "format": "Bps",
       "gauge": {
         "maxValue": 100,
@@ -1600,7 +1600,7 @@
         "#299c46"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Incoming messages rate",
+      "description": "Incoming Messages Rate",
       "format": "wps",
       "gauge": {
         "maxValue": 100,
@@ -1684,7 +1684,7 @@
         "#299c46"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Total produce request rate",
+      "description": "Total Produce Request Rate",
       "format": "reqps",
       "gauge": {
         "maxValue": 100,
@@ -1764,7 +1764,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Byte rate",
+      "description": "Byte Rate",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -1954,7 +1954,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Produce request rate",
+      "description": "Produce Request Rate.",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -2049,7 +2049,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Fetch request rate",
+      "description": "Fetch Request Rate",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -2143,7 +2143,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Average percentage of time network processor is idle",
+      "description": "Network Processor Avg Idle Percent",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -2230,7 +2230,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "description": "Average percentage of time request handler threads are idle",
+      "description": "Request Handler Avg Idle Percent",
       "fill": 1,
       "gridPos": {
         "h": 8,
