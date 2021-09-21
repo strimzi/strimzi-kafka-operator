@@ -383,5 +383,4 @@ public class AuthenticationUtils {
             zookeeperCluster.setJmxAuthenticated(false);
         }
     }
-
 }
