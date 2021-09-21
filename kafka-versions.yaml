@@ -150,7 +150,7 @@
 - version: 3.0.0
   format: 3.0
   protocol: 3.0
-  url: https://home.apache.org/~kkarantasis/kafka-3.0.0-rc2/kafka_2.13-3.0.0.tgz
+  url: https://archive.apache.org/dist/kafka/3.0.0/kafka_2.13-3.0.0.tgz
   checksum: 86CDEB04AF123399858D03431E9777948C1C40EC0D843966CF9BD90B8235B47EBBB5CB96D1F0660710B9286DA86BBB5EE65E21E757606F5A1E67F970AE5CF57C
   zookeeper: 3.6.3
   third-party-libs: 3.0.x

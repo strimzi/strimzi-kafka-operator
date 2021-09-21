@@ -174,13 +174,6 @@
         <module>systemtest</module>
     </modules>
 
-    <repositories>
-        <repository>
-            <id>kafka-staging</id>
-            <url>https://repository.apache.org/content/groups/staging/</url>
-        </repository>
-    </repositories>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
