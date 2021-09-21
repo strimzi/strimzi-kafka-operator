@@ -9,6 +9,7 @@ import io.strimzi.systemtest.kafkaclients.AbstractKafkaClient;
 import io.strimzi.systemtest.kafkaclients.clientproperties.ConsumerProperties;
 import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.test.WaitException;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -27,6 +28,9 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient.Builder> {
 
@@ -138,84 +142,88 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
     }
 
     private int sendMessages() {
-        try {
-            Producer<String, String> producer = new KafkaProducer<>(producerProperties.getProperties());
-            int[] messagesSentCounter = {0};
+        Producer<String, String> producer = new KafkaProducer<>(producerProperties.getProperties());
+        int[] messagesSentCounter = {0};
 
-            CompletableFuture<Integer> sent = new CompletableFuture<>();
+        CompletableFuture<Integer> sent = new CompletableFuture<>();
 
-            Runnable send = new Runnable() {
-                @Override
-                public void run() {
-                    ProducerRecord<String, String> record = new ProducerRecord<>(topicName, partition, null, String.format("Hello-world - %s", messagesSentCounter[0]));
-                    try {
-                        if (messagesSentCounter[0] == messageCount) {
-                            sent.complete(messagesSentCounter[0]);
-                        } else {
-                            RecordMetadata metadata = producer.send(record).get();
-                            LOGGER.debug("Message " + record.value() + " written on topic=" + metadata.topic() +
-                                ", partition=" + metadata.partition() +
-                                ", offset=" + metadata.offset());
-                            messagesSentCounter[0]++;
-                            this.run();
-                        }
-                    } catch (Exception e) {
-                        LOGGER.error("Error sending message {} - {}", messagesSentCounter[0], e.getCause());
-                        e.printStackTrace();
-                        sent.completeExceptionally(e);
+        Runnable send = new Runnable() {
+            @Override
+            public void run() {
+                ProducerRecord<String, String> record = new ProducerRecord<>(topicName, partition, null, String.format("Hello-world - %s", messagesSentCounter[0]));
+                try {
+                    if (messagesSentCounter[0] == messageCount) {
+                        sent.complete(messagesSentCounter[0]);
+                    } else {
+                        RecordMetadata metadata = producer.send(record).get();
+                        LOGGER.debug("Message " + record.value() + " written on topic=" + metadata.topic() +
+                            ", partition=" + metadata.partition() +
+                            ", offset=" + metadata.offset());
+                        messagesSentCounter[0]++;
+                        this.run();
                     }
+                } catch (Exception e) {
+                    LOGGER.error("Error sending message {} - {}", messagesSentCounter[0], e.getCause());
+                    e.printStackTrace();
+                    sent.completeExceptionally(e);
                 }
-            };
+            }
+        };
 
-            send.run();
+        send.run();
 
-            int messagesSent = sent.get();
+        try {
+            int messagesSent = sent.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
             LOGGER.info("Sent {} messages.", messagesSent);
 
             producer.close();
 
             return messagesSent;
-        } catch (Exception e) {
-            LOGGER.error("Exception while sending messages: {}", e.getMessage());
-            return -1;
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            producer.close();
+
+            e.printStackTrace();
+            throw new WaitException(e);
         }
     }
 
     private int consumeMessages() {
-        try {
-            Consumer<String, String> consumer = new KafkaConsumer<>(consumerProperties.getProperties());
-            consumer.subscribe(Collections.singletonList(topicName));
+        Consumer<String, String> consumer = new KafkaConsumer<>(consumerProperties.getProperties());
+        consumer.subscribe(Collections.singletonList(topicName));
 
-            CompletableFuture<Integer> received = new CompletableFuture<>();
+        CompletableFuture<Integer> received = new CompletableFuture<>();
 
-            Runnable poll = new Runnable() {
-                @Override
-                public void run() {
-                    ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(Constants.GLOBAL_CLIENTS_TIMEOUT));
+        Runnable poll = new Runnable() {
+            @Override
+            public void run() {
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(Constants.GLOBAL_CLIENTS_TIMEOUT));
 
-                    int size = records.count();
+                int size = records.count();
 
-                    records.forEach(record -> LOGGER.debug("Received message: {}", record.value()));
+                records.forEach(record -> LOGGER.debug("Received message: {}", record.value()));
 
-                    if (size >= messageCount) {
-                        received.complete(size);
-                    } else {
-                        this.run();
-                    }
+                if (size >= messageCount) {
+                    received.complete(size);
+                } else {
+                    this.run();
                 }
-            };
+            }
+        };
 
-            poll.run();
+        poll.run();
 
-            int messagesReceived = received.get();
+        try {
+            int messagesReceived = received.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
             LOGGER.info("Received {} messages.", messagesReceived);
 
             consumer.close();
 
             return messagesReceived;
-        } catch (Exception e) {
-            LOGGER.error("Exception while receiving messages: {}", e.getMessage());
-            return -1;
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            consumer.close();
+
+            e.printStackTrace();
+            throw new WaitException(e);
         }
     }
 }
