@@ -6,6 +6,10 @@
 
 = Enabling the example Grafana dashboards
 
+[role="_abstract"]
+Use Grafana dashboards to visualize Strimzi data.
+Add dashboards if you are using Prometheus and Grafana to extract metrics and monitor Strimzi.
+
 Strimzi provides xref:ref-metrics-config-files-{context}[example dashboard configuration files for Grafana].
 Example dashboards are provided in the `examples/metrics/grafana-dashboards` directory as JSON files:
 
@@ -20,8 +24,6 @@ Example dashboards are provided in the `examples/metrics/grafana-dashboards` dir
 
 The example dashboards are a good starting point for monitoring key metrics, but they do not represent all available metrics.
 You can modify the example dashboards or add other metrics, depending on your infrastructure.
-
-After setting up Prometheus and Grafana, you can visualize the Strimzi data on the Grafana dashboards.
 
 NOTE: No alert notification rules are defined.
 
@@ -167,5 +169,4 @@ Strimzi Kafka Bridge:: See xref:assembly-kafka-bridge-{context}[].
 
 Strimzi Cruise Control:: See xref:assembly-cruise-control-{context}[].
 
-Strimzi Kafka Exporter:: See xref:proc-kafka-exporter-enabling-{context}[]. 
- 
+Strimzi Kafka Exporter:: See xref:proc-kafka-exporter-enabling-{context}[].

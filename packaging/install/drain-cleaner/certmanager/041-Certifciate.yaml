@@ -1,0 +1,16 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: strimzi-drain-cleaner
+  labels:
+    app: strimzi-drain-cleaner
+  namespace: strimzi-drain-cleaner
+spec:
+  secretName: strimzi-drain-cleaner
+  commonName: strimzi-drain-cleaner
+  dnsNames:
+  - strimzi-drain-cleaner.strimzi-drain-cleaner.svc
+  - strimzi-drain-cleaner.strimzi-drain-cleaner
+  - strimzi-drain-cleaner
+  issuerRef:
+    name: strimzi-drain-cleaner

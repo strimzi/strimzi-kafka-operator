@@ -32,7 +32,7 @@ public abstract class DownloadableArtifact extends Artifact {
             "For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. " +
             "Required for `jar`, `zip`, `tgz` and `other` artifacts. " +
             "Not applicable to the `maven` artifact type.")
-    @Pattern("^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]")
+    @Pattern("^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]$")
     public String getUrl() {
         return url;
     }

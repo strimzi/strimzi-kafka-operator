@@ -15,7 +15,8 @@ The list of grants (permissions) is fetched from the Keycloak server as the firs
 The list is refreshed in the background so that changes to the grants are detected.
 Grants are cached and enforced locally on the Kafka broker for each user session to provide fast authorization decisions.
 
-Strimzi provides two example files with the deployment artifacts for setting up Keycloak:
+Strimzi provides link:{BookURLDeploying}#deploy-examples-{context}[example configuration files].
+These include the following example files for setting up Keycloak:
 
 `kafka-ephemeral-oauth-single-keycloak-authz.yaml`:: An example `Kafka` custom resource configured for OAuth 2.0 token-based authorization using Keycloak.
 You can use the custom resource to deploy a Kafka cluster that uses `keycloak` authorization and token-based `oauth` authentication.
@@ -632,6 +633,5 @@ The cluster configuration for this example is empty.
 
 [role="_additional-resources"]
 .Additional resources
-
 * {keycloak-server-install-doc}
 * xref:con-mapping-keycloak-authz-services-to-kafka-model_authz-model[Map Keycloak Authorization Services to the Kafka authorization model]

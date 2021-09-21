@@ -270,11 +270,11 @@ spec:
                       description: A map of -XX options to the JVM.
                     "-Xms":
                       type: string
-                      pattern: '[0-9]+[mMgG]?'
+                      pattern: ^[0-9]+[mMgG]?$
                       description: -Xms option to to the JVM.
                     "-Xmx":
                       type: string
-                      pattern: '[0-9]+[mMgG]?'
+                      pattern: ^[0-9]+[mMgG]?$
                       description: -Xmx option to to the JVM.
                     gcLoggingEnabled:
                       type: boolean
@@ -1772,7 +1772,7 @@ spec:
                                   description: Artifact type. Currently, the supported artifact types are `tgz`, `jar`, `zip`, `other` and `maven`.
                                 url:
                                   type: string
-                                  pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
+                                  pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]$
                                   description: URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required for `jar`, `zip`, `tgz` and `other` artifacts. Not applicable to the `maven` artifact type.
                                 version:
                                   type: string

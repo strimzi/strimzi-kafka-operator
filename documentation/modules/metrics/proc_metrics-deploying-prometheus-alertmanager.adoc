@@ -6,9 +6,17 @@
 
 = Deploying Alertmanager
 
-To deploy Alertmanager, apply the xref:ref-metrics-config-files-{context}[example configuration files].
+[role="_abstract"]
+Use Alertmanager to route alerts to a notification service.
 
-The sample configuration provided with Strimzi configures the Alertmanager to send notifications to a Slack channel.
+You can use the xref:ref-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi to deploy Alertmanager to send notifications to a Slack channel.
+A configuration file defines the resources for deploying Alertmanager:
+
+* `examples/metrics/prometheus-install/alert-manager.yaml`
+
+An additional configuration file provides the hook definitions for sending notifications from your Kafka cluster:
+
+* `examples/metrics/prometheus-alertmanager-config/alert-manager-config.yaml`
 
 The following resources are defined on deployment:
 

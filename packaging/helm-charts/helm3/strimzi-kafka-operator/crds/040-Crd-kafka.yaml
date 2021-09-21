@@ -652,11 +652,11 @@ spec:
                           description: A map of -XX options to the JVM.
                         "-Xms":
                           type: string
-                          pattern: '[0-9]+[mMgG]?'
+                          pattern: ^[0-9]+[mMgG]?$
                           description: -Xms option to to the JVM.
                         "-Xmx":
                           type: string
-                          pattern: '[0-9]+[mMgG]?'
+                          pattern: ^[0-9]+[mMgG]?$
                           description: -Xmx option to to the JVM.
                         gcLoggingEnabled:
                           type: boolean
@@ -1743,11 +1743,11 @@ spec:
                           description: A map of -XX options to the JVM.
                         "-Xms":
                           type: string
-                          pattern: '[0-9]+[mMgG]?'
+                          pattern: ^[0-9]+[mMgG]?$
                           description: -Xms option to to the JVM.
                         "-Xmx":
                           type: string
-                          pattern: '[0-9]+[mMgG]?'
+                          pattern: ^[0-9]+[mMgG]?$
                           description: -Xmx option to to the JVM.
                         gcLoggingEnabled:
                           type: boolean
@@ -2662,11 +2662,11 @@ spec:
                               description: A map of -XX options to the JVM.
                             "-Xms":
                               type: string
-                              pattern: '[0-9]+[mMgG]?'
+                              pattern: ^[0-9]+[mMgG]?$
                               description: -Xms option to to the JVM.
                             "-Xmx":
                               type: string
-                              pattern: '[0-9]+[mMgG]?'
+                              pattern: ^[0-9]+[mMgG]?$
                               description: -Xmx option to to the JVM.
                             gcLoggingEnabled:
                               type: boolean
@@ -2802,11 +2802,11 @@ spec:
                               description: A map of -XX options to the JVM.
                             "-Xms":
                               type: string
-                              pattern: '[0-9]+[mMgG]?'
+                              pattern: ^[0-9]+[mMgG]?$
                               description: -Xms option to to the JVM.
                             "-Xmx":
                               type: string
-                              pattern: '[0-9]+[mMgG]?'
+                              pattern: ^[0-9]+[mMgG]?$
                               description: -Xmx option to to the JVM.
                             gcLoggingEnabled:
                               type: boolean
@@ -3792,11 +3792,11 @@ spec:
                           description: A map of -XX options to the JVM.
                         "-Xms":
                           type: string
-                          pattern: '[0-9]+[mMgG]?'
+                          pattern: ^[0-9]+[mMgG]?$
                           description: -Xms option to to the JVM.
                         "-Xmx":
                           type: string
-                          pattern: '[0-9]+[mMgG]?'
+                          pattern: ^[0-9]+[mMgG]?$
                           description: -Xmx option to to the JVM.
                         gcLoggingEnabled:
                           type: boolean
@@ -4528,11 +4528,11 @@ spec:
                           description: Broker capacity for CPU resource utilization as a percentage (0 - 100).
                         inboundNetwork:
                           type: string
-                          pattern: '[0-9]+([KMG]i?)?B/s'
+                          pattern: ^[0-9]+([KMG]i?)?B/s$
                           description: Broker capacity for inbound network throughput in bytes per second, for example, 10000KB/s.
                         outboundNetwork:
                           type: string
-                          pattern: '[0-9]+([KMG]i?)?B/s'
+                          pattern: ^[0-9]+([KMG]i?)?B/s$
                           description: Broker capacity for outbound network throughput in bytes per second, for example 10000KB/s.
                       description: The Cruise Control `brokerCapacity` configuration.
                     config:
