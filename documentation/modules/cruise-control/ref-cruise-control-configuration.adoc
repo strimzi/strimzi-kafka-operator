@@ -168,7 +168,7 @@ spec:
 
 [[api-security-configuration]]
 [discrete]
-== Disabling Cruise Control REST API security
+== Cruise Control REST API security
 
 The Cruise Control REST API is secured with authentication and authorization to protect the cluster against potentially destructive Cruise Control operations, such as decommissioning Kafka brokers.
 
