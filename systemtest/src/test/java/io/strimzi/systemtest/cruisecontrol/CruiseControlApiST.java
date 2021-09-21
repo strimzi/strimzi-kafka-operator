@@ -161,7 +161,5 @@ public class CruiseControlApiST extends AbstractST {
             .withNamespace(NAMESPACE)
             .createInstallation()
             .runInstallation();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3).build());
     }
 }
