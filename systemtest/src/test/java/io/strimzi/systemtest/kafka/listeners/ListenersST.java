@@ -1578,6 +1578,8 @@ public class ListenersST extends AbstractST {
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, false, aliceUser).build());
 
+        int expectedMessageCountForNewGroup = MESSAGE_COUNT * 3;
+
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName())
             .withTopicName(topicName)
@@ -1590,12 +1592,13 @@ public class ListenersST extends AbstractST {
             .build();
 
         int sent = internalKafkaClient.sendMessagesTls();
+        int expectedMessageCountForExternalClient = sent;
         assertThat(sent, is(MESSAGE_COUNT));
 
-        internalKafkaClient.setMessageCount(MESSAGE_COUNT * 3);
+        internalKafkaClient.setMessageCount(expectedMessageCountForNewGroup);
 
         int received = internalKafkaClient.receiveMessagesTls();
-        assertThat(received, is(3 * MESSAGE_COUNT));
+        assertThat(received, is(expectedMessageCountForNewGroup));
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_2);
         SecretUtils.createCustomSecret(clusterCustomCertServer2, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_1);
@@ -1614,20 +1617,30 @@ public class ListenersST extends AbstractST {
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
         assertThat(internalSecretCerts, is(internalCerts));
 
+        sent = externalKafkaClient.sendMessagesTls();
+        expectedMessageCountForExternalClient += sent;
+        expectedMessageCountForNewGroup += sent;
+
         externalKafkaClient.verifyProducedAndConsumedMessages(
-            externalKafkaClient.sendMessagesTls(),
+            expectedMessageCountForExternalClient,
             externalKafkaClient.receiveMessagesTls()
         );
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName("consumer-group-certs-72")
-            .withMessageCount(MESSAGE_COUNT * 5)
+            .withMessageCount(MESSAGE_COUNT)
             .build();
 
         sent = internalKafkaClient.sendMessagesTls();
-        assertThat(sent, is(5 * MESSAGE_COUNT));
+        expectedMessageCountForNewGroup += sent;
+
+        expectedMessageCountForExternalClient = sent;
+
+        assertThat(sent, is(MESSAGE_COUNT));
+
+        internalKafkaClient.setMessageCount(expectedMessageCountForNewGroup);
         received = internalKafkaClient.receiveMessagesTls();
-        assertThat(received, is(5 * MESSAGE_COUNT));
+        assertThat(received, is(expectedMessageCountForNewGroup));
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
@@ -1672,17 +1685,24 @@ public class ListenersST extends AbstractST {
         externalKafkaClient = externalKafkaClient.toBuilder()
             .withCertificateAuthorityCertificateName(null)
             .build();
+
+        sent = externalKafkaClient.sendMessagesTls();
+
+        expectedMessageCountForExternalClient += sent;
+        expectedMessageCountForNewGroup += sent;
+
         externalKafkaClient.verifyProducedAndConsumedMessages(
-            externalKafkaClient.sendMessagesTls(),
+            expectedMessageCountForExternalClient,
             externalKafkaClient.receiveMessagesTls()
         );
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName("consumer-group-certs-73")
+            .withMessageCount(expectedMessageCountForNewGroup)
             .build();
 
         received = internalKafkaClient.receiveMessagesTls();
-        assertThat(received, is(5 * MESSAGE_COUNT));
+        assertThat(received, is(expectedMessageCountForNewGroup));
     }
 
     @ParallelNamespaceTest

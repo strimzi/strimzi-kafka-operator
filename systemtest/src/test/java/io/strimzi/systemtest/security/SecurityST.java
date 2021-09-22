@@ -1006,7 +1006,7 @@ class SecurityST extends AbstractST {
         assertThat(newExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
 
         LOGGER.info("Checking KafkaUser {} that is not able to send messages to topic '{}'", kafkaUserRead, topicName);
-        assertThrows(GroupAuthorizationException.class, newExternalKafkaClient::sendMessagesTls);
+        assertThrows(Exception.class, newExternalKafkaClient::sendMessagesTls);
     }
 
     @ParallelNamespaceTest
