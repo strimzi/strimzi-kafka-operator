@@ -22,10 +22,10 @@ import java.util.Map;
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(name = KafkaClientAuthenticationTls.TYPE_TLS, value = KafkaClientAuthenticationTls.class),
-        @JsonSubTypes.Type(name = KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512, value = KafkaClientAuthenticationScramSha512.class),
-        @JsonSubTypes.Type(name = KafkaClientAuthenticationPlain.TYPE_PLAIN, value = KafkaClientAuthenticationPlain.class),
-        @JsonSubTypes.Type(name = KafkaClientAuthenticationOAuth.TYPE_OAUTH, value = KafkaClientAuthenticationOAuth.class),
+    @JsonSubTypes.Type(name = KafkaClientAuthenticationTls.TYPE_TLS, value = KafkaClientAuthenticationTls.class),
+    @JsonSubTypes.Type(name = KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512, value = KafkaClientAuthenticationScramSha512.class),
+    @JsonSubTypes.Type(name = KafkaClientAuthenticationPlain.TYPE_PLAIN, value = KafkaClientAuthenticationPlain.class),
+    @JsonSubTypes.Type(name = KafkaClientAuthenticationOAuth.TYPE_OAUTH, value = KafkaClientAuthenticationOAuth.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode

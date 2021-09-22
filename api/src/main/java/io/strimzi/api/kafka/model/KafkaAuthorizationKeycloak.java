@@ -24,8 +24,8 @@ import java.util.List;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "clientId", "tokenEndpointUri",
-                    "tlsTrustedCertificates", "disableTlsHostnameVerification",
-                    "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize", "superUsers"})
+    "tlsTrustedCertificates", "disableTlsHostnameVerification",
+    "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize", "superUsers"})
 @EqualsAndHashCode
 public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private static final long serialVersionUID = 1L;

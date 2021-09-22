@@ -15,26 +15,25 @@ import io.strimzi.crdgenerator.annotations.Crd;
             plural = "exampleswithsubresources",
             categories = {"strimzi"}),
         scope = "Namespaced",
-    versions = {
-        @Crd.Spec.Version(name = "v1alpha1", served = true, storage = true),
-        @Crd.Spec.Version(name = "v1beta1", served = true, storage = false)
-    },
-    subresources = @Crd.Spec.Subresources(
-            status = @Crd.Spec.Subresources.Status(),
-            scale = @Crd.Spec.Subresources.Scale(
-                    specReplicasPath = ".spec.replicas",
-                    statusReplicasPath = ".status.replicas",
-                    labelSelectorPath = ".status.selector"
-            )
-    ),
-    additionalPrinterColumns = {
-        @Crd.Spec.AdditionalPrinterColumn(
-            name = "Foo",
-            description = "The foo",
-            jsonPath = "...",
-            type = "integer"
-        )
-    }
+        versions = {
+            @Crd.Spec.Version(name = "v1alpha1", served = true, storage = true),
+            @Crd.Spec.Version(name = "v1beta1", served = true, storage = false)
+        },
+        subresources = @Crd.Spec.Subresources(
+                status = @Crd.Spec.Subresources.Status(),
+                scale = @Crd.Spec.Subresources.Scale(
+                        specReplicasPath = ".spec.replicas",
+                        statusReplicasPath = ".status.replicas",
+                        labelSelectorPath = ".status.selector"
+                )
+        ),
+        additionalPrinterColumns = {
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Foo",
+                description = "The foo",
+                jsonPath = "...",
+                type = "integer")
+        }
     ))
 public class ExampleWithSubresourcesCrd<T, U extends Number, V extends U> extends CustomResource {
     private String replicas;

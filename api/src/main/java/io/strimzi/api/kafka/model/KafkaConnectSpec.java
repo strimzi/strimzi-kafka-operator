@@ -24,10 +24,10 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "version", "replicas", "image",
-        "bootstrapServers", "tls", "authentication", "config", "resources",
-        "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions",
-        "affinity", "tolerations", "logging", "metrics", "tracing",
-        "template", "externalConfiguration"})
+    "bootstrapServers", "tls", "authentication", "config", "resources",
+    "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions",
+    "affinity", "tolerations", "logging", "metrics", "tracing",
+    "template", "externalConfiguration"})
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
 

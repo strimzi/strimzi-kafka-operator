@@ -30,53 +30,49 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 
 @Crd(
-        spec = @Crd.Spec(
-                names = @Crd.Spec.Names(
-                        kind = KafkaConnector.RESOURCE_KIND,
-                        plural = KafkaConnector.RESOURCE_PLURAL,
-                        shortNames = {KafkaConnector.SHORT_NAME},
-                        categories = {Constants.STRIMZI_CATEGORY}
-                ),
-                group = KafkaConnector.RESOURCE_GROUP,
-                scope = KafkaConnector.SCOPE,
-                versions = {
-                        @Crd.Spec.Version(name = KafkaConnector.V1BETA2, served = true, storage = false),
-                        @Crd.Spec.Version(name = KafkaConnector.V1ALPHA1, served = true, storage = true)
-                },
-                subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status(),
-                        scale = @Crd.Spec.Subresources.Scale(
-                                specReplicasPath = KafkaConnector.SPEC_REPLICAS_PATH,
-                                statusReplicasPath = KafkaConnector.STATUS_REPLICAS_PATH
-                        )
-                ),
-                additionalPrinterColumns = {
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Cluster",
-                                description = "The name of the Kafka Connect cluster this connector belongs to",
-                                jsonPath = ".metadata.labels.strimzi\\.io/cluster",
-                                type = "string"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Connector class",
-                                description = "The class used by this connector",
-                                jsonPath = ".spec.class",
-                                type = "string"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Max Tasks",
-                                description = "Maximum number of tasks",
-                                jsonPath = ".spec.tasksMax",
-                                type = "integer"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Ready",
-                                description = "The state of the custom resource",
-                                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
-                                type = "string"
-                        )
-                }
-        )
+    spec = @Crd.Spec(
+        names = @Crd.Spec.Names(
+            kind = KafkaConnector.RESOURCE_KIND,
+            plural = KafkaConnector.RESOURCE_PLURAL,
+            shortNames = {KafkaConnector.SHORT_NAME},
+            categories = {Constants.STRIMZI_CATEGORY}
+        ),
+        group = KafkaConnector.RESOURCE_GROUP,
+        scope = KafkaConnector.SCOPE,
+        versions = {
+            @Crd.Spec.Version(name = KafkaConnector.V1BETA2, served = true, storage = false),
+            @Crd.Spec.Version(name = KafkaConnector.V1ALPHA1, served = true, storage = true)
+        },
+        subresources = @Crd.Spec.Subresources(
+            status = @Crd.Spec.Subresources.Status(),
+            scale = @Crd.Spec.Subresources.Scale(
+                specReplicasPath = KafkaConnector.SPEC_REPLICAS_PATH,
+                statusReplicasPath = KafkaConnector.STATUS_REPLICAS_PATH
+            )
+        ),
+        additionalPrinterColumns = {
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Cluster",
+                description = "The name of the Kafka Connect cluster this connector belongs to",
+                jsonPath = ".metadata.labels.strimzi\\.io/cluster",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Connector class",
+                description = "The class used by this connector",
+                jsonPath = ".spec.class",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Max Tasks",
+                description = "Maximum number of tasks",
+                jsonPath = ".spec.tasksMax",
+                type = "integer"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Ready",
+                description = "The state of the custom resource",
+                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
+                type = "string")
+        }
+    )
 )
 @Buildable(
         editableEnabled = false,

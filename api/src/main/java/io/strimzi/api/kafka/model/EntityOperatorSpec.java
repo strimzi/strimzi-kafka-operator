@@ -23,8 +23,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "topicOperator", "userOperator", "tlsSidecar", "template"})
+@JsonPropertyOrder({"topicOperator", "userOperator", "tlsSidecar", "template"})
 @EqualsAndHashCode
 public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializable {
 

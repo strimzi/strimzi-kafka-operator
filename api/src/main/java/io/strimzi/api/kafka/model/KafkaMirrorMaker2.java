@@ -33,42 +33,40 @@ import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize
 @Crd(
-        spec = @Crd.Spec(
-                names = @Crd.Spec.Names(
-                        kind = KafkaMirrorMaker2.RESOURCE_KIND,
-                        plural = KafkaMirrorMaker2.RESOURCE_PLURAL,
-                        shortNames = {KafkaMirrorMaker2.SHORT_NAME},
-                        categories = {Constants.STRIMZI_CATEGORY}
-                ),
-                group = KafkaMirrorMaker2.RESOURCE_GROUP,
-                scope = KafkaMirrorMaker2.SCOPE,
-                versions = {
-                        @Crd.Spec.Version(name = KafkaMirrorMaker2.V1BETA2, served = true, storage = false),
-                        @Crd.Spec.Version(name = KafkaMirrorMaker2.V1ALPHA1, served = true, storage = true)
-                },
-                subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status(),
-                        scale = @Crd.Spec.Subresources.Scale(
-                                specReplicasPath = KafkaMirrorMaker2.SPEC_REPLICAS_PATH,
-                                statusReplicasPath = KafkaMirrorMaker2.STATUS_REPLICAS_PATH,
-                                labelSelectorPath = KafkaMirrorMaker2.LABEL_SELECTOR_PATH
-                        )
-                ),
-                additionalPrinterColumns = {
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Desired replicas",
-                                description = "The desired number of Kafka MirrorMaker 2.0 replicas",
-                                jsonPath = ".spec.replicas",
-                                type = "integer"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Ready",
-                                description = "The state of the custom resource",
-                                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
-                                type = "string"
-                        )
-                }
-        )
+    spec = @Crd.Spec(
+        names = @Crd.Spec.Names(
+            kind = KafkaMirrorMaker2.RESOURCE_KIND,
+            plural = KafkaMirrorMaker2.RESOURCE_PLURAL,
+            shortNames = {KafkaMirrorMaker2.SHORT_NAME},
+            categories = {Constants.STRIMZI_CATEGORY}
+        ),
+        group = KafkaMirrorMaker2.RESOURCE_GROUP,
+        scope = KafkaMirrorMaker2.SCOPE,
+        versions = {
+            @Crd.Spec.Version(name = KafkaMirrorMaker2.V1BETA2, served = true, storage = false),
+            @Crd.Spec.Version(name = KafkaMirrorMaker2.V1ALPHA1, served = true, storage = true)
+        },
+        subresources = @Crd.Spec.Subresources(
+            status = @Crd.Spec.Subresources.Status(),
+            scale = @Crd.Spec.Subresources.Scale(
+                specReplicasPath = KafkaMirrorMaker2.SPEC_REPLICAS_PATH,
+                statusReplicasPath = KafkaMirrorMaker2.STATUS_REPLICAS_PATH,
+                labelSelectorPath = KafkaMirrorMaker2.LABEL_SELECTOR_PATH
+            )
+        ),
+        additionalPrinterColumns = {
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Desired replicas",
+                description = "The desired number of Kafka MirrorMaker 2.0 replicas",
+                jsonPath = ".spec.replicas",
+                type = "integer"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Ready",
+                description = "The state of the custom resource",
+                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
+                type = "string")
+        }
+    )
 )
 @Buildable(
         editableEnabled = false, 

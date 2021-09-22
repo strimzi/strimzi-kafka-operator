@@ -20,10 +20,10 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"version", "replicas", "image", "connectCluster",
-        "clusters", "mirrors", "resources", 
-        "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions",
-        "affinity", "tolerations", "logging", "metrics", "tracing", 
-        "template", "externalConfiguration"})
+    "clusters", "mirrors", "resources",
+    "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions",
+    "affinity", "tolerations", "logging", "metrics", "tracing",
+    "template", "externalConfiguration"})
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 public class KafkaMirrorMaker2Spec extends AbstractKafkaConnectSpec {
 

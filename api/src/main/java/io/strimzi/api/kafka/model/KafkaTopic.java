@@ -32,50 +32,46 @@ import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize
 @Crd(
-        spec = @Crd.Spec(
-                names = @Crd.Spec.Names(
-                        kind = KafkaTopic.RESOURCE_KIND,
-                        plural = KafkaTopic.RESOURCE_PLURAL,
-                        shortNames = {KafkaTopic.SHORT_NAME},
-                        categories = {Constants.STRIMZI_CATEGORY}
-                ),
-                group = KafkaTopic.RESOURCE_GROUP,
-                scope = KafkaTopic.SCOPE,
-                versions = {
-                        @Crd.Spec.Version(name = KafkaTopic.V1BETA2, served = true, storage = false),
-                        @Crd.Spec.Version(name = KafkaTopic.V1BETA1, served = true, storage = true),
-                        @Crd.Spec.Version(name = KafkaTopic.V1ALPHA1, served = true, storage = false)
-                },
-                subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status()
-                ),
-                additionalPrinterColumns = {
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Cluster",
-                                description = "The name of the Kafka cluster this topic belongs to",
-                                jsonPath = ".metadata.labels.strimzi\\.io/cluster",
-                                type = "string"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Partitions",
-                                description = "The desired number of partitions in the topic",
-                                jsonPath = ".spec.partitions",
-                                type = "integer"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Replication factor",
-                                description = "The desired number of replicas of each partition",
-                                jsonPath = ".spec.replicas",
-                                type = "integer"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Ready",
-                                description = "The state of the custom resource",
-                                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
-                                type = "string"
-                        )
-                }
-        )
+    spec = @Crd.Spec(
+        names = @Crd.Spec.Names(
+            kind = KafkaTopic.RESOURCE_KIND,
+            plural = KafkaTopic.RESOURCE_PLURAL,
+            shortNames = {KafkaTopic.SHORT_NAME},
+            categories = {Constants.STRIMZI_CATEGORY}
+        ),
+        group = KafkaTopic.RESOURCE_GROUP,
+        scope = KafkaTopic.SCOPE,
+        versions = {
+            @Crd.Spec.Version(name = KafkaTopic.V1BETA2, served = true, storage = false),
+            @Crd.Spec.Version(name = KafkaTopic.V1BETA1, served = true, storage = true),
+            @Crd.Spec.Version(name = KafkaTopic.V1ALPHA1, served = true, storage = false)
+        },
+        subresources = @Crd.Spec.Subresources(
+            status = @Crd.Spec.Subresources.Status()
+        ),
+        additionalPrinterColumns = {
+            @Crd.Spec.AdditionalPrinterColumn(
+                    name = "Cluster",
+                    description = "The name of the Kafka cluster this topic belongs to",
+                    jsonPath = ".metadata.labels.strimzi\\.io/cluster",
+                    type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                    name = "Partitions",
+                    description = "The desired number of partitions in the topic",
+                    jsonPath = ".spec.partitions",
+                    type = "integer"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                    name = "Replication factor",
+                    description = "The desired number of replicas of each partition",
+                    jsonPath = ".spec.replicas",
+                    type = "integer"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                    name = "Ready",
+                    description = "The state of the custom resource",
+                    jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
+                    type = "string")
+        }
+    )
 )
 @Buildable(
         editableEnabled = false,

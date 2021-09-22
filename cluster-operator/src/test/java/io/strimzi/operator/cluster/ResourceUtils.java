@@ -129,8 +129,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings({
-        "checkstyle:ClassDataAbstractionCoupling",
-        "checkstyle:ClassFanOutComplexity"
+    "checkstyle:ClassDataAbstractionCoupling",
+    "checkstyle:ClassFanOutComplexity"
 })
 public class ResourceUtils {
 

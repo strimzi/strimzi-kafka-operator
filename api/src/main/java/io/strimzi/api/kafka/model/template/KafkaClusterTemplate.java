@@ -25,9 +25,9 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "statefulset", "pod", "bootstrapService", "brokersService", "externalBootstrapService", "perPodService",
-        "externalBootstrapRoute", "perPodRoute", "externalBootstrapIngress", "perPodIngress", "persistentVolumeClaim",
-        "podDisruptionBudget", "kafkaContainer", "initContainer", "clusterCaCert", "serviceAccount", "jmxSecret"})
+    "statefulset", "pod", "bootstrapService", "brokersService", "externalBootstrapService", "perPodService",
+    "externalBootstrapRoute", "perPodRoute", "externalBootstrapIngress", "perPodIngress", "persistentVolumeClaim",
+    "podDisruptionBudget", "kafkaContainer", "initContainer", "clusterCaCert", "serviceAccount", "jmxSecret"})
 @EqualsAndHashCode
 public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

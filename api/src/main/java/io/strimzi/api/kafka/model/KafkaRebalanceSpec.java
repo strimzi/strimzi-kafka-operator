@@ -20,7 +20,7 @@ import java.util.List;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "goals", "skipHardGoalCheck", "excludedTopics", "concurrentPartitionMovementsPerBroker",
-                     "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "replicaMovementStrategies" })
+    "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "replicaMovementStrategies" })
 @EqualsAndHashCode
 public class KafkaRebalanceSpec extends Spec {
     private static final long serialVersionUID = 1L;

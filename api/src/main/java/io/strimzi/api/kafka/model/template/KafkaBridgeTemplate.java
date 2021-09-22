@@ -24,8 +24,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "deployment", "pod", "apiService", "podDisruptionBudget", "bridgeContainer", "serviceAccount"})
+@JsonPropertyOrder({"deployment", "pod", "apiService", "podDisruptionBudget", "bridgeContainer", "serviceAccount"})
 @EqualsAndHashCode
 public class KafkaBridgeTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

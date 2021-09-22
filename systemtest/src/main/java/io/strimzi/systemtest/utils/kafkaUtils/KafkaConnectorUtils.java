@@ -117,10 +117,10 @@ public class KafkaConnectorUtils {
 
     public static void waitForConnectorsTaskMaxChange(String namespaceName, String connectorName, int taskMax) {
         TestUtils.waitFor("Wait for KafkaConnector taskMax will change", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
-            () -> (KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName)
-                .withName(connectorName).get().getSpec().getTasksMax() == taskMax)
-                && (KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName)
-                .withName(connectorName).get().getStatus().getTasksMax() == taskMax)
+            () -> KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName)
+                .withName(connectorName).get().getSpec().getTasksMax() == taskMax
+                && KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName)
+                .withName(connectorName).get().getStatus().getTasksMax() == taskMax
         );
     }
 

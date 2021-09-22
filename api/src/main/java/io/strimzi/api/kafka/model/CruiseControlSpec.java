@@ -24,8 +24,8 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "image", "tlsSidecar", "resources", "livenessProbe", "readinessProbe", "jvmOptions", "logging", "template",
-        "brokerCapacity", "config", "metricsConfig"})
+    "image", "tlsSidecar", "resources", "livenessProbe", "readinessProbe", "jvmOptions", "logging", "template",
+    "brokerCapacity", "config", "metricsConfig"})
 @EqualsAndHashCode
 public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;

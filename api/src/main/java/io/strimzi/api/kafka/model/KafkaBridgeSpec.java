@@ -26,9 +26,9 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "adminClient", "consumer",
-        "producer", "resources", "jvmOptions", "logging",
-        "enableMetrics", "livenessProbe", "readinessProbe", "template", "tracing"})
+    "replicas", "image", "bootstrapServers", "tls", "authentication", "http", "adminClient", "consumer",
+    "producer", "resources", "jvmOptions", "logging",
+    "enableMetrics", "livenessProbe", "readinessProbe", "template", "tracing"})
 @EqualsAndHashCode
 public class KafkaBridgeSpec extends Spec {
     private static final long serialVersionUID = 1L;

@@ -26,9 +26,9 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({
-        "image", "groupRegex",
-        "topicRegex", "resources", "logging",
-        "enableSaramaLogging", "template"})
+    "image", "groupRegex",
+    "topicRegex", "resources", "logging",
+    "enableSaramaLogging", "template"})
 @EqualsAndHashCode
 public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;

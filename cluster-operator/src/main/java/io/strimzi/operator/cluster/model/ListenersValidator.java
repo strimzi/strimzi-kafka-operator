@@ -296,7 +296,7 @@ public class ListenersValidator {
      * @param listener  Listener which needs to be validated
      */
     private static void validateBootstrapHost(Set<String> errors, GenericKafkaListener listener) {
-        if ((!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
+        if (!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType())
                 && listener.getConfiguration().getBootstrap().getHost() != null)    {
             errors.add("listener " + listener.getName() + " cannot configure bootstrap.host because it is not Route ot Ingress based listener");
         }
@@ -360,7 +360,7 @@ public class ListenersValidator {
      * @param broker    Broker configuration which needs to be validated
      */
     private static void validateBrokerHost(Set<String> errors, GenericKafkaListener listener, GenericKafkaListenerConfigurationBroker broker) {
-        if ((!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType()))
+        if (!KafkaListenerType.ROUTE.equals(listener.getType()) && !KafkaListenerType.INGRESS.equals(listener.getType())
                 && broker.getHost() != null)    {
             errors.add("listener " + listener.getName() + " cannot configure brokers[].host because it is not Route ot Ingress based listener");
         }
@@ -516,9 +516,9 @@ public class ListenersValidator {
                 errors.add("listener " + listenerName + ": 'jwksMinRefreshPauseSeconds' needs to be a positive integer or zero (set to: " + oAuth.getJwksMinRefreshPauseSeconds() + ")");
             }
 
-            if ((hasJwksExpirySecondsValidInput && hasJwksRefreshSecondsValidInput && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60) ||
-                    (!hasJwksExpirySecondsValidInput && hasJwksRefreshSecondsValidInput && KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_EXPIRY_SECONDS < oAuth.getJwksRefreshSeconds() + 60) ||
-                    (hasJwksExpirySecondsValidInput && !hasJwksRefreshSecondsValidInput && oAuth.getJwksExpirySeconds() < KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_REFRESH_SECONDS + 60)) {
+            if (hasJwksExpirySecondsValidInput && hasJwksRefreshSecondsValidInput && oAuth.getJwksExpirySeconds() < oAuth.getJwksRefreshSeconds() + 60 ||
+                    !hasJwksExpirySecondsValidInput && hasJwksRefreshSecondsValidInput && KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_EXPIRY_SECONDS < oAuth.getJwksRefreshSeconds() + 60 ||
+                    hasJwksExpirySecondsValidInput && !hasJwksRefreshSecondsValidInput && oAuth.getJwksExpirySeconds() < KafkaListenerAuthenticationOAuth.DEFAULT_JWKS_REFRESH_SECONDS + 60) {
                 errors.add("listener " + listenerName + ": The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`");
             }
 

@@ -32,7 +32,7 @@ import static java.util.Collections.emptyMap;
  */
 @DescriptionFile
 @JsonPropertyOrder({"brokerCertChainAndKey", "ingressClass", "preferredAddressType", "externalTrafficPolicy",
-        "loadBalancerSourceRanges", "bootstrap", "brokers", "ipFamilyPolicy", "ipFamilies"})
+    "loadBalancerSourceRanges", "bootstrap", "brokers", "ipFamilyPolicy", "ipFamilies"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,

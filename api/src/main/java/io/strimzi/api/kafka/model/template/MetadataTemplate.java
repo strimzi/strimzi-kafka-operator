@@ -25,8 +25,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "labels", "annotations"})
+@JsonPropertyOrder({"labels", "annotations"})
 @DescriptionFile
 @EqualsAndHashCode
 public class MetadataTemplate implements Serializable, UnknownPropertyPreserving {

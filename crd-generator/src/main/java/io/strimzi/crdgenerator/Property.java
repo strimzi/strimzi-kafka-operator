@@ -328,7 +328,7 @@ class Property implements AnnotatedElement {
                 Property.properties(crApiVersion, getType().getType()).values().stream()
                         .filter(p -> {
                             Alternative annotation = p.getAnnotation(Alternative.class);
-                            return crApiVersion == null || (annotation != null && ApiVersion.parseRange(annotation.apiVersion()).contains(crApiVersion));
+                            return crApiVersion == null || annotation != null && ApiVersion.parseRange(annotation.apiVersion()).contains(crApiVersion);
                         })
                         .collect(Collectors.toList());
         return alternatives;

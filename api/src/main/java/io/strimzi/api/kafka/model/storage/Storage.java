@@ -24,9 +24,9 @@ import java.util.Map;
         property = "type"
 )
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = EphemeralStorage.class, name = Storage.TYPE_EPHEMERAL),
-        @JsonSubTypes.Type(value = PersistentClaimStorage.class, name = Storage.TYPE_PERSISTENT_CLAIM),
-        @JsonSubTypes.Type(value = JbodStorage.class, name = Storage.TYPE_JBOD)}
+    @JsonSubTypes.Type(value = EphemeralStorage.class, name = Storage.TYPE_EPHEMERAL),
+    @JsonSubTypes.Type(value = PersistentClaimStorage.class, name = Storage.TYPE_PERSISTENT_CLAIM),
+    @JsonSubTypes.Type(value = JbodStorage.class, name = Storage.TYPE_JBOD)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode

@@ -82,8 +82,8 @@ public class ServiceOperator extends AbstractResourceOperator<KubernetesClient, 
     protected Future<ReconcileResult<Service>> internalPatch(Reconciliation reconciliation, String namespace, String name, Service current, Service desired) {
         try {
             if (current.getSpec() != null && desired.getSpec() != null) {
-                if (("NodePort".equals(current.getSpec().getType()) && "NodePort".equals(desired.getSpec().getType()))
-                        || ("LoadBalancer".equals(current.getSpec().getType()) && "LoadBalancer".equals(desired.getSpec().getType())))   {
+                if ("NodePort".equals(current.getSpec().getType()) && "NodePort".equals(desired.getSpec().getType())
+                        || "LoadBalancer".equals(current.getSpec().getType()) && "LoadBalancer".equals(desired.getSpec().getType()))   {
                     patchNodePorts(current, desired);
                     patchHealthCheckPorts(current, desired);
                     patchAnnotations(current, desired);

@@ -34,43 +34,41 @@ import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize
 @Crd(
-        spec = @Crd.Spec(
-                names = @Crd.Spec.Names(
-                        kind = KafkaConnect.RESOURCE_KIND,
-                        plural = KafkaConnect.RESOURCE_PLURAL,
-                        shortNames = {KafkaConnect.SHORT_NAME},
-                        categories = {Constants.STRIMZI_CATEGORY}
-                ),
-                group = KafkaConnect.RESOURCE_GROUP,
-                scope = KafkaConnect.SCOPE,
-                versions = {
-                        @Crd.Spec.Version(name = KafkaConnect.V1BETA2, served = true, storage = false),
-                        @Crd.Spec.Version(name = KafkaConnect.V1BETA1, served = true, storage = true),
-                        @Crd.Spec.Version(name = KafkaConnect.V1ALPHA1, served = true, storage = false)
-                },
-                subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status(),
-                        scale = @Crd.Spec.Subresources.Scale(
-                                specReplicasPath = KafkaConnect.SPEC_REPLICAS_PATH,
-                                statusReplicasPath = KafkaConnect.STATUS_REPLICAS_PATH,
-                                labelSelectorPath = KafkaConnect.LABEL_SELECTOR_PATH
-                        )
-                ),
-                additionalPrinterColumns = {
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Desired replicas",
-                                description = "The desired number of Kafka Connect replicas",
-                                jsonPath = ".spec.replicas",
-                                type = "integer"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Ready",
-                                description = "The state of the custom resource",
-                                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
-                                type = "string"
-                        )
-                }
-        )
+    spec = @Crd.Spec(
+        names = @Crd.Spec.Names(
+            kind = KafkaConnect.RESOURCE_KIND,
+            plural = KafkaConnect.RESOURCE_PLURAL,
+            shortNames = {KafkaConnect.SHORT_NAME},
+            categories = {Constants.STRIMZI_CATEGORY}
+        ),
+        group = KafkaConnect.RESOURCE_GROUP,
+        scope = KafkaConnect.SCOPE,
+        versions = {
+            @Crd.Spec.Version(name = KafkaConnect.V1BETA2, served = true, storage = false),
+            @Crd.Spec.Version(name = KafkaConnect.V1BETA1, served = true, storage = true),
+            @Crd.Spec.Version(name = KafkaConnect.V1ALPHA1, served = true, storage = false)
+        },
+        subresources = @Crd.Spec.Subresources(
+            status = @Crd.Spec.Subresources.Status(),
+            scale = @Crd.Spec.Subresources.Scale(
+                specReplicasPath = KafkaConnect.SPEC_REPLICAS_PATH,
+                statusReplicasPath = KafkaConnect.STATUS_REPLICAS_PATH,
+                labelSelectorPath = KafkaConnect.LABEL_SELECTOR_PATH
+            )
+        ),
+        additionalPrinterColumns = {
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Desired replicas",
+                description = "The desired number of Kafka Connect replicas",
+                jsonPath = ".spec.replicas",
+                type = "integer"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Ready",
+                description = "The state of the custom resource",
+                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
+                type = "string")
+        }
+    )
 )
 @Buildable(
         editableEnabled = false,

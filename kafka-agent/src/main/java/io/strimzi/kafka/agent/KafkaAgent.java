@@ -109,8 +109,8 @@ public class KafkaAgent {
                 Integer running = Integer.valueOf(3);
                 Object value = brokerState.value();
 
-                if ((value instanceof Integer && running.equals(value))
-                        || (value instanceof Byte && running.equals(((Byte) value).intValue()))) {
+                if (value instanceof Integer && running.equals(value)
+                        || value instanceof Byte && running.equals(((Byte) value).intValue())) {
                     try {
                         LOGGER.trace("Running as server according to {} => ready", brokerStateName);
                         touch(brokerReadyFile);

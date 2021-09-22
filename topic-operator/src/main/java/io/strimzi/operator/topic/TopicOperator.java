@@ -844,8 +844,8 @@ class TopicOperator {
             () -> {
                 Future<Boolean> existsFuture = ref.get();
                 if (existsFuture.isComplete()) {
-                    if ((!checkExists && !existsFuture.result())
-                            || (checkExists && existsFuture.result())) {
+                    if (!checkExists && !existsFuture.result()
+                            || checkExists && existsFuture.result()) {
                         return true;
                     } else {
                         // It still exists (or still doesn't exist), so ask again, until we timeout

@@ -26,8 +26,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "deployment", "pod", "service", "container", "serviceAccount"})
+@JsonPropertyOrder({"deployment", "pod", "service", "container", "serviceAccount"})
 @EqualsAndHashCode
 public class KafkaExporterTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

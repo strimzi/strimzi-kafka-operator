@@ -25,7 +25,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"deployment", "pod", "apiService", "connectContainer", "initContainer", "podDisruptionBudget",
-        "serviceAccount", "clusterRoleBinding", "buildPod", "buildContainer", "buildConfig", "buildServiceAccount", "jmxSecret"})
+    "serviceAccount", "clusterRoleBinding", "buildPod", "buildContainer", "buildConfig", "buildServiceAccount", "jmxSecret"})
 @EqualsAndHashCode
 public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

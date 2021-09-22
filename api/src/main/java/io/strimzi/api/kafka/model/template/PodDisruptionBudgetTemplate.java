@@ -27,8 +27,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "metadata", "maxUnavailable"})
+@JsonPropertyOrder({"metadata", "maxUnavailable"})
 @DescriptionFile
 @EqualsAndHashCode
 public class PodDisruptionBudgetTemplate implements Serializable, UnknownPropertyPreserving {

@@ -24,8 +24,8 @@ import java.util.List;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "kafka", "zookeeper", "topicOperator",
-                    "entityOperator", "clusterCa", "clientsCa",
-                    "maintenance"})
+    "entityOperator", "clusterCa", "clientsCa",
+    "maintenance"})
 @EqualsAndHashCode
 public class KafkaSpec extends Spec {
     private static final long serialVersionUID = 1L;

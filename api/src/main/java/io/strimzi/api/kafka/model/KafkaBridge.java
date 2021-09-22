@@ -32,49 +32,46 @@ import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize
 @Crd(
-        spec = @Crd.Spec(
-                names = @Crd.Spec.Names(
-                        kind = KafkaBridge.RESOURCE_KIND,
-                        plural = KafkaBridge.RESOURCE_PLURAL,
-                        shortNames = {KafkaBridge.SHORT_NAME},
-                        categories = {Constants.STRIMZI_CATEGORY}
-                ),
-                group = KafkaBridge.RESOURCE_GROUP,
-                scope = KafkaBridge.SCOPE,
-                versions = {
-                        @Crd.Spec.Version(name = KafkaBridge.V1BETA2, served = true, storage = false),
-                        @Crd.Spec.Version(name = KafkaBridge.V1ALPHA1, served = true, storage = true)
-                },
-                subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status(),
-                        scale = @Crd.Spec.Subresources.Scale(
-                                specReplicasPath = KafkaBridge.SPEC_REPLICAS_PATH,
-                                statusReplicasPath = KafkaBridge.STATUS_REPLICAS_PATH,
-                                labelSelectorPath = KafkaBridge.LABEL_SELECTOR_PATH
-                        )
-                ),
-                additionalPrinterColumns = {
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Desired replicas",
-                                description = "The desired number of Kafka Bridge replicas",
-                                jsonPath = ".spec.replicas",
-                                type = "integer"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Bootstrap Servers",
-                                description = "The boostrap servers",
-                                jsonPath = ".spec.bootstrapServers",
-                                type = "string",
-                                priority = 1
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Ready",
-                                description = "The state of the custom resource",
-                                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
-                                type = "string"
-                        )
-                }
-        )
+    spec = @Crd.Spec(
+        names = @Crd.Spec.Names(
+            kind = KafkaBridge.RESOURCE_KIND,
+            plural = KafkaBridge.RESOURCE_PLURAL,
+            shortNames = {KafkaBridge.SHORT_NAME},
+            categories = {Constants.STRIMZI_CATEGORY}
+        ),
+        group = KafkaBridge.RESOURCE_GROUP,
+        scope = KafkaBridge.SCOPE,
+        versions = {
+            @Crd.Spec.Version(name = KafkaBridge.V1BETA2, served = true, storage = false),
+            @Crd.Spec.Version(name = KafkaBridge.V1ALPHA1, served = true, storage = true)
+        },
+        subresources = @Crd.Spec.Subresources(
+            status = @Crd.Spec.Subresources.Status(),
+            scale = @Crd.Spec.Subresources.Scale(
+                specReplicasPath = KafkaBridge.SPEC_REPLICAS_PATH,
+                statusReplicasPath = KafkaBridge.STATUS_REPLICAS_PATH,
+                labelSelectorPath = KafkaBridge.LABEL_SELECTOR_PATH
+            )
+        ),
+        additionalPrinterColumns = {
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Desired replicas",
+                description = "The desired number of Kafka Bridge replicas",
+                jsonPath = ".spec.replicas",
+                type = "integer"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Bootstrap Servers",
+                description = "The boostrap servers",
+                jsonPath = ".spec.bootstrapServers",
+                type = "string",
+                priority = 1),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Ready",
+                description = "The state of the custom resource",
+                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
+                type = "string")
+        }
+    )
 )
 @Buildable(
         editableEnabled = false,
