@@ -240,6 +240,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+        int sent = 0;
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editSpec()
@@ -279,8 +280,10 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
+        sent += externalKafkaClientPlain.sendMessagesPlain();
+
         externalKafkaClientPlain.verifyProducedAndConsumedMessages(
-            externalKafkaClientPlain.sendMessagesPlain(),
+            sent,
             externalKafkaClientPlain.receiveMessagesPlain()
         );
 
@@ -313,8 +316,10 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
         // TODO: remove it ?
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(kafkaStatefulSetName(clusterName), KAFKA_REPLICAS, kafkaPods);
 
+        sent += externalKafkaClientTls.sendMessagesTls();
+
         externalKafkaClientTls.verifyProducedAndConsumedMessages(
-            externalKafkaClientTls.sendMessagesTls(),
+            sent,
             externalKafkaClientTls.receiveMessagesTls()
         );
 
@@ -344,8 +349,9 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             LOGGER.error("Producer & Consumer did not send and receive messages because external listener is set to plain communication");
         });
 
+        sent += externalKafkaClientPlain.sendMessagesPlain();
         externalKafkaClientPlain.verifyProducedAndConsumedMessages(
-            externalKafkaClientPlain.sendMessagesPlain(),
+            sent,
             externalKafkaClientPlain.receiveMessagesPlain()
         );
     }

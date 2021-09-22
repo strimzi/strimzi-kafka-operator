@@ -54,6 +54,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import org.apache.kafka.common.config.SslConfigs;
+import org.apache.kafka.common.errors.GroupAuthorizationException;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -971,7 +972,7 @@ class SecurityST extends AbstractST {
 
         assertThat(externalKafkaClient.sendMessagesTls(), is(numberOfMessages));
 
-        assertThrows(WaitException.class, externalKafkaClient::receiveMessagesTls);
+        assertThrows(GroupAuthorizationException.class, externalKafkaClient::receiveMessagesTls);
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, kafkaUserRead)
             .editSpec()
@@ -1006,7 +1007,7 @@ class SecurityST extends AbstractST {
         assertThat(newExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
 
         LOGGER.info("Checking KafkaUser {} that is not able to send messages to topic '{}'", kafkaUserRead, topicName);
-        assertThrows(WaitException.class, newExternalKafkaClient::sendMessagesTls);
+        assertThrows(GroupAuthorizationException.class, newExternalKafkaClient::sendMessagesTls);
     }
 
     @ParallelNamespaceTest
@@ -1110,7 +1111,7 @@ class SecurityST extends AbstractST {
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
             .build();
 
-        assertThrows(WaitException.class, newExternalKafkaClient::receiveMessagesTls);
+        assertThrows(GroupAuthorizationException.class, newExternalKafkaClient::receiveMessagesTls);
     }
 
     @ParallelNamespaceTest

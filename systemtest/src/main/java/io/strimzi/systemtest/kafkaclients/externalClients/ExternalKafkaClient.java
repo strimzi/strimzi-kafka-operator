@@ -23,6 +23,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import scala.collection.immutable.Stream;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -80,24 +81,26 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
     }
 
     public int sendMessagesPlain() {
-        if (this.producerProperties == null) {
-            this.producerProperties =
+        ProducerProperties producerProperties = this.producerProperties;
+        if (producerProperties == null || producerProperties.getProperties().isEmpty()) {
+            producerProperties =
                 getProducerProperties()
                     .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
                     .withSharedProperties()
                     .build();
         }
 
-        return sendMessages();
+        return sendMessages(producerProperties);
     }
 
     public int sendMessagesTls() {
-        this.caCertName = this.caCertName == null ?
+        String caCertName = this.caCertName == null ?
             KafkaUtils.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
             this.caCertName;
 
-        if (this.producerProperties == null) {
-            this.producerProperties =
+        ProducerProperties producerProperties = this.producerProperties;
+        if (producerProperties == null || producerProperties.getProperties().isEmpty()) {
+            producerProperties =
                 getProducerProperties()
                     .withCaSecretName(caCertName)
                     .withKafkaUsername(kafkaUsername)
@@ -107,28 +110,30 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
                     .build();
         }
 
-        return sendMessages();
+        return sendMessages(producerProperties);
     }
 
     public int receiveMessagesPlain() {
-        if (this.consumerProperties == null) {
-            this.consumerProperties =
+        ConsumerProperties consumerProperties = this.consumerProperties;
+        if (consumerProperties == null || consumerProperties.getProperties().isEmpty()) {
+            consumerProperties =
                 getConsumerProperties()
                     .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
                     .withSharedProperties()
                     .build();
         }
 
-        return consumeMessages();
+        return consumeMessages(consumerProperties);
     }
 
     public int receiveMessagesTls() {
-        this.caCertName = this.caCertName == null ?
+        String caCertName = this.caCertName == null ?
             KafkaUtils.getKafkaExternalListenerCaCertName(namespaceName, clusterName, listenerName) :
             this.caCertName;
 
-        if (this.consumerProperties == null) {
-            this.consumerProperties =
+        ConsumerProperties consumerProperties = this.consumerProperties;
+        if (consumerProperties == null || consumerProperties.getProperties().isEmpty()) {
+            consumerProperties =
                 getConsumerProperties()
                     .withSecurityProtocol(securityProtocol)
                     .withCaSecretName(caCertName)
@@ -138,11 +143,11 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
                     .build();
         }
 
-        return consumeMessages();
+        return consumeMessages(consumerProperties);
     }
 
-    private int sendMessages() {
-        Producer<String, String> producer = new KafkaProducer<>(producerProperties.getProperties());
+    private int sendMessages(ProducerProperties properties) {
+        Producer<String, String> producer = new KafkaProducer<>(properties.getProperties());
         int[] messagesSentCounter = {0};
 
         CompletableFuture<Integer> sent = new CompletableFuture<>();
@@ -150,7 +155,7 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
         Runnable send = new Runnable() {
             @Override
             public void run() {
-                ProducerRecord<String, String> record = new ProducerRecord<>(topicName, partition, null, String.format("Hello-world - %s", messagesSentCounter[0]));
+                ProducerRecord<String, String> record = new ProducerRecord<>(topicName, partition, null, "\"Hello-world - " + messagesSentCounter[0] + "\"");
                 try {
                     if (messagesSentCounter[0] == messageCount) {
                         sent.complete(messagesSentCounter[0]);
@@ -187,8 +192,8 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
         }
     }
 
-    private int consumeMessages() {
-        Consumer<String, String> consumer = new KafkaConsumer<>(consumerProperties.getProperties());
+    private int consumeMessages(ConsumerProperties properties) {
+        Consumer<String, String> consumer = new KafkaConsumer<>(properties.getProperties());
         consumer.subscribe(Collections.singletonList(topicName));
 
         CompletableFuture<Integer> received = new CompletableFuture<>();
