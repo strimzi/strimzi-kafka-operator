@@ -6137,8 +6137,8 @@ spec:
                   logging:
                     type: string
                     description: 'Only log messages with the given severity or above.
-                      Valid levels: [`debug`, `info`, `warn`, `error`, `fatal`]. Default
-                      log level is `info`.'
+                      Valid levels: [`info`, `debug`, `trace`]. Default log level
+                      is `info`.'
                   enableSaramaLogging:
                     type: boolean
                     description: Enable Sarama logging, a Go client library used by

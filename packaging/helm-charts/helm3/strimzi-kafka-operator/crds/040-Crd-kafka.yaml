@@ -5212,7 +5212,7 @@ spec:
                       description: CPU and memory resources to reserve.
                     logging:
                       type: string
-                      description: 'Only log messages with the given severity or above. Valid levels: [`debug`, `info`, `warn`, `error`, `fatal`]. Default log level is `info`.'
+                      description: 'Only log messages with the given severity or above. Valid levels: [`info`, `debug`, `trace`]. Default log level is `info`.'
                     enableSaramaLogging:
                       type: boolean
                       description: Enable Sarama logging, a Go client library used by the Kafka Exporter.

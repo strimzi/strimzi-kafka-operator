@@ -231,7 +231,7 @@ public class KafkaExporter extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
 
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_LOGGING, logging));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_LOGGING, Integer.toString(loggingMapping(logging))));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION, version));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_GROUP_REGEX, groupRegex));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_TOPIC_REGEX, topicRegex));
@@ -244,6 +244,18 @@ public class KafkaExporter extends AbstractModel {
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
         return varList;
+    }
+
+    private int loggingMapping(String logLevel) {
+        if (logLevel.equalsIgnoreCase("info")) {
+            return 0;
+        } else if (logLevel.equalsIgnoreCase("debug")) {
+            return 1;
+        } else if (logLevel.equalsIgnoreCase("trace")) {
+            return 2;
+        } else {
+            return 0;
+        }
     }
 
     private List<Volume> getVolumes(boolean isOpenShift) {

@@ -1431,7 +1431,7 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
-|logging              1.2+<.<a|Only log messages with the given severity or above. Valid levels: [`debug`, `info`, `warn`, `error`, `fatal`]. Default log level is `info`.
+|logging              1.2+<.<a|Only log messages with the given severity or above. Valid levels: [`info`, `debug`, `trace`]. Default log level is `info`.
 |string
 |enableSaramaLogging  1.2+<.<a|Enable Sarama logging, a Go client library used by the Kafka Exporter.
 |boolean
