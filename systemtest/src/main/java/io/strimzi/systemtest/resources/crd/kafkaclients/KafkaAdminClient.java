@@ -8,12 +8,17 @@ import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidParameterException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * Initial implementation of test-client, which supports Topic management operations only.
@@ -35,12 +40,16 @@ public class KafkaAdminClient {
     private String namespaceName;
 
     public KafkaAdminClient(KafkaAdminClient.Builder builder) {
-        if (builder.topicOperation == null || builder.topicOperation.isEmpty())
+        if (builder.topicOperation == null || builder.topicOperation.isEmpty()) {
             throw new InvalidParameterException("TopicOperation must be set.");
-        if (builder.bootstrapAddress == null || builder.bootstrapAddress.isEmpty())
+        }
+        if (builder.bootstrapAddress == null || builder.bootstrapAddress.isEmpty()) {
             throw new InvalidParameterException("Bootstrap server is not set.");
-        if ((builder.topicName == null || builder.topicName.isEmpty()) && !(builder.topicOperation.equals("help") || builder.topicOperation.equals("list")))
+        }
+        if ((builder.topicName == null || builder.topicName.isEmpty())
+                && !(builder.topicOperation.equals("help") || builder.topicOperation.equals("list"))) {
             throw new InvalidParameterException("Topic name (or 'prefix' if topic count > 1) is not set.");
+        }
 
         replicationFactor = (builder.replicationFactor <= 0) ? 1 : builder.replicationFactor;
         partitions = (builder.partitions <= 0) ? 1 : builder.partitions;
@@ -107,9 +116,18 @@ public class KafkaAdminClient {
             .withTopicOffset(getTopicOffset())
             .withPartitions(getPartitions())
             .withReplicationFactor(getReplicationFactor())
-            .withAdminName(getAdminName())
+            .withKafkaAdminClientName(getAdminName())
             .withTopicName(getTopicName())
             .withNamespaceName(getNamespaceName());
+    }
+
+    public static String getAdminClientScramConfig(String namespace, String kafkaUsername, int timeoutMs) {
+        final String saslJaasConfigEncrypted = kubeClient().getSecret(namespace, kafkaUsername).getData().get("sasl.jaas.config");
+        final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
+        return "sasl.mechanism=SCRAM-SHA-512\n" +
+                "security.protocol=" + SecurityProtocol.SASL_PLAINTEXT + "\n" +
+                "sasl.jaas.config=" + saslJaasConfigDecrypted + "\n" +
+                "request.timeout.ms=" + timeoutMs;
     }
 
     public KafkaAdminClient.Builder toBuilder() {
@@ -124,7 +142,7 @@ public class KafkaAdminClient {
 
         Map<String, String> adminLabels = new HashMap<>();
         adminLabels.put("app", adminName);
-        adminLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
+        adminLabels.put(Constants.KAFKA_ADMIN_CLIENT_LABEL_KEY, Constants.KAFKA_ADMIN_CLIENT_LABEL_VALUE);
 
         return new JobBuilder()
             .withNewMetadata()
@@ -201,7 +219,7 @@ public class KafkaAdminClient {
         private String additionalConfig;
         private String namespaceName;
 
-        public KafkaAdminClient.Builder withAdminName(String adminName) {
+        public KafkaAdminClient.Builder withKafkaAdminClientName(String adminName) {
             this.adminName = adminName;
             return this;
         }
