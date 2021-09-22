@@ -471,6 +471,7 @@ class UserST extends AbstractST {
     }
 
     synchronized void createBigAmountOfUsers(ExtensionContext extensionContext, String userName, String typeOfUser, int numberOfUsers) {
+        LOGGER.info("Creating {} KafkaUsers", numberOfUsers);
         for (int i = 0; i < numberOfUsers; i++) {
             String userNameWithSuffix = userName + "-" + i;
 
@@ -488,13 +489,13 @@ class UserST extends AbstractST {
                     .build());
             }
 
-            LOGGER.info("Checking status of KafkaUser {}", userNameWithSuffix);
+            LOGGER.debug("Checking status of KafkaUser {}", userNameWithSuffix);
             Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userNameWithSuffix).get()
                     .getStatus().getConditions().get(0);
-            LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
-            LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
+            LOGGER.debug("KafkaUser condition status: {}", kafkaCondition.getStatus());
+            LOGGER.debug("KafkaUser condition type: {}", kafkaCondition.getType());
             assertThat(kafkaCondition.getType(), is(Ready.toString()));
-            LOGGER.info("KafkaUser {} is in desired state: {}", userNameWithSuffix, kafkaCondition.getType());
+            LOGGER.debug("KafkaUser {} is in desired state: {}", userNameWithSuffix, kafkaCondition.getType());
         }
     }
 
@@ -506,6 +507,7 @@ class UserST extends AbstractST {
         kuq.setRequestPercentage(requestsPercentage);
         kuq.setControllerMutationRate(mutationRate);
 
+        LOGGER.info("Updating of existing KafkaUsers");
         for (int i = 0; i < numberOfUsers; i++) {
             String userNameWithSuffix = userName + "-" + i;
             if (typeOfUser.equals("TLS")) {
@@ -528,16 +530,16 @@ class UserST extends AbstractST {
                     .build());
             }
 
-            LOGGER.info("[After update] Checking status of KafkaUser {}", userNameWithSuffix);
+            LOGGER.debug("[After update] Checking status of KafkaUser {}", userNameWithSuffix);
             Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userNameWithSuffix).get()
                     .getStatus().getConditions().get(0);
-            LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
-            LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
+            LOGGER.debug("KafkaUser condition status: {}", kafkaCondition.getStatus());
+            LOGGER.debug("KafkaUser condition type: {}", kafkaCondition.getType());
             assertThat(kafkaCondition.getType(), is(Ready.toString()));
-            LOGGER.info("KafkaUser {} is in desired state: {}", userNameWithSuffix, kafkaCondition.getType());
+            LOGGER.debug("KafkaUser {} is in desired state: {}", userNameWithSuffix, kafkaCondition.getType());
 
             KafkaUserQuotas kuqAfter = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userNameWithSuffix).get().getSpec().getQuotas();
-            LOGGER.info("Check altered KafkaUser {} new quotas.", userNameWithSuffix);
+            LOGGER.debug("Check altered KafkaUser {} new quotas.", userNameWithSuffix);
             assertThat(kuqAfter.getRequestPercentage(), is(requestsPercentage));
             assertThat(kuqAfter.getConsumerByteRate(), is(consumerRate));
             assertThat(kuqAfter.getProducerByteRate(), is(producerRate));
