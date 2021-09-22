@@ -8,10 +8,12 @@
 
 [role="_abstract"]
 {kafka-exporter-project} is an open source project to enhance monitoring of Apache Kafka brokers and clients.
-You can configure the `Kafka` resource to xref:proc-kafka-exporter-monitoring-{context}[deploy Kafka Exporter with your Kafka cluster].
+You can configure the `Kafka` resource to xref:proc-metrics-kafka-deploy-options-{context}[deploy Kafka Exporter with your Kafka cluster].
 Kafka Exporter extracts additional metrics data from Kafka brokers related to offsets, consumer groups, consumer lag, and topics.
 The metrics data is used, for example, to help identify slow consumers.
 Lag data is exposed as Prometheus metrics, which can then be presented in Grafana for analysis.
+
+IMPORTANT: For Kafka Exporter to be able to provide additional Kafka metrics, you also need the Prometheus metrics configuration for Kafka.
 
 Consumer lag indicates the difference in the rate of production and consumption of messages.
 Specifically, consumer lag for a given consumer group indicates the delay between the last message in the partition and the message being currently picked up by that consumer.
@@ -36,6 +38,9 @@ Consumer lag, for example, might be a result of consuming too much old data that
 
 [discrete]
 == Reducing consumer lag
+
+Use the Grafana charts to analyze lag and to check if actions to reduce lag are having an impact on an affected consumer group.
+If, for example, Kafka brokers are adjusted to reduce lag, the dashboard will show the  _Lag by consumer group_ chart going down and the _Messages consumed per minute_ chart going up.
 
 Typical actions to reduce lag include:
 

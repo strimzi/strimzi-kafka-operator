@@ -8,181 +8,44 @@
 
 [role="_abstract"]
 If you deploy Prometheus to provide metrics,
-you can use Strimzi's example Grafana dashboards to monitor the following components:
+you can use Strimzi's example Grafana dashboards to monitor Strimzi components.
 
-* Strimzi Operators
-* Kafka
-* ZooKeeper
-* Kafka Connect
-* Kafka MirrorMaker 2.0
-* Kafka Bridge
-* Cruise Control
-* Kafka Exporter
+Example dashboards are provided in the `examples/metrics/grafana-dashboards` directory as JSON files.
 
 All dashboards provide JVM metrics, as well as metrics specific to the component.
-For example, the Grafana dashboard for Strimzi Operators provides information on the number of reconciliations or custom resources they are processing.
-
-The dashboards are provided in the `examples/metrics/grafana-dashboards` directory of xref:deploy-examples-{context}[the example files provided with Strimzi].
+For example, the Grafana dashboard for Strimzi operators provides information on the number of reconciliations or custom resources they are processing.
 
 The example dashboards don't show all the metrics supported by Kafka.
-The dashboards are populated with a representative set of metrics for monitoring (as listed here).
+The dashboards are populated with a representative set of metrics for monitoring.
 
-.Strimzi Operators dashboard metrics
+.Example Grafana dashboard files
+[cols="2*",options="header",stripes="none"]
+|===
+|Component
+|Example JSON file
 
-* Custom resources for components
-* Successful custom resource reconciliations per hour
-* Failed custom resource reconciliations per hour
-* Reconciliations without locks per hour
-* Reconciliations started hour
-* Periodical reconciliations per hour
-* Maximum reconciliation time
-* Average reconciliation time
-* JVM memory used
-* JVM garbage collection thread count
-* JVM garbage collection count
+|Strimzi operators
+|`strimzi-operators.json`
 
-.Kafka dashboard metrics
+|Kafka
+|`strimzi-kafka.json`
 
-* Number of brokers online
-* Number of active controllers in the cluster
-* Unclean leader election rate
-* Replicas that are online
-* Number of under-replicated partitions
-* Number of partitions which are at their minimum in sync replica count
-* Number of partitions which are under their minimum in sync replica count
-* Offline partitions count
-* Number of partitions that don’t have an active leader and are hence not writable or readable
-* Kafka broker pods memory usage
-* Aggregated Kafka broker pods CPU usage
-* Kafka broker pods disk usage
-* Total incoming byte rate per second
-* Total outgoing byte rate per second
-* Incoming messages rate in writes per second
-* Total produce request rate
-* Failed produce request rate
-* Fetch request rate
-* Failed fetch request rate
-* Average percentage of time network processor is idle
-* Average percentage of time request handler threads are idle
-* Disk reads and writes in bytes
-* Connection count per listener
-* Log size in bytes
-* JVM thread count
-* JVM memory used
-* JVM garbage collection time
-* JVM garbage collection thread count
+|ZooKeeper
+|`strimzi-zookeeper.json`
 
-.ZooKeeper dashboard metrics
+|Kafka Connect
+|`strimzi-kafka-connect.json`
 
-* Quorum size of ZooKeeper ensemble
-* Number of active connections
-* Number of queued requests in the server
-* Number of connected watchers (listeners)
-* ZooKeeper pods memory usage
-* Aggregated ZooKeeper pods CPU usage
-* Kafka broker pods disk usage
-* JVM thread count
-* JVM memory used
-* JVM garbage collection time
-* JVM garbage collection thread count
-* Amount of time it takes for the server to respond to a client request (maximum, minimum and average)
+|Kafka MirrorMaker 2.0
+|`strimzi-kafka-mirror-maker-2.json`
 
-.Kafka Connect dashboard metrics
+|Kafka Bridge
+|`strimzi-kafka-bridge.json`
 
-* Number of connectors
-* Number of tasks
-* Sink (consumer) incoming bytes per second
-* Source (producer) outgoing bytes per second
-* CPU usage per second
-* JVM memory used
-* JVM garbage collection time
-* Connector task state
-* Connector task state with issues
-* Connection count
+|Cruise Control
+|`strimzi-cruise-control.json`
 
-.MirrorMaker 2.0 dashboard metrics
+|Kafka Exporter
+|`strimzi-kafka-exporter.json`
 
-* Number of connectors
-* Total record rate in bytes
-* Age of each record when consumed (maximum, minimum and average)
-* Replication latency as the time in milliseconds between a record's timestamp and acknowledgment of replication
-* Offset synchronization latency as the time in milliseconds between a consumer group commit and offset checkpoint acknowledgment
-* Topic partitions with consumer lag
-* Incoming bytes received from the source cluster per second
-* Outgoing bytes received by the target cluster per second
-* Number of Kafka Connect worker tasks
-* Total average byte rate per second
-* CPU usage per second
-* JVM memory used
-* JVM garbage collection time
-
-The Kafka Exporter dashboard provides more detailed information on consumer lag.
-
-.Kafka Bridge dashboard metrics
-
-* HTTP connections to the Kafka Bridge
-* HTTP requests being processed
-* Bytes received and sent per second
-* Number of Kafka consumers, producers, and related connections used by the Kafka Bridge
-* Requests processed per second grouped by HTTP method
-* The total request rate grouped by response codes (2XX, 4XX, 5XX)
-* Messages sent to partitions rate
-* Subscriptions to topics rate
-* Poll for messages rate
-* Commit offsets rate
-* JVM memory used
-* JVM garbage collection time
-* JVM garbage collection count
-* Producers
-** Messages sent per second (messages and bytes)
-** Messages sent to partitions per second
-** Average producer request latency
-* Consumers
-** Messages consumed per second (messages and bytes)
-** Partitions assigned (grouped by clientId)
-** Average consumer idle poll
-** Poll for messages rate per second
-** Consumer commit to offset rate
-** Consumer commit latency
-** The average number of fetch requests per second
-** Consumer fetch latency
-** Consumer instance creation and deletion rate
-** Subscriptions to topics rate per second
-
-.Cruise Control dashboard metrics
-
-* Number of snapshot windows that are monitored by Cruise Control
-* Number of time windows considered valid because they contain enough samples to compute an optimization proposal
-* Number of ongoing executions running for proposals or rebalances
-* Current balancedness score of the Kafka cluster as calculated by the anomaly detector component of Cruise Control (every 5 minutes by default)
-* Percentage of monitored partitions
-* Number of goal violations reported by the anomaly detector (every 5 minutes by default)
-* How often a disk read failure happens on the brokers
-* Rate of derived metrics for each partition fetch failures
-* Rate of metric sample fetch failures
-* Time needed to compute an optimization proposal
-* Time needed to create the cluster model
-* How often a proposal request or an actual rebalance request is made through the Cruise Control REST API
-* How often the overall cluster state and the user tasks state are requested through the Cruise Control REST API
-* CPU usage per second
-* JVM memory used
-* JVM garbage collection time
-* JVM garbage collection count
-
-.Kafka Exporter dashboard metrics
-
-* Topic count
-* Partition count
-* Replicas count
-* In-sync replicas count
-* Under-replicated partitions count
-* Partitions which are at their minimum in sync replica count
-* Partitions which are under their minimum in sync replica count
-* Partitions not on a preferred node
-* Messages in per second from topics
-* Messages consumed per second from topics
-* Messages consumed per minute by consumer groups
-* Lag by consumer group
-* Number of partitions
-* Latest offsets
-* Oldest offsets
+|===

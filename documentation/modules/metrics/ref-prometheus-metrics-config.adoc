@@ -46,8 +46,3 @@ When deploying Prometheus metrics configuration, you can can deploy the example 
 |`Kafka`
 |`kafka-cruise-control-metrics.yaml`
 |===
-
-[role="_additional-resources"]
-.Additional resources
-
-For more information on the use of relabeling, see {PrometheusConfig} in the Prometheus documentation.

@@ -10,25 +10,17 @@
 Use Grafana to provide visualizations of Prometheus metrics.
 
 You can use your own Grafana deployment or deploy Grafana using the xref:assembly-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi.
-The example files include a configuration file for a Grafana deployment:
+The example files include a configuration file for a Grafana deployment
 
 * `examples/metrics/grafana-install/grafana.yaml`
 
-Strimzi also provides xref:ref-metrics-dashboards-{context}[example dashboard configuration files for Grafana].
-Example dashboards are provided in the `examples/metrics/grafana-dashboards` directory as JSON files:
+Strimzi also provides xref:ref-metrics-dashboards-{context}[example dashboard configuration files for Grafana] in JSON format.
 
-* `strimzi-kafka.json`
-* `strimzi-zookeeper.json`
-* `strimzi-operators.json`
-* `strimzi-kafka-connect.json`
-* `strimzi-kafka-mirror-maker-2.json`
-* `strimzi-kafka-bridge.json`
-* `strimzi-cruise-control.json`
-* `strimzi-kafka-exporter.json`
+* `examples/metrics/grafana-dashboards`
 
 This procedure uses the example Grafana configuration file and example dashboards.
 
-The example dashboards are a good starting point for monitoring key metrics, but they do not represent all available metrics.
+The example dashboards are a good starting point for monitoring key metrics, but they don't show all the metrics supported by Kafka.
 You can modify the example dashboards or add other metrics, depending on your infrastructure.
 
 NOTE: No alert notification rules are defined.

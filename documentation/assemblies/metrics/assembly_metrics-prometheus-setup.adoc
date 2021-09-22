@@ -7,17 +7,18 @@
 
 You can use Prometheus to provide monitoring data for the example Grafana dashboards provided with Strimzi.
 
-In order to run Prometheus, you add metrics configuration to your Kafka cluster.
+To expose metrics in Prometheus format, you add configuration to a custom resource.
 You also need to deploy Prometheus and Prometheus Alertmanager.
 
-. xref:proc-metrics-kafka-deploy-options-{context}[Add metrics configuration to your Kafka cluster resource]
-. xref:assembly-metrics-prometheus-{context}[Deploy Prometheus and Prometheus Alertmanager]
+. xref:proc-metrics-kafka-deploy-options-{context}[Deploying Prometheus metrics configuration]
+. xref:assembly-metrics-prometheus-{context}[Setting up Prometheus]
+. xref:proc-metrics-deploying-prometheus-alertmanager-{context}[Deploying Prometheus Alertmanager]
 
 include::modules/proc-metrics-kafka-deploy-options.adoc[leveloffset=+1]
 
 include::assembly_metrics-prometheus-deploy.adoc[leveloffset=+1]
 
-include::assembly_metrics-prometheus-alertmanager.adoc[leveloffset=+1]
+include::modules/proc_metrics-deploying-prometheus-alertmanager.adoc[leveloffset=+1]
 
 ifdef::InstallationAppendix[]
 include::modules/con_metrics-kafka-mini-kube.adoc[leveloffset=+1]

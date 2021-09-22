@@ -54,10 +54,9 @@ metrics
 <12> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and ZooKeeper.
 <13> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Mirror Maker 2.0.
 
-//Example metrics files
+//Example Prometheus metrics files
 include::modules/ref-prometheus-metrics-config.adoc[leveloffset=+1]
-//Example dashboards
+//Example Prometheus alert rules
+include::modules/ref_metrics-alertmanager-examples.adoc[leveloffset=+1]
+//Example Grafana dashboards
 include::modules/ref_metrics-dashboards.adoc[leveloffset=+1]
-//Kafka Exporter metrics
-include::modules/kafka-exporter/con_kafka-exporter-alerts.adoc[leveloffset=+1]
-include::modules/kafka-exporter/ref_kafka-exporter-metrics.adoc[leveloffset=+1]
