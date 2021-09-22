@@ -88,7 +88,7 @@ public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializabl
     }
 
     @Description("Only log messages with the given severity or above. " +
-            "Valid levels: [`debug`, `info`, `warn`, `error`, `fatal`]. " +
+            "Valid levels: [`info`, `debug`, `trace`]. " +
             "Default log level is `info`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getLogging() {

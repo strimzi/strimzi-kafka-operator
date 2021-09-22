@@ -68,7 +68,7 @@ spec:
 <2> A regular expression to specify the consumer groups to include in the metrics.
 <3> A regular expression to specify the topics to include in the metrics.
 <4> link:{BookURLUsing}#con-common-configuration-resources-reference[CPU and memory resources to reserve].
-<5> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
+<5> Logging configuration, to log messages with a given severity (info, debug, trace) or above.
 <6> Boolean to enable Sarama logging, a Go client library used by Kafka Exporter.
 <7> link:{BookURLUsing}#assembly-customizing-kubernetes-resources-str[Customization of deployment templates and pods].
 <8> link:{BookURLUsing}#con-common-configuration-healthchecks-reference[Healthcheck readiness probes].
