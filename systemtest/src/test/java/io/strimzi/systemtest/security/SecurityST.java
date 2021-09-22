@@ -52,7 +52,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.WaitException;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.errors.GroupAuthorizationException;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
