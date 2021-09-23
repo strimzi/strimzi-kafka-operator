@@ -93,13 +93,13 @@ Offset synchronization periodically transfers the consumer offsets for the consu
 Offset synchronization is particularly useful in an _active/passive_ configuration.
 If the active cluster goes down, consumer applications can switch to the passive (standby) cluster and pick up from the last transferred offset position.
 
-To use topic offset synchronization:
+To use topic offset synchronization, enable the synchronization by adding `sync.group.offsets.enabled` to the checkpoint connector configuration, and setting the property to `true`.
+Synchronization is disabled by default.
 
-* Enable the synchronization by adding `sync.group.offsets.enabled` to the checkpoint connector configuration,
-and setting the property to `true`. Synchronization is disabled by default.
-* Add the `IdentityReplicationPolicy` to the source and checkpoint connector configuration so that topics in the target cluster retain their original names.
+When using the `IdentityReplicationPolicy` in the source connector, it has to be configured also in the checkpoint connector configuration.
+That will ensure that the mirrored consumer offsets will be applied for the correct topics.
 
-For topic offset synchronization to work, consumer groups in the target cluster cannot use the same ids as groups in the source cluster.
+The consumer offsets will be synchronized only for consumer groups which are not active in the target cluster.
 
 If enabled, the synchronization of offsets from the source cluster is made periodically.
 You can change the frequency by adding `sync.group.offsets.interval.seconds` and `emit.checkpoints.interval.seconds` to the checkpoint connector configuration.
