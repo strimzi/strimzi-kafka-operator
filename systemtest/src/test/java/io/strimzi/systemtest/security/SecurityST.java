@@ -27,9 +27,9 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
@@ -52,8 +52,8 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.WaitException;
 import org.apache.kafka.common.config.SslConfigs;
+import org.apache.kafka.common.errors.GroupAuthorizationException;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -959,7 +959,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Checking KafkaUser {} that is able to send messages to topic '{}'", kafkaUserWrite, topicName);
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+        ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(topicName)
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
@@ -969,9 +969,9 @@ class SecurityST extends AbstractST {
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
-        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(numberOfMessages));
+        assertThat(externalKafkaClient.sendMessagesTls(), is(numberOfMessages));
 
-        assertThrows(WaitException.class, basicExternalKafkaClient::receiveMessagesTls);
+        assertThrows(GroupAuthorizationException.class, externalKafkaClient::receiveMessagesTls);
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, kafkaUserRead)
             .editSpec()
@@ -998,15 +998,15 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        BasicExternalKafkaClient newBasicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
+        ExternalKafkaClient newExternalKafkaClient = externalKafkaClient.toBuilder()
             .withKafkaUsername(kafkaUserRead)
             .withConsumerGroupName(consumerGroupName)
             .build();
 
-        assertThat(newBasicExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
+        assertThat(newExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
 
         LOGGER.info("Checking KafkaUser {} that is not able to send messages to topic '{}'", kafkaUserRead, topicName);
-        assertThrows(WaitException.class, newBasicExternalKafkaClient::sendMessagesTls);
+        assertThrows(Exception.class, newExternalKafkaClient::sendMessagesTls);
     }
 
     @ParallelNamespaceTest
@@ -1057,7 +1057,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", userName, topicName);
 
-        BasicExternalKafkaClient basicExternalKafkaClient = new BasicExternalKafkaClient.Builder()
+        ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
             .withTopicName(topicName)
             .withNamespaceName(namespaceName)
             .withClusterName(clusterName)
@@ -1067,12 +1067,12 @@ class SecurityST extends AbstractST {
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
-        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
+        assertThat(externalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
         LOGGER.info("Checking kafka super user:{} that is able to read messages to topic:{} regardless that " +
                 "we configured Acls with only write operation", userName, topicName);
 
-        assertThat(basicExternalKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
+        assertThat(externalKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
 
         String nonSuperuserName = userName + "-non-super-user";
 
@@ -1097,20 +1097,20 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", nonSuperuserName, topicName);
 
-        basicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
+        externalKafkaClient = externalKafkaClient.toBuilder()
             .withKafkaUsername(nonSuperuserName)
             .build();
 
-        assertThat(basicExternalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
+        assertThat(externalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
         LOGGER.info("Checking kafka super user:{} that is not able to read messages to topic:{} because of defined" +
                 " ACLs on only write operation", nonSuperuserName, topicName);
 
-        BasicExternalKafkaClient newBasicExternalKafkaClient = basicExternalKafkaClient.toBuilder()
+        ExternalKafkaClient newExternalKafkaClient = externalKafkaClient.toBuilder()
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
             .build();
 
-        assertThrows(WaitException.class, () -> newBasicExternalKafkaClient.receiveMessagesTls(Constants.GLOBAL_CLIENTS_EXCEPT_ERROR_TIMEOUT));
+        assertThrows(GroupAuthorizationException.class, newExternalKafkaClient::receiveMessagesTls);
     }
 
     @ParallelNamespaceTest
