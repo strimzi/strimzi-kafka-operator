@@ -530,46 +530,47 @@ public class Util {
      * @return Future computing hash from TLS + Auth
      */
     public static Future<Integer> authTlsHash(SecretOperator secretOperations, String namespace, KafkaClientAuthentication auth, List<CertSecretSource> certSecretSources) {
-        Future<Integer> tls;
-        if (certSecretSources != null) {
+        Future<Integer> tlsFuture;
+        if (certSecretSources == null || certSecretSources.isEmpty()) {
+            tlsFuture = Future.succeededFuture(0);
+        } else {
             // get all TLS trusted certs, compute hash from each of them, sum hashes
-            tls = CompositeFuture.join(certSecretSources.stream().map(certSecretSource ->
+            tlsFuture = CompositeFuture.join(certSecretSources.stream().map(certSecretSource ->
                     getCertificateAsync(secretOperations, namespace, certSecretSource)
                     .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList()))
                 .compose(hashes -> Future.succeededFuture(hashes.list().stream().collect(Collectors.summingInt(e -> (int) e))));
-        } else {
-            tls = Future.succeededFuture(0);
         }
 
         if (auth == null) {
-            return tls;
+            return tlsFuture;
         } else {
             // compute hash from Auth
             if (auth instanceof KafkaClientAuthenticationScramSha512) {
                 // only passwordSecret can be changed
-                return tls.compose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
+                return tlsFuture.compose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
                         .compose(password -> Future.succeededFuture(password.hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationPlain) {
                 // only passwordSecret can be changed
-                return tls.compose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
+                return tlsFuture.compose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
                         .compose(password -> Future.succeededFuture(password.hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationTls) {
                 // custom cert can be used (and changed)
-                return ((KafkaClientAuthenticationTls) auth).getCertificateAndKey() == null ? tls :
-                        tls.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, (KafkaClientAuthenticationTls) auth)
+                return ((KafkaClientAuthenticationTls) auth).getCertificateAndKey() == null ? tlsFuture :
+                        tlsFuture.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, (KafkaClientAuthenticationTls) auth)
                         .compose(crtAndKey -> Future.succeededFuture(crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationOAuth) {
-                List<Future> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates().stream().map(certSecretSource ->
+                List<Future> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates() == null ?
+                        new ArrayList<>() : ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates().stream().map(certSecretSource ->
                         getCertificateAsync(secretOperations, namespace, certSecretSource)
                                 .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList());
-                futureList.add(tls);
+                futureList.add(tlsFuture);
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getAccessToken()));
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getClientSecret()));
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getRefreshToken()));
                 return CompositeFuture.join(futureList).compose(hashes -> Future.succeededFuture(hashes.list().stream().collect(Collectors.summingInt(e -> (int) e))));
             } else {
                 // unknown Auth type
-                return tls;
+                return tlsFuture;
             }
         }
     }
