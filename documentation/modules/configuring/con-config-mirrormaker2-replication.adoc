@@ -96,10 +96,10 @@ If the active cluster goes down, consumer applications can switch to the passive
 To use topic offset synchronization, enable the synchronization by adding `sync.group.offsets.enabled` to the checkpoint connector configuration, and setting the property to `true`.
 Synchronization is disabled by default.
 
-When using the `IdentityReplicationPolicy` in the source connector, it has to be configured also in the checkpoint connector configuration.
-That will ensure that the mirrored consumer offsets will be applied for the correct topics.
+When using the `IdentityReplicationPolicy` in the source connector, it also has to be configured in the checkpoint connector configuration.
+This ensures that the mirrored consumer offsets will be applied for the correct topics.
 
-The consumer offsets will be synchronized only for consumer groups which are not active in the target cluster.
+The consumer offsets are only synchronized for consumer groups that are not active in the target cluster.
 
 If enabled, the synchronization of offsets from the source cluster is made periodically.
 You can change the frequency by adding `sync.group.offsets.interval.seconds` and `emit.checkpoints.interval.seconds` to the checkpoint connector configuration.
