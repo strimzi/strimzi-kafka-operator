@@ -901,6 +901,8 @@ include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#HostAlias-v1-core[HostAlias] array
+|tmpSizeLimit                   1.2+<.<a|Defines the total amount of local storage required for temporary EmptyDir volume (for example 1Gi).
+|string
 |enableServiceLinks             1.2+<.<a|Indicates whether information about services should be injected into Pod's environment variables.
 |boolean
 |topologySpreadConstraints      1.2+<.<a|The pod's topology spread constraints. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#topologyspreadconstraint-v1-core[external documentation for core/v1 topologyspreadconstraint].

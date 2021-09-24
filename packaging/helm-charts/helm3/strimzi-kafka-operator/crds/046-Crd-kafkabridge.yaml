@@ -804,6 +804,10 @@ spec:
                               ip:
                                 type: string
                           description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                        tmpSizeLimit:
+                          type: string
+                          pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                          description: Defines the total amount of local storage required for temporary EmptyDir volume (for example 1Gi).
                         enableServiceLinks:
                           type: boolean
                           description: Indicates whether information about services should be injected into Pod's environment variables.
