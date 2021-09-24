@@ -596,7 +596,7 @@ public class KafkaConnectClusterTest {
                             .withHostAliases(hostAlias1, hostAlias2)
                             .withTopologySpreadConstraints(tsc1, tsc2)
                             .withEnableServiceLinks(false)
-                            .withTmpSizeLimit("10Mi")
+                            .withTmpDirSizeLimit("10Mi")
                         .endPod()
                         .withNewApiService()
                             .withNewMetadata()

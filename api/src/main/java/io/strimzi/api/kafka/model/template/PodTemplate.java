@@ -54,7 +54,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     private String schedulerName;
     private List<HostAlias> hostAliases;
     private Boolean enableServiceLinks;
-    private String tmpSizeLimit;
+    private String tmpDirSizeLimit;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Metadata applied to the resource.")
@@ -188,12 +188,12 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     @DefaultValue("1Mi")
     @Description("Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). " +
             "Default value is `1Mi`.")
-    public String getTmpSizeLimit() {
-        return tmpSizeLimit;
+    public String getTmpDirSizeLimit() {
+        return tmpDirSizeLimit;
     }
 
-    public void setTmpSizeLimit(String tmpSizeLimit) {
-        this.tmpSizeLimit = tmpSizeLimit;
+    public void setTmpDirSizeLimit(String tmpDirSizeLimit) {
+        this.tmpDirSizeLimit = tmpDirSizeLimit;
     }
 
     @Override

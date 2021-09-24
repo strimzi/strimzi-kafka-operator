@@ -290,7 +290,7 @@ public abstract class AbstractModel {
     protected Map<String, String> templateServiceAccountAnnotations;
     protected Map<String, String> templateJmxSecretLabels;
     protected Map<String, String> templateJmxSecretAnnotations;
-    protected String templateTmpSizeLimit;
+    protected String templateTmpDirSizeLimit;
 
     protected List<Condition> warningConditions = new ArrayList<>(0);
 
@@ -1586,7 +1586,7 @@ public abstract class AbstractModel {
     }
 
     protected Volume createTempDirVolume() {
-        return VolumeUtils.createEmptyDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templateTmpSizeLimit == null ? "1Mi" : templateTmpSizeLimit, "Memory");
+        return VolumeUtils.createEmptyDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templateTmpDirSizeLimit == null ? "1Mi" : templateTmpDirSizeLimit, "Memory");
     }
 
     protected Volume createTempDirVolume(String volumeName) {

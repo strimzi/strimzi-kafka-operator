@@ -267,7 +267,7 @@ public class ModelUtils {
             model.templatePodHostAliases = pod.getHostAliases();
             model.templatePodTopologySpreadConstraints = pod.getTopologySpreadConstraints();
             model.templatePodEnableServiceLinks = pod.getEnableServiceLinks();
-            model.templateTmpSizeLimit = pod.getTmpSizeLimit();
+            model.templateTmpDirSizeLimit = pod.getTmpDirSizeLimit();
         }
     }
 
