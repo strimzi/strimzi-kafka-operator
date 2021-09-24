@@ -201,7 +201,7 @@ xref:scaling-clusters-{context}[scale clusters].
 <12> Enables TLS encryption for each listener. Default is `false`. TLS encryption is not required for `route` listeners.
 <13> Defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.
 <14> Listener authentication mechanism xref:assembly-securing-kafka-brokers-str[specified as mutual TLS, SCRAM-SHA-512 or token-based OAuth 2.0].
-<15> External listener configuration specifies xref:assembly-configuring-external-listeners-str[how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`].
+<15> External listener configuration specifies xref:assembly-accessing-kafka-external-clients-str[how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`].
 <16> Optional configuration for a xref:kafka-listener-certificates-str[Kafka listener certificate] managed by an external Certificate Authority. The `brokerCertChainAndKey` specifies a `Secret` that contains a server certificate and a private key. You can configure Kafka listener certificates on any listener with enabled TLS encryption.
 <17> Authorization xref:con-securing-kafka-authorization-str[enables simple, OAUTH 2.0, or OPA authorization on the Kafka broker.] Simple authorization uses the `AclAuthorizer` Kafka plugin.
 <18> The `config` specifies the broker configuration. xref:property-kafka-config-reference[Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi].

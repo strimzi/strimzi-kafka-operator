@@ -2,8 +2,8 @@
 //
 // assembly-securing-access.adoc
 
-[id='assembly-configuring-external-listeners-{context}']
-= Configuring external listeners
+[id='assembly-accessing-kafka-external-clients-{context}']
+= Accessing Kafka from external clients
 
 Use an external listener to expose your Strimzi Kafka cluster to a client outside a Kubernetes environment.
 
