@@ -184,8 +184,10 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
         this.enableServiceLinks = enableServiceLinks;
     }
 
-    @Pattern("^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$")
-    @Description("Defines the total amount of local storage required for temporary EmptyDir volume (for example 1Gi).")
+    @Pattern(Constants.MEMORY_REGEX)
+    @DefaultValue("1Mi")
+    @Description("Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). " +
+            "Default value is `1Mi`.")
     public String getTmpSizeLimit() {
         return tmpSizeLimit;
     }

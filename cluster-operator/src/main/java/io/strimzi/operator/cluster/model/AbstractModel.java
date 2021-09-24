@@ -1586,11 +1586,7 @@ public abstract class AbstractModel {
     }
 
     protected Volume createTempDirVolume() {
-        if (templateTmpSizeLimit != null) {
-            return VolumeUtils.createEmptyDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templateTmpSizeLimit, "Memory");
-        } else {
-            return VolumeUtils.createEmptyDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, "1Mi", "Memory");
-        }
+        return VolumeUtils.createEmptyDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templateTmpSizeLimit == null ? "1Mi" : templateTmpSizeLimit, "Memory");
     }
 
     protected Volume createTempDirVolume(String volumeName) {
