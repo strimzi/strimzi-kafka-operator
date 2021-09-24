@@ -11,3 +11,8 @@ It offers you an alternative way to install stable versions of Strimzi using the
 The {OperatorLifecycleManager} is used for the installation and management of all Operators published on {OperatorHub}.
 
 To install Strimzi from {OperatorHub}, locate the _Strimzi Kafka Operator_ and follow the instructions provided.
+
+WARNING: Make sure you use the appropriate update channel.
+If you are on a supported version of the Kubernetes, installing Strimzi from the default stable channel is safe.
+However, if you are using a version of Kubernetes that is unsupported, installing Strimzi from the stable channel is unsafe,
+especially when automatic updates are enabled, as the cluster will receive automatic updates with new components that are unsupported by the Kubernetes release.

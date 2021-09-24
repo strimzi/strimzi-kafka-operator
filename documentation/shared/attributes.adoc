@@ -58,6 +58,7 @@
 
 // External links
 :aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
+:cluster-docs: link:https://kubernetes.io/docs/home/
 :docs-okd: link:https://docs.okd.io/3.11/dev_guide/builds/index.html[builds^]
 :kafkaDoc: link:https://kafka.apache.org/documentation/[Apache Kafka documentation^]
 :KafkaRacks: link:https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]

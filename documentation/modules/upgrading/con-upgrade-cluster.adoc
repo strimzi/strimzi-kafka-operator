@@ -1,0 +1,40 @@
+// This module is included in the following assemblies:
+//
+// upgrading/assembly-upgrade.adoc
+
+[id='con-upgrade-cluster-{context}']
+= Upgrading Kubernetes
+
+[role="_abstract"]
+If you are upgrading your Kubenerates cluster to a later supported version, do it before upgrading Strimzi.
+Refer to the Kubernetes upgrade documentation to check the upgrade path and the steps to upgrade your nodes correctly.
+
+You’ll need admin privileges to be able to upgrade your Kubernetes cluster.
+As a Strimzi admin with permission to perform the upgrade, the basic steps are as follows:
+
+. Backup your Kubernetes components
+. Check and provision for any backwards incompatible changes in the release notes of the target version
+. Upgrade the Kubernetes cluster manually or automatically
+
+You'll probably want to upgrade the `kubectl` command-line tool to the latest version too.
+
+You can upgrade Kubernetes with minimal downtime for Strimzi.
+Consult the latest Kubernetes documentation for guidance on the upgrade process.
+For a manual upgrade, you can choose to upgrade nodes, or remove old nodes and replace them with new nodes.
+
+After you have verified that the Kubernetes cluster upgrade is successful, you can upgrade Strimzi.
+
+If you used the Operator Lifecycle Manager (OLM) to install the Strimzi Operator using the _stable_ channel, Strimzi updates are discovered automatically after the Kubernetes upgrade.
+If you have specified automatic OLM updates, the Strimzi Operator will automatically upgrade to the version of Strimzi that was released for the upgraded Kubernetes cluster version.
+If you are manually updating using OLM, you’ll need to approve the upgrade.
+
+Otherwise, follow the required upgrade sequence depending on the method used to deploy Strimzi.
+
+WARNING: We recommend using OLM's manual update policy for Strimzi.
+You can then perform any required upgrade preparation steps before the upgrade.
+An automatic upgrade can occur before performing these steps, which can cause issues with the performance of Strimzi.
+
+[role="_additional-resources"]
+.Additional resources
+* {cluster-docs}[Kubernetes documentation^]
+* {OLMOperatorDocs}
