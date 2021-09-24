@@ -77,13 +77,13 @@ public class TopicST extends AbstractST {
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, topicName));
         assertThat("Topic doesn't exists in Kafka itself", !hasTopicInKafka(topicName, TOPIC_CLUSTER_NAME));
 
-        String errorMessage = "Replication factor: 5 larger than available brokers: 3";
+        String errorMessage = "org.apache.kafka.common.errors.InvalidReplicationFactorException: Replication factor: 5 larger than available brokers: 3";
 
         KafkaTopicUtils.waitForKafkaTopicNotReady(topicName);
         KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(NAMESPACE).withName(topicName).get().getStatus();
 
         assertThat(kafkaTopicStatus.getConditions().get(0).getMessage(), containsString(errorMessage));
-        assertThat(kafkaTopicStatus.getConditions().get(0).getReason(), containsString("InvalidReplicationFactorException"));
+        assertThat(kafkaTopicStatus.getConditions().get(0).getReason(), containsString("CompletionException"));
 
         LOGGER.info("Delete topic {}", topicName);
         cmdKubeClient().deleteByName("kafkatopic", topicName);

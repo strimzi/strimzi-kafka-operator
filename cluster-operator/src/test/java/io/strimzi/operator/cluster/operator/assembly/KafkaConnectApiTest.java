@@ -104,6 +104,7 @@ public class KafkaConnectApiTest {
 
     @AfterAll
     public static void after() {
+        cluster.stop();
         vertx.close();
     }
 

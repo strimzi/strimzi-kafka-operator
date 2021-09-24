@@ -33,6 +33,7 @@ public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
     @AfterAll
     public static void afterAll() {
         teardownKubeCluster();
+        kafkaCluster.stop();
     }
 
     @BeforeEach

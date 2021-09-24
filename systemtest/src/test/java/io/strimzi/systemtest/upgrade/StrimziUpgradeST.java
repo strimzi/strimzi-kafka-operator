@@ -267,7 +267,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         logPodImages(clusterName);
         changeClusterOperator(testParameters, NAMESPACE, extensionContext);
 
-        if (TestKafkaVersion.containsVersion(getDefaultKafkaVersionPerStrimzi(testParameters.getString("fromVersion")).version())) {
+        if (TestKafkaVersion.supportedVersionsContainsVersion(getDefaultKafkaVersionPerStrimzi(testParameters.getString("fromVersion")).version())) {
             waitForKafkaClusterRollingUpdate();
         }
 

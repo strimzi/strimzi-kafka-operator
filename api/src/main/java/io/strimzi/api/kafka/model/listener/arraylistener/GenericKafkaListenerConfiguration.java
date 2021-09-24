@@ -188,8 +188,7 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
     }
 
     @Description("The maximum connection creation rate we allow in this listener at any time. " +
-            "New connections will be throttled if the limit is reached." +
-            "Supported only on Kafka 2.7.0 and newer.")
+            "New connections will be throttled if the limit is reached.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getMaxConnectionCreationRate() {
         return maxConnectionCreationRate;

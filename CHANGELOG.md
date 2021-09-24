@@ -2,6 +2,7 @@
 
 ## 0.26.0
 
+* Add support for Kafka 2.8.1 and 3.0.0; remove Kafka 2.7.0 and 2.7.1
 * Update the Open Policy Agent Authorizer to version [1.1.0](https://github.com/Bisnode/opa-kafka-plugin/releases/tag/v1.1.0)
 * Expose JMX port on Zookeeper nodes via a headless service.
 * Allow configuring labels and annotations for JMX authentication secrets

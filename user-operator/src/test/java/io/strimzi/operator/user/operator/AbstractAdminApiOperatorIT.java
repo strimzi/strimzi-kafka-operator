@@ -66,6 +66,8 @@ public abstract class AbstractAdminApiOperatorIT<T, S extends Collection<String>
         if (adminClient != null) {
             adminClient.close();
         }
+
+        kafkaCluster.stop();
     }
 
     abstract AbstractAdminApiOperator<T, S> operator();

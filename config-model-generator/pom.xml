@@ -29,6 +29,11 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka-metadata-version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-raft</artifactId>
+                <version>${kafka-metadata-version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -44,6 +49,10 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-raft</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

@@ -219,7 +219,7 @@ public class TopicSerializationTest {
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), is("KafkaTopics's spec.topicName property is absent and KafkaTopics's metadata.name is invalid as a topic name: " +
-                    "Topic name is illegal, it can't be longer than 249 characters, topic name: " +
+                    "Topic name is illegal, it can't be longer than 249 characters, Topic name: " +
                     illegalAsATopicName));
         }
     }

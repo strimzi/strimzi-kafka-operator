@@ -12,14 +12,14 @@
     "additionalTopics": 2,
     "oldestKafka": "2.6.0",
     "imagesBeforeKafkaUpgrade": {
-      "zookeeper": "strimzi/kafka:latest-kafka-2.7.0",
-      "kafka": "strimzi/kafka:latest-kafka-2.7.0",
+      "zookeeper": "strimzi/kafka:latest-kafka-2.8.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.8.0",
       "topicOperator": "strimzi/operator:latest",
       "userOperator": "strimzi/operator:latest"
     },
     "imagesAfterKafkaUpgrade": {
-      "zookeeper": "strimzi/kafka:latest-kafka-2.8.0",
-      "kafka": "strimzi/kafka:latest-kafka-2.8.0",
+      "zookeeper": "strimzi/kafka:latest-kafka-3.0.0",
+      "kafka": "strimzi/kafka:latest-kafka-3.0.0",
       "topicOperator": "strimzi/operator:latest",
       "userOperator": "strimzi/operator:latest"
     },
@@ -46,14 +46,14 @@
     "additionalTopics": 2,
     "oldestKafka": "2.7.0",
     "imagesBeforeKafkaUpgrade": {
-      "zookeeper": "strimzi/kafka:latest-kafka-2.7.0",
-      "kafka": "strimzi/kafka:latest-kafka-2.7.0",
+      "zookeeper": "strimzi/kafka:latest-kafka-2.8.0",
+      "kafka": "strimzi/kafka:latest-kafka-2.8.0",
       "topicOperator": "strimzi/operator:latest",
       "userOperator": "strimzi/operator:latest"
     },
     "imagesAfterKafkaUpgrade": {
-      "zookeeper": "strimzi/kafka:latest-kafka-2.8.0",
-      "kafka": "strimzi/kafka:latest-kafka-2.8.0",
+      "zookeeper": "strimzi/kafka:latest-kafka-3.0.0",
+      "kafka": "strimzi/kafka:latest-kafka-3.0.0",
       "topicOperator": "strimzi/operator:latest",
       "userOperator": "strimzi/operator:latest"
     },
@@ -86,8 +86,8 @@
       "userOperator": "strimzi/operator:latest"
     },
     "imagesAfterKafkaUpgrade": {
-      "zookeeper": "strimzi/kafka:latest-kafka-2.8.0",
-      "kafka": "strimzi/kafka:latest-kafka-2.8.0",
+      "zookeeper": "strimzi/kafka:latest-kafka-3.0.0",
+      "kafka": "strimzi/kafka:latest-kafka-3.0.0",
       "topicOperator": "strimzi/operator:latest",
       "userOperator": "strimzi/operator:latest"
     },
