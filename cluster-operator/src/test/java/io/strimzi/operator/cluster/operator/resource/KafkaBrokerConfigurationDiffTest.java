@@ -230,10 +230,6 @@ public class KafkaBrokerConfigurationDiffTest {
         KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(ces),
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
 
-        for (AlterConfigOp op : kcd.getConfigDiff()) {
-            System.out.println(op);
-        }
-
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
     }
