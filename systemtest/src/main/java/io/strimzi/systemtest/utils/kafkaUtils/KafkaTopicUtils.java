@@ -14,7 +14,9 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
@@ -188,5 +190,17 @@ public class KafkaTopicUtils {
             LOGGER.info("KafkaTopic's spec gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
             return false;
         });
+    }
+
+    public static List<KafkaTopic> getAllKafkaTopicsWithPrefix(String namespace, String prefix) {
+        return KafkaTopicResource.kafkaTopicClient().inNamespace(namespace).list().getItems()
+            .stream().filter(p -> p.getMetadata().getName().startsWith(prefix))
+            .collect(Collectors.toList());
+    }
+
+    public static void deleteAllKafkaTopicsWithPrefix(String namespace, String prefix) {
+        KafkaTopicUtils.getAllKafkaTopicsWithPrefix(namespace, prefix).forEach(topic ->
+            cmdKubeClient().namespace(namespace).deleteByName(KafkaTopic.RESOURCE_SINGULAR, topic.getMetadata().getName())
+        );
     }
 }
