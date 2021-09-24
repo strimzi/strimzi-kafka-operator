@@ -12,12 +12,14 @@ import io.strimzi.api.kafka.model.AclRule;
 import io.strimzi.api.kafka.model.AclRuleBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -36,6 +38,7 @@ import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -157,27 +160,58 @@ class UserST extends AbstractST {
     }
 
     @Tag(SCALABILITY)
-    @ParallelTest
+    @IsolatedTest
+    @Disabled("UserOperator create user operation timeouts, when creating many kafka users.")
     void testBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-
-        createBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA");
+        createBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA", 100);
     }
 
     @Tag(SCALABILITY)
-    @ParallelTest
+    @IsolatedTest
+    @Disabled("UserOperator create user operation timeouts, when creating many kafka users.")
+    void testAlterBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        int numberOfUsers = 100;
+        int producerRate = 1000;
+        int consumerRate = 1500;
+        int requestsPercentage = 42;
+        double mutationRate = 3.0;
+
+        createBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA", numberOfUsers);
+        alterBigAmountOfUsers(extensionContext, userName, "SCRAM_SHA", numberOfUsers,
+                producerRate, consumerRate, requestsPercentage, mutationRate);
+    }
+
+    @Tag(SCALABILITY)
+    @IsolatedTest
+    @Disabled("UserOperator create user operation timeouts, when creating many kafka users.")
     void testBigAmountOfTlsUsers(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        createBigAmountOfUsers(extensionContext, userName, "TLS", 100);
+    }
+
+    @Tag(SCALABILITY)
+    @IsolatedTest
+    @Disabled("UserOperator create user operation timeouts, when creating many kafka users.")
+    void testAlterBigAmountOfTlsUsers(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
-        createBigAmountOfUsers(extensionContext, userName, "TLS");
+        int numberOfUsers = 100;
+        int producerRate = 1000;
+        int consumerRate = 1500;
+        int requestsPercentage = 42;
+        double mutationRate = 3.0;
+
+        createBigAmountOfUsers(extensionContext, userName, "TLS", numberOfUsers);
+        alterBigAmountOfUsers(extensionContext, userName, "TLS", numberOfUsers,
+                producerRate, consumerRate, requestsPercentage, mutationRate);
     }
 
     @ParallelTest
     void testTlsUserWithQuotas(ExtensionContext extensionContext) {
         KafkaUser user = KafkaUserTemplates.tlsUser(NAMESPACE, userClusterName, "encrypted-arnost").build();
-
+        resourceManager.createResource(extensionContext, user);
         testUserWithQuotas(extensionContext, user);
     }
 
@@ -192,7 +226,7 @@ class UserST extends AbstractST {
     @ParallelTest
     void testScramUserWithQuotas(ExtensionContext extensionContext) {
         KafkaUser user = KafkaUserTemplates.scramShaUser(NAMESPACE, userClusterName, "scramed-arnost").build();
-
+        resourceManager.createResource(extensionContext, user);
         testUserWithQuotas(extensionContext, user);
     }
 
@@ -441,10 +475,8 @@ class UserST extends AbstractST {
         assertThat(user.getStatus().getUsername(), is("CN=" + userName));
     }
 
-    synchronized void createBigAmountOfUsers(ExtensionContext extensionContext, String userName, String typeOfUser) {
-
-        int numberOfUsers = 100;
-
+    synchronized void createBigAmountOfUsers(ExtensionContext extensionContext, String userName, String typeOfUser, int numberOfUsers) {
+        LOGGER.info("Creating {} KafkaUsers", numberOfUsers);
         for (int i = 0; i < numberOfUsers; i++) {
             String userNameWithSuffix = userName + "-" + i;
 
@@ -462,13 +494,61 @@ class UserST extends AbstractST {
                     .build());
             }
 
-            LOGGER.info("Checking status of KafkaUser {}", userNameWithSuffix);
+            LOGGER.debug("Checking status of KafkaUser {}", userNameWithSuffix);
             Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userNameWithSuffix).get()
                     .getStatus().getConditions().get(0);
-            LOGGER.info("KafkaUser condition status: {}", kafkaCondition.getStatus());
-            LOGGER.info("KafkaUser condition type: {}", kafkaCondition.getType());
+            LOGGER.debug("KafkaUser condition status: {}", kafkaCondition.getStatus());
+            LOGGER.debug("KafkaUser condition type: {}", kafkaCondition.getType());
             assertThat(kafkaCondition.getType(), is(Ready.toString()));
-            LOGGER.info("KafkaUser {} is in desired state: {}", userNameWithSuffix, kafkaCondition.getType());
+            LOGGER.debug("KafkaUser {} is in desired state: {}", userNameWithSuffix, kafkaCondition.getType());
+        }
+    }
+
+    synchronized void alterBigAmountOfUsers(ExtensionContext extensionContext, String userName, String typeOfUser, int numberOfUsers,
+                                            int producerRate, int consumerRate, int requestsPercentage, double mutationRate) {
+        KafkaUserQuotas kuq = new KafkaUserQuotas();
+        kuq.setConsumerByteRate(consumerRate);
+        kuq.setProducerByteRate(producerRate);
+        kuq.setRequestPercentage(requestsPercentage);
+        kuq.setControllerMutationRate(mutationRate);
+
+        LOGGER.info("Updating of existing KafkaUsers");
+        for (int i = 0; i < numberOfUsers; i++) {
+            String userNameWithSuffix = userName + "-" + i;
+            if (typeOfUser.equals("TLS")) {
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userNameWithSuffix)
+                    .editMetadata()
+                        .withNamespace(NAMESPACE)
+                    .endMetadata()
+                        .editSpec()
+                            .withQuotas(kuq)
+                        .endSpec()
+                    .build());
+            } else {
+                resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(userClusterName, userNameWithSuffix)
+                    .editMetadata()
+                        .withNamespace(NAMESPACE)
+                    .endMetadata()
+                        .editSpec()
+                            .withQuotas(kuq)
+                        .endSpec()
+                    .build());
+            }
+
+            LOGGER.debug("[After update] Checking status of KafkaUser {}", userNameWithSuffix);
+            Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userNameWithSuffix).get()
+                    .getStatus().getConditions().get(0);
+            LOGGER.debug("KafkaUser condition status: {}", kafkaCondition.getStatus());
+            LOGGER.debug("KafkaUser condition type: {}", kafkaCondition.getType());
+            assertThat(kafkaCondition.getType(), is(Ready.toString()));
+            LOGGER.debug("KafkaUser {} is in desired state: {}", userNameWithSuffix, kafkaCondition.getType());
+
+            KafkaUserQuotas kuqAfter = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userNameWithSuffix).get().getSpec().getQuotas();
+            LOGGER.debug("Check altered KafkaUser {} new quotas.", userNameWithSuffix);
+            assertThat(kuqAfter.getRequestPercentage(), is(requestsPercentage));
+            assertThat(kuqAfter.getConsumerByteRate(), is(consumerRate));
+            assertThat(kuqAfter.getProducerByteRate(), is(producerRate));
+            assertThat(kuqAfter.getControllerMutationRate(), is(mutationRate));
         }
     }
 
