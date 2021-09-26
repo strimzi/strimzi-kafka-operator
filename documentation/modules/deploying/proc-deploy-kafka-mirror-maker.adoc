@@ -10,6 +10,12 @@ This procedure shows how to deploy a Kafka MirrorMaker cluster to your Kubernete
 
 The deployment uses a YAML file to provide the specification to create a `KafkaMirrorMaker` or `KafkaMirrorMaker2` resource depending on the version of MirrorMaker deployed.
 
+IMPORTANT: Kafka MirrorMaker 1 has been deprecated in Apache Kafka 3.0.0 and will be removed in Apache Kafka 4.0.O.
+As a result, the `KafkaMirrorMaker` custom resource which is used to deploy Kafka MirrorMaker 1 has been deprecated in Strimzi as well.
+The `KafkaMirrorMaker` resource will be removed from Strimzi when we adopt Apache Kafka 4.0.
+As a replacement, use the `KafkaMirrorMaker2` custom resource with the `IdentityReplicationPolicy`.
+As a replacement, use the `KafkaMirrorMaker2` custom resource with the link:{BookURLUsing}#unidirectional_replication_activepassive[`IdentityReplicationPolicy`].
+
 Strimzi provides xref:deploy-examples-{context}[example configuration files].
 In this procedure, we use the following example files:
 

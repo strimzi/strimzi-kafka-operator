@@ -41,6 +41,8 @@ import java.util.Map;
  *     <li>A Kafka Mirror Maker Deployment and related Services</li>
  * </ul>
  */
+// Deprecation is suppressed because of KafkaMirrorMaker
+@SuppressWarnings("deprecation")
 public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList, Resource<KafkaMirrorMaker>, KafkaMirrorMakerSpec, KafkaMirrorMakerStatus> {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaMirrorMakerAssemblyOperator.class.getName());

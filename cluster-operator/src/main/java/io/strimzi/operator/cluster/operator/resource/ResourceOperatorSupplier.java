@@ -50,7 +50,8 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.vertx.core.Vertx;
 
-@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
+// Deprecation is suppressed because of KafkaMirrorMaker
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "deprecation"})
 public class ResourceOperatorSupplier {
     public final SecretOperator secretOperations;
     public final ServiceOperator serviceOperations;

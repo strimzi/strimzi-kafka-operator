@@ -16,6 +16,8 @@ import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.function.Consumer;
 
+// Deprecation is suppressed because of KafkaMirrorMaker
+@SuppressWarnings("deprecation")
 public class KafkaMirrorMakerResource implements ResourceType<KafkaMirrorMaker> {
 
     @Override
