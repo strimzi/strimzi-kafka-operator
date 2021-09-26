@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Service;
@@ -52,6 +53,8 @@ import io.strimzi.api.kafka.model.connect.ExternalConfiguration;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvVarSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.KafkaConnectTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -139,6 +142,13 @@ public class KafkaConnectCluster extends AbstractModel {
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
 
+    /**
+     * Lists with volumes, persistent volume claims and related volume mount paths for the storage
+     */
+    List<Volume> dataVolumes;
+    List<PersistentVolumeClaim> dataPvcs;
+    List<VolumeMount> dataVolumeMountPaths;
+
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_CONNECT_POD_LABELS);
@@ -216,6 +226,8 @@ public class KafkaConnectCluster extends AbstractModel {
             kafkaConnect.setImage(versions.kafkaConnectVersion(spec.getImage(), spec.getVersion()));
         }
 
+        kafkaConnect.setStorage(spec.getStorage());
+        kafkaConnect.setDataVolumesClaimsAndMountPaths(spec.getStorage());
         kafkaConnect.setResources(spec.getResources());
         kafkaConnect.setLogging(spec.getLogging());
         kafkaConnect.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
@@ -263,6 +275,12 @@ public class KafkaConnectCluster extends AbstractModel {
             ModelUtils.parseDeploymentTemplate(kafkaConnect, template.getDeployment());
             ModelUtils.parsePodTemplate(kafkaConnect, template.getPod());
             ModelUtils.parseInternalServiceTemplate(kafkaConnect, template.getApiService());
+
+            if (template.getPersistentVolumeClaim() != null && template.getPersistentVolumeClaim().getMetadata() != null) {
+                kafkaConnect.templatePersistentVolumeClaimLabels = Util.mergeLabelsOrAnnotations(template.getPersistentVolumeClaim().getMetadata().getLabels(),
+                        kafkaConnect.templateStatefulSetLabels);
+                kafkaConnect.templatePersistentVolumeClaimAnnotations = template.getPersistentVolumeClaim().getMetadata().getAnnotations();
+            }
 
             if (template.getClusterRoleBinding() != null && template.getClusterRoleBinding().getMetadata() != null) {
                 kafkaConnect.templateClusterRoleBindingLabels = template.getClusterRoleBinding().getMetadata().getLabels();
@@ -340,8 +358,44 @@ public class KafkaConnectCluster extends AbstractModel {
         return portList;
     }
 
+    /**
+     * Fill the StatefulSet with volumes, persistent volume claims and related volume mount paths for the storage
+     * It's called recursively on the related inner volumes if the storage is of {@link Storage#TYPE_JBOD} type
+     *
+     * @param storage the Storage instance from which building volumes, persistent volume claims and
+     *                related volume mount paths
+     */
+    protected void setDataVolumesClaimsAndMountPaths(Storage storage) {
+        dataVolumeMountPaths = VolumeUtils.getDataVolumeMountPaths(storage, mountPath);
+        dataPvcs = VolumeUtils.getDataPersistentVolumeClaims(storage);
+        dataVolumes = VolumeUtils.getDataVolumes(storage);
+    }
+
+    /**
+     * Generate the persistent volume claims for the storage It's called recursively on the related inner volumes if the
+     * storage is of {@link Storage#TYPE_JBOD} type.
+     *
+     * @param storage the Storage instance from which building volumes, persistent volume claims and
+     *                related volume mount paths.
+     * @return The PersistentVolumeClaims.
+     */
+    public List<PersistentVolumeClaim> generatePersistentVolumeClaims(Storage storage) {
+        List<PersistentVolumeClaim> pvcs = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof PersistentClaimStorage) {
+                Integer id = ((PersistentClaimStorage) storage).getId();
+                String pvcBaseName = VolumeUtils.getVolumePrefix(id) + "-" + name;
+
+                pvcs.add(createPersistentVolumeClaim(0, pvcBaseName, (PersistentClaimStorage) storage, "ReadWriteMany"));
+            }
+        }
+        dataPvcs = pvcs;
+        return pvcs;
+    }
+
     protected List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>(2);
+        List<Volume> volumeList = new ArrayList<>(dataVolumes);
         volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
 
@@ -355,7 +409,18 @@ public class KafkaConnectCluster extends AbstractModel {
         AuthenticationUtils.configureClientAuthenticationVolumes(authentication, volumeList, "oauth-certs", isOpenShift);
         volumeList.addAll(getExternalConfigurationVolumes(isOpenShift));
 
+        if (!dataPvcs.isEmpty()) {
+            String volumeName = dataVolumeMountPaths.get(0).getName();
+            String claimName = dataPvcs.get(0).getMetadata().getName();
+            volumeList.add(VolumeUtils.createPersistentVolume(volumeName, claimName));
+        }
         return volumeList;
+    }
+
+    /* test */ List<PersistentVolumeClaim> getVolumeClaims() {
+        List<PersistentVolumeClaim> pvcList = new ArrayList<>();
+        pvcList.addAll(dataPvcs);
+        return pvcList;
     }
 
     private List<Volume> getExternalConfigurationVolumes(boolean isOpenShift)  {
@@ -402,7 +467,7 @@ public class KafkaConnectCluster extends AbstractModel {
     }
 
     protected List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>(2);
+        List<VolumeMount> volumeMountList = new ArrayList<>(dataVolumeMountPaths);
         volumeMountList.add(createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
 

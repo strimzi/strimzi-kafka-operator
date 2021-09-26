@@ -24,6 +24,8 @@ import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSource;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
@@ -35,13 +37,18 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Shared methods for working with Volume
  */
 public class VolumeUtils {
+    private static final Logger LOGGER = LogManager.getLogger(VolumeUtils.class.getName());
     private static Pattern volumeNamePattern = Pattern.compile("^([a-z0-9]{1}[a-z0-9-]{0,61}[a-z0-9]{1})$");
 
     private VolumeUtils() { }
@@ -201,6 +208,23 @@ public class VolumeUtils {
         return volume;
     }
 
+    public static Volume createPersistentVolume(String name, String claimName) {
+        String validName = getValidVolumeName(name);
+
+        PersistentVolumeClaimVolumeSource persistentVolumeSource = new PersistentVolumeClaimVolumeSourceBuilder()
+                .withClaimName(claimName)
+                .build();
+
+        Volume volume = new VolumeBuilder()
+                .withName(validName)
+                .withPersistentVolumeClaim(persistentVolumeSource)
+                .build();
+
+        LOGGER.trace("Created persistent Volume named '{}' with source claim '{}'", validName, claimName);
+
+        return volume;
+    }
+
     /**
      * Creates a PVC template
      *
@@ -316,6 +340,16 @@ public class VolumeUtils {
 
                 String name = getVolumePrefix(id);
                 String namedMountPath = mountPath + "/" + name;
+                if (storage instanceof PersistentClaimStorage) {
+                    List<PersistentClaimStorageOverride> overrides = ((PersistentClaimStorage) storage).getOverrides();
+                    int _id = id == null ? 0 : id;
+                    if (overrides != null && overrides.size() > _id) {
+                        String mountPathOverride = overrides.get(_id).getMountPath();
+                        if (mountPathOverride != null) {
+                            namedMountPath = mountPathOverride;
+                        }
+                    }
+                }
                 volumeMounts.add(createVolumeMount(name, namedMountPath));
             }
         }

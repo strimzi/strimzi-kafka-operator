@@ -6,10 +6,12 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ContainerStateTerminated;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Build;
@@ -26,6 +28,7 @@ import io.strimzi.operator.cluster.model.KafkaConnectBuildUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectDockerfile;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -37,13 +40,19 @@ import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
+import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.operator.common.operator.resource.StorageClassOperator;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -57,6 +66,8 @@ import java.util.function.Function;
 public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaConnectAssemblyOperator.class.getName());
     private final boolean isNetworkPolicyGeneration;
+    private final PvcOperator pvcOperations;
+    private final StorageClassOperator storageClassOperator;
     private final DeploymentOperator deploymentOperations;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final PodOperator podOperator;
@@ -83,12 +94,15 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                         Function<Vertx, KafkaConnectApi> connectClientProvider) {
         this(vertx, pfa, supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT);
     }
+
     public KafkaConnectAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider, int port) {
         super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.connectOperator, supplier, config, connectClientProvider, port);
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
+        this.pvcOperations = supplier.pvcOperations;
+        this.storageClassOperator = supplier.storageClassOperations;
         this.deploymentOperations = supplier.deploymentOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.podOperator = supplier.podOperations;
@@ -132,6 +146,11 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     } else {
                         return Future.succeededFuture();
                     }
+                })
+                .compose(i -> {
+                    List<PersistentVolumeClaim> pvcs = connect.generatePersistentVolumeClaims(connect.getStorage());
+
+                    return maybeResizeReconcilePvcs(namespace, reconciliation, pvcs, connect);
                 })
                 .compose(i -> deploymentOperations.getAsync(namespace, connect.getName()))
                 .compose(deployment -> {
@@ -203,6 +222,124 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         return serviceAccountOperations.reconcile(reconciliation, namespace,
                 KafkaConnectResources.serviceAccountName(connect.getCluster()),
                 connect.generateServiceAccount());
+    }
+
+    private int getPodIndexFromPvcName(String pvcName)  {
+        return Integer.parseInt(pvcName.substring(pvcName.lastIndexOf("-") + 1));
+    }
+
+    private int getPodIndexFromPodName(String podName)  {
+        return Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
+    }
+
+    private Future<Void> maybeResizeReconcilePvcs(String namespace, Reconciliation reconciliation, List<PersistentVolumeClaim> pvcs, AbstractModel cluster) {
+        List<Future> futures = new ArrayList<>(pvcs.size());
+
+        for (PersistentVolumeClaim desiredPvc : pvcs)  {
+            Promise<Void> resultPromise = Promise.promise();
+
+            pvcOperations.getAsync(namespace, desiredPvc.getMetadata().getName()).onComplete(res -> {
+                if (res.succeeded())    {
+                    PersistentVolumeClaim currentPvc = res.result();
+
+                    if (currentPvc == null || currentPvc.getStatus() == null || !"Bound".equals(currentPvc.getStatus().getPhase())) {
+                        // This branch handles the following conditions:
+                        // * The PVC doesn't exist yet, we should create it
+                        // * The PVC is not Bound and we should reconcile it
+                        reconcilePvc(namespace,  reconciliation, desiredPvc).onComplete(resultPromise);
+                    } else if (currentPvc.getStatus().getConditions().stream().filter(cond -> "Resizing".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))).findFirst().orElse(null) != null)  {
+                        // The PVC is Bound but it is already resizing => Nothing to do, we should let it resize
+                        LOGGER.debugCr(reconciliation, "The PVC {} is resizing, nothing to do", desiredPvc.getMetadata().getName());
+                        resultPromise.complete();
+                    } else if (currentPvc.getStatus().getConditions().stream().filter(cond -> "FileSystemResizePending".equals(cond.getType()) && "true".equals(cond.getStatus().toLowerCase(Locale.ENGLISH))).findFirst().orElse(null) != null)  {
+                        // The PVC is Bound and resized but waiting for FS resizing => We need to restart the pod which is using it
+                        String podName = cluster.getPodName(getPodIndexFromPvcName(desiredPvc.getMetadata().getName()));
+                        //TODO fsResizingRestartRequest.add(podName);
+                        LOGGER.infoCr(reconciliation, "The PVC {} is waiting for file system resizing and the pod {} needs to be restarted.", desiredPvc.getMetadata().getName(), podName);
+                        resultPromise.complete();
+                    } else {
+                        // The PVC is Bound and resizing is not in progress => We should check if the SC supports resizing and check if size changed
+                        Long currentSize = StorageUtils.parseMemory(currentPvc.getSpec().getResources().getRequests().get("storage"));
+                        Long desiredSize = StorageUtils.parseMemory(desiredPvc.getSpec().getResources().getRequests().get("storage"));
+
+                        if (!currentSize.equals(desiredSize))   {
+                            // The sizes are different => we should resize (shrinking will be handled in StorageDiff, so we do not need to check that)
+                            resizePvc(namespace, reconciliation, currentPvc, desiredPvc).onComplete(resultPromise);
+                        } else  {
+                            // size didn't changed, just reconcile
+                            reconcilePvc(namespace,  reconciliation, desiredPvc).onComplete(resultPromise);
+                        }
+                    }
+                } else {
+                    resultPromise.fail(res.cause());
+                }
+            });
+
+            futures.add(resultPromise.future());
+        }
+
+        return CompositeFuture.all(futures)
+            .compose(res -> {
+                if (res.failed()) {
+                    return Future.failedFuture(res.cause());
+                }
+                return Future.succeededFuture();
+            });
+    }
+
+    private Future<Void> reconcilePvc(String namespace, Reconciliation reconciliation, PersistentVolumeClaim desired)  {
+        Promise<Void> resultPromise = Promise.promise();
+
+        pvcOperations.reconcile(reconciliation, namespace, desired.getMetadata().getName(), desired).onComplete(pvcRes -> {
+            if (pvcRes.succeeded()) {
+                resultPromise.complete();
+            } else {
+                resultPromise.fail(pvcRes.cause());
+            }
+        });
+
+        return resultPromise.future();
+    }
+
+    private Future<Void> resizePvc(String namespace, Reconciliation reconciliation, PersistentVolumeClaim current, PersistentVolumeClaim desired)  {
+        Promise<Void> resultPromise = Promise.promise();
+
+        String storageClassName = current.getSpec().getStorageClassName();
+
+        if (storageClassName != null && !storageClassName.isEmpty()) {
+            storageClassOperator.getAsync(storageClassName).onComplete(scRes -> {
+                if (scRes.succeeded()) {
+                    StorageClass sc = scRes.result();
+
+                    if (sc == null) {
+                        LOGGER.warnCr(reconciliation, "Storage Class {} not found. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", storageClassName, desired.getMetadata().getName());
+                        resultPromise.complete();
+                    } else if (sc.getAllowVolumeExpansion() == null || !sc.getAllowVolumeExpansion())    {
+                        // Resizing not suported in SC => do nothing
+                        LOGGER.warnCr(reconciliation, "Storage Class {} does not support resizing of volumes. PVC {} cannot be resized. Reconciliation will proceed without reconciling this PVC.", storageClassName, desired.getMetadata().getName());
+                        resultPromise.complete();
+                    } else  {
+                        // Resizing supported by SC => We can reconcile the PVC to have it resized
+                        LOGGER.infoCr(reconciliation, "Resizing PVC {} from {} to {}.", desired.getMetadata().getName(), current.getStatus().getCapacity().get("storage").getAmount(), desired.getSpec().getResources().getRequests().get("storage").getAmount());
+                        pvcOperations.reconcile(reconciliation, namespace, desired.getMetadata().getName(), desired).onComplete(pvcRes -> {
+                            if (pvcRes.succeeded()) {
+                                resultPromise.complete();
+                            } else {
+                                resultPromise.fail(pvcRes.cause());
+                            }
+                        });
+                    }
+                } else {
+                    LOGGER.errorCr(reconciliation, "Storage Class {} not found. PVC {} cannot be resized.", storageClassName, desired.getMetadata().getName(), scRes.cause());
+                    resultPromise.fail(scRes.cause());
+                }
+            });
+        } else {
+            LOGGER.warnCr(reconciliation, "PVC {} does not use any Storage Class and cannot be resized. Reconciliation will proceed without reconciling this PVC.", desired.getMetadata().getName());
+            resultPromise.complete();
+        }
+
+        return resultPromise.future();
     }
 
     /**

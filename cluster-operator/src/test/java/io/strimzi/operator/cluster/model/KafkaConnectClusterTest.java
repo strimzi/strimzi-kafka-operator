@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -56,6 +57,8 @@ import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnv;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationEnvBuilder;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSource;
 import io.strimzi.api.kafka.model.connect.ExternalConfigurationVolumeSourceBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.template.IpFamily;
@@ -1726,5 +1729,135 @@ public class KafkaConnectClusterTest {
         ResourceRequirements initContainersResources = kcc.getInitContainers(ImagePullPolicy.IFNOTPRESENT).get(0).getResources();
         assertThat(initContainersResources.getRequests(), is(requirements));
         assertThat(initContainersResources.getLimits(), is(limits));
+    }
+
+    @ParallelTest
+    public void testGeneratePersistentVolumeClaimsPersistentWithClaimDeletion() {
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withNewPersistentClaimStorage()
+                        .withStorageClass("gp2-ssd")
+                        .withDeleteClaim(true)
+                        .withSize("100Gi")
+                    .endPersistentClaimStorage()
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS);
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
+
+        assertThat(pvcs.size(), is(1));
+
+        for (PersistentVolumeClaim pvc : pvcs) {
+            assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
+            assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
+            assertThat(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getOwnerReferences().size(), is(1));
+            assertThat(pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is("true"));
+        }
+    }
+
+    @ParallelTest
+    public void testGeneratePersistentVolumeClaimsPersistentWithoutClaimDeletion() {
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withNewPersistentClaimStorage()
+                        .withStorageClass("gp2-ssd")
+                        .withDeleteClaim(false)
+                        .withSize("100Gi")
+                    .endPersistentClaimStorage()
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS);
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
+
+        assertThat(pvcs.size(), is(1));
+
+        for (PersistentVolumeClaim pvc : pvcs) {
+            assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
+            assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
+            assertThat(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
+            assertThat(pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
+        }
+    }
+
+    @ParallelTest
+    public void testGeneratePersistentVolumeClaimsPersistentWithOverride() {
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                .withNewPersistentClaimStorage()
+                    .withStorageClass("gp2-ssd")
+                    .withDeleteClaim(false)
+                    .withSize("100Gi")
+                    .withOverrides(new PersistentClaimStorageOverrideBuilder()
+                            .withBroker(1)
+                            .withStorageClass("gp2-ssd-az1")
+                            .build())
+                .endPersistentClaimStorage()
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS);
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
+
+        assertThat(pvcs.size(), is(1));
+
+        for (int i = 0; i < 1; i++) {
+            PersistentVolumeClaim pvc = pvcs.get(i);
+
+            assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
+
+            if (i != 1) {
+                assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
+            } else {
+                assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd-az1"));
+            }
+
+            assertThat(pvc.getMetadata().getName().startsWith(kc.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
+            assertThat(pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
+        }
+    }
+
+    @ParallelTest
+    public void testGeneratePersistentVolumeClaimsEphemeral()    {
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withNewEphemeralStorage().endEphemeralStorage()
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS);
+
+        // Check PVCs
+        List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
+
+        assertThat(pvcs.size(), is(0));
+    }
+
+    @ParallelTest
+    public void testPvcNames() {
+        KafkaConnect kafkaConnect = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withStorage(new PersistentClaimStorageBuilder().withDeleteClaim(false).withSize("100Gi").build())
+                .endSpec()
+                .build();
+
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS);
+
+        List<PersistentVolumeClaim> pvcs = kc.getVolumeClaims();
+
+        for (int i = 0; i < replicas; i++) {
+            assertThat(pvcs.get(0).getMetadata().getName() + "-" + KafkaCluster.kafkaPodName(cluster, i),
+                    is(kc.VOLUME_NAME + "-" + KafkaCluster.kafkaPodName(cluster, i)));
+        }
     }
 }

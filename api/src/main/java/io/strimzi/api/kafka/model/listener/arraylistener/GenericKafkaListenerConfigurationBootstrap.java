@@ -38,6 +38,7 @@ public class GenericKafkaListenerConfigurationBootstrap implements Serializable,
     private Map<String, String> labels = new HashMap<>(0);
     private Integer nodePort;
     private String loadBalancerIP;
+    private List<String> externalIPs;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -109,6 +110,16 @@ public class GenericKafkaListenerConfigurationBootstrap implements Serializable,
 
     public void setLoadBalancerIP(String loadBalancerIP) {
         this.loadBalancerIP = loadBalancerIP;
+    }
+
+    @Description("External IPs to the resource.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public List<String> getExternalIPs() {
+        return externalIPs;
+    }
+
+    public void setExternalIPs(List<String> externalIPs) {
+        this.externalIPs = externalIPs;
     }
 
     @Override

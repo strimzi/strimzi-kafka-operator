@@ -362,6 +362,8 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |string
 |annotations       1.2+<.<a|Annotations that will be added to the `Ingress`, `Route`, or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
 |map
+|externalIPs       1.2+<.<a|External IPs to the resource.
+|string array
 |labels            1.2+<.<a|Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
 |map
 |====
@@ -396,6 +398,8 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |string
 |annotations     1.2+<.<a|Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.
 |map
+|externalIPs     1.2+<.<a|External IPs to the resource.
+|string array
 |labels          1.2+<.<a|Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
 |map
 |====
@@ -403,7 +407,7 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 [id='type-EphemeralStorage-{context}']
 ### `EphemeralStorage` schema reference
 
-Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `EphemeralStorage` type from xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
@@ -422,7 +426,7 @@ It must have the value `ephemeral` for the type `EphemeralStorage`.
 [id='type-PersistentClaimStorage-{context}']
 ### `PersistentClaimStorage` schema reference
 
-Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `PersistentClaimStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`].
@@ -454,11 +458,13 @@ Used in: xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
 
 [options="header"]
 |====
-|Property       |Description
-|class   1.2+<.<a|The storage class to use for dynamic volume allocation for this broker.
+|Property          |Description
+|class      1.2+<.<a|The storage class to use for dynamic volume allocation for this broker.
 |string
-|broker  1.2+<.<a|Id of the kafka broker (broker identifier).
+|broker     1.2+<.<a|Id of the kafka broker (broker identifier).
 |integer
+|mountPath  1.2+<.<a|The mount path to use, overriding the default /var/lib/kafka/data.
+|string
 |====
 
 [id='type-JbodStorage-{context}']
@@ -1601,6 +1607,8 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |externalConfiguration  1.2+<.<a|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
+|storage                1.2+<.<a|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim].
+|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
 |build                  1.2+<.<a|Configures how the Connect container image should be built. Optional.
 |xref:type-Build-{context}[`Build`]
 |clientRackInitImage    1.2+<.<a|The image of the init container used for initializing the `client.rack`.
@@ -1789,32 +1797,34 @@ Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Kaf
 
 [options="header"]
 |====
-|Property                    |Description
-|deployment           1.2+<.<a|Template for Kafka Connect `Deployment`.
+|Property                      |Description
+|deployment             1.2+<.<a|Template for Kafka Connect `Deployment`.
 |xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
-|pod                  1.2+<.<a|Template for Kafka Connect `Pods`.
+|pod                    1.2+<.<a|Template for Kafka Connect `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|apiService           1.2+<.<a|Template for Kafka Connect API `Service`.
+|apiService             1.2+<.<a|Template for Kafka Connect API `Service`.
 |xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`]
-|connectContainer     1.2+<.<a|Template for the Kafka Connect container.
+|connectContainer       1.2+<.<a|Template for the Kafka Connect container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|initContainer        1.2+<.<a|Template for the Kafka init container.
+|initContainer          1.2+<.<a|Template for the Kafka init container.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|podDisruptionBudget  1.2+<.<a|Template for Kafka Connect `PodDisruptionBudget`.
+|podDisruptionBudget    1.2+<.<a|Template for Kafka Connect `PodDisruptionBudget`.
 |xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`]
-|serviceAccount       1.2+<.<a|Template for the Kafka Connect service account.
+|serviceAccount         1.2+<.<a|Template for the Kafka Connect service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|clusterRoleBinding   1.2+<.<a|Template for the Kafka Connect ClusterRoleBinding.
+|clusterRoleBinding     1.2+<.<a|Template for the Kafka Connect ClusterRoleBinding.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|buildPod             1.2+<.<a|Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
+|buildPod               1.2+<.<a|Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
-|buildContainer       1.2+<.<a|Template for the Kafka Connect Build container. The build container is used only on Kubernetes.
+|buildContainer         1.2+<.<a|Template for the Kafka Connect Build container. The build container is used only on Kubernetes.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
-|buildConfig          1.2+<.<a|Template for the Kafka Connect BuildConfig used to build new container images. The BuildConfig is used only on OpenShift.
+|buildConfig            1.2+<.<a|Template for the Kafka Connect BuildConfig used to build new container images. The BuildConfig is used only on OpenShift.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|buildServiceAccount  1.2+<.<a|Template for the Kafka Connect Build service account.
+|buildServiceAccount    1.2+<.<a|Template for the Kafka Connect Build service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
-|jmxSecret            1.2+<.<a|Template for Secret of the Kafka Connect Cluster JMX authentication.
+|jmxSecret              1.2+<.<a|Template for Secret of the Kafka Connect Cluster JMX authentication.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|persistentVolumeClaim  1.2+<.<a|Template for the Kafka Connect persistent volume claim.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 

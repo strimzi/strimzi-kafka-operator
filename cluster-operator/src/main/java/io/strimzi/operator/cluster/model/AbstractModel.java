@@ -867,6 +867,10 @@ public abstract class AbstractModel {
      * @return PersistentVolumeClaim
      */
     protected PersistentVolumeClaim createPersistentVolumeClaim(int ordinalId, String name, PersistentClaimStorage storage) {
+        return createPersistentVolumeClaim(ordinalId, name, storage, "ReadWriteOnce");
+    }
+
+    protected PersistentVolumeClaim createPersistentVolumeClaim(int ordinalId, String name, PersistentClaimStorage storage, String accessMode) {
         Map<String, Quantity> requests = new HashMap<>(1);
         requests.put("storage", new Quantity(storage.getSize(), null));
 
@@ -897,7 +901,7 @@ public abstract class AbstractModel {
                     .withAnnotations(Util.mergeLabelsOrAnnotations(Collections.singletonMap(ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())), templatePersistentVolumeClaimAnnotations))
                 .endMetadata()
                 .withNewSpec()
-                    .withAccessModes("ReadWriteOnce")
+                    .withAccessModes(accessMode)
                     .withNewResources()
                         .withRequests(requests)
                     .endResources()

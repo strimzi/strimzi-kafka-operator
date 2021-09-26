@@ -637,4 +637,39 @@ public class ListenersUtils {
             return "ClusterIP";
         }
     }
+
+    /**
+     * Finds bootstrap service external IPs
+     *
+     * @param listener  Listener for which the external IPs should be found
+     * @return          External IPs or null if not specified
+     */
+    public static List<String> bootstrapExternalIPs(GenericKafkaListener listener)    {
+        if (listener.getConfiguration() != null
+                && listener.getConfiguration().getBootstrap() != null) {
+            return listener.getConfiguration().getBootstrap().getExternalIPs();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Finds broker service external IPs
+     *
+     * @param listener  Listener for which the external IPs should be found
+     * @param pod       Pod ID for which we should get the configuration option
+     * @return          External IPs or null if not specified
+     */
+    public static List<String> brokerExternalIPs(GenericKafkaListener listener, int pod)    {
+        if (listener.getConfiguration() != null
+                && listener.getConfiguration().getBrokers() != null) {
+            return listener.getConfiguration().getBrokers().stream()
+                    .filter(broker -> broker != null && broker.getBroker() != null && broker.getBroker() == pod && broker.getExternalIPs() != null)
+                    .map(GenericKafkaListenerConfigurationBroker::getExternalIPs)
+                    .findAny()
+                    .orElse(null);
+        } else {
+            return null;
+        }
+    }
 }

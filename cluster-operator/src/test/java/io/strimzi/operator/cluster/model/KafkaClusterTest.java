@@ -3785,4 +3785,40 @@ public class KafkaClusterTest {
         assertThat(initContainersResources.getRequests(), is(requirements));
         assertThat(initContainersResources.getLimits(), is(limits));
     }
+
+    @ParallelTest
+    public void testGetExternalNodePortServiceExternalIPs() {
+        GenericKafkaListenerConfigurationBootstrap bootstrapConfig = new GenericKafkaListenerConfigurationBootstrapBuilder()
+                .withExternalIPs("10.10.10.10", "11.11.11.11")
+                .build();
+
+        GenericKafkaListenerConfigurationBroker brokerConfig0 = new GenericKafkaListenerConfigurationBrokerBuilder()
+                .withBroker(0)
+                .withExternalIPs("10.10.10.10", "11.11.11.11")
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+            image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
+            .editSpec()
+                .editKafka()
+                    .withListeners(new GenericKafkaListenerBuilder()
+                            .withName("external")
+                            .withPort(9094)
+                            .withType(KafkaListenerType.NODEPORT)
+                            .withTls(false)
+                            .withNewConfiguration()
+                                .withBootstrap(bootstrapConfig)
+                                .withBrokers(brokerConfig0)
+                            .endConfiguration()
+                            .build())
+                .endKafka()
+            .endSpec()
+            .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+
+        assertThat(ListenersUtils.bootstrapExternalIPs(kc.getListeners().get(0)).get(0), is("10.10.10.10"));
+        assertThat(ListenersUtils.bootstrapExternalIPs(kc.getListeners().get(0)).get(1), is("11.11.11.11"));
+        assertThat(ListenersUtils.brokerExternalIPs(kc.getListeners().get(0), 0).get(0), is("10.10.10.10"));
+        assertThat(ListenersUtils.brokerExternalIPs(kc.getListeners().get(0), 0).get(1), is("11.11.11.11"));
+    }
 }

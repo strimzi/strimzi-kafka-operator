@@ -34,6 +34,7 @@ public class PersistentClaimStorageOverride  implements Serializable, UnknownPro
 
     private Integer broker;
     private String storageClass;
+    private String mountPath;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Id of the kafka broker (broker identifier)")
@@ -54,6 +55,15 @@ public class PersistentClaimStorageOverride  implements Serializable, UnknownPro
 
     public void setStorageClass(String storageClass) {
         this.storageClass = storageClass;
+    }
+
+    @Description("The mount path to use, overriding the default /var/lib/kafka/data.")
+    public String getMountPath() {
+        return mountPath;
+    }
+
+    public void setMountPath(String mountPath) {
+        this.mountPath = mountPath;
     }
 
     @Override

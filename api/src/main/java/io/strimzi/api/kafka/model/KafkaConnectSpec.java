@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.connect.build.Build;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
@@ -27,7 +28,7 @@ import java.util.Map;
         "bootstrapServers", "tls", "authentication", "config", "resources",
         "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions",
         "affinity", "tolerations", "logging", "metrics", "tracing",
-        "template", "externalConfiguration"})
+        "template", "externalConfiguration", "storage"})
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
 
@@ -42,6 +43,7 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
     private String bootstrapServers;
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
+    private SingleVolumeStorage storage;
     private Build build;
 
     @Description("The Kafka Connect configuration. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
@@ -101,6 +103,16 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
 
     public void setAuthentication(KafkaClientAuthentication authentication) {
         this.authentication = authentication;
+    }
+
+    @Description("Storage configuration (disk). Cannot be updated.")
+    @JsonProperty(required = true)
+    public SingleVolumeStorage getStorage() {
+        return storage;
+    }
+
+    public void setStorage(SingleVolumeStorage storage) {
+        this.storage = storage;
     }
 
     @Description("Configures how the Connect container image should be built. " +

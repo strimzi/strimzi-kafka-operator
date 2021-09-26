@@ -420,6 +420,11 @@ spec:
                                     such as External DNS. This field can be used only
                                     with `loadbalancer`, `nodeport`, `route`, or `ingress`
                                     type listeners.
+                                externalIPs:
+                                  type: array
+                                  items:
+                                    type: string
+                                  description: External IPs to the resource.
                                 labels:
                                   x-kubernetes-preserve-unknown-fields: true
                                   type: object
@@ -477,6 +482,11 @@ spec:
                                       as External DNS. This field can be used only
                                       with `loadbalancer`, `nodeport`, or `ingress`
                                       type listeners.
+                                  externalIPs:
+                                    type: array
+                                    items:
+                                      type: string
+                                    description: External IPs to the resource.
                                   labels:
                                     x-kubernetes-preserve-unknown-fields: true
                                     type: object
@@ -677,6 +687,10 @@ spec:
                             broker:
                               type: integer
                               description: Id of the kafka broker (broker identifier).
+                            mountPath:
+                              type: string
+                              description: The mount path to use, overriding the default
+                                /var/lib/kafka/data.
                         description: Overrides for individual brokers. The `overrides`
                           field allows to specify a different configuration for different
                           brokers.
@@ -736,6 +750,10 @@ spec:
                                   broker:
                                     type: integer
                                     description: Id of the kafka broker (broker identifier).
+                                  mountPath:
+                                    type: string
+                                    description: The mount path to use, overriding
+                                      the default /var/lib/kafka/data.
                               description: Overrides for individual brokers. The `overrides`
                                 field allows to specify a different configuration
                                 for different brokers.
@@ -2124,6 +2142,10 @@ spec:
                             broker:
                               type: integer
                               description: Id of the kafka broker (broker identifier).
+                            mountPath:
+                              type: string
+                              description: The mount path to use, overriding the default
+                                /var/lib/kafka/data.
                         description: Overrides for individual brokers. The `overrides`
                           field allows to specify a different configuration for different
                           brokers.

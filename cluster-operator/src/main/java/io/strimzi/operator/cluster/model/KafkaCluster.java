@@ -832,6 +832,10 @@ public class KafkaCluster extends AbstractModel {
             }
 
             if (KafkaListenerType.LOADBALANCER == listener.getType() || KafkaListenerType.NODEPORT == listener.getType()) {
+                List<String> eip = ListenersUtils.bootstrapExternalIPs(listener);
+                if (eip != null && !eip.isEmpty()) {
+                    service.getSpec().setExternalIPs(eip);
+                }
                 ExternalTrafficPolicy etp = ListenersUtils.externalTrafficPolicy(listener);
                 if (etp != null) {
                     service.getSpec().setExternalTrafficPolicy(etp.toValue());
@@ -901,6 +905,10 @@ public class KafkaCluster extends AbstractModel {
             }
 
             if (KafkaListenerType.LOADBALANCER == listener.getType() || KafkaListenerType.NODEPORT == listener.getType()) {
+                List<String> eip = ListenersUtils.brokerExternalIPs(listener, pod);
+                if (eip != null && !eip.isEmpty()) {
+                    service.getSpec().setExternalIPs(eip);
+                }
                 ExternalTrafficPolicy etp = ListenersUtils.externalTrafficPolicy(listener);
                 if (etp != null) {
                     service.getSpec().setExternalTrafficPolicy(etp.toValue());
