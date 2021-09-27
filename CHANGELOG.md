@@ -11,7 +11,7 @@
 * Allow Kafka Connect Build artifacts to be downloaded from insecure servers (#5542)
 * Configurable authentication, authorization, and SSL for Cruise Control API
 * Update to Cruise Control version 2.5.73
-* Allow to configure `/tmp` volume size via Pod template. If no template is provided, default value of `1Mi` is used
+* Allow to configure `/tmp` volume size via Pod template. By default `1Mi` is used.
 
 ### Changes, deprecations and removals
 

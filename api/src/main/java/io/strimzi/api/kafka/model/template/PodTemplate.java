@@ -37,7 +37,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
-    "tolerations", "topologySpreadConstraint", "priorityClassName", "schedulerName", "hostAliases", "tmpSizeLimit"})
+    "tolerations", "topologySpreadConstraint", "priorityClassName", "schedulerName", "hostAliases", "tmpDirSizeLimit"})
 @EqualsAndHashCode
 @DescriptionFile
 public class PodTemplate implements Serializable, UnknownPropertyPreserving {
