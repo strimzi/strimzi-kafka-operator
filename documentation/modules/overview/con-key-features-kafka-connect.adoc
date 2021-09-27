@@ -3,9 +3,11 @@
 // overview/assembly-key-features.adoc
 
 [id="key-features-kafka-connect_{context}"]
-= Kafka Connect concepts
+= How Kafka Connect streams data
 
 [role="_abstract"]
+Kafka Connect uses connector instances to integrate with other systems to stream data.
+
 Kafka Connect loads existing connector instances on start up and distributes data streaming tasks and connector configuration across worker pods.
 Workers run the tasks for the connector instances.
 Each worker runs as a separate pod to make the Kafka Connect cluster more fault tolerant.
@@ -13,16 +15,13 @@ Work is distributed evenly through load balancing and is divided into tasks.
 If there are more tasks than workers, workers are assigned multiple tasks.
 If a worker fails, its tasks are automatically assigned to active workers in the Kafka Connect cluster.
 
-The following diagram shows the main Kafka Connect components used in streaming data:
+The main Kafka Connect components used in streaming data are as follows:
 
 * Connectors to create tasks
 * Tasks to split the work
 * Workers to start tasks
 * Transforms to manipulate data
 * Converters to convert data
-
-.Workers running in distributed mode in a Kafka Connect cluster
-image:overview/kafka-concepts-kafka-connect.png[Kafka Connect worker interaction in distributed mode]
 
 == Connectors
 
@@ -46,6 +45,35 @@ Kafka provides two built-in example connectors:
 * `FileStreamSourceConnector` streams data from an external system to Kafka, reading lines from an input source and sending each line to a Kafka topic.
 * `FileStreamSinkConnector` streams data from Kafka to an external system, reading messages from a Kafka topic and creating a line for each in an output file.
 --
+
+The following source connector diagram shows the process flow for a source connector that streams records from an external data system.
+A Kafka Connect cluster might operate source and sink connectors at the same time.
+Workers are running in distributed mode in the cluster.
+Workers can run one or more tasks for more than one connector instance.
+
+.Source connector streaming data to Kafka
+image:overview/kafka-concepts-source-connector.png[Kafka Connect source connector worker interaction in distributed mode]
+
+. A plugin provides the implementation artifacts for the source connector
+. A single worker initiates the source connector instance
+. The source connector creates the tasks to stream data
+. Tasks run in parallel to poll the external data system and return records
+. Transforms adjust the records, such as filtering or relabelling them
+. Converters put the records into a format suitable for Kafka
+. The source connector is managed using KafkaConnectors or the Kafka Connect API
+
+The following sink connector diagram shows the process flow when streaming data from Kafka to an external data system.
+
+.Sink connector streaming data from Kafka
+image:overview/kafka-concepts-sink-connector.png[Kafka Connect source connector worker interaction in distributed mode]
+
+. A plugin provides the implementation artifacts for the sink connector
+. A single worker initiates the sink connector instance
+. The sink connector creates the tasks to stream data
+. Tasks run in parallel to poll Kafka and return records
+. Converters put the records into a format suitable for the external data system
+. Transforms adjust the records, such as filtering or relabelling them
+. The sink connector is managed using KafkaConnectors or the Kafka Connect API
 
 == Tasks
 
@@ -109,5 +137,5 @@ NOTE: You can also specify converters for specific connectors to override the ge
 [role="_additional-resources"]
 .Additional resources
 * http://kafka.apache.org[Apache Kafka documentation^]
-* link:{BookURLUsing}#property-kafka-connect-config-reference[Kafka Connect configuration of workers^] 
+* link:{BookURLUsing}#property-kafka-connect-config-reference[Kafka Connect configuration of workers^]
 * link:{BookURLUsing}#proc-mirrormaker-replication-str[Synchronizing data between Kafka clusters using MirrorMaker 2.0^]
