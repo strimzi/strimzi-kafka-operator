@@ -65,7 +65,7 @@ image:overview/kafka-concepts-source-connector.png[Kafka Connect source connecto
 The following sink connector diagram shows the process flow when streaming data from Kafka to an external data system.
 
 .Sink connector streaming data from Kafka
-image:overview/kafka-concepts-sink-connector.png[Kafka Connect source connector worker interaction in distributed mode]
+image:overview/kafka-concepts-sink-connector.png[Kafka Connect sink connector worker interaction in distributed mode]
 
 . A plugin provides the implementation artifacts for the sink connector
 . A single worker initiates the sink connector instance
