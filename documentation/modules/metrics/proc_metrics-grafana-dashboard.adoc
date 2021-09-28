@@ -7,7 +7,7 @@
 = Enabling the example Grafana dashboards
 
 [role="_abstract"]
-Use Grafana to provide visualizations of Prometheus metrics.
+Use Grafana to provide visualizations of Prometheus metrics on customizable dashboards.
 
 You can use your own Grafana deployment or deploy Grafana using the xref:assembly-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi.
 The example files include a configuration file for a Grafana deployment

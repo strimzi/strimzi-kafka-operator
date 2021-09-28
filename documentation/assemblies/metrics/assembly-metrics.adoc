@@ -11,8 +11,8 @@ You can use Prometheus and Grafana to monitor your Strimzi deployment.
 Depending on your requirements, you can:
 
 * xref:assembly-metrics-setup-{context}[Set up and deploy Prometheus to expose metrics]
-* xref:proc-metrics-grafana-dashboard-{context}[Use Grafana to present the Prometheus metrics]
 * xref:proc-metrics-kafka-deploy-options-{context}[Deploy Kafka Exporter to provide additional metrics]
+* xref:proc-metrics-grafana-dashboard-{context}[Use Grafana to present the Prometheus metrics]
 
 With Prometheus and Grafana set up, you can use the example Grafana dashboards provided by Strimzi for monitoring.
 
