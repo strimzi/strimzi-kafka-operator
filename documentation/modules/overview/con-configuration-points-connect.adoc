@@ -43,7 +43,7 @@ You can create the image in two ways:
 * link:{BookURLDeploying}#creating-new-image-using-kafka-connect-build-str[Automatically using Kafka Connect configuration^]
 * link:{BookURLDeploying}#creating-new-image-from-base-str[Manually using Dockerfile and a Kafka container image from {DockerRepository} as a base image^]
 
-To create the container image automatically, you specify and deploy plugins for your Kafka Connect cluster using the `build` property of the `KafkaConnect` resource.
+To create the container image automatically, you specify the plugins to add to your Kafka Connect cluster using the `build` property of the `KafkaConnect` resource.
 Strimzi automatically downloads and adds the plugin artifacts to a new container image.
 
 .Example plugin configuration
@@ -91,7 +91,7 @@ USER {DockerImageUser}
 
 You specify the configuration for workers in the `config` property of the `KafkaConnect` resource.
 
-A distributed Kafka Connect cluster has a group ID and a set of internal connector topics.
+A distributed Kafka Connect cluster has a group ID and a set of internal configuration topics.
 
 * `group.id`
 * `offset.storage.topic`
@@ -117,7 +117,7 @@ spec:
     offset.storage.topic: my-connect-cluster-offsets <2>
     config.storage.topic: my-connect-cluster-configs <3>
     status.storage.topic: my-connect-cluster-status <4>
-    Key.converter: org.apache.kafka.connect.json.JsonConverter <5>
+    key.converter: org.apache.kafka.connect.json.JsonConverter <5>
     value.converter: org.apache.kafka.connect.json.JsonConverter <6>
     key.converter.schemas.enable: true <7>
     value.converter.schemas.enable: true <8>
@@ -126,10 +126,10 @@ spec:
     status.storage.replication.factor: 3 <11>
   # ...
 ----
-<1> The Kafka Connect cluster ID within Kafka.
-<2> Kafka topic that stores connector offsets.
-<3> Kafka topic that stores connector and task status configurations.
-<4> Kafka topic that stores connector and task status updates.
+<1> The Kafka Connect cluster ID within Kafka. Must be unique for each Kafka Connect cluster.
+<2> Kafka topic that stores connector offsets. Must be unique for each Kafka Connect cluster.
+<3> Kafka topic that stores connector and task status configurations. Must be unique for each Kafka Connect cluster.
+<4> Kafka topic that stores connector and task status updates. Must be unique for each Kafka Connect cluster.
 <5> Converter to transform message keys into JSON format for storage in Kafka.
 <6> Converter to transform message values into JSON format for storage in Kafka.
 <7> Schema enabled for converting message keys into structured JSON format.
@@ -138,21 +138,7 @@ spec:
 <10> Replication factor for the Kafka topic that stores connector and task status configurations.
 <11> Replication factor for the Kafka topic that stores connector and task status updates.
 
-NOTE: In this example, JSON converters are specified. The converters you specify must be in a data format supported by Kafka.
-
-.Worker configuration that must be unique for each Kafka Connect cluster
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaConnectApiVersion}
-kind: KafkaConnect
-# ...
-spec:
-  config:
-    group.id: my-connect-cluster
-    offset.storage.topic: my-connect-cluster-offsets
-    config.storage.topic: my-connect-cluster-configs
-    status.storage.topic: my-connect-cluster-status
-----
+NOTE: In this example, JSON converters are specified.
 
 [discrete]
 == `KafkaConnector` management of connectors
@@ -252,6 +238,7 @@ The operations supported by the REST API are described in the http://kafka.apach
 
 NOTE: You can expose the Kafka Connect API service outside Kubernetes.
 You do this by creating a service that uses a connection mechanism that provides the access, such as an ingress or route.
+Use advisedly as the connection is insecure.
 
 [role="_additional-resources"]
 .Additional resources

@@ -17,9 +17,10 @@ Each connector defines a schema for its configuration.
 You supply the configuration to Kafka Connect to create a _connector instance_ within Kafka Connect.
 Connector instances define a set of tasks to move data between systems.
 
-Strimzi operates Kafka Connect in _distributed mode_, distributing data streaming tasks across worker pods.
+Strimzi operates Kafka Connect in _distributed mode_, distributing data streaming tasks across one or more worker pods.
 A Kafka Connect cluster comprises a group of worker pods.
-A single worker instantiates a connector, but tasks are distributed across the group.
+A single worker instantiates a connector.
+Each connector comprises one or more tasks that are distributed across the group of workers.
 Distribution across workers creates highly scalable pipelines.
 
 Workers convert data into the correct format for the target system.
