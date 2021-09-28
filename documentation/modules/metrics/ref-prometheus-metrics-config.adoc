@@ -8,7 +8,7 @@
 = Example Prometheus metrics configuration
 
 [role="_abstract"]
-Strimzi uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter^] to expose JMX metrics through an HTTP endpoint, which is then scraped by the Prometheus server.
+Strimzi uses the link:https://github.com/prometheus/jmx_exporter[Prometheus JMX Exporter^] to expose metrics through an HTTP endpoint, which can be scraped by the Prometheus server.
 
 Grafana dashboards are dependent on Prometheus JMX Exporter relabeling rules, which are defined for Strimzi components in the custom resource configuration.
 

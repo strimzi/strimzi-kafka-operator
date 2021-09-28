@@ -13,7 +13,8 @@ Kafka Exporter extracts additional metrics data from Kafka brokers related to of
 The metrics data is used, for example, to help identify slow consumers.
 Lag data is exposed as Prometheus metrics, which can then be presented in Grafana for analysis.
 
-IMPORTANT: For Kafka Exporter to be able to provide additional Kafka metrics, you also need the Prometheus metrics configuration for Kafka.
+IMPORTANT: Kafka Exporter provides only additional metrics related to consumer lag and consumer offsets.
+For regular Kafka metrics, you have to configure the Prometheus metrics in xref:proc-metrics-kafka-deploy-options-{context}[Kafka brokers].
 
 Consumer lag indicates the difference in the rate of production and consumption of messages.
 Specifically, consumer lag for a given consumer group indicates the delay between the last message in the partition and the message being currently picked up by that consumer.

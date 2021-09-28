@@ -8,7 +8,8 @@
 You can use Prometheus to provide monitoring data for the example Grafana dashboards provided with Strimzi.
 
 To expose metrics in Prometheus format, you add configuration to a custom resource.
-You also need to deploy Prometheus and Prometheus Alertmanager.
+You will also need to make sure that the metrics are scraped by your monitoring stack.
+Prometheus and Prometheus Alertmanager are used in the examples provided by Strimzi, but you can use also other compatible tools.
 
 . xref:proc-metrics-kafka-deploy-options-{context}[Deploying Prometheus metrics configuration]
 . xref:assembly-metrics-prometheus-{context}[Setting up Prometheus]

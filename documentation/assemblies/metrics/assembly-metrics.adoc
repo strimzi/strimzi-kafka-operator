@@ -18,8 +18,9 @@ With Prometheus and Grafana set up, you can use the example Grafana dashboards p
 
 Additionally, you can configure your deployment to track messages end-to-end by link:{BookURLUsing}#assembly-distributed-tracing-str[setting up distributed tracing^].
 
-NOTE: The resources referenced in this section are intended as a starting point for setting up monitoring, but they are provided as examples only.
-If you require further support on configuring and running Prometheus or Grafana in production, try reaching out to their respective communities.
+NOTE: Strimzi provides example installation files for Prometheus and Grafana.
+You can use these files as a starting point when trying out monitoring of Strimzi.
+For further support, try engaging with the Prometheus and Grafana developer communities.
 
 [role="_additional-resources"]
 .Additional resources

@@ -8,7 +8,7 @@
 
 [role="_abstract"]
 Use Alertmanager to route alerts to a notification service.
-link:https://prometheus.io/docs/alerting/alertmanager/[Prometheus Alertmanager^] is a plugin for handling alerts and routing them to a notification service.
+link:https://prometheus.io/docs/alerting/alertmanager/[Prometheus Alertmanager^] is a component for handling alerts and routing them to a notification service.
 Alertmanager supports an essential aspect of monitoring, which is to be notified of conditions that indicate potential issues based on alerting rules.
 
 You can use the xref:assembly-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi to deploy Alertmanager to send notifications to a Slack channel.
