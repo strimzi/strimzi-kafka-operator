@@ -105,8 +105,8 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
         this.authentication = authentication;
     }
 
-    @Description("Storage configuration (disk). Cannot be updated.")
-    @JsonProperty(required = true)
+    @Description("Storage configuration (disk). Optional.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public SingleVolumeStorage getStorage() {
         return storage;
     }
