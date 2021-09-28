@@ -21,7 +21,7 @@
 :UpgradeGuide: link:https://strimzi.io/docs/operators/0.24.0/deploying.html#assembly-upgrade-resources-str[Strimzi 0.24.0 upgrade documentation^]
 
 // Kubernetes and OpenShift versions
-:OpenShiftVersion: 4.3 and later
+:OpenShiftVersion: 4.6 and 4.8
 :KubernetesVersion: 1.16 and later
 
 // Kafka upgrade attributes used in kafka upgrades section

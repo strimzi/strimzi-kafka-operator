@@ -7,7 +7,16 @@
 
 To upgrade brokers and clients without downtime, you _must_ complete the Strimzi upgrade procedures in the following order:
 
-. Update your Kubernetes cluster to a supported version.
+. Make sure your Kubernetes cluster version is supported.
++
+--
+ifdef::StrimziUpgrades[]
+Strimzi {ProductVersion} requires Kubernetes {KubernetesVersion}.
+endif::StrimziUpgrades[]
+ifndef::StrimziUpgrades[]
+Strimzi {ProductVersion} requires OpenShift {OpenShiftVersion}.
+endif::StrimziUpgrades[]
+--
 +
 --
 * xref:con-upgrade-cluster-{context}[]
