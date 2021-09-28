@@ -24,8 +24,10 @@ For a manual upgrade, you can choose to upgrade nodes, or remove old nodes and r
 
 After you have verified that the Kubernetes cluster upgrade is successful, you can upgrade Strimzi.
 
-If you used the Operator Lifecycle Manager (OLM) to install the Strimzi Operator from the _stable_ channel, Strimzi updates are discovered automatically after the Kubernetes upgrade.
-If you have specified _automatic_ OLM updates, the Strimzi Operator will automatically upgrade to the version of Strimzi that was released for the upgraded Kubernetes cluster version.
+If you used the Operator Lifecycle Manager (OLM) to install the Strimzi Operator from the _stable_ channel,
+Strimzi updates are discovered automatically after the Kubernetes upgrade.
+If you have specified _automatic_ OLM updates, the Strimzi Operator will automatically upgrade to the version of Strimzi
+that was released for the upgraded Kubernetes cluster version.
 If you are manually updating using OLM, you’ll need to approve the upgrade.
 
 Otherwise, follow the required upgrade sequence depending on the method used to deploy Strimzi.
