@@ -14,6 +14,10 @@
 
 * imageRepositoryOverride,imageRegistryOverride and imageTagOverride are now removed from values.yaml. defaultImageRepository, defaultImageRegistry and defaultImageTag values are introduced in helm charts which sets the default registry, repository and tags for the images. Now the registry, repository and tag for a single image can be configured as per the requirement.
 * The OpenShift Templates were removed from the examples and are no longer supported (#5548)
+* Kafka MirrorMaker 1 has been deprecated in Apache Kafka 3.0.0 and will be removed in Apache Kafka 4.0.0.
+  As a result, the `KafkaMirrorMaker` custom resource which is used to deploy Kafka MirrorMaker 1 has been deprecated in Strimzi as well. (#5617)
+  The `KafkaMirrorMaker` resource will be removed from Strimzi when we adopt Apache Kafka 4.0.0.
+  As a replacement, use the `KafkaMirrorMaker2` custom resource with the [`IdentityReplicationPolicy`](https://strimzi.io/docs/operators/latest/using.html#unidirectional_replication_activepassive).
 
 ## 0.25.0
 

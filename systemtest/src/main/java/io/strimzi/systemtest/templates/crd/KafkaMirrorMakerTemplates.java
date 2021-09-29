@@ -19,6 +19,8 @@ import io.strimzi.test.TestUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
+// Deprecation is suppressed because of KafkaMirrorMaker
+@SuppressWarnings("deprecation")
 public class KafkaMirrorMakerTemplates {
 
     private KafkaMirrorMakerTemplates() {}

@@ -2476,6 +2476,9 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 [id='type-KafkaMirrorMaker-{context}']
 ### `KafkaMirrorMaker` schema reference
 
+*The type `KafkaMirrorMaker` has been deprecated.*
+Please use xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`] instead.
+
 
 [options="header"]
 |====
