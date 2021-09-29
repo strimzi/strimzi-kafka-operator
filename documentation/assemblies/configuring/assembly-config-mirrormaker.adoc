@@ -12,7 +12,7 @@ MirrorMaker 2.0 is the latest version, and offers a more efficient way to mirror
 
 If you are using MirrorMaker, you configure the `KafkaMirrorMaker` resource.
 
-IMPORTANT: Kafka MirrorMaker 1 has been deprecated in Apache Kafka 3.0.0 and will be removed in Apache Kafka 4.0.0.
+IMPORTANT: Kafka MirrorMaker 1 (referred to as just _MirrorMaker_ in the documentation) has been deprecated in Apache Kafka 3.0.0 and will be removed in Apache Kafka 4.0.0.  
 As a result, the `KafkaMirrorMaker` custom resource which is used to deploy Kafka MirrorMaker 1 has been deprecated in Strimzi as well.
 The `KafkaMirrorMaker` resource will be removed from Strimzi when we adopt Apache Kafka 4.0.0.
 As a replacement, use the `KafkaMirrorMaker2` custom resource with the xref:unidirectional_replication_activepassive[`IdentityReplicationPolicy`].
