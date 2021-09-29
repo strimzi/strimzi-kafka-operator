@@ -10,6 +10,7 @@ if [[ $(uname -s) == "Darwin" ]]; then
     alias tar="gtar"
     alias sed="gsed"
     alias date="gdate"
+    alias ls="gls"
 fi
 __HOME="" && pushd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" >/dev/null \
     && { __HOME=$PWD; popd >/dev/null; } && readonly __HOME
@@ -26,7 +27,7 @@ KAFKA_PVC=()
 KAFKA_PVC_SIZE=""
 KAFKA_PVC_CLASS=""
 COMMAND=""
-INVALID=false
+CLEANUP=true
 CONFIRM=true
 NAMESPACE=""
 CLUSTER_NAME=""
@@ -117,8 +118,7 @@ __stop_cluster() {
 }
 
 __cleanup() {
-    rm -rf $BACKUP_PATH/$NAMESPACE/$CLUSTER_NAME
-    if [[ -n $COMMAND && $INVALID == false ]]; then
+    if [[ -n $COMMAND && $CLEANUP == true ]]; then
         kubectl -n $NAMESPACE delete pod $RSYNC_POD_NAME 2>/dev/null ||true
         __start_cluster
     fi
@@ -132,11 +132,12 @@ __error() {
 __confirm() {
     read -p "Please confirm (y/n) " reply
     if [[ ! $reply =~ ^[Yy]$ ]]; then
+        CLEANUP=false
         exit 0
     fi
 }
 
-__check_connection() {
+__check_kube_conn() {
     kubectl version --request-timeout=10s 1>/dev/null
 }
 
@@ -266,7 +267,6 @@ __uncompress() {
     local target_dir="$2"
     if [[ -n $source_file && -n $target_dir ]]; then
         echo "Uncompressing $source_file to $target_dir"
-        rm -rf $target_dir
         mkdir -p $target_dir
         unzip -qo $source_file -d $target_dir
         chmod -R ugo+rwx $target_dir
@@ -281,14 +281,17 @@ backup() {
             # init context
             readonly RSYNC_POD_NAME="$CLUSTER_NAME-backup"
             local tmp="$BACKUP_PATH/$NAMESPACE/$CLUSTER_NAME"
-            __check_connection
+            if [[ ! -z "$(ls -A $tmp)" ]]; then
+              CLEANUP=false
+              __error "Non empty directory: $tmp"
+            fi
+            __check_kube_conn
             if [[ $CONFIRM == true ]]; then
                 echo "Backup of cluster $NAMESPACE/$CLUSTER_NAME"
                 echo "The cluster won't be available for the entire duration of the process"
                 __confirm
             fi
             echo "Starting backup"
-            rm -rf $tmp
             mkdir -p $tmp/resources $tmp/data
             __export_env $tmp/env
             __stop_cluster
@@ -331,9 +334,9 @@ backup() {
             __error "$(dirname $TARGET_FILE) not found"
         fi
     else
-        INVALID=true
+        CLEANUP=false
         __error "Specify namespace, cluster name and target file to backup"
-    fi    
+    fi
 }
 
 restore() {
@@ -342,7 +345,7 @@ restore() {
             # init context
             readonly RSYNC_POD_NAME="$CLUSTER_NAME-restore"
             local tmp="$BACKUP_PATH/$NAMESPACE/$CLUSTER_NAME"
-            __check_connection
+            __check_kube_conn
             if [[ $CONFIRM == true ]]; then
                 echo "Restore of cluster $NAMESPACE/$CLUSTER_NAME"
                 __confirm
@@ -369,7 +372,7 @@ restore() {
             __error "$SOURCE_FILE file not found"
         fi
     else
-        INVALID=true
+        CLEANUP=false
         __error "Specify namespace, cluster name and source file to restore"
     fi
 }
