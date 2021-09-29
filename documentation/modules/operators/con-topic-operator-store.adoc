@@ -63,7 +63,7 @@ metadata:
   labels:
     strimzi.io/cluster: my-cluster
 spec:
-  partitions: 1 <1>
+  partitions: 10 <1>
   replicas: 3 <2>
   config:
     min.insync.replicas: 2 <3>
