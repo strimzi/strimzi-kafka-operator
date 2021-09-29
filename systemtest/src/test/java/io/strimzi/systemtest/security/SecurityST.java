@@ -29,7 +29,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
