@@ -484,19 +484,19 @@ class UserST extends AbstractST {
             if (typeOfUser.equals("TLS")) {
                 resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(userClusterName, userNameWithSuffix)
                     .editMetadata()
-                        .withNamespace(NAMESPACE)
+                        .withNamespace(INFRA_NAMESPACE)
                     .endMetadata()
                     .build());
             } else {
                 resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(userClusterName, userNameWithSuffix)
                     .editMetadata()
-                        .withNamespace(NAMESPACE)
+                        .withNamespace(INFRA_NAMESPACE)
                     .endMetadata()
                     .build());
             }
 
             LOGGER.debug("Checking status of KafkaUser {}", userNameWithSuffix);
-            Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userNameWithSuffix).get()
+            Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(INFRA_NAMESPACE).withName(userNameWithSuffix).get()
                     .getStatus().getConditions().get(0);
             LOGGER.debug("KafkaUser condition status: {}", kafkaCondition.getStatus());
             LOGGER.debug("KafkaUser condition type: {}", kafkaCondition.getType());
@@ -544,7 +544,7 @@ class UserST extends AbstractST {
             assertThat(kafkaCondition.getType(), is(Ready.toString()));
             LOGGER.debug("KafkaUser {} is in desired state: {}", userNameWithSuffix, kafkaCondition.getType());
 
-            KafkaUserQuotas kuqAfter = KafkaUserResource.kafkaUserClient().inNamespace(NAMESPACE).withName(userNameWithSuffix).get().getSpec().getQuotas();
+            KafkaUserQuotas kuqAfter = KafkaUserResource.kafkaUserClient().inNamespace(INFRA_NAMESPACE).withName(userNameWithSuffix).get().getSpec().getQuotas();
             LOGGER.debug("Check altered KafkaUser {} new quotas.", userNameWithSuffix);
             assertThat(kuqAfter.getRequestPercentage(), is(requestsPercentage));
             assertThat(kuqAfter.getConsumerByteRate(), is(consumerRate));
