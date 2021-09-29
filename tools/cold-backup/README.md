@@ -1,10 +1,12 @@
 ## Strimzi backup
 
-Bash script for cold/offline backups of Kafka clusters on Kubernetes/OpenShift. Only local file system is supported. Make sure to have enough free space in the target directory.
+Bash script for offline (_cold_) backups of Kafka clusters on Kubernetes or OpenShift. The script only supports a local file system. Make sure you have enough free disk space in the target directory.
 
-If you think you do not need a backup strategy for Kafka because of its embedded data replication, then consider the impact of a misconfiguration, bug or security breach that deleted all your data. For hot/online backups, you can use storage snapshotting or streaming into object storage.
+If you think you don't need a backup strategy for Kafka because of its embedded data replication, then consider the impact of a misconfiguration, bug, or security breach that deletes all of your data. For online (_hot_) backups, you can use storage snapshotting or stream into object storage.
 
-To run the script, the Kubernetes user must have permission to work with PVC and Strimzi custom resources. The procedure will stop the Cluster Operator and selected cluster for the duration of the backup. Before restoring the Kafka cluster you need to make sure to have the right version of Strimzi CRDs installed. If you have a single cluster-wide Cluster Operator, then you need to scale it down manually. You can run backup and restore procedures for different Kafka clusters in parallel. Only the local file system is supported. Consumer group offsets are included, but not Kafka Connect, MirrorMaker and Kafka Bridge custom resources.
+Run the script as a Kubernetes user with permission to work with PVC and Strimzi custom resources. 
+
+The procedure will stop the Cluster Operator and selected cluster for the duration of the backup. Before restoring the Kafka cluster you need to make sure to have the right version of Strimzi CRDs installed. If you have a single cluster-wide Cluster Operator, then you need to scale it down manually. You can run backup and restore procedures for different Kafka clusters in parallel. Consumer group offsets are included, but not Kafka Connect, MirrorMaker and Kafka Bridge custom resources.
 
 ## Requirements
 
