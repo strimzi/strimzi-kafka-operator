@@ -128,7 +128,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    void createClassResources(ExtensionContext extensionContext) {
+    void setUp(ExtensionContext extensionContext) {
         cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName()), NAMESPACE);
 
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");

@@ -125,7 +125,7 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    void setUp(ExtensionContext extensionContext) {
         cluster.createNamespace(CollectorElement.createCollectorElement(
             extensionContext.getRequiredTestClass().getName(),
             extensionContext.getDisplayName()), NAMESPACE);

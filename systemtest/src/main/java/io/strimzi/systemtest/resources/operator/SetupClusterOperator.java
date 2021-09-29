@@ -491,7 +491,7 @@ public class SetupClusterOperator {
 
     public void unInstall() {
         LOGGER.info(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.info("Un-installing cluster operator from {} namespace", Constants.INFRA_NAMESPACE);
+        LOGGER.info("Un-installing cluster operator from {} namespace", namespaceInstallTo);
         LOGGER.info(String.join("", Collections.nCopies(76, "=")));
         BeforeAllOnce.getSharedExtensionContext().getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, null);
 
@@ -510,7 +510,7 @@ public class SetupClusterOperator {
             }
 
             KubeClusterResource.getInstance().deleteNamespace(
-                CollectorElement.createCollectorElement(testClassName, testMethodName), Constants.INFRA_NAMESPACE);
+                CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo);
         }
     }
 

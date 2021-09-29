@@ -71,6 +71,10 @@ public class KafkaRebalanceUtils {
     }
 
     public static void doRebalancingProcess(Reconciliation reconciliation, String namespaceName, String rebalanceName) {
+        LOGGER.infoCr(reconciliation, "===================================================================");
+        LOGGER.infoCr(reconciliation, KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(rebalanceName).get().getStatus().getConditions().get(0).getType());
+        LOGGER.infoCr(reconciliation, "===================================================================");
+
         // it can sometimes happen that KafkaRebalance is already in the ProposalReady state -> race condition prevention
         if (!rebalanceStateCondition(reconciliation, namespaceName, rebalanceName).getType().equals(KafkaRebalanceState.ProposalReady.name())) {
             LOGGER.infoCr(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
@@ -81,6 +85,10 @@ public class KafkaRebalanceUtils {
 
             waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.ProposalReady);
         }
+
+        LOGGER.infoCr(reconciliation, "===================================================================");
+        LOGGER.infoCr(reconciliation, KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(rebalanceName).get().getStatus().getConditions().get(0).getType());
+        LOGGER.infoCr(reconciliation, "===================================================================");
 
         LOGGER.infoCr(reconciliation, "Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
 
