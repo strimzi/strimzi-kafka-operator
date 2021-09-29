@@ -1955,7 +1955,7 @@ spec:
                     description: Storage type, must be either 'ephemeral' or 'persistent-claim'.
                 required:
                 - type
-                description: Storage configuration (disk). Cannot be updated.
+                description: Storage configuration (disk). Optional.
               build:
                 type: object
                 properties:
@@ -2146,7 +2146,6 @@ spec:
                   the client.rack consumer configuration.
             required:
             - bootstrapServers
-            - storage
             description: The specification of the Kafka Connect cluster.
           status:
             type: object
