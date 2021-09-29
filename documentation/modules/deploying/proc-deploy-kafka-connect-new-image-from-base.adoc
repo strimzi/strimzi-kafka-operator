@@ -65,6 +65,8 @@ $ tree ./_my-plugins_/
     ├── protobuf-java-2.6.1.jar
     └── README.md
 ----
++
+NOTE: This example uses the Debezium connectors for MongoDB, MySQL, and PostgreSQL. Debezium running in Kafka Connect looks the same as any other Kafka Connect task.
 
 . Build the container image.
 
