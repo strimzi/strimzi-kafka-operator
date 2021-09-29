@@ -1927,14 +1927,16 @@ include::../api/io.strimzi.api.kafka.model.connect.build.Build.adoc[leveloffset=
 
 [options="header"]
 |====
-|Property          |Description
-|output     1.2+<.<a|Configures where should the newly built image be stored. Required. The type depends on the value of the `output.type` property within the given object, which must be one of [docker, imagestream].
+|Property           |Description
+|pullSecret  1.2+<.<a|Secret used to pull base image.
+|string
+|output      1.2+<.<a|Configures where should the newly built image be stored. Required. The type depends on the value of the `output.type` property within the given object, which must be one of [docker, imagestream].
 |xref:type-DockerOutput-{context}[`DockerOutput`], xref:type-ImageStreamOutput-{context}[`ImageStreamOutput`]
-|resources  1.2+<.<a|CPU and memory resources to reserve for the build. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
+|resources   1.2+<.<a|CPU and memory resources to reserve for the build. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
-|plugins    1.2+<.<a|List of connector plugins which should be added to the Kafka Connect. Required.
+|plugins     1.2+<.<a|List of connector plugins which should be added to the Kafka Connect. Required.
 |xref:type-Plugin-{context}[`Plugin`] array
 |====
 

@@ -1901,6 +1901,9 @@ spec:
               build:
                 type: object
                 properties:
+                  pullSecret:
+                    type: string
+                    description: Secret used to pull base image.
                   output:
                     type: object
                     properties:

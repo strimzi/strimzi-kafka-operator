@@ -22,6 +22,7 @@ import io.fabric8.openshift.api.model.BuildOutput;
 import io.fabric8.openshift.api.model.BuildOutputBuilder;
 import io.fabric8.openshift.api.model.BuildRequest;
 import io.fabric8.openshift.api.model.BuildRequestBuilder;
+import io.fabric8.openshift.api.model.DockerBuildStrategyBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -405,6 +406,11 @@ public class KafkaConnectBuild extends AbstractModel {
             throw new RuntimeException("Unknown output type " + build.getOutput().getType());
         }
 
+        DockerBuildStrategyBuilder dockerBuildStrategyBuilder = new DockerBuildStrategyBuilder();
+        if (build.getPullSecret() != null) {
+            dockerBuildStrategyBuilder.withNewPullSecret().withName(build.getPullSecret()).endPullSecret();
+        }
+
         return new BuildConfigBuilder()
                 .withNewMetadata()
                     .withName(KafkaConnectResources.buildConfigName(cluster))
@@ -421,8 +427,7 @@ public class KafkaConnectBuild extends AbstractModel {
                     .endSource()
                     .withNewStrategy()
                         .withType("Docker")
-                        .withNewDockerStrategy()
-                        .endDockerStrategy()
+                        .withDockerStrategy(dockerBuildStrategyBuilder.build())
                     .endStrategy()
                     .withResources(build.getResources())
                     .withRunPolicy("Serial")
