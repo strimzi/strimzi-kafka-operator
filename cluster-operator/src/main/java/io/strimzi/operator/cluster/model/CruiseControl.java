@@ -261,9 +261,9 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.setTlsSidecar(tlsSidecar);
 
             cruiseControl = cruiseControl.updateConfiguration(spec);
-            CruiseControlConfiguration c = (CruiseControlConfiguration) cruiseControl.getConfiguration();
-            cruiseControl.sslEnabled = isApiSslEnabled(c);
-            cruiseControl.authEnabled = isApiAuthEnabled(c);
+            CruiseControlConfiguration ccConfiguration = (CruiseControlConfiguration) cruiseControl.getConfiguration();
+            cruiseControl.sslEnabled = isApiSslEnabled(ccConfiguration);
+            cruiseControl.authEnabled = isApiAuthEnabled(ccConfiguration);
 
             KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
             if (configuration.getConfigOption(MIN_INSYNC_REPLICAS) != null) {

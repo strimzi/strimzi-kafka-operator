@@ -178,7 +178,7 @@ You should not disable the built-in HTTP Basic authentication or SSL settings de
 * To disable the built-in HTTP Basic authentication, set `webserver.security.enable` to `false`.
 * To disable the built-in SSL, set `webserver.ssl.enable` to `false`.
 
-.Example Cruise Control configuration to disable API authorization and authentication
+.Example Cruise Control configuration to disable API authorization, authentication, and SSL
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}

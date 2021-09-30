@@ -8,7 +8,7 @@
 * Enable Cruise Control anomaly.detection configurations
 * Add support for building connector images from the Maven coordinates
 * Allow Kafka Connect Build artifacts to be downloaded from insecure servers (#5542)
-* Configurable auth and SSL for Cruise Control API
+* Configurable authentication, authorization, and SSL for Cruise Control API
 
 ### Changes, deprecations and removals
 
