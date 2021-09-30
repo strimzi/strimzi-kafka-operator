@@ -6,8 +6,9 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -40,9 +41,12 @@ class KafkaAvailability {
 
     private final Reconciliation reconciliation;
 
+    private final Vertx vertx;
+
     private final Future<Collection<TopicDescription>> descriptions;
 
-    KafkaAvailability(Reconciliation reconciliation, Admin ac) {
+    KafkaAvailability(Reconciliation reconciliation, Vertx vertx, Admin ac) {
+        this.vertx = vertx;
         this.ac = ac;
         this.reconciliation = reconciliation;
         // 1. Get all topic names
@@ -59,9 +63,9 @@ class KafkaAvailability {
      * Determine whether the given broker can be rolled without affecting
      * producers with acks=all publishing to topics with a {@code min.in.sync.replicas}.
      */
-    Future<Boolean> canRoll(int podId) {
+    Future<Boolean> canRoll(int podId, Set<Integer> restartingBrokers) {
         LOGGER.debugCr(reconciliation, "Determining whether broker {} can be rolled", podId);
-        return canRollBroker(descriptions, podId);
+        return canRollBroker(descriptions, podId, restartingBrokers);
     }
 
    /**
@@ -82,7 +86,7 @@ class KafkaAvailability {
     }
 
 
-    private Future<Boolean> canRollBroker(Future<Collection<TopicDescription>> descriptions, int podId) {
+    private Future<Boolean> canRollBroker(Future<Collection<TopicDescription>> descriptions, int podId, Set<Integer> restartingBrokers) {
         Future<Set<TopicDescription>> topicsOnGivenBroker = descriptions
                 .compose(topicDescriptions -> {
                     LOGGER.debugCr(reconciliation, "Got {} topic descriptions", topicDescriptions.size());
@@ -94,13 +98,13 @@ class KafkaAvailability {
 
         // 4. Get topic configs (for those on $broker)
         Future<Map<String, Config>> topicConfigsOnGivenBroker = topicsOnGivenBroker
-                .compose(td -> topicConfigs(td.stream().map(t -> t.name()).collect(Collectors.toSet())));
+                .compose(td -> topicConfigs(td.stream().map(TopicDescription::name).collect(Collectors.toSet())));
 
         // 5. join
         return topicConfigsOnGivenBroker.map(topicNameToConfig -> {
             Collection<TopicDescription> tds = topicsOnGivenBroker.result();
             boolean canRoll = tds.stream().noneMatch(
-                td -> wouldAffectAvailability(podId, topicNameToConfig, td));
+                td -> wouldAffectAvailability(podId, topicNameToConfig, td, restartingBrokers));
             if (!canRoll) {
                 LOGGER.debugCr(reconciliation, "Restart pod {} would remove it from ISR, stalling producers with acks=all", podId);
             }
@@ -111,7 +115,7 @@ class KafkaAvailability {
         });
     }
 
-    private boolean wouldAffectAvailability(int broker, Map<String, Config> nameToConfig, TopicDescription td) {
+    private boolean wouldAffectAvailability(int broker, Map<String, Config> nameToConfig, TopicDescription td, Set<Integer> restartingBrokers) {
         Config config = nameToConfig.get(td.name());
         ConfigEntry minIsrConfig = config.get(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG);
         int minIsr;
@@ -124,41 +128,42 @@ class KafkaAvailability {
         }
 
         for (TopicPartitionInfo pi : td.partitions()) {
-            List<Node> isr = pi.isr();
             if (minIsr >= 0) {
+                // Override the ISR given by the controller to also remove brokers which are already known to be in
+                // the process of restarting (because ISR shrink and metadata propagation aren't instantaneous but we
+                // might try to restart two brokers at the same time).
+                List<Node> effectiveIsr = pi.isr().stream().filter(node -> !restartingBrokers.contains(node.id())).collect(Collectors.toList());
                 if (pi.replicas().size() <= minIsr) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debugCr(reconciliation, "{}/{} will be under-replicated (ISR={{}}, replicas=[{}], {}={}) if broker {} is restarted, but there are only {} replicas.",
-                                td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
-                                pi.replicas().size());
-                    }
-                } else if (isr.size() < minIsr
+                    LOGGER.debugCr(reconciliation, "{}/{} will be under-replicated (effective ISR={{}}, replicas=[{}], {}={}) if broker {} is restarted, but there are only {} replicas.",
+                            td.name(), pi.partition(), nodeList(effectiveIsr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
+                            pi.replicas().size());
+                } else if (effectiveIsr.size() < minIsr
                         && contains(pi.replicas(), broker)) {
                     if (LOGGER.isInfoEnabled()) {
                         String msg;
-                        if (contains(isr, broker)) {
-                            msg = "{}/{} is already under-replicated (ISR={{}}, replicas=[{}], {}={}); broker {} is in the ISR, " +
-                                                          "so should not be restarted right now (it would impact consumers).";
+                        if (contains(effectiveIsr, broker)) {
+                            msg = "{}/{} is already under-replicated (effective ISR={{}}, replicas=[{}], {}={}); broker {} is in the ISR, " +
+                                    "so should not be restarted right now (it would impact consumers).";
                         } else {
-                            msg = "{}/{} is already under-replicated (ISR={{}}, replicas=[{}], {}={}); broker {} has a replica, " +
-                                                          "so should not be restarted right now (it might be first to catch up).";
+                            msg = "{}/{} is already under-replicated (effective ISR={{}}, replicas=[{}], {}={}); broker {} has a replica, " +
+                                    "so should not be restarted right now (it might be first to catch up).";
                         }
                         LOGGER.infoCr(reconciliation, msg,
-                                td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
+                                td.name(), pi.partition(), nodeList(effectiveIsr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
                     }
                     return true;
-                } else if (isr.size() == minIsr
-                        && contains(isr, broker)) {
+                } else if (effectiveIsr.size() == minIsr
+                        && contains(effectiveIsr, broker)) {
                     if (minIsr < pi.replicas().size()) {
                         if (LOGGER.isInfoEnabled()) {
-                            LOGGER.infoCr(reconciliation, "{}/{} will be under-replicated (ISR={{}}, replicas=[{}], {}={}) if broker {} is restarted.",
-                                    td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
+                            LOGGER.infoCr(reconciliation, "{}/{} will be under-replicated (effective ISR={{}}, replicas=[{}], {}={}) if broker {} is restarted.",
+                                    td.name(), pi.partition(), nodeList(effectiveIsr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
                         }
                         return true;
                     } else {
                         if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debugCr(reconciliation, "{}/{} will be under-replicated (ISR={{}}, replicas=[{}], {}={}) if broker {} is restarted, but there are only {} replicas.",
-                                    td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
+                            LOGGER.debugCr(reconciliation, "{}/{} will be under-replicated (effective ISR={{}}, replicas=[{}], {}={}) if broker {} is restarted, but there are only {} replicas.",
+                                    td.name(), pi.partition(), nodeList(effectiveIsr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
                                     pi.replicas().size());
                         }
                     }
@@ -172,7 +177,7 @@ class KafkaAvailability {
         return isr.stream().map(Node::idString).collect(Collectors.joining(","));
     }
 
-    private boolean contains(List<Node> isr, int broker) {
+    private static boolean contains(List<Node> isr, int broker) {
         return isr.stream().anyMatch(node -> node.id() == broker);
     }
 
@@ -181,19 +186,13 @@ class KafkaAvailability {
         List<ConfigResource> configs = topicNames.stream()
                 .map((String topicName) -> new ConfigResource(ConfigResource.Type.TOPIC, topicName))
                 .collect(Collectors.toList());
-        Promise<Map<String, Config>> promise = Promise.promise();
-        ac.describeConfigs(configs).all().whenComplete((topicNameToConfig, error) -> {
-            if (error != null) {
-                promise.fail(error);
-            } else {
-                LOGGER.debugCr(reconciliation, "Got topic configs for {} topics", topicNames.size());
-                promise.complete(topicNameToConfig.entrySet().stream()
-                        .collect(Collectors.toMap(
-                            entry -> entry.getKey().name(),
-                            entry -> entry.getValue())));
-            }
-        });
-        return promise.future();
+        return Util.kafkaFutureToVertxFuture(reconciliation, vertx, ac.describeConfigs(configs).all().thenApply(topicNameToConfig -> {
+                    LOGGER.debugCr(reconciliation, "Got topic configs for {} topics", topicNames.size());
+                    return topicNameToConfig.entrySet().stream()
+                            .collect(Collectors.toMap(
+                                    entry -> entry.getKey().name(),
+                                    Map.Entry::getValue));
+                }));
     }
 
     private Set<TopicDescription> groupTopicsByBroker(Collection<TopicDescription> tds, int podId) {
@@ -212,30 +211,17 @@ class KafkaAvailability {
     }
 
     protected Future<Collection<TopicDescription>> describeTopics(Set<String> names) {
-        Promise<Collection<TopicDescription>> descPromise = Promise.promise();
-        ac.describeTopics(names).all()
-                .whenComplete((tds, error) -> {
-                    if (error != null) {
-                        descPromise.fail(error);
-                    } else {
-                        LOGGER.debugCr(reconciliation, "Got topic descriptions for {} topics", tds.size());
-                        descPromise.complete(tds.values());
-                    }
-                });
-        return descPromise.future();
+        return Util.kafkaFutureToVertxFuture(reconciliation, vertx, ac.describeTopics(names).all().thenApply(tds -> {
+            LOGGER.debugCr(reconciliation, "Got topic descriptions for {} topics", tds.size());
+            return tds.values();
+                }));
     }
 
     protected Future<Set<String>> topicNames() {
-        Promise<Set<String>> namesPromise = Promise.promise();
-        ac.listTopics(new ListTopicsOptions().listInternal(true)).names()
-                .whenComplete((names, error) -> {
-                    if (error != null) {
-                        namesPromise.fail(error);
-                    } else {
+        return Util.kafkaFutureToVertxFuture(reconciliation, vertx, ac.listTopics(new ListTopicsOptions().listInternal(true)).names()
+                .thenApply(names -> {
                         LOGGER.debugCr(reconciliation, "Got {} topic names", names.size());
-                        namesPromise.complete(names);
-                    }
-                });
-        return namesPromise.future();
+                        return names;
+                }));
     }
 }

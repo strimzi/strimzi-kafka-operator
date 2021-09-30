@@ -4,277 +4,118 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.junit5.Checkpoint;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
-import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.Config;
-import org.apache.kafka.clients.admin.ConfigEntry;
-import org.apache.kafka.clients.admin.DescribeConfigsResult;
-import org.apache.kafka.clients.admin.DescribeTopicsResult;
-import org.apache.kafka.clients.admin.ListTopicsResult;
-import org.apache.kafka.clients.admin.TopicDescription;
-import org.apache.kafka.common.KafkaFuture;
-import org.apache.kafka.common.Node;
-import org.apache.kafka.common.TopicPartitionInfo;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
-import org.apache.kafka.common.internals.KafkaFutureImpl;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-@ExtendWith(VertxExtension.class)
 public class KafkaAvailabilityTest {
 
+    private static Vertx vertx;
 
-    static class KSB {
-        private Throwable listTopicsResult;
-        private Map<String, Throwable> describeTopicsResult = new HashMap<>(1);
-        private Map<ConfigResource, Throwable> describeConfigsResult = new HashMap<>(1);
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
 
-        class TSB {
-            class PSB {
-                private final Integer id;
-                private int[] isr = new int[0];
-                private Integer leader;
-                private int[] replicaOn = new int[0];
+    @AfterAll
+    public static void after() {
+        vertx.close();
+    }
 
-                public PSB(Integer p) {
-                    this.id = p;
-                }
-                PSB replicaOn(int... broker) {
-                    addBroker(broker);
-                    this.replicaOn = broker;
-                    return this;
-                }
-
-                PSB leader(int broker) {
-                    addBroker(broker);
-                    this.leader = broker;
-                    return this;
-                }
-
-                PSB isr(int... broker) {
-                    addBroker(broker);
-                    this.isr = broker;
-                    return this;
-                }
-                TSB endPartition() {
-                    if (this.leader != null) {
-                        if (!IntStream.of(this.replicaOn).anyMatch(x -> x == this.leader)) {
-                            throw new RuntimeException("Leader must be one of the replicas");
-                        }
-                        if (!IntStream.of(this.isr).anyMatch(x -> x == this.leader)) {
-                            throw new RuntimeException("ISR must include the leader");
-                        }
-                    }
-                    if (!IntStream.of(this.isr).allMatch(x -> IntStream.of(this.replicaOn).anyMatch(y -> x == y))) {
-                        throw new RuntimeException("ISR must be a subset of the replicas");
-                    }
-                    return TSB.this;
-                }
-            }
-            private final String name;
-            private final boolean internal;
-            private Map<String, String> configs = new HashMap<>();
-            private Map<Integer, PSB> partitions = new HashMap<>();
-
-            public TSB(String name, boolean internal) {
-                this.name = name;
-                this.internal = internal;
-            }
-
-            TSB addToConfig(String config, String value) {
-                configs.put(config, value);
-                return this;
-            }
-            PSB addNewPartition(int partition) {
-                return partitions.computeIfAbsent(partition, p -> new PSB(p));
-            }
-
-
-            KSB endTopic() {
-                return KSB.this;
-            }
-        }
-
-        class BSB {
-
-            private int id;
-
-            public BSB(int id) {
-                this.id = id;
-                KSB.this.nodes.put(id, new Node(id, "localhost", 1234 + id));
-            }
-
-            KSB endBroker() {
-                return KSB.this;
-            }
-        }
-
-        private Map<String, TSB> topics = new HashMap<>();
-        private Map<Integer, BSB> brokers = new HashMap<>();
-        private Map<Integer, Node> nodes = new HashMap<>();
-
-        TSB addNewTopic(String name, boolean internal) {
-            return topics.computeIfAbsent(name, n -> new TSB(n, internal));
-        }
-
-        KSB addBroker(int... ids) {
-            for (int id : ids) {
-                brokers.computeIfAbsent(id, i -> new BSB(i));
-            }
-            return this;
-        }
-
-        static <T> KafkaFuture<T> failedFuture(Throwable t) {
-            KafkaFutureImpl kafkaFuture = new KafkaFutureImpl();
-            kafkaFuture.completeExceptionally(t);
-            return kafkaFuture;
-        }
-
-        ListTopicsResult mockListTopics() {
-            ListTopicsResult ltr = mock(ListTopicsResult.class);
-            when(ltr.names()).thenAnswer(invocation -> {
-                return listTopicsResult != null ? failedFuture(listTopicsResult) : KafkaFuture.completedFuture(new HashSet<>(topics.keySet()));
-            });
-            when(ltr.listings()).thenThrow(notImplemented());
-            when(ltr.namesToListings()).thenThrow(notImplemented());
-            return ltr;
-        }
-
-        KSB listTopicsResult(Throwable t) {
-            listTopicsResult = t;
-            return this;
-        }
-
-        KSB describeTopicsResult(String topic, Throwable t) {
-            describeTopicsResult.put(topic, t);
-            return this;
-        }
-
-        KSB describeConfigsResult(ConfigResource config, Throwable t) {
-            describeConfigsResult.put(config, t);
-            return this;
-        }
-
-        private Throwable notImplemented() {
-            UnsupportedOperationException unsupportedOperationException = new UnsupportedOperationException("Not implemented by " + KSB.class.getName());
-            //unsupportedOperationException.printStackTrace();
-            return unsupportedOperationException;
-        }
-
-        void mockDescribeTopics(Admin mockAc) {
-            when(mockAc.describeTopics(any())).thenAnswer(invocation -> {
-                DescribeTopicsResult dtr = mock(DescribeTopicsResult.class);
-                Collection<String> topicNames = invocation.getArgument(0);
-                Throwable throwable = null;
-                for (String topicName : topicNames) {
-                    throwable = describeTopicsResult.get(topicName);
-                    if (throwable != null) {
-                        break;
-                    }
-                }
-                if (throwable != null) {
-                    when(dtr.all()).thenReturn(failedFuture(throwable));
-                } else {
-                    Map<String, TopicDescription> tds = topics.entrySet().stream().collect(Collectors.toMap(
-                        e -> e.getKey(),
-                        e -> {
-                            TSB tsb = e.getValue();
-                            return new TopicDescription(tsb.name, tsb.internal,
-                                    tsb.partitions.entrySet().stream().map(e1 -> {
-                                        TSB.PSB psb = e1.getValue();
-                                        return new TopicPartitionInfo(psb.id,
-                                                psb.leader != null ? node(psb.leader) : Node.noNode(),
-                                                Arrays.stream(psb.replicaOn).boxed().map(broker -> node(broker)).collect(Collectors.toList()),
-                                                Arrays.stream(psb.isr).boxed().map(broker -> node(broker)).collect(Collectors.toList()));
-                                    }).collect(Collectors.toList()));
-                        }
-                    ));
-                    when(dtr.all()).thenReturn(KafkaFuture.completedFuture(tds));
-                    when(dtr.values()).thenThrow(notImplemented());
-                }
-                return dtr;
-            });
-        }
-
-        private Node node(int id) {
-            return nodes.computeIfAbsent(id, x -> {
-                throw new RuntimeException("Unknown node " + id);
-            });
-        }
-
-        void mockDescribeConfigs(Admin mockAc) {
-            when(mockAc.describeConfigs(any())).thenAnswer(invocation -> {
-                Collection<ConfigResource> argument = invocation.getArgument(0);
-                DescribeConfigsResult dcr = mock(DescribeConfigsResult.class);
-                Throwable throwable = null;
-                for (ConfigResource configResource : argument) {
-                    throwable = describeConfigsResult.get(configResource);
-                    if (throwable != null) {
-                        break;
-                    }
-                }
-                when(dcr.values()).thenThrow(notImplemented());
-                if (throwable != null) {
-                    when(dcr.all()).thenReturn(failedFuture(throwable));
-                } else {
-                    Map<ConfigResource, Config> result = new HashMap<>();
-                    for (ConfigResource cr : argument) {
-                        List<ConfigEntry> entries = new ArrayList<>();
-                        for (Map.Entry<String, String> e : topics.get(cr.name()).configs.entrySet()) {
-                            ConfigEntry ce = new ConfigEntry(e.getKey(), e.getValue());
-                            entries.add(ce);
-                        }
-                        result.put(cr, new Config(entries));
-                    }
-                    when(dcr.all()).thenReturn(KafkaFuture.completedFuture(result));
-                }
-                return dcr;
-            });
-        }
-
-        Admin ac() {
-            Admin ac = mock(AdminClient.class);
-
-            ListTopicsResult ltr = mockListTopics();
-            when(ac.listTopics(any())).thenReturn(ltr);
-
-            mockDescribeTopics(ac);
-
-            mockDescribeConfigs(ac);
-
-            return ac;
+    static class UncheckedInterruptedException extends RuntimeException{
+        public UncheckedInterruptedException(Throwable cause) {
+            super(cause);
         }
     }
 
+    private static <T> T await(Future<T> future) {
+        CountDownLatch latch = new CountDownLatch(1);
+        future.onComplete(ar -> {
+            latch.countDown();
+        });
+        try {
+            if (latch.await(1, TimeUnit.SECONDS)) {
+                if (future.failed()) {
+                    Assertions.fail(future.cause());
+                }
+                return future.result();
+            } else {
+                Assertions.fail("Future wasn't completed within timeout");
+                throw new RuntimeException(); // to appease definite return checking
+            }
+        } catch (InterruptedException e) {
+            throw new UncheckedInterruptedException(e);
+        }
+    }
+
+    private static Throwable awaitThrows(Future<?> future) {
+        CountDownLatch latch = new CountDownLatch(1);
+        future.onComplete(ar -> {
+            latch.countDown();
+        });
+        try {
+            if (latch.await(1, TimeUnit.SECONDS)) {
+                if (future.succeeded()) {
+                    Assertions.fail("Expected future to have failed");
+                }
+                return future.cause();
+            } else {
+                Assertions.fail("Future wasn't completed within timeout");
+                throw new RuntimeException(); // to appease definite return checking
+            }
+        } catch (InterruptedException e) {
+            throw new UncheckedInterruptedException(e);
+        }
+    }
+
+    private ClusterModel clusterWithTwoTopics(int numBrokers, int minIsr, List<Integer> isr) {
+        ClusterModel clusterModel = new ClusterModel()
+                .addNBrokers(numBrokers)
+                .addNewTopic("A")
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, Integer.toString(minIsr))
+                    .addNewPartition(0)
+                        .replicaOn(0, 1, 2)
+                        .leader(0)
+                        .isr(isr.stream().mapToInt(Integer::intValue).toArray())
+                    .endPartition()
+                .endTopic()
+                .addNewTopic("B")
+                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, Integer.toString(minIsr))
+                    .addNewPartition(0)
+                        .replicaOn(1, 2, 0)
+                        .leader(1)
+                        .isr(isr.stream().mapToInt(Integer::intValue).toArray())
+                    .endPartition()
+                .endTopic();
+        return clusterModel;
+    }
+
     @Test
-    public void testBelowMinIsr(VertxTestContext context) {
-        KSB ksb = new KSB()
-            .addNewTopic("A", false)
+    public void testBelowMinIsr() throws InterruptedException {
+        ClusterModel clusterModel = new ClusterModel()
+            .addNewTopic("A")
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
                 .addNewPartition(0)
                     .replicaOn(0, 1, 3)
@@ -282,7 +123,7 @@ public class KafkaAvailabilityTest {
                     .isr(0, 1)
                 .endPartition()
             .endTopic()
-            .addNewTopic("B", false)
+            .addNewTopic("B")
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
                 .addNewPartition(0)
                     .replicaOn(0, 1, 3)
@@ -291,29 +132,38 @@ public class KafkaAvailabilityTest {
                 .endPartition()
             .endTopic()
 
-            .addBroker(4);
+            .addNBrokers(4);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
 
-        Checkpoint a = context.checkpoint(ksb.brokers.size());
-        for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
-                if (brokerId == 4) {
-                    assertTrue(canRoll,
-                            "broker " + brokerId + " should be rollable, having no partitions");
-                } else {
-                    assertFalse(canRoll,
-                            "broker " + brokerId + " should not be rollable, being minisr = 2 and it's only replicated on two brokers");
-                }
-                a.flag();
-            })));
-        }
+        assertEquals(Map.of(
+                0, false,
+                1, false,
+                2, true,
+                3, false),
+                canRollBrokers(kafkaAvailability, clusterModel.brokerIds(), Set.of()));
+//        for (Integer brokerId : brokers) {
+//            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+//            if (brokerId == 4) {
+//                assertTrue(canRoll,
+//                        "broker " + brokerId + " should be rollable, having no partitions");
+//            } else {
+//                assertFalse(canRoll,
+//                        "broker " + brokerId + " should not be rollable, being minisr = 2 and it's only replicated on two brokers");
+//            }
+//        }
+    }
+
+    private Map<Integer, Boolean> canRollBrokers(KafkaAvailability kafkaAvailability,
+                                                 Set<Integer> brokers,
+                                                 Set<Integer> rollingBrokers) {
+        return brokers.stream().collect(Collectors.toMap(brokerId -> brokerId, brokerId -> await(kafkaAvailability.canRoll(brokerId, rollingBrokers))));
     }
 
     @Test
-    public void testAtMinIsr(VertxTestContext context) {
-        KSB ksb = new KSB()
-            .addNewTopic("A", false)
+    public void testAtMinIsr() throws InterruptedException {
+        ClusterModel clusterModel = new ClusterModel()
+            .addNewTopic("A")
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
                 .addNewPartition(0)
                     .replicaOn(0, 1)
@@ -321,7 +171,7 @@ public class KafkaAvailabilityTest {
                     .isr(0, 1)
                 .endPartition()
             .endTopic()
-            .addNewTopic("B", false)
+            .addNewTopic("B")
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
                 .addNewPartition(0)
                     .replicaOn(0, 1)
@@ -330,63 +180,67 @@ public class KafkaAvailabilityTest {
                 .endPartition()
             .endTopic()
 
-            .addBroker(2);
+            .addNBrokers(2);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
 
-        Checkpoint a = context.checkpoint(ksb.brokers.size());
-        for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
-                if (brokerId == 2) {
-                    assertTrue(canRoll,
-                            "broker " + brokerId + " should be rollable, having no partitions");
-                } else {
-                    assertTrue(canRoll,
-                            "broker " + brokerId + " should be rollable, because although rolling it will impact availability minisr=|replicas|");
-                }
-                a.flag();
-            })));
-        }
-    }
+        Set<Integer> brokers = clusterModel.brokerIds();
 
-    @Test
-    public void testAboveMinIsr(VertxTestContext context) {
-        KSB ksb = new KSB()
-                .addNewTopic("A", false)
-                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-                    .addNewPartition(0)
-                        .replicaOn(0, 1, 2)
-                        .leader(0)
-                        .isr(0, 1, 2)
-                    .endPartition()
-                .endTopic()
-                .addNewTopic("B", false)
-                    .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
-                    .addNewPartition(0)
-                        .replicaOn(0, 1, 2)
-                        .leader(1)
-                        .isr(0, 1, 2)
-                    .endPartition()
-                .endTopic()
-
-                .addBroker(3);
-
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
-
-        Checkpoint a = context.checkpoint(ksb.brokers.size());
-        for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
+        for (Integer brokerId : brokers) {
+            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+            if (brokerId == 2) {
                 assertTrue(canRoll,
-                        "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
-                a.flag();
-            })));
+                        "broker " + brokerId + " should be rollable, having no partitions");
+            } else {
+                assertTrue(canRoll,
+                        "broker " + brokerId + " should be rollable, because although rolling it will impact availability minisr=|replicas|");
+            }
+        }
+    }
+
+
+    @Test
+    public void testAboveMinIsr() throws InterruptedException {
+        ClusterModel clusterModel = clusterWithTwoTopics(3, 3, List.of(0, 1, 2));
+
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
+
+        Set<Integer> brokers = clusterModel.brokerIds();
+        for (Integer brokerId1 : brokers) {
+            boolean canRoll1 = await(kafkaAvailability.canRoll(brokerId1, Set.of()));
+            ((BiConsumer<Integer, Boolean>) (brokerId, canRoll) -> Assertions.assertTrue(canRoll, "broker " + brokerId + " should be rollable, since it has no URP")).accept(brokerId1, canRoll1);
         }
     }
 
     @Test
-    public void testMinIsrEqualsReplicas(VertxTestContext context) {
-        KSB ksb = new KSB()
-                .addNewTopic("A", false)
+    public void testAboveMinIsrWhileRestartingBrokers() throws InterruptedException {
+        ClusterModel clusterModel = clusterWithTwoTopics(3, 3, List.of(0, 1, 2));
+
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
+
+        assertEquals(Map.of(0, true, 1, false, 2, true),
+                canRollBrokers(kafkaAvailability, clusterModel.brokerIds(), Set.of(1)));
+
+//        Set<Integer> brokers = adminMockBuilder.brokers();
+//        for (Integer brokerId1 : brokers) {
+//            boolean canRoll1 = await(kafkaAvailability.canRoll(brokerId1, Set.of(1)));
+//            ((BiConsumer<Integer, Boolean>) (brokerId, canRoll) -> {
+//                if (brokerId != 1) {
+//                    Assertions.assertTrue(canRoll,
+//                            "broker " + brokerId + " should be rollable, since it has no URP");
+//                } else {
+//                    Assertions.assertFalse(canRoll,
+//                            "broker " + brokerId + " should not be rollable, because while Kafka says no URP, we're already rolling it");
+//                }
+//            }).accept(brokerId1, canRoll1);
+//        }
+    }
+
+
+    @Test
+    public void testMinIsrEqualsReplicas() throws InterruptedException {
+        ClusterModel clusterModel = new ClusterModel()
+                .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "3")
                     .addNewPartition(0)
                         .replicaOn(0, 1, 2)
@@ -395,25 +249,23 @@ public class KafkaAvailabilityTest {
                     .endPartition()
                 .endTopic()
 
-                .addBroker(3);
+                .addNBrokers(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
 
-        Checkpoint a = context.checkpoint(ksb.brokers.size());
-        for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
-                assertTrue(canRoll,
-                        "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
+        Set<Integer> brokers = clusterModel.brokerIds();
 
-                a.flag();
-            })));
+        for (Integer brokerId : brokers) {
+            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+            assertTrue(canRoll,
+                    "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
         }
     }
 
     @Test
-    public void testMinIsrEqualsReplicasWithOfflineReplicas(VertxTestContext context) {
-        KSB ksb = new KSB()
-                .addNewTopic("A", false)
+    public void testMinIsrEqualsReplicasWithOfflineReplicas() throws InterruptedException {
+        ClusterModel clusterModel = new ClusterModel()
+                .addNewTopic("A")
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "3")
                 .addNewPartition(0)
                 .replicaOn(0, 1, 2)
@@ -422,25 +274,22 @@ public class KafkaAvailabilityTest {
                 .endPartition()
                 .endTopic()
 
-                .addBroker(3);
+                .addNBrokers(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
 
-        Checkpoint a = context.checkpoint(ksb.brokers.size());
-        for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
-                assertTrue(canRoll,
-                        "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
-
-                a.flag();
-            })));
+        Set<Integer> brokers = clusterModel.brokerIds();
+        for (Integer brokerId : brokers) {
+            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+            assertTrue(canRoll,
+                    "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
         }
     }
 
     @Test
-    public void testMinIsrMoreThanReplicas(VertxTestContext context) {
-        KSB ksb = new KSB()
-                .addNewTopic("A", false)
+    public void testMinIsrMoreThanReplicas() throws InterruptedException {
+        ClusterModel clusterModel = new ClusterModel()
+                .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
                     .addNewPartition(0)
                         .replicaOn(0)
@@ -448,25 +297,23 @@ public class KafkaAvailabilityTest {
                         .isr(0)
                     .endPartition()
                 .endTopic()
-                .addBroker(3);
+                .addNBrokers(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
 
-        Checkpoint a = context.checkpoint(ksb.brokers.size());
-        for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
-                assertTrue(canRoll,
-                        "broker " + brokerId + " should be rollable, being minisr = 2, but only 1 replicas");
+        Set<Integer> brokers = clusterModel.brokerIds();
 
-                a.flag();
-            })));
+        for (Integer brokerId : brokers) {
+            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+            assertTrue(canRoll,
+                    "broker " + brokerId + " should be rollable, being minisr = 2, but only 1 replicas");
         }
     }
 
     @Test
-    public void testNoLeader(VertxTestContext context) {
-        KSB ksb = new KSB()
-                .addNewTopic("A", false)
+    public void testNoLeader() throws InterruptedException {
+        ClusterModel clusterModel = new ClusterModel()
+                .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
                     .addNewPartition(0)
                         .replicaOn(0, 1, 2)
@@ -474,7 +321,7 @@ public class KafkaAvailabilityTest {
                         .isr(1, 2)
                     .endPartition()
                 .endTopic()
-                .addNewTopic("B", false)
+                .addNewTopic("B")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
                     .addNewPartition(0)
                         .replicaOn(0, 1, 2)
@@ -483,36 +330,34 @@ public class KafkaAvailabilityTest {
                     .endPartition()
                 .endTopic()
 
-                .addBroker(3);
+                .addNBrokers(3);
 
-        KafkaAvailability kafkaSorted = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
+        KafkaAvailability kafkaSorted = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
 
-        Checkpoint a = context.checkpoint(ksb.brokers.size());
-        for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaSorted.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
-                if (brokerId == 0) {
-                    assertFalse(canRoll,
-                            "broker " + brokerId + " should not be rollable, because B/0 would be below min isr");
-                } else {
-                    assertTrue(canRoll,
-                            "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
-                }
-                a.flag();
-            })));
+        Set<Integer> brokers = clusterModel.brokerIds();
+        for (Integer brokerId : brokers) {
+            boolean canRoll = await(kafkaSorted.canRoll(brokerId, Set.of()));
+            if (brokerId == 0) {
+                assertFalse(canRoll,
+                        "broker " + brokerId + " should not be rollable, because B/0 would be below min isr");
+            } else {
+                assertTrue(canRoll,
+                        "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
+            }
         }
     }
 
     @Test
-    public void testNoMinIsr(VertxTestContext context) {
-        KSB ksb = new KSB()
-                .addNewTopic("A", false)
+    public void testNoMinIsr() throws InterruptedException {
+        ClusterModel clusterModel = new ClusterModel()
+                .addNewTopic("A")
                     .addNewPartition(0)
                         .replicaOn(0, 1, 2)
                         .leader(0)
                         .isr(0, 1, 2)
                     .endPartition()
                 .endTopic()
-                .addNewTopic("B", false)
+                .addNewTopic("B")
                     .addNewPartition(0)
                         .replicaOn(0, 1, 2)
                         .leader(1)
@@ -520,25 +365,23 @@ public class KafkaAvailabilityTest {
                     .endPartition()
                 .endTopic()
 
-                .addBroker(3);
+                .addNBrokers(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
 
-        Checkpoint a = context.checkpoint(ksb.brokers.size());
-        for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> context.verify(() -> {
-                assertTrue(canRoll,
-                        "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
-                a.flag();
-            })));
+        Set<Integer> brokers = clusterModel.brokerIds();
+        for (Integer brokerId : brokers) {
+            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+            assertTrue(canRoll,
+                    "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
         }
     }
 
     // TODO when AC throws various exceptions (e.g. UnknownTopicOrPartitionException)
     @Test
-    public void testCanRollThrowsTimeoutExceptionWhenTopicsListThrowsException(VertxTestContext context) {
-        KSB ksb = new KSB()
-                .addNewTopic("A", false)
+    public void testCanRollThrowsTimeoutExceptionWhenTopicsListThrowsException() throws InterruptedException {
+        ClusterModel clusterModel = new ClusterModel()
+                .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
                     .addNewPartition(0)
                         .replicaOn(0, 1, 2)
@@ -546,7 +389,7 @@ public class KafkaAvailabilityTest {
                         .isr(0, 1, 2)
                     .endPartition()
                 .endTopic()
-                .addNewTopic("B", false)
+                .addNewTopic("B")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
                     .addNewPartition(0)
                         .replicaOn(0, 1, 2)
@@ -555,24 +398,22 @@ public class KafkaAvailabilityTest {
                     .endPartition()
                 .endTopic()
 
-                .addBroker(3)
+                .addNBrokers(3)
                 .listTopicsResult(new TimeoutException());
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
 
-        Checkpoint a = context.checkpoint(ksb.brokers.size());
-        for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).onComplete(context.failing(e -> context.verify(() -> {
-                assertThat(e, instanceOf(TimeoutException.class));
-                a.flag();
-            })));
+        Set<Integer> brokers = clusterModel.brokerIds();
+        for (Integer brokerId : brokers) {
+            Throwable cause = awaitThrows(kafkaAvailability.canRoll(brokerId, Set.of()));
+            assertThat(cause, instanceOf(TimeoutException.class));
         }
     }
 
     @Test
-    public void testCanRollThrowsExceptionWhenTopicDescribeThrows(VertxTestContext context) {
-        KSB ksb = new KSB()
-                .addNewTopic("A", false)
+    public void testCanRollThrowsExceptionWhenTopicDescribeThrows() throws InterruptedException {
+        ClusterModel clusterModel = new ClusterModel()
+                .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
                     .addNewPartition(0)
                         .replicaOn(0, 1, 2)
@@ -580,7 +421,7 @@ public class KafkaAvailabilityTest {
                         .isr(0, 1, 2)
                     .endPartition()
                 .endTopic()
-                .addNewTopic("B", false)
+                .addNewTopic("B")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
                     .addNewPartition(0)
                         .replicaOn(0, 1, 2)
@@ -589,24 +430,22 @@ public class KafkaAvailabilityTest {
                     .endPartition()
                 .endTopic()
 
-                .addBroker(3)
+                .addNBrokers(3)
                 .describeTopicsResult("A", new UnknownTopicOrPartitionException());
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
 
-        Checkpoint a = context.checkpoint(ksb.brokers.size());
-        for (Integer brokerId : ksb.brokers.keySet()) {
-            kafkaAvailability.canRoll(brokerId).onComplete(context.failing(e -> context.verify(() -> {
-                assertThat(e, instanceOf(UnknownTopicOrPartitionException.class));
-                a.flag();
-            })));
+        Set<Integer> brokers = clusterModel.brokerIds();
+        for (Integer brokerId : brokers) {
+            Throwable cause = awaitThrows(kafkaAvailability.canRoll(brokerId, Set.of()));
+            assertThat(cause, instanceOf(UnknownTopicOrPartitionException.class));
         }
     }
 
     @Test
-    public void testCanRollThrowsExceptionWhenDescribeConfigsThrows(VertxTestContext context) {
-        KSB ksb = new KSB()
-                .addNewTopic("A", false)
+    public void testCanRollThrowsExceptionWhenDescribeConfigsThrows() throws InterruptedException {
+        ClusterModel clusterModel = new ClusterModel()
+                .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
                     .addNewPartition(0)
                         .replicaOn(0, 1, 2)
@@ -614,7 +453,7 @@ public class KafkaAvailabilityTest {
                         .isr(0, 1, 2)
                     .endPartition()
                 .endTopic()
-                .addNewTopic("B", false)
+                .addNewTopic("B")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
                     .addNewPartition(0)
                         .replicaOn(0, 1, 2)
@@ -623,20 +462,18 @@ public class KafkaAvailabilityTest {
                     .endPartition()
                 .endTopic()
 
-                .addBroker(3)
+                .addNBrokers(3)
                 .describeConfigsResult(new ConfigResource(ConfigResource.Type.TOPIC, "A"), new UnknownTopicOrPartitionException());
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(new Reconciliation("dummy", "kind", "namespace", "A"), ksb.ac());
+        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
 
-        Checkpoint a = context.checkpoint(ksb.brokers.size());
-        for (Integer brokerId : ksb.brokers.keySet()) {
+        Set<Integer> brokers = clusterModel.brokerIds();
+        for (Integer brokerId : brokers) {
             if (brokerId <= 2) {
-                kafkaAvailability.canRoll(brokerId).onComplete(context.failing(e -> context.verify(() -> {
-                    assertThat(e, instanceOf(UnknownTopicOrPartitionException.class));
-                    a.flag();
-                })));
+                Throwable cause = awaitThrows(kafkaAvailability.canRoll(brokerId, Set.of()));
+                assertThat(cause, instanceOf(UnknownTopicOrPartitionException.class));
             } else {
-                kafkaAvailability.canRoll(brokerId).onComplete(context.succeeding(canRoll -> a.flag()));
+                boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
             }
         }
     }

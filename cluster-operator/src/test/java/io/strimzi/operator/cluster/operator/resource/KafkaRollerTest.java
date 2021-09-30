@@ -12,12 +12,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -34,8 +32,6 @@ import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.logging.log4j.LogManager;
@@ -599,30 +595,30 @@ public class KafkaRollerTest {
             this.unclosedAdminClients = new IdentityHashMap<>();
         }
 
-        @Override
-        protected Admin adminClient(List<Integer> bootstrapBrokers, boolean b) throws ForceableProblem {
-            RuntimeException exception = acOpenException.apply(bootstrapBrokers);
-            if (exception != null) {
-                throw new ForceableProblem("An error while try to create the admin client", exception);
-            }
-            Admin ac = mock(AdminClient.class, invocation -> {
-                if ("close".equals(invocation.getMethod().getName())) {
-                    Admin mock = (Admin) invocation.getMock();
-                    unclosedAdminClients.remove(mock);
-                    if (acCloseException != null) {
-                        throw acCloseException;
-                    }
-                    return null;
-                }
-                throw new RuntimeException("Not mocked " + invocation.getMethod());
-            });
-            unclosedAdminClients.put(ac, new Throwable("Pod " + bootstrapBrokers));
-            return ac;
-        }
+//        @Override
+//        protected Admin adminClient(List<Integer> bootstrapBrokers, boolean b) throws ForceableProblem {
+//            RuntimeException exception = acOpenException.apply(bootstrapBrokers);
+//            if (exception != null) {
+//                throw new ForceableProblem("An error while try to create the admin client", exception);
+//            }
+//            Admin ac = mock(AdminClient.class, invocation -> {
+//                if ("close".equals(invocation.getMethod().getName())) {
+//                    Admin mock = (Admin) invocation.getMock();
+//                    unclosedAdminClients.remove(mock);
+//                    if (acCloseException != null) {
+//                        throw acCloseException;
+//                    }
+//                    return null;
+//                }
+//                throw new RuntimeException("Not mocked " + invocation.getMethod());
+//            });
+//            unclosedAdminClients.put(ac, new Throwable("Pod " + bootstrapBrokers));
+//            return ac;
+//        }
 
         @Override
         protected KafkaAvailability availability(Admin ac) {
-            return new KafkaAvailability(null, null) {
+            return new KafkaAvailability(null, null, null) {
                 @Override
                 protected Future<Set<String>> topicNames() {
                     return succeededFuture(Collections.emptySet());
@@ -634,7 +630,7 @@ public class KafkaRollerTest {
                 }
 
                 @Override
-                Future<Boolean> canRoll(int podId) {
+                Future<Boolean> canRoll(int podId, Set<Integer> restartingBrokers) {
                     return canRollFn.apply(podId);
                 }
 
@@ -645,49 +641,49 @@ public class KafkaRollerTest {
             };
         }
 
-        @Override
-        int controller(int podId, long timeout, TimeUnit unit, RestartContext restartContext) throws ForceableProblem {
-            Throwable throwable = controllerException.apply(podId);
-            if (throwable != null) {
-                throw new ForceableProblem("An error while trying to determine the cluster controller from pod " + podName(podId), throwable);
-            } else {
-                int index;
-                if (controllerCall < controllers.length) {
-                    index = controllerCall;
-                } else {
-                    index = controllers.length - 1;
-                }
-                controllerCall++;
-                return controllers[index];
-            }
-        }
+//        @Override
+//        int controller(int podId) throws ForceableProblem {
+//            Throwable throwable = controllerException.apply(podId);
+//            if (throwable != null) {
+//                throw new ForceableProblem("An error while trying to determine the cluster controller from pod " + podName(podId), throwable);
+//            } else {
+//                int index;
+//                if (controllerCall < controllers.length) {
+//                    index = controllerCall;
+//                } else {
+//                    index = controllers.length - 1;
+//                }
+//                controllerCall++;
+//                return controllers[index];
+//            }
+//        }
 
-        @Override
-        protected Config brokerConfig(int brokerId) throws ForceableProblem, InterruptedException {
-            ForceableProblem problem = getConfigsException.apply(brokerId);
-            if (problem != null) {
-                throw problem;
-            } else return new Config(emptyList());
-        }
+//        @Override
+//        protected Config existingBrokerConfig(int brokerId) throws ForceableProblem, InterruptedException {
+//            ForceableProblem problem = getConfigsException.apply(brokerId);
+//            if (problem != null) {
+//                throw problem;
+//            } else return new Config(emptyList());
+//        }
 
-        @Override
-        protected Config brokerLogging(int brokerId) throws ForceableProblem, InterruptedException {
-            return new Config(emptyList());
-        }
+//        @Override
+//        protected Config brokerLogging(int brokerId) throws ForceableProblem, InterruptedException {
+//            return new Config(emptyList());
+//        }
 
-        @Override
-        protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem, InterruptedException {
-            ForceableProblem problem = alterConfigsException.apply(podId);
-            if (problem != null) {
-                throw problem;
-            }
-        }
-
-        @Override
-        protected Future<Void> restart(Pod pod) {
-            restarted.add(pod.getMetadata().getName());
-            return succeededFuture();
-        }
+//        @Override
+//        protected void dynamicUpdateBrokerConfig(int podId, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem, InterruptedException {
+//            ForceableProblem problem = alterConfigsException.apply(podId);
+//            if (problem != null) {
+//                throw problem;
+//            }
+//        }
+//
+//        @Override
+//        protected Future<Void> restart(Pod pod) {
+//            restarted.add(pod.getMetadata().getName());
+//            return succeededFuture();
+//        }
 
     }
 

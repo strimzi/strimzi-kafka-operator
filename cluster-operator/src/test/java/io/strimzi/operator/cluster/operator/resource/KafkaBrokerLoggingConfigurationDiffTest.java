@@ -66,7 +66,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
         Config currentConfig = getRealisticConfig();
 
         KafkaBrokerLoggingConfigurationDiff diff = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, currentConfig, desiredConfig, brokerId);
-        assertThat(diff.getLoggingDiff(), is(getRealisticConfigDiff()));
+        assertThat(diff.alterConfigOps(), is(getRealisticConfigDiff()));
     }
 
     Config getRealisticConfig() {

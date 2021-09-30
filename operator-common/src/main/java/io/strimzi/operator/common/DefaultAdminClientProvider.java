@@ -20,6 +20,8 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
 
     private static final Logger LOGGER = LogManager.getLogger(DefaultAdminClientProvider.class);
 
+    public DefaultAdminClientProvider() {}
+
     /**
      * Create a Kafka Admin interface instance handling the following different scenarios:
      *

@@ -91,7 +91,7 @@ public class KafkaBrokerConfigurationDiffTest {
     }
 
     private void assertConfig(KafkaBrokerConfigurationDiff kcd, ConfigEntry ce) {
-        Collection<AlterConfigOp> brokerDiffConf = kcd.getConfigDiff();
+        Collection<AlterConfigOp> brokerDiffConf = kcd.alterConfigOps();
         long appearances = brokerDiffConf.stream().filter(entry -> entry.configEntry().name().equals(ce.name())).count();
         Optional<AlterConfigOp> en = brokerDiffConf.stream().filter(entry -> entry.configEntry().name().equals(ce.name())).findFirst();
         assertThat(appearances, is(1L));

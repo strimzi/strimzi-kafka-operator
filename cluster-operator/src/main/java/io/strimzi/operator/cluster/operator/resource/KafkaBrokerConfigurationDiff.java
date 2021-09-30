@@ -106,7 +106,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
      * Returns configuration difference
      * @return Collection of AlterConfigOp containing difference between current and desired configuration
      */
-    public Collection<AlterConfigOp> getConfigDiff() {
+    public Collection<AlterConfigOp> alterConfigOps() {
         return diff;
     }
 

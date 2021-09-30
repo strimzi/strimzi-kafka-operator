@@ -393,19 +393,19 @@ public class Util {
         }
     }
 
-    public static ConfigResource getBrokersConfig(int podId) {
-        return Util.getBrokersConfig(Integer.toString(podId));
+    public static ConfigResource brokerConfigResource(int podId) {
+        return Util.brokerConfigResource(Integer.toString(podId));
     }
 
-    public static ConfigResource getBrokersLogging(int podId) {
-        return Util.getBrokersLogging(Integer.toString(podId));
+    public static ConfigResource brokerLoggersConfigResource(int podId) {
+        return Util.brokerLoggersConfigResource(Integer.toString(podId));
     }
 
-    public static ConfigResource getBrokersConfig(String podId) {
+    public static ConfigResource brokerConfigResource(String podId) {
         return new ConfigResource(ConfigResource.Type.BROKER, podId);
     }
 
-    public static ConfigResource getBrokersLogging(String podId) {
+    public static ConfigResource brokerLoggersConfigResource(String podId) {
         return new ConfigResource(ConfigResource.Type.BROKER_LOGGER, podId);
     }
 
