@@ -143,7 +143,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
             }
 
             @Override
-            public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret, boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
+            public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret, boolean apiAuthEnabled, boolean apiSslEnabled) {
                 return new CruiseControlApiImpl(vertx, 1, ccSecret, ccApiSecret, true, true);
             }
         };

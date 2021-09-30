@@ -178,13 +178,13 @@ public class KafkaRebalanceAssemblyOperator
      *
      * @param ccSecret Cruise Control secret
      * @param ccApiSecret Cruise Control API secret
-     * @param apiAuthorizationEnabled if enabled, configures API authorization
-     * @param apiAuthenticationEnabled if enabled, configures API authentication
+     * @param apiAuthEnabled if enabled, configures auth
+     * @param apiSslEnabled if enabled, configures SSL
      * @return Cruise Control API client instance
      */
     public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret,
-                                                           boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
-        return new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, ccSecret, ccApiSecret, apiAuthorizationEnabled, apiAuthenticationEnabled);
+                                                           boolean apiAuthEnabled, boolean apiSslEnabled) {
+        return new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
     }
 
     /**
@@ -1082,9 +1082,9 @@ public class KafkaRebalanceAssemblyOperator
                                 }
 
                                 CruiseControlConfiguration c = new CruiseControlConfiguration(reconciliation, kafka.getSpec().getCruiseControl().getConfig().entrySet());
-                                boolean apiAuthorizationEnabled = CruiseControl.isApiAuthorizationEnabled(c);
-                                boolean apiAuthenticationEnabled = CruiseControl.isApiAuthenticationEnabled(c);
-                                CruiseControlApi apiClient = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthorizationEnabled, apiAuthenticationEnabled);
+                                boolean apiAuthEnabled = CruiseControl.isApiAuthEnabled(c);
+                                boolean apiSslEnabled = CruiseControl.isApiSslEnabled(c);
+                                CruiseControlApi apiClient = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
 
                                 // get latest KafkaRebalance state as it may have changed
                                 return kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())

@@ -183,8 +183,8 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY).withValue(Integer.toString(DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY)).build());
         expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY).withValue(Double.toString(DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY)).build());
         expected.add(new EnvVarBuilder().withName(ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY).withValue(Double.toString(DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY)).build());
-        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTHENTICATION_ENABLED).withValue(Boolean.toString(DEFAULT_WEBSERVER_SSL_ENABLED)).build());
-        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTHORIZATION_ENABLED).withValue(Boolean.toString(DEFAULT_WEBSERVER_SECURITY_ENABLED)).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_SSL_ENABLED).withValue(Boolean.toString(DEFAULT_WEBSERVER_SSL_ENABLED)).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTH_ENABLED).withValue(Boolean.toString(DEFAULT_WEBSERVER_SECURITY_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_USER).withValue(API_USER_NAME).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_PORT).withValue(Integer.toString(CruiseControl.REST_API_PORT)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_HEALTHCHECK_PATH).withValue(API_HEALTHCHECK_PATH).build());
@@ -647,18 +647,18 @@ public class CruiseControlTest {
         testApiSecurity(false, false);
     }
 
-    public void testApiSecurity(Boolean apiAuthorizationEnabled, Boolean apiAuthenticationEnabled) {
-        String e1Key = CruiseControl.ENV_VAR_API_AUTHORIZATION_ENABLED;
-        String e1Value = apiAuthorizationEnabled.toString();
+    public void testApiSecurity(Boolean apiAuthEnabled, Boolean apiSslEnabled) {
+        String e1Key = CruiseControl.ENV_VAR_API_AUTH_ENABLED;
+        String e1Value = apiAuthEnabled.toString();
         EnvVar e1 = new EnvVar(e1Key, e1Value, null);
 
-        String e2Key = CruiseControl.ENV_VAR_API_AUTHENTICATION_ENABLED;
-        String e2Value = apiAuthenticationEnabled.toString();
+        String e2Key = CruiseControl.ENV_VAR_API_SSL_ENABLED;
+        String e2Value = apiSslEnabled.toString();
         EnvVar e2 = new EnvVar(e2Key, e2Value, null);
 
         Map<String, Object> config = ccConfig;
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SECURITY_ENABLE.getValue(), apiAuthorizationEnabled);
-        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), apiAuthenticationEnabled);
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SECURITY_ENABLE.getValue(), apiAuthEnabled);
+        config.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), apiSslEnabled);
 
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)

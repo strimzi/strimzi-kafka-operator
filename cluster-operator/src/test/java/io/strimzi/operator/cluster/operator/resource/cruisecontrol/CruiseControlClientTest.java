@@ -31,8 +31,8 @@ public class CruiseControlClientTest {
     private static final int PORT = 1080;
     private static final String HOST = "localhost";
 
-    private static final boolean API_AUTHORIZATION_ENABLED = true;
-    private static final boolean API_AUTHENTICATION_ENABLED = true;
+    private static final boolean API_AUTH_ENABLED = true;
+    private static final boolean API_SSL_ENABLED = true;
 
     private static ClientAndServer ccServer;
 
@@ -52,7 +52,7 @@ public class CruiseControlClientTest {
     }
 
     private CruiseControlApi cruiseControlClientProvider(Vertx vertx) {
-        return new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, API_AUTHORIZATION_ENABLED, API_AUTHENTICATION_ENABLED);
+        return new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, API_AUTH_ENABLED, API_SSL_ENABLED);
     }
 
     @Test

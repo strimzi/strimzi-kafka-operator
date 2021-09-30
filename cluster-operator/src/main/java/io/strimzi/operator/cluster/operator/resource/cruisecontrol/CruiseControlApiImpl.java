@@ -35,16 +35,16 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     private final Vertx vertx;
     private final long idleTimeout;
-    private boolean apiAuthenticationEnabled;
+    private boolean apiSslEnabled;
     private HTTPHeader authHttpHeader;
     private File truststoreFile;
     private String trustStorePassword;
 
-    public CruiseControlApiImpl(Vertx vertx, int idleTimeout, Secret ccSecret, Secret ccApiSecret, Boolean apiAuthorizationEnabled, boolean apiAuthenticationEnabled) {
+    public CruiseControlApiImpl(Vertx vertx, int idleTimeout, Secret ccSecret, Secret ccApiSecret, Boolean apiAuthEnabled, boolean apiSslEnabled) {
         this.vertx = vertx;
         this.idleTimeout = idleTimeout;
-        this.apiAuthenticationEnabled = apiAuthenticationEnabled;
-        this.authHttpHeader = getAuthHttpHeader(apiAuthorizationEnabled, ccApiSecret);
+        this.apiSslEnabled = apiSslEnabled;
+        this.authHttpHeader = getAuthHttpHeader(apiAuthEnabled, ccApiSecret);
         this.trustStorePassword = new PasswordGenerator(12).generate();
         this.truststoreFile = Util.createFileTrustStore(getClass().getName(), "ts", Ca.cert(ccSecret, "cruise-control.crt"), trustStorePassword.toCharArray());
     }
@@ -55,7 +55,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     public HttpClientOptions getHttpClientOptions() {
-        if (apiAuthenticationEnabled) {
+        if (apiSslEnabled) {
             return new HttpClientOptions()
                 .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING)
                 .setSsl(true)
@@ -78,8 +78,8 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         return new HTTPHeader(headerName, headerValue);
     }
 
-    public static HTTPHeader getAuthHttpHeader(boolean apiAuthorizationEnabled, Secret apiSecret) {
-        if (apiAuthorizationEnabled) {
+    public static HTTPHeader getAuthHttpHeader(boolean apiAuthEnabled, Secret apiSecret) {
+        if (apiAuthEnabled) {
             String password = new String(Util.decodeFromSecret(apiSecret, CruiseControl.API_ADMIN_PASSWORD_KEY), StandardCharsets.US_ASCII);
             HTTPHeader header = generateAuthHttpHeader(CruiseControl.API_ADMIN_NAME, password);
             return header;
