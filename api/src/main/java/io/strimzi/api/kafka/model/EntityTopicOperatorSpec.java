@@ -151,7 +151,7 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
     }
 
 
-    @Description("Logging configuration")
+    @Description("Logging configuration.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Logging getLogging() {
         return logging;

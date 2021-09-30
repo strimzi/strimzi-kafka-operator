@@ -131,6 +131,7 @@ public class Config {
     public static final String TC_STALE_RESULT_TIMEOUT_MS = "STRIMZI_STALE_RESULT_TIMEOUT_MS";
 
     public static final String TC_USE_ZOOKEEPER_TOPIC_STORE = "STRIMZI_USE_ZOOKEEPER_TOPIC_STORE";
+    public static final String TC_KAFKA_STREAMS_REPLICATION_FACTOR = "STRIMZI_KAFKA_STREAMS_REPLICATION_FACTOR";
 
     private static final Map<String, Value<?>> CONFIG_VALUES = new HashMap<>();
 
@@ -139,6 +140,9 @@ public class Config {
 
     /** A comma-separated list of kafka bootstrap servers. */
     public static final Value<String> KAFKA_BOOTSTRAP_SERVERS = new Value<>(TC_KAFKA_BOOTSTRAP_SERVERS, STRING, true);
+
+    /** Kafka Streams replication factor */
+    public static final Value<String> KAFKA_STREAMS_REPLICATION_FACTOR = new Value<>(TC_KAFKA_STREAMS_REPLICATION_FACTOR, STRING, "-1");
 
     /** The kubernetes namespace in which to operate. */
     public static final Value<String> NAMESPACE = new Value<>(TC_NAMESPACE, STRING, true);
@@ -240,6 +244,7 @@ public class Config {
         addConfigValue(configValues, APPLICATION_ID);
         addConfigValue(configValues, STALE_RESULT_TIMEOUT_MS);
         addConfigValue(configValues, USE_ZOOKEEPER_TOPIC_STORE);
+        addConfigValue(configValues, KAFKA_STREAMS_REPLICATION_FACTOR);
     }
 
     static void addConfigValue(Map<String, Value<?>> configValues, Value<?> cv) {

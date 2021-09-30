@@ -301,6 +301,7 @@ public class Session extends AbstractVerticle {
         Properties kafkaClientProps = new Properties();
         kafkaClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         kafkaClientProps.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, config.get(Config.APPLICATION_ID));
+        kafkaClientProps.setProperty(StreamsConfig.REPLICATION_FACTOR_CONFIG, config.get(Config.KAFKA_STREAMS_REPLICATION_FACTOR));
 
         String securityProtocol = config.get(Config.SECURITY_PROTOCOL);
         boolean tlsEnabled = Boolean.parseBoolean(config.get(Config.TLS_ENABLED));

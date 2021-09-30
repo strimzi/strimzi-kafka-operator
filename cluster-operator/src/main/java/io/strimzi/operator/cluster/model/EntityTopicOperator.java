@@ -50,6 +50,7 @@ public class EntityTopicOperator extends AbstractModel {
     // Topic Operator configuration keys
     public static final String ENV_VAR_RESOURCE_LABELS = "STRIMZI_RESOURCE_LABELS";
     public static final String ENV_VAR_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
+    public static final String ENV_VAR_KAFKA_STREAMS_REPLICATION_FACTOR = "STRIMZI_KAFKA_STREAMS_REPLICATION_FACTOR";
     public static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     public static final String ENV_VAR_WATCHED_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
@@ -71,6 +72,7 @@ public class EntityTopicOperator extends AbstractModel {
     private String kafkaBootstrapServers;
     private String zookeeperConnect;
 
+    private int streamsReplicationFactor;
     private String watchedNamespace;
     private int reconciliationIntervalMs;
     private int zookeeperSessionTimeoutMs;
@@ -98,6 +100,7 @@ public class EntityTopicOperator extends AbstractModel {
                 .build();
 
         // create a default configuration
+        this.streamsReplicationFactor = -1;
         this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
         this.zookeeperConnect = defaultZookeeperConnect(cluster);
         this.watchedNamespace = namespace;
@@ -246,6 +249,7 @@ public class EntityTopicOperator extends AbstractModel {
                 if (topicOperatorSpec.getLivenessProbe() != null) {
                     result.setLivenessProbe(topicOperatorSpec.getLivenessProbe());
                 }
+                result.setStreamsReplicationFactor(Math.min(kafkaAssembly.getSpec().getKafka().getReplicas(), 3));
             }
         }
         return result;
@@ -275,6 +279,7 @@ public class EntityTopicOperator extends AbstractModel {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(buildEnvVar(ENV_VAR_RESOURCE_LABELS, resourceLabels));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_BOOTSTRAP_SERVERS, kafkaBootstrapServers));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_STREAMS_REPLICATION_FACTOR, Integer.toString(streamsReplicationFactor)));
         varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
         varList.add(buildEnvVar(ENV_VAR_WATCHED_NAMESPACE, watchedNamespace));
         varList.add(buildEnvVar(ENV_VAR_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(reconciliationIntervalMs)));
@@ -303,6 +308,10 @@ public class EntityTopicOperator extends AbstractModel {
                 VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath),
                 VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
                 VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
+    }
+
+    private void setStreamsReplicationFactor(int streamsReplicationFactor) {
+        this.streamsReplicationFactor = streamsReplicationFactor;
     }
 
     @Override

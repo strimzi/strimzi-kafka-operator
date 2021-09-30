@@ -129,7 +129,7 @@ public class EntityUserOperatorSpec implements UnknownPropertyPreserving, Serial
         this.readinessProbe = readinessProbe;
     }
 
-    @Description("Logging configuration")
+    @Description("Logging configuration.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public Logging getLogging() {
         return logging;
