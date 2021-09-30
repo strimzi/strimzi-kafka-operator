@@ -95,6 +95,7 @@ the documentation for more details.
 | Parameter                            | Description                               | Default                                              |
 | ------------------------------------ | ----------------------------------------- | ---------------------------------------------------- |
 | `watchNamespaces`                    | Comma separated list of additional namespaces for the strimzi-operator to watch | []             |
+| `watchAnyNamespace`                  | Watch the whole Kubernetes cluster (all namespaces) | `false`                                    |
 | `defaultImageRegistry`               | Default image registry for all the images | `quay.io`                                            |
 | `defaultImageRepository`             | Default image registry for all the images | `strimzi`                                            |
 | `defaultImageTag`                    | Default image tag for all the images except Kafka Bridge | `latest`                              |
