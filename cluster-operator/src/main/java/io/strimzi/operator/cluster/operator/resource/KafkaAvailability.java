@@ -108,27 +108,40 @@ class KafkaAvailability {
             List<Node> isr = pi.isr();
             if (minIsr >= 0) {
                 if (pi.replicas().size() <= minIsr) {
-                    LOGGER.debugCr(reconciliation, "{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
-                            td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
-                            pi.replicas().size());
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debugCr(reconciliation, "{}/{} will be under-replicated (ISR={{}}, replicas=[{}], {}={}) if broker {} is restarted, but there are only {} replicas.",
+                                td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
+                                pi.replicas().size());
+                    }
                 } else if (isr.size() < minIsr
                         && contains(pi.replicas(), broker)) {
-                    logIsrReplicas(td, pi, isr);
-                    LOGGER.infoCr(reconciliation, "{}/{} is already underreplicated (|ISR|={}, {}={}); broker {} has a replica, " +
-                                    "so should not be restarted right now (it might be first to catch up).",
-                            td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
+                    if (LOGGER.isInfoEnabled()) {
+                        String msg;
+                        if (contains(isr, broker)) {
+                            msg = "{}/{} is already under-replicated (ISR={{}}, replicas=[{}], {}={}); broker {} is in the ISR, " +
+                                                          "so should not be restarted right now (it would impact consumers).";
+                        } else {
+                            msg = "{}/{} is already under-replicated (ISR={{}}, replicas=[{}], {}={}); broker {} has a replica, " +
+                                                          "so should not be restarted right now (it might be first to catch up).";
+                        }
+                        LOGGER.infoCr(reconciliation, msg,
+                                td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
+                    }
                     return true;
                 } else if (isr.size() == minIsr
                         && contains(isr, broker)) {
                     if (minIsr < pi.replicas().size()) {
-                        logIsrReplicas(td, pi, isr);
-                        LOGGER.infoCr(reconciliation, "{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted.",
-                                td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
+                        if (LOGGER.isInfoEnabled()) {
+                            LOGGER.infoCr(reconciliation, "{}/{} will be under-replicated (ISR={{}}, replicas=[{}], {}={}) if broker {} is restarted.",
+                                    td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker);
+                        }
                         return true;
                     } else {
-                        LOGGER.debugCr(reconciliation, "{}/{} will be underreplicated (|ISR|={} and {}={}) if broker {} is restarted, but there are only {} replicas.",
-                                td.name(), pi.partition(), isr.size(), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
-                                pi.replicas().size());
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debugCr(reconciliation, "{}/{} will be under-replicated (ISR={{}}, replicas=[{}], {}={}) if broker {} is restarted, but there are only {} replicas.",
+                                    td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()), TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, minIsr, broker,
+                                    pi.replicas().size());
+                        }
                     }
                 }
             }
@@ -136,12 +149,8 @@ class KafkaAvailability {
         return false;
     }
 
-    private void logIsrReplicas(TopicDescription td, TopicPartitionInfo pi, List<Node> isr) {
-        LOGGER.debugCr(reconciliation, "{}/{} has ISR={}, replicas={}", td.name(), pi.partition(), nodeList(isr), nodeList(pi.replicas()));
-    }
-
-    String nodeList(List<Node> nodes) {
-        return nodes.stream().map(n -> String.valueOf(n.id())).collect(Collectors.joining(",", "[", "]"));
+    private String nodeList(List<Node> isr) {
+        return isr.stream().map(Node::idString).collect(Collectors.joining(","));
     }
 
     private boolean contains(List<Node> isr, int broker) {
