@@ -259,7 +259,7 @@ If the consumer application does not make a call to poll at least every `max.pol
 If the application cannot process all the records returned from poll in time, you can avoid a rebalance by using the `max.poll.interval.ms` property to specify the interval in milliseconds between polls for new messages from a consumer.
 Or you can use the `max.poll.records` property to set a maximum limit on the number of records returned from the consumer buffer, allowing your application to process fewer records within the `max.poll.interval.ms` limit.
 
-[source,shell]
+[source,shell,subs="+quotes"]
 ----
 # ...
 group.instance.id=_UNIQUE-ID_ <1>
