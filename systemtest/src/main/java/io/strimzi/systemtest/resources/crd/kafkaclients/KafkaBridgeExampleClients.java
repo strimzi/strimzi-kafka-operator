@@ -6,6 +6,7 @@ package io.strimzi.systemtest.resources.crd.kafkaclients;
 
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.HashMap;
@@ -130,7 +131,7 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
                             .addNewContainer()
                                 .withName(producerName)
                                 .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
-                                .withImage("strimzi/kafka-http-producer:latest")
+                                .withImage(Environment.TEST_HTTP_PRODUCER_IMAGE)
                                 .addNewEnv()
                                     .withName("HOSTNAME")
                                     .withValue(bootstrapAddress)
@@ -180,7 +181,7 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
                             .addNewContainer()
                                 .withName(consumerName)
                                 .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
-                                .withImage("strimzi/kafka-http-consumer:latest")
+                                .withImage(Environment.TEST_HTTP_CONSUMER_IMAGE)
                                 .addNewEnv()
                                     .withName("HOSTNAME")
                                     .withValue(bootstrapAddress)
