@@ -101,7 +101,7 @@ When a `KafkaUser.spec.authentication.type` is configured with `scram-sha-512` t
 
 By default, Strimzi automatically creates a `NetworkPolicy` resource for every listener that is enabled on a Kafka broker.
 This `NetworkPolicy` allows applications to connect to listeners in all namespaces.
-Use network policies as part of the listener authentication configuration.
+Use network policies as part of the listener configuration.
 
 If you want to restrict access to a listener at the network level to only selected applications or namespaces, use the `networkPolicyPeers` property.
 Each listener can have a different xref:configuration-listener-network-policy-reference[`networkPolicyPeers`] configuration.

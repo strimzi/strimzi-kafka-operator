@@ -53,7 +53,7 @@ OAUTHBEARER authentication can only be used by Kafka clients that support the OA
 
 .PLAIN overview
 
-PLAIN is a simple authentication mechanism used by all Kafka client tools (including developer tools such as kcat). 
+PLAIN is a simple authentication mechanism used by all Kafka client tools. 
 To enable PLAIN to be used together with OAuth 2.0 authentication, Strimzi includes server-side callbacks and calls this _OAuth 2.0 over PLAIN_.
 
 With the Strimzi implementation of PLAIN, the client credentials are not stored in ZooKeeper.
