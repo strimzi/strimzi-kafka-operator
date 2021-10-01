@@ -22,7 +22,7 @@ The example files are a good way to try Prometheus with Strimzi.
 
 To apply the relabeling rules and metrics configuration, do one of the following:
 
-* Copy the example configuration to your own custom resource definition
+* Copy the example configuration to your own custom resources
 * Deploy the custom resource with the metrics configuration
 
 If you want to include Kafka Exporter metrics, add `kafkaExporter` configuration to your `Kafka` resource.
@@ -45,7 +45,7 @@ For example, for each `Kafka` resource you apply the `kafka-metrics.yaml` file.
 kubectl apply -f kafka-metrics.yaml
 ----
 +
-Alternatively, you can copy the example configuration in `kafka-metrics.yaml` to your own `Kafka` resource definition.
+Alternatively, you can copy the example configuration in `kafka-metrics.yaml` to your own `Kafka` resource.
 +
 .Copying the example configuration
 [source,shell,subs="+quotes,attributes"]
