@@ -19,10 +19,10 @@
         <strimzi-oauth.version>0.8.1</strimzi-oauth.version>
         <cruise-control.version>2.5.57</cruise-control.version>
         <opa-authorizer.version>1.1.0</opa-authorizer.version>
-        <kafka-quotas-plugin.version>0.1.0</kafka-quotas-plugin.version>
+        <kafka-quotas-plugin.version>0.2.0</kafka-quotas-plugin.version>
         <kafka-mirror-maker-2-extensions.version>1.0.0</kafka-mirror-maker-2-extensions.version>
-        <kafka-kubernetes-config-provider.version>0.1.0</kafka-kubernetes-config-provider.version>
-        <kafka-env-var-config-provider.version>0.1.0</kafka-env-var-config-provider.version>
+        <kafka-kubernetes-config-provider.version>0.1.1</kafka-kubernetes-config-provider.version>
+        <kafka-env-var-config-provider.version>0.1.1</kafka-env-var-config-provider.version>
         <jmx-prometheus-javaagent.version>0.16.1</jmx-prometheus-javaagent.version>
         <json-smart.version>2.4.7</json-smart.version>
         <jsonevent-layout.version>1.7</jsonevent-layout.version>
@@ -35,6 +35,18 @@
         <repository>
             <id>cruise-control</id>
             <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
+        </repository>
+        <repository>
+            <id>quotas-plugin-staging-repository</id>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1117</url>
+        </repository>
+        <repository>
+            <id>env-var-provider-staging-repository</id>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1118</url>
+        </repository>
+        <repository>
+            <id>kubernetes-provider-staging-repository</id>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1119</url>
         </repository>
     </repositories>
 
