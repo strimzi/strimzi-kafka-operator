@@ -2,8 +2,9 @@
     "spec": {
         "containers": [
             {
-                "name": "dummy",
-                "image": "centos:7",
+                "name": "strimzi-backup",
+                "image": "registry.access.redhat.com/ubi8/ubi:8.4",
+                "imagePullPolicy": "IfNotPresent",
                 "command": [
                     "/bin/bash",
                     "-c",

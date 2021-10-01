@@ -10,8 +10,8 @@ if [[ $(uname -s) == "Darwin" ]]; then
     alias tar="gtar"
     alias sed="gsed"
     alias date="gdate"
+    alias ls="gls"
 fi
-__TMP="/tmp/cold-backup" && readonly __TMP && mkdir -p $__TMP
 __HOME="" && pushd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" >/dev/null \
     && { __HOME=$PWD; popd >/dev/null; } && readonly __HOME
 trap __cleanup EXIT
@@ -27,13 +27,14 @@ KAFKA_PVC=()
 KAFKA_PVC_SIZE=""
 KAFKA_PVC_CLASS=""
 COMMAND=""
-INVALID=false
-INCREMENTAL=false
+CLEANUP=true
 CONFIRM=true
 NAMESPACE=""
 CLUSTER_NAME=""
 TARGET_FILE=""
 SOURCE_FILE=""
+BACKUP_PATH=""
+BACKUP_NAME=""
 CUSTOM_CM=""
 CUSTOM_SE=""
 
@@ -117,10 +118,7 @@ __stop_cluster() {
 }
 
 __cleanup() {
-    if [[ $INCREMENTAL == false ]]; then
-        rm -rf $__TMP/$NAMESPACE/$CLUSTER_NAME
-    fi
-    if [[ -n $COMMAND && $INVALID == false ]]; then
+    if [[ -n $COMMAND && $CLEANUP == true ]]; then
         kubectl -n $NAMESPACE delete pod $RSYNC_POD_NAME 2>/dev/null ||true
         __start_cluster
     fi
@@ -134,11 +132,12 @@ __error() {
 __confirm() {
     read -p "Please confirm (y/n) " reply
     if [[ ! $reply =~ ^[Yy]$ ]]; then
+        CLEANUP=false
         exit 0
     fi
 }
 
-__check_connection() {
+__check_kube_conn() {
     kubectl version --request-timeout=10s 1>/dev/null
 }
 
@@ -207,25 +206,24 @@ __rsync() {
     local target="$2"
     if [[ -n $source && -n $target ]]; then
         echo "Rsync from $source to $target"
-        local flags="--no-check-device --no-acls --no-xattrs --no-same-owner"
-        if [[ $source != "/tmp/"* ]]; then
+        local flags="--no-check-device --no-acls --no-xattrs --no-same-owner --warning=no-file-changed"
+        if [[ $source != "$BACKUP_PATH/"* ]]; then
             # download from pod to local (backup)
-            flags="$flags --listed-incremental /data/backup.snar \
-                --exclude=backup.snar --exclude=data/version-2/{currentEpoch,acceptedEpoch}"
-            if [[ $INCREMENTAL == false ]]; then
-                flags="$flags --level=0"
-            fi
-            local patch=$(sed "s/\$name/$source/g" $__HOME/templates/patch.json)
-            kubectl -n $NAMESPACE run $RSYNC_POD_NAME --image="dummy" --restart="Never" --overrides="$patch"
+            flags="$flags --exclude=data/version-2/{currentEpoch,acceptedEpoch}"
+            local patch=$(sed "s@\$name@$source@g" $__HOME/templates/patch.json)
+            kubectl -n $NAMESPACE run $RSYNC_POD_NAME --image "dummy" --restart "Never" --overrides "$patch"
             __wait_for condition=ready pod run="$RSYNC_POD_NAME"
-            kubectl -n $NAMESPACE exec -i $RSYNC_POD_NAME -- sh -c "tar $flags -C /data -c ." | tar $flags -C $target -xv -f -
+            # ignore the sporadic file changed error
+            kubectl -n $NAMESPACE exec -i $RSYNC_POD_NAME -- sh -c "tar $flags -C /data -c ." \
+              | tar $flags -C $target -xv -f - && if [[ $? == 1 ]]; then exit 0; fi
             kubectl -n $NAMESPACE delete pod $RSYNC_POD_NAME
         else
             # upload from local to pod (restore)
-            local patch=$(sed "s/\$name/$target/g" $__HOME/templates/patch.json)
-            kubectl -n $NAMESPACE run $RSYNC_POD_NAME --image="dummy" --restart="Never" --overrides="$patch"
+            local patch=$(sed "s@\$name@$target@g" $__HOME/templates/patch.json)
+            kubectl -n $NAMESPACE run $RSYNC_POD_NAME --image "dummy" --restart "Never" --overrides "$patch"
             __wait_for condition=ready pod run="$RSYNC_POD_NAME"
-            tar $flags -C $source -c . | kubectl -n $NAMESPACE exec -i $RSYNC_POD_NAME -- sh -c "tar $flags -C /data -xv -f -"
+            tar $flags -C $source -c . \
+              | kubectl -n $NAMESPACE exec -i $RSYNC_POD_NAME -- sh -c "tar $flags -C /data -xv -f -"
             kubectl -n $NAMESPACE delete pod $RSYNC_POD_NAME
         fi
     else
@@ -254,12 +252,10 @@ __compress() {
     local target_file="$2"
     if [[ -n $source_dir && -n $target_file ]]; then
         local current_dir=$(pwd)
-        local target_path=$(readlink -f $target_file)
-        local target_name=$(basename "$target_file")
         cd $source_dir
         echo "Compressing $source_dir to $target_file"
-        zip -FSqr $target_name *
-        mv $target_name $target_path
+        zip -FSqr $BACKUP_NAME *
+        mv $BACKUP_NAME $BACKUP_PATH
         cd $current_dir
     else
         __error "Missing required parameters"
@@ -268,10 +264,9 @@ __compress() {
 
 __uncompress() {
     local source_file="$1"
-    local readonly target_dir="$2"
+    local target_dir="$2"
     if [[ -n $source_file && -n $target_dir ]]; then
         echo "Uncompressing $source_file to $target_dir"
-        rm -rf $target_dir
         mkdir -p $target_dir
         unzip -qo $source_file -d $target_dir
         chmod -R ugo+rwx $target_dir
@@ -283,22 +278,20 @@ __uncompress() {
 backup() {
     if [[ -n $NAMESPACE && -n $CLUSTER_NAME && -n $TARGET_FILE ]]; then
         if [[ -d "$(dirname $TARGET_FILE)" ]]; then
-            readonly RSYNC_POD_NAME="$CLUSTER_NAME-backup"
-            __check_connection
-
             # init context
-            local readonly tmp="$__TMP/$NAMESPACE/$CLUSTER_NAME"
+            readonly RSYNC_POD_NAME="$CLUSTER_NAME-backup"
+            local tmp="$BACKUP_PATH/$NAMESPACE/$CLUSTER_NAME"
+            if [[ ! -z "$(ls -A $tmp)" ]]; then
+              CLEANUP=false
+              __error "Non empty directory: $tmp"
+            fi
+            __check_kube_conn
             if [[ $CONFIRM == true ]]; then
                 echo "Backup of cluster $NAMESPACE/$CLUSTER_NAME"
                 echo "The cluster won't be available for the entire duration of the process"
                 __confirm
             fi
-            if [[ $INCREMENTAL == true ]]; then
-                echo "Starting incremental backup"
-            else
-                echo "Starting full backup"
-                rm -rf $tmp
-            fi
+            echo "Starting backup"
             mkdir -p $tmp/resources $tmp/data
             __export_env $tmp/env
             __stop_cluster
@@ -341,19 +334,18 @@ backup() {
             __error "$(dirname $TARGET_FILE) not found"
         fi
     else
-        INVALID=true
+        CLEANUP=false
         __error "Specify namespace, cluster name and target file to backup"
-    fi    
+    fi
 }
 
 restore() {
     if  [[ -n $NAMESPACE && -n $CLUSTER_NAME && -f $SOURCE_FILE ]]; then
         if [[ -f $SOURCE_FILE ]]; then
-            readonly RSYNC_POD_NAME="$CLUSTER_NAME-restore"
-            __check_connection
-
             # init context
-            local readonly tmp="$__TMP/$NAMESPACE/$CLUSTER_NAME"
+            readonly RSYNC_POD_NAME="$CLUSTER_NAME-restore"
+            local tmp="$BACKUP_PATH/$NAMESPACE/$CLUSTER_NAME"
+            __check_kube_conn
             if [[ $CONFIRM == true ]]; then
                 echo "Restore of cluster $NAMESPACE/$CLUSTER_NAME"
                 __confirm
@@ -380,7 +372,7 @@ restore() {
             __error "$SOURCE_FILE file not found"
         fi
     else
-        INVALID=true
+        CLEANUP=false
         __error "Specify namespace, cluster name and source file to restore"
     fi
 }
@@ -393,7 +385,6 @@ Commands:
   restore  Cluster restore
 
 Options:
-  -i  Enable incremental backup
   -y  Skip confirmation step
   -n  Cluster namespace
   -c  Cluster name
@@ -419,10 +410,6 @@ i=0
 for argument in $OPTIONS; do
     i=$(($i+1))
     case $argument in
-        -i)
-            export INCREMENTAL=true
-            readonly INCREMENTAL
-            ;;
         -y)
             export CONFIRM=false
             readonly CONFIRM
@@ -438,10 +425,18 @@ for argument in $OPTIONS; do
         -t)
             export TARGET_FILE=${ARGUMENTS[i]}
             readonly TARGET_FILE
+            export BACKUP_PATH=$(dirname $TARGET_FILE)
+            readonly BACKUP_PATH
+            export BACKUP_NAME=$(basename $TARGET_FILE)
+            readonly BACKUP_NAME
             ;;
         -s)
             export SOURCE_FILE=${ARGUMENTS[i]}
             readonly SOURCE_FILE
+            export BACKUP_PATH=$(dirname $SOURCE_FILE)
+            readonly BACKUP_PATH
+            export BACKUP_NAME=$(basename $SOURCE_FILE)
+            readonly BACKUP_NAME
             ;;
         -m)
             export CUSTOM_CM=${ARGUMENTS[i]}
