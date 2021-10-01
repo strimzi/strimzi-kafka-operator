@@ -1,78 +1,77 @@
-. Copy the `_reassignment.json_` file to the broker pod on which you will later execute the commands:
-+
-[source,shell,subs=+quotes]
-----
-cat _reassignment.json_ | \
-  kubectl exec _broker-pod_ -c kafka -i -- /bin/bash -c \
-  'cat > /tmp/reassignment.json'
-----
-+
-For example:
-+
-[source,shell,subs=+quotes]
-----
-cat _reassignment.json_ | \
-  kubectl exec my-cluster-kafka-0 -c kafka -i -- /bin/bash -c \
-  'cat > /tmp/reassignment.json'
-----
+. If you haven't done so, xref:proc-generating-reassignment-json-files-{context}[run an interactive pod container to generate a reassignment JSON file] named `reassignment.json`.
 
-. Execute the partition reassignment using the `kafka-reassign-partitions.sh` command line tool from the same broker pod.
+. Copy the `_reassignment.json_` file to the interactive pod container.
 +
 [source,shell,subs=+quotes]
 ----
-kubectl exec _broker-pod_ -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
-  --reassignment-json-file /tmp/reassignment.json \
-  --execute
+kubectl cp reassignment.json _<interactive_pod_name>_:/tmp/reassignment.json
 ----
 +
-If you are going to throttle replication you can also pass the `--throttle` option with an inter-broker throttled rate in bytes per second. For example:
+Replace _<interactive_pod_name>_ with the name of the pod.
+
+. Start a shell process in the interactive pod container.
++
+[source,shell,subs=+quotes]
+kubectl exec -n _<namespace>_ -ti _<interactive_pod_name>_ /bin/bash
++
+Replace _<namespace>_ with the Kubernetes namespace where the pod is running.
+
+. Run the partition reassignment using the `kafka-reassign-partitions.sh` script from the interactive pod container.
 +
 [source,shell,subs=+quotes]
 ----
-kubectl exec my-cluster-kafka-0 -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
+bin/kafka-reassign-partitions.sh --bootstrap-server
+ _<cluster_name>_-kafka-bootstrap:9093 \
+ --command-config /tmp/config.properties \
+ --reassignment-json-file /tmp/reassignment.json \
+ --execute
+----
++
+Replace _<cluster_name>_ with the name of your Kafka cluster.
+For example, `my-cluster-kafka-bootstrap:9093`
++
+If you are going to throttle replication, you can also pass the `--throttle` option with an inter-broker throttled rate in bytes per second. For example:
++
+[source,shell,subs=+quotes]
+----
+bin/kafka-reassign-partitions.sh --bootstrap-server
+  _<cluster_name>_-kafka-bootstrap:9093 \
+  --command-config /tmp/config.properties \
   --reassignment-json-file /tmp/reassignment.json \
   --throttle 5000000 \
   --execute
 ----
 +
-This command will print out two reassignment JSON objects. 
-The first records the current assignment for the partitions being moved. 
-You should save this to a local file (not a file in the pod) in case you need to revert the reassignment later on. 
+This command will print out two reassignment JSON objects.
+The first records the current assignment for the partitions being moved.
+You should save this to a local file (not a file in the pod) in case you need to revert the reassignment later on.
 The second JSON object is the target reassignment you have passed in your reassignment JSON file.
-
-. If you need to change the throttle during reassignment you can use the same command line with a different throttled rate. For example:
++
+If you need to change the throttle during reassignment, you can use the same command with a different throttled rate. For example:
 +
 [source,shell,subs=+quotes]
 ----
-kubectl exec my-cluster-kafka-0 -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
+bin/kafka-reassign-partitions.sh --bootstrap-server
+  _<cluster_name>_-kafka-bootstrap:9093 \
+  --command-config /tmp/config.properties \
   --reassignment-json-file /tmp/reassignment.json \
   --throttle 10000000 \
   --execute
 ----
 
-. Periodically verify whether the reassignment has completed using the `kafka-reassign-partitions.sh` command line tool from any of the broker pods. This is the same command as the previous step but with the `--verify` option instead of the `--execute` option.
+. Verify that the reassignment has completed using the `kafka-reassign-partitions.sh` command line tool from any of the broker pods.
+This is the same command as the previous step, but with the `--verify` option instead of the `--execute` option.
 +
 [source,shell,subs=+quotes]
 ----
-kubectl exec _broker-pod_ -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
+bin/kafka-reassign-partitions.sh --bootstrap-server
+  _<cluster_name>_-kafka-bootstrap:9093 \
+  --command-config /tmp/config.properties \
   --reassignment-json-file /tmp/reassignment.json \
   --verify
 ----
 +
-For example,
-+
-[source,shell,subs=+quotes]
-----
-kubectl exec my-cluster-kafka-0 -c kafka -it -- \
-  bin/kafka-reassign-partitions.sh --bootstrap-server localhost:9092 \
-  --reassignment-json-file /tmp/reassignment.json \
-  --verify
-----
-
-. The reassignment has finished when the `--verify` command reports each of  the partitions being moved as completed successfully. 
+The reassignment has finished when the `--verify` command reports that each of the partitions being moved has completed successfully.
 This final `--verify` will also have the effect of removing any reassignment throttles.
-You can now delete the revert file if you saved the JSON for reverting the assignment to their original brokers.
+
+. You can now delete the revert file if you saved the JSON for reverting the assignment to their original brokers.

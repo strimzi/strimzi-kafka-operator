@@ -137,6 +137,7 @@ public class TopicStoreUpgradeTest {
 
     @AfterAll
     public static void after() {
+        cluster.stop();
         vertx.close();
     }
 }

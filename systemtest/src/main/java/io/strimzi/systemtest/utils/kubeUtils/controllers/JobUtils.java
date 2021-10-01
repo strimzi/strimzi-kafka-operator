@@ -21,6 +21,15 @@ public class JobUtils {
     private JobUtils() { }
 
     /**
+     * Wait until all Jobs are deleted in given namespace.
+     * @param namespace Delete all jobs in this namespace
+     */
+    public static void removeAllJobs(String namespace) {
+        kubeClient().namespace(namespace).getJobList().getItems().forEach(
+            job -> JobUtils.deleteJobWithWait(namespace, job.getMetadata().getName()));
+    }
+
+    /**
      * Wait until the given Job has been deleted.
      * @param name The name of the Job
      */

@@ -25,16 +25,16 @@
 :KubernetesVersion: 1.16 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
-:DefaultKafkaVersion: 2.8.0
-:KafkaVersionLower: 2.7.0
-:KafkaVersionHigher: 2.8.0
+:DefaultKafkaVersion: 3.0.0
+:KafkaVersionLower: 2.8.0
+:KafkaVersionHigher: 3.0.0
 :ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 
 //log message format version and inter-broker protocol version
-:LogMsgVersLower: 2.7
-:LogMsgVersHigher: 2.8
-:InterBrokVersLower: 2.7
-:InterBrokVersHigher: 2.8
+:LogMsgVersLower: 2.8
+:LogMsgVersHigher: 3.0
+:InterBrokVersLower: 2.8
+:InterBrokVersHigher: 3.0
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]
@@ -52,7 +52,7 @@
 :keycloak-server-install-doc: link:https://www.keycloak.org/docs/latest/server_installation/index.html#_operator[Installing the Keycloak Operator^]
 :keycloak-authorization-services: link:https://www.keycloak.org/docs/latest/authorization_services/index.html[Keycloak Authorization Services^]
 :oauth-blog: link:https://strimzi.io/2019/10/25/kafka-authentication-using-oauth-2.0.html[Kafka authentication using OAuth 2.0^]
-:OAuthVersion: 0.7.2
+:OAuthVersion: 0.8.1
 :oauth-demo-keycloak: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{OAuthVersion}/examples[Using Keycloak as the OAuth 2.0 authorization server^]
 :oauth-demo-hydra: link:https://github.com/strimzi/strimzi-kafka-oauth/tree/{OAuthVersion}/examples/docker#running-with-hydra-using-ssl-and-opaque-tokens[Using Hydra as the OAuth 2.0 authorization server^]
 

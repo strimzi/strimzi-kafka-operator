@@ -11,10 +11,10 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
-import io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -187,7 +187,7 @@ public class MultipleListenersST extends AbstractST {
 
                 if (listener.getType() != KafkaListenerType.INTERNAL) {
                     if (isTlsEnabled) {
-                        BasicExternalKafkaClient externalTlsKafkaClient = new BasicExternalKafkaClient.Builder()
+                        ExternalKafkaClient externalTlsKafkaClient = new ExternalKafkaClient.Builder()
                             .withTopicName(topicName)
                             .withNamespaceName(NAMESPACE)
                             .withClusterName(clusterName)
@@ -206,7 +206,7 @@ public class MultipleListenersST extends AbstractST {
                             externalTlsKafkaClient.receiveMessagesTls()
                         );
                     } else {
-                        BasicExternalKafkaClient externalPlainKafkaClient = new BasicExternalKafkaClient.Builder()
+                        ExternalKafkaClient externalPlainKafkaClient = new ExternalKafkaClient.Builder()
                             .withTopicName(topicName)
                             .withNamespaceName(NAMESPACE)
                             .withClusterName(clusterName)

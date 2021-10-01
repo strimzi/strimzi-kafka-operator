@@ -87,7 +87,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         for (AlterConfigOp entry : diff) {
             if (isEntryReadOnly(entry.configEntry())) {
                 result = false;
-                LOGGER.debugCr(reconciliation, "Configuration can't be updated dynamically due to: {}", entry);
+                LOGGER.infoCr(reconciliation, "Configuration can't be updated dynamically due to: {}", entry);
                 break;
             }
         }
@@ -221,7 +221,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
             // if the entry was custom, it should be deleted
             if (!isIgnorableProperty(pathValueWithoutSlash)) {
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, null), AlterConfigOp.OpType.DELETE));
-                LOGGER.traceCr(reconciliation, "{} not set in desired, unsetting back to default {}", entry.name(), "deleted entry");
+                LOGGER.infoCr(reconciliation, "{} not set in desired, unsetting back to default {}", entry.name(), "deleted entry");
             } else {
                 LOGGER.traceCr(reconciliation, "{} is ignorable, not considering as removed");
             }

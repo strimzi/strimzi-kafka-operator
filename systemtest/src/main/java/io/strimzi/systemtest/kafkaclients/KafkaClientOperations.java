@@ -7,9 +7,7 @@ package io.strimzi.systemtest.kafkaclients;
 /**
  * Interface KafkaClientOperations used for basic operations with the clients
  *
- * @see io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient
- * @see io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient
- * @see io.strimzi.systemtest.kafkaclients.externalClients.TracingExternalKafkaClient
+ * @see io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient
  * @see io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient
  */
 public interface KafkaClientOperations {

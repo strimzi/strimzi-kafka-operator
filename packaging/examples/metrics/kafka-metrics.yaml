@@ -4,7 +4,7 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    version: 2.8.0
+    version: 3.0.0
     replicas: 3
     listeners:
       - name: plain
@@ -94,10 +94,10 @@ data:
       name: kafka_server_$1_connections_tls_info
       type: GAUGE
       labels:
-        listener: "$2"
-        networkProcessor: "$3"
-        protocol: "$4"
-        cipher: "$5"
+        cipher: "$2"
+        protocol: "$3"
+        listener: "$4"
+        networkProcessor: "$5"
     - pattern: kafka.server<type=(.+), clientSoftwareName=(.+), clientSoftwareVersion=(.+), listener=(.+), networkProcessor=(.+)><>connections
       name: kafka_server_$1_connections_software
       type: GAUGE

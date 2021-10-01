@@ -22,7 +22,9 @@ The Cluster Operator watches for changes to the following resources:
 * `KafkaConnect` for the Kafka Connect cluster.
 * `KafkaConnector` for creating and managing connectors in a Kafka Connect cluster.
 * `KafkaMirrorMaker` for the Kafka MirrorMaker instance.
-* `KafkaBridge` for the Kafka Bridge instance
+* `KafkaMirrorMaker2` for the Kafka MirrorMaker 2.0 instance.
+* `KafkaBridge` for the Kafka Bridge instance.
+* `KafkaRebalance` for the Cruise Control optimization requests.
 
 When one of these resources is created in the Kubernetes cluster, the operator gets the cluster description from the resource and starts creating a new cluster for the resource by creating the necessary Kubernetes resources, such as StatefulSets, Services and ConfigMaps.
 

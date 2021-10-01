@@ -43,7 +43,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
         configList.forEach(entry -> {
             String[] split = entry.split("=");
             String val = split.length == 1 ? "" : split[1];
-            ConfigEntry ce = new ConfigEntry(split[0].replace("\n", ""), val, true, true, false);
+            ConfigEntry ce = new ConfigEntry(split[0].replace("\n", ""), val);
             entryList.add(ce);
         });
         entryList.addAll(additional);

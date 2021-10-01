@@ -24,9 +24,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 /**
  * ClientUtils class, which provides static methods for the all type clients
- * @see io.strimzi.systemtest.kafkaclients.externalClients.OauthExternalKafkaClient
- * @see io.strimzi.systemtest.kafkaclients.externalClients.TracingExternalKafkaClient
- * @see io.strimzi.systemtest.kafkaclients.externalClients.BasicExternalKafkaClient
+ * @see io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient
  * @see io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient
  */
 public class ClientUtils {

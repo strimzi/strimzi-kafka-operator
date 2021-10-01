@@ -89,14 +89,14 @@
         <license.maven.version>2.11</license.maven.version>
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
         <sundrio.version>0.40.1</sundrio.version>
-        <fabric8.kubernetes-client.version>5.7.2</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>5.7.2</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>5.7.2</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>5.8.0</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>5.8.0</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>5.8.0</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <okhttp.version>3.12.6</okhttp.version>
         <okio.version>1.15.0</okio.version>
-        <vertx.version>4.1.2</vertx.version>
-        <vertx-junit5.version>4.1.2</vertx-junit5.version>
+        <vertx.version>4.1.4</vertx.version>
+        <vertx-junit5.version>4.1.4</vertx-junit5.version>
         <log4j.version>2.14.1</log4j.version>
         <hamcrest.version>2.2</hamcrest.version>
         <valid4j.version>1.1</valid4j.version>
@@ -104,12 +104,12 @@
         <fasterxml.jackson-databind.version>2.11.3</fasterxml.jackson-databind.version>
         <fasterxml.jackson-dataformat.version>2.10.5</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.11.3</fasterxml.jackson-annotations.version>
-        <kafka.version>2.8.0</kafka.version>
+        <kafka.version>3.0.0</kafka.version>
         <!-- keep in-sync with dataformat-yaml -->
         <json-path.version>4.1.1</json-path.version>
         <zkclient.version>0.11</zkclient.version>
         <scala-library.version>2.13.6</scala-library.version>
-        <zookeeper.version>3.5.9</zookeeper.version>
+        <zookeeper.version>3.6.3</zookeeper.version>
         <mockito.version>2.28.2</mockito.version>
         <jayway-jsonpath.version>2.6.0</jayway-jsonpath.version>
         <slf4j.version>1.7.25</slf4j.version>
@@ -119,24 +119,25 @@
         <opentracing-kafka.version>0.1.13</opentracing-kafka.version>
         <strimzi-oauth.version>0.8.1</strimzi-oauth.version>
         <commons-codec.version>1.13</commons-codec.version>
+        <commons-compress.version>1.21</commons-compress.version>
         <registry.version>1.3.2.Final</registry.version>
 
         <test-containers.version>1.15.2</test-containers.version>
         <docker-java.version>3.2.7</docker-java.version>
         <javax.json-api.version>1.1.4</javax.json-api.version>
         <javax.json.version>1.1.4</javax.json.version>
-        <rest-assured.version>4.3.3</rest-assured.version>
-        <rest-assured-json-path.version>4.3.3</rest-assured-json-path.version>
+        <rest-assured.version>4.4.0</rest-assured.version>
+        <rest-assured-json-path.version>4.4.0</rest-assured-json-path.version>
         <jupiter.version>5.7.0</jupiter.version>
         <junit.platform.version>1.7.0</junit.platform.version>
         <junit-platform-surefire-provider.version>1.3.2</junit-platform-surefire-provider.version>
         <opentest4j.version>1.2.0</opentest4j.version>
         <gson.version>2.8.2</gson.version>
-        <vertx.kafka.client>4.1.2</vertx.kafka.client>
+        <vertx.kafka.client>4.1.4</vertx.kafka.client>
         <exec-maven-plugin.version>1.6.0</exec-maven-plugin.version>
-        <netty.version>4.1.66.Final</netty.version>
+        <netty.version>4.1.68.Final</netty.version>
         <micrometer.version>1.3.1</micrometer.version>
-        <bouncycastle.version>1.68</bouncycastle.version>
+        <bouncycastle.version>1.69</bouncycastle.version>
         <!-- property to skip surefire tests during failsafe execution -->
         <!--suppress UnresolvedMavenProperty -->
         <skip.surefire.tests>${skipTests}</skip.surefire.tests>
@@ -631,12 +632,6 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-migrationsupport</artifactId>
-                <version>${jupiter.version}</version>
-                <scope>test</scope>
-            </dependency>
             <!-- ^^^^^ Used by EmbeddedKafkaCluster -->
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -798,6 +793,12 @@
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-launcher</artifactId>
                 <version>${junit.platform.version}</version>
+            </dependency>
+            <!-- transitive dep of TestContainers; overridden here to avoid vulnerable version -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${commons-compress.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -1,0 +1,29 @@
+{
+	"signing": {
+		"profiles": {
+			"CA": {
+				"usages": ["cert sign"],
+				"ca_constraint": { "is_ca": true, "max_path_len": 0 },
+				"expiry": "80000h"
+			},
+			"server": {
+				"usages": ["server auth", "client auth", "signing", "key encipherment"],
+				"expiry": "80000h"
+			},
+			"email": {
+				"usages": ["s/mime"],
+				"expiry": "80000h"
+			}
+		},
+		"default": {
+			"usages": ["digital signature", "email protection"],
+			"expiry": "80000h"
+		}
+	},
+	"auth_key": {
+		"garbage": {
+			"type":"standard",
+			"key":"0123456789ABCDEF0123456789ABCDEF"
+		}
+	}
+}

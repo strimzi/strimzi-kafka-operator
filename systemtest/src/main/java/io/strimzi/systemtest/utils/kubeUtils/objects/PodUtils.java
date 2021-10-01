@@ -178,8 +178,12 @@ public class PodUtils {
     }
 
     public static void waitUntilMessageIsInPodLogs(String podName, String message) {
+        waitUntilMessageIsInPodLogs(podName, message, Constants.TIMEOUT_FOR_LOG);
+    }
+
+    public static void waitUntilMessageIsInPodLogs(String podName, String message, long duration) {
         LOGGER.info("Waiting for message will be in the log");
-        TestUtils.waitFor("Waiting for message will be in the log", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_LOG,
+        TestUtils.waitFor("Waiting for message will be in the log", Constants.GLOBAL_POLL_INTERVAL, duration,
             () -> kubeClient().logs(podName).contains(message));
         LOGGER.info("Message {} found in {} log", message, podName);
     }

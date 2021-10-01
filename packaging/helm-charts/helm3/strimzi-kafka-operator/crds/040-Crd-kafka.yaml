@@ -324,7 +324,7 @@ spec:
                                 description: A list of finalizers which will be configured for the `LoadBalancer` type Services created for this listener. If supported by the platform, the finalizer `service.kubernetes.io/load-balancer-cleanup` to make sure that the external load balancer is deleted together with the service.For more information, see https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#garbage-collecting-load-balancers. This field can be used only with `loadbalancer` type listeners.
                               maxConnectionCreationRate:
                                 type: integer
-                                description: The maximum connection creation rate we allow in this listener at any time. New connections will be throttled if the limit is reached.Supported only on Kafka 2.7.0 and newer.
+                                description: The maximum connection creation rate we allow in this listener at any time. New connections will be throttled if the limit is reached.
                               maxConnections:
                                 type: integer
                                 description: The maximum number of connections we allow for this listener in the broker at any time. New connections are blocked if the limit is reached.
@@ -854,6 +854,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Configures pod-level security attributes and common container settings.
@@ -1481,6 +1483,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
@@ -1553,6 +1557,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
@@ -1945,6 +1951,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Configures pod-level security attributes and common container settings.
@@ -2476,6 +2484,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
@@ -2995,6 +3005,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Configures pod-level security attributes and common container settings.
@@ -3428,6 +3440,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
@@ -3500,6 +3514,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
@@ -3572,6 +3588,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
@@ -3937,6 +3955,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Configures pod-level security attributes and common container settings.
@@ -4421,6 +4441,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
@@ -4493,6 +4515,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
@@ -4730,6 +4754,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Configures pod-level security attributes and common container settings.
@@ -5163,6 +5189,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.
@@ -5212,7 +5240,7 @@ spec:
                       description: CPU and memory resources to reserve.
                     logging:
                       type: string
-                      description: 'Only log messages with the given severity or above. Valid levels: [`debug`, `info`, `warn`, `error`, `fatal`]. Default log level is `info`.'
+                      description: 'Only log messages with the given severity or above. Valid levels: [`info`, `debug`, `trace`]. Default log level is `info`.'
                     enableSaramaLogging:
                       type: boolean
                       description: Enable Sarama logging, a Go client library used by the Kafka Exporter.
@@ -5309,6 +5337,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Configures pod-level security attributes and common container settings.
@@ -5758,6 +5788,8 @@ spec:
                                       type: string
                                     gmsaCredentialSpecName:
                                       type: string
+                                    hostProcess:
+                                      type: boolean
                                     runAsUserName:
                                       type: string
                               description: Security context for the container.

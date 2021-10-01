@@ -21,6 +21,8 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
@@ -3749,5 +3751,38 @@ public class KafkaClusterTest {
 
         assertThat(kc.isMetricsEnabled(), is(false));
         assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testKafkaInitContainerSectionIsConfigurable() {
+        Map<String, Quantity> limits = new HashMap<>();
+        limits.put("cpu", Quantity.parse("1"));
+        limits.put("memory", Quantity.parse("256Mi"));
+
+        Map<String, Quantity> requirements = new HashMap<>();
+        requirements.put("cpu", Quantity.parse("100m"));
+        requirements.put("memory", Quantity.parse("128Mi"));
+
+        ResourceRequirements resourceReq = new ResourceRequirementsBuilder()
+            .withLimits(limits)
+            .withRequests(requirements)
+            .build();
+
+        Kafka kafka = new KafkaBuilder(kafkaAssembly)
+            .editSpec()
+                .editKafka()
+                    .withResources(resourceReq)
+                    .withNewRack()
+                        .withTopologyKey("rack-key")
+                    .endRack()
+                .endKafka()
+            .endSpec()
+            .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+
+        ResourceRequirements initContainersResources = kc.getInitContainers(ImagePullPolicy.IFNOTPRESENT).get(0).getResources();
+        assertThat(initContainersResources.getRequests(), is(requirements));
+        assertThat(initContainersResources.getLimits(), is(limits));
     }
 }

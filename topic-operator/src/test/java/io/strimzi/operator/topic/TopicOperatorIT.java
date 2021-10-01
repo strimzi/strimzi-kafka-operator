@@ -59,6 +59,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     @AfterAll
     public static void afterAll() {
         teardownKubeCluster();
+        kafkaCluster.stop();
     }
 
     @BeforeEach
@@ -178,28 +179,28 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
 
     @Test
     public void testKafkaTopicAddedWithMoreReplicasThanBrokers() throws InterruptedException, ExecutionException, TimeoutException {
-        createKafkaTopicResourceError("test-resource-created-with-more-replicas-than-brokers", emptyMap(), 42, "Replication factor: 42 larger than available brokers: 1.");
+        createKafkaTopicResourceError("test-resource-created-with-more-replicas-than-brokers", emptyMap(), 42, "org.apache.kafka.common.errors.InvalidReplicationFactorException: Replication factor: 42 larger than available brokers: 1.");
     }
 
     @Test
     public void testKafkaTopicAddedWithHigherMinIsrThanBrokers() throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError("test-resource-created-with-higher-min-isr-than-brokers",
                 singletonMap("min.insync.replicas", "42"), 42,
-               "Replication factor: 42 larger than available brokers: 1.");
+               "org.apache.kafka.common.errors.InvalidReplicationFactorException: Replication factor: 42 larger than available brokers: 1.");
     }
 
     @Test
     public void testKafkaTopicAddedWithUnknownConfig() throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError("test-resource-created-with-unknown-config",
                 singletonMap("aardvark", "zebra"), 1,
-               "Unknown topic config name: aardvark");
+               "org.apache.kafka.common.errors.InvalidConfigurationException: Unknown topic config name: aardvark");
     }
 
     @Test
     public void testKafkaTopicAddedWithInvalidConfig() throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError("test-resource-created-with-invalid-config",
                 singletonMap("message.format.version", "zebra"), 1,
-               "Invalid value zebra for configuration message.format.version: Version `zebra` is not a valid version");
+               "org.apache.kafka.common.errors.InvalidConfigurationException: Invalid value zebra for configuration message.format.version: Version `zebra` is not a valid version");
     }
 
     @Test

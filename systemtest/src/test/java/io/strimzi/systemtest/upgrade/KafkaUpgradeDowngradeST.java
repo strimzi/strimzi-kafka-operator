@@ -319,7 +319,6 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
             } else {
                 LOGGER.info("ClusterOperator already changed the configuration, there should be no RollingUpdate");
                 PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(clusterName));
-                LOGGER.info("test");
                 assertFalse(StatefulSetUtils.ssHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaPods));
             }
         }

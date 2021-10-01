@@ -12,11 +12,11 @@ import java.lang.annotation.Target;
 
 /**
  * This annotation is used to restrict a string to a particular regular expression.
- * <br/><br/>
+ * <br><br>
  * When defining the regular expression, it's important to note that the string is considered valid if the expression
  * matches anywhere within the string. Unless there is a good reason to do so, it's usually less confusing to wrap the
  * regular expression in {@code ^...$}.
- * <br/><br/>
+ * <br><br>
  * For example, the expression {@code p} will match any string containing a p, like "apple", instead the expression
  * {@code ^p$} will only match the string "p".
  */

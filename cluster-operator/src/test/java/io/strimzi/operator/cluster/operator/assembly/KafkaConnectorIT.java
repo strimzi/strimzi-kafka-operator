@@ -73,6 +73,7 @@ public class KafkaConnectorIT {
 
     @AfterAll
     public static void after() {
+        cluster.stop();
         vertx.close();
     }
 
