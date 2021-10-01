@@ -133,7 +133,7 @@ public class Environment {
     /**
      * Defaults
      */
-    private static final String ST_KAFKA_VERSION_DEFAULT = "3.0.0";
+    private static final String ST_KAFKA_VERSION_DEFAULT = "2.8.0";
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_TAG_DEFAULT = "latest";
     public static final String STRIMZI_REGISTRY_DEFAULT = "quay.io";
