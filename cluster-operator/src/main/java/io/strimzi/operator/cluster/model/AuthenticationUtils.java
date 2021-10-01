@@ -68,9 +68,9 @@ public class AuthenticationUtils {
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth auth = (KafkaClientAuthenticationOAuth) authentication;
 
-                if (auth.getAccessToken() != null
-                        || auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getRefreshToken() != null
-                        || auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getClientSecret() != null)    {
+                if ((auth.getAccessToken() != null)
+                        || (auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getRefreshToken() != null)
+                        || (auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getClientSecret() != null))    {
                     // Valid options, lets just pass it through.
                     // This way the condition is easier to read and understand.
                 } else {

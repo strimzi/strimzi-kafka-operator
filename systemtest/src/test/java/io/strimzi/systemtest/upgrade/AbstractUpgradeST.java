@@ -238,8 +238,8 @@ public class AbstractUpgradeST extends AbstractST {
                     cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/config/inter.broker.protocol.version", interBrokerProtocolVersion);
                 }
 
-                if (currentInterBrokerProtocol != null && !currentInterBrokerProtocol.equals(interBrokerProtocolVersion) ||
-                        currentLogMessageFormat != null && !currentLogMessageFormat.equals(logMessageVersion)) {
+                if ((currentInterBrokerProtocol != null && !currentInterBrokerProtocol.equals(interBrokerProtocolVersion)) ||
+                        (currentLogMessageFormat != null) && !currentLogMessageFormat.equals(logMessageVersion)) {
                     LOGGER.info("Wait until kafka rolling update is finished");
                     kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
                 }

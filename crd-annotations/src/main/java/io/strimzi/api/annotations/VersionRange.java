@@ -164,7 +164,7 @@ public class VersionRange<Version extends Comparable<Version>> {
         } else if (to == null) {
             return from.compareTo(other.from) <= 0;
         } else {
-            return !(to.compareTo(other.from) < 0 || other.to != null && from.compareTo(other.to) > 0);
+            return !(to.compareTo(other.from) < 0 || (other.to != null && from.compareTo(other.to) > 0));
         }
     }
 

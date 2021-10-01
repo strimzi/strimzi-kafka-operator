@@ -29,9 +29,9 @@ public class NamespaceAndName {
             return false;
         } else if (obj instanceof NamespaceAndName) {
             NamespaceAndName nrn = (NamespaceAndName) obj;
-            if (nrn.getName() == null && name == null ||
-                    nrn.getName().equals(name) && (nrn.getNamespace() == null && namespace == null
-                            || nrn.getNamespace().equals(namespace))) {
+            if ((nrn.getName() == null && name == null) ||
+                    (nrn.getName().equals(name) && ((nrn.getNamespace() == null && namespace == null)
+                            || nrn.getNamespace().equals(namespace)))) {
                 return true;
             }
         }

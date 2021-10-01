@@ -56,7 +56,7 @@ public class Subject {
         public boolean isValidDnsName(String dnsName) {
             return dnsName.length() <= 255
                     && (DNS_NAME.matcher(dnsName).matches()
-                    || dnsName.startsWith("*.") && DNS_NAME.matcher(dnsName.substring(2)).matches());
+                    || (dnsName.startsWith("*.") && DNS_NAME.matcher(dnsName.substring(2)).matches()));
         }
 
         public Builder addIpAddress(String ip) {
