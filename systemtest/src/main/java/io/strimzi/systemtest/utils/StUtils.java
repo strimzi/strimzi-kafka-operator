@@ -62,7 +62,8 @@ public class StUtils {
         (annotationName, extensionContext) -> Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
             annotation -> annotation.annotationType().getName()
                 .toLowerCase(Locale.ENGLISH)
-                .contains(annotationName)).count() == 1;
+                // more than one because in some cases the TestSuite can inherit the annotation
+                .contains(annotationName)).count() >= 1;
 
     private StUtils() { }
 

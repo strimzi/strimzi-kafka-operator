@@ -95,6 +95,11 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
         }
 
         @Override
+        public Builder withNamespaceName(String namespaceName) {
+            return (Builder) super.withNamespaceName(namespaceName);
+        }
+
+        @Override
         public KafkaTracingExampleClients build() {
             return new KafkaTracingExampleClients(this);
         }

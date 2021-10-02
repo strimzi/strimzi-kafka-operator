@@ -8,6 +8,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.executor.ExecResult;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -207,7 +208,7 @@ public class KeycloakUtils {
     }
 
     public static String getValidKeycloakVersion() {
-        if (Double.parseDouble(kubeClient().clusterKubernetesVersion()) >= 1.22) {
+        if (Double.parseDouble(KubeClusterResource.getInstance().client().clusterKubernetesVersion()) >= 1.22) {
             return LATEST_KEYCLOAK_VERSION;
         } else {
             return OLD_KEYCLOAK_VERSION;
