@@ -145,7 +145,7 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
                                     .withValue(topicName)
                                 .endEnv()
                                 .addNewEnv()
-                                    .withName("SEND_INTERVAL")
+                                    .withName("DELAY_MS")
                                     .withValue(String.valueOf(delayMs))
                                 .endEnv()
                                 .addNewEnv()
