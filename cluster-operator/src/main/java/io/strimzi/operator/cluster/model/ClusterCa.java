@@ -79,7 +79,6 @@ public class ClusterCa extends Ca {
         return "cluster-ca";
     }
 
-    @SuppressWarnings("deprecation")
     public void initCaSecrets(List<Secret> secrets) {
         for (Secret secret: secrets) {
             String name = secret.getMetadata().getName();
