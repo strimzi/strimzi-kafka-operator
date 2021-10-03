@@ -124,6 +124,7 @@ public class SetupClusterOperator {
 
     public static SetupClusterOperator buildDefaultInstallation() {
         if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
+            LOGGER.debug("Building default installation for RBAC Cluster operator.");
             return new SetupClusterOperator.SetupClusterOperatorBuilder()
                 .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
                 .withNamespace(Constants.INFRA_NAMESPACE)
@@ -131,6 +132,7 @@ public class SetupClusterOperator {
                 .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
                 .createInstallation();
         }
+        LOGGER.debug("Building default installation for Cluster operator.");
         return new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(Constants.INFRA_NAMESPACE)
@@ -145,6 +147,7 @@ public class SetupClusterOperator {
      * Don't use this method in tests, where specific configuration of CO is needed.
      */
     public SetupClusterOperator runInstallation() {
+        LOGGER.debug("Cluster operator installation configuration:\n{}", this::toString);
         // if it's shared context (before suite) skip
         if (BeforeAllOnce.getSharedExtensionContext() != extensionContext) {
             testClassName = extensionContext.getRequiredTestClass() != null ? extensionContext.getRequiredTestClass().getName() : "";
@@ -550,5 +553,26 @@ public class SetupClusterOperator {
         return Objects.hash(cluster, helmResource, olmResource, extensionContext,
             clusterOperatorName, namespaceInstallTo, namespaceToWatch, bindingsNamespaces, operationTimeout,
             extraEnvVars, extraLabels, clusterOperatorRBACType);
+    }
+
+    @Override
+    public String toString() {
+        return "SetupClusterOperator{" +
+            "cluster=" + cluster +
+            ", helmResource=" + helmResource +
+            ", olmResource=" + olmResource +
+            ", extensionContext=" + extensionContext +
+            ", clusterOperatorName='" + clusterOperatorName + '\'' +
+            ", namespaceInstallTo='" + namespaceInstallTo + '\'' +
+            ", namespaceToWatch='" + namespaceToWatch + '\'' +
+            ", bindingsNamespaces=" + bindingsNamespaces +
+            ", operationTimeout=" + operationTimeout +
+            ", reconciliationInterval=" + reconciliationInterval +
+            ", extraEnvVars=" + extraEnvVars +
+            ", extraLabels=" + extraLabels +
+            ", clusterOperatorRBACType=" + clusterOperatorRBACType +
+            ", testClassName='" + testClassName + '\'' +
+            ", testMethodName='" + testMethodName + '\'' +
+            '}';
     }
 }

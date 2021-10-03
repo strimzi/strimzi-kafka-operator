@@ -13,7 +13,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -40,7 +39,11 @@ public class CruiseControlApiST extends AbstractST {
     @Tag(ACCEPTANCE)
     @ParallelTest
     void testCruiseControlBasicAPIRequests(ExtensionContext extensionContext)  {
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
+            .build());
 
         LOGGER.info("----> CRUISE CONTROL DEPLOYMENT STATE ENDPOINT <----");
 
@@ -155,14 +158,5 @@ public class CruiseControlApiST extends AbstractST {
         assertThat(response, not(containsString("404")));
         assertThat(response, containsString("RUNNING"));
         assertThat(response, containsString("NO_TASK_IN_PROGRESS"));
-    }
-
-    @BeforeAll
-    void setup(ExtensionContext extensionContext) throws Exception {
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3)
-            .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
-            .endMetadata()
-            .build());
     }
 }
