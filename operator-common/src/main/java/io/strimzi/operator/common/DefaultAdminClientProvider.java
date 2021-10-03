@@ -50,7 +50,7 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
         if (clusterCaCertSecret != null) {
             PasswordGenerator pg = new PasswordGenerator(12);
             trustStorePassword = pg.generate();
-            truststoreFile = Util.createFileTrustStore(getClass().getName(), "ts", Ca.cert(clusterCaCertSecret, Ca.CA_CRT), trustStorePassword.toCharArray());
+            truststoreFile = Util.createFileTrustStore(getClass().getName(), "ts", Ca.certs(clusterCaCertSecret), trustStorePassword.toCharArray());
         }
 
         try {

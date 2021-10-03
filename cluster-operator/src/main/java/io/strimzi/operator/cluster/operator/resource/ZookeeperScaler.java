@@ -279,7 +279,7 @@ public class ZookeeperScaler implements AutoCloseable {
             try {
                 ZKClientConfig clientConfig = new ZKClientConfig();
 
-                trustStoreFile = Util.createFileTrustStore(getClass().getName(), "p12", Ca.cert(clusterCaCertSecret, Ca.CA_CRT), trustStorePassword.toCharArray());
+                trustStoreFile = Util.createFileTrustStore(getClass().getName(), "p12", Ca.certs(clusterCaCertSecret), trustStorePassword.toCharArray());
                 keyStoreFile = Util.createFileStore(getClass().getName(), "p12", Util.decodeFromSecret(coKeySecret, "cluster-operator.p12"));
 
                 clientConfig.setProperty("zookeeper.clientCnxnSocket", "org.apache.zookeeper.ClientCnxnSocketNetty");
