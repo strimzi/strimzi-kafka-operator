@@ -152,7 +152,7 @@ public class Environment {
     private static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = ClusterOperatorInstallType.BUNDLE;
     private static final boolean LB_FINALIZERS_DEFAULT = false;
     private static final String STRIMZI_FEATURE_GATES_DEFAULT = "";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.1.0";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.1.1";
 
     /**
      * Set values
