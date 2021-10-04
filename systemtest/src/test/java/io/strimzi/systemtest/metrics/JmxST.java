@@ -44,41 +44,7 @@ public class JmxST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
-    void testKafkaAndKafkaConnectWithJMX(ExtensionContext extensionContext) {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
-            .editOrNewSpec()
-                .editKafka()
-                    .withNewJmxOptions()
-                        .withAuthentication(new KafkaJmxAuthenticationPassword())
-                    .endJmxOptions()
-                .endKafka()
-            .endSpec()
-            .build());
-
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-        String clientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
-
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, true)
-            .editOrNewSpec()
-                .withNewJmxOptions()
-                    .withAuthentication(new KafkaJmxAuthenticationPassword())
-                .endJmxOptions()
-            .endSpec()
-            .build());
-
-        String kafkaResults = JmxUtils.execJmxTermAndGetResult(namespaceName, KafkaResources.brokersServiceName(clusterName), clusterName + "-kafka-jmx", clientsPodName, "bean kafka.server:type=app-info\nget -i *");
-        String kafkaConnectResults = JmxUtils.execJmxTermAndGetResult(namespaceName, KafkaConnectResources.serviceName(clusterName), clusterName + "-kafka-connect-jmx", clientsPodName, "bean kafka.connect:type=app-info\nget -i *");
-
-        assertThat("Result from Kafka JMX doesn't contain right version of Kafka, result: " + kafkaResults, kafkaResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
-        assertThat("Result from KafkaConnect JMX doesn't contain right version of Kafka, result: " + kafkaConnectResults, kafkaConnectResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
-    }
-
-    @ParallelNamespaceTest
-    void testJmxOnZookeeperNodesWithSecretLabelsAndAnnotations(ExtensionContext extensionContext) {
+    void testKafkaZookeeperAndKafkaConnectWithJMX(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
@@ -88,7 +54,12 @@ public class JmxST extends AbstractST {
         Map<String, String> jmxSecretAnnotations = Collections.singletonMap("my-annotation", "some-value");
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
-            .editSpec()
+            .editOrNewSpec()
+                .editKafka()
+                    .withNewJmxOptions()
+                        .withAuthentication(new KafkaJmxAuthenticationPassword())
+                    .endJmxOptions()
+                .endKafka()
                 .editOrNewZookeeper()
                     .withNewJmxOptions()
                         .withAuthentication(new KafkaJmxAuthenticationPassword())
@@ -107,9 +78,23 @@ public class JmxST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         String clientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
+
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1, true)
+            .editOrNewSpec()
+                .withNewJmxOptions()
+                    .withAuthentication(new KafkaJmxAuthenticationPassword())
+                .endJmxOptions()
+            .endSpec()
+            .build());
+
         Secret jmxZkSecret = kubeClient().getSecret(namespaceName, zkSecretName);
 
+        String kafkaResults = JmxUtils.execJmxTermAndGetResult(namespaceName, KafkaResources.brokersServiceName(clusterName), clusterName + "-kafka-jmx", clientsPodName, "bean kafka.server:type=app-info\nget -i *");
+        String kafkaConnectResults = JmxUtils.execJmxTermAndGetResult(namespaceName, KafkaConnectResources.serviceName(clusterName), clusterName + "-kafka-connect-jmx", clientsPodName, "bean kafka.connect:type=app-info\nget -i *");
         String zkResults = JmxUtils.execJmxTermAndGetResult(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, clientsPodName, "bean org.apache.ZooKeeperService:name0=ReplicatedServer_id1\nget -i *");
+
+        assertThat("Result from Kafka JMX doesn't contain right version of Kafka, result: " + kafkaResults, kafkaResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
+        assertThat("Result from KafkaConnect JMX doesn't contain right version of Kafka, result: " + kafkaConnectResults, kafkaConnectResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
         assertThat("Result from Zookeeper JMX doesn't contain right quorum size, result: " + zkResults, zkResults, containsString("QuorumSize = 3"));
 
         LOGGER.info("Checking that Zookeeper JMX secret is created with custom labels and annotations");
