@@ -6,67 +6,17 @@
 = Upgrading Kubernetes
 
 [role="_abstract"]
-If you are upgrading Strimzi, you may also need to upgrade your Kubernetes cluster to a supported version.
+If you are upgrading Kubernetes, refer the Kubernertes upgrade documentation to check the upgrade path and the steps to upgrade your nodes correctly.
+Before upgrading Kubernetes, link:{supported-configurations}[check the supported versions for your version of Strimzi^].
 
-Refer to your Kubernetes distribution upgrade documentation to check the upgrade path and the steps to upgrade your nodes correctly.
+When performing your upgrade, you'll want to keep your Kafka clusters available.
 
-NOTE: Before upgrading, {supported-configurations}[check supported Kubernetes versions^].
-
-When performing your upgrade, you'll want to keep your Strimzi clusters available.
-You can employ the following strategies to do this.
+You can employ one of the following strategies:
 
 * Configuring pod disruption budgets
-* Updating pods while keeping topics available
+* Manually updating pods while keeping topics available
 
-== Configuring pod disruption budgets
-
-A pod disruption budget allows only a specified number of pods to be unavailable at a given time.
-During planned maintenance of Kafka broker pods, a pod disruption budget ensures Kafka continues to run in a highly available environment.
-
-You specify a pod disruption budget using a `template` customization for a Kafka component.
-Labels and annotations identify resources.
-By default, pod disruption budgets allow only a single pod to be unavailable at a given time.
-You can increase the number of unavailable pods allowed by changing the default value of the `maxUnavailable` property.
-
-If you used the Cluster Operator to deploy Kafka, you can use the Strimzi Drain Cleaner tool to evict nodes during an upgrade.
-To do this, you set `maxUnavailable` to 0. This prevents voluntary disruptions, so pods must be evicted manually.
-
-.Specifying a pod discruption budget
-[source,yaml,subs=attributes+]
-----
-# ...
-template:
-  podDisruptionBudget:
-    metadata:
-      labels:
-        key1: label1
-        key2: label2
-      annotations:
-        key1: label1
-        key2: label2
-    maxUnavailable: 1
-# ...
-----
-
-== Updating pods while keeping topics available
-
-During an upgrade, you can trigger a rolling update of pods through the Cluster Operator.
-Using `Pod` resources, rolling updates restart the pods of resources with new pods.
-
-You add a pod annotation to make the update.
-Here, the annotation updates a Kafka broker.
-
-.Performing a manual rolling update on a Kafka broker pod
-[source,shell,subs="+quotes,attributes"]
-----
-kubectl annotate pod _<cluster_name>_-kafka-_<index>_ strimzi.io/manual-rolling-update=true
-----
-
-You replace _<cluster_name>_ with the name of the cluster.
-Kafka broker pods are named _<cluster-name>_-kafka-_<index>_, where _<index>_ starts at zero and ends at the total number of replicas.
-For example, `my-cluster-kafka-0`.
-
-For Kafka to stay operational, topics must be replicated for high availability.
+For Kafka to stay operational, topics must also be replicated for high availability.
 This requires topic configuration that specifies a replication factor of at least 3 and a minimum number of in-sync replicas to 1 less than the replication factor.
 
 .Kafka topic replicated for high availability
@@ -90,9 +40,52 @@ spec:
 
 In a highly available environment, the Cluster Operator maintains a minimum number of in-sync replicas for topics during the upgrade process so that there is no downtime.
 
-You can use the Strimzi Drain Cleaner to evict pods during an upgrade.
-The Drain Cleaner annotates the pods with the same rolling update pod annotation.
-This informs the Cluster Operator to perform a rolling update of the evicted pod.
+== Configuring pod disruption budgets
+
+A pod disruption budget allows only a specified number of pods to be unavailable at a given time.
+During planned maintenance of Kafka broker pods, a pod disruption budget ensures Kafka continues to run in a highly available environment.
+
+You specify a pod disruption budget using a `template` customization for a Kafka component.
+By default, pod disruption budgets allow only a single pod to be unavailable at a given time.
+
+If you used the Cluster Operator to deploy Kafka, you can use the Strimzi Drain Cleaner tool to evict nodes during an upgrade.
+To do this, you set `maxUnavailable` to 0 (zero).
+Reducing the maximum pod disruption budget to zero prevents voluntary disruptions, so pods must be evicted manually.
+
+.Specifying a pod discruption budget
+[source,yaml,subs=attributes+]
+----
+# ...
+template:
+  podDisruptionBudget:
+    # ...
+    maxUnavailable: 1
+# ...
+----
+
+The Strimzi Drain Cleaner annotates pods with a rolling update pod annotation.
+This informs the Cluster Operator to perform a rolling update of an evicted pod.
+
+== Manually updating pods while keeping topics available
+
+During an upgrade, you can trigger a manual rolling update of pods through the Cluster Operator.
+Using `Pod` resources, rolling updates restart the pods of resources with new pods.
+As with using the Strimzi Drain Cleaner, you'll need to set the `maxUnavailable` value to zero for the pod disruption budget.
+
+You need to watch the pods that need to be drained.
+You then add a pod annotation to make the update.
+
+Here, the annotation updates a Kafka broker.
+
+.Performing a manual rolling update on a Kafka broker pod
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl annotate pod _<cluster_name>_-kafka-_<index>_ strimzi.io/manual-rolling-update=true
+----
+
+You replace _<cluster_name>_ with the name of the cluster.
+Kafka broker pods are named _<cluster-name>_-kafka-_<index>_, where _<index>_ starts at zero and ends at the total number of replicas.
+For example, `my-cluster-kafka-0`.
 
 [role="_additional-resources"]
 .Additional resources
