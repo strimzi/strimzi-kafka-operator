@@ -134,7 +134,7 @@ public class Environment {
     /**
      * Defaults
      */
-    private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getLatestSupportedKafkaVersion();
+    private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_TAG_DEFAULT = "latest";
     public static final String STRIMZI_REGISTRY_DEFAULT = "quay.io";
