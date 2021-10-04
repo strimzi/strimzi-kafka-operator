@@ -36,18 +36,6 @@
             <id>cruise-control</id>
             <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
         </repository>
-        <repository>
-            <id>quotas-plugin-staging-repository</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1117</url>
-        </repository>
-        <repository>
-            <id>env-var-provider-staging-repository</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1118</url>
-        </repository>
-        <repository>
-            <id>kubernetes-provider-staging-repository</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1119</url>
-        </repository>
     </repositories>
 
     <dependencyManagement>
