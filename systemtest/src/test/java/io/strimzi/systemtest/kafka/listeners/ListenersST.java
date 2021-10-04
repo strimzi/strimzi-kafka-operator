@@ -8,14 +8,17 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.ListenerAddress;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
@@ -48,7 +51,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
@@ -74,6 +81,7 @@ import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCe
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -2153,6 +2161,112 @@ public class ListenersST extends AbstractST {
             sentMessages,
             internalKafkaClient.receiveMessagesTls()
         );
+    }
+
+    @ParallelNamespaceTest
+    void testAdvertisedHostNamesAppearsInBrokerCerts(ExtensionContext extensionContext) throws CertificateException {
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+
+        final String advertHostInternal0 = "kafka-test.internal.0.net";
+        final String advertHostInternal1 = "kafka-test.internal.1.net";
+        final String advertHostInternal2 = "kafka-test.internal.2.net";
+
+        List<String> advertHostInternalList = asList(advertHostInternal0, advertHostInternal1, advertHostInternal2);
+
+        final int advertPortInternalListener = 9999;
+
+        final String advertHostExternal0 = "kafka-test.external.0.net";
+        final String advertHostExternal1 = "kafka-test.external.1.net";
+        final String advertHostExternal2 = "kafka-test.external.2.net";
+
+        List<String> advertHostExternalList = asList(advertHostExternal0, advertHostExternal1, advertHostExternal2);
+
+        final int advertPortExternalListener = 9888;
+
+        GenericKafkaListenerConfigurationBroker brokerInternal0 =
+            new GenericKafkaListenerConfigurationBrokerBuilder()
+                .withBroker(0)
+                .withAdvertisedHost(advertHostInternal0)
+                .withAdvertisedPort(advertPortInternalListener)
+                .build();
+
+        GenericKafkaListenerConfigurationBroker brokerInternal1 =
+            new GenericKafkaListenerConfigurationBrokerBuilder(brokerInternal0)
+                .withBroker(1)
+                .withAdvertisedHost(advertHostInternal1)
+                .build();
+
+        GenericKafkaListenerConfigurationBroker brokerInternal2 =
+            new GenericKafkaListenerConfigurationBrokerBuilder(brokerInternal0)
+                .withBroker(2)
+                .withAdvertisedHost(advertHostInternal2)
+                .build();
+
+        GenericKafkaListenerConfigurationBroker brokerExternal0 =
+            new GenericKafkaListenerConfigurationBrokerBuilder()
+                .withBroker(0)
+                .withAdvertisedHost(advertHostExternal0)
+                .withAdvertisedPort(advertPortExternalListener)
+                .build();
+
+        GenericKafkaListenerConfigurationBroker brokerExternal1 =
+            new GenericKafkaListenerConfigurationBrokerBuilder(brokerExternal0)
+                .withBroker(1)
+                .withAdvertisedHost(advertHostExternal1)
+                .build();
+
+        GenericKafkaListenerConfigurationBroker brokerExternal2 =
+            new GenericKafkaListenerConfigurationBrokerBuilder(brokerExternal0)
+                .withBroker(2)
+                .withAdvertisedHost(advertHostExternal2)
+                .build();
+
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(asList(
+                            new GenericKafkaListenerBuilder()
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withPort(9098)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .withNewConfiguration()
+                                    .withBrokers(asList(brokerInternal0, brokerInternal1, brokerInternal2))
+                                .endConfiguration()
+                                .build(),
+                            new GenericKafkaListenerBuilder()
+                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                                .withPort(9099)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(true)
+                                .withNewConfiguration()
+                                    .withBrokers(asList(brokerExternal0, brokerExternal1, brokerExternal2))
+                                .endConfiguration()
+                                .build()
+                        ))
+                    .endKafka()
+                .endSpec()
+                .build());
+
+        Map<String, String> secretData = kubeClient().getSecret(namespaceName, KafkaResources.brokersServiceName(clusterName)).getData();
+        List<String> kafkaPods = kubeClient().listPodNamesInSpecificNamespace(namespaceName, Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND)
+            .stream().filter(podName -> podName.contains("kafka")).collect(Collectors.toList());
+
+        int index = 0;
+        for (String kafkaBroker : kafkaPods) {
+            String cert = secretData.get(kafkaBroker + ".crt");
+
+            LOGGER.info("Encoding {}.crt", kafkaBroker);
+
+            ByteArrayInputStream publicCert = new ByteArrayInputStream(Base64.getDecoder().decode(cert.getBytes()));
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            Certificate certificate = certificateFactory.generateCertificate(publicCert);
+
+            assertThat(certificate.toString(), containsString(advertHostInternalList.get(index)));
+            assertThat(certificate.toString(), containsString(advertHostExternalList.get(index++)));
+        }
     }
 
     @BeforeAll
