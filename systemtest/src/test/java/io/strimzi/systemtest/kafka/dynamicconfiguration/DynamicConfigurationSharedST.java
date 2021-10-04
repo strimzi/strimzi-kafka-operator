@@ -202,7 +202,6 @@ public class DynamicConfigurationSharedST extends AbstractST {
             int stochasticNumber = generator.nextInt(testCaseKeys.size());
             String chosenDynConfiguration = testCaseKeys.get(stochasticNumber);
 
-            // ak uz tam je iny..
             if (chosenDynConfigurations.contains(chosenDynConfiguration)) {
                 while (chosenDynConfigurations.contains(chosenDynConfiguration)) {
                     LOGGER.debug("List of dynamic configurations already have that type of configuration:\n{}", chosenDynConfigurations.toArray());
