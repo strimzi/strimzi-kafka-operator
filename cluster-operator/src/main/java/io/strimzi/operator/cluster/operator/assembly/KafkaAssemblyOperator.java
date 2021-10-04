@@ -715,7 +715,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * It is not necessary when the CA certificate is replace while retaining the existing key.
          */
         Future<ReconciliationState> rollingUpdateForNewCaKey() {
-            List<String> reason = new ArrayList<>(4);
+            List<String> reason = new ArrayList<>(2);
             if (this.clusterCa.keyReplaced()) {
                 reason.add("trust new cluster CA certificate signed by new key");
             }
