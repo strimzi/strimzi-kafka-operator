@@ -61,6 +61,9 @@ public class Environment {
     private static final String TEST_CONSUMER_IMAGE_ENV = "TEST_CONSUMER_IMAGE";
     private static final String TEST_STREAMS_IMAGE_ENV = "TEST_STREAMS_IMAGE";
     private static final String TEST_ADMIN_IMAGE_ENV = "TEST_ADMIN_IMAGE";
+    private static final String TEST_HTTP_PRODUCER_IMAGE_ENV = "TEST_HTTP_PRODUCER_IMAGE";
+    private static final String TEST_HTTP_CONSUMER_IMAGE_ENV = "TEST_HTTP_CONSUMER_IMAGE";
+    private static final String TEST_CLIENTS_VERSION_ENV = "TEST_CLIENTS_VERSION";
     /**
      * Specify kafka bridge image used in system tests.
      */
@@ -134,6 +137,7 @@ public class Environment {
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_TAG_DEFAULT = "latest";
     public static final String STRIMZI_REGISTRY_DEFAULT = "quay.io";
+    public static final String TEST_CLIENTS_ORG_DEFAULT = "strimzi-test-clients";
     private static final String TEST_LOG_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/logs/";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
     private static final String STRIMZI_COMPONENTS_LOG_LEVEL_DEFAULT = "INFO";
@@ -143,11 +147,12 @@ public class Environment {
     public static final String OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT = Constants.STRIMZI_DEPLOYMENT_NAME;
     public static final String OLM_SOURCE_NAME_DEFAULT = "community-operators";
     public static final String OLM_APP_BUNDLE_PREFIX_DEFAULT = "strimzi-cluster-operator";
-    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.23.0";
+    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.25.0";
     private static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT = true;
     private static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT = ClusterOperatorInstallType.BUNDLE;
     private static final boolean LB_FINALIZERS_DEFAULT = false;
     private static final String STRIMZI_FEATURE_GATES_DEFAULT = "";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.1.1";
 
     /**
      * Set values
@@ -168,14 +173,19 @@ public class Environment {
     private static final String TEST_CLIENT_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/test-client:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String TEST_CLIENT_IMAGE = getOrDefault(TEST_CLIENT_IMAGE_ENV, TEST_CLIENT_IMAGE_DEFAULT);
     // variables for kafka client app images
-    private static final String TEST_PRODUCER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/strimzi-examples/java-kafka-producer:latest";
-    private static final String TEST_CONSUMER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/strimzi-examples/java-kafka-consumer:latest";
-    private static final String TEST_STREAMS_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/strimzi-examples/java-kafka-streams:latest";
-    private static final String TEST_ADMIN_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/strimzi-test-clients/test-client-kafka-admin:latest";
+    private static final String TEST_CLIENTS_VERSION = getOrDefault(TEST_CLIENTS_VERSION_ENV, TEST_CLIENTS_VERSION_DEFAULT);
+    private static final String TEST_PRODUCER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-producer:" + TEST_CLIENTS_VERSION + "-kafka-" + ST_KAFKA_VERSION;
+    private static final String TEST_CONSUMER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-consumer:" + TEST_CLIENTS_VERSION + "-kafka-" + ST_KAFKA_VERSION;
+    private static final String TEST_STREAMS_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-streams:" + TEST_CLIENTS_VERSION + "-kafka-" + ST_KAFKA_VERSION;
+    private static final String TEST_ADMIN_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-admin:" + TEST_CLIENTS_VERSION + "-kafka-" + ST_KAFKA_VERSION;
+    private static final String TEST_HTTP_PRODUCER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-http-producer:" + TEST_CLIENTS_VERSION;
+    private static final String TEST_HTTP_CONSUMER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-http-consumer:" + TEST_CLIENTS_VERSION;
     public static final String TEST_PRODUCER_IMAGE = getOrDefault(TEST_PRODUCER_IMAGE_ENV, TEST_PRODUCER_IMAGE_DEFAULT);
     public static final String TEST_CONSUMER_IMAGE = getOrDefault(TEST_CONSUMER_IMAGE_ENV, TEST_CONSUMER_IMAGE_DEFAULT);
     public static final String TEST_STREAMS_IMAGE = getOrDefault(TEST_STREAMS_IMAGE_ENV, TEST_STREAMS_IMAGE_DEFAULT);
     public static final String TEST_ADMIN_IMAGE = getOrDefault(TEST_ADMIN_IMAGE_ENV, TEST_ADMIN_IMAGE_DEFAULT);
+    public static final String TEST_HTTP_PRODUCER_IMAGE = getOrDefault(TEST_HTTP_PRODUCER_IMAGE_ENV, TEST_HTTP_PRODUCER_IMAGE_DEFAULT);
+    public static final String TEST_HTTP_CONSUMER_IMAGE = getOrDefault(TEST_HTTP_CONSUMER_IMAGE_ENV, TEST_HTTP_CONSUMER_IMAGE_DEFAULT);
     // variables for kafka bridge image
     private static final String BRIDGE_IMAGE_DEFAULT = "latest-released";
     public static final String BRIDGE_IMAGE = getOrDefault(BRIDGE_IMAGE_ENV, BRIDGE_IMAGE_DEFAULT);
