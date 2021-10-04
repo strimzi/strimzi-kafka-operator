@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import io.strimzi.operator.common.Reconciliation;
@@ -52,9 +51,7 @@ public class KafkaAvailabilityTest {
 
     private static <T> T await(Future<T> future) {
         CountDownLatch latch = new CountDownLatch(1);
-        future.onComplete(ar -> {
-            latch.countDown();
-        });
+        future.onComplete(ar -> latch.countDown());
         try {
             if (latch.await(1, TimeUnit.SECONDS)) {
                 if (future.failed()) {
@@ -72,9 +69,7 @@ public class KafkaAvailabilityTest {
 
     private static Throwable awaitThrows(Future<?> future) {
         CountDownLatch latch = new CountDownLatch(1);
-        future.onComplete(ar -> {
-            latch.countDown();
-        });
+        future.onComplete(ar -> latch.countDown());
         try {
             if (latch.await(1, TimeUnit.SECONDS)) {
                 if (future.succeeded()) {
@@ -91,7 +86,7 @@ public class KafkaAvailabilityTest {
     }
 
     private ClusterModel clusterWithTwoTopics(int numBrokers, int minIsr, List<Integer> isr) {
-        ClusterModel clusterModel = new ClusterModel()
+        return new ClusterModel()
                 .addNBrokers(numBrokers)
                 .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, Integer.toString(minIsr))
@@ -109,11 +104,10 @@ public class KafkaAvailabilityTest {
                         .isr(isr.stream().mapToInt(Integer::intValue).toArray())
                     .endPartition()
                 .endTopic();
-        return clusterModel;
     }
 
     @Test
-    public void testBelowMinIsr() throws InterruptedException {
+    public void testBelowMinIsr() {
         ClusterModel clusterModel = new ClusterModel()
             .addNewTopic("A")
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
@@ -161,7 +155,7 @@ public class KafkaAvailabilityTest {
     }
 
     @Test
-    public void testAtMinIsr() throws InterruptedException {
+    public void testAtMinIsr() {
         ClusterModel clusterModel = new ClusterModel()
             .addNewTopic("A")
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
@@ -200,45 +194,32 @@ public class KafkaAvailabilityTest {
 
 
     @Test
-    public void testAboveMinIsr() throws InterruptedException {
+    public void testAboveMinIsr() {
         ClusterModel clusterModel = clusterWithTwoTopics(3, 3, List.of(0, 1, 2));
 
         KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
 
         Set<Integer> brokers = clusterModel.brokerIds();
-        for (Integer brokerId1 : brokers) {
-            boolean canRoll1 = await(kafkaAvailability.canRoll(brokerId1, Set.of()));
-            ((BiConsumer<Integer, Boolean>) (brokerId, canRoll) -> Assertions.assertTrue(canRoll, "broker " + brokerId + " should be rollable, since it has no URP")).accept(brokerId1, canRoll1);
+        for (Integer brokerId : brokers) {
+            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+            Assertions.assertTrue(canRoll, "broker " + brokerId + " should be rollable, since it has no URP");
         }
     }
 
     @Test
-    public void testAboveMinIsrWhileRestartingBrokers() throws InterruptedException {
-        ClusterModel clusterModel = clusterWithTwoTopics(3, 3, List.of(0, 1, 2));
+    public void testAboveMinIsrWhileRestartingBrokers() {
+        ClusterModel clusterModel = clusterWithTwoTopics(3, 2, List.of(0, 1, 2));
 
         KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
 
-        assertEquals(Map.of(0, true, 1, false, 2, true),
+        // We should be able to roll broker 1 because it's not in the ISR
+        assertEquals(Map.of(0, false, 1, true, 2, false),
                 canRollBrokers(kafkaAvailability, clusterModel.brokerIds(), Set.of(1)));
-
-//        Set<Integer> brokers = adminMockBuilder.brokers();
-//        for (Integer brokerId1 : brokers) {
-//            boolean canRoll1 = await(kafkaAvailability.canRoll(brokerId1, Set.of(1)));
-//            ((BiConsumer<Integer, Boolean>) (brokerId, canRoll) -> {
-//                if (brokerId != 1) {
-//                    Assertions.assertTrue(canRoll,
-//                            "broker " + brokerId + " should be rollable, since it has no URP");
-//                } else {
-//                    Assertions.assertFalse(canRoll,
-//                            "broker " + brokerId + " should not be rollable, because while Kafka says no URP, we're already rolling it");
-//                }
-//            }).accept(brokerId1, canRoll1);
-//        }
     }
 
 
     @Test
-    public void testMinIsrEqualsReplicas() throws InterruptedException {
+    public void testMinIsrEqualsReplicas() {
         ClusterModel clusterModel = new ClusterModel()
                 .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "3")
@@ -263,7 +244,7 @@ public class KafkaAvailabilityTest {
     }
 
     @Test
-    public void testMinIsrEqualsReplicasWithOfflineReplicas() throws InterruptedException {
+    public void testMinIsrEqualsReplicasWithOfflineReplicas() {
         ClusterModel clusterModel = new ClusterModel()
                 .addNewTopic("A")
                 .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "3")
@@ -287,7 +268,7 @@ public class KafkaAvailabilityTest {
     }
 
     @Test
-    public void testMinIsrMoreThanReplicas() throws InterruptedException {
+    public void testMinIsrMoreThanReplicas() {
         ClusterModel clusterModel = new ClusterModel()
                 .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "2")
@@ -311,13 +292,13 @@ public class KafkaAvailabilityTest {
     }
 
     @Test
-    public void testNoLeader() throws InterruptedException {
+    public void testNoLeader() {
         ClusterModel clusterModel = new ClusterModel()
                 .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
                     .addNewPartition(0)
                         .replicaOn(0, 1, 2)
-                        //.leader(0)
+                        .leader(-1)
                         .isr(1, 2)
                     .endPartition()
                 .endTopic()
@@ -325,7 +306,7 @@ public class KafkaAvailabilityTest {
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
                     .addNewPartition(0)
                         .replicaOn(0, 1, 2)
-                        //.leader(1)
+                        .leader(-1)
                         .isr(0)
                     .endPartition()
                 .endTopic()
@@ -348,7 +329,7 @@ public class KafkaAvailabilityTest {
     }
 
     @Test
-    public void testNoMinIsr() throws InterruptedException {
+    public void testNoMinIsr() {
         ClusterModel clusterModel = new ClusterModel()
                 .addNewTopic("A")
                     .addNewPartition(0)
@@ -379,7 +360,7 @@ public class KafkaAvailabilityTest {
 
     // TODO when AC throws various exceptions (e.g. UnknownTopicOrPartitionException)
     @Test
-    public void testCanRollThrowsTimeoutExceptionWhenTopicsListThrowsException() throws InterruptedException {
+    public void testCanRollThrowsTimeoutExceptionWhenTopicsListThrowsException() {
         ClusterModel clusterModel = new ClusterModel()
                 .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
@@ -411,7 +392,7 @@ public class KafkaAvailabilityTest {
     }
 
     @Test
-    public void testCanRollThrowsExceptionWhenTopicDescribeThrows() throws InterruptedException {
+    public void testCanRollThrowsExceptionWhenTopicDescribeThrows() {
         ClusterModel clusterModel = new ClusterModel()
                 .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
@@ -443,7 +424,7 @@ public class KafkaAvailabilityTest {
     }
 
     @Test
-    public void testCanRollThrowsExceptionWhenDescribeConfigsThrows() throws InterruptedException {
+    public void testCanRollThrowsExceptionWhenDescribeConfigsThrows() {
         ClusterModel clusterModel = new ClusterModel()
                 .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
@@ -474,6 +455,8 @@ public class KafkaAvailabilityTest {
                 assertThat(cause, instanceOf(UnknownTopicOrPartitionException.class));
             } else {
                 boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+                // TODO assertion
+                assertTrue(canRoll);
             }
         }
     }

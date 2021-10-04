@@ -16,7 +16,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -71,7 +70,7 @@ import static io.strimzi.operator.cluster.operator.resource.KafkaRoller.RestartS
  *
  * <p>All the brokers in the cluster are considered for an action (restart or reconfigure).
  * (The reason we always consider <em>all</em> brokers is so that the regular reconciliation of a cluster done
- * by the CO means we maybe be able to resolve spontaneous problems in the cluster by restarting.)
+ * by the CO means we may be able to resolve spontaneous problems in the cluster by restarting.)
  * <p>The brokers are processed in three batches:</p>
  * <ul>
  *     <li>Brokers that are either not {@code Ready} or do not appear to be up and are not in log recovery
@@ -86,8 +85,8 @@ import static io.strimzi.operator.cluster.operator.resource.KafkaRoller.RestartS
  * </ul>
  * <p>Since all these states are transient (and rolling actions can take a long time) the algorithm cannot
  * partition the brokers initially and then work on each batch sequentially.
- * Rather it considers all brokers that haven't yet been actioned and based on their
- * <em>current</em> state either actions them now, or defers them for reconsideration in the future.</p>
+ * Rather it considers all brokers that haven't yet been actioned and, based on their
+ * <em>current</em> state, either actions them now, or defers them for reconsideration in the future.</p>
  *
  * <h3>Reconfigurations</h3>
  * <p>Where possible reconfiguration of a broker is favoured over restart, because it affects cluster and client state
@@ -101,16 +100,17 @@ import static io.strimzi.operator.cluster.operator.resource.KafkaRoller.RestartS
  * // canary?
  *
  * <h3>Restarts</h3>
- * <p>Restart is done by deleting the pod on kubernetes. As such the broker process is sent an initial SIGTERM
- * which begins graceful shutdown. If it has not shutdown within the terminationGracePeriod it is sent a SIGKILL,
- * likely resulting in log files not being closed cleaning and thus incurring log recovery on start up.</p>
+ * <p>Restart is done by deleting the pod on kubernetes. As such, the broker process is sent an initial SIGTERM
+ * which begins graceful shutdown. If it has not shutdown within the {@code terminationGracePeriodSeconds} it is
+ * sent a SIGKILL, likely resulting in log files not being closed cleanly and thus incurring
+ * log recovery on start up.</p>
  *
  * <h4>Restart pre-conditions</h4>
  * <ul>
  *     <li>the restart must not result in any topics replicated on that broker from being under-replicated.</li>
- *     <li>the broker must not be in log recovery</li>
+ *     <li>TODO the broker must not be in log recovery</li>
  * </ul>
- * <p>If any of these preconditions are violated restart is deferred.</p>
+ * <p>If any of these preconditions are violated restart is deferred, as described above</p>
  *
  * <h4>Restart post-conditions</h4>
  * <ul>
@@ -122,7 +122,7 @@ import static io.strimzi.operator.cluster.operator.resource.KafkaRoller.RestartS
  * // TODO parallelism?? Also vertx?
  * The restart or reconfiguration of a individual broker is managed by a state machine whose states
  * are given by {@link RestartState}.
- * {@link RestartContext#makeTransition(RestartState, long)} this guarantees that each broker can only be restarted once.
+ * {@link RestartContext#makeTransition(RestartState, long)} guarantees that each broker can only be restarted once.
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ParameterNumber"})
 public class KafkaRoller {
@@ -151,7 +151,8 @@ public class KafkaRoller {
     private final KafkaVersion kafkaVersion;
     private final Reconciliation reconciliation;
     private final boolean allowReconfiguration;
-    private Admin allClient;
+    private Admin _allClient;
+    private Function<Pod, List<String>> podNeedsRestart;
 
     public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
@@ -190,23 +191,13 @@ public class KafkaRoller {
         return podOperations.getAsync(namespace, KafkaCluster.kafkaPodName(cluster, podId));
     }
 
-    private ConcurrentHashMap<Integer, RestartContext> podToContext = new ConcurrentHashMap<>();
-    private Function<Pod, List<String>> podNeedsRestart;
-
-//    /**
-//     * If allClient has not been initialized yet, does exactly that
-//     * @return true if the creation of AC succeeded, false otherwise
-//     */
-//    private boolean initAdminClient() {
-//        if (this.allClient == null) {
-//            try {
-//                this.allClient = adminClient(IntStream.range(0, numPods).boxed().collect(Collectors.toList()), false);
-//            } catch (ForceableProblem | FatalProblem e) {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
+    private Admin adminClient() {
+        if (this._allClient == null) {
+            this._allClient = adminClientProvider.createAdminClient(KafkaCluster.headlessServiceName(cluster), this.clusterCaCertSecret, this.coKeySecret, "cluster-operator");
+            //this._allClient = adminClient(IntStream.range(0, numPods).boxed().collect(Collectors.toList()), false);
+        }
+        return this._allClient;
+    }
 
      /**
      * Asynchronously perform a rolling restart of some subset of the pods,
@@ -219,9 +210,7 @@ public class KafkaRoller {
     public Future<Void> rollingRestart(Function<Pod, List<String>> podNeedsRestart) {
         this.podNeedsRestart = podNeedsRestart;
         Promise<Void> result = Promise.promise();
-        if (!vertx.getOrCreateContext().isEventLoopContext()) {
-            return Future.failedFuture("Not event loop context!");
-        }
+        assertEventLoop();
         // There's nowhere for the group state to reside
         buildQueue().compose(queue -> {
             // create a queue
@@ -259,12 +248,12 @@ public class KafkaRoller {
             vertx.setTimer(0, longHandler);
             return Future.succeededFuture();
         });
-        return result.future().eventually(i -> vertx.executeBlocking(p -> {
+        return result.future().eventually(i -> vertx.executeBlocking(promise -> {
             try {
-                allClient.close(Duration.ofSeconds(30));
-                p.complete();
+                _allClient.close(Duration.ofSeconds(30));
+                promise.complete();
             } catch (Exception e) {
-                p.fail(e);
+                promise.fail(e);
             }
         }));
     }
@@ -465,7 +454,7 @@ public class KafkaRoller {
 
         private Transition electPreferredLeader(Set<TopicPartition> partitions) {
             if (electLeaders == null) {
-                this.electLeaders = allClient.electLeaders(ElectionType.PREFERRED, partitions).partitions();
+                this.electLeaders = adminClient().electLeaders(ElectionType.PREFERRED, partitions).partitions();
             }
             if (electLeaders.isDone()) {
                 try {
@@ -555,7 +544,7 @@ public class KafkaRoller {
         }
 
         Future<Boolean> isController() {
-            return Util.kafkaFutureToVertxFuture(reconciliation, vertx, allClient.describeCluster(new DescribeClusterOptions().timeoutMs(5_000))
+            return Util.kafkaFutureToVertxFuture(reconciliation, vertx, adminClient().describeCluster(new DescribeClusterOptions().timeoutMs(5_000))
                     .controller().thenApply(controller -> controller.id() == podId));
         }
 
@@ -612,7 +601,7 @@ public class KafkaRoller {
          * @return a Future which completes with the config of the given broker.
          */
         protected Future<Map<ConfigResource.Type, Config>> existingBrokerConfig() {
-            DescribeConfigsResult describeConfigsResult = allClient.describeConfigs(
+            DescribeConfigsResult describeConfigsResult = adminClient().describeConfigs(
                     List.of(Util.brokerConfigResource(podId), Util.brokerLoggersConfigResource(podId)));
             return Util.kafkaFutureToVertxFuture(reconciliation, vertx, describeConfigsResult.all())
                     .map(mapOfConfigs -> mapOfConfigs.entrySet().stream()
@@ -638,7 +627,7 @@ public class KafkaRoller {
                         } else {
                             LOGGER.debugCr(reconciliation, "Altering broker configuration {}", podId);
                         }
-                        this.alterConfigResult = allClient.incrementalAlterConfigs(updatedConfig, new AlterConfigsOptions().timeoutMs(30_000));
+                        this.alterConfigResult = adminClient().incrementalAlterConfigs(updatedConfig, new AlterConfigsOptions().timeoutMs(30_000));
                     }
 
                     if (alterConfigResult.all().isDone()) {
@@ -669,7 +658,7 @@ public class KafkaRoller {
                 makeTransition(NEEDS_RESTART, 10_000);// TODO have a future that is completed when restartingBrokers changes?
                 return Future.succeededFuture();
             } else {
-                return availability(allClient).canRoll(podId, restartingBrokers).map(canRoll -> {
+                return availability(adminClient()).canRoll(podId, restartingBrokers).map(canRoll -> {
                     if (canRoll) {
                         assertEventLoop();
                         restartingBrokers.add(podId);
@@ -703,7 +692,7 @@ public class KafkaRoller {
                     restartingBrokers.remove(podId);
                     return Future.succeededFuture(new Transition(DONE, 0));
                 } else {
-                    return Util.kafkaFutureToVertxFuture(reconciliation, vertx, allClient.electLeaders(ElectionType.PREFERRED, partitions).partitions())
+                    return Util.kafkaFutureToVertxFuture(reconciliation, vertx, adminClient().electLeaders(ElectionType.PREFERRED, partitions).partitions())
                             .map(new Transition(AWAITING_READY, 0))
                             .otherwise(new Transition(AWAITING_READY, 10_000));
                 }
@@ -712,7 +701,7 @@ public class KafkaRoller {
         }
 
         private Future<Set<TopicPartition>> partitionsToElect(int podId) {
-            return availability(allClient).partitionsWithPreferredButNotCurrentLeader(podId);
+            return availability(adminClient()).partitionsWithPreferredButNotCurrentLeader(podId);
         }
     }
 
@@ -898,10 +887,5 @@ public class KafkaRoller {
 //            socket.close();
 //        }
 //    }
-
-    @Override
-    public String toString() {
-        return podToContext.toString();
-    }
 
 }

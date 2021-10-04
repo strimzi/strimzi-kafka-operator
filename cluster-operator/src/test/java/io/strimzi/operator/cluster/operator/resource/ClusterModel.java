@@ -56,7 +56,7 @@ class ClusterModel {
         class PartitionState {
             private final int id;
             private final Set<Integer> isr = new HashSet<>(3);
-            private int leader;
+            private int leader = -1;
             private final List<Integer> replicas = new ArrayList<>(3);
 
             public PartitionState(int partitionId) {
@@ -375,7 +375,7 @@ class ClusterModel {
         assert Set.of(1, 2).equals(mock.partition("my-topic", 1).isr);
         assert 0 != mock.partition("my-topic", 1).leader;
         // Make admin calls
-        KafkaFuture.completedFuture()
+
     }
 
     /**

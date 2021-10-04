@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 
 import static java.lang.Integer.parseInt;
@@ -53,7 +54,6 @@ class KafkaAvailability {
         Future<Set<String>> topicNames = topicNames();
         // 2. Get topic descriptions
         descriptions = topicNames.compose(names -> {
-            LOGGER.debugCr(reconciliation, "Got {} topic names", names.size());
             LOGGER.traceCr(reconciliation, "Topic names {}", names);
             return describeTopics(names);
         });
@@ -63,9 +63,15 @@ class KafkaAvailability {
      * Determine whether the given broker can be rolled without affecting
      * producers with acks=all publishing to topics with a {@code min.in.sync.replicas}.
      */
-    Future<Boolean> canRoll(int podId, Set<Integer> restartingBrokers) {
-        LOGGER.debugCr(reconciliation, "Determining whether broker {} can be rolled", podId);
-        return canRollBroker(descriptions, podId, restartingBrokers);
+    Future<Boolean> canRoll(int brokerId, Set<Integer> restartingBrokers) {
+        LOGGER.debugCr(reconciliation, "Determining whether broker {} can be rolled", brokerId);
+        return canRollBroker(descriptions, brokerId, restartingBrokers).recover(t -> {
+            if (t instanceof CompletionException) {
+                return Future.failedFuture(t.getCause());
+            } else {
+                return Future.failedFuture(t);
+            }
+        });
     }
 
    /**
@@ -86,13 +92,11 @@ class KafkaAvailability {
     }
 
 
-    private Future<Boolean> canRollBroker(Future<Collection<TopicDescription>> descriptions, int podId, Set<Integer> restartingBrokers) {
+    private Future<Boolean> canRollBroker(Future<Collection<TopicDescription>> descriptions, int brokerId, Set<Integer> restartingBrokers) {
         Future<Set<TopicDescription>> topicsOnGivenBroker = descriptions
-                .compose(topicDescriptions -> {
-                    LOGGER.debugCr(reconciliation, "Got {} topic descriptions", topicDescriptions.size());
-                    return Future.succeededFuture(groupTopicsByBroker(topicDescriptions, podId));
-                }).recover(error -> {
-                    LOGGER.warnCr(reconciliation, "failed to get topic descriptions", error);
+                .compose(topicDescriptions -> Future.succeededFuture(groupTopicsByBroker(topicDescriptions, brokerId)))
+                .recover(error -> {
+                    LOGGER.warnCr(reconciliation, "Failed to get topic descriptions", error);
                     return Future.failedFuture(error);
                 });
 
@@ -104,13 +108,15 @@ class KafkaAvailability {
         return topicConfigsOnGivenBroker.map(topicNameToConfig -> {
             Collection<TopicDescription> tds = topicsOnGivenBroker.result();
             boolean canRoll = tds.stream().noneMatch(
-                td -> wouldAffectAvailability(podId, topicNameToConfig, td, restartingBrokers));
+                td -> wouldAffectAvailability(brokerId, topicNameToConfig, td, restartingBrokers));
             if (!canRoll) {
-                LOGGER.debugCr(reconciliation, "Restart pod {} would remove it from ISR, stalling producers with acks=all", podId);
+                LOGGER.debugCr(reconciliation, "Restarting broker {} would would make at least one topic with acks=all under-replicated", brokerId);
+            } else {
+                LOGGER.debugCr(reconciliation, "Restarting broker {} would should not affect producers with acks=all", brokerId);
             }
             return canRoll;
         }).recover(error -> {
-            LOGGER.warnCr(reconciliation, "Error determining whether it is safe to restart pod {}", podId, error);
+            LOGGER.warnCr(reconciliation, "Error determining whether it is safe to restart broker {}", brokerId, error);
             return Future.failedFuture(error);
         });
     }
@@ -170,6 +176,10 @@ class KafkaAvailability {
                 }
             }
         }
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debugCr(reconciliation, "Rolling {} should not affect availability of {}",
+                    broker, td.name());
+        }
         return false;
     }
 
@@ -182,26 +192,23 @@ class KafkaAvailability {
     }
 
     private Future<Map<String, Config>> topicConfigs(Collection<String> topicNames) {
-        LOGGER.debugCr(reconciliation, "Getting topic configs for {} topics", topicNames.size());
         List<ConfigResource> configs = topicNames.stream()
                 .map((String topicName) -> new ConfigResource(ConfigResource.Type.TOPIC, topicName))
                 .collect(Collectors.toList());
-        return Util.kafkaFutureToVertxFuture(reconciliation, vertx, ac.describeConfigs(configs).all().thenApply(topicNameToConfig -> {
-                    LOGGER.debugCr(reconciliation, "Got topic configs for {} topics", topicNames.size());
-                    return topicNameToConfig.entrySet().stream()
-                            .collect(Collectors.toMap(
-                                    entry -> entry.getKey().name(),
-                                    Map.Entry::getValue));
-                }));
+        return Util.kafkaFutureToVertxFuture(reconciliation, vertx, ac.describeConfigs(configs).all()
+                .thenApply(topicNameToConfig -> topicNameToConfig.entrySet().stream()
+                        .collect(Collectors.toMap(
+                                entry -> entry.getKey().name(),
+                                Map.Entry::getValue))));
     }
 
-    private Set<TopicDescription> groupTopicsByBroker(Collection<TopicDescription> tds, int podId) {
+    private Set<TopicDescription> groupTopicsByBroker(Collection<TopicDescription> tds, int brokerId) {
         Set<TopicDescription> topicPartitionInfos = new HashSet<>();
         for (TopicDescription td : tds) {
             LOGGER.traceCr(reconciliation, td);
             for (TopicPartitionInfo pd : td.partitions()) {
                 for (Node broker : pd.replicas()) {
-                    if (podId == broker.id()) {
+                    if (brokerId == broker.id()) {
                         topicPartitionInfos.add(td);
                     }
                 }
@@ -211,17 +218,11 @@ class KafkaAvailability {
     }
 
     protected Future<Collection<TopicDescription>> describeTopics(Set<String> names) {
-        return Util.kafkaFutureToVertxFuture(reconciliation, vertx, ac.describeTopics(names).all().thenApply(tds -> {
-            LOGGER.debugCr(reconciliation, "Got topic descriptions for {} topics", tds.size());
-            return tds.values();
-                }));
+        return Util.kafkaFutureToVertxFuture(reconciliation, vertx, ac.describeTopics(names).all()
+                .thenApply(Map::values));
     }
 
     protected Future<Set<String>> topicNames() {
-        return Util.kafkaFutureToVertxFuture(reconciliation, vertx, ac.listTopics(new ListTopicsOptions().listInternal(true)).names()
-                .thenApply(names -> {
-                        LOGGER.debugCr(reconciliation, "Got {} topic names", names.size());
-                        return names;
-                }));
+        return Util.kafkaFutureToVertxFuture(reconciliation, vertx, ac.listTopics(new ListTopicsOptions().listInternal(true)).names());
     }
 }

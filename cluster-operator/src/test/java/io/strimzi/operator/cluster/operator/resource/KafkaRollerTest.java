@@ -630,8 +630,8 @@ public class KafkaRollerTest {
                 }
 
                 @Override
-                Future<Boolean> canRoll(int podId, Set<Integer> restartingBrokers) {
-                    return canRollFn.apply(podId);
+                Future<Boolean> canRoll(int brokerId, Set<Integer> restartingBrokers) {
+                    return canRollFn.apply(brokerId);
                 }
 
                 @Override
