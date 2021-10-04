@@ -24,8 +24,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "metadata"})
+@JsonPropertyOrder({"metadata"})
 @EqualsAndHashCode
 public class ResourceTemplate implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

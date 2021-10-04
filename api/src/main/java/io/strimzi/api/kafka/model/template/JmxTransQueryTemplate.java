@@ -23,8 +23,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({
-        "targetMBean", "attributes", "outputs"})
+@JsonPropertyOrder({"targetMBean", "attributes", "outputs"})
 @EqualsAndHashCode
 public class JmxTransQueryTemplate implements Serializable, UnknownPropertyPreserving {
     private String targetMBean;

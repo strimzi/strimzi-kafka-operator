@@ -4,6 +4,7 @@
  */
 package io.strimzi.test.container;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.utils.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,6 +41,7 @@ public class StrimziKafkaCluster implements Startable {
     private final StrimziZookeeperContainer zookeeper;
     private final Collection<StrimziKafkaContainer> brokers;
 
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     public StrimziKafkaCluster(String imageVersion, int brokersNum, int internalTopicReplicationFactor, Map<String, String> additionalKafkaConfiguration) {
         if (brokersNum < 0) {
             throw new IllegalArgumentException("brokersNum '" + brokersNum + "' must be greater than 0");

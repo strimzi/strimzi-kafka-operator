@@ -32,50 +32,46 @@ import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize
 @Crd(
-        spec = @Crd.Spec(
-                names = @Crd.Spec.Names(
-                        kind = KafkaUser.RESOURCE_KIND,
-                        plural = KafkaUser.RESOURCE_PLURAL,
-                        shortNames = {KafkaUser.SHORT_NAME},
-                        categories = {Constants.STRIMZI_CATEGORY}
-                ),
-                group = KafkaUser.RESOURCE_GROUP,
-                scope = KafkaUser.SCOPE,
-                versions = {
-                        @Crd.Spec.Version(name = KafkaUser.V1BETA2, served = true, storage = false),
-                        @Crd.Spec.Version(name = KafkaUser.V1BETA1, served = true, storage = true),
-                        @Crd.Spec.Version(name = KafkaUser.V1ALPHA1, served = true, storage = false)
-                },
-                subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status()
-                ),
-                additionalPrinterColumns = {
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Cluster",
-                                description = "The name of the Kafka cluster this user belongs to",
-                                jsonPath = ".metadata.labels.strimzi\\.io/cluster",
-                                type = "string"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Authentication",
-                                description = "How the user is authenticated",
-                                jsonPath = ".spec.authentication.type",
-                                type = "string"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Authorization",
-                                description = "How the user is authorised",
-                                jsonPath = ".spec.authorization.type",
-                                type = "string"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Ready",
-                                description = "The state of the custom resource",
-                                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
-                                type = "string"
-                        )
-                }
-        )
+    spec = @Crd.Spec(
+        names = @Crd.Spec.Names(
+            kind = KafkaUser.RESOURCE_KIND,
+            plural = KafkaUser.RESOURCE_PLURAL,
+            shortNames = {KafkaUser.SHORT_NAME},
+            categories = {Constants.STRIMZI_CATEGORY}
+        ),
+        group = KafkaUser.RESOURCE_GROUP,
+        scope = KafkaUser.SCOPE,
+        versions = {
+            @Crd.Spec.Version(name = KafkaUser.V1BETA2, served = true, storage = false),
+            @Crd.Spec.Version(name = KafkaUser.V1BETA1, served = true, storage = true),
+            @Crd.Spec.Version(name = KafkaUser.V1ALPHA1, served = true, storage = false)
+        },
+        subresources = @Crd.Spec.Subresources(
+            status = @Crd.Spec.Subresources.Status()
+        ),
+        additionalPrinterColumns = {
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Cluster",
+                description = "The name of the Kafka cluster this user belongs to",
+                jsonPath = ".metadata.labels.strimzi\\.io/cluster",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Authentication",
+                description = "How the user is authenticated",
+                jsonPath = ".spec.authentication.type",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Authorization",
+                description = "How the user is authorised",
+                jsonPath = ".spec.authorization.type",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Ready",
+                description = "The state of the custom resource",
+                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
+                type = "string")
+        }
+    )
 )
 @Buildable(
         editableEnabled = false,

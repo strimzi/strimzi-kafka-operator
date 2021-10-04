@@ -123,8 +123,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings({
-        "checkstyle:ClassDataAbstractionCoupling",
-        "checkstyle:ClassFanOutComplexity"
+    "checkstyle:ClassDataAbstractionCoupling",
+    "checkstyle:ClassFanOutComplexity"
 })
 @ParallelSuite
 public class KafkaClusterTest {

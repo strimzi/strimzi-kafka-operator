@@ -21,10 +21,10 @@ import java.util.Map;
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(name = AclRuleTopicResource.TYPE_TOPIC, value = AclRuleTopicResource.class),
-        @JsonSubTypes.Type(name = AclRuleGroupResource.TYPE_GROUP, value = AclRuleGroupResource.class),
-        @JsonSubTypes.Type(name = AclRuleClusterResource.TYPE_CLUSTER, value = AclRuleClusterResource.class),
-        @JsonSubTypes.Type(name = AclRuleTransactionalIdResource.TYPE_TRANSACTIONAL_ID, value = AclRuleTransactionalIdResource.class),
+    @JsonSubTypes.Type(name = AclRuleTopicResource.TYPE_TOPIC, value = AclRuleTopicResource.class),
+    @JsonSubTypes.Type(name = AclRuleGroupResource.TYPE_GROUP, value = AclRuleGroupResource.class),
+    @JsonSubTypes.Type(name = AclRuleClusterResource.TYPE_CLUSTER, value = AclRuleClusterResource.class),
+    @JsonSubTypes.Type(name = AclRuleTransactionalIdResource.TYPE_TRANSACTIONAL_ID, value = AclRuleTransactionalIdResource.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode

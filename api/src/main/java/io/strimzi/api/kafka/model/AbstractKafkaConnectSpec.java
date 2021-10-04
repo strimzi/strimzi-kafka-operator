@@ -23,8 +23,8 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "replicas", "version", "image", "resources", 
-        "livenessProbe", "readinessProbe", "jvmOptions",  "jmxOptions",
-        "logging", "metricsConfig", "tracing", "template", "externalConfiguration"})
+    "livenessProbe", "readinessProbe", "jvmOptions",  "jmxOptions",
+    "logging", "metricsConfig", "tracing", "template", "externalConfiguration"})
 @EqualsAndHashCode(doNotUseGetters = true)
 public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfigurableMetrics {
     private static final long serialVersionUID = 1L;

@@ -98,8 +98,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({
-        "checkstyle:ClassDataAbstractionCoupling",
-        "checkstyle:ClassFanOutComplexity"
+    "checkstyle:ClassDataAbstractionCoupling",
+    "checkstyle:ClassFanOutComplexity"
 })
 @ParallelSuite
 public class CruiseControlTest {

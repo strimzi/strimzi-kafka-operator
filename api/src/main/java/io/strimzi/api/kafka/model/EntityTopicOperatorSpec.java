@@ -28,9 +28,9 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"watchedNamespace", "image",
-        "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
-        "startupProbe", "livenessProbe", "readinessProbe",
-        "resources", "topicMetadataMaxAttempts", "logging", "jvmOptions"})
+    "reconciliationIntervalSeconds", "zookeeperSessionTimeoutSeconds",
+    "startupProbe", "livenessProbe", "readinessProbe",
+    "resources", "topicMetadataMaxAttempts", "logging", "jvmOptions"})
 @EqualsAndHashCode
 public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Serializable {
 

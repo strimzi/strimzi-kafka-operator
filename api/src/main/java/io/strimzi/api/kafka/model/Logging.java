@@ -21,8 +21,8 @@ import java.util.Map;
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(name = InlineLogging.TYPE_INLINE, value = InlineLogging.class),
-        @JsonSubTypes.Type(name = ExternalLogging.TYPE_EXTERNAL, value = ExternalLogging.class),
+    @JsonSubTypes.Type(name = InlineLogging.TYPE_INLINE, value = InlineLogging.class),
+    @JsonSubTypes.Type(name = ExternalLogging.TYPE_EXTERNAL, value = ExternalLogging.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode

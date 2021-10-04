@@ -24,13 +24,13 @@ import java.util.Map;
         property = "type"
 )
 @JsonSubTypes(
-        {
-            @JsonSubTypes.Type(value = JarArtifact.class, name = Artifact.TYPE_JAR),
-            @JsonSubTypes.Type(value = TgzArtifact.class, name = Artifact.TYPE_TGZ),
-            @JsonSubTypes.Type(value = ZipArtifact.class, name = Artifact.TYPE_ZIP),
-            @JsonSubTypes.Type(value = MavenArtifact.class, name = Artifact.TYPE_MVN),
-            @JsonSubTypes.Type(value = OtherArtifact.class, name = Artifact.TYPE_OTHER)
-        }
+    {
+        @JsonSubTypes.Type(value = JarArtifact.class, name = Artifact.TYPE_JAR),
+        @JsonSubTypes.Type(value = TgzArtifact.class, name = Artifact.TYPE_TGZ),
+        @JsonSubTypes.Type(value = ZipArtifact.class, name = Artifact.TYPE_ZIP),
+        @JsonSubTypes.Type(value = MavenArtifact.class, name = Artifact.TYPE_MVN),
+        @JsonSubTypes.Type(value = OtherArtifact.class, name = Artifact.TYPE_OTHER)
+    }
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode

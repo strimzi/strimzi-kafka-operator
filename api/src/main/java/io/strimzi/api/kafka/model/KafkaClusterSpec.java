@@ -34,8 +34,8 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "version", "replicas", "image", "listeners", "config", "storage", "authorization", "rack", "brokerRackInitImage",
-        "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources", "metricsConfig", "logging", "template"})
+    "version", "replicas", "image", "listeners", "config", "storage", "authorization", "rack", "brokerRackInitImage",
+    "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources", "metricsConfig", "logging", "template"})
 @EqualsAndHashCode
 public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownPropertyPreserving, Serializable {
 

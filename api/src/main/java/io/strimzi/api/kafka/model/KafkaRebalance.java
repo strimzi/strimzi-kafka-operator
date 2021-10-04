@@ -33,31 +33,30 @@ import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize
 @Crd(
-        spec = @Crd.Spec(
-                names = @Crd.Spec.Names(
-                        kind = KafkaRebalance.RESOURCE_KIND,
-                        plural = KafkaRebalance.RESOURCE_PLURAL,
-                        shortNames = {KafkaRebalance.SHORT_NAME},
-                        categories = {Constants.STRIMZI_CATEGORY}
-                ),
-                group = KafkaRebalance.RESOURCE_GROUP,
-                scope = KafkaRebalance.SCOPE,
-                versions = {
-                        @Crd.Spec.Version(name = KafkaRebalance.V1BETA2, served = true, storage = false),
-                        @Crd.Spec.Version(name = KafkaRebalance.V1ALPHA1, served = true, storage = true)
-                },
-                subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status()
-                ),
-                additionalPrinterColumns = {
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Cluster",
-                                description = "The name of the Kafka cluster this resource rebalances",
-                                jsonPath = ".metadata.labels.strimzi\\.io/cluster",
-                                type = "string"
-                        )
-                }
-        )
+    spec = @Crd.Spec(
+        names = @Crd.Spec.Names(
+            kind = KafkaRebalance.RESOURCE_KIND,
+            plural = KafkaRebalance.RESOURCE_PLURAL,
+            shortNames = {KafkaRebalance.SHORT_NAME},
+            categories = {Constants.STRIMZI_CATEGORY}
+        ),
+        group = KafkaRebalance.RESOURCE_GROUP,
+        scope = KafkaRebalance.SCOPE,
+        versions = {
+            @Crd.Spec.Version(name = KafkaRebalance.V1BETA2, served = true, storage = false),
+            @Crd.Spec.Version(name = KafkaRebalance.V1ALPHA1, served = true, storage = true)
+        },
+        subresources = @Crd.Spec.Subresources(
+            status = @Crd.Spec.Subresources.Status()
+        ),
+        additionalPrinterColumns = {
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Cluster",
+                description = "The name of the Kafka cluster this resource rebalances",
+                jsonPath = ".metadata.labels.strimzi\\.io/cluster",
+                type = "string")
+        }
+    )
 )
 @Buildable(
         editableEnabled = false,

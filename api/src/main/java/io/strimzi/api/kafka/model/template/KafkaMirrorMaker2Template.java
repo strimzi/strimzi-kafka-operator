@@ -24,8 +24,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({
-        "deployment", "pod", "apiService", "podDisruptionBudget", "mirrorMaker2Container", "serviceAccount", "jmxSecret"})
+@JsonPropertyOrder({"deployment", "pod", "apiService", "podDisruptionBudget", "mirrorMaker2Container", "serviceAccount", "jmxSecret"})
 @EqualsAndHashCode
 public class KafkaMirrorMaker2Template implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

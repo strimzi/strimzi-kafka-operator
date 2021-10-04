@@ -34,50 +34,46 @@ import static java.util.Collections.unmodifiableList;
 
 @JsonDeserialize
 @Crd(
-        spec = @Crd.Spec(
-                names = @Crd.Spec.Names(
-                        kind = Kafka.RESOURCE_KIND,
-                        plural = Kafka.RESOURCE_PLURAL,
-                        shortNames = {Kafka.SHORT_NAME},
-                        categories = {Constants.STRIMZI_CATEGORY}
-                ),
-                group = Kafka.RESOURCE_GROUP,
-                scope = Kafka.SCOPE,
-                versions = {
-                        @Crd.Spec.Version(name = Kafka.V1BETA2, served = true, storage = false),
-                        @Crd.Spec.Version(name = Kafka.V1BETA1, served = true, storage = true),
-                        @Crd.Spec.Version(name = Kafka.V1ALPHA1, served = true, storage = false)
-                },
-                subresources = @Crd.Spec.Subresources(
-                        status = @Crd.Spec.Subresources.Status()
-                ),
-                additionalPrinterColumns = {
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Desired Kafka replicas",
-                                description = "The desired number of Kafka replicas in the cluster",
-                                jsonPath = ".spec.kafka.replicas",
-                                type = "integer"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Desired ZK replicas",
-                                description = "The desired number of ZooKeeper replicas in the cluster",
-                                jsonPath = ".spec.zookeeper.replicas",
-                                type = "integer"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Ready",
-                                description = "The state of the custom resource",
-                                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
-                                type = "string"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Warnings",
-                                description = "Warnings related to the custom resource",
-                                jsonPath = ".status.conditions[?(@.type==\"Warning\")].status",
-                                type = "string"
-                        )
-                }
-        )
+    spec = @Crd.Spec(
+        names = @Crd.Spec.Names(
+            kind = Kafka.RESOURCE_KIND,
+            plural = Kafka.RESOURCE_PLURAL,
+            shortNames = {Kafka.SHORT_NAME},
+            categories = {Constants.STRIMZI_CATEGORY}
+        ),
+        group = Kafka.RESOURCE_GROUP,
+        scope = Kafka.SCOPE,
+        versions = {
+            @Crd.Spec.Version(name = Kafka.V1BETA2, served = true, storage = false),
+            @Crd.Spec.Version(name = Kafka.V1BETA1, served = true, storage = true),
+            @Crd.Spec.Version(name = Kafka.V1ALPHA1, served = true, storage = false)
+        },
+        subresources = @Crd.Spec.Subresources(
+            status = @Crd.Spec.Subresources.Status()
+        ),
+        additionalPrinterColumns = {
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Desired Kafka replicas",
+                description = "The desired number of Kafka replicas in the cluster",
+                jsonPath = ".spec.kafka.replicas",
+                type = "integer"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Desired ZK replicas",
+                description = "The desired number of ZooKeeper replicas in the cluster",
+                jsonPath = ".spec.zookeeper.replicas",
+                type = "integer"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Ready",
+                description = "The state of the custom resource",
+                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
+                type = "string"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                name = "Warnings",
+                description = "Warnings related to the custom resource",
+                jsonPath = ".status.conditions[?(@.type==\"Warning\")].status",
+                type = "string")
+        }
+    )
 )
 @Buildable(
         editableEnabled = false,

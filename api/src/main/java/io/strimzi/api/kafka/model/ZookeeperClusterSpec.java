@@ -31,8 +31,8 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-        "replicas", "image", "storage", "config", "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources",
-         "metricsConfig", "logging", "template"})
+    "replicas", "image", "storage", "config", "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources",
+    "metricsConfig", "logging", "template"})
 @EqualsAndHashCode
 public class ZookeeperClusterSpec implements HasConfigurableMetrics, UnknownPropertyPreserving, Serializable {
 

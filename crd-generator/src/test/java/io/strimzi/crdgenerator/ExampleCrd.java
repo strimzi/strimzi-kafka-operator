@@ -40,8 +40,7 @@ import java.util.Map;
             name = "Foo",
             description = "The foo",
             jsonPath = "...",
-            type = "integer"
-        )
+            type = "integer")
     }
     ))
 @OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("either")), @OneOf.Alternative(@OneOf.Alternative.Property("or"))})
@@ -152,8 +151,8 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
     @Description("Example of a polymorphic type")
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "discrim")
     @JsonSubTypes({
-            @JsonSubTypes.Type(value = PolymorphicLeft.class, name = "left"),
-            @JsonSubTypes.Type(value = PolymorphicRight.class, name = "right")
+        @JsonSubTypes.Type(value = PolymorphicLeft.class, name = "left"),
+        @JsonSubTypes.Type(value = PolymorphicRight.class, name = "right")
     })
     public abstract static class PolymorphicTop {
         private String discrim;

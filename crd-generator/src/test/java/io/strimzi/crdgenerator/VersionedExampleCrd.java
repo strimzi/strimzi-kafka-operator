@@ -19,49 +19,47 @@ import io.strimzi.crdgenerator.annotations.Pattern;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
 
 @Crd(
-        spec = @Crd.Spec(
-                group = "crdgenerator.strimzi.io",
-                names = @Crd.Spec.Names(
-                        kind = "Example",
-                        plural = "examples",
-                        categories = {"strimzi"}),
-                scope = "Namespaced",
-                versions = {
-                        @Crd.Spec.Version(name = "v1", served = true, storage = true),
-                        @Crd.Spec.Version(name = "v2", served = true, storage = false)
-                },
-                subresources = @Crd.Spec.Subresources(
-                       status = {@Crd.Spec.Subresources.Status()},
-                       scale = {
-                               @Crd.Spec.Subresources.Scale(
-                                   apiVersion = "v1",
-                                   labelSelectorPath = "v1.dsdvc",
-                                   specReplicasPath = "v1.dcsdvsv",
-                                   statusReplicasPath = "v1.sdvsdvs"),
-                               @Crd.Spec.Subresources.Scale(
-                                   apiVersion = "v2",
-                                   labelSelectorPath = "v2.ssdv",
-                                   specReplicasPath = "v2.dcsdvsv",
-                                   statusReplicasPath = "v2.sdvsdvs")
-                       }
-                ),
-                additionalPrinterColumns = {
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                apiVersion = "v1",
-                                name = "V1 column",
-                                description = "The foo",
-                                jsonPath = "...",
-                                type = "integer"
-                        ),
-                        @Crd.Spec.AdditionalPrinterColumn(
-                                apiVersion = "v2",
-                                name = "V2 column",
-                                description = "The bar",
-                                jsonPath = "...",
-                                type = "integer"
-                        )
-                }
-        ))
+    spec = @Crd.Spec(
+        group = "crdgenerator.strimzi.io",
+        names = @Crd.Spec.Names(
+                kind = "Example",
+                plural = "examples",
+                categories = {"strimzi"}),
+        scope = "Namespaced",
+        versions = {
+            @Crd.Spec.Version(name = "v1", served = true, storage = true),
+            @Crd.Spec.Version(name = "v2", served = true, storage = false)
+        },
+        subresources = @Crd.Spec.Subresources(
+            status = {@Crd.Spec.Subresources.Status()},
+            scale = {
+                @Crd.Spec.Subresources.Scale(
+                    apiVersion = "v1",
+                    labelSelectorPath = "v1.dsdvc",
+                    specReplicasPath = "v1.dcsdvsv",
+                    statusReplicasPath = "v1.sdvsdvs"),
+                @Crd.Spec.Subresources.Scale(
+                    apiVersion = "v2",
+                    labelSelectorPath = "v2.ssdv",
+                    specReplicasPath = "v2.dcsdvsv",
+                    statusReplicasPath = "v2.sdvsdvs")
+            }
+        ),
+        additionalPrinterColumns = {
+            @Crd.Spec.AdditionalPrinterColumn(
+                apiVersion = "v1",
+                name = "V1 column",
+                description = "The foo",
+                jsonPath = "...",
+                type = "integer"),
+            @Crd.Spec.AdditionalPrinterColumn(
+                apiVersion = "v2",
+                name = "V2 column",
+                description = "The bar",
+                jsonPath = "...",
+                type = "integer")
+        }
+    ))
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 public class VersionedExampleCrd<T, U extends Number, V extends U> extends CustomResource {

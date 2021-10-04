@@ -18,7 +18,7 @@ import java.util.Map;
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
         property = "type")
 @JsonSubTypes({
-        @JsonSubTypes.Type(name = KafkaUserAuthorizationSimple.TYPE_SIMPLE, value = KafkaUserAuthorizationSimple.class),
+    @JsonSubTypes.Type(name = KafkaUserAuthorizationSimple.TYPE_SIMPLE, value = KafkaUserAuthorizationSimple.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode

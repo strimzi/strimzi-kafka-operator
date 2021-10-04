@@ -25,10 +25,10 @@ import java.util.Map;
         property = "type"
 )
 @JsonSubTypes(
-        {
-            @JsonSubTypes.Type(value = DockerOutput.class, name = Output.TYPE_DOCKER),
-            @JsonSubTypes.Type(value = ImageStreamOutput.class, name = Output.TYPE_IMAGESTREAM)
-        }
+    {
+        @JsonSubTypes.Type(value = DockerOutput.class, name = Output.TYPE_DOCKER),
+        @JsonSubTypes.Type(value = ImageStreamOutput.class, name = Output.TYPE_IMAGESTREAM)
+    }
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode

@@ -17,8 +17,8 @@ import lombok.EqualsAndHashCode;
         property = "type"
 )
 @JsonSubTypes({
-        @JsonSubTypes.Type(value = EphemeralStorage.class, name = Storage.TYPE_EPHEMERAL),
-        @JsonSubTypes.Type(value = PersistentClaimStorage.class, name = Storage.TYPE_PERSISTENT_CLAIM)}
+    @JsonSubTypes.Type(value = EphemeralStorage.class, name = Storage.TYPE_EPHEMERAL),
+    @JsonSubTypes.Type(value = PersistentClaimStorage.class, name = Storage.TYPE_PERSISTENT_CLAIM)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode
