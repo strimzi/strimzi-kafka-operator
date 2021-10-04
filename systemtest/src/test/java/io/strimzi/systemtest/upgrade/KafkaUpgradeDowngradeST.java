@@ -270,14 +270,21 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaPods);
         LOGGER.info("1st Kafka roll (image change) is complete");
 
+        Object currentLogMessageFormat = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("log.message.format.version");
+        Object currentInterBrokerProtocol = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version");
+
         if (isUpgrade && !sameMinorVersion) {
             LOGGER.info("Kafka version is increased, two RUs remaining for increasing IBPV and LMFV");
 
-            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaPods);
-            LOGGER.info("2nd Kafka roll (inter.broker.protocol.version) is complete");
+            if (currentInterBrokerProtocol == null) {
+                kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaPods);
+                LOGGER.info("Kafka roll (inter.broker.protocol.version) is complete");
+            }
 
-            kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaReplicas, kafkaPods);
-            LOGGER.info("3rd Kafka roll (log.message.format.version) is complete");
+            if (currentLogMessageFormat == null) {
+                kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaReplicas, kafkaPods);
+                LOGGER.info("Kafka roll (log.message.format.version) is complete");
+            }
         }
 
         LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
@@ -298,9 +305,6 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
         assertThat("Kafka container had version " + kafkaVersionResult + " where " + newVersion.version() +
                 " was expected", kafkaVersionResult, is(newVersion.version()));
-
-        Object currentLogMessageFormat = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("log.message.format.version");
-        Object currentInterBrokerProtocol = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version");
 
         if (isUpgrade && !sameMinorVersion) {
             LOGGER.info("Updating kafka config attribute 'log.message.format.version' from '{}' to '{}' version", initialVersion.messageVersion(), newVersion.messageVersion());
