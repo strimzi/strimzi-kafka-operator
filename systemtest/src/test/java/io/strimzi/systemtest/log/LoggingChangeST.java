@@ -63,7 +63,6 @@ import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
-import static io.strimzi.systemtest.Constants.LOGGING_RELOADING_INTERVAL;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.RECONCILIATION_INTERVAL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -75,7 +74,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.emptyString;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -284,13 +282,10 @@ class LoggingChangeST extends AbstractST {
                         && cmdKubeClient().namespace(namespaceName).execInPodContainer(false, eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
         );
 
-        LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL * 2);
-        // wait some time and check whether logs (UO and TO) after this time contain anything
-        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
-
-        LOGGER.info("Asserting if log will contain some records");
-        assertThat(StUtils.getLogFromPodByTime(namespaceName, eoPodName, "user-operator", "30s"), is(not(emptyString())));
-        assertThat(StUtils.getLogFromPodByTime(namespaceName, eoPodName, "topic-operator", "30s"), is(not(emptyString())));
+        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () ->
+                StUtils.getLogFromPodByTime(namespaceName, eoPodName, "user-operator", "30s").equals("") &&
+                StUtils.getLogFromPodByTime(namespaceName, eoPodName, "topic-operator", "30s").equals(""));
 
         LOGGER.info("Setting external logging OFF");
         ConfigMap configMapTo = new ConfigMapBuilder()
@@ -365,12 +360,10 @@ class LoggingChangeST extends AbstractST {
                     && cmdKubeClient().namespace(namespaceName).execInPodContainer(false, eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
-        LOGGER.info("Waiting {} ms for DEBUG log will disappear", LOGGING_RELOADING_INTERVAL * 2);
-        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
-
-        LOGGER.info("Asserting if log is without records");
-        assertThat(StUtils.getLogFromPodByTime(namespaceName, eoPodName, "topic-operator", "30s"), is(emptyString()));
-        assertThat(StUtils.getLogFromPodByTime(namespaceName, eoPodName, "user-operator", "30s"), is(emptyString()));
+        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () ->
+                StUtils.getLogFromPodByTime(namespaceName, eoPodName, "user-operator", "30s").equals("") &&
+                StUtils.getLogFromPodByTime(namespaceName, eoPodName, "topic-operator", "30s").equals(""));
 
         LOGGER.info("Setting external logging OFF");
         configMapTo = new ConfigMapBuilder()
@@ -414,13 +407,10 @@ class LoggingChangeST extends AbstractST {
                         && cmdKubeClient().namespace(namespaceName).execInPodContainer(false, eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
         );
 
-        LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL * 2);
-        //wait some time if TO and UO will log something
-        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
-
-        LOGGER.info("Asserting if log will contain some records");
-        assertThat(StUtils.getLogFromPodByTime(namespaceName, eoPodName, "user-operator", "30s"), is(not(emptyString())));
-        assertThat(StUtils.getLogFromPodByTime(namespaceName, eoPodName, "topic-operator", "30s"), is(not(emptyString())));
+        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () ->
+                StUtils.getLogFromPodByTime(namespaceName, eoPodName, "user-operator", "30s").equals("") &&
+                StUtils.getLogFromPodByTime(namespaceName, eoPodName, "topic-operator", "30s").equals(""));
 
         assertThat("EO pod should not roll", DeploymentUtils.depSnapshot(namespaceName, eoDeploymentName), equalTo(eoPods));
     }
@@ -476,12 +466,8 @@ class LoggingChangeST extends AbstractST {
                 && cmdKubeClient().namespace(namespaceName).execInPodContainer(false, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
-        LOGGER.info("Waiting {} ms for DEBUG log will appear", LOGGING_RELOADING_INTERVAL * 2);
-        // wait some time and check whether logs after this time contain anything
-        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
-
-        LOGGER.info("Asserting if log will contain some records");
-        assertThat(StUtils.getLogFromPodByTime(namespaceName, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "30s"), is(not(emptyString())));
+        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> StUtils.getLogFromPodByTime(namespaceName, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "30s").equals(""));
 
         ConfigMap configMapBridge = new ConfigMapBuilder()
             .withNewMetadata()
@@ -540,12 +526,8 @@ class LoggingChangeST extends AbstractST {
                 && cmdKubeClient().namespace(namespaceName).execInPodContainer(false, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
-        LOGGER.info("Waiting {} ms log to be empty", LOGGING_RELOADING_INTERVAL * 2);
-        // wait some time and check whether logs after this time are empty
-        Thread.sleep(LOGGING_RELOADING_INTERVAL * 2);
-
-        LOGGER.info("Asserting if log will contain no records");
-        assertThat(StUtils.getLogFromPodByTime(namespaceName, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "30s"), is(emptyString()));
+        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> StUtils.getLogFromPodByTime(namespaceName, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "30s").equals(""));
 
         assertThat("Bridge pod should not roll", DeploymentUtils.depSnapshot(namespaceName, KafkaBridgeResources.deploymentName(clusterName)), equalTo(bridgeSnapshot));
     }
@@ -608,12 +590,8 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Checking if CO rolled its pod");
         assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME)));
 
-        LOGGER.info("Waiting {} ms log to be empty", LOGGING_RELOADING_INTERVAL);
-        // wait some time and check whether logs after this time are empty
-        Thread.sleep(LOGGING_RELOADING_INTERVAL);
-
-        LOGGER.info("Asserting if log will contain no records");
-        assertThat(StUtils.getLogFromPodByTime(INFRA_NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s"), is(emptyString()));
+        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> StUtils.getLogFromPodByTime(INFRA_NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s").equals(""));
 
         LOGGER.info("Changing all levels from OFF to INFO/WARN");
         log4jConfig = log4jConfig.replaceAll("OFF", "INFO");
@@ -635,14 +613,12 @@ class LoggingChangeST extends AbstractST {
         assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME)));
 
         long reconciliationSleep = RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis();
-        LOGGER.info("Waiting {} ms log not to be empty", reconciliationSleep);
-        // wait enough time (at least for reconciliation time + 10) and check whether logs after this time are not empty
-        Thread.sleep(reconciliationSleep * 2);
 
-        LOGGER.info("Asserting if log will contain no records");
-        String coLog = StUtils.getLogFromPodByTime(INFRA_NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
-        assertThat(coLog, is(not(emptyString())));
-        assertThat(coLog.contains("INFO"), is(true));
+        TestUtils.waitFor("log to be not empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> {
+                final String coLog = StUtils.getLogFromPodByTime(INFRA_NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
+                return coLog != null && coLog != "" && coLog.contains("INFO");
+            });
     }
 
     @ParallelNamespaceTest
