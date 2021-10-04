@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -58,7 +59,6 @@ public class KafkaRebalanceStateMachineTest {
     private static final String RESOURCE_NAME = "my-rebalance";
     private static final String CLUSTER_NAMESPACE = "cruise-control-namespace";
     private static final String CLUSTER_NAME = "kafka-cruise-control-test-cluster";
-
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_18;
 
     private static ClientAndServer ccServer;
@@ -134,7 +134,7 @@ public class KafkaRebalanceStateMachineTest {
                                                          KafkaRebalanceAnnotation initialAnnotation,
                                                          KafkaRebalance kcRebalance) {
 
-        CruiseControlApi client = new CruiseControlApiImpl(vertx);
+        CruiseControlApi client = new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, true, true);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);

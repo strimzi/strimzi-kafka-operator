@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.Constants;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -346,6 +347,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.cruiseControlServiceAccount())
                 .compose(state -> state.cruiseControlAncillaryCm())
                 .compose(state -> state.cruiseControlSecret(this::dateSupplier))
+                .compose(state -> state.cruiseControlApiSecret())
                 .compose(state -> state.cruiseControlDeployment())
                 .compose(state -> state.cruiseControlService())
                 .compose(state -> state.cruiseControlReady())
@@ -3412,11 +3414,28 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(CruiseControl.secretName(name), cruiseControl == null ? null : cruiseControl.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+            return updateCertificateSecretWithDiff(CruiseControl.secretName(name), cruiseControl == null ? null : cruiseControl.generateSecret(kafkaAssembly, clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
                     .map(changed -> {
                         existingCruiseControlCertsChanged = changed;
                         return this;
                     });
+        }
+
+        Future<ReconciliationState> cruiseControlApiSecret() {
+            if (this.cruiseControl != null) {
+                Future<Secret> secretFuture = secretOperations.getAsync(namespace, CruiseControlResources.apiSecretName(name));
+                return secretFuture.compose(res -> {
+                    if (res == null) {
+                        return withVoid(secretOperations.reconcile(reconciliation, namespace, CruiseControlResources.apiSecretName(name),
+                                cruiseControl.generateApiSecret()));
+                    } else {
+                        return withVoid(Future.succeededFuture(this));
+                    }
+                });
+
+            } else {
+                return withVoid(secretOperations.reconcile(reconciliation, namespace, CruiseControlResources.apiSecretName(name), null));
+            }
         }
 
         Future<ReconciliationState> cruiseControlDeployment() {
@@ -3445,7 +3464,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlService() {
-            return withVoid(serviceOperations.reconcile(reconciliation, namespace, CruiseControl.cruiseControlServiceName(name), cruiseControl != null ? cruiseControl.generateService() : null));
+            return withVoid(serviceOperations.reconcile(reconciliation, namespace, CruiseControl.serviceName(name), cruiseControl != null ? cruiseControl.generateService() : null));
         }
 
         Future<ReconciliationState> cruiseControlReady() {

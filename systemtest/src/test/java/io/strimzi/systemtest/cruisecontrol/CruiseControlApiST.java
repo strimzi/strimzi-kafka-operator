@@ -17,6 +17,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.HashMap;
+
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -41,12 +43,12 @@ public class CruiseControlApiST extends AbstractST {
 
         LOGGER.info("----> CRUISE CONTROL DEPLOYMENT STATE ENDPOINT <----");
 
-        String response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STATE);
+        String response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STATE,  CruiseControlUtils.SupportedSchemes.HTTPS, true);
 
         assertThat(response, is("Unrecognized endpoint in request '/state'\n" +
             "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION]\n"));
 
-        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE,  CruiseControlUtils.SupportedSchemes.HTTPS, true);
 
         LOGGER.info("Verifying that {} REST API is available", CRUISE_CONTROL_NAME);
 
@@ -58,7 +60,7 @@ public class CruiseControlApiST extends AbstractST {
 
         LOGGER.info("----> KAFKA REBALANCE <----");
 
-        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.REBALANCE);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.REBALANCE,  CruiseControlUtils.SupportedSchemes.HTTPS, true);
 
         assertThat(response, is("Unrecognized endpoint in request '/rebalance'\n" +
             "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
@@ -66,7 +68,7 @@ public class CruiseControlApiST extends AbstractST {
         LOGGER.info("Waiting for CC will have for enough metrics to be recorded to make a proposal ");
         CruiseControlUtils.waitForRebalanceEndpointIsReady(NAMESPACE);
 
-        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE,  CruiseControlUtils.SupportedSchemes.HTTPS, true);
 
         // all goals stats that contains
         assertThat(response, containsString("RackAwareGoal"));
@@ -89,23 +91,23 @@ public class CruiseControlApiST extends AbstractST {
 
         LOGGER.info("----> EXECUTION OF STOP PROPOSAL <----");
 
-        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STOP);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STOP, CruiseControlUtils.SupportedSchemes.HTTPS, true);
 
         assertThat(response, is("Unrecognized endpoint in request '/stop_proposal_execution'\n" +
             "Supported GET endpoints: [BOOTSTRAP, TRAIN, LOAD, PARTITION_LOAD, PROPOSALS, STATE, KAFKA_CLUSTER_STATE, USER_TASKS, REVIEW_BOARD]\n"));
 
-        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STOP);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STOP, CruiseControlUtils.SupportedSchemes.HTTPS, true);
 
         assertThat(response, containsString("Proposal execution stopped."));
 
         LOGGER.info("----> USER TASKS <----");
 
-        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.USER_TASKS);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.USER_TASKS, CruiseControlUtils.SupportedSchemes.HTTPS, true);
 
         assertThat(response, is("Unrecognized endpoint in request '/user_tasks'\n" +
             "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION]\n"));
 
-        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.USER_TASKS);
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.USER_TASKS,  CruiseControlUtils.SupportedSchemes.HTTPS, true);
 
         assertThat(response, containsString("GET"));
         assertThat(response, containsString(CruiseControlEndpoints.STATE.toString()));
@@ -113,6 +115,43 @@ public class CruiseControlApiST extends AbstractST {
         assertThat(response, containsString(CruiseControlEndpoints.REBALANCE.toString()));
         assertThat(response, containsString(CruiseControlEndpoints.STOP.toString()));
         assertThat(response, containsString(CruiseControlUserTaskStatus.COMPLETED.toString()));
+
+
+        LOGGER.info("Verifying that {} REST API doesn't allow HTTP requests", CRUISE_CONTROL_NAME);
+
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE,  CruiseControlUtils.SupportedSchemes.HTTP, false);
+        assertThat(response, not(containsString("RUNNING")));
+        assertThat(response, not(containsString("NO_TASK_IN_PROGRESS")));
+
+        LOGGER.info("Verifying that {} REST API doesn't allow unauthenticated requests", CRUISE_CONTROL_NAME);
+
+        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE,  CruiseControlUtils.SupportedSchemes.HTTPS, false);
+        assertThat(response, containsString("401 Unauthorized"));
+    }
+
+    @Tag(ACCEPTANCE)
+    @ParallelTest
+    void testCruiseControlBasicAPIRequestsWithSecurityDisabled(ExtensionContext extensionContext) {
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3)
+            .editOrNewSpec()
+                .withNewCruiseControl().withConfig(
+                        new HashMap<String, Object>() {{
+                            put("webserver.security.enable", "false");
+                            put("webserver.ssl.enable", "false");
+                        }})
+                .endCruiseControl()
+            .endSpec()
+            .build());
+
+        LOGGER.info("----> CRUISE CONTROL DEPLOYMENT STATE ENDPOINT <----");
+
+        String response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE, CruiseControlUtils.SupportedSchemes.HTTP, false);
+
+        LOGGER.info("Verifying that {} REST API is available using HTTP request without credentials", CRUISE_CONTROL_NAME);
+
+        assertThat(response, not(containsString("404")));
+        assertThat(response, containsString("RUNNING"));
+        assertThat(response, containsString("NO_TASK_IN_PROGRESS"));
     }
 
     @BeforeAll
@@ -122,7 +161,5 @@ public class CruiseControlApiST extends AbstractST {
             .withNamespace(NAMESPACE)
             .createInstallation()
             .runInstallation();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3).build());
     }
 }

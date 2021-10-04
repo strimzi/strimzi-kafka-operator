@@ -17,7 +17,7 @@ mkdir -p /tmp/cruise-control
 export STRIMZI_TRUSTSTORE_LOCATION=/tmp/cruise-control/replication.truststore.p12
 export STRIMZI_TRUSTSTORE_PASSWORD="$CERTS_STORE_PASSWORD"
 
-export STRIMZI_KEYSTORE_LOCATION=/tmp/cruise-control/replication.keystore.p12
+export STRIMZI_KEYSTORE_LOCATION=/tmp/cruise-control/cruise-control.keystore.p12
 export STRIMZI_KEYSTORE_PASSWORD="$CERTS_STORE_PASSWORD"
 
 if [ -z "$KAFKA_LOG4J_OPTS" ]; then

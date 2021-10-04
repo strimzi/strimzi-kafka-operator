@@ -165,3 +165,31 @@ spec:
           key: cruise-control-log4j.properties
     # ...
 ----
+
+[[api-security-configuration]]
+[discrete]
+== Cruise Control REST API security
+
+The Cruise Control REST API is secured with HTTP Basic authentication and SSL to protect the cluster against potentially destructive Cruise Control operations, such as decommissioning Kafka brokers.
+
+We recommend that Cruise Control in Strimzi is **only used with these settings enabled**.
+You should not disable the built-in HTTP Basic authentication or SSL settings described below.
+
+* To disable the built-in HTTP Basic authentication, set `webserver.security.enable` to `false`.
+* To disable the built-in SSL, set `webserver.ssl.enable` to `false`.
+
+.Example Cruise Control configuration to disable API authorization, authentication, and SSL
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    config:
+      webserver.security.enable: false
+      webserver.ssl.enable: false
+# ...
+----

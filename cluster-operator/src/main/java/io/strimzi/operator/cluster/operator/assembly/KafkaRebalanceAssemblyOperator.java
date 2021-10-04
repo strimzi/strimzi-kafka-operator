@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
@@ -27,6 +28,7 @@ import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CruiseControl;
+import io.strimzi.operator.cluster.model.CruiseControlConfiguration;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
@@ -48,7 +50,9 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedResourceOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -67,6 +71,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
 
 /**
@@ -146,6 +151,7 @@ public class KafkaRebalanceAssemblyOperator
     protected static final String BROKER_LOAD_KEY = "brokerLoad.json";
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
+    private final SecretOperator secretOperations;
     private final PlatformFeaturesAvailability pfa;
     private final Optional<LabelSelector> kafkaSelector;
 
@@ -164,15 +170,21 @@ public class KafkaRebalanceAssemblyOperator
         this.kafkaRebalanceOperator = supplier.kafkaRebalanceOperator;
         this.kafkaOperator = supplier.kafkaOperator;
         this.configMapOperator = supplier.configMapOperations;
+        this.secretOperations = supplier.secretOperations;
     }
 
     /**
      * Provides an implementation of the Cruise Control API client
      *
+     * @param ccSecret Cruise Control secret
+     * @param ccApiSecret Cruise Control API secret
+     * @param apiAuthEnabled if enabled, configures auth
+     * @param apiSslEnabled if enabled, configures SSL
      * @return Cruise Control API client instance
      */
-    protected CruiseControlApi cruiseControlClientProvider() {
-        return new CruiseControlApiImpl(vertx);
+    public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret,
+                                                           boolean apiAuthEnabled, boolean apiSslEnabled) {
+        return new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
     }
 
     /**
@@ -1050,32 +1062,54 @@ public class KafkaRebalanceAssemblyOperator
                                         + ": No deployed Cruise Control for doing a rebalance.")).mapEmpty();
                     }
 
-                    CruiseControlApi apiClient = cruiseControlClientProvider();
+                    String ccSecretName =  CruiseControlResources.secretName(clusterName);
+                    String ccApiSecretName =  CruiseControlResources.apiSecretName(clusterName);
 
-                    // get latest KafkaRebalance state as it may have changed
-                    return kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
-                        .compose(currentKafkaRebalance -> {
-                            KafkaRebalanceStatus kafkaRebalanceStatus = currentKafkaRebalance.getStatus();
-                            KafkaRebalanceState currentState;
-                            // cluster rebalance is new or it is in one of the others states
-                            if (kafkaRebalanceStatus == null || kafkaRebalanceStatus.getConditions().stream().filter(cond -> "ReconciliationPaused".equals(cond.getType())).findAny().isPresent()) {
-                                currentState = KafkaRebalanceState.New;
-                            } else {
-                                String rebalanceStateType = rebalanceStateConditionType(kafkaRebalanceStatus);
-                                if (rebalanceStateType == null) {
-                                    throw new RuntimeException("Unable to find KafkaRebalance State in current KafkaRebalance status");
+                    Future<Secret> ccSecretFuture = secretOperations.getAsync(clusterNamespace, ccSecretName);
+                    Future<Secret> ccApiSecretFuture = secretOperations.getAsync(clusterNamespace, ccApiSecretName);
+
+                    return CompositeFuture.join(ccSecretFuture, ccApiSecretFuture)
+                            .compose(compositeFuture -> {
+
+                                Secret ccSecret = compositeFuture.resultAt(0);
+                                if (ccSecret == null) {
+                                    return Future.failedFuture(Util.missingSecretException(clusterNamespace, ccSecretName));
                                 }
-                                currentState = KafkaRebalanceState.valueOf(rebalanceStateType);
-                            }
-                            // Check annotation
-                            KafkaRebalanceAnnotation rebalanceAnnotation = rebalanceAnnotation(reconciliation, currentKafkaRebalance);
-                            return reconcile(reconciliation, cruiseControlHost(clusterName, clusterNamespace),
-                                        apiClient, currentKafkaRebalance, currentState, rebalanceAnnotation).mapEmpty();
 
-                        }, exception -> Future.failedFuture(exception).mapEmpty());
+                                Secret ccApiSecret = compositeFuture.resultAt(1);
+                                if (ccApiSecret == null) {
+                                    return Future.failedFuture(Util.missingSecretException(clusterNamespace, ccApiSecretName));
+                                }
+
+                                CruiseControlConfiguration c = new CruiseControlConfiguration(reconciliation, kafka.getSpec().getCruiseControl().getConfig().entrySet());
+                                boolean apiAuthEnabled = CruiseControl.isApiAuthEnabled(c);
+                                boolean apiSslEnabled = CruiseControl.isApiSslEnabled(c);
+                                CruiseControlApi apiClient = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
+
+                                // get latest KafkaRebalance state as it may have changed
+                                return kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
+                                        .compose(currentKafkaRebalance -> {
+                                            KafkaRebalanceStatus kafkaRebalanceStatus = currentKafkaRebalance.getStatus();
+                                            KafkaRebalanceState currentState;
+                                            // cluster rebalance is new or it is in one of the others states
+                                            if (kafkaRebalanceStatus == null || kafkaRebalanceStatus.getConditions().stream().filter(cond -> "ReconciliationPaused".equals(cond.getType())).findAny().isPresent()) {
+                                                currentState = KafkaRebalanceState.New;
+                                            } else {
+                                                String rebalanceStateType = rebalanceStateConditionType(kafkaRebalanceStatus);
+                                                if (rebalanceStateType == null) {
+                                                    throw new RuntimeException("Unable to find KafkaRebalance State in current KafkaRebalance status");
+                                                }
+                                                currentState = KafkaRebalanceState.valueOf(rebalanceStateType);
+                                            }
+                                            // Check annotation
+                                            KafkaRebalanceAnnotation rebalanceAnnotation = rebalanceAnnotation(reconciliation, currentKafkaRebalance);
+                                            return reconcile(reconciliation, cruiseControlHost(clusterName, clusterNamespace),
+                                                    apiClient, currentKafkaRebalance, currentState, rebalanceAnnotation).mapEmpty();
+
+                                        }, exception -> Future.failedFuture(exception).mapEmpty());
+                            });
                 }, exception -> updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(), exception).mapEmpty());
     }
-
 
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> requestRebalance(Reconciliation reconciliation,
                                                           String host, CruiseControlApi apiClient, KafkaRebalance kafkaRebalance,

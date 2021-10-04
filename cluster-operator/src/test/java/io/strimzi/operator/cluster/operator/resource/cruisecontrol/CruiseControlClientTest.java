@@ -20,6 +20,7 @@ import java.net.URISyntaxException;
 
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasEntry;
 import static io.strimzi.operator.cluster.JSONObjectMatchers.hasKeys;
+import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
@@ -29,6 +30,9 @@ public class CruiseControlClientTest {
 
     private static final int PORT = 1080;
     private static final String HOST = "localhost";
+
+    private static final boolean API_AUTH_ENABLED = true;
+    private static final boolean API_SSL_ENABLED = true;
 
     private static ClientAndServer ccServer;
 
@@ -47,12 +51,15 @@ public class CruiseControlClientTest {
         ccServer.reset();
     }
 
+    private CruiseControlApi cruiseControlClientProvider(Vertx vertx) {
+        return new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, API_AUTH_ENABLED, API_SSL_ENABLED);
+    }
+
     @Test
     public void testGetCCState(Vertx vertx, VertxTestContext context) throws IOException, URISyntaxException {
-
         MockCruiseControl.setupCCStateResponse(ccServer);
 
-        CruiseControlApi client = new CruiseControlApiImpl(vertx);
+        CruiseControlApi client = cruiseControlClientProvider(vertx);
 
         Checkpoint checkpoint = context.checkpoint();
         client.getCruiseControlState(HOST, PORT, false)
@@ -70,7 +77,7 @@ public class CruiseControlClientTest {
 
         RebalanceOptions rbOptions = new RebalanceOptions.RebalanceOptionsBuilder().build();
 
-        CruiseControlApi client = new CruiseControlApiImpl(vertx);
+        CruiseControlApi client = cruiseControlClientProvider(vertx);
 
         Checkpoint checkpoint = context.checkpoint();
         client.rebalance(HOST, PORT, rbOptions, null)
@@ -87,7 +94,7 @@ public class CruiseControlClientTest {
 
         RebalanceOptions rbOptions = new RebalanceOptions.RebalanceOptionsBuilder().withVerboseResponse().build();
 
-        CruiseControlApi client = new CruiseControlApiImpl(vertx);
+        CruiseControlApi client = cruiseControlClientProvider(vertx);
 
         Checkpoint checkpoint = context.checkpoint();
         client.rebalance(HOST, PORT, rbOptions, null)
@@ -105,7 +112,7 @@ public class CruiseControlClientTest {
 
         RebalanceOptions rbOptions = new RebalanceOptions.RebalanceOptionsBuilder().build();
 
-        CruiseControlApiImpl client = new CruiseControlApiImpl(vertx);
+        CruiseControlApi client = cruiseControlClientProvider(vertx);
 
         Checkpoint checkpoint = context.checkpoint();
         client.rebalance(HOST, PORT, rbOptions, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
@@ -122,7 +129,7 @@ public class CruiseControlClientTest {
 
         RebalanceOptions rbOptions = new RebalanceOptions.RebalanceOptionsBuilder().build();
 
-        CruiseControlApiImpl client = new CruiseControlApiImpl(vertx);
+        CruiseControlApi client = cruiseControlClientProvider(vertx);
 
         Checkpoint checkpoint = context.checkpoint();
         client.rebalance(HOST, PORT, rbOptions, MockCruiseControl.REBALANCE_NOT_ENOUGH_VALID_WINDOWS_ERROR)
@@ -137,7 +144,7 @@ public class CruiseControlClientTest {
 
         MockCruiseControl.setupCCUserTasksResponseNoGoals(ccServer, 0, 0);
 
-        CruiseControlApi client = new CruiseControlApiImpl(vertx);
+        CruiseControlApi client = cruiseControlClientProvider(vertx);
         String userTaskID = MockCruiseControl.REBALANCE_NO_GOALS_RESPONSE_UTID;
 
         Checkpoint checkpoint = context.checkpoint();

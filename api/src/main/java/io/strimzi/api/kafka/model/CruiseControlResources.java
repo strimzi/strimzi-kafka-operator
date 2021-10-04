@@ -49,6 +49,18 @@ public class CruiseControlResources {
     }
 
     /**
+     * Returns the name of the Cruise Control {@code Secret} used for API authorization for a {@code Kafka} cluster of the given name.
+     * This {@code Secret} will only exist if {@code Kafka.spec.cruiseControl} is configured in the
+     * {@code Kafka} resource with the given name.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding Cruise Control {@code Secret}.
+     */
+    public static String apiSecretName(String clusterName) {
+        return deploymentName(clusterName) + "-api";
+    }
+
+    /**
      * Returns the name of the Cruise Control {@code Secret} for a {@code Kafka} cluster of the given name.
      * This {@code Secret} will only exist if {@code Kafka.spec.cruiseControl} is configured in the
      * {@code Kafka} resource with the given name.

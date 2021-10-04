@@ -4,18 +4,30 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.fabric8.kubernetes.api.model.HTTPHeader;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.CruiseControlResources;
+import io.strimzi.certs.Subject;
+import io.strimzi.operator.cluster.model.CruiseControl;
+import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.MockCertManager;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.matchers.Times;
+import org.mockserver.model.Header;
 import org.mockserver.model.JsonBody;
 import org.mockserver.model.Parameter;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -52,6 +64,21 @@ public class MockCruiseControl {
     public static final String STATE_PROPOSAL_NOT_READY = STATE + SEP + "proposal" + SEP + "not" + SEP + "ready";
     public static final String STATE_PROPOSAL_NOT_READY_RESPONSE = STATE_PROPOSAL_NOT_READY + SEP + RESPONSE;
 
+    private static final String CLUSTER = "my-cluster";
+    private static final String NAMESPACE = "my-project";
+
+    public static final Secret CC_SECRET = new SecretBuilder()
+            .withNewMetadata()
+              .withName(CruiseControl.secretName(CLUSTER))
+              .withNamespace(NAMESPACE)
+            .endMetadata()
+            .addToData("cruise-control.crt", MockCertManager.clusterCaCert())
+            .build();
+    public static final Secret CC_API_SECRET = ModelUtils.createSecret(CruiseControlResources.apiSecretName(CLUSTER), NAMESPACE, Labels.EMPTY, null,
+            CruiseControl.generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
+
+    private static final Header AUTH_HEADER = convertToHeader(CruiseControlApiImpl.getAuthHttpHeader(true, CC_API_SECRET));
+
     /**
      * Sets up and returns the Cruise Control MockSever.
      *
@@ -61,6 +88,16 @@ public class MockCruiseControl {
      */
     public static ClientAndServer server(int port) throws IOException {
         ConfigurationProperties.logLevel("WARN");
+
+        File key = File.createTempFile("key-", ".key");
+        File cert = File.createTempFile("crt-", ".crt");
+
+        MockCertManager certManager = new MockCertManager();
+        certManager.generateSelfSignedCert(key, cert, new Subject.Builder().withCommonName("Test CA").build(), 365);
+
+        ConfigurationProperties.certificateAuthorityPrivateKey(key.getAbsolutePath());
+        ConfigurationProperties.certificateAuthorityCertificate(cert.getAbsolutePath());
+
         String loggingConfiguration = "" +
                 "handlers=org.mockserver.logging.StandardOutConsoleHandler\n" +
                 "org.mockserver.logging.StandardOutConsoleHandler.level=WARNING\n" +
@@ -71,6 +108,14 @@ public class MockCruiseControl {
         LogManager.getLogManager().readConfiguration(new ByteArrayInputStream(loggingConfiguration.getBytes(UTF_8)));
 
         return new ClientAndServer(port);
+    }
+
+    private static Header convertToHeader(HTTPHeader httpHeader) {
+        if (httpHeader == null) {
+            return null;
+        } else {
+            return new Header(httpHeader.getName(), httpHeader.getValue());
+        }
     }
 
     private static JsonBody getJsonFromResource(String resource) throws URISyntaxException, IOException {
@@ -103,7 +148,9 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
                                 .withPath(CruiseControlEndpoints.STATE.path)
-                                .withHeaders(header(CruiseControlApi.CC_REST_API_USER_ID_HEADER, STATE_PROPOSAL_NOT_READY)))
+                                .withHeaders(header(CruiseControlApi.CC_REST_API_USER_ID_HEADER, STATE_PROPOSAL_NOT_READY),
+                                        AUTH_HEADER)
+                                .withSecure(true))
                 .respond(
                         response()
                                 .withBody(jsonProposalNotReady)
@@ -120,7 +167,9 @@ public class MockCruiseControl {
                                 .withMethod("GET")
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "false"))
-                                .withPath(CruiseControlEndpoints.STATE.path))
+                                .withPath(CruiseControlEndpoints.STATE.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true))
                 .respond(
                         response()
                                 .withBody(json)
@@ -136,7 +185,9 @@ public class MockCruiseControl {
                                 .withMethod("GET")
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true"))
-                                .withPath(CruiseControlEndpoints.STATE.path))
+                                .withPath(CruiseControlEndpoints.STATE.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true))
                 .respond(
                         response()
                                 .withBody(jsonVerbose)
@@ -160,7 +211,9 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path))
+                                .withPath(CruiseControlEndpoints.REBALANCE.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true))
 
                 .respond(
                         response()
@@ -191,7 +244,9 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path),
+                                .withPath(CruiseControlEndpoints.REBALANCE.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true),
                         Times.exactly(pendingCalls))
                 .respond(
                         response()
@@ -210,7 +265,9 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "false"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path),
+                                .withPath(CruiseControlEndpoints.REBALANCE.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true),
                         Times.unlimited())
                 .respond(
                         response()
@@ -228,7 +285,9 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.DRY_RUN.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path))
+                                .withPath(CruiseControlEndpoints.REBALANCE.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true))
                 .respond(
                         response()
                                 .withBody(jsonVerbose)
@@ -254,7 +313,9 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.GOALS.key, ".+"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.SKIP_HARD_GOAL_CHECK.key, "false"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path))
+                                .withPath(CruiseControlEndpoints.REBALANCE.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true))
                 .respond(
                         response()
                                 .withBody(jsonError)
@@ -275,7 +336,9 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.VERBOSE.key, "true|false"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.GOALS.key, ".+"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.SKIP_HARD_GOAL_CHECK.key, "true"))
-                                .withPath(CruiseControlEndpoints.REBALANCE.path))
+                                .withPath(CruiseControlEndpoints.REBALANCE.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true))
                 .respond(
                         response()
                                 .withBody(jsonSummary)
@@ -309,7 +372,9 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.USER_TASK_IDS.key, REBALANCE_NO_GOALS_RESPONSE_UTID))
-                                .withPath(CruiseControlEndpoints.USER_TASKS.path),
+                                .withPath(CruiseControlEndpoints.USER_TASKS.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true),
                         Times.exactly(activeCalls))
                 .respond(
                         response()
@@ -325,7 +390,9 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.USER_TASK_IDS.key, REBALANCE_NO_GOALS_RESPONSE_UTID))
-                                .withPath(CruiseControlEndpoints.USER_TASKS.path),
+                                .withPath(CruiseControlEndpoints.USER_TASKS.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true),
                         Times.exactly(inExecutionCalls))
                 .respond(
                         response()
@@ -341,7 +408,9 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.USER_TASK_IDS.key, REBALANCE_NO_GOALS_RESPONSE_UTID))
-                                .withPath(CruiseControlEndpoints.USER_TASKS.path),
+                                .withPath(CruiseControlEndpoints.USER_TASKS.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true),
                         Times.unlimited())
                 .respond(
                         response()
@@ -363,7 +432,9 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
                                 .withQueryStringParameter(
                                         Parameter.param(CruiseControlParameters.USER_TASK_IDS.key, REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
-                                .withPath(CruiseControlEndpoints.USER_TASKS.path),
+                                .withPath(CruiseControlEndpoints.USER_TASKS.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true),
                         Times.exactly(activeCalls))
                 .respond(
                         response()
@@ -379,7 +450,9 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
                                 .withQueryStringParameter(
                                         Parameter.param(CruiseControlParameters.USER_TASK_IDS.key, REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
-                                .withPath(CruiseControlEndpoints.USER_TASKS.path),
+                                .withPath(CruiseControlEndpoints.USER_TASKS.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true),
                         Times.exactly(inExecutionCalls))
                 .respond(
                         response()
@@ -395,7 +468,9 @@ public class MockCruiseControl {
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
                                 .withQueryStringParameter(
                                         Parameter.param(CruiseControlParameters.USER_TASK_IDS.key, REBALANCE_NO_GOALS_VERBOSE_RESPONSE_UTID))
-                                .withPath(CruiseControlEndpoints.USER_TASKS.path),
+                                .withPath(CruiseControlEndpoints.USER_TASKS.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true),
                         Times.unlimited())
                 .respond(
                         response()
@@ -418,7 +493,9 @@ public class MockCruiseControl {
                                 .withMethod("GET")
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true"))
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.FETCH_COMPLETE.key, "true"))
-                                .withPath(CruiseControlEndpoints.USER_TASKS.path))
+                                .withPath(CruiseControlEndpoints.USER_TASKS.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true))
                 .respond(
                         response()
                                 .withBody(compWithErrorJson)
@@ -439,7 +516,9 @@ public class MockCruiseControl {
                         request()
                                 .withMethod("POST")
                                 .withQueryStringParameter(Parameter.param(CruiseControlParameters.JSON.key, "true|false"))
-                                .withPath(CruiseControlEndpoints.STOP.path))
+                                .withPath(CruiseControlEndpoints.STOP.path)
+                                .withHeader(AUTH_HEADER)
+                                .withSecure(true))
                 .respond(
                         response()
                                 .withBody(jsonStop)

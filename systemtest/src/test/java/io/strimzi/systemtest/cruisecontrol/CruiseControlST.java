@@ -101,6 +101,31 @@ public class CruiseControlST extends AbstractST {
         assertThat(partitionMetricsTopic.getReplicas(), is(2));
     }
 
+    @IsolatedTest
+    void testCruiseControlWithApiSecurityDisabled(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+                .editMetadata()
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .editOrNewSpec()
+                    .editCruiseControl()
+                        .addToConfig("webserver.security.enable", "false")
+                        .addToConfig("webserver.ssl.enable", "false")
+                    .endCruiseControl()
+                .endSpec()
+                .build());
+        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName)
+                .editMetadata()
+                .withNamespace(NAMESPACE)
+                .endMetadata()
+                .build());
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(NAMESPACE, clusterName, KafkaRebalanceState.ProposalReady);
+    }
+
+
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     @Tag(ACCEPTANCE)
     void testCruiseControlWithRebalanceResourceAndRefreshAnnotation(ExtensionContext extensionContext) {

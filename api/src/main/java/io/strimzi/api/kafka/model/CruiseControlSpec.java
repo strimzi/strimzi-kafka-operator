@@ -35,8 +35,8 @@ public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropert
         + "webserver.http., webserver.api.urlprefix, webserver.session.path, webserver.accesslog., two.step., request.reason.required,"
         + "metric.reporter.sampler.bootstrap.servers, metric.reporter.topic, partition.metric.sample.store.topic, broker.metric.sample.store.topic,"
         + "capacity.config.file, self.healing., ssl.";
-    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, webserver.http.cors.enabled," +
-            "webserver.http.cors.origin, webserver.http.cors.exposeheaders";
+    public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols, webserver.http.cors.enabled, "
+        + "webserver.http.cors.origin, webserver.http.cors.exposeheaders, webserver.security.enable, webserver.ssl.enable";
 
     private String image;
     private TlsSidecar tlsSidecar;

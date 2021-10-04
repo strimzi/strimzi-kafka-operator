@@ -705,6 +705,7 @@ public class ResourceUtils {
                 metricsProvider(),
                 adminClientProvider());
 
+        when(supplier.secretOperations.getAsync(any(), any())).thenReturn(Future.succeededFuture());
         when(supplier.serviceAccountOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleBindingOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
         when(supplier.roleOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
