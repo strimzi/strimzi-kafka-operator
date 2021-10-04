@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import org.apache.logging.log4j.LogManager;
@@ -133,7 +134,7 @@ public class Environment {
     /**
      * Defaults
      */
-    private static final String ST_KAFKA_VERSION_DEFAULT = "3.0.0";
+    private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getLatestSupportedKafkaVersion();
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
     public static final String STRIMZI_TAG_DEFAULT = "latest";
     public static final String STRIMZI_REGISTRY_DEFAULT = "quay.io";
