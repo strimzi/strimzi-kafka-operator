@@ -125,13 +125,13 @@ public class CruiseControlApiST extends AbstractST {
 
         LOGGER.info("Verifying that {} REST API doesn't allow HTTP requests", CRUISE_CONTROL_NAME);
 
-        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE,  CruiseControlUtils.SupportedSchemes.HTTP, false);
+        response = CruiseControlUtils.callApi(INFRA_NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE,  CruiseControlUtils.SupportedSchemes.HTTP, false);
         assertThat(response, not(containsString("RUNNING")));
         assertThat(response, not(containsString("NO_TASK_IN_PROGRESS")));
 
         LOGGER.info("Verifying that {} REST API doesn't allow unauthenticated requests", CRUISE_CONTROL_NAME);
 
-        response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE,  CruiseControlUtils.SupportedSchemes.HTTPS, false);
+        response = CruiseControlUtils.callApi(INFRA_NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE,  CruiseControlUtils.SupportedSchemes.HTTPS, false);
         assertThat(response, containsString("401 Unauthorized"));
     }
 
@@ -139,6 +139,9 @@ public class CruiseControlApiST extends AbstractST {
     @ParallelTest
     void testCruiseControlBasicAPIRequestsWithSecurityDisabled(ExtensionContext extensionContext) {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
             .editOrNewSpec()
                 .withNewCruiseControl().withConfig(
                         new HashMap<String, Object>() {{
@@ -151,7 +154,7 @@ public class CruiseControlApiST extends AbstractST {
 
         LOGGER.info("----> CRUISE CONTROL DEPLOYMENT STATE ENDPOINT <----");
 
-        String response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE, CruiseControlUtils.SupportedSchemes.HTTP, false);
+        String response = CruiseControlUtils.callApi(INFRA_NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE, CruiseControlUtils.SupportedSchemes.HTTP, false);
 
         LOGGER.info("Verifying that {} REST API is available using HTTP request without credentials", CRUISE_CONTROL_NAME);
 
