@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static io.strimzi.systemtest.Constants.DYNAMIC_CONFIGURATION;
@@ -53,15 +54,21 @@ public class DynamicConfigurationSharedST extends AbstractST {
         List<DynamicTest> dynamicTests = new ArrayList<>(40);
 
         Map<String, Object> testCases = generateTestCases(TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).version());
+        List<String> chosenTestCases = stochasticSelection(testCases);
 
-        testCases.forEach((key, value) -> dynamicTests.add(DynamicTest.dynamicTest("Test " + key + "->" + value, () -> {
-            // exercise phase
-            KafkaUtils.updateConfigurationWithStabilityWait(dynamicConfigurationSharedClusterName, key, value);
+        for (String key : chosenTestCases) {
+            final Object value = testCases.get(key);
 
-            // verify phase
-            assertThat(KafkaUtils.verifyCrDynamicConfiguration(dynamicConfigurationSharedClusterName, key, value), is(true));
-            assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(dynamicConfigurationSharedClusterName), key, value), is(true));
-        })));
+            dynamicTests.add(DynamicTest.dynamicTest("Test " + key + "->" + value, () -> {
+                // exercise phase
+                KafkaUtils.updateConfigurationWithStabilityWait(dynamicConfigurationSharedClusterName, key, value);
+
+                // verify phase
+                assertThat(KafkaUtils.verifyCrDynamicConfiguration(dynamicConfigurationSharedClusterName, key, value), is(true));
+                assertThat(KafkaUtils.verifyPodDynamicConfiguration(KafkaResources.kafkaStatefulSetName(dynamicConfigurationSharedClusterName), key, value), is(true));
+            }));
+        }
+
         return dynamicTests.iterator();
     }
 
@@ -177,6 +184,42 @@ public class DynamicConfigurationSharedST extends AbstractST {
         });
 
         return testCases;
+    }
+
+    /**
+     * Method, which randomly choose 3 dynamic properties for verification from @see{testCases}. In this case we are ok
+     * with stochastic selection, because we don't care, which configuration is used. Furthermore, it's the same path
+     * of code (i.e., same CFG (control flow graph), which does not triggers RollingUpdate).
+     * @param testCases test cases, where each consist of one dynamic property
+     * @return List 3 chosen dynamic properties
+     */
+    private static List<String> stochasticSelection(final Map<String, Object> testCases) {
+        final List<String> testCaseKeys = new ArrayList<>(testCases.keySet());
+        final Random generator = new Random();
+        final List<String> chosenDynConfigurations = new ArrayList<>(3);
+
+        for (int i = 0; i < 3; i++) {
+            int stochasticNumber = generator.nextInt(testCaseKeys.size());
+            String chosenDynConfiguration = testCaseKeys.get(stochasticNumber);
+
+            // ak uz tam je iny..
+            if (chosenDynConfigurations.contains(chosenDynConfiguration)) {
+                while (chosenDynConfigurations.contains(chosenDynConfiguration)) {
+                    LOGGER.debug("List of dynamic configurations already have that type of configuration:\n{}", chosenDynConfigurations.toArray());
+                    stochasticNumber = generator.nextInt(testCaseKeys.size());
+                    chosenDynConfiguration = chosenDynConfigurations.get(stochasticNumber);
+
+                    chosenDynConfigurations.add(chosenDynConfiguration);
+                }
+            } else {
+                LOGGER.debug("New configuration in List of dynamic configuration:\n{}", chosenDynConfigurations.toArray());
+                chosenDynConfigurations.add(chosenDynConfiguration);
+            }
+        }
+
+        LOGGER.debug("Chosen dynamic configuration are:\n{}", chosenDynConfigurations.toArray());
+
+        return chosenDynConfigurations;
     }
 
     @BeforeAll
