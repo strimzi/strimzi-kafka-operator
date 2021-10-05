@@ -3,7 +3,7 @@
 // upgrading/assembly-upgrade.adoc
 
 [id='con-upgrade-cluster-{context}']
-= Upgrading Kubernetes
+= Upgrading Kubernetes with minimal downtime
 
 [role="_abstract"]
 If you are upgrading Kubernetes, refer the Kubernertes upgrade documentation to check the upgrade path and the steps to upgrade your nodes correctly.
