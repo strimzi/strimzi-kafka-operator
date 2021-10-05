@@ -195,28 +195,19 @@ public class DynamicConfigurationSharedST extends AbstractST {
      */
     private static List<String> stochasticSelection(final Map<String, Object> testCases) {
         final List<String> testCaseKeys = new ArrayList<>(testCases.keySet());
-        final Random generator = new Random();
         final List<String> chosenDynConfigurations = new ArrayList<>(3);
 
         for (int i = 0; i < 3; i++) {
-            int stochasticNumber = generator.nextInt(testCaseKeys.size());
-            String chosenDynConfiguration = testCaseKeys.get(stochasticNumber);
+            final int stochasticNumber = rng.nextInt(testCaseKeys.size());
+            final String chosenDynConfiguration = testCaseKeys.get(stochasticNumber);
 
-            if (chosenDynConfigurations.contains(chosenDynConfiguration)) {
-                while (chosenDynConfigurations.contains(chosenDynConfiguration)) {
-                    LOGGER.debug("List of dynamic configurations already have that type of configuration:\n{}", chosenDynConfigurations.toArray());
-                    stochasticNumber = generator.nextInt(testCaseKeys.size());
-                    chosenDynConfiguration = testCaseKeys.get(stochasticNumber);
-
-                    chosenDynConfigurations.add(chosenDynConfiguration);
-                }
-            } else {
-                LOGGER.debug("New configuration in List of dynamic configuration:\n{}", chosenDynConfigurations.toArray());
-                chosenDynConfigurations.add(chosenDynConfiguration);
-            }
+            LOGGER.debug("New configuration in List of dynamic configuration:\n{}", chosenDynConfigurations.toString());
+            chosenDynConfigurations.add(chosenDynConfiguration);
+            // remove it from `testCaseKeys` list to not include it twice
+            testCaseKeys.remove(chosenDynConfiguration);
         }
 
-        LOGGER.debug("Chosen dynamic configuration are:\n{}", chosenDynConfigurations.toArray());
+        LOGGER.debug("Chosen dynamic configuration are:\n{}", chosenDynConfigurations.toString());
 
         return chosenDynConfigurations;
     }
