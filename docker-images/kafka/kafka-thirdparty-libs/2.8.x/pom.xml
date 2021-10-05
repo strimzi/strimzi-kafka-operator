@@ -17,7 +17,7 @@
 
     <properties>
         <strimzi-oauth.version>0.8.1</strimzi-oauth.version>
-        <cruise-control.version>2.5.57</cruise-control.version>
+        <cruise-control.version>2.5.73</cruise-control.version>
         <opa-authorizer.version>1.1.0</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.2.0</kafka-quotas-plugin.version>
         <kafka-mirror-maker-2-extensions.version>1.0.0</kafka-mirror-maker-2-extensions.version>
@@ -251,6 +251,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- Cruise Control -->
         <dependency>
             <groupId>com.linkedin.cruisecontrol</groupId>
             <artifactId>cruise-control-metrics-reporter</artifactId>
@@ -258,7 +259,7 @@
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka_2.12</artifactId>
+                    <artifactId>kafka_2.13</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.kafka</groupId>

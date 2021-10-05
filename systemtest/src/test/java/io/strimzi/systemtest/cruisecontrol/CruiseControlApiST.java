@@ -46,7 +46,8 @@ public class CruiseControlApiST extends AbstractST {
         String response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.STATE,  CruiseControlUtils.SupportedSchemes.HTTPS, true);
 
         assertThat(response, is("Unrecognized endpoint in request '/state'\n" +
-            "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION]\n"));
+            "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, " +
+                "RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION, RIGHTSIZE]\n"));
 
         response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.STATE,  CruiseControlUtils.SupportedSchemes.HTTPS, true);
 
@@ -105,7 +106,8 @@ public class CruiseControlApiST extends AbstractST {
         response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.POST, CruiseControlEndpoints.USER_TASKS, CruiseControlUtils.SupportedSchemes.HTTPS, true);
 
         assertThat(response, is("Unrecognized endpoint in request '/user_tasks'\n" +
-            "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION]\n"));
+            "Supported POST endpoints: [ADD_BROKER, REMOVE_BROKER, FIX_OFFLINE_REPLICAS, REBALANCE, STOP_PROPOSAL_EXECUTION, PAUSE_SAMPLING, " +
+                "RESUME_SAMPLING, DEMOTE_BROKER, ADMIN, REVIEW, TOPIC_CONFIGURATION, RIGHTSIZE]\n"));
 
         response = CruiseControlUtils.callApi(NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.USER_TASKS,  CruiseControlUtils.SupportedSchemes.HTTPS, true);
 
