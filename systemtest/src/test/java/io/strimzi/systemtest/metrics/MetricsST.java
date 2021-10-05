@@ -78,7 +78,6 @@ import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.Constants.RECONCILIATION_INTERVAL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -661,6 +660,9 @@ public class MetricsST extends AbstractST {
         resourceManager.createResource(extensionContext, false,
             // kafka with cruise control and metrics
             KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(metricsClusterName, 3, 3)
+                .editMetadata()
+                    .withNamespace(INFRA_NAMESPACE)
+                .endMetadata()
                 .editOrNewSpec()
                     .editEntityOperator()
                         .editTopicOperator()
@@ -699,7 +701,7 @@ public class MetricsST extends AbstractST {
         NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, SECOND_CLUSTER, SECOND_NAMESPACE);
 
         // wait some time for metrics to be stable - at least reconciliation interval + 10s
-        Thread.sleep(RECONCILIATION_INTERVAL + 10_000);
+        Thread.sleep(Constants.SAFETY_RECONCILIATION_INTERVAL);
 
         collector = new MetricsCollector.Builder()
             .withScraperPodName(kafkaClientsPodName)

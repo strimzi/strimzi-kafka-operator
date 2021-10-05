@@ -147,7 +147,7 @@ public class SetupClusterOperator {
      * Don't use this method in tests, where specific configuration of CO is needed.
      */
     public SetupClusterOperator runInstallation() {
-        LOGGER.debug("Cluster operator installation configuration:\n{}", this::toString);
+        LOGGER.info("Cluster operator installation configuration:\n{}", this::toString);
         // if it's shared context (before suite) skip
         if (BeforeAllOnce.getSharedExtensionContext() != extensionContext) {
             testClassName = extensionContext.getRequiredTestClass() != null ? extensionContext.getRequiredTestClass().getName() : "";
