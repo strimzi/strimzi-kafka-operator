@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.kafkaclients;
 
 import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.clientproperties.ConsumerProperties;
 import io.strimzi.systemtest.kafkaclients.clientproperties.ProducerProperties;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -33,6 +34,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
     protected ProducerProperties producerProperties;
     protected ConsumerProperties consumerProperties;
     protected String secretPrefix;
+    protected int maxPollRecords;
 
     public abstract static class Builder<SELF extends Builder<SELF>> {
 
@@ -49,6 +51,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         private ProducerProperties producerProperties;
         private ConsumerProperties consumerProperties;
         private String secretPrefix;
+        private int maxPollRecords;
 
         public SELF withTopicName(String topicName) {
             this.topicName = topicName;
@@ -115,6 +118,11 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
             return self();
         }
 
+        public SELF withMaxPollRecords(int maxPollRecords) {
+            this.maxPollRecords = maxPollRecords;
+            return self();
+        }
+
         @SuppressWarnings("unchecked")
         protected SELF self() {
             return (SELF) this;
@@ -144,7 +152,8 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
             .withListenerName(listenerName)
             .withProducerProperties(producerProperties)
             .withConsumerProperties(consumerProperties)
-            .withSecretPrefix(secretPrefix);
+            .withSecretPrefix(secretPrefix)
+            .withMaxPollRecords(maxPollRecords);
     }
 
     protected AbstractKafkaClient(Builder<?> builder) {
@@ -163,6 +172,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         producerProperties = builder.producerProperties;
         consumerProperties = builder.consumerProperties;
         secretPrefix = builder.secretPrefix;
+        maxPollRecords = builder.maxPollRecords;
     }
 
     private void verifyEssentialInstanceAttributes() {
@@ -187,6 +197,9 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
             LOGGER.info("Consumer group were not specified going to create the random one.");
             builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
+        }
+        if (builder.maxPollRecords <= 0) {
+            builder.maxPollRecords = Constants.MAX_POLL_RECORDS_DEFAULT;
         }
     }
 

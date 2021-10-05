@@ -76,7 +76,8 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
             .withValueDeserializerConfig(StringDeserializer.class)
             .withClientIdConfig("consumer-" + new Random().nextInt(Integer.MAX_VALUE))
             .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
-            .withGroupIdConfig(consumerGroup);
+            .withGroupIdConfig(consumerGroup)
+            .withMaxPollRecords(maxPollRecords);
     }
 
     public int sendMessagesPlain() {

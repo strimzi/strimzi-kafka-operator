@@ -54,6 +54,10 @@ public interface Constants {
     long KEYCLOAK_DEPLOYMENT_POLL = Duration.ofSeconds(5).toMillis();
     long KEYCLOAK_DEPLOYMENT_TIMEOUT = Duration.ofMinutes(10).toMillis();
 
+    // Clients constants
+    int MAX_POLL_RECORDS_DEFAULT = 500;
+    int MAX_POLL_RECORDS_HIGH = 1000;
+
     // stability count ensures that after some reconciliation we have some additional time
     int GLOBAL_STABILITY_OFFSET_COUNT = 20;
     // it is replacement instead of checking logs for reconciliation using dynamic waiting on some change for some period of time
