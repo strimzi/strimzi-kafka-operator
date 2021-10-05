@@ -55,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Disabled("Due to fatal exception when deploying Kafka. Should be enabled after new version of Strimzi OAuth will be released")
 public class OauthAuthorizationST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthAuthorizationST.class);
 

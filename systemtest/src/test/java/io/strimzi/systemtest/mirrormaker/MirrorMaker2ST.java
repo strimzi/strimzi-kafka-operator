@@ -47,6 +47,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -785,6 +786,7 @@ class MirrorMaker2ST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @Disabled("Disabled because of issue with IdentityReplicationPolicy -> messages are not mirrored from source to target cluster")
     void testIdentityReplicationPolicy(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
