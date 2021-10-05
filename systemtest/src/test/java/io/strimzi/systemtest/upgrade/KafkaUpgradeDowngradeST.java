@@ -237,7 +237,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
                     LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
                 });
 
-                StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+                StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaReplicas, kafkaPods);
             }
         }
 
@@ -253,7 +253,6 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
         kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
-
         LOGGER.info("Updating Kafka CR version field to " + newVersion.version());
 
         // Change the version in Kafka CR
@@ -270,6 +269,23 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         // Wait for the kafka broker version change roll
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaPods);
         LOGGER.info("1st Kafka roll (image change) is complete");
+
+        Object currentLogMessageFormat = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("log.message.format.version");
+        Object currentInterBrokerProtocol = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version");
+
+        if (isUpgrade && !sameMinorVersion) {
+            LOGGER.info("Kafka version is increased, two RUs remaining for increasing IBPV and LMFV");
+
+            if (currentInterBrokerProtocol == null) {
+                kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaPods);
+                LOGGER.info("Kafka roll (inter.broker.protocol.version) is complete");
+            }
+
+            if (currentLogMessageFormat == null) {
+                kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaReplicas, kafkaPods);
+                LOGGER.info("Kafka roll (log.message.format.version) is complete");
+            }
+        }
 
         LOGGER.info("Deployment of Kafka (" + newVersion.version() + ") complete");
 
@@ -290,17 +306,9 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         assertThat("Kafka container had version " + kafkaVersionResult + " where " + newVersion.version() +
                 " was expected", kafkaVersionResult, is(newVersion.version()));
 
-        Object currentLogMessageFormat = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("log.message.format.version");
-        Object currentInterBrokerProtocol = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version");
-
         if (isUpgrade && !sameMinorVersion) {
             LOGGER.info("Updating kafka config attribute 'log.message.format.version' from '{}' to '{}' version", initialVersion.messageVersion(), newVersion.messageVersion());
             LOGGER.info("Updating kafka config attribute 'inter.broker.protocol.version' from '{}' to '{}' version", initialVersion.protocolVersion(), newVersion.protocolVersion());
-
-            if (currentLogMessageFormat == null || currentInterBrokerProtocol == null) {
-                LOGGER.info("Config for Kafka is not set, ClusterOperator will do one more rolling update to increase log.message.format.version");
-                kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaReplicas, kafkaPods);
-            }
 
             KafkaResource.replaceKafkaResource(clusterName, kafka -> {
                 LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
