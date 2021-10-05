@@ -24,6 +24,13 @@ if [ -n "$KAFKA_EXPORTER_LOGGING" ]; then
     loglevel="--verbosity=${KAFKA_EXPORTER_LOGGING}"
 fi
 
+# Combine all the certs in the cluster CA into one file
+CA_CERTS=/tmp/cluster-ca.crt
+for cert in /etc/kafka-exporter/cluster-ca-certs/*.crt; do
+  sed -z '$ s/\n$//' "$cert" >> "$CA_CERTS"
+  echo "" >> "$CA_CERTS"
+done
+
 # shellcheck disable=SC2027
 version="--kafka.version=\""$KAFKA_EXPORTER_KAFKA_VERSION"\""
 
@@ -33,7 +40,7 @@ listenaddress="--web.listen-address=:9404"
 
 allgroups="--offset.show-all"
 
-tls="--tls.enabled --tls.ca-file=/etc/kafka-exporter/cluster-ca-certs/ca.crt --tls.cert-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.crt  --tls.key-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.key"
+tls="--tls.enabled --tls.ca-file=$CA_CERTS --tls.cert-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.crt  --tls.key-file=/etc/kafka-exporter/kafka-exporter-certs/kafka-exporter.key"
 
 # starting Kafka Exporter with final configuration
 cat <<EOT > /tmp/run.sh
