@@ -269,8 +269,8 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaPods);
         LOGGER.info("1st Kafka roll (image change) is complete");
 
-        Object currentLogMessageFormat = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("log.message.format.version");
-        Object currentInterBrokerProtocol = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version");
+        Object currentLogMessageFormat = KafkaResource.kafkaClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("log.message.format.version");
+        Object currentInterBrokerProtocol = KafkaResource.kafkaClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version");
 
         if (isUpgrade && !sameMinorVersion) {
             LOGGER.info("Kafka version is increased, two RUs remaining for increasing IBPV and LMFV");

@@ -43,6 +43,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IsolatedSuite
 public class JmxST extends AbstractST {
 
+    private static final Logger LOGGER = LogManager.getLogger(JmxST.class);
+
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
