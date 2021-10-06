@@ -11,24 +11,23 @@ Kafka Connect uses connector instances to integrate with other systems to stream
 Kafka Connect loads existing connector instances on start up and distributes data streaming tasks and connector configuration across worker pods.
 Workers run the tasks for the connector instances.
 Each worker runs as a separate pod to make the Kafka Connect cluster more fault tolerant.
-Work is distributed evenly through load balancing and is divided into tasks.
 If there are more tasks than workers, workers are assigned multiple tasks.
 If a worker fails, its tasks are automatically assigned to active workers in the Kafka Connect cluster.
 
 The main Kafka Connect components used in streaming data are as follows:
 
 * Connectors to create tasks
-* Tasks to split the work
-* Workers to start tasks
+* Tasks to move data
+* Workers to run tasks
 * Transforms to manipulate data
 * Converters to convert data
 
 == Connectors
 
-Connectors copy data from external systems to Kafka, or from Kafka into external systems.
+Connectors can be one of the following type:
 
-* Source connectors push data into Kafka.
-* Sink connectors extract data out of Kafka.
+* Source connectors that push data into Kafka
+* Sink connectors that extract data out of Kafka
 
 Plugins provide the implementation for Kafka Connect to run connector instances.
 Connector instances create the tasks required to transfer data in and out of Kafka.
@@ -39,12 +38,12 @@ In this case, the external data system is another Kafka cluster.
 Specialized connectors for MirrorMaker 2.0 manage data replication between source and target Kafka clusters.
 
 [NOTE]
---
-Kafka provides two built-in example connectors:
+====
+In addition to the MirrorMaker 2.0 connectors, Kafka provides two built-in connectors as examples:
 
-* `FileStreamSourceConnector` streams data from an external system to Kafka, reading lines from an input source and sending each line to a Kafka topic.
-* `FileStreamSinkConnector` streams data from Kafka to an external system, reading messages from a Kafka topic and creating a line for each in an output file.
---
+* `FileStreamSourceConnector` streams data from a file on the worker's filesystem to Kafka, reading the input file and sending each line to a given Kafka topic.
+* `FileStreamSinkConnector` streams data from Kafka to the worker's filesystem, reading messages from a Kafka topic and writing a line for each in an output file.
+====
 
 The following source connector diagram shows the process flow for a source connector that streams records from an external data system.
 A Kafka Connect cluster might operate source and sink connectors at the same time.
@@ -79,30 +78,30 @@ image:overview/kafka-concepts-sink-connector.png[Kafka Connect sink connector wo
 
 Data transfer orchestrated by the Kafka Connect runtime is split into tasks that run in parallel.
 A task is started using the configuration supplied by a connector instance.
-Kafka Connect distributes tasks to workers.
+Kafka Connect distributes the task configurations to workers, which instantiate and execute tasks.
 
 * A source connector task polls the external data system and returns a list of records that a worker sends to the Kafka brokers.
 * A sink connector task receives Kafka records from a worker for writing to the external data system.
 
-If a task fails, it can be restarted through the Kafka Connect API.
-
 For sink connectors, the number of tasks created relates to the number of partitions being consumed.
 For source connectors, how the source data is partitioned is defined by the connector.
 You can control the maximum number of tasks that can run in parallel by setting `tasksMax` in the connector configuration.
+The connector might create fewer tasks than the maximum setting.
+For example, the connector might create fewer tasks if it's not possible to split the source data into that many partitions.
+
+NOTE: In the context of Kafka Connect, a _partition_ can mean a topic partition or a _shard of data_ intended for an external system.
 
 == Workers
 
-Workers store the initial connector configuration deployed to the Kafka Connect cluster.
-They also start connectors and their tasks.
-
-* Source connector workers read events from an external data system and use converters to construct key and value pairs to store in Kafka.
-* Sink connector workers read records from Kafka and use converters to construct records to pass into an external data system.
+Workers employ the initial connector configuration deployed to the Kafka Connect cluster.
+The configuration is stored in an internal Kafka topic used by Kafka Connect.
+Workers also run connectors and their tasks.
 
 A Kafka Connect cluster contains a group of workers with the same `group.id`.
 The ID identifies the cluster within Kafka.
 The ID is assigned in the worker configuration through the `KafkaConnect` resource.
 Worker configuration also specifies the names of internal Kafka Connect topics.
-The topics store connector offset and status information.
+The topics store connector configuration, offset, and status information.
 The group ID and names of these topics must also be unique to the Kafka Connect cluster.
 
 Workers are assigned one or more connector instances and tasks.
@@ -117,8 +116,8 @@ Single-message transforms change messages into a format suitable for the target 
 For example, a transform might insert or rename a field. Transforms can also filter and route data.
 Plugins contain the implementation required for workers to perform one or more transformations.
 
-* Source connectors transform data before converting it into a format supported by Kafka.
-* Sink connectors transform data after converting it into a format suitable for an external data system.
+* Source connectors apply transforms before converting data into a format supported by Kafka.
+* Sink connectors apply transforms after converting data into a format suitable for an external data system.
 
 A transform comprises a set of Java class files packaged in a JAR file for inclusion in a connector plugin.
 Kafka Connect provides a set of standard transforms, but you can also create your own.

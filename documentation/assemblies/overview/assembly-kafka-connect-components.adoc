@@ -23,7 +23,7 @@ A single worker instantiates a connector.
 Each connector comprises one or more tasks that are distributed across the group of workers.
 Distribution across workers creates highly scalable pipelines.
 
-Workers convert data into the correct format for the target system.
+Workers convert data from one format into another format that's suitable for the source or target system.
 Depending on the configuration of the connector instance, workers might also apply transforms (also known as Single Message Transforms, or SMTs).
 Transforms adjust messages, such as filtering certain data, before they are converted.
 Kafka Connect has some built-in transforms, but other transformations can be provided by plugins if necessary.
