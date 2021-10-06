@@ -76,8 +76,7 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
             .withValueDeserializerConfig(StringDeserializer.class)
             .withClientIdConfig("consumer-" + new Random().nextInt(Integer.MAX_VALUE))
             .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
-            .withGroupIdConfig(consumerGroup)
-            .withMaxPollRecords(maxPollRecords);
+            .withGroupIdConfig(consumerGroup);
     }
 
     public int sendMessagesPlain() {
@@ -198,17 +197,19 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
 
         CompletableFuture<Integer> received = new CompletableFuture<>();
 
+        int[] size = {0};
+
         Runnable poll = new Runnable() {
             @Override
             public void run() {
-                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(Constants.GLOBAL_CLIENTS_TIMEOUT));
+                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(15000));
 
-                int size = records.count();
+                size[0] += records.count();
 
                 records.forEach(record -> LOGGER.debug("Received message: {}", record.value()));
 
-                if (size >= messageCount) {
-                    received.complete(size);
+                if (size[0] >= messageCount) {
+                    received.complete(size[0]);
                 } else {
                     this.run();
                 }

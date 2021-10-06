@@ -52,12 +52,6 @@ public class ConsumerProperties extends AbstractKafkaClientProperties<ConsumerPr
             return this;
         }
 
-        public ConsumerPropertiesBuilder withMaxPollRecords(int maxPollRecords) {
-
-            this.properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, String.valueOf(maxPollRecords));
-            return this;
-        }
-
         @Override
         public ConsumerProperties build() {
             return new ConsumerProperties(this);

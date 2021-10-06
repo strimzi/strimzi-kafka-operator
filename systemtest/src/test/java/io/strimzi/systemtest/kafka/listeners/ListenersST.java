@@ -1378,8 +1378,12 @@ public class ListenersST extends AbstractST {
         LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
         assertThat(internalSecretCerts, is(internalCerts));
 
+        sent = externalKafkaClient.sendMessagesTls() + MESSAGE_COUNT;
+
+        externalKafkaClient.setMessageCount(2 * MESSAGE_COUNT);
+
         externalKafkaClient.verifyProducedAndConsumedMessages(
-            externalKafkaClient.sendMessagesTls() + MESSAGE_COUNT,
+            sent,
             externalKafkaClient.receiveMessagesTls()
         );
 
@@ -1441,10 +1445,15 @@ public class ListenersST extends AbstractST {
 
         externalKafkaClient = externalKafkaClient.toBuilder()
             .withCertificateAuthorityCertificateName(null)
+            .withMessageCount(MESSAGE_COUNT)
             .build();
 
+        sent = externalKafkaClient.sendMessagesTls() + MESSAGE_COUNT;
+
+        externalKafkaClient.setMessageCount(2 * MESSAGE_COUNT);
+
         externalKafkaClient.verifyProducedAndConsumedMessages(
-            externalKafkaClient.sendMessagesTls() + MESSAGE_COUNT,
+            sent,
             externalKafkaClient.receiveMessagesTls()
         );
 
@@ -1768,7 +1777,6 @@ public class ListenersST extends AbstractST {
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-            .withMaxPollRecords(Constants.MAX_POLL_RECORDS_HIGH)
             .build();
 
         externalKafkaClient.verifyProducedAndConsumedMessages(
@@ -1939,8 +1947,14 @@ public class ListenersST extends AbstractST {
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
             .build();
 
+        sent = externalKafkaClient.sendMessagesTls() + (5 * MESSAGE_COUNT);
+
+        externalKafkaClient = externalKafkaClient.toBuilder()
+            .withMessageCount(6 * MESSAGE_COUNT)
+            .build();
+
         externalKafkaClient.verifyProducedAndConsumedMessages(
-            externalKafkaClient.sendMessagesTls() + (5 * MESSAGE_COUNT),
+            sent,
             externalKafkaClient.receiveMessagesTls()
         );
 
