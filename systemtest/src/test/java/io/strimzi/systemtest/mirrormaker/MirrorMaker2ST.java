@@ -786,7 +786,6 @@ class MirrorMaker2ST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @Disabled("Disabled because of issue with IdentityReplicationPolicy -> messages are not mirrored from source to target cluster")
     void testIdentityReplicationPolicy(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
