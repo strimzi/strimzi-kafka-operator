@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.function.BooleanSupplier;
@@ -239,16 +240,22 @@ public class Util {
      *
      * @param prefix Prefix which will be used for the filename
      * @param suffix Suffix which will be used for the filename
-     * @param certificate X509 certificate to put inside the Truststore
+     * @param certificates X509 certificates to put inside the Truststore
      * @param password Password protecting the Truststore
      * @return File with the Truststore
      */
-    public static File createFileTrustStore(String prefix, String suffix, X509Certificate certificate, char[] password) {
+    public static File createFileTrustStore(String prefix, String suffix, Set<X509Certificate> certificates, char[] password) {
         try {
             KeyStore trustStore = null;
             trustStore = KeyStore.getInstance("PKCS12");
             trustStore.load(null, password);
-            trustStore.setEntry(certificate.getSubjectDN().getName(), new KeyStore.TrustedCertificateEntry(certificate), null);
+
+            int aliasIndex = 0;
+            for (X509Certificate certificate : certificates) {
+                trustStore.setEntry(certificate.getSubjectDN().getName() + "-" + aliasIndex, new KeyStore.TrustedCertificateEntry(certificate), null);
+                aliasIndex++;
+            }
+
             return store(prefix, suffix, trustStore, password);
         } catch (Exception e) {
             throw new RuntimeException(e);

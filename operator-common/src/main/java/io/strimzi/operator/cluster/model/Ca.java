@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -844,6 +845,36 @@ public abstract class Ca {
             return x509Certificate(bytes);
         } catch (CertificateException e) {
             throw new RuntimeException("Failed to decode certificate in data." + key.replace(".", "\\.") + " of Secret " + secret.getMetadata().getName(), e);
+        }
+    }
+
+    /**
+     * Returns set of all public keys (all .crt records) from a secret
+     *
+     * @param secret    Kubernetes Secret with certificates
+     *
+     * @return          Set with X509Certificate instances
+     */
+    public static Set<X509Certificate> certs(Secret secret)  {
+        if (secret == null || secret.getData() == null) {
+            return Set.of();
+        } else {
+            Base64.Decoder decoder = Base64.getDecoder();
+
+            return secret
+                    .getData()
+                    .entrySet()
+                    .stream()
+                    .filter(record -> record.getKey().endsWith(".crt"))
+                    .map(record -> {
+                        byte[] bytes = decoder.decode(record.getValue());
+                        try {
+                            return x509Certificate(bytes);
+                        } catch (CertificateException e) {
+                            throw new RuntimeException("Failed to decode certificate in data." + record.getKey().replace(".", "\\.") + " of Secret " + secret.getMetadata().getName(), e);
+                        }
+                    })
+                    .collect(Collectors.toSet());
         }
     }
 
