@@ -58,6 +58,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
                 .withExtensionContext(sharedExtensionContext)
                 .withNamespace(Constants.INFRA_NAMESPACE)
                 .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+                .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
                 .createInstallation()
                 .runInstallation();
 
