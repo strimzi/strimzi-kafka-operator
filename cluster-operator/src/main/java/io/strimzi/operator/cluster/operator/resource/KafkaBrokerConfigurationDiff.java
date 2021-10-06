@@ -69,10 +69,17 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
             + "|zookeeper\\.clientCnxnSocket"
             + "|broker\\.rack)$");
 
-    public KafkaBrokerConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, KafkaVersion kafkaVersion, int brokerId) {
+    public KafkaBrokerConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired,
+                                        KafkaVersion kafkaVersion, int brokerId) {
         this.reconciliation = reconciliation;
         this.configModel = KafkaConfiguration.readConfigModel(kafkaVersion);
-        this.diff = diff(brokerId, desired, brokerConfigs, configModel);
+        this.diff = diff(reconciliation, brokerId, desired, brokerConfigs, configModel);
+    }
+
+    /* test */ KafkaBrokerConfigurationDiff(Reconciliation reconciliation, Collection<AlterConfigOp> diff, Map<String, ConfigModel> configModel) {
+        this.reconciliation = reconciliation;
+        this.configModel = configModel;
+        this.diff = diff;
     }
 
     private static void fillPlaceholderValue(Map<String, String> orderedProperties, String value) {
@@ -129,7 +136,9 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
      * @param configModel default configuration for {@code kafkaVersion} of broker
      * @return Collection of AlterConfigOp containing all entries which were changed from current in desired configuration
      */
-    private Collection<AlterConfigOp> diff(int brokerId, String desired,
+    private static Collection<AlterConfigOp> diff(Reconciliation reconciliation,
+                                                  int brokerId,
+                                                  String desired,
                                                   Config brokerConfigs,
                                                   Map<String, ConfigModel> configModel) {
         if (brokerConfigs == null || desired == null) {
@@ -140,9 +149,9 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         Collection<AlterConfigOp> updatedCE = new ArrayList<>();
 
         currentMap = brokerConfigs.entries().stream().collect(
-            Collectors.toMap(
-                ConfigEntry::name,
-                configEntry -> configEntry.value() == null ? "null" : configEntry.value()));
+                Collectors.toMap(
+                        ConfigEntry::name,
+                        configEntry -> configEntry.value() == null ? "null" : configEntry.value()));
 
         OrderedProperties orderedProperties = new OrderedProperties();
         orderedProperties.addStringPairs(desired);
@@ -166,15 +175,15 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
             if (optEntry.isPresent()) {
                 ConfigEntry entry = optEntry.get();
                 if ("remove".equals(op)) {
-                    removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry);
+                    removeProperty(reconciliation, configModel, updatedCE, pathValueWithoutSlash, entry);
                 } else if ("replace".equals(op)) {
                     // entry is in the current, desired is updated value
-                    updateOrAdd(entry.name(), configModel, desiredMap, updatedCE);
+                    updateOrAdd(reconciliation, entry.name(), configModel, desiredMap, updatedCE);
                 }
             } else {
                 if ("add".equals(op)) {
                     // entry is not in the current, it is added
-                    updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE);
+                    updateOrAdd(reconciliation, pathValueWithoutSlash, configModel, desiredMap, updatedCE);
                 }
             }
 
@@ -193,7 +202,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         return updatedCE;
     }
 
-    private void updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE) {
+    private static void updateOrAdd(Reconciliation reconciliation, String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE) {
         if (!isIgnorableProperty(propertyName)) {
             if (isCustomEntry(propertyName, configModel)) {
                 LOGGER.traceCr(reconciliation, "custom property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
@@ -206,7 +215,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         }
     }
 
-    private void removeProperty(Map<String, ConfigModel> configModel, Collection<AlterConfigOp> updatedCE, String pathValueWithoutSlash, ConfigEntry entry) {
+    private static void removeProperty(Reconciliation reconciliation, Map<String, ConfigModel> configModel, Collection<AlterConfigOp> updatedCE, String pathValueWithoutSlash, ConfigEntry entry) {
         if (isCustomEntry(entry.name(), configModel)) {
             // we are deleting custom option
             LOGGER.traceCr(reconciliation, "removing custom property {}", entry.name());

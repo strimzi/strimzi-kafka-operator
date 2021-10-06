@@ -4,29 +4,37 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.strimzi.operator.common.ReconciliationLogger;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.AlterConfigOp;
+import org.apache.kafka.clients.admin.AlterConfigsOptions;
+import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.admin.DescribeClusterOptions;
 import org.apache.kafka.clients.admin.ListTopicsOptions;
 import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.common.ElectionType;
+import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletionException;
-import java.util.stream.Collectors;
 
 import static java.lang.Integer.parseInt;
 
@@ -37,62 +45,30 @@ import static java.lang.Integer.parseInt;
 class KafkaAvailability {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaAvailability.class.getName());
-
-    private final Admin ac;
-
     private final Reconciliation reconciliation;
-
+    private final Admin admin;
     private final Vertx vertx;
 
-    private final Future<Collection<TopicDescription>> descriptions;
-
-    KafkaAvailability(Reconciliation reconciliation, Vertx vertx, Admin ac) {
-        this.vertx = vertx;
-        this.ac = ac;
+    public KafkaAvailability(Reconciliation reconciliation, Vertx vertx, Admin admin) {
         this.reconciliation = reconciliation;
-        // 1. Get all topic names
-        Future<Set<String>> topicNames = topicNames();
-        // 2. Get topic descriptions
-        descriptions = topicNames.compose(names -> {
-            LOGGER.traceCr(reconciliation, "Topic names {}", names);
-            return describeTopics(names);
-        });
+        this.vertx = vertx;
+        this.admin = admin;
     }
+
 
     /**
      * Determine whether the given broker can be rolled without affecting
      * producers with acks=all publishing to topics with a {@code min.in.sync.replicas}.
+     * If the admin client threw an exception the returned future will be failed with an AdminClientException.
      */
-    Future<Boolean> canRoll(int brokerId, Set<Integer> restartingBrokers) {
-        LOGGER.debugCr(reconciliation, "Determining whether broker {} can be rolled", brokerId);
-        return canRollBroker(descriptions, brokerId, restartingBrokers).recover(t -> {
-            if (t instanceof CompletionException) {
-                return Future.failedFuture(t.getCause());
-            } else {
-                return Future.failedFuture(t);
-            }
+    public Future<Boolean> canRoll(int brokerId, Set<Integer> restartingBrokers) {
+        Future<Set<String>> topicNames = topicNames();
+        // 2. Get topic descriptions
+        var descriptions = topicNames.compose(names -> {
+            LOGGER.traceCr(reconciliation, "Topic names {}", names);
+            return describeTopics(names);
         });
-    }
-
-   /**
-     * Return a Future which completes with the set of partitions which have the given
-     * {@code broker} as their preferred leader, but which aren't currently being led by that broker.
-     * @param broker The broker
-     * @return a Future.
-     */
-    Future<Set<TopicPartition>> partitionsWithPreferredButNotCurrentLeader(int broker) {
-        return descriptions.map(d -> d.stream().flatMap(td -> {
-            String topic = td.name();
-            return td.partitions().stream()
-                    .filter(pd -> pd.replicas().size() > 0
-                            && pd.replicas().get(0).id() == broker
-                            && broker != pd.leader().id())
-                    .map(pd -> new TopicPartition(topic, pd.partition()));
-        }).collect(Collectors.toSet()));
-    }
-
-
-    private Future<Boolean> canRollBroker(Future<Collection<TopicDescription>> descriptions, int brokerId, Set<Integer> restartingBrokers) {
+        LOGGER.debugCr(reconciliation, "Determining whether broker {} can be rolled", brokerId);
         Future<Set<TopicDescription>> topicsOnGivenBroker = descriptions
                 .compose(topicDescriptions -> Future.succeededFuture(groupTopicsByBroker(topicDescriptions, brokerId)))
                 .recover(error -> {
@@ -119,6 +95,30 @@ class KafkaAvailability {
             LOGGER.warnCr(reconciliation, "Error determining whether it is safe to restart broker {}", brokerId, error);
             return Future.failedFuture(error);
         });
+    }
+
+   /**
+    * Return a Future which completes with the set of partitions which have the given
+    * {@code broker} as their preferred leader, but which aren't currently being led by that broker.
+    * If the admin client threw an exception the returned future will be failed with an AdminClientException.
+    * @param broker The broker
+    * @return a Future.
+    */
+    public Future<Set<TopicPartition>> partitionsWithPreferredButNotCurrentLeader(int broker) {
+        Future<Set<String>> topicNames = topicNames();
+        // 2. Get topic descriptions
+        var descriptions = topicNames.compose(names -> {
+            LOGGER.traceCr(reconciliation, "Topic names {}", names);
+            return describeTopics(names);
+        });
+        return descriptions.map(d -> d.stream().flatMap(td -> {
+            String topic = td.name();
+            return td.partitions().stream()
+                    .filter(pd -> pd.replicas().size() > 0
+                            && pd.replicas().get(0).id() == broker
+                            && broker != pd.leader().id())
+                    .map(pd -> new TopicPartition(topic, pd.partition()));
+        }).collect(Collectors.toSet()));
     }
 
     private boolean wouldAffectAvailability(int broker, Map<String, Config> nameToConfig, TopicDescription td, Set<Integer> restartingBrokers) {
@@ -195,34 +195,111 @@ class KafkaAvailability {
         List<ConfigResource> configs = topicNames.stream()
                 .map((String topicName) -> new ConfigResource(ConfigResource.Type.TOPIC, topicName))
                 .collect(Collectors.toList());
-        return Util.kafkaFutureToVertxFuture(reconciliation, vertx, ac.describeConfigs(configs).all()
-                .thenApply(topicNameToConfig -> topicNameToConfig.entrySet().stream()
-                        .collect(Collectors.toMap(
+        return Util.kafkaFutureToVertxFuture(vertx, admin.describeConfigs(configs).all())
+                .recover(ex -> adminClientFailure(ex, "Admin.describeConfigs (topics)"))
+                .map(topicNameToConfig -> topicNameToConfig.entrySet().stream()
+                        .collect(Collectors.<Map.Entry<ConfigResource, Config>, String, Config>toMap(
                                 entry -> entry.getKey().name(),
-                                Map.Entry::getValue))));
+                                Map.Entry::getValue)));
+    }
+
+    private <T> Future<T> adminClientFailure(Throwable ex, String call) {
+        Throwable cause;
+        if (ex instanceof CompletionException) {
+            cause = ex.getCause();
+        } else {
+            cause = ex;
+        }
+        return Future.failedFuture(new AdminClientException(KafkaAvailability.class.getSimpleName() + " call of " + call + " failed", cause));
     }
 
     private Set<TopicDescription> groupTopicsByBroker(Collection<TopicDescription> tds, int brokerId) {
-        Set<TopicDescription> topicPartitionInfos = new HashSet<>();
-        for (TopicDescription td : tds) {
-            LOGGER.traceCr(reconciliation, td);
-            for (TopicPartitionInfo pd : td.partitions()) {
-                for (Node broker : pd.replicas()) {
-                    if (brokerId == broker.id()) {
-                        topicPartitionInfos.add(td);
-                    }
-                }
-            }
-        }
-        return topicPartitionInfos;
+        return tds.stream().filter(td ->
+                td.partitions().stream().flatMap(pd ->
+                        pd.replicas().stream()).anyMatch(broker ->
+                        brokerId == broker.id()
+                )
+        ).collect(Collectors.toSet());
     }
 
     protected Future<Collection<TopicDescription>> describeTopics(Set<String> names) {
-        return Util.kafkaFutureToVertxFuture(reconciliation, vertx, ac.describeTopics(names).all()
-                .thenApply(Map::values));
+        return Util.kafkaFutureToVertxFuture(vertx, admin.describeTopics(names).all()
+                .thenApply(Map::values))
+                .recover(ex -> adminClientFailure(ex, "Admin.describeTopics"));
     }
 
     protected Future<Set<String>> topicNames() {
-        return Util.kafkaFutureToVertxFuture(reconciliation, vertx, ac.listTopics(new ListTopicsOptions().listInternal(true)).names());
+        return Util.kafkaFutureToVertxFuture(vertx, admin.listTopics(new ListTopicsOptions().listInternal(true)).names())
+                .recover(ex -> adminClientFailure(ex, "Admin.listTopics"));
+    }
+
+    public Future<Map<ConfigResource.Type, Config>> brokerConfigs(int brokerId) {
+        return Util.kafkaFutureToVertxFuture(
+                        vertx,
+                        admin.describeConfigs(
+                                List.of(Util.brokerConfigResource(brokerId), Util.brokerLoggersConfigResource(brokerId))).all())
+                    .map(mapOfConfigs -> mapOfConfigs.entrySet().stream()
+                            .collect(Collectors.toMap(entry -> entry.getKey().type(), Map.Entry::getValue)))
+                    .recover(ex -> adminClientFailure(ex, "Admin.describeConfigs (broker)"));
+    }
+
+    static class ConfigDiff {
+        public final KafkaBrokerConfigurationDiff configDiff;
+        public final KafkaBrokerLoggingConfigurationDiff loggersDiff;
+
+        public ConfigDiff(KafkaBrokerConfigurationDiff configDiff, KafkaBrokerLoggingConfigurationDiff loggersDiff) {
+            this.configDiff = configDiff;
+            this.loggersDiff = loggersDiff;
+        }
+    }
+
+    public Future<ConfigDiff> brokerConfigDiffs(int brokerId, KafkaVersion kafkaVersion, String kafkaConfig, String kafkaLogging) {
+        return brokerConfigs(brokerId).map(map ->
+                new ConfigDiff(new KafkaBrokerConfigurationDiff(reconciliation, map.get(ConfigResource.Type.BROKER), kafkaConfig, kafkaVersion, brokerId),
+                        new KafkaBrokerLoggingConfigurationDiff(reconciliation, map.get(ConfigResource.Type.BROKER_LOGGER), kafkaLogging)));
+    }
+
+    public Future<Boolean> controller(int brokerId) {
+        return Util.kafkaFutureToVertxFuture(
+                        vertx,
+                        admin.describeCluster(new DescribeClusterOptions().timeoutMs(5_000))
+                                .controller().thenApply(controller -> controller.id() == brokerId))
+                .recover(ex -> adminClientFailure(ex, "Admin.describeCluster"));
+    }
+
+    public Future<Map<TopicPartition, Optional<Throwable>>> electPreferred(Set<TopicPartition> partitions) {
+        return Util.kafkaFutureToVertxFuture(
+                        vertx,
+                        admin.electLeaders(ElectionType.PREFERRED, partitions).partitions())
+                .recover(ex -> adminClientFailure(ex, "Admin.electLeaders"));
+    }
+
+    public Future<Map<ConfigResource, Throwable>> alterConfigs(Map<ConfigResource, Collection<AlterConfigOp>> updatedConfig) {
+        AlterConfigsResult alterConfigsResult = admin.incrementalAlterConfigs(updatedConfig, new AlterConfigsOptions().timeoutMs(30_000));
+        var values = alterConfigsResult.all();
+        return Util.kafkaFutureToVertxFuture(vertx, values)
+                .recover(ex -> adminClientFailure(ex, "Admin.incrementalAlterConfigs"))
+                .map(map -> alterConfigsResult.values().entrySet().stream().collect(Collectors.toMap(
+                entry -> entry.getKey(),
+                entry -> {
+                    KafkaFuture<Void> value = entry.getValue();
+                    if (value.isCompletedExceptionally()) {
+                        try {
+                            value.getNow(null);
+                        } catch (ExecutionException e) {
+                            return e.getCause();
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e); // should never happen
+                        }
+                    }
+                    return null;
+                })));
+//        return values.entrySet().stream().collect(Collectors.toMap(
+//                        entry -> entry.getKey(),
+//                        entry -> {
+//                            KafkaFuture<Void> value = entry.getValue();
+//                            Future<Void> tFuture = Util.kafkaFutureToVertxFuture(vertx, value);
+//                            return tFuture.recover(ex -> adminClientFailure(ex, "Admin.electLeaders"));
+//                        }));
     }
 }

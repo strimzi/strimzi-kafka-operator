@@ -616,30 +616,29 @@ public class KafkaRollerTest {
 //            return ac;
 //        }
 
-        @Override
-        protected KafkaAvailability availability(Admin ac) {
-            return new KafkaAvailability(null, null, null) {
-                @Override
-                protected Future<Set<String>> topicNames() {
-                    return succeededFuture(Collections.emptySet());
-                }
-
-                @Override
-                protected Future<Collection<TopicDescription>> describeTopics(Set<String> names) {
-                    return succeededFuture(Collections.emptySet());
-                }
-
-                @Override
-                Future<Boolean> canRoll(int brokerId, Set<Integer> restartingBrokers) {
-                    return canRollFn.apply(brokerId);
-                }
-
-                @Override
-                Future<Set<TopicPartition>> partitionsWithPreferredButNotCurrentLeader(int broker) {
-                    return Future.succeededFuture(Set.of());
-                }
-            };
-        }
+//        protected KafkaAvailability availability(Admin ac) {
+//            return new KafkaAvailability(null, null, null) {
+//                @Override
+//                protected Future<Set<String>> topicNames() {
+//                    return succeededFuture(Collections.emptySet());
+//                }
+//
+//                @Override
+//                protected Future<Collection<TopicDescription>> describeTopics(Set<String> names) {
+//                    return succeededFuture(Collections.emptySet());
+//                }
+//
+//                @Override
+//                Future<Boolean> canRoll(int brokerId, Set<Integer> restartingBrokers) {
+//                    return canRollFn.apply(brokerId);
+//                }
+//
+//                @Override
+//                Future<Set<TopicPartition>> partitionsWithPreferredButNotCurrentLeader(int broker) {
+//                    return Future.succeededFuture(Set.of());
+//                }
+//            };
+//        }
 
 //        @Override
 //        int controller(int podId) throws ForceableProblem {

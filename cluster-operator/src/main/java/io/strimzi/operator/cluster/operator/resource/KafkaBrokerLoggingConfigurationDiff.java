@@ -26,12 +26,15 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaBrokerLoggingConfigurationDiff.class);
     private final Collection<AlterConfigOp> diff;
-    private final Reconciliation reconciliation;
 
-    public KafkaBrokerLoggingConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, int brokerId) {
-        this.reconciliation = reconciliation;
-        this.diff = diff(brokerId, desired, brokerConfigs);
+    public KafkaBrokerLoggingConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired) {
+        this(diff(reconciliation, desired, brokerConfigs));
     }
+
+    KafkaBrokerLoggingConfigurationDiff(Collection<AlterConfigOp> diff) {
+        this.diff = diff;
+    }
+
 
     /**
      * Returns logging difference
@@ -50,12 +53,11 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
 
     /**
      * Computes logging diff
-     * @param brokerId id of compared broker
      * @param desired desired logging configuration, may be null if the related ConfigMap does not exist yet or no changes are required
      * @param brokerConfigs current configuration
      * @return Collection of AlterConfigOp containing all entries which were changed from current in desired configuration
      */
-    private Collection<AlterConfigOp> diff(int brokerId, String desired,
+    private static Collection<AlterConfigOp> diff(Reconciliation reconciliation, String desired,
                                                   Config brokerConfigs) {
         if (brokerConfigs == null || desired == null) {
             return Collections.emptyList();
@@ -63,7 +65,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
 
         Collection<AlterConfigOp> updatedCE = new ArrayList<>();
 
-        Map<String, String> desiredMap = readLog4jConfig(desired);
+        Map<String, String> desiredMap = readLog4jConfig(reconciliation, desired);
         if (desiredMap.get("root") == null) {
             desiredMap.put("root", LoggingLevel.WARN.name());
         }
@@ -97,7 +99,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
 
         return updatedCE;
     }
-    protected Map<String, String> readLog4jConfig(String config) {
+    protected static Map<String, String> readLog4jConfig(Reconciliation reconciliation, String config) {
         Map<String, String> parsed = new LinkedHashMap<>();
         Map<String, String> env = new HashMap<>();
         BufferedReader firstPassReader = new BufferedReader(new StringReader(config));

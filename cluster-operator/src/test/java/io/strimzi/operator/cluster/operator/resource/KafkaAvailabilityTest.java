@@ -14,6 +14,8 @@ import java.util.stream.Collectors;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.config.TopicConfig;
 import org.apache.kafka.common.errors.TimeoutException;
@@ -23,8 +25,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,9 +33,15 @@ public class KafkaAvailabilityTest {
 
     private static Vertx vertx;
 
+    private KafkaAvailability kafkaAvailability;
+
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
+    }
+
+    KafkaAvailability ka(Admin admin) {
+        return kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, admin);
     }
 
     @AfterAll
@@ -128,30 +134,20 @@ public class KafkaAvailabilityTest {
 
             .addNBrokers(4);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
-
+        ka(clusterModel.buildAdminClient());
         assertEquals(Map.of(
                 0, false,
                 1, false,
                 2, true,
                 3, false),
-                canRollBrokers(kafkaAvailability, clusterModel.brokerIds(), Set.of()));
-//        for (Integer brokerId : brokers) {
-//            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
-//            if (brokerId == 4) {
-//                assertTrue(canRoll,
-//                        "broker " + brokerId + " should be rollable, having no partitions");
-//            } else {
-//                assertFalse(canRoll,
-//                        "broker " + brokerId + " should not be rollable, being minisr = 2 and it's only replicated on two brokers");
-//            }
-//        }
+                canRollBrokers(clusterModel.brokerIds(), Set.of()));
     }
 
-    private Map<Integer, Boolean> canRollBrokers(KafkaAvailability kafkaAvailability,
-                                                 Set<Integer> brokers,
+    private Map<Integer, Boolean> canRollBrokers(Set<Integer> brokers,
                                                  Set<Integer> rollingBrokers) {
-        return brokers.stream().collect(Collectors.toMap(brokerId -> brokerId, brokerId -> await(kafkaAvailability.canRoll(brokerId, rollingBrokers))));
+        return brokers.stream().collect(Collectors.toMap(
+                brokerId -> brokerId,
+                brokerId -> await(kafkaAvailability.canRoll(brokerId, rollingBrokers))));
     }
 
     @Test
@@ -173,14 +169,10 @@ public class KafkaAvailabilityTest {
                     .isr(0, 1)
                 .endPartition()
             .endTopic()
-
             .addNBrokers(2);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
-
-        Set<Integer> brokers = clusterModel.brokerIds();
-
-        for (Integer brokerId : brokers) {
+        ka(clusterModel.buildAdminClient());
+        for (Integer brokerId : clusterModel.brokerIds()) {
             boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
             if (brokerId == 2) {
                 assertTrue(canRoll,
@@ -196,11 +188,8 @@ public class KafkaAvailabilityTest {
     @Test
     public void testAboveMinIsr() {
         ClusterModel clusterModel = clusterWithTwoTopics(3, 3, List.of(0, 1, 2));
-
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
-
-        Set<Integer> brokers = clusterModel.brokerIds();
-        for (Integer brokerId : brokers) {
+        ka(clusterModel.buildAdminClient());
+        for (Integer brokerId : clusterModel.brokerIds()) {
             boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
             Assertions.assertTrue(canRoll, "broker " + brokerId + " should be rollable, since it has no URP");
         }
@@ -209,12 +198,10 @@ public class KafkaAvailabilityTest {
     @Test
     public void testAboveMinIsrWhileRestartingBrokers() {
         ClusterModel clusterModel = clusterWithTwoTopics(3, 2, List.of(0, 1, 2));
-
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
-
+        ka(clusterModel.buildAdminClient());
         // We should be able to roll broker 1 because it's not in the ISR
         assertEquals(Map.of(0, false, 1, true, 2, false),
-                canRollBrokers(kafkaAvailability, clusterModel.brokerIds(), Set.of(1)));
+                canRollBrokers(clusterModel.brokerIds(), Set.of(1)));
     }
 
 
@@ -229,14 +216,11 @@ public class KafkaAvailabilityTest {
                         .isr(0, 1, 2)
                     .endPartition()
                 .endTopic()
-
                 .addNBrokers(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
+        ka(clusterModel.buildAdminClient());
+        for (Integer brokerId : clusterModel.brokerIds()) {
 
-        Set<Integer> brokers = clusterModel.brokerIds();
-
-        for (Integer brokerId : brokers) {
             boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
             assertTrue(canRoll,
                     "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
@@ -257,10 +241,8 @@ public class KafkaAvailabilityTest {
 
                 .addNBrokers(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
-
-        Set<Integer> brokers = clusterModel.brokerIds();
-        for (Integer brokerId : brokers) {
+        ka(clusterModel.buildAdminClient());
+        for (Integer brokerId : clusterModel.brokerIds()) {
             boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
             assertTrue(canRoll,
                     "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
@@ -280,11 +262,8 @@ public class KafkaAvailabilityTest {
                 .endTopic()
                 .addNBrokers(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
-
-        Set<Integer> brokers = clusterModel.brokerIds();
-
-        for (Integer brokerId : brokers) {
+        ka(clusterModel.buildAdminClient());
+        for (Integer brokerId : clusterModel.brokerIds()) {
             boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
             assertTrue(canRoll,
                     "broker " + brokerId + " should be rollable, being minisr = 2, but only 1 replicas");
@@ -313,11 +292,9 @@ public class KafkaAvailabilityTest {
 
                 .addNBrokers(3);
 
-        KafkaAvailability kafkaSorted = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
-
-        Set<Integer> brokers = clusterModel.brokerIds();
-        for (Integer brokerId : brokers) {
-            boolean canRoll = await(kafkaSorted.canRoll(brokerId, Set.of()));
+        ka(clusterModel.buildAdminClient());
+        for (Integer brokerId : clusterModel.brokerIds()) {
+            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
             if (brokerId == 0) {
                 assertFalse(canRoll,
                         "broker " + brokerId + " should not be rollable, because B/0 would be below min isr");
@@ -345,13 +322,10 @@ public class KafkaAvailabilityTest {
                         .isr(1, 0, 2)
                     .endPartition()
                 .endTopic()
-
                 .addNBrokers(3);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
-
-        Set<Integer> brokers = clusterModel.brokerIds();
-        for (Integer brokerId : brokers) {
+        ka(clusterModel.buildAdminClient());
+        for (Integer brokerId : clusterModel.brokerIds()) {
             boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
             assertTrue(canRoll,
                     "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
@@ -361,6 +335,7 @@ public class KafkaAvailabilityTest {
     // TODO when AC throws various exceptions (e.g. UnknownTopicOrPartitionException)
     @Test
     public void testCanRollThrowsTimeoutExceptionWhenTopicsListThrowsException() {
+        TimeoutException ex = new TimeoutException();
         ClusterModel clusterModel = new ClusterModel()
                 .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
@@ -380,19 +355,20 @@ public class KafkaAvailabilityTest {
                 .endTopic()
 
                 .addNBrokers(3)
-                .listTopicsResult(new TimeoutException());
+                .listTopicsResult(ex);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
-
-        Set<Integer> brokers = clusterModel.brokerIds();
-        for (Integer brokerId : brokers) {
+        ka(clusterModel.buildAdminClient());
+        for (Integer brokerId : clusterModel.brokerIds()) {
             Throwable cause = awaitThrows(kafkaAvailability.canRoll(brokerId, Set.of()));
-            assertThat(cause, instanceOf(TimeoutException.class));
+            assertTrue(cause instanceof AdminClientException);
+            assertEquals("KafkaAvailability call of Admin.listTopics failed", cause.getMessage());
+            assertEquals(ex, cause.getCause());
         }
     }
 
     @Test
     public void testCanRollThrowsExceptionWhenTopicDescribeThrows() {
+        UnknownTopicOrPartitionException ex = new UnknownTopicOrPartitionException();
         ClusterModel clusterModel = new ClusterModel()
                 .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
@@ -412,19 +388,20 @@ public class KafkaAvailabilityTest {
                 .endTopic()
 
                 .addNBrokers(3)
-                .describeTopicsResult("A", new UnknownTopicOrPartitionException());
+                .describeTopicsResult("A", ex);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
-
-        Set<Integer> brokers = clusterModel.brokerIds();
-        for (Integer brokerId : brokers) {
+        ka(clusterModel.buildAdminClient());
+        for (Integer brokerId : clusterModel.brokerIds()) {
             Throwable cause = awaitThrows(kafkaAvailability.canRoll(brokerId, Set.of()));
-            assertThat(cause, instanceOf(UnknownTopicOrPartitionException.class));
+            assertTrue(cause instanceof AdminClientException);
+            assertEquals("KafkaAvailability call of Admin.describeTopics failed", cause.getMessage());
+            assertEquals(ex, cause.getCause());
         }
     }
 
     @Test
     public void testCanRollThrowsExceptionWhenDescribeConfigsThrows() {
+        UnknownTopicOrPartitionException ex = new UnknownTopicOrPartitionException();
         ClusterModel clusterModel = new ClusterModel()
                 .addNewTopic("A")
                     .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
@@ -444,20 +421,95 @@ public class KafkaAvailabilityTest {
                 .endTopic()
 
                 .addNBrokers(3)
-                .describeConfigsResult(new ConfigResource(ConfigResource.Type.TOPIC, "A"), new UnknownTopicOrPartitionException());
+                .describeConfigsResult(new ConfigResource(ConfigResource.Type.TOPIC, "A"), ex);
 
-        KafkaAvailability kafkaAvailability = new KafkaAvailability(Reconciliation.DUMMY_RECONCILIATION, vertx, clusterModel.buildAdminClient());
-
-        Set<Integer> brokers = clusterModel.brokerIds();
-        for (Integer brokerId : brokers) {
+        ka(clusterModel.buildAdminClient());
+        for (Integer brokerId : clusterModel.brokerIds()) {
             if (brokerId <= 2) {
                 Throwable cause = awaitThrows(kafkaAvailability.canRoll(brokerId, Set.of()));
-                assertThat(cause, instanceOf(UnknownTopicOrPartitionException.class));
+                assertTrue(cause instanceof AdminClientException);
+                assertEquals("KafkaAvailability call of Admin.describeConfigs (topics) failed", cause.getMessage());
+                assertEquals(ex, cause.getCause());
             } else {
                 boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
                 // TODO assertion
                 assertTrue(canRoll);
             }
+        }
+    }
+
+    @Test
+    public void testPartitionsWithPreferredButNotCurrentLeader() {
+        ClusterModel clusterModel = new ClusterModel()
+            .addNewTopic("A")
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .addNewPartition(0)
+                    .replicaOn(0, 1, 2) // broker 0 preferred...
+                    .leader(0) // ...and current
+                    .isr(0, 1, 2)
+                .endPartition()
+            .endTopic()
+            .addNewTopic("B")
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .addNewPartition(0)
+                    .replicaOn(0, 1, 2) // broker 0 preferred...
+                    .leader(1) // ...but not current
+                    .isr(0, 1, 2)
+                .endPartition()
+                .addNewPartition(1)
+                    .replicaOn(2, 1, 0) // broker 2 preferred...
+                    .leader(1) // ...but not current
+                    .isr(0, 1, 2)
+                .endPartition()
+            .endTopic()
+            .addNBrokers(3);
+
+        ka(clusterModel.buildAdminClient());
+        var map = clusterModel.brokerIds().stream()
+                .collect(Collectors.toMap(
+                        brokerId -> brokerId,
+                        broker -> await(kafkaAvailability.partitionsWithPreferredButNotCurrentLeader(broker))));
+        assertEquals(Map.of(
+                0, Set.of(new TopicPartition("B", 0)),
+                1, Set.of(),
+                2, Set.of(new TopicPartition("B", 1))), map);
+    }
+
+    @Test
+    public void testPartitionsWithPreferredButNotCurrentLeader_describeError() {
+        UnknownTopicOrPartitionException ex = new UnknownTopicOrPartitionException();
+        ClusterModel clusterModel = new ClusterModel()
+                .addNewTopic("A")
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .addNewPartition(0)
+                .replicaOn(0, 1, 2) // broker 0 preferred...
+                .leader(0) // ...and current
+                .isr(0, 1, 2)
+                .endPartition()
+                .endTopic()
+                .addNewTopic("B")
+                .addToConfig(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG, "1")
+                .addNewPartition(0)
+                .replicaOn(0, 1, 2) // broker 0 preferred...
+                .leader(1) // ...but not current
+                .isr(0, 1, 2)
+                .endPartition()
+                .addNewPartition(1)
+                .replicaOn(2, 1, 0) // broker 2 preferred...
+                .leader(1) // ...but not current
+                .isr(0, 1, 2)
+                .endPartition()
+                .endTopic()
+
+                .addNBrokers(3)
+                .describeTopicsResult("B", ex);
+
+        ka(clusterModel.buildAdminClient());
+        for (var brokerId : clusterModel.brokerIds()) {
+            var cause = awaitThrows(kafkaAvailability.partitionsWithPreferredButNotCurrentLeader(brokerId));
+            assertTrue(cause instanceof AdminClientException);
+            assertEquals("KafkaAvailability call of Admin.describeTopics failed", cause.getMessage());
+            assertEquals(ex, cause.getCause());
         }
     }
 }

@@ -22,8 +22,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaBrokerLoggingConfigurationDiffTest {
 
-    private final int brokerId = 0;
-
     private String getDesiredConfiguration(List<ConfigEntry> additional) {
         StringBuilder desiredConfigString = new StringBuilder();
         desiredConfigString.append("# Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.\n" +
@@ -53,7 +51,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
 
     @Test
     public void testReplaceRootLogger() {
-        KafkaBrokerLoggingConfigurationDiff klcd = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()), getDesiredConfiguration(emptyList()), brokerId);
+        KafkaBrokerLoggingConfigurationDiff klcd = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()), getDesiredConfiguration(emptyList()));
         assertThat(klcd.getDiffSize(), is(0));
     }
 
@@ -65,7 +63,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
         // Prepare currentConfig
         Config currentConfig = getRealisticConfig();
 
-        KafkaBrokerLoggingConfigurationDiff diff = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, currentConfig, desiredConfig, brokerId);
+        KafkaBrokerLoggingConfigurationDiff diff = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, currentConfig, desiredConfig);
         assertThat(diff.alterConfigOps(), is(getRealisticConfigDiff()));
     }
 
@@ -167,9 +165,9 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
                 "log4j.logger.kafka.authorizer.logger=INFO\n" +
                 "monitorInterval=30\n";
 
-        KafkaBrokerLoggingConfigurationDiff kdiff = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, null, null, 0);
+        KafkaBrokerLoggingConfigurationDiff kdiff = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, null, null);
 
-        Map<String, String> res = kdiff.readLog4jConfig(input);
+        Map<String, String> res = kdiff.readLog4jConfig(Reconciliation.DUMMY_RECONCILIATION,input);
         assertThat(res.get("root"), is("INFO"));
         assertThat(res.get("kafka.request.logger"), is("WARN"));
     }
