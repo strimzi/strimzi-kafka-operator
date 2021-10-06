@@ -60,7 +60,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -397,8 +396,8 @@ public class ListenersST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final Map<String, String> label = Collections.singletonMap("my-label", "value");
-        final Map<String, String> anno = Collections.singletonMap("my-annotation", "value");
+        final Map<String, String> label = singletonMap("my-label", "value");
+        final Map<String, String> anno = singletonMap("my-annotation", "value");
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
@@ -2184,7 +2183,7 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testAdvertisedHostNamesAppearsInBrokerCerts(ExtensionContext extensionContext) throws CertificateException {
+    void dtestAdvertisedHostNamesAppearsInBrokerCerts(ExtensionContext extensionContext) throws CertificateException {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
 

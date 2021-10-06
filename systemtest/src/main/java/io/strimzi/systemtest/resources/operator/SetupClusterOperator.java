@@ -371,8 +371,11 @@ public class SetupClusterOperator {
                         .build());
                     break;
                 case Constants.CLUSTER_ROLE:
-                    ClusterRole clusterRole = TestUtils.configFromYaml(createFile, ClusterRole.class);
-                    ResourceManager.getInstance().createResource(extensionContext, clusterRole);
+                    // apply ClusterRole only if RBAC is set to `CLUSTER`
+                    if (!Environment.isNamespaceRbacScope()) {
+                        ClusterRole clusterRole = TestUtils.configFromYaml(createFile, ClusterRole.class);
+                        ResourceManager.getInstance().createResource(extensionContext, clusterRole);
+                    }
                     break;
                 case Constants.SERVICE_ACCOUNT:
                     ServiceAccount serviceAccount = TestUtils.configFromYaml(createFile, ServiceAccount.class);
