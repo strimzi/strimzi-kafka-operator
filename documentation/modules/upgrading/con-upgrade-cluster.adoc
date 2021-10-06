@@ -96,7 +96,7 @@ kubectl annotate pod _<cluster_name>_-kafka-_<index>_ strimzi.io/manual-rolling-
 ----
 
 You replace _<cluster_name>_ with the name of the cluster.
-Kafka broker pods are named _<cluster-name>_-kafka-_<index>_, where _<index>_ starts at zero and ends at the total number of replicas.
+Kafka broker pods are named _<cluster-name>_-kafka-_<index>_, where _<index>_ starts at zero and ends at the total number of replicas minus one.
 For example, `my-cluster-kafka-0`.
 
 [role="_additional-resources"]

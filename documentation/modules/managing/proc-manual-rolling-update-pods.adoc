@@ -13,7 +13,7 @@ When multiple pods from the same `StatefulSet` are annotated, consecutive rollin
 . Find the name of the Kafka or ZooKeeper `Pod` you want to manually update.
 +
 For example, if your Kafka cluster is named _my-cluster_, the corresponding `Pod` names are _my-cluster-kafka-index_ and _my-cluster-zookeeper-index_.
-The _index_ starts at zero and ends at the total number of replicas.
+The _index_ starts at zero and ends at the total number of replicas minus one.
 
 . Annotate the `Pod` resource in Kubernetes.
 +

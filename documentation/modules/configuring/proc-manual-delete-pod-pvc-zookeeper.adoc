@@ -22,7 +22,8 @@ See the _Deploying and Upgrading Strimzi_ guide for instructions on running a:
 
 . Find the name of the `Pod` that you want to delete.
 +
-For example, if the cluster is named _cluster-name_, the pods are named _cluster-name_-zookeeper-_index_, where _index_ starts at zero and ends at the total number of replicas.
+ZooKeeper pods are named _<cluster-name>_-zookeeper-_<index>_, where _<index>_ starts at zero and ends at the total number of replicas minus one.
+For example, `my-cluster-zookeeper-0`.
 
 . Annotate the `Pod` resource in Kubernetes.
 +
