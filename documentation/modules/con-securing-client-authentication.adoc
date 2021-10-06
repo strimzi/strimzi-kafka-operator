@@ -20,9 +20,9 @@ If `tls-external` is specified, the user still uses TLS client authentication, b
 Use this option when you're providing your own certificates.
 When no authentication type is specified, the User Operator does not create the user or its credentials.
 
-You can use `tls-external` to authenticate with TLS using a certificate issued outside the User Operator.
+You can use `tls-external` to authenticate with TLS client authentication using a certificate issued outside the User Operator.
 The User Operator does not generate a TLS certificate or a secret.
-You can still manage ACL rules and quotas through the User Operator in the same way as with the `tls` mechanism.
+You can still manage ACL rules and quotas through the User Operator in the same way as when you're using the `tls` mechanism.
 This means that you use the `CN=__USER-NAME__` format when specifying ACL rules and quotas.
 _USER-NAME_ is the common name given in a TLS certificate.
 

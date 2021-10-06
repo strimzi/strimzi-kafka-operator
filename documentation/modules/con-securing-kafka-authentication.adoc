@@ -10,7 +10,7 @@ For clients inside the Kubernetes cluster, you can create `plain` (without encry
 For clients outside the Kubernetes cluster, you create _external_ listeners and specify a connection mechanism,
 which can be `nodeport`, `loadbalancer`, `ingress` or `route` (on OpenShift).
 
-For more information on the configuration options for connecting an external client, see xref:assembly-accessing-kafka-external-clients-str[Accessing Kafka from external clients].
+For more information on the configuration options for connecting an external client, see xref:assembly-accessing-kafka-outside-cluster-str[Accessing Kafka outside of the Kubernetes cluster].
 
 Supported authentication options:
 
