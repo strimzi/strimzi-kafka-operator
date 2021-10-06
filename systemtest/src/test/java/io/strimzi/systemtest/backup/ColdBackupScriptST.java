@@ -71,7 +71,7 @@ public class ColdBackupScriptST extends AbstractST {
         Exec.exec(true, backupCommand);
 
         install.unInstall();
-        install = SetupClusterOperator.buildDefaultInstallation().runInstallation();
+        install = SetupClusterOperator.defaultInstallation().createInstallation().runInstallation();
 
         // run restore procedure and wait for provisioning
         LOGGER.info("Running restore procedure for {}/{}", INFRA_NAMESPACE, clusterName);

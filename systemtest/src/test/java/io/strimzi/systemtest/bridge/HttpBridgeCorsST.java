@@ -18,7 +18,6 @@ import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
-import io.strimzi.test.logs.CollectorElement;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -130,10 +129,6 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void beforeAll(ExtensionContext extensionContext) {
-        cluster.createNamespace(CollectorElement.createCollectorElement(
-            extensionContext.getRequiredTestClass().getName(),
-            extensionContext.getDisplayName()), NAMESPACE);
-
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeCorsClusterName, 1, 1)
             .editMetadata()
                 .withNamespace(NAMESPACE)

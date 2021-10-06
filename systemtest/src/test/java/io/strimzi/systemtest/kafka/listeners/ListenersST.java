@@ -549,7 +549,7 @@ public class ListenersST extends AbstractST {
                             .withTls(true)
                             .withAuth(new KafkaListenerAuthenticationTls())
                         .build())
-                    .withConfig(singletonMap("default.replication.factor", 3))
+                    .withConfig(Collections.singletonMap("default.replication.factor", 3))
                 .endKafka()
             .endSpec()
             .build());
@@ -2182,6 +2182,7 @@ public class ListenersST extends AbstractST {
         );
     }
 
+    @Tag(NODEPORT_SUPPORTED)
     @ParallelNamespaceTest
     void testAdvertisedHostNamesAppearsInBrokerCerts(ExtensionContext extensionContext) throws CertificateException {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

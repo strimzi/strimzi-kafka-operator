@@ -17,6 +17,7 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.test.annotations.IsolatedSuite;
+import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,18 +65,16 @@ class HelmChartST extends AbstractST {
         install.unInstall();
 
         LOGGER.info("Creating resources before the test class");
-        cluster.createNamespace(INFRA_NAMESPACE);
+        cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), INFRA_NAMESPACE);
         helmResource.create(extensionContext);
     }
 
     @Override
     protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
         helmResource.delete();
-        cluster.deleteNamespaces();
 
-        super.afterAllMayOverride(extensionContext);
-
-        // create shared CO for the following TestSuites
-        install = SetupClusterOperator.buildDefaultInstallation().runInstallation();
+        install = SetupClusterOperator.defaultInstallation()
+            .createInstallation()
+            .runInstallation();
     }
 }

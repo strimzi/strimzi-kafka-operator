@@ -122,23 +122,20 @@ public class SetupClusterOperator {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null;
     }
 
-    public static SetupClusterOperator buildDefaultInstallation() {
+    public static SetupClusterOperatorBuilder defaultInstallation() {
         if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
             LOGGER.debug("Building default installation for RBAC Cluster operator.");
             return new SetupClusterOperator.SetupClusterOperatorBuilder()
                 .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
                 .withNamespace(Constants.INFRA_NAMESPACE)
                 .withWatchingNamespaces(ParallelNamespacesSuitesNames.getRbacNamespacesToWatch())
-                .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
-                .createInstallation();
+                .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces());
         }
         LOGGER.debug("Building default installation for Cluster operator.");
         return new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(Constants.INFRA_NAMESPACE)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-            .createInstallation();
-
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES);
     }
 
     /**
@@ -196,6 +193,7 @@ public class SetupClusterOperator {
     }
 
     public SetupClusterOperator runBundleInstallation() {
+        LOGGER.info("Cluster operator installation configuration:\n{}", this::toString);
         bundleInstallation();
         return this;
     }
@@ -371,11 +369,8 @@ public class SetupClusterOperator {
                         .build());
                     break;
                 case Constants.CLUSTER_ROLE:
-                    // apply ClusterRole only if RBAC is set to `CLUSTER`
-                    if (!Environment.isNamespaceRbacScope()) {
-                        ClusterRole clusterRole = TestUtils.configFromYaml(createFile, ClusterRole.class);
-                        ResourceManager.getInstance().createResource(extensionContext, clusterRole);
-                    }
+                    ClusterRole clusterRole = TestUtils.configFromYaml(createFile, ClusterRole.class);
+                    ResourceManager.getInstance().createResource(extensionContext, clusterRole);
                     break;
                 case Constants.SERVICE_ACCOUNT:
                     ServiceAccount serviceAccount = TestUtils.configFromYaml(createFile, ServiceAccount.class);
@@ -466,6 +461,7 @@ public class SetupClusterOperator {
                 applyRoles(extensionContext, bindingsNamespace);
                 applyRoleBindings(extensionContext, namespaceInstallTo, bindingsNamespace);
             }
+            // RoleBindings also deployed in CO namespace
             applyRoleBindings(extensionContext, namespaceInstallTo, namespaceInstallTo);
         } else {
             for (String bindingsNamespace : bindingsNamespaces) {
@@ -525,7 +521,9 @@ public class SetupClusterOperator {
         unInstall();
 
         // install new one with default configuration
-        return buildDefaultInstallation().runInstallation();
+        return defaultInstallation()
+            .createInstallation()
+            .runInstallation();
     }
 
     @Override

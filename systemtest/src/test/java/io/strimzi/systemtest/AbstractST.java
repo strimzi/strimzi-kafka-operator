@@ -551,7 +551,7 @@ public abstract class AbstractST implements TestSeparator {
         // ----
         // 2nd case = transition from if previous suite is @IsolatedSuite and now @ParallelSuite is running we must do
         // additional check that configuration is in default
-        if (install != null && !SetupClusterOperator.buildDefaultInstallation().equals(install)) {
+        if (install != null && !SetupClusterOperator.defaultInstallation().createInstallation().equals(install)) {
             // install configuration differs from default one we are gonna roll-back
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
             LOGGER.info("Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.");

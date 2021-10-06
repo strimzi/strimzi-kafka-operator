@@ -263,7 +263,7 @@ public class SpecificST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
-    public void testRackAwareConnectCorrectDeployment(ExtensionContext extensionContext) {
+    void testRackAwareConnectCorrectDeployment(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
 
         String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
@@ -273,9 +273,7 @@ public class SpecificST extends AbstractST {
         Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(INFRA_NAMESPACE, ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
         install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+        install = SetupClusterOperator.defaultInstallation()
             .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
             .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
             .createInstallation()
@@ -335,11 +333,9 @@ public class SpecificST extends AbstractST {
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, INFRA_NAMESPACE, clusterName);
         // Revert changes for CO deployment
         install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+        install = SetupClusterOperator.defaultInstallation()
             .createInstallation()
-            .runBundleInstallation();
+            .runInstallation();
 
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coSnapshot);
     }

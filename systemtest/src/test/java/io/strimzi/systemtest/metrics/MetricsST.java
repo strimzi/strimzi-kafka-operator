@@ -50,7 +50,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
-import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -644,13 +643,6 @@ public class MetricsST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
-        LOGGER.info("Setting up Environment for MetricsST");
-        cluster.createNamespace(CollectorElement.createCollectorElement(
-            extensionContext.getRequiredTestClass().getName(),
-            extensionContext.getDisplayName()), SECOND_NAMESPACE);
-
-        NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(SECOND_NAMESPACE));
-
         final String firstKafkaClientsName = INFRA_NAMESPACE + "-" + Constants.KAFKA_CLIENTS;
         final String secondKafkaClientsName = SECOND_NAMESPACE + "-" + Constants.KAFKA_CLIENTS;
 
