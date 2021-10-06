@@ -72,7 +72,7 @@ spec:
     # ...
     template:
       podDisruptionBudget:
-        maxUnavailable: 1
+        maxUnavailable: 0
 # ...
 ----
 
