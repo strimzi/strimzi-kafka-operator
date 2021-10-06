@@ -60,6 +60,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -83,7 +84,6 @@ import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCe
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -396,8 +396,8 @@ public class ListenersST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final Map<String, String> label = singletonMap("my-label", "value");
-        final Map<String, String> anno = singletonMap("my-annotation", "value");
+        final Map<String, String> label = Collections.singletonMap("my-label", "value");
+        final Map<String, String> anno = Collections.singletonMap("my-annotation", "value");
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
@@ -414,7 +414,7 @@ public class ListenersST extends AbstractST {
                             .withPort(9098)
                             .withTls(false)
                         .build())
-                    .withConfig(singletonMap("default.replication.factor", 3))
+                    .withConfig(Collections.singletonMap("default.replication.factor", 3))
                     .editOrNewTemplate()
                         .withNewClusterRoleBinding()
                             .withNewMetadata()
@@ -593,7 +593,7 @@ public class ListenersST extends AbstractST {
                                 .withFinalizers(LB_FINALIZERS)
                             .endConfiguration()
                         .build())
-                    .withConfig(singletonMap("default.replication.factor", 3))
+                    .withConfig(Collections.singletonMap("default.replication.factor", 3))
                 .endKafka()
             .endSpec()
             .build());
@@ -637,7 +637,7 @@ public class ListenersST extends AbstractST {
                                 .withFinalizers(LB_FINALIZERS)
                             .endConfiguration()
                         .build())
-                    .withConfig(singletonMap("default.replication.factor", 3))
+                    .withConfig(Collections.singletonMap("default.replication.factor", 3))
                 .endKafka()
             .endSpec()
             .build());
@@ -2183,7 +2183,7 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void dtestAdvertisedHostNamesAppearsInBrokerCerts(ExtensionContext extensionContext) throws CertificateException {
+    void testAdvertisedHostNamesAppearsInBrokerCerts(ExtensionContext extensionContext) throws CertificateException {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
 
