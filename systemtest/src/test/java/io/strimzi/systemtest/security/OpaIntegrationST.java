@@ -24,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -38,6 +39,7 @@ import static org.hamcrest.CoreMatchers.is;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
+@Disabled("Issue with OPA -> users in allowedList or superusers are not able to producer/consume messages")
 public class OpaIntegrationST extends AbstractST {
     public static final String NAMESPACE = "opa-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(OpaIntegrationST.class);

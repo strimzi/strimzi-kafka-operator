@@ -37,6 +37,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -196,6 +197,7 @@ public class TracingST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @Disabled("Issue with Kafka Streams application")
     void testProducerWithStreamsService(ExtensionContext extensionContext) {
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
         assumeFalse(Environment.isNamespaceRbacScope());
@@ -269,6 +271,7 @@ public class TracingST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
+    @Disabled("Issue with Kafka Streams application")
     void testProducerConsumerStreamsService(ExtensionContext extensionContext) {
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
         assumeFalse(Environment.isNamespaceRbacScope());
@@ -507,6 +510,7 @@ public class TracingST extends AbstractST {
     @Tag(MIRROR_MAKER)
     @Tag(CONNECT_COMPONENTS)
     @SuppressWarnings({"checkstyle:MethodLength"})
+    @Disabled("Issue with Kafka Streams application")
     void testProducerConsumerMirrorMakerConnectStreamsService(ExtensionContext extensionContext) {
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
         assumeFalse(Environment.isNamespaceRbacScope());
