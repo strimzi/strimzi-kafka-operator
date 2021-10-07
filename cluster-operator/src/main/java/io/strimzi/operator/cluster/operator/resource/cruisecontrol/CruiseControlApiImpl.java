@@ -23,6 +23,7 @@ import io.vertx.core.net.PfxOptions;
 import java.io.File;
 import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.operator.cluster.model.CruiseControl.encodeToBase64;
@@ -46,7 +47,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
         this.apiSslEnabled = apiSslEnabled;
         this.authHttpHeader = getAuthHttpHeader(apiAuthEnabled, ccApiSecret);
         this.trustStorePassword = new PasswordGenerator(12).generate();
-        this.truststoreFile = Util.createFileTrustStore(getClass().getName(), "ts", Ca.cert(ccSecret, "cruise-control.crt"), trustStorePassword.toCharArray());
+        this.truststoreFile = Util.createFileTrustStore(getClass().getName(), "ts", Set.of(Ca.cert(ccSecret, "cruise-control.crt")), trustStorePassword.toCharArray());
     }
 
     @Override
