@@ -190,8 +190,6 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
 
     @BeforeAll
     void createClassResources(ExtensionContext extensionContext) {
-        LOGGER.debug("===============================================================");
-        LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(NAMESPACE)

@@ -146,10 +146,10 @@ public class ReconciliationST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
 
         LOGGER.info("Adding pause annotation into KafkaTopic resource and changing replication factor");
-        KafkaTopicResource.replaceTopicResource(topicName, topic -> {
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName, topic -> {
             topic.getMetadata().setAnnotations(PAUSE_ANNO);
             topic.getSpec().setPartitions(SCALE_TO);
-        });
+        }, namespaceName);
 
         KafkaTopicUtils.waitForKafkaTopicStatus(namespaceName, topicName, CustomResourceStatus.ReconciliationPaused);
         KafkaTopicUtils.waitForKafkaTopicSpecStability(topicName, KafkaResources.kafkaPodName(clusterName, 0), KafkaResources.plainBootstrapAddress(clusterName));
