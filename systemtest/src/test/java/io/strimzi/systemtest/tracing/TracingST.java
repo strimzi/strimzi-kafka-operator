@@ -128,7 +128,7 @@ public class TracingST extends AbstractST {
         resourceManager.createResource(extensionContext, ((KafkaTracingExampleClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing().build());
 
         TracingUtils.verify(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(NAMESPACE_KEY).toString(), JAEGER_CONSUMER_SERVICE, extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_CLIENTS_POD_KEY).toString(), JAEGER_QUERY_SERVICE);
-//        TODO: Disabled because of issue with Streams API and tracing. Uncomment this after fix.
+//        TODO: Disabled because of issue with Streams API and tracing. Uncomment this after fix. https://github.com/strimzi/strimzi-kafka-operator/issues/5680
 //        resourceManager.createResource(extensionContext, ((KafkaTracingExampleClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing().build());
 //
 //        TracingUtils.verify(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(NAMESPACE_KEY).toString(), JAEGER_KAFKA_STREAMS_SERVICE, extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_CLIENTS_POD_KEY).toString(), JAEGER_QUERY_SERVICE);
@@ -385,7 +385,7 @@ public class TracingST extends AbstractST {
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CONSUMER_KEY).toString(),
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(NAMESPACE_KEY).toString(), MESSAGE_COUNT);
 
-//        TODO: Disabled because of issue with Streams API and tracing. Uncomment this after fix.
+//        TODO: Disabled because of issue with Streams API and tracing. Uncomment this after fix. https://github.com/strimzi/strimzi-kafka-operator/issues/5680
 //        resourceManager.createResource(extensionContext, ((KafkaTracingExampleClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing().build());
 //
 //        TracingUtils.verify(extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(NAMESPACE_KEY).toString(), JAEGER_KAFKA_STREAMS_SERVICE, extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_CLIENTS_POD_KEY).toString(), "From_" + extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TOPIC_KEY).toString(), JAEGER_QUERY_SERVICE);
