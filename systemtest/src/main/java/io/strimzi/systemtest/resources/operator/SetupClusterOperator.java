@@ -51,6 +51,13 @@ import java.util.stream.Collectors;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+/**
+ * SetupClusterOperator encapsulates the whole installation process of Cluster Operator (i.e., RoleBinding, ClusterRoleBinding,
+ * ConfigMap, Deployment, CustomResourceDefinition, preparation of the Namespace). Based on the @code{Environment}
+ * values, this class decides how Cluster Operator should be installed (i.e., Olm, Helm, Bundle). Moreover, it provides
+ * @code{rollbackToDefaultConfiguration()} method, which basically re-install Cluster Operator to the default values. In
+ * case user wants to edit specific installation, one can use @code{defaultInstallation()}, which returns SetupClusterOperatorBuilder.
+ */
 public class SetupClusterOperator {
 
     private static final Logger LOGGER = LogManager.getLogger(SetupClusterOperator.class);
