@@ -1186,6 +1186,10 @@ spec:
                                   ip:
                                     type: string
                               description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            tmpDirSizeLimit:
+                              type: string
+                              pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `1Mi`.
                             enableServiceLinks:
                               type: boolean
                               description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -2283,6 +2287,10 @@ spec:
                                   ip:
                                     type: string
                               description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            tmpDirSizeLimit:
+                              type: string
+                              pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `1Mi`.
                             enableServiceLinks:
                               type: boolean
                               description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -3337,6 +3345,10 @@ spec:
                                   ip:
                                     type: string
                               description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            tmpDirSizeLimit:
+                              type: string
+                              pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `1Mi`.
                             enableServiceLinks:
                               type: boolean
                               description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -4287,6 +4299,10 @@ spec:
                                   ip:
                                     type: string
                               description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            tmpDirSizeLimit:
+                              type: string
+                              pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `1Mi`.
                             enableServiceLinks:
                               type: boolean
                               description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -5086,6 +5102,10 @@ spec:
                                   ip:
                                     type: string
                               description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            tmpDirSizeLimit:
+                              type: string
+                              pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `1Mi`.
                             enableServiceLinks:
                               type: boolean
                               description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -5669,6 +5689,10 @@ spec:
                                   ip:
                                     type: string
                               description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
+                            tmpDirSizeLimit:
+                              type: string
+                              pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                              description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `1Mi`.
                             enableServiceLinks:
                               type: boolean
                               description: Indicates whether information about services should be injected into Pod's environment variables.

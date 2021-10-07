@@ -18,6 +18,7 @@ import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.strimzi.crdgenerator.annotations.KubeLink;
 import io.strimzi.crdgenerator.annotations.Minimum;
+import io.strimzi.crdgenerator.annotations.Pattern;
 import io.sundr.builder.annotations.Buildable;
 import io.vertx.core.cli.annotations.DefaultValue;
 import lombok.EqualsAndHashCode;
@@ -36,7 +37,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({"metadata", "imagePullSecrets", "securityContext", "terminationGracePeriodSeconds", "affinity",
-    "tolerations", "topologySpreadConstraint", "priorityClassName", "schedulerName", "hostAliases"})
+    "tolerations", "topologySpreadConstraint", "priorityClassName", "schedulerName", "hostAliases", "tmpDirSizeLimit"})
 @EqualsAndHashCode
 @DescriptionFile
 public class PodTemplate implements Serializable, UnknownPropertyPreserving {
@@ -53,6 +54,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     private String schedulerName;
     private List<HostAlias> hostAliases;
     private Boolean enableServiceLinks;
+    private String tmpDirSizeLimit;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
     @Description("Metadata applied to the resource.")
@@ -180,6 +182,18 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
 
     public void setEnableServiceLinks(Boolean enableServiceLinks) {
         this.enableServiceLinks = enableServiceLinks;
+    }
+
+    @Pattern(Constants.MEMORY_REGEX)
+    @DefaultValue("1Mi")
+    @Description("Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). " +
+            "Default value is `1Mi`.")
+    public String getTmpDirSizeLimit() {
+        return tmpDirSizeLimit;
+    }
+
+    public void setTmpDirSizeLimit(String tmpDirSizeLimit) {
+        this.tmpDirSizeLimit = tmpDirSizeLimit;
     }
 
     @Override
