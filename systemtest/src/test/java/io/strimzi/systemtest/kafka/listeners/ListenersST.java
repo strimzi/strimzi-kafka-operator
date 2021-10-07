@@ -2164,6 +2164,7 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @Tag(NODEPORT_SUPPORTED)
     void testAdvertisedHostNamesAppearsInBrokerCerts(ExtensionContext extensionContext) throws CertificateException {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
