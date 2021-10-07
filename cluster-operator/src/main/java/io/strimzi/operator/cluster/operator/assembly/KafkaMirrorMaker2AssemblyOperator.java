@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.client.CustomResource;
@@ -169,6 +171,14 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 })
                 .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generatePodDisruptionBudget()))
+                .compose(i -> kafkaMirrorMaker2.getSpec().getClusters() == null ? Future.succeededFuture() : CompositeFuture.join(kafkaMirrorMaker2.getSpec().getClusters().stream().map(cluster ->
+                    Util.authTlsHash(secretOperations, namespace, cluster.getAuthentication(), cluster.getTls() == null ? Collections.emptyList() : cluster.getTls().getTrustedCertificates())).collect(Collectors.toList())))
+                .compose(hashesFut -> {
+                    if (hashesFut != null) {
+                        annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(IntStream.range(0, hashesFut.size()).map(j -> (int) hashesFut.resultAt(j)).sum()));
+                    }
+                    return Future.succeededFuture();
+                })
                 .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
                 .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))

@@ -14,9 +14,11 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Build;
 import io.strimzi.api.kafka.KafkaConnectList;
+import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -43,7 +45,9 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -123,6 +127,9 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         boolean connectHasZeroReplicas = connect.getReplicas() == 0;
 
+        KafkaClientAuthentication auth = kafkaConnect.getSpec().getAuthentication();
+        List<CertSecretSource> trustedCertificates = kafkaConnect.getSpec().getTls() == null ? Collections.emptyList() : kafkaConnect.getSpec().getTls().getTrustedCertificates();
+
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
         connectServiceAccount(reconciliation, namespace, connect)
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
@@ -157,10 +164,12 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 })
                 .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generatePodDisruptionBudget()))
-                .compose(i -> {
+                .compose(i -> Util.authTlsHash(secretOperations, namespace, auth, trustedCertificates))
+                .compose(hash -> {
                     if (buildState.desiredBuildRevision != null) {
                         annotations.put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildState.desiredBuildRevision);
                     }
+                    annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
 
                     Deployment dep = connect.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
 

@@ -9,9 +9,11 @@ import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaMirrorMakerList;
+import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerSpec;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -28,11 +30,14 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -83,6 +88,11 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
 
         Map<String, String> annotations = new HashMap<>(1);
 
+        KafkaClientAuthentication authConsumer = assemblyResource.getSpec().getConsumer().getAuthentication();
+        List<CertSecretSource> trustedCertificatesConsumer = assemblyResource.getSpec().getConsumer().getTls() == null ? Collections.emptyList() : assemblyResource.getSpec().getConsumer().getTls().getTrustedCertificates();
+        KafkaClientAuthentication authProducer = assemblyResource.getSpec().getProducer().getAuthentication();
+        List<CertSecretSource> trustedCertificatesProducer = assemblyResource.getSpec().getProducer().getTls() == null ? Collections.emptyList() : assemblyResource.getSpec().getProducer().getTls().getTrustedCertificates();
+
         Promise<KafkaMirrorMakerStatus> createOrUpdatePromise = Promise.promise();
 
         boolean mirrorHasZeroReplicas = mirror.getReplicas() == 0;
@@ -97,6 +107,14 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                     return configMapOperations.reconcile(reconciliation, namespace, mirror.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirror.getName(), mirror.generatePodDisruptionBudget()))
+                .compose(i -> CompositeFuture.join(Util.authTlsHash(secretOperations, namespace, authConsumer, trustedCertificatesConsumer),
+                        Util.authTlsHash(secretOperations, namespace, authProducer, trustedCertificatesProducer)))
+                .compose(hashFut -> {
+                    if (hashFut != null) {
+                        annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString((int) hashFut.resultAt(0) + (int) hashFut.resultAt(1)));
+                    }
+                    return Future.succeededFuture();
+                })
                 .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, mirror.getName(), mirror.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
                 .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirror.getName(), mirror.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, mirror.getName(), 1_000, operationTimeoutMs))

@@ -9,9 +9,11 @@ import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaBridgeList;
+import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.certs.CertManager;
@@ -20,6 +22,7 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaBridgeCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -34,6 +37,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 import java.util.Collections;
+import java.util.List;
 
 /**
  * <p>Assembly operator for a "Kafka Bridge" assembly, which manages:</p>
@@ -78,6 +82,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, Future.failedFuture(e));
             return Future.failedFuture(new ReconciliationException(kafkaBridgeStatus, e));
         }
+        KafkaClientAuthentication auth = assemblyResource.getSpec().getAuthentication();
+        List<CertSecretSource> trustedCertificates = assemblyResource.getSpec().getTls() == null ? Collections.emptyList() : assemblyResource.getSpec().getTls().getTrustedCertificates();
 
         Promise<KafkaBridgeStatus> createOrUpdatePromise = Promise.promise();
 
@@ -89,7 +95,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> Util.metricsAndLogging(reconciliation, configMapOperations, namespace, bridge.getLogging(), null))
             .compose(metricsAndLogging -> configMapOperations.reconcile(reconciliation, namespace, bridge.getAncillaryConfigMapName(), bridge.generateMetricsAndLogConfigMap(metricsAndLogging)))
             .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, bridge.getName(), bridge.generatePodDisruptionBudget()))
-            .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, bridge.getName(), bridge.generateDeployment(Collections.emptyMap(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
+            .compose(i -> Util.authTlsHash(secretOperations, namespace, auth, trustedCertificates))
+            .compose(hash -> deploymentOperations.reconcile(reconciliation, namespace, bridge.getName(), bridge.generateDeployment(Collections.singletonMap(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash)), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
             .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, bridge.getName(), bridge.getReplicas()))
             .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, bridge.getName(), 1_000, operationTimeoutMs))
             .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, bridge.getName(), 1_000, operationTimeoutMs))

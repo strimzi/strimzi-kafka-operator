@@ -61,6 +61,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -187,8 +188,10 @@ public class KafkaConnectAssemblyOperatorTest {
                 assertThat(capturedDc, hasSize(1));
                 Deployment dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(connect.getName()));
-                Map<String, String> annotations = Map.of(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
+                Map<String, String> annotations = new HashMap<>();
+                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
                                                          Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(LOGGING_CONFIG)));
+                annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, "0");
                 assertThat(dc, is(connect.generateDeployment(annotations, true, null, null)));
 
                 // Verify PodDisruptionBudget
@@ -459,8 +462,10 @@ public class KafkaConnectAssemblyOperatorTest {
                 String loggingConfiguration = loggingCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
                 String dynamicallyUnmodifiableEntries = Util.getLoggingDynamicallyUnmodifiableEntries(loggingConfiguration);
                 String hashedLoggingConf = Util.stringHash(dynamicallyUnmodifiableEntries);
-                Map<String, String> annotations = Map.of(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
+                Map<String, String> annotations = new HashMap<>();
+                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
                                                          hashedLoggingConf);
+                annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, "0");
 
                 assertThat(dc, is(compareTo.generateDeployment(annotations, true, null, null)));
 

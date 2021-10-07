@@ -1238,6 +1238,110 @@ class ConnectST extends AbstractST {
         assertThat(kafkaConnect.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.ROLLING_UPDATE));
     }
 
+    @ParallelNamespaceTest
+    @Tag(INTERNAL_CLIENTS_USED)
+    // changing the password in secret should cause the RU of connect pod
+    void testKafkaConnectWithScramShaAuthenticationRolledAfterPasswordChanged(ExtensionContext extensionContext) {
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                        .withPort(9092)
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withTls(false)
+                        .withAuth(new KafkaListenerAuthenticationScramSha512())
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build());
+
+        Secret passwordSecret = new SecretBuilder()
+                .withNewMetadata()
+                .withName("custom-pwd-secret")
+                .endMetadata()
+                .addToData("pwd", "MTIzNDU2Nzg5")
+                .build();
+
+        kubeClient(namespaceName).createSecret(passwordSecret);
+
+        KafkaUser kafkaUser =  KafkaUserTemplates.scramShaUser(clusterName, userName)
+                .editSpec()
+                    .withNewKafkaUserScramSha512ClientAuthentication()
+                        .withNewPassword()
+                            .withNewValueFrom()
+                                .withNewSecretKeyRef("pwd", "custom-pwd-secret", false)
+                            .endValueFrom()
+                        .endPassword()
+                    .endKafkaUserScramSha512ClientAuthentication()
+                .endSpec()
+                .build();
+
+        resourceManager.createResource(extensionContext, kafkaUser);
+
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, userName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
+                .withNewSpec()
+                    .withBootstrapServers(KafkaResources.plainBootstrapAddress(clusterName))
+                    .withNewKafkaClientAuthenticationScramSha512()
+                        .withUsername(userName)
+                        .withPasswordSecret(new PasswordSecretSourceBuilder()
+                            .withSecretName(userName)
+                            .withPassword("password")
+                            .build())
+                    .endKafkaClientAuthenticationScramSha512()
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .withVersion(Environment.ST_KAFKA_VERSION)
+                    .withReplicas(1)
+                .endSpec()
+                .build());
+
+        final String kafkaConnectPodName = kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespaceName, kafkaConnectPodName);
+
+        Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaConnectResources.deploymentName(clusterName));
+        String newPassword = "bmVjb0ppbmVob05lelNwcmF2bnlQYXNzd29yZA==";
+        Secret newPasswordSecret = new SecretBuilder()
+                .withNewMetadata()
+                    .withName("new-custom-pwd-secret")
+                .endMetadata()
+                .addToData("pwd", newPassword)
+                .build();
+
+        kubeClient(namespaceName).createSecret(newPasswordSecret);
+
+        kafkaUser =  KafkaUserTemplates.scramShaUser(clusterName, userName)
+                .editSpec()
+                    .withNewKafkaUserScramSha512ClientAuthentication()
+                        .withNewPassword()
+                            .withNewValueFrom()
+                                .withNewSecretKeyRef("pwd", "new-custom-pwd-secret", false)
+                            .endValueFrom()
+                        .endPassword()
+                    .endKafkaUserScramSha512ClientAuthentication()
+                .endSpec()
+                .build();
+
+        resourceManager.createResource(extensionContext, kafkaUser);
+
+        DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaConnectResources.deploymentName(clusterName), 1, connectSnapshot);
+
+        final String kafkaConnectPodNameAfterRU = kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespaceName, kafkaConnectPodNameAfterRU);
+    }
+
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
