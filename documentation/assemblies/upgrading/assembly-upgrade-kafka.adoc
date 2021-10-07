@@ -7,17 +7,28 @@
 
 To upgrade brokers and clients without downtime, you _must_ complete the Strimzi upgrade procedures in the following order:
 
-. . When upgrading from {ConvertAfterProductVersion} or earlier, update existing custom resources to support the `v1beta2` API version.
+. Make sure your Kubernetes cluster version is supported.
++
+--
+ifdef::StrimziUpgrades[]
+Strimzi {ProductVersion} requires Kubernetes {KubernetesVersion}.
+endif::StrimziUpgrades[]
+ifndef::StrimziUpgrades[]
+Strimzi {ProductVersion} requires OpenShift {OpenShiftVersion}.
+endif::StrimziUpgrades[]
+--
++
+--
+* xref:con-upgrade-cluster-{context}[]
+--
+
+. When upgrading from {ConvertAfterProductVersion} or earlier, update existing custom resources to support the `v1beta2` API version.
 +
 --
 * xref:assembly-upgrade-resources-{context}[]
 --
 
 . Update your Cluster Operator to a new Strimzi version.
-+
---
-* xref:proc-upgrading-the-co-{context}[]
---
 +
 The approach you take depends on how you xref:cluster-operator-{context}[deployed the Cluster Operator].
 +

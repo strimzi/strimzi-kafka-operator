@@ -63,6 +63,8 @@ A reduction in cluster availability increases the chance that a broker failure w
 
 include::assembly-upgrade-kafka.adoc[leveloffset=+1]
 
+include::modules/con-upgrade-cluster.adoc[leveloffset=+1]
+
 include::assembly-upgrade-resources.adoc[leveloffset=+1]
 
 include::modules/proc-upgrade-cluster-operator.adoc[leveloffset=+1]

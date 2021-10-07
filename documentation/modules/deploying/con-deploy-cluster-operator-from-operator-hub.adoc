@@ -5,9 +5,21 @@
 [id='deploying-cluster-operator-from-operator-hub-{context}']
 = Deploying the Cluster Operator from OperatorHub.io
 
+[role="_abstract"]
 {OperatorHub} is a catalog of Kubernetes Operators sourced from multiple providers.
 It offers you an alternative way to install stable versions of Strimzi using the Strimzi Kafka Operator.
 
 The {OperatorLifecycleManager} is used for the installation and management of all Operators published on {OperatorHub}.
 
 To install Strimzi from {OperatorHub}, locate the _Strimzi Kafka Operator_ and follow the instructions provided.
+
+Upgrades between versions might include manual steps.
+Always read the release notes before upgrading.
+
+WARNING: Make sure you use the appropriate update channel.
+Installing Strimzi from the default _stable_ channel is generally safe.
+However, we do not recommend enabling _automatic_ OLM updates on the stable channel.
+An automatic upgrade will skip any necessary steps prior to upgrade.
+For example, to upgrade from {ConvertAfterProductVersion} or earlier
+you must first xref:assembly-upgrade-resources-{context}[update custom resources to support the `v1beta2` API version].
+Use automatic upgrades only on version-specific channels.
