@@ -7,33 +7,39 @@
 = Enabling the example Grafana dashboards
 
 [role="_abstract"]
-Use Grafana dashboards to visualize Strimzi data.
-Add dashboards if you are using Prometheus and Grafana to extract metrics and monitor Strimzi.
+Use Grafana to provide visualizations of Prometheus metrics on customizable dashboards.
 
-Strimzi provides xref:ref-metrics-config-files-{context}[example dashboard configuration files for Grafana].
-Example dashboards are provided in the `examples/metrics/grafana-dashboards` directory as JSON files:
+You can use your own Grafana deployment or deploy Grafana using the xref:assembly-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi.
+The example files include a configuration file for a Grafana deployment
 
-* `strimzi-kafka.json`
-* `strimzi-zookeeper.json`
-* `strimzi-operators.json`
-* `strimzi-kafka-connect.json`
-* `strimzi-kafka-mirror-maker-2.json`
-* `strimzi-kafka-bridge.json`
-* `strimzi-cruise-control.json`
-* `strimzi-kafka-exporter.json`
+* `examples/metrics/grafana-install/grafana.yaml`
 
-The example dashboards are a good starting point for monitoring key metrics, but they do not represent all available metrics.
+Strimzi also provides xref:ref-metrics-dashboards-{context}[example dashboard configuration files for Grafana] in JSON format.
+
+* `examples/metrics/grafana-dashboards`
+
+This procedure uses the example Grafana configuration file and example dashboards.
+
+The example dashboards are a good starting point for monitoring key metrics, but they don't show all the metrics supported by Kafka.
 You can modify the example dashboards or add other metrics, depending on your infrastructure.
 
 NOTE: No alert notification rules are defined.
 
 When accessing a dashboard, you can use the `port-forward` command to forward traffic from the Grafana pod to the host.
+The name of the Grafana pod is different for each user.
 
-NOTE: The name of the Grafana pod is different for each user.
+.Prerequisites
+* xref:proc-metrics-kafka-deploy-options-{context}[Metrics are configured for the Kafka cluster resource]
+* xref:assembly-metrics-prometheus-{context}[Prometheus and Prometheus Alertmanager are deployed]
 
 .Procedure
 
-. Get the details of the Grafana service:
+. Deploy Grafana.
++
+[source,shell,subs="+quotes,attributes"]
+kubectl apply -f grafana.yaml
+
+. Get the details of the Grafana service.
 +
 [source,shell]
 ----
@@ -62,7 +68,7 @@ kubectl port-forward svc/grafana 3000:3000
 +
 The Grafana Log In page appears.
 
-. Enter your user name and password, and then click btn:[Log In].
+. Enter your user name and password, and then click *Log In*.
 +
 The default Grafana user name and password are both `admin`. After logging in for the first time, you can change the password.
 
@@ -70,7 +76,7 @@ The default Grafana user name and password are both `admin`. After logging in fo
 +
 * Specify a name
 * Add _Prometheus_ as the type
-* Specify a Prometheus server URL (http://prometheus-operated:9090)
+* Specify a Prometheus server URL (\http://prometheus-operated:9090)
 +
 Save and test the connection when you have added the details.
 +
@@ -81,92 +87,6 @@ image::grafana_prometheus_data_source.png[Add Prometheus data source]
 . On the top header, click the dashboard drop-down menu, and then select the dashboard you want to view.
 +
 When the Prometheus server has been collecting metrics for a Strimzi cluster for some time, the dashboards are populated.
-
-.Strimzi charts
-
++
 .Dashboard selection options
-
 image::grafana-dashboard-selection.png[Strimzi dashboard selection]
-
-Strimzi Kafka:: Shows metrics for:
-+
-* Brokers online count
-* Active controllers in the cluster count
-* Unclean leader election rate
-* Replicas that are online
-* Under-replicated partitions count
-* Partitions which are at their minimum in sync replica count
-* Partitions which are under their minimum in sync replica count
-* Partitions that do not have an active leader and are hence not writable or readable
-* Kafka broker pods memory usage
-* Aggregated Kafka broker pods CPU usage
-* Kafka broker pods disk usage
-* JVM memory used
-* JVM garbage collection time
-* JVM garbage collection count
-* Total incoming byte rate
-* Total outgoing byte rate
-* Incoming messages rate
-* Total produce request rate
-* Byte rate
-* Produce request rate
-* Fetch request rate
-* Network processor average time idle percentage
-* Request handler average time idle percentage
-* Log size
-+
-.Strimzi Kafka dashboard
-
-image::grafana_kafka_dashboard.png[Kafka dashboard]
-
-Strimzi ZooKeeper:: Shows metrics for:
-+
-* Quorum Size of Zookeeper ensemble
-* Number of _alive_ connections
-* Queued requests in the server count
-* Watchers count
-* ZooKeeper pods memory usage
-* Aggregated ZooKeeper pods CPU usage
-* ZooKeeper pods disk usage
-* JVM memory used
-* JVM garbage collection time
-* JVM garbage collection count
-* Amount of time it takes for the server to respond to a client request (maximum, minimum and average)
-
-Strimzi Operators:: Shows metrics for:
-+
-* Custom resources
-* Successful custom resource reconciliations per hour
-* Failed custom resource reconciliations per hour
-* Reconciliations without locks per hour
-* Reconciliations started hour
-* Periodical reconciliations per hour
-* Maximum reconciliation time
-* Average reconciliation time
-* JVM memory used
-* JVM garbage collection time
-* JVM garbage collection count
-
-Strimzi Kafka Connect:: Shows metrics for:
-+
-* Total incoming byte rate
-* Total outgoing byte rate
-* Disk usage
-* JVM memory used
-* JVM garbage collection time
-
-Strimzi Kafka MirrorMaker 2:: Shows metrics for:
-+
-* Number of connectors
-* Number of tasks
-* Total incoming byte rate
-* Total outgoing byte rate
-* Disk usage
-* JVM memory used
-* JVM garbage collection time
-
-Strimzi Kafka Bridge:: See xref:assembly-kafka-bridge-{context}[].
-
-Strimzi Cruise Control:: See xref:assembly-cruise-control-{context}[].
-
-Strimzi Kafka Exporter:: See xref:proc-kafka-exporter-enabling-{context}[].

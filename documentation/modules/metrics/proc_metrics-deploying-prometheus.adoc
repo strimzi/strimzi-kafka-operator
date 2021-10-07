@@ -9,7 +9,7 @@
 [role="_abstract"]
 Use Prometheus to obtain monitoring data in your Kafka cluster.
 
-You can use your own Prometheus deployment or deploy Prometheus using the xref:ref-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi.
+You can use your own Prometheus deployment or deploy Prometheus using the xref:assembly-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi.
 The example files include a configuration file for a Prometheus deployment and files for Prometheus-related resources:
 
 * `examples/metrics/prometheus-install/prometheus.yaml`

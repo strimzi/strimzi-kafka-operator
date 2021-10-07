@@ -3,26 +3,23 @@
 // deploying/deploying.adoc
 
 [id='assembly-metrics-setup-{context}']
-= Add Prometheus and Grafana
+= Using Prometheus with Strimzi
 
 You can use Prometheus to provide monitoring data for the example Grafana dashboards provided with Strimzi.
 
-In order to run the example Grafana dashboards, you must:
+To expose metrics in Prometheus format, you add configuration to a custom resource.
+You will also need to make sure that the metrics are scraped by your monitoring stack.
+Prometheus and Prometheus Alertmanager are used in the examples provided by Strimzi, but you can use also other compatible tools.
 
-. xref:proc-metrics-kafka-deploy-options-{context}[Add metrics configuration to your Kafka cluster resource]
-. xref:assembly-metrics-prometheus-{context}[Deploy Prometheus and Prometheus Alertmanager]
-. xref:assembly-metrics-grafana-{context}[Deploy Grafana]
-
-NOTE: The resources referenced in this section are intended as a starting point for setting up monitoring, but they are provided as examples only.
-If you require further support on configuring and running Prometheus or Grafana in production, try reaching out to their respective communities.
+. xref:proc-metrics-kafka-deploy-options-{context}[Deploying Prometheus metrics configuration]
+. xref:assembly-metrics-prometheus-{context}[Setting up Prometheus]
+. xref:proc-metrics-deploying-prometheus-alertmanager-{context}[Deploying Prometheus Alertmanager]
 
 include::modules/proc-metrics-kafka-deploy-options.adoc[leveloffset=+1]
 
 include::assembly_metrics-prometheus-deploy.adoc[leveloffset=+1]
 
-include::assembly_metrics-prometheus-alertmanager.adoc[leveloffset=+1]
-
-include::assembly_metrics-grafana.adoc[leveloffset=+1]
+include::modules/proc_metrics-deploying-prometheus-alertmanager.adoc[leveloffset=+1]
 
 ifdef::InstallationAppendix[]
 include::modules/con_metrics-kafka-mini-kube.adoc[leveloffset=+1]

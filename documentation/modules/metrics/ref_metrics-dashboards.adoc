@@ -1,0 +1,51 @@
+
+// This assembly is included in the following assemblies:
+//
+// metrics/assembly-metrics-config-files.adoc
+
+[id='ref-metrics-dashboards-{context}']
+= Example Grafana dashboards
+
+[role="_abstract"]
+If you deploy Prometheus to provide metrics,
+you can use Strimzi's example Grafana dashboards to monitor Strimzi components.
+
+Example dashboards are provided in the `examples/metrics/grafana-dashboards` directory as JSON files.
+
+All dashboards provide JVM metrics, as well as metrics specific to the component.
+For example, the Grafana dashboard for Strimzi operators provides information on the number of reconciliations or custom resources they are processing.
+
+The example dashboards don't show all the metrics supported by Kafka.
+The dashboards are populated with a representative set of metrics for monitoring.
+
+.Example Grafana dashboard files
+[cols="2*",options="header",stripes="none"]
+|===
+|Component
+|Example JSON file
+
+|Strimzi operators
+|`strimzi-operators.json`
+
+|Kafka
+|`strimzi-kafka.json`
+
+|ZooKeeper
+|`strimzi-zookeeper.json`
+
+|Kafka Connect
+|`strimzi-kafka-connect.json`
+
+|Kafka MirrorMaker 2.0
+|`strimzi-kafka-mirror-maker-2.json`
+
+|Kafka Bridge
+|`strimzi-kafka-bridge.json`
+
+|Cruise Control
+|`strimzi-cruise-control.json`
+
+|Kafka Exporter
+|`strimzi-kafka-exporter.json`
+
+|===

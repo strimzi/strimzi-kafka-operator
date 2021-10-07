@@ -5,45 +5,164 @@
 [id='proc-metrics-kafka-deploy-options-{context}']
 = Deploying Prometheus metrics configuration
 
-Strimzi provides xref:ref-metrics-yaml-files-{context}[example custom resource configuration YAML files] with relabeling rules.
+[role="_abstract"]
+Deploy Prometheus metrics configuration to use Prometheus with Strimzi.
 
-To apply metrics configuration of relabeling rules, do one of the following:
+You can use your own configuration or Strimzi's xref:ref-metrics-prometheus-metrics-config-{context}[example custom resource configuration files].
 
-* xref:proc-metrics-kafka-{context}[Copy the example configuration to your own custom resource definition]
-* xref:proc-metrics-deploying-kafka-{context}[Deploy the custom resource with the metrics configuration]
+* `kafka-metrics.yaml`
+* `kafka-connect-metrics.yaml`
+* `kafka-mirror-maker-2-metrics.yaml`
+* `kafka-bridge-metrics.yaml`
+* `kafka-cruise-control-metrics.yaml`
 
-[id='proc-metrics-kafka-{context}']
-== Copying Prometheus metrics configuration to a custom resource
+The example configuration files have relabeling rules and the configuration required to enable Prometheus metrics.
+Prometheus scrapes metrics from target HTTP endpoints.
+The example files are a good way to try Prometheus with Strimzi.
 
-To use Grafana dashboards for monitoring, copy xref:ref-metrics-yaml-files-{context}[the example metrics configuration to a custom resource].
+To apply the relabeling rules and metrics configuration, do one of the following:
 
-In this procedure, the `Kafka` resource is updated, but the procedure is the same for all components that support monitoring.
+* Copy the example configuration to your own custom resources
+* Deploy the custom resource with the metrics configuration
 
-.Procedure
-Perform the following steps for each `Kafka` resource in your deployment.
+If you want to include Kafka Exporter metrics, add `kafkaExporter` configuration to your `Kafka` resource.
 
-. Update the `Kafka` resource in an editor.
-+
-[source,shell,subs="+quotes,attributes"]
-----
-kubectl edit kafka _KAFKA-CONFIG-FILE_
-----
+IMPORTANT: Kafka Exporter provides only additional metrics related to consumer lag and consumer offsets.
+For regular Kafka metrics, you have to configure the Prometheus metrics in xref:proc-metrics-kafka-deploy-options-{context}[Kafka brokers].
 
-. Copy the xref:ref-metrics-yaml-files-{context}[example configuration in `kafka-metrics.yaml`] to your own `Kafka` resource definition.
-. Save the file, and wait for the updated resource to be reconciled.
-
-[id='proc-metrics-deploying-kafka-{context}']
-== Deploying a Kafka cluster with Prometheus metrics configuration
-
-To use Grafana dashboards for monitoring, you can deploy xref:ref-metrics-config-files-{context}[an example Kafka cluster with metrics configuration].
-
-In this procedure, The `kafka-metrics.yaml` file is used for the `Kafka` resource.
+This procedure shows how to deploy Prometheus metrics configuration in the `Kafka` resource.
+The process is the same when using the example files for other resources.
 
 .Procedure
 
-* Deploy the Kafka cluster with the xref:ref-metrics-yaml-files-{context}[example metrics configuration].
+. Deploy the example custom resource with the Prometheus configuration.
 +
+For example, for each `Kafka` resource you apply the `kafka-metrics.yaml` file.
++
+.Deploying the example configuration
 [source,shell,subs="+attributes"]
 ----
 kubectl apply -f kafka-metrics.yaml
 ----
++
+Alternatively, you can copy the example configuration in `kafka-metrics.yaml` to your own `Kafka` resource.
++
+.Copying the example configuration
+[source,shell,subs="+quotes,attributes"]
+----
+kubectl edit kafka _<kafka-configuration-file>_
+----
++
+Copy the `metricsConfig` property and the `ConfigMap` it references to your `Kafka` resource.
++
+.Example metrics configuration for Kafka
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    metricsConfig: <1>
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: my-config-map
+          key: my-key
+---
+kind: ConfigMap <2>
+apiVersion: v1
+metadata:
+  name: kafka-metrics
+  labels:
+    app: strimzi
+data:
+  kafka-metrics-config.yml: |
+  # _metrics configuration..._
+----
+<1> Copy the `metricsConfig` property that references the ConfigMap that contains metrics configuration.
+<2> Copy the whole `ConfigMap` that specifies the metrics configuration.
++
+[NOTE]
+====
+For Kafka Bridge, you specify the `enableMetrics` property and set it to `true`.
+
+.Enabling metrics for Kafka Bridge
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  # ...
+  bootstrapServers: my-cluster-kafka:9092
+  http:
+    # ...
+  enableMetrics: true
+  # ...
+----
+====
+
+. To deploy Kafka Exporter, add `kafkaExporter` configuration.
++
+`kafkaExporter` configuration is only specified in the `Kafka` resource.
++
+.Example configuration for deploying Kafka Exporter
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  kafkaExporter:
+    image: my-registry.io/my-org/my-exporter-cluster:latest <1>
+    groupRegex: ".*" <2>
+    topicRegex: ".*" <3>
+    resources: <4>
+      requests:
+        cpu: 200m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 128Mi
+    logging: debug <5>
+    enableSaramaLogging: true <6>
+    template: <7>
+      pod:
+        metadata:
+          labels:
+            label1: value1
+        imagePullSecrets:
+          - name: my-docker-credentials
+        securityContext:
+          runAsUser: 1000001
+          fsGroup: 0
+        terminationGracePeriodSeconds: 120
+    readinessProbe: <8>
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+    livenessProbe: <9>
+      initialDelaySeconds: 15
+      timeoutSeconds: 5
+# ...
+----
+<1> ADVANCED OPTION: Container image configuration, which is link:{BookURLUsing}#con-common-configuration-images-reference[recommended only in special situations].
+<2> A regular expression to specify the consumer groups to include in the metrics.
+<3> A regular expression to specify the topics to include in the metrics.
+<4> link:{BookURLUsing}#con-common-configuration-resources-reference[CPU and memory resources to reserve].
+<5> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
+<6> Boolean to enable Sarama logging, a Go client library used by Kafka Exporter.
+<7> link:{BookURLUsing}#assembly-customizing-kubernetes-resources-str[Customization of deployment templates and pods].
+<8> link:{BookURLUsing}#con-common-configuration-healthchecks-reference[Healthcheck readiness probes].
+<9> link:{BookURLUsing}#con-common-configuration-healthchecks-reference[Healthcheck liveness probes].
+
+[role="_additional-resources"]
+.Additional resources
+
+* link:{BookURLUsing}#type-KafkaExporterTemplate-reference[`KafkaExporterTemplate` schema reference]
+* link:{BookURLUsing}#con-common-configuration-prometheus-reference[`metricsConfig` schema reference]

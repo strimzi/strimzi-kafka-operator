@@ -44,7 +44,7 @@
 :GrafanaHome: link:https://grafana.com/[Grafana Labs^]
 :JMXExporter: link:https://github.com/prometheus/jmx_exporter[JMX Exporter documentation^]
 :PrometheusHome: link:https://github.com/prometheus[Prometheus^]
-:PrometheusConfig: link:https://prometheus.io/docs/prometheus/latest/configuration/configuration[Configuration^]
+:PrometheusConfig: link:https://prometheus.io/docs/prometheus/latest/configuration/configuration[Prometheus configuration^]
 :kafka-exporter-project: link:https://github.com/danielqsj/kafka_exporter[Kafka Exporter^]
 
 //OAuth attributes and links

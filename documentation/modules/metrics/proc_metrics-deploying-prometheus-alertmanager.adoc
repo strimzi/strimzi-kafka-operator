@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// metrics/assembly_metrics-prometheus-alertmanager.adoc
+// metrics/assembly_metrics-prometheus-setup.adoc
 
 [id='proc-metrics-deploying-prometheus-alertmanager-{context}']
 
@@ -8,8 +8,10 @@
 
 [role="_abstract"]
 Use Alertmanager to route alerts to a notification service.
+link:https://prometheus.io/docs/alerting/alertmanager/[Prometheus Alertmanager^] is a component for handling alerts and routing them to a notification service.
+Alertmanager supports an essential aspect of monitoring, which is to be notified of conditions that indicate potential issues based on alerting rules.
 
-You can use the xref:ref-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi to deploy Alertmanager to send notifications to a Slack channel.
+You can use the xref:assembly-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi to deploy Alertmanager to send notifications to a Slack channel.
 A configuration file defines the resources for deploying Alertmanager:
 
 * `examples/metrics/prometheus-install/alert-manager.yaml`
