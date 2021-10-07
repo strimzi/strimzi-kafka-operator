@@ -69,23 +69,23 @@ env:
     value: "^key1.*"
 ----
 
-`STRIMZI_CUSTOM_{CR_NAME}_LABELS`:: Optional.
-One or more custom labels to apply to all the Pods created by the `{CR_NAME}` custom resource.  
+`STRIMZI_CUSTOM_{COMPONENT_NAME}_LABELS`:: Optional.
+One or more custom labels to apply to all the Pods created by the `{COMPONENT_NAME}` custom resource.  
 The Cluster Operator labels the Pods when the custom resource is created or is next reconciled.
 +
 Environment variables exist for the following custom resources:
 +
-* KAFKA
-* KAFKA_CONNECT
-* KAFKA_CONNECT_BUILD
-* ZOOKEEPER
-* ENTITY_OPERATOR
-* KAFKA_MIRROR_MAKER2
-* KAFKA_MIRROR_MAKER
-* CRUISE_CONTROL
-* KAFKA_BRIDGE
-* KAFKA_EXPORTER
-* JMX_TRANS
+* `KAFKA`
+* `KAFKA_CONNECT`
+* `KAFKA_CONNECT_BUILD`
+* `ZOOKEEPER`
+* `ENTITY_OPERATOR`
+* `KAFKA_MIRROR_MAKER2`
+* `KAFKA_MIRROR_MAKER`
+* `CRUISE_CONTROL`
+* `KAFKA_BRIDGE`
+* `KAFKA_EXPORTER`
+* `JMX_TRANS`
 
 `STRIMZI_CUSTOM_RESOURCE_SELECTOR`:: Optional.
 Specifies label selector used to filter the custom resources handled by the operator.
