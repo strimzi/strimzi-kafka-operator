@@ -10,10 +10,15 @@ include::shared/attributes.adoc[]
 
 //key features
 include::assemblies/overview/assembly-key-features.adoc[leveloffset=+1]
-//Kafka concepts
-include::assemblies/overview/assembly-kafka-concepts.adoc[leveloffset=+1]
 //Kafka components
 include::assemblies/overview/assembly-kafka-components.adoc[leveloffset=+1]
+//Kafka concepts
+include::assemblies/overview/assembly-kafka-concepts.adoc[leveloffset=+1]
+//Kafka Connect components
+include::assemblies/overview/assembly-kafka-connect-components.adoc[leveloffset=+1]
+//description of kafka bridge
+include::modules/overview/con-overview-components-kafka-bridge.adoc[leveloffset=+1]
+include::modules/overview/con-overview-components-kafka-bridge-clients.adoc[leveloffset=+2]
 //Product components
 include::assemblies/overview/assembly-overview-components.adoc[leveloffset=+1]
 //Main configuration points

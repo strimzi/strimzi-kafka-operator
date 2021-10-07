@@ -7,8 +7,5 @@
 
 //standard kafka deployment intro
 include::../../shared/snip-intro-kafka-deployment.adoc[leveloffset=+1]
-
+//Overview of Kafka component interaction
 include::modules/con-kafka-concepts-components.adoc[leveloffset=+1]
-//description of kafka bridge
-include::modules/con-overview-components-kafka-bridge.adoc[leveloffset=+1]
-include::modules/con-overview-components-kafka-bridge-clients.adoc[leveloffset=+2]

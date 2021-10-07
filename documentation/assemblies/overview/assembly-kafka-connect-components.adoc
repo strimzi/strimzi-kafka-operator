@@ -1,0 +1,31 @@
+// This assembly is included in:
+//
+// overview/overview.adoc
+
+[id="kafka-connect-components_{context}"]
+= About Kafka Connect
+
+[role="_abstract"]
+Kafka Connect is an integration toolkit for streaming data between Kafka brokers and other systems.
+The other system is typically an external data source or target, such as a database.
+
+Kafka Connect uses a plugin architecture.
+Plugins allow connections to other systems and provide additional configuration to manipulate data.
+Plugins include _connectors_ and other components, such as data converters and transforms.
+A connector operates with a specific type of external system.
+Each connector defines a schema for its configuration.
+You supply the configuration to Kafka Connect to create a _connector instance_ within Kafka Connect.
+Connector instances then define a set of tasks for moving data between systems.
+
+Strimzi operates Kafka Connect in _distributed mode_, distributing data streaming tasks across one or more worker pods.
+A Kafka Connect cluster comprises a group of worker pods.
+Each connector is instantiated on a single worker.
+Each connector comprises one or more tasks that are distributed across the group of workers.
+Distribution across workers permits highly scalable pipelines.
+
+Workers convert data from one format into another format that's suitable for the source or target system.
+Depending on the configuration of the connector instance, workers might also apply transforms (also known as Single Message Transforms, or SMTs).
+Transforms adjust messages, such as filtering certain data, before they are converted.
+Kafka Connect has some built-in transforms, but other transformations can be provided by plugins if necessary.
+
+include::modules/con-key-features-kafka-connect.adoc[leveloffset=+1]

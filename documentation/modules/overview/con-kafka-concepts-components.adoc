@@ -5,7 +5,7 @@
 [id="kafka-concepts-components_{context}"]
 = Kafka component architecture
 
-A cluster of Kafka brokers is main part of the Apache Kafka project responsible for delivering messages.
+A cluster of Kafka brokers handles delivery of messages.
 
 A broker uses Apache ZooKeeper for storing configuration data and for cluster coordination.
 Before running Apache Kafka, an Apache ZooKeeper cluster has to be ready.

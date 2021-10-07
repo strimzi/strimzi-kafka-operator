@@ -3,12 +3,13 @@
 // overview/assembly-kafka-concepts.adoc
 
 [id="kafka-concepts-key_{context}"]
-= Kafka concepts
+= How Kafka operates as a message broker
 
-Knowledge of the key concepts of Kafka is important in understanding how Strimzi works.
+[role="_abstract"]
+To maximise your experience of using Strimzi, you need to understand how Kafka operates as a message broker.
 
 A Kafka cluster comprises multiple brokers.
-Topics are used to receive and store data in a Kafka cluster.
+Brokers contain topics that receive and store data.
 Topics are split by partitions, where the data is written.
 Partitions are replicated across topics for fault tolerance.
 
