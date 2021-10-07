@@ -6,6 +6,7 @@ package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -47,7 +48,7 @@ public class JmxUtils {
         return cmdKubeClient().execInPod(podName, cmd).out().trim();
     }
 
-    public static String execJmxTermAndGetResult(String namespace, String serviceName, String secretName, String podName, String commands) {
+    public static String collectJmxMetricsWithWait(String namespace, String serviceName, String secretName, String podName, String commands) {
         Secret jmxSecret = kubeClient(namespace).getSecret(secretName);
 
         LOGGER.info("Getting username and password for service: {} and secret: {}", serviceName, secretName);
@@ -57,7 +58,16 @@ public class JmxUtils {
         LOGGER.info("Creating script file for service: {}", serviceName);
         createScriptForJMXTermInPod(podName, serviceName, userName, password, commands);
 
-        LOGGER.info("Checking results from JMXTerm");
-        return getResultOfJMXTermExec(podName, serviceName);
+        String[] result = {""};
+
+        LOGGER.info("Waiting for JMX metrics for service: {} will be present", serviceName);
+        TestUtils.waitFor("JMX metrics will be present for service: " + serviceName, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                result[0] = getResultOfJMXTermExec(podName, serviceName);
+                return !result[0].isEmpty();
+            }
+        );
+
+        return result[0];
     }
 }
