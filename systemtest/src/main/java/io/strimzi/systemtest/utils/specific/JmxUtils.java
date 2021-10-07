@@ -48,7 +48,7 @@ public class JmxUtils {
         return cmdKubeClient().execInPod(podName, cmd).out().trim();
     }
 
-    public static String waitForJmxMetrics(String namespace, String serviceName, String secretName, String podName, String commands) {
+    public static String collectJmxMetricsWithWait(String namespace, String serviceName, String secretName, String podName, String commands) {
         Secret jmxSecret = kubeClient(namespace).getSecret(secretName);
 
         LOGGER.info("Getting username and password for service: {} and secret: {}", serviceName, secretName);

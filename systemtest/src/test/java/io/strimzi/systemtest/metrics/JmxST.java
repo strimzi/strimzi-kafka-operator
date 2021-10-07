@@ -93,13 +93,13 @@ public class JmxST extends AbstractST {
 
         Secret jmxZkSecret = kubeClient().getSecret(namespaceName, zkSecretName);
 
-        String kafkaResults = JmxUtils.waitForJmxMetrics(namespaceName, KafkaResources.brokersServiceName(clusterName), kafkaJmxSecretName, clientsPodName, "bean kafka.server:type=app-info\nget -i *");
-        String kafkaConnectResults = JmxUtils.waitForJmxMetrics(namespaceName, KafkaConnectResources.serviceName(clusterName), connectJmxSecretName, clientsPodName, "bean kafka.connect:type=app-info\nget -i *");
+        String kafkaResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.brokersServiceName(clusterName), kafkaJmxSecretName, clientsPodName, "bean kafka.server:type=app-info\nget -i *");
+        String kafkaConnectResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaConnectResources.serviceName(clusterName), connectJmxSecretName, clientsPodName, "bean kafka.connect:type=app-info\nget -i *");
 
-        String zkBeans = JmxUtils.waitForJmxMetrics(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, clientsPodName, "domain org.apache.ZooKeeperService\nbeans");
+        String zkBeans = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, clientsPodName, "domain org.apache.ZooKeeperService\nbeans");
         String zkBean = Arrays.asList(zkBeans.split("\\n")).stream().filter(bean -> bean.matches("org.apache.ZooKeeperService:name[0-9]+=ReplicatedServer_id[0-9]+")).findFirst().get();
 
-        String zkResults = JmxUtils.waitForJmxMetrics(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, clientsPodName, "bean " + zkBean + "\nget -i *");
+        String zkResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, clientsPodName, "bean " + zkBean + "\nget -i *");
 
         assertThat("Result from Kafka JMX doesn't contain right version of Kafka, result: " + kafkaResults, kafkaResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
         assertThat("Result from KafkaConnect JMX doesn't contain right version of Kafka, result: " + kafkaConnectResults, kafkaConnectResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
