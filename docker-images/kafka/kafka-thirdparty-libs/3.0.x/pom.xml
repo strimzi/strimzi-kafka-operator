@@ -36,14 +36,6 @@
             <id>cruise-control</id>
             <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
         </repository>
-        <repository>
-            <id>mm2extensions-staging</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1120</url>
-        </repository>
-        <repository>
-            <id>oauth-staging</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1122</url>
-        </repository>
     </repositories>
 
     <dependencyManagement>
