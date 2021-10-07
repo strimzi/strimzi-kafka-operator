@@ -58,6 +58,35 @@ env:
     value: label1=value1,label2=value2
 ----
 
+`STRIMZI_LABELS_EXCLUSION_PATTERN`:: Optional, default regex pattern is `^app.kubernetes.io/(?!part-of).*`.
+Specifies regex exclusion pattern used to filter labels propagation from the main custom resource to its subresources.
+The labels exclusion filter is not applied to labels in template sections such as `spec.kafka.template.pod.metadata.labels`.
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_LABELS_EXCLUSION_PATTERN
+    value: "^key1.*"
+----
+
+`STRIMZI_CUSTOM_{CR_NAME}_LABELS`:: Optional.
+One or more custom labels to apply to all the Pods created by the `{CR_NAME}` custom resource.  
+The Cluster Operator labels the Pods when the custom resource is created or is next reconciled.
++
+Environment variables exist for the following custom resources:
++
+* KAFKA
+* KAFKA_CONNECT
+* KAFKA_CONNECT_BUILD
+* ZOOKEEPER
+* ENTITY_OPERATOR
+* KAFKA_MIRROR_MAKER2
+* KAFKA_MIRROR_MAKER
+* CRUISE_CONTROL
+* KAFKA_BRIDGE
+* KAFKA_EXPORTER
+* JMX_TRANS
+
 `STRIMZI_CUSTOM_RESOURCE_SELECTOR`:: Optional.
 Specifies label selector used to filter the custom resources handled by the operator.
 The operator will operate only on those custom resources which will have the specified labels set.
@@ -70,17 +99,6 @@ The label selector applies to `Kafka`, `KafkaConnect`, `KafkaBridge`, `KafkaMirr
 env:
   - name: STRIMZI_CUSTOM_RESOURCE_SELECTOR
     value: label1=value1,label2=value2
-----
-
-`STRIMZI_LABELS_EXCLUSION_PATTERN`:: Optional, default regex pattern is `^app.kubernetes.io/(?!part-of).*`.
-Specifies regex exclusion pattern used to filter labels propagation from the main custom resource to its subresources.
-The labels exclusion filter is not applied to labels in template sections such as `spec.kafka.template.pod.metadata.labels`.
-+
-[source,yaml,options="nowrap"]
-----
-env:
-  - name: STRIMZI_LABELS_EXCLUSION_PATTERN
-    value: "^key1.*"
 ----
 
 `STRIMZI_KAFKA_IMAGES`:: Required.
