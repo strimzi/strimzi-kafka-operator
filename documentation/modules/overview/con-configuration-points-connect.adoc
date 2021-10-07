@@ -8,7 +8,8 @@
 [role="_abstract"]
 Use Strimzi’s `KafkaConnect` resource to quickly and easily create new Kafka Connect clusters.
 
-When you deploy Kafka Connect using the `KafkaConnect` resource, you specify bootstrap server addresses (in `spec.bootstrapServers`) for connecting to a Kafka cluster.
+When you deploy Kafka Connect using the `KafkaConnect` resource,
+you specify bootstrap server addresses (in `spec.bootstrapServers`) for connecting to a Kafka cluster.
 You can specify more than one address in case a server goes down.
 You also specify the authentication credentials and TLS encryption certificates to make a secure connection.
 
@@ -32,7 +33,7 @@ Plugins for many external systems are available for use with Kafka Connect.
 You can also create your own plugins.
 
 The configuration describes the source input data and target output data to feed into and out of Kafka Connect.
-The external source data must reference specific topics that will store the messages.
+For a source connector, external source data must reference specific topics that will store the messages.
 The plugins might also contain the libraries and files needed to transform the data.
 
 A Kafka Connect deployment can have one or more plugins, but only one version of each plugin.
@@ -41,7 +42,7 @@ You can create a custom Kafka Connect image that includes your choice of plugins
 You can create the image in two ways:
 
 * link:{BookURLDeploying}#creating-new-image-using-kafka-connect-build-str[Automatically using Kafka Connect configuration^]
-* link:{BookURLDeploying}#creating-new-image-from-base-str[Manually using Dockerfile and a Kafka container image from {DockerRepository} as a base image^]
+* link:{BookURLDeploying}#creating-new-image-from-base-str[Manually using a Dockerfile and a Kafka container image from {DockerRepository} as a base image^]
 
 To create the container image automatically, you specify the plugins to add to your Kafka Connect cluster using the `build` property of the `KafkaConnect` resource.
 Strimzi automatically downloads and adds the plugin artifacts to a new container image.
@@ -104,6 +105,11 @@ If multiple different Kafka Connect clusters are used, these settings must be un
 
 The names of the connectors used by each Kafka Connect cluster must also be unique.
 
+In the following example worker configuration, JSON converters are specified.
+A replication factor is set for the internal Kafka topics used by Kafka Connect.
+This should be at least 3 for a production environment.
+Changing the replication factor after the topics have been created will have no effect.
+
 .Example worker configuration
 [source,yaml,subs="attributes+"]
 ----
@@ -137,8 +143,6 @@ spec:
 <9> Replication factor for the Kafka topic that stores connector offsets.
 <10> Replication factor for the Kafka topic that stores connector and task status configurations.
 <11> Replication factor for the Kafka topic that stores connector and task status updates.
-
-NOTE: In this example, JSON converters are specified.
 
 [discrete]
 == `KafkaConnector` management of connectors
@@ -177,7 +181,7 @@ For a source connector, you might provide a database name in the configuration.
 You can also specify where the data should sit in Kafka by specifying a target topic name.
 
 Use `tasksMax` to specify the maximum number of tasks.
-For example, a source connector with `tasksMax: 2` can split the import of source data into two tasks.
+For example, a source connector with `tasksMax: 2` might split the import of source data into two tasks.
 
 .Example KafkaConnector source connector configuration
 [source,yaml,subs="attributes+"]
@@ -198,7 +202,7 @@ spec:
 ----
 <1> Name of the `KafkaConnector` resource, which is used as the name of the connector. Use any name that is valid for a Kubernetes resource.
 <2> Name of the Kafka Connect cluster to create the connector instance in. Connectors must be deployed to the same namespace as the Kafka Connect cluster they link to.
-<3> Full name of the connector class. This should be present in the image being used by the Kafka Connect cluster. You can use an alias if one is defined.
+<3> Full name of the connector class. This should be present in the image being used by the Kafka Connect cluster.
 <4> Maximum number of Kafka Connect tasks that the connector can create.
 <5> link:{BookURLDeploying}#kafkaconnector-configs[Connector configuration^] as key-value pairs.
 <6> Location of the external data file. In this example, we're configuring the `FileStreamSourceConnector` to read from the `/opt/kafka/LICENSE` file.

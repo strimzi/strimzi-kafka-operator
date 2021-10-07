@@ -89,11 +89,11 @@ You can control the maximum number of tasks that can run in parallel by setting 
 The connector might create fewer tasks than the maximum setting.
 For example, the connector might create fewer tasks if it's not possible to split the source data into that many partitions.
 
-NOTE: In the context of Kafka Connect, a _partition_ can mean a topic partition or a _shard of data_ intended for an external system.
+NOTE: In the context of Kafka Connect, a _partition_ can mean a topic partition or a _shard of data_ in an external system.
 
 == Workers
 
-Workers employ the initial connector configuration deployed to the Kafka Connect cluster.
+Workers employ the connector configuration deployed to the Kafka Connect cluster.
 The configuration is stored in an internal Kafka topic used by Kafka Connect.
 Workers also run connectors and their tasks.
 
@@ -106,7 +106,7 @@ The group ID and names of these topics must also be unique to the Kafka Connect 
 
 Workers are assigned one or more connector instances and tasks.
 The distributed approach to deploying Kafka Connect is fault tolerant and scalable.
-If a worker pod fails, active workers share the tasks.
+If a worker pod fails, the tasks it was running are reassigned to active workers.
 You can add to a group of worker pods through configuration of the `replicas` property in the `KafkaConnect` resource.
 
 == Transforms
