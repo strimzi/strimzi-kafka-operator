@@ -73,7 +73,7 @@ env:
 One or more custom labels to apply to all the Pods created by the `{COMPONENT_NAME}` custom resource.  
 The Cluster Operator labels the Pods when the custom resource is created or is next reconciled.
 +
-Environment variables exist for the following custom resources:
+Environment variables exist for the following components:
 +
 * `KAFKA`
 * `KAFKA_CONNECT`
