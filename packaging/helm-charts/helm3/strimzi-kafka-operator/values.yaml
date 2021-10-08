@@ -87,7 +87,7 @@ kafkaBridge:
     registry: ""
     repository:
     name: kafka-bridge
-    tag: latest
+    tag: 0.20.3
 kafkaExporter:
   image:
     registry: ""
