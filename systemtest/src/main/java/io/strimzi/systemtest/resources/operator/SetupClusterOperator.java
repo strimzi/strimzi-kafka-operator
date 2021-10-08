@@ -125,7 +125,11 @@ public class SetupClusterOperator {
         }
     }
 
-    private boolean isClusterOperatorNamespaceAlreadyCreated() {
+    /**
+     * Auxiliary method, which check if Cluster Operator namespace is created.
+     * @return true if Cluster Operator namespace not created, otherwise false (i.e., namespace already created)
+     */
+    private boolean isClusterOperatorNamespaceNotCreated() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null;
     }
 
@@ -164,7 +168,7 @@ public class SetupClusterOperator {
             if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
                 // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
                 if (!Environment.isNamespaceRbacScope()) {
-                    if (isClusterOperatorNamespaceAlreadyCreated()) {
+                    if (isClusterOperatorNamespaceNotCreated()) {
                         cluster.setNamespace(namespaceInstallTo);
 
                         cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
@@ -176,7 +180,7 @@ public class SetupClusterOperator {
                 }
                 // single-namespace olm co-operator
             } else {
-                if (isClusterOperatorNamespaceAlreadyCreated()) {
+                if (isClusterOperatorNamespaceNotCreated()) {
                     cluster.setNamespace(namespaceInstallTo);
                     cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                     extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
@@ -187,7 +191,7 @@ public class SetupClusterOperator {
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
             helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
-            if (isClusterOperatorNamespaceAlreadyCreated()) {
+            if (isClusterOperatorNamespaceNotCreated()) {
                 cluster.setNamespace(namespaceInstallTo);
                 cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                 extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
@@ -208,7 +212,7 @@ public class SetupClusterOperator {
     private void bundleInstallation() {
         LOGGER.info("Going to install ClusterOperator via Yaml bundle");
         // check if namespace is already created
-        if (isClusterOperatorNamespaceAlreadyCreated()) {
+        if (isClusterOperatorNamespaceNotCreated()) {
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
         } else {
@@ -534,27 +538,27 @@ public class SetupClusterOperator {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
+    public boolean equals(Object other) {
+        if (this == other) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
+        if (other == null || getClass() != other.getClass()) {
             return false;
         }
-        SetupClusterOperator that = (SetupClusterOperator) o;
+        SetupClusterOperator otherInstallation = (SetupClusterOperator) other;
 
-        return operationTimeout == that.operationTimeout &&
-            reconciliationInterval == that.reconciliationInterval &&
-            Objects.equals(cluster, that.cluster) &&
-            Objects.equals(helmResource, that.helmResource) &&
-            Objects.equals(olmResource, that.olmResource) &&
-            Objects.equals(clusterOperatorName, that.clusterOperatorName) &&
-            Objects.equals(namespaceInstallTo, that.namespaceInstallTo) &&
-            Objects.equals(namespaceToWatch, that.namespaceToWatch) &&
-            Objects.equals(bindingsNamespaces, that.bindingsNamespaces) &&
-            Objects.equals(extraEnvVars, that.extraEnvVars) &&
-            Objects.equals(extraLabels, that.extraLabels) &&
-            clusterOperatorRBACType == that.clusterOperatorRBACType;
+        return operationTimeout == otherInstallation.operationTimeout &&
+            reconciliationInterval == otherInstallation.reconciliationInterval &&
+            Objects.equals(cluster, otherInstallation.cluster) &&
+            Objects.equals(helmResource, otherInstallation.helmResource) &&
+            Objects.equals(olmResource, otherInstallation.olmResource) &&
+            Objects.equals(clusterOperatorName, otherInstallation.clusterOperatorName) &&
+            Objects.equals(namespaceInstallTo, otherInstallation.namespaceInstallTo) &&
+            Objects.equals(namespaceToWatch, otherInstallation.namespaceToWatch) &&
+            Objects.equals(bindingsNamespaces, otherInstallation.bindingsNamespaces) &&
+            Objects.equals(extraEnvVars, otherInstallation.extraEnvVars) &&
+            Objects.equals(extraLabels, otherInstallation.extraLabels) &&
+            clusterOperatorRBACType == otherInstallation.clusterOperatorRBACType;
     }
     @Override
     public int hashCode() {
@@ -583,4 +587,5 @@ public class SetupClusterOperator {
             ", testMethodName='" + testMethodName + '\'' +
             '}';
     }
+
 }

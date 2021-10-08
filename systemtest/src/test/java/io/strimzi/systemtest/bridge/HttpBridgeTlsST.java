@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -48,7 +49,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(ACCEPTANCE)
 @Tag(INTERNAL_CLIENTS_USED)
 @ParallelSuite
-class HttpBridgeTlsST extends HttpBridgeAbstractST {
+class HttpBridgeTlsST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);
     private final String httpBridgeTlsClusterName = "http-bridge-tls-cluster-name";
     private KafkaBridgeExampleClients kafkaBridgeClientJob;
@@ -197,7 +198,7 @@ class HttpBridgeTlsST extends HttpBridgeAbstractST {
             .withConsumerName(consumerName)
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withPort(bridgePort)
+            .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
             .withNamespaceName(NAMESPACE)

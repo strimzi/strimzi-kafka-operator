@@ -7,6 +7,7 @@ package io.strimzi.systemtest.resources.kubernetes;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceType;
+import io.strimzi.test.k8s.KubeClusterResource;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -22,12 +23,14 @@ public class ClusterRoleResource implements ResourceType<ClusterRole> {
     }
     @Override
     public void create(ClusterRole resource) {
-        resource.getMetadata().setNamespace("default");
+        // ClusterRole his operation namespace is only 'default'
+        resource.getMetadata().setNamespace(KubeClusterResource.getInstance().defaultNamespace());
         kubeClient().createOrReplaceClusterRoles(resource);
     }
     @Override
     public void delete(ClusterRole resource) {
-        resource.getMetadata().setNamespace("default");
+        // ClusterRole his operation namespace is only 'default'
+        resource.getMetadata().setNamespace(KubeClusterResource.getInstance().defaultNamespace());
         kubeClient().deleteClusterRole(resource);
     }
     @Override

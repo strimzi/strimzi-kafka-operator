@@ -7,12 +7,12 @@ package io.strimzi.systemtest.bridge;
 import io.strimzi.api.kafka.model.KafkaBridgeHttpCors;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -41,7 +41,7 @@ import static org.hamcrest.Matchers.containsString;
 
 @Tag(BRIDGE)
 @ParallelSuite
-public class HttpBridgeCorsST extends HttpBridgeAbstractST {
+public class HttpBridgeCorsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeCorsST.class);
     private static final String NAMESPACE = ParallelNamespacesSuitesNames.BRIDGE_KAFKA_CORS_NAMESPACE;
@@ -53,7 +53,6 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
     private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
     private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
-    private KafkaBridgeExampleClients kafkaBridgeClientJob;
     private String kafkaClientsPodName;
     private String bridgeUrl;
 
@@ -79,9 +78,7 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         String responseAllowHeaders = BridgeUtils.getHeaderValue("access-control-allow-headers", response);
         LOGGER.info("Checking if response from Bridge is correct");
 
-        final boolean isResponseOk = response.contains("200 OK") || response.contains("204 No Content");
-
-        assertThat(isResponseOk, is(true));
+        assertThat(response.contains("200 OK") || response.contains("204 No Content"), is(true));
         assertThat(BridgeUtils.getHeaderValue("access-control-allow-origin", response), is(ALLOWED_ORIGIN));
         assertThat(responseAllowHeaders, containsString("access-control-allow-origin"));
         assertThat(responseAllowHeaders, containsString("origin"));
@@ -135,18 +132,6 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
             .endMetadata()
             .build());
 
-        kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
-            .withProducerName(producerName + new Random().nextInt(Integer.MAX_VALUE))
-            .withConsumerName(consumerName + new Random().nextInt(Integer.MAX_VALUE))
-            .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeCorsClusterName))
-            .withTopicName(TOPIC_NAME)
-            .withMessageCount(MESSAGE_COUNT)
-            .withPort(bridgePort)
-            .withDelayMs(1000)
-            .withPollInterval(1000)
-            .withNamespaceName(NAMESPACE)
-            .build();
-
         String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(NAMESPACE, false, kafkaClientsName).build());
@@ -162,6 +147,6 @@ public class HttpBridgeCorsST extends HttpBridgeAbstractST {
         KafkaBridgeHttpCors kafkaBridgeHttpCors = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(httpBridgeCorsClusterName).get().getSpec().getHttp().getCors();
         LOGGER.info("Bridge with the following CORS settings {}", kafkaBridgeHttpCors.toString());
 
-        bridgeUrl = KafkaBridgeResources.url(httpBridgeCorsClusterName, NAMESPACE, bridgePort);
+        bridgeUrl = KafkaBridgeResources.url(httpBridgeCorsClusterName, NAMESPACE, Constants.HTTP_BRIDGE_DEFAULT_PORT);
     }
 }

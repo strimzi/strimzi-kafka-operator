@@ -546,7 +546,7 @@ public abstract class AbstractST implements TestSeparator {
             ParallelSuiteController.removeParallelSuite(extensionContext);
         }
 
-        // 1st case = contract that always we always change configuration of CO when we annotate suite to 'isolated' and therefore
+        // 1st case = contract that we always change configuration of CO when we annotate suite to 'isolated' and therefore
         // we need to rollback to default configuration, which most of the suites use.
         // ----
         // 2nd case = transition from if previous suite is @IsolatedSuite and now @ParallelSuite is running we must do

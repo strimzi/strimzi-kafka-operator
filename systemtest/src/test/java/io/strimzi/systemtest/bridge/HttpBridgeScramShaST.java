@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -47,7 +48,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(BRIDGE)
 @Tag(REGRESSION)
 @ParallelSuite
-class HttpBridgeScramShaST extends HttpBridgeAbstractST {
+class HttpBridgeScramShaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
     private final String httpBridgeScramShaClusterName = "http-bridge-scram-sha-cluster-name";
     private static final String NAMESPACE = ParallelNamespacesSuitesNames.BRIDGE_SCRAM_SHA_NAMESPACE;
@@ -190,13 +191,13 @@ class HttpBridgeScramShaST extends HttpBridgeAbstractST {
                     .endTls()
                 .endSpec().build());
 
-        kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
+        kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeScramShaClusterName))
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withPort(bridgePort)
+            .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
             .withNamespaceName(NAMESPACE)

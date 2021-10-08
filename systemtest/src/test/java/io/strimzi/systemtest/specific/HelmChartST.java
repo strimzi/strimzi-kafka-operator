@@ -62,17 +62,21 @@ class HelmChartST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
+        // shared classic CO operator removed
         install.unInstall();
 
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), INFRA_NAMESPACE);
+        // Helm CO created
         helmResource.create(extensionContext);
     }
 
     @Override
     protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
+        // Helm CO deleted
         helmResource.delete();
 
+        // shared classic CO deployed
         install = SetupClusterOperator.defaultInstallation()
             .createInstallation()
             .runInstallation();

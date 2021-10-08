@@ -59,8 +59,6 @@ public class BundleResource implements ResourceType<Deployment> {
     @Override
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public boolean waitForReadiness(Deployment resource) {
-        System.out.println(resource.getMetadata().getName());
-        System.out.println(resource.getMetadata().getNamespace());
         return resource != null
             && resource.getMetadata() != null
             && resource.getMetadata().getName() != null

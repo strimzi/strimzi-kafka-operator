@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
@@ -60,7 +61,7 @@ public class KafkaResource implements ResourceType<Kafka> {
             KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).list()
                 .getItems().stream()
                 .parallel()
-                .filter(kt -> kt.getMetadata().getLabels().get("strimzi.io/cluster").equals(clusterName))
+                .filter(kt -> kt.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL).equals(clusterName))
                 .map(kt -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(kt.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete())
                 .map(kt -> kt.equals(Boolean.TRUE))
                 // check that all topic was successfully deleted

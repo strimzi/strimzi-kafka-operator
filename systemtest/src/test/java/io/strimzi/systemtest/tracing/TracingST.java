@@ -58,7 +58,6 @@ import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.NAMESPACE_KEY;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.TRACING;
-import static io.strimzi.systemtest.bridge.HttpBridgeAbstractST.bridgePort;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -489,7 +488,7 @@ public class TracingST extends AbstractST {
             .withBootstrapAddress(KafkaBridgeResources.serviceName(storageMap.get(extensionContext).getClusterName()))
             .withTopicName(storageMap.get(extensionContext).getTopicName())
             .withMessageCount(MESSAGE_COUNT)
-            .withPort(bridgePort)
+            .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
             .build();

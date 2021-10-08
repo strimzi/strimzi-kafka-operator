@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -36,12 +37,10 @@ import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
-import io.strimzi.test.logs.CollectorElement;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -61,7 +60,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
 @ParallelSuite
-class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
+class HttpBridgeKafkaExternalListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeKafkaExternalListenersST.class);
     private static final String BRIDGE_EXTERNAL_SERVICE =  "shared-http-bridge-external-service";
@@ -72,13 +71,13 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
 
     @ParallelTest
     void testScramShaAuthWithWeirdUsername(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
-        String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd.asdasidioiqweioqiweooioqieioqieoqieooi";
+        final String weirdUserName = "jjglmahyijoambryleyxjjglmahy.ijoambryleyxjjglmahyijoambryleyxasd.asdasidioiqweioqiweooioqieioqieoqieooi";
 
         // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
-        PasswordSecretSource passwordSecret = new PasswordSecretSource();
+        final PasswordSecretSource passwordSecret = new PasswordSecretSource();
         passwordSecret.setSecretName(weirdUserName);
         passwordSecret.setPassword("password");
 
@@ -130,39 +129,41 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
 
     @SuppressWarnings({"checkstyle:MethodLength"})
     private void testWeirdUsername(ExtensionContext extensionContext, String weirdUserName, KafkaListenerAuthentication auth, KafkaBridgeSpec spec, SecurityProtocol securityProtocol) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editMetadata()
                 .withNamespace(NAMESPACE)
             .endMetadata()
             .editSpec()
                 .editKafka()
-                    .withListeners(new GenericKafkaListenerBuilder()
-                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                                .withPort(9093)
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withTls(true)
-                                .withAuth(auth)
-                                .build(),
-                            new GenericKafkaListenerBuilder()
-                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .withAuth(auth)
-                                .build())
+                .withListeners(
+                    new GenericKafkaListenerBuilder()
+                        .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                        .withPort(9093)
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withTls(true)
+                        .withAuth(auth)
+                        .build(),
+                    new GenericKafkaListenerBuilder()
+                        .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                        .withPort(9094)
+                        .withType(KafkaListenerType.NODEPORT)
+                        .withTls(true)
+                        .withAuth(auth)
+                        .build())
                 .endKafka()
-            .endSpec().build());
+            .endSpec()
+            .build());
 
-        final KafkaBridgeExampleClients kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
-            .withBootstrapAddress(KafkaBridgeResources.serviceName(clusterName))
+        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(clusterName + "-" + producerName)
             .withConsumerName(clusterName + "-" + consumerName)
+            .withBootstrapAddress(KafkaBridgeResources.serviceName(clusterName))
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
-            .withPort(bridgePort)
+            .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
             .withNamespaceName(NAMESPACE)
@@ -208,7 +209,7 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
             .endSpec()
             .build());
 
-        Service service = KafkaBridgeUtils.createBridgeNodePortService(clusterName, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
+        final Service service = KafkaBridgeUtils.createBridgeNodePortService(clusterName, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
         ServiceResource.createServiceResource(extensionContext, service, NAMESPACE);
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge()
@@ -310,13 +311,4 @@ class HttpBridgeKafkaExternalListenersST extends HttpBridgeAbstractST {
         ClientUtils.waitForClientSuccess(clusterName + "-" + consumerName, NAMESPACE, MESSAGE_COUNT);
     }
 
-    @BeforeAll
-    void createClassResources(ExtensionContext extensionContext) {
-        LOGGER.debug("===============================================================");
-        LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
-
-        cluster.createNamespace(CollectorElement.createCollectorElement(
-            extensionContext.getRequiredTestClass().getName(),
-            extensionContext.getDisplayName()), NAMESPACE);
-    }
 }

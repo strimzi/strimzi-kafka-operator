@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -63,7 +64,7 @@ import static org.hamcrest.Matchers.containsString;
 @Tag(BRIDGE)
 @Tag(INTERNAL_CLIENTS_USED)
 @IsolatedSuite
-class HttpBridgeST extends HttpBridgeAbstractST {
+class HttpBridgeST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeST.class);
 
     private final String httpBridgeClusterName = "http-bridge-cluster-name";
@@ -82,7 +83,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeClusterName))
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
-            .withPort(bridgePort)
+            .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
             .withNamespaceName(INFRA_NAMESPACE)
@@ -131,7 +132,7 @@ class HttpBridgeST extends HttpBridgeAbstractST {
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeClusterName))
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
-            .withPort(bridgePort)
+            .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
             .withNamespaceName(INFRA_NAMESPACE)
