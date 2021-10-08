@@ -17,20 +17,14 @@ import java.util.stream.Collectors;
  */
 public class ParallelNamespacesSuitesNames {
 
-    public static final String BRIDGE_KAFKA_CORS_NAMESPACE = "bridge-kafka-cors-namespace";
-    public static final String BRIDGE_KAFKA_EXTERNAL_LISTENER_NAMESPACE = "bridge-kafka-external-listener-namespace";
-    public static final String BRIDGE_SCRAM_SHA_NAMESPACE = "bridge-scram-sha-namespace";
-    public static final String BRIDGE_HTTP_TLS_NAMESPACE = "http-bridge-tls-namespace";
-    public static final String METRICS_SECOND_NAMESPACE = "second-metrics-cluster-test";
-
     private static final List<String> PARALLEL_NAMESPACE_SUITE_NAMES = Arrays.asList(
         // default namespace for cluster operator
         Constants.INFRA_NAMESPACE,
-        BRIDGE_KAFKA_CORS_NAMESPACE,
-        BRIDGE_KAFKA_EXTERNAL_LISTENER_NAMESPACE,
-        BRIDGE_SCRAM_SHA_NAMESPACE,
-        BRIDGE_HTTP_TLS_NAMESPACE,
-        METRICS_SECOND_NAMESPACE
+        Constants.BRIDGE_KAFKA_CORS_NAMESPACE,
+        Constants.BRIDGE_KAFKA_EXTERNAL_LISTENER_NAMESPACE,
+        Constants.BRIDGE_SCRAM_SHA_NAMESPACE,
+        Constants.BRIDGE_HTTP_TLS_NAMESPACE,
+        Constants.METRICS_SECOND_NAMESPACE
     );
 
     public static String getRbacNamespacesToWatch() {

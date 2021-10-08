@@ -24,13 +24,10 @@ public class ParallelSuiteController {
     private static int runningTestSuitesInParallelCount;
 
     public synchronized static void addParallelSuite(ExtensionContext extensionContext) {
-        if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PARALLEL_CLASS_COUNT) == null) {
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, ++runningTestSuitesInParallelCount);
-        } else {
-            LOGGER.debug("Adding parallel suite: {}", extensionContext.getDisplayName());
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, ++runningTestSuitesInParallelCount);
-        }
-        LOGGER.debug("Current parallel suites: {}", runningTestSuitesInParallelCount);
+        LOGGER.debug("Adding parallel suite: {}", extensionContext.getDisplayName());
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, ++runningTestSuitesInParallelCount);
+
+        LOGGER.debug("Parallel suites count: {}", runningTestSuitesInParallelCount);
     }
 
 
@@ -42,7 +39,7 @@ public class ParallelSuiteController {
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, --runningTestSuitesInParallelCount);
         }
 
-        LOGGER.debug("Current parallel suites: {}", runningTestSuitesInParallelCount);
+        LOGGER.debug("Parallel suites count: {}", runningTestSuitesInParallelCount);
     }
 
     public static boolean waitUntilZeroParallelSuites() {
@@ -50,7 +47,7 @@ public class ParallelSuiteController {
         boolean preCondition = true;
 
         while (preCondition) {
-            LOGGER.debug("Current number of parallel suites is: {}", runningTestSuitesInParallelCount);
+            LOGGER.debug("Parallel suites count: {}", runningTestSuitesInParallelCount);
             try {
                 Thread.sleep(STARTING_DELAY);
             } catch (InterruptedException e) {

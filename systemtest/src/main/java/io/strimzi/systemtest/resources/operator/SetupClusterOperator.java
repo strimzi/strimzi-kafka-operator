@@ -404,8 +404,8 @@ public class SetupClusterOperator {
                     ResourceManager.getInstance().createResource(extensionContext, customResourceDefinition);
                     break;
                 default:
-                    LOGGER.error("Not known installation resource type: {}", resourceType);
-                    throw new RuntimeException("Not known installation resource type:" + resourceType);
+                    LOGGER.error("Unknown installation resource type: {}", resourceType);
+                    throw new RuntimeException("Unknown installation resource type:" + resourceType);
             }
         }
     }

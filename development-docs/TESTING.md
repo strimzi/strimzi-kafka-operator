@@ -31,6 +31,9 @@ The following requirement is to have built the `systemtest` package dependencies
 * crd-annotations
 * crd-generator
 * api
+* config-model
+* operator-common
+* kafka-oauth-client
 
 You can achieve that with `mvn clean install -DskipTests` or `mvn clean install -am -pl systemtest -DskipTests` commands.
 These dependencies are needed because we use methods from the `test` package and the strimzi model from the `api` package.
@@ -42,8 +45,7 @@ In `main`, you can find all support classes, which are used in the tests.
 
 Notable modules:
 
-* **annotations** — we have our own `@OpenShiftOnly` annotation, which checks if the current cluster is Openshift or not. Any other annotations should be stored here.
-* **clients** — client implementations used in tests.
+* **kafkaclients** — client implementations used in tests.
 * **matchers** — contains our matcher implementation for checking cluster operator logs. For more info see [Cluster Operator log check](#cluster-operator-log-check).
 * **utils** — many actions are the same for most of the tests, and we share them through utils class and static methods. You can find here most of the useful methods.
 * **resources** —  you can find here all methods needed for deploying and managing the lifecycle of Strimzi, Kafka, Kafka Connect, Kafka Bridge, Kafka Mirror Maker and other resources using CRUD methods.
@@ -54,13 +56,13 @@ Notable classes:
 * **Environment** — singleton class, which loads the test environment variables (see following section) used in tests.
 * **Constants** — simple interface holding all constants used in tests.
 * **resources/ResourceManager** - singleton class which stores data about deployed resources and takes care of proper resource deletion.
-* **SetupClusterOperator** - encapsulates the whole installation process of Cluster Operator (i.e., `RoleBinding`, `ClusterRoleBinding`,
+* **resources/operator/SetupClusterOperator** - encapsulates the whole installation process of Cluster Operator (i.e., `RoleBinding`, `ClusterRoleBinding`,
 * `ConfigMap`, `Deployment`, `CustomResourceDefinition`, preparation of the Namespace). The Environment class
   values decide how Cluster Operator should be installed (i.e., Olm, Helm, Bundle). Moreover, it provides `rollbackToDefaultConfiguration()`
   method, which basically re-install Cluster Operator to the default values. In case user wants to edit specific installation,
   one can use `defaultInstallation()`, which returns `SetupClusterOperatorBuilder`.
 * **BeforeAllOnce** - custom extension which executes code only once before all tests are started and after all tests finished.
-* **TestStorage** - generate and stores values in the specific `ExtensionContext`. This ensures that if one want to retrieve data from
+* **storage/TestStorage** - generate and stores values in the specific `ExtensionContext`. This ensures that if one want to retrieve data from
   `TestStorage` it can be done via `ExtensionContext` (with help of ConcurrentHashMap) inside `AbstractST`.
 
 ## Test Phases
@@ -69,7 +71,7 @@ We generally use classic test phases: `setup`, `exercise`, `test` and `teardown`
 
 ### Setup once
 
-This phase creates a complete installation of ClusterOperator with default values. 
+This phase creates a complete installation of ClusterOperator with default values (not including env variables). 
 Furthermore, it should be noted that this installation is generic because it encapsulates the complexity of selecting the type of installation (i.e., `Helm`, `Olm`, `Bundle`). 
 All this is transparent to the user, and the only thing he has to set is the env variables `CLUSTER_OPERATOR_INSTALL_TYPE=[HELM|OLM|BUNDLE]`. 
 To guarantee that the given resources will not be deleted after the given test suite, we use the `root ExtensionContext`, which ensures that the given resources will be deleted only after the whole execution of tests.
@@ -94,22 +96,49 @@ void setupOnce(ExtensionContext extensionContext) {
 
 In this phase, we perform:
 
+* Change configuration of shared Cluster Operator (optional)
 * Deploy the shared Kafka cluster and other components (optional)
 
-The last point is optional because we have some test cases where you want to have a different Kafka configuration for each test scenario, so creating the Kafka cluster and other resources is done in the test phase.
+Both points are optional because we have some test cases where you want to have a different Kafka or Cluster Operator configuration for each test scenario, so creating the Kafka cluster or Cluster Operator  and other resources is done in the test phase .
+Here is an example how to make change of Cluster Operator configuration:
+```java
+@BeforeAll
+void setup(ExtensionContext extensionContext){
+    install.unInstall(); // un-install current Cluster Operator
+    install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        // build your new configuration using chain (fluent) methods
+        .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+        .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+        .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
+        .createInstallation()
+        .runInstallation();
+}
+```
 
 We create resources in the Kubernetes cluster via classes in the `resources` package, which allows you to deploy all components and, if needed, change them from their default configuration using a builder.
-Currently, we have two stacks stored in the `ResourceManager` singleton instance — one for all test class resources and one for test method resources.
 You can create resources anywhere you want. Our resource lifecycle implementation will handle insertion of the resource on top of the stack and deletion at the end of the test method/class.
+Moreover, you should always use `Templates` classes for pre-defined resources. For instance, when one want deploy Kafka cluster
+with tree nodes it can be simply done by following code:
+```java
+final int numberOfKafkaBrokers = 3;
+final int numberOfZooKeeperNodes = 1;
 
+resourceManager.createResource(extensionContext, 
+    // using KafkaTemplate class for pre-defined values
+    KafkaTemplates.kafkaEphemeral(
+        clusterName,
+        numberOfKafkaBrokers, 
+        numberOfZooKeeperNodes).build()
+    );
+```
 
-`ResourceManager` has Map<String, Stack<Runnable>>, which means that for each test case, we have a brand-new stack that stores all resources needed for specific tests. An important aspect is also the `ExtensionContext.class` with which
+`ResourceManager` has Map<String, Stack<ResourceItem>>, which means that for each test case, we have a brand-new stack that stores all resources needed for specific tests. An important aspect is also the `ExtensionContext.class` with which
 we can know which stack is associated with which test uniquely.
 
 Example of setup shared resources in scope of the test suite:
 ```java
 @BeforeAll
-void setUp(ExtensionContext extensionContext){
+void setUp(ExtensionContext extensionContext) {
     // create resources without wait to deploy them simultaneously
     resourceManager.createResource(extensionContext,false, // <- false, deploy all resources asynchronously
     // kafka with cruise control and metrics

@@ -23,7 +23,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
@@ -64,7 +63,7 @@ class HttpBridgeKafkaExternalListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeKafkaExternalListenersST.class);
     private static final String BRIDGE_EXTERNAL_SERVICE =  "shared-http-bridge-external-service";
-    private static final String NAMESPACE = ParallelNamespacesSuitesNames.BRIDGE_KAFKA_EXTERNAL_LISTENER_NAMESPACE;
+    private static final String NAMESPACE = Constants.BRIDGE_KAFKA_EXTERNAL_LISTENER_NAMESPACE;
 
     private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
     private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);

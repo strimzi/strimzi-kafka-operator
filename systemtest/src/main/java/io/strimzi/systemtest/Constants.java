@@ -322,7 +322,13 @@ public interface Constants {
      */
     String LOAD_BALANCER_CLEANUP = "service.kubernetes.io/load-balancer-cleanup";
 
+    // parallel namespaces
     String INFRA_NAMESPACE = "infra-namespace";
+    String BRIDGE_KAFKA_CORS_NAMESPACE = "bridge-kafka-cors-namespace";
+    String BRIDGE_KAFKA_EXTERNAL_LISTENER_NAMESPACE = "bridge-kafka-external-listener-namespace";
+    String BRIDGE_SCRAM_SHA_NAMESPACE = "bridge-scram-sha-namespace";
+    String BRIDGE_HTTP_TLS_NAMESPACE = "http-bridge-tls-namespace";
+    String METRICS_SECOND_NAMESPACE = "second-metrics-cluster-test";
 
     /**
      * Auxiliary variables for storing data across our tests
@@ -344,4 +350,14 @@ public interface Constants {
     String CONSUMER_KEY = "CONSUMER_NAME";
     String KAFKA_CLIENTS_POD_KEY = "KAFKA_CLIENTS_POD_NAME";
     String KAFKA_TRACING_CLIENT_KEY = "KAFKA_TRACING_CLIENT";
+
+    /**
+     * Resource constants for Cluster Operator
+     */
+    // in case we execute more than 5 test cases in parallel we at least these configuration
+    // (because if we use default configuration, the Cluster Operator Pod occasionally restarting because of OOM)
+    String CLUSTER_OPERATOR_RESOURCE_CPU_LIMITS = "1000m";
+    String CLUSTER_OPERATOR_RESOURCE_MEMORY_LIMITS = "2048Mi";
+    String CLUSTER_OPERATOR_RESOURCE_CPU_REQUESTS = "200m";
+    String CLUSTER_OPERATOR_RESOURCE_MEMORY_REQUESTS = "1024Mi";
 }

@@ -36,11 +36,11 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
             sharedExtensionContext = extensionContext.getRoot();
             systemReady = true;
             LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-            LOGGER.debug("{} - [BEFORE SUITE] has been called", BeforeAllOnce.class.getName());
+            LOGGER.debug("[BEFORE SUITE] - Going to setup testing system");
 
             // When we set RBAC policy to NAMESPACE, we must copy all Roles to other (parallel) namespaces.
             if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
-                LOGGER.debug("Cluster Operator is gonna see to these namespaces :\n{}", ParallelNamespacesSuitesNames.getRbacNamespacesToWatch());
+                LOGGER.debug("Watched namespaces: :\n{}", ParallelNamespacesSuitesNames.getRbacNamespacesToWatch());
 
                 // setup cluster operator before all suites only once
                 install = new SetupClusterOperator.SetupClusterOperatorBuilder()
@@ -50,18 +50,16 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
                     .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
                     .createInstallation()
                     .runInstallation();
-                return;
+            } else {
+                // setup cluster operator before all suites only once
+                install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+                    .withExtensionContext(sharedExtensionContext)
+                    .withNamespace(Constants.INFRA_NAMESPACE)
+                    .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+                    .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
+                    .createInstallation()
+                    .runInstallation();
             }
-
-            // setup cluster operator before all suites only once
-            install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                .withExtensionContext(sharedExtensionContext)
-                .withNamespace(Constants.INFRA_NAMESPACE)
-                .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-                .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
-                .createInstallation()
-                .runInstallation();
-
             // this is for correction because callback also count some randomly chosen class twice
             ParallelSuiteController.decrementCounter();
         }

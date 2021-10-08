@@ -16,7 +16,6 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -51,7 +50,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class HttpBridgeScramShaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
     private final String httpBridgeScramShaClusterName = "http-bridge-scram-sha-cluster-name";
-    private static final String NAMESPACE = ParallelNamespacesSuitesNames.BRIDGE_SCRAM_SHA_NAMESPACE;
+    private static final String NAMESPACE = Constants.BRIDGE_SCRAM_SHA_NAMESPACE;
 
     private String kafkaClientsPodName;
     private KafkaBridgeExampleClients kafkaBridgeClientJob;
