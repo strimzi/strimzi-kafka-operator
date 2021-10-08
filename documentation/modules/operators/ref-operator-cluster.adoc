@@ -59,7 +59,7 @@ env:
 ----
 
 `STRIMZI_LABELS_EXCLUSION_PATTERN`:: Optional, default regex pattern is `^app.kubernetes.io/(?!part-of).*`.
-Specifies regex exclusion pattern used to filter labels propagation from the main custom resource to its subresources.
+Specifies the regex exclusion pattern used to filter labels propagation from the main custom resource to its subresources.
 The labels exclusion filter is not applied to labels in template sections such as `spec.kafka.template.pod.metadata.labels`.
 +
 [source,yaml,options="nowrap"]
