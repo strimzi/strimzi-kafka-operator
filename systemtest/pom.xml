@@ -312,8 +312,13 @@
                 <groups>regression</groups>
                 <it.test>
                     kafka/**/*ST,
+                    !kafka/listeners/*ST,
                     !kafka/dynamicconfiguration/**/*ST,
-                    security/oauth/**/*ST
+                    !kafka/ConfigProviderST,
+                    !operators/topic/ThrottlingQuotaST,
+                    security/oauth/**/*ST,
+                    security/custom/*ST,
+                    security/OpaIntegrationST
                 </it.test>
             </properties>
         </profile>
@@ -325,18 +330,23 @@
                 <groups>regression</groups>
                 <it.test>
                     security/**/*ST,
-                    !security/oauth/**/*ST
+                    !security/oauth/**/*ST,
+                    !security/custom/*ST,
+                    !security/OpaIntegrationST
                 </it.test>
             </properties>
         </profile>
 
         <profile>
-            <id>azp_dynconfig_tracing_watcher</id>
+            <id>azp_dynconfig_listeners_tracing_watcher</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>regression</groups>
                 <it.test>
                     kafka/dynamicconfiguration/**/*ST,
+                    kafka/listeners/*ST,
+                    kafka/ConfigProviderST,
+                    operators/topic/ThrottlingQuotaST,
                     tracing/**/*ST,
                     watcher/**/*ST
                 </it.test>
@@ -344,12 +354,13 @@
         </profile>
 
         <profile>
-            <id>azp_rolling_update</id>
+            <id>azp_rolling_update_bridge</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>regression</groups>
                 <it.test>
-                    rollingupdate/**/*ST
+                    rollingupdate/**/*ST,
+                    bridge/**/*ST
                 </it.test>
             </properties>
         </profile>
@@ -390,7 +401,8 @@
                     !operators/**/*ST,
                     !rollingupdate/**/*ST,
                     !watcher/**/*ST,
-                    !tracing/**/*ST
+                    !tracing/**/*ST,
+                    !bridge/**/*ST
                 </it.test>
             </properties>
         </profile>
