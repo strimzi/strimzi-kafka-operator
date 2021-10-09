@@ -315,7 +315,6 @@
                     !kafka/listeners/*ST,
                     !kafka/dynamicconfiguration/**/*ST,
                     !kafka/ConfigProviderST,
-                    !operators/topic/ThrottlingQuotaST,
                     security/oauth/**/*ST,
                     security/custom/*ST,
                     security/OpaIntegrationST
@@ -383,7 +382,8 @@
                 <skipTests>false</skipTests>
                 <groups>regression</groups>
                 <it.test>
-                    operators/**/*ST
+                    operators/**/*ST,
+                    !operators/topic/ThrottlingQuotaST
                 </it.test>
             </properties>
         </profile>
