@@ -29,28 +29,17 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
-@JsonPropertyOrder({ "pullSecret", "output", "connectorPlugins", "resources" })
+@JsonPropertyOrder({ "output", "connectorPlugins", "resources" })
 @DescriptionFile
 @EqualsAndHashCode
 public class Build implements Serializable, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 
-    private String pullSecret;
     private Output output;
     private List<Plugin> plugins;
     private ResourceRequirements resources;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    @Description("Secret used to pull base image")
-    public String getPullSecret() {
-        return pullSecret;
-    }
-
-    public void setPullSecret(String pullSecret) {
-        this.pullSecret = pullSecret;
-    }
 
     @Description("Configures where should the newly built image be stored. " +
             "Required")

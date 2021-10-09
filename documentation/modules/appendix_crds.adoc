@@ -838,7 +838,7 @@ Used in: xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:
 [id='type-MetadataTemplate-{context}']
 ### `MetadataTemplate` schema reference
 
-Used in: xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`], xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`], xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
+Used in: xref:type-BuildConfigTemplate-{context}[`BuildConfigTemplate`], xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`], xref:type-InternalServiceTemplate-{context}[`InternalServiceTemplate`], xref:type-PodDisruptionBudgetTemplate-{context}[`PodDisruptionBudgetTemplate`], xref:type-PodTemplate-{context}[`PodTemplate`], xref:type-ResourceTemplate-{context}[`ResourceTemplate`], xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
 
 xref:type-MetadataTemplate-schema-{context}[Full list of `MetadataTemplate` schema properties]
 
@@ -1813,7 +1813,7 @@ Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Kaf
 |buildContainer       1.2+<.<a|Template for the Kafka Connect Build container. The build container is used only on Kubernetes.
 |xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
 |buildConfig          1.2+<.<a|Template for the Kafka Connect BuildConfig used to build new container images. The BuildConfig is used only on OpenShift.
-|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|xref:type-BuildConfigTemplate-{context}[`BuildConfigTemplate`]
 |buildServiceAccount  1.2+<.<a|Template for the Kafka Connect Build service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |jmxSecret            1.2+<.<a|Template for Secret of the Kafka Connect Cluster JMX authentication.
@@ -1833,6 +1833,21 @@ Used in: xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:ty
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |deploymentStrategy  1.2+<.<a|DeploymentStrategy which will be used for this Deployment. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
 |string (one of [RollingUpdate, Recreate])
+|====
+
+[id='type-BuildConfigTemplate-{context}']
+### `BuildConfigTemplate` schema reference
+
+Used in: xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
+
+
+[options="header"]
+|====
+|Property           |Description
+|metadata    1.2+<.<a|Metadata to apply to the `PodDistruptionBugetTemplate` resource.
+|xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
+|pullSecret  1.2+<.<a|Container Registry Secret with the credentials for pulling the base image.
+|string
 |====
 
 [id='type-ExternalConfiguration-{context}']
@@ -1927,16 +1942,14 @@ include::../api/io.strimzi.api.kafka.model.connect.build.Build.adoc[leveloffset=
 
 [options="header"]
 |====
-|Property           |Description
-|pullSecret  1.2+<.<a|Secret used to pull base image.
-|string
-|output      1.2+<.<a|Configures where should the newly built image be stored. Required. The type depends on the value of the `output.type` property within the given object, which must be one of [docker, imagestream].
+|Property          |Description
+|output     1.2+<.<a|Configures where should the newly built image be stored. Required. The type depends on the value of the `output.type` property within the given object, which must be one of [docker, imagestream].
 |xref:type-DockerOutput-{context}[`DockerOutput`], xref:type-ImageStreamOutput-{context}[`ImageStreamOutput`]
-|resources   1.2+<.<a|CPU and memory resources to reserve for the build. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
+|resources  1.2+<.<a|CPU and memory resources to reserve for the build. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements]
-|plugins     1.2+<.<a|List of connector plugins which should be added to the Kafka Connect. Required.
+|plugins    1.2+<.<a|List of connector plugins which should be added to the Kafka Connect. Required.
 |xref:type-Plugin-{context}[`Plugin`] array
 |====
 

@@ -59,6 +59,7 @@ public class KafkaConnectBuild extends AbstractModel {
     private Map<String, String> templateBuildConfigAnnotations;
     private String baseImage;
     private List<String> additionalKanikoOptions;
+    private String pullSecret;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -132,13 +133,17 @@ public class KafkaConnectBuild extends AbstractModel {
                 build.templateBuildContainerSecurityContext = template.getBuildContainer().getSecurityContext();
             }
 
-            if (template.getBuildConfig() != null && template.getBuildConfig().getMetadata() != null)  {
-                if (template.getBuildConfig().getMetadata().getLabels() != null)  {
-                    build.templateBuildConfigLabels = template.getBuildConfig().getMetadata().getLabels();
-                }
+            if (template.getBuildConfig() != null) {
+                build.pullSecret = template.getBuildConfig().getPullSecret();
 
-                if (template.getBuildConfig().getMetadata().getAnnotations() != null)  {
-                    build.templateBuildConfigAnnotations = template.getBuildConfig().getMetadata().getAnnotations();
+                if (template.getBuildConfig().getMetadata() != null) {
+                    if (template.getBuildConfig().getMetadata().getLabels() != null) {
+                        build.templateBuildConfigLabels = template.getBuildConfig().getMetadata().getLabels();
+                    }
+
+                    if (template.getBuildConfig().getMetadata().getAnnotations() != null) {
+                        build.templateBuildConfigAnnotations = template.getBuildConfig().getMetadata().getAnnotations();
+                    }
                 }
             }
 
@@ -407,8 +412,8 @@ public class KafkaConnectBuild extends AbstractModel {
         }
 
         DockerBuildStrategyBuilder dockerBuildStrategyBuilder = new DockerBuildStrategyBuilder();
-        if (build.getPullSecret() != null) {
-            dockerBuildStrategyBuilder.withNewPullSecret().withName(build.getPullSecret()).endPullSecret();
+        if (pullSecret != null) {
+            dockerBuildStrategyBuilder.withNewPullSecret().withName(pullSecret).endPullSecret();
         }
 
         return new BuildConfigBuilder()

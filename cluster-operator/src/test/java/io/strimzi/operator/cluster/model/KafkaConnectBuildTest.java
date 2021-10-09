@@ -419,6 +419,7 @@ public class KafkaConnectBuildTest {
                                 .withLabels(buildConfigLabels)
                                 .withAnnotations(buildConfigAnnos)
                             .endMetadata()
+                            .withPullSecret("my-pull-secret")
                         .endBuildConfig()
                         .withNewBuildServiceAccount()
                             .withNewMetadata()
@@ -444,6 +445,7 @@ public class KafkaConnectBuildTest {
         BuildConfig bc = build.generateBuildConfig(dockerfile);
         assertThat(bc.getMetadata().getLabels().entrySet().containsAll(buildConfigLabels.entrySet()), is(true));
         assertThat(bc.getMetadata().getAnnotations().entrySet().containsAll(buildConfigAnnos.entrySet()), is(true));
+        assertThat(bc.getSpec().getStrategy().getDockerStrategy().getPullSecret().getName(), is("my-pull-secret"));
 
         // Check Service Account
         ServiceAccount sa = build.generateServiceAccount();
