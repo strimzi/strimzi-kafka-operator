@@ -52,8 +52,8 @@ public class QuotasOperatorIT extends AbstractAdminApiOperatorIT<KafkaUserQuotas
     }
 
     @Override
-    KafkaUserQuotas get() {
-        ClientQuotaFilterComponent c = ClientQuotaFilterComponent.ofEntity(ClientQuotaEntity.USER, USERNAME);
+    KafkaUserQuotas get(String username) {
+        ClientQuotaFilterComponent c = ClientQuotaFilterComponent.ofEntity(ClientQuotaEntity.USER, username);
         ClientQuotaFilter f =  ClientQuotaFilter.contains(List.of(c));
 
         Map<ClientQuotaEntity, Map<String, Double>> quotas;
@@ -63,7 +63,7 @@ public class QuotasOperatorIT extends AbstractAdminApiOperatorIT<KafkaUserQuotas
             throw new RuntimeException("Failed to get quotas", e);
         }
 
-        ClientQuotaEntity cqe = new ClientQuotaEntity(Map.of(ClientQuotaEntity.USER, USERNAME));
+        ClientQuotaEntity cqe = new ClientQuotaEntity(Map.of(ClientQuotaEntity.USER, username));
 
         if (quotas.containsKey(cqe)) {
             return QuotaUtils.fromClientQuota(quotas.get(cqe));

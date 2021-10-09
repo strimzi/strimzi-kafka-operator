@@ -9,6 +9,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.QuotaUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -153,7 +154,8 @@ public class QuotasOperator extends AbstractAdminApiOperator<KafkaUserQuotas, Se
 
                     for (ClientQuotaEntity entity : quotas.keySet()) {
                         if (entity.entries().containsKey(ClientQuotaEntity.USER)) {
-                            users.add(entity.entries().get(ClientQuotaEntity.USER));
+                            String username = KafkaUserModel.decodeUsername(entity.entries().get(ClientQuotaEntity.USER));
+                            users.add(username);
                         }
                     }
 
