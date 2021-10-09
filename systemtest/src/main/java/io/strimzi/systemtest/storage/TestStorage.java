@@ -39,8 +39,8 @@ final public class TestStorage {
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.streamsTopicTargetName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
-        this.producerName = clusterName + PRODUCER_JOB_NAME;
-        this.consumerName = clusterName + CONSUMER_JOB_NAME;
+        this.producerName = clusterName + "-" + PRODUCER_JOB_NAME;
+        this.consumerName = clusterName  + "-" + CONSUMER_JOB_NAME;
 
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, namespaceName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CLUSTER_KEY, clusterName);
