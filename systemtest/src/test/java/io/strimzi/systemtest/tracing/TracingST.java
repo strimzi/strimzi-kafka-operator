@@ -447,6 +447,7 @@ public class TracingST extends AbstractST {
 
         KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
             .withProducerName(bridgeProducer)
+            .withNamespaceName(storageMap.get(extensionContext).getNamespaceName())
             .withBootstrapAddress(KafkaBridgeResources.serviceName(storageMap.get(extensionContext).getClusterName()))
             .withTopicName(storageMap.get(extensionContext).getTopicName())
             .withMessageCount(MESSAGE_COUNT)
