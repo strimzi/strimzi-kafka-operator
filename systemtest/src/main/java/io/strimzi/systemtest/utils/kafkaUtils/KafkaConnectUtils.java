@@ -85,6 +85,10 @@ public class KafkaConnectUtils {
                 "\"Hello-world - 99\"");
     }
 
+    public static void clearFileSinkFile(String namespaceName, String kafkaConnectPodName, String sinkFileName) {
+        cmdKubeClient(namespaceName).execInPod(kafkaConnectPodName, "/bin/bash", "-c", "truncate -s 0 " + sinkFileName);
+    }
+
     /**
      *  Waits until the kafka connect CR config has changed.
      * @param propertyKey property key in the Kafka Connect CR config

@@ -188,7 +188,6 @@ class ConnectST extends AbstractST {
                 .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-                .withPause(true)
             .endSpec()
             .build());
 
@@ -206,13 +205,31 @@ class ConnectST extends AbstractST {
             internalKafkaClient.receiveMessagesPlain()
         );
 
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+
+        LOGGER.info("Clearing FileSink file to check if KafkaConnector will be really paused");
+        KafkaConnectUtils.clearFileSinkFile(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
+
+        LOGGER.info("Pausing KafkaConnector: {}", clusterName);
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(clusterName,
+            kafkaConnector -> kafkaConnector.getSpec().setPause(true), namespaceName);
+
+        KafkaConnectorUtils.waitForConnectorReady(clusterName);
+
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
+        );
+
         LOGGER.info("Because KafkaConnector is paused, no messages should appear to FileSink file");
         assertThrows(Exception.class, () -> KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99"));
 
+        LOGGER.info("Unpausing KafkaConnector, messages should again appear to FileSink file");
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(clusterName,
             kafkaConnector -> kafkaConnector.getSpec().setPause(false), namespaceName);
 
         KafkaConnectorUtils.waitForConnectorReady(clusterName);
+
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
