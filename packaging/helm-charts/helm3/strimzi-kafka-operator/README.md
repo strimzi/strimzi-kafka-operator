@@ -157,7 +157,7 @@ the documentation for more details.
 | `kafkaBridge.image.registry`         | Override default Kafka Bridge image registry               | `quay.io`                           |
 | `kafkaBridge.image.repository`       | Override default Kafka Bridge image repository             | `strimzi`                           |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge`                                       |
-| `kafkaBridge.image.tag`              | Override default Kafka Bridge image tag                    | `0.20.2`                            |
+| `kafkaBridge.image.tag`              | Override default Kafka Bridge image tag                    | `0.20.3`                            |
 | `kanikoExecutor.image.registry`      | Override default Kaniko Executor image registry            | `nil`                               |
 | `kanikoExecutor.image.repository`    | Override default Kaniko Executor image repository          | `nil`                               |
 | `kanikoExecutor.image.name`          | Kaniko Executor image name                | `kaniko-executor`                                    |
