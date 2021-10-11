@@ -28,7 +28,7 @@ For more information on securing access to Kafka brokers, see xref:assembly-secu
 
 .Configuring external listeners for client access outside Kubernetes
 You can configure external listeners for client access outside a Kubernetes environment using a specified connection mechanism, such as a loadbalancer.
-For more information on the configuration options for connecting an external client, see xref:assembly-configuring-external-listeners-str[Configuring external listeners].
+For more information on the configuration options for connecting an external client, see xref:assembly-accessing-kafka-outside-cluster-str[Accessing Kafka from external clients outside of the Kubernetes cluster].
 
 .Listener certificates
 You can provide your own server certificates, called _Kafka listener certificates_, for TLS listeners or external listeners which have TLS encryption enabled.

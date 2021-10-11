@@ -16,12 +16,13 @@ Supported authentication types:
 * `scram-sha-512` for SCRAM-SHA-512 authentication
 
 If `tls` or `scram-sha-512` is specified, the User Operator creates authentication credentials when it creates the user.
-If `tls-external` is specified, the user is expected to use TLS client authentication, but no authentication credentials are created.
+If `tls-external` is specified, the user still uses TLS client authentication, but no authentication credentials are created.
+Use this option when you're providing your own certificates.
 When no authentication type is specified, the User Operator does not create the user or its credentials.
 
-Use `tls-external` to authenticate with TLS using a certificate issued outside the User Operator.
+You can use `tls-external` to authenticate with TLS client authentication using a certificate issued outside the User Operator.
 The User Operator does not generate a TLS certificate or a secret.
-You can still manage user authorization through the User Operator  in the same way as with the `tls` mechanism.
+You can still manage ACL rules and quotas through the User Operator in the same way as when you're using the `tls` mechanism.
 This means that you use the `CN=__USER-NAME__` format when specifying ACL rules and quotas.
 _USER-NAME_ is the common name given in a TLS certificate.
 
