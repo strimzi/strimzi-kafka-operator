@@ -9,6 +9,7 @@
 * Enable Cruise Control anomaly.detection configurations
 * Add support for building connector images from the Maven coordinates
 * Allow Kafka Connect Build artifacts to be downloaded from insecure servers (#5542)
+* Add option to specify pull secret in Kafka Connect Build on OpenShift (#5631)
 * Configurable authentication, authorization, and SSL for Cruise Control API
 * Update to Cruise Control version 2.5.73
 * Allow to configure `/tmp` volume size via Pod template. By default `1Mi` is used.

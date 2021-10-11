@@ -1746,7 +1746,12 @@ spec:
                             description: Annotations added to the resource template.
                               Can be applied to different resources such as `StatefulSets`,
                               `Deployments`, `Pods`, and `Services`.
-                        description: Metadata applied to the resource.
+                        description: Metadata to apply to the `PodDistruptionBugetTemplate`
+                          resource.
+                      pullSecret:
+                        type: string
+                        description: Container Registry Secret with the credentials
+                          for pulling the base image.
                     description: Template for the Kafka Connect BuildConfig used to
                       build new container images. The BuildConfig is used only on
                       OpenShift.

@@ -38,7 +38,7 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
     private ContainerTemplate connectContainer;
     private ContainerTemplate initContainer;
     private ContainerTemplate buildContainer;
-    private ResourceTemplate buildConfig;
+    private BuildConfigTemplate buildConfig;
     private ResourceTemplate clusterRoleBinding;
     private ResourceTemplate serviceAccount;
     private ResourceTemplate buildServiceAccount;
@@ -130,11 +130,11 @@ public class KafkaConnectTemplate implements Serializable, UnknownPropertyPreser
     @Description("Template for the Kafka Connect BuildConfig used to build new container images. " +
             "The BuildConfig is used only on OpenShift.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public ResourceTemplate getBuildConfig() {
+    public BuildConfigTemplate getBuildConfig() {
         return buildConfig;
     }
 
-    public void setBuildConfig(ResourceTemplate buildConfig) {
+    public void setBuildConfig(BuildConfigTemplate buildConfig) {
         this.buildConfig = buildConfig;
     }
 
