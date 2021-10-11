@@ -207,14 +207,14 @@ class ConnectST extends AbstractST {
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
 
-        LOGGER.info("Clearing FileSink file to check if KafkaConnector will be really paused");
-        KafkaConnectUtils.clearFileSinkFile(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
-
         LOGGER.info("Pausing KafkaConnector: {}", clusterName);
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(clusterName,
             kafkaConnector -> kafkaConnector.getSpec().setPause(true), namespaceName);
 
         KafkaConnectorUtils.waitForConnectorReady(clusterName);
+
+        LOGGER.info("Clearing FileSink file to check if KafkaConnector will be really paused");
+        KafkaConnectUtils.clearFileSinkFile(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
 
         internalKafkaClient.checkProducedAndConsumedMessages(
             internalKafkaClient.sendMessagesPlain(),
