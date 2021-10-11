@@ -39,6 +39,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.kubernetes.ClusterOperatorCustomResourceDefinition;
+import io.strimzi.systemtest.resources.draincleaner.DrainCleanerResource;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleResource;
 import io.strimzi.systemtest.resources.kubernetes.ConfigMapResource;
@@ -380,6 +381,8 @@ public class ResourceManager {
                     return (ResourceType<T>) new BundleResource();
                 case KafkaClients:
                     return (ResourceType<T>) new KafkaClientsResource();
+                case DrainCleaner:
+                    return (ResourceType<T>) new DrainCleanerResource();
                 default:
                     return (ResourceType<T>) new DeploymentResource();
             }

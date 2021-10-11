@@ -9,5 +9,6 @@ public enum DeploymentTypes {
     BundleClusterOperator,
     HelmClusterOperator,
     OlmClusterOperator,
-    KafkaClients
+    KafkaClients,
+    DrainCleaner,
 }

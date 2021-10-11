@@ -582,6 +582,14 @@ public class KubeClient {
         return client.nodes().list().getItems();
     }
 
+    public List<Node> listWorkerNodes() {
+        return listNodes().stream().filter(node -> node.getMetadata().getLabels().containsKey("node-role.kubernetes.io/worker")).collect(Collectors.toList());
+    }
+
+    public List<Node> listMasterNodes() {
+        return listNodes().stream().filter(node -> node.getMetadata().getLabels().containsKey("node-role.kubernetes.io/master")).collect(Collectors.toList());
+    }
+
     /**
      * Method which return list of kube cluster nodes
      * @return list of nodes
