@@ -5,6 +5,7 @@
 package io.strimzi.operator.user.operator;
 
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.user.model.KafkaUserModel;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -32,7 +33,8 @@ import static org.hamcrest.Matchers.contains;
 public abstract class AbstractAdminApiOperatorIT<T, S extends Collection<String>> {
     protected static final Logger LOGGER = LogManager.getLogger(AbstractAdminApiOperatorIT.class);
 
-    public static final String USERNAME = "my-user";
+    public static final String SCRAM_USERNAME = "my-user";
+    public static final String TLS_USERNAME = "CN=my-user";
 
     private static EmbeddedKafkaCluster kafkaCluster;
     protected static Vertx vertx;
@@ -73,8 +75,42 @@ public abstract class AbstractAdminApiOperatorIT<T, S extends Collection<String>
     abstract AbstractAdminApiOperator<T, S> operator();
     abstract T getOriginal();
     abstract T getModified();
-    abstract T get();
+    abstract T get(String username);
     abstract void assertResources(VertxTestContext context, T expected, T actual);
+
+    /**
+     * This tests takes a SCRAM-SHA user and goes through a chain of operations and asserts each of them
+     * - Lists all users (empty list is expected)
+     * - Creates a user
+     * - Lists all users (the user should be listed)
+     * - Modifies the user
+     * - Deletes the user
+     * - Lists all users (should be empty)
+     * - Deletes the user again
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testCreateModifyDeleteScramUsers(VertxTestContext context)    {
+        testCreateModifyDelete(context, SCRAM_USERNAME);
+    }
+
+    /**
+     * This tests takes a LTS user and goes through a chain of operations and asserts each of them
+     * - Lists all users (empty list is expected)
+     * - Creates a user
+     * - Lists all users (the user should be listed)
+     * - Modifies the user
+     * - Deletes the user
+     * - Lists all users (should be empty)
+     * - Deletes the user again
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testCreateModifyDeleteTlsUsers(VertxTestContext context)    {
+        testCreateModifyDelete(context, TLS_USERNAME);
+    }
 
     /**
      * This tests goes through a chain of operations and asserts each of them
@@ -88,8 +124,7 @@ public abstract class AbstractAdminApiOperatorIT<T, S extends Collection<String>
      *
      * @param context   Test context
      */
-    @Test
-    public void testCreateModifyDelete(VertxTestContext context)    {
+    public void testCreateModifyDelete(VertxTestContext context, String username)    {
         Checkpoint async = context.checkpoint();
 
         AbstractAdminApiOperator<T, S> op = operator();
@@ -102,10 +137,10 @@ public abstract class AbstractAdminApiOperatorIT<T, S extends Collection<String>
                     LOGGER.info("Asserting existing");
                     context.verify(() -> assertThat(noUsers.isEmpty(), is(true)));
                 }))
-                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, USERNAME, newResource))
+                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, newResource))
                 .onComplete(context.succeeding(rrCreated -> {
                     LOGGER.info("Asserting created");
-                    T created = get();
+                    T created = get(username);
                     LOGGER.info("Asserting created 2");
                     context.verify(() -> assertThat(created, Matchers.is(Matchers.notNullValue())));
                     assertResources(context, newResource, created);
@@ -113,20 +148,20 @@ public abstract class AbstractAdminApiOperatorIT<T, S extends Collection<String>
                 .compose(rr -> op.getAllUsers())
                 .onComplete(context.succeeding(userList -> {
                     LOGGER.info("Asserting existing");
-                    context.verify(() -> assertThat(userList, contains(USERNAME)));
+                    context.verify(() -> assertThat(userList, contains(KafkaUserModel.decodeUsername(username))));
                 }))
-                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, USERNAME, modResource))
+                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, modResource))
                 .onComplete(context.succeeding(rrModified -> {
                     LOGGER.info("Asserting modified");
-                    T modified = get();
+                    T modified = get(username);
 
                     context.verify(() -> assertThat(modified, Matchers.is(Matchers.notNullValue())));
                     assertResources(context, modResource, modified);
                 }))
-                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, USERNAME, null))
+                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, null))
                 .onComplete(context.succeeding(rrDeleted -> {
                     LOGGER.info("Asserting deleted");
-                    T modified = get();
+                    T modified = get(username);
                     context.verify(() -> assertThat(modified, Matchers.is(Matchers.nullValue())));
                 }))
                 .compose(rr -> op.getAllUsers())
@@ -136,10 +171,10 @@ public abstract class AbstractAdminApiOperatorIT<T, S extends Collection<String>
                         assertThat(noUsers.isEmpty(), is(true));
                     });
                 }))
-                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, USERNAME, null))
+                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, username, null))
                 .onComplete(context.succeeding(rrDeleted -> {
                     LOGGER.info("Asserting deleted credentials");
-                    T modified = get();
+                    T modified = get(username);
                     context.verify(() -> assertThat(modified, Matchers.is(Matchers.nullValue())));
                     async.flag();
                 }));

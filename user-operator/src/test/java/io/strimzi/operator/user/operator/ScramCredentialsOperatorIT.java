@@ -8,6 +8,7 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.UserScramCredentialsDescription;
 import org.apache.kafka.common.errors.ResourceNotFoundException;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
@@ -31,9 +32,9 @@ public class ScramCredentialsOperatorIT extends AbstractAdminApiOperatorIT<Strin
     }
 
     @Override
-    String get() {
+    String get(String username) {
         try {
-            UserScramCredentialsDescription result = adminClient.describeUserScramCredentials(List.of(USERNAME)).description(USERNAME).get();
+            UserScramCredentialsDescription result = adminClient.describeUserScramCredentials(List.of(username)).description(username).get();
             // The SCRAM-SHA credentials never return back an password. So we return a dummy empty String
             return result != null ? "" : null;
         } catch (ResourceNotFoundException e) {
@@ -54,5 +55,16 @@ public class ScramCredentialsOperatorIT extends AbstractAdminApiOperatorIT<Strin
     @Override
     void assertResources(VertxTestContext context, String expected, String actual) {
         // The password can be never obtained again from Kafka. So there is nothing to do here
+    }
+
+    /**
+     * SCRAM-SHA credentials are valid only for SCRAM users and not for TLS users. So this inherited test is disabled here.
+     *
+     * @param context   Test context
+     */
+    @Test
+    @Override
+    public void testCreateModifyDeleteTlsUsers(VertxTestContext context)    {
+        context.completeNow();
     }
 }

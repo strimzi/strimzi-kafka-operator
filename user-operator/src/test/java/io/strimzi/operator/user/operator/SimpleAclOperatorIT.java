@@ -92,8 +92,8 @@ public class SimpleAclOperatorIT extends AbstractAdminApiOperatorIT<Set<SimpleAc
     }
 
     @Override
-    Set<SimpleAclRule> get() {
-        KafkaPrincipal principal = new KafkaPrincipal("User", USERNAME);
+    Set<SimpleAclRule> get(String username) {
+        KafkaPrincipal principal = new KafkaPrincipal("User", username);
         AclBindingFilter aclBindingFilter = new AclBindingFilter(ResourcePatternFilter.ANY,
                 new AccessControlEntryFilter(principal.toString(), null, org.apache.kafka.common.acl.AclOperation.ANY, AclPermissionType.ANY));
 
