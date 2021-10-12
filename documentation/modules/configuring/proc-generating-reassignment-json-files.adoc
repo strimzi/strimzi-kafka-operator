@@ -158,6 +158,8 @@ The CA certificates allow the interactive pod container to connect to the Kafka 
 
 . Create a `config.properties` file to specify the truststore and keystore used to authenticate connection to the Kafka cluster.
 +
+Use the certificates and passwords you extracted in the previous steps.
++
 [source,properties,subs="+quotes,attributes"]
 ----
 bootstrap.servers=__<kafka_cluster_name>__-kafka-bootstrap:9093 <1>
@@ -170,9 +172,9 @@ ssl.keystore.password=__<keystore_password>__ <6>
 <1> The bootstrap server address to connect to the Kafka cluster. Use your own Kafka cluster name to replace _<kafka_cluster_name>_.
 <2> The security protocol option when using TLS for encryption.
 <3> The truststore location contains the public key certificate (`ca.p12`) for the Kafka cluster.
-<4> The password for accessing the truststore.
+<4> The password (`ca.password`) for accessing the truststore.
 <5> The keystore location contains the public key certificate (`user.p12`) for the Kafka user.
-<6> The password for accessing the keystore.
+<6> The password (`user.password`) for accessing the keystore.
 
 . Copy the `config.properties` file to the interactive pod container.
 +
@@ -181,8 +183,9 @@ kubectl cp config.properties _<interactive_pod_name>_:/tmp/config.properties
 
 . Prepare a JSON file named `topics.json` that specifies the topics to move.
 +
+--
 Specify topic names as a comma-separated list.
-+
+
 .Example JSON file to reassign all the partitions of `topic-a` and `topic-b`
 [source,json]
 ----
@@ -194,6 +197,9 @@ Specify topic names as a comma-separated list.
   ]
 }
 ----
+
+NOTE: Use the `spec.topicName` if one is present. Otherwise, use the `metadata.name`. 
+--
 
 . Copy the `_topics.json_` file to the interactive pod container.
 +
