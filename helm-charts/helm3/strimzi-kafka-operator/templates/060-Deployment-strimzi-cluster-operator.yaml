@@ -45,7 +45,7 @@ spec:
             name: {{ .Values.logConfigMap }}
       containers:
         - name: strimzi-cluster-operator
-          image: {{ default .Values.image.registry .Values.imageRegistryOverride }}/{{ default .Values.image.repository .Values.imageRepositoryOverride }}/{{ .Values.image.name }}:{{ default .Values.image.tag .Values.imageTagOverride }}
+          image: {{ default .Values.defaultImageRegistry .Values.image.registry }}/{{ default .Values.defaultImageRepository .Values.image.repository}}/{{ .Values.image.name }}:{{ default .Values.defaultImageTag .Values.image.tag }}
           ports:
             - containerPort: 8080
               name: http
@@ -80,17 +80,19 @@ spec:
               value: {{ .Values.operationTimeoutMs | quote }}
             {{- template "strimzi.kafka.image.map" . }}
             - name: STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE
-              value: {{ default .Values.topicOperator.image.registry .Values.imageRegistryOverride }}/{{ default .Values.topicOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.topicOperator.image.name }}:{{ default .Values.topicOperator.image.tag .Values.imageTagOverride }}
+              value: {{ default .Values.defaultImageRegistry  .Values.topicOperator.image.registry }}/{{ default .Values.defaultImageRepository .Values.topicOperator.image.repository }}/{{ .Values.topicOperator.image.name }}:{{ default  .Values.defaultImageTag .Values.topicOperator.image.tag }}
             - name: STRIMZI_DEFAULT_USER_OPERATOR_IMAGE
-              value: {{ default .Values.userOperator.image.registry .Values.imageRegistryOverride }}/{{ default .Values.userOperator.image.repository .Values.imageRepositoryOverride }}/{{ .Values.userOperator.image.name }}:{{ default .Values.userOperator.image.tag .Values.imageTagOverride }}
+              value: {{ default .Values.defaultImageRegistry  .Values.userOperator.image.registry }}/{{ default .Values.defaultImageRepository .Values.userOperator.image.repository }}/{{ .Values.userOperator.image.name }}:{{ default .Values.defaultImageTag .Values.userOperator.image.tag }}
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
-              value: {{ default .Values.kafkaInit.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafkaInit.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaInit.image.name }}:{{ default .Values.kafkaInit.image.tag .Values.imageTagOverride }}
+              value: {{ default .Values.defaultImageRegistry  .Values.kafkaInit.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaInit.image.repository }}/{{ .Values.kafkaInit.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaInit.image.tag }}
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
-              value: {{ default .Values.kafkaBridge.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kafkaBridge.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kafkaBridge.image.name }}:{{ default .Values.kafkaBridge.image.tag .Values.imageTagOverride }}
+              value: {{ default .Values.defaultImageRegistry  .Values.kafkaBridge.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaBridge.image.repository }}/{{ .Values.kafkaBridge.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaBridge.image.tag }}
             - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
-              value: {{ default .Values.jmxTrans.image.registry .Values.imageRegistryOverride }}/{{ default .Values.jmxTrans.image.repository .Values.imageRepositoryOverride }}/{{ .Values.jmxTrans.image.name }}:{{ default .Values.jmxTrans.image.tag .Values.imageTagOverride }}
+              value: {{ default .Values.defaultImageRegistry  .Values.jmxTrans.image.registry }}/{{ default .Values.defaultImageRepository .Values.jmxTrans.image.repository }}/{{ .Values.jmxTrans.image.name }}:{{ default .Values.defaultImageTag .Values.jmxTrans.image.tag }}
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
-              value: {{ default .Values.kanikoExecutor.image.registry .Values.imageRegistryOverride }}/{{ default .Values.kanikoExecutor.image.repository .Values.imageRepositoryOverride }}/{{ .Values.kanikoExecutor.image.name }}:{{ default .Values.kanikoExecutor.image.tag .Values.imageTagOverride }}
+              value: {{ default .Values.defaultImageRegistry  .Values.kanikoExecutor.image.registry }}/{{ default .Values.defaultImageRepository .Values.kanikoExecutor.image.repository }}/{{ .Values.kanikoExecutor.image.name }}:{{ default .Values.defaultImageTag .Values.kanikoExecutor.image.tag }}
+            - name: STRIMZI_DEFAULT_MAVEN_BUILDER
+              value: {{ default .Values.defaultImageRegistry  .Values.mavenBuilder.image.registry }}/{{ default .Values.defaultImageRepository .Values.mavenBuilder.image.repository }}/{{ .Values.mavenBuilder.image.name }}:{{ default .Values.defaultImageTag .Values.mavenBuilder.image.tag }}
             - name: STRIMZI_OPERATOR_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -117,7 +119,7 @@ spec:
             {{- end }}
             {{- if ne .Values.generateNetworkPolicy true}}
             - name: STRIMZI_NETWORK_POLICY_GENERATION
-              value: {{ .Values.generateNetworkPolicy }}
+              value: {{ .Values.generateNetworkPolicy | quote }}
             {{- end }}
             {{- if ne (int .Values.connectBuildTimeoutMs) 300000 }}
             - name: STRIMZI_CONNECT_BUILD_TIMEOUT_MS

@@ -325,11 +325,11 @@ spec:
                     description: A map of -XX options to the JVM.
                   "-Xms":
                     type: string
-                    pattern: '[0-9]+[mMgG]?'
+                    pattern: ^[0-9]+[mMgG]?$
                     description: -Xms option to to the JVM.
                   "-Xmx":
                     type: string
-                    pattern: '[0-9]+[mMgG]?'
+                    pattern: ^[0-9]+[mMgG]?$
                     description: -Xmx option to to the JVM.
                   gcLoggingEnabled:
                     type: boolean
@@ -525,6 +525,8 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                              hostProcess:
+                                type: boolean
                               runAsUserName:
                                 type: string
                         description: Configures pod-level security attributes and
@@ -870,6 +872,12 @@ spec:
                         description: The pod's HostAliases. HostAliases is an optional
                           list of hosts and IPs that will be injected into the Pod's
                           hosts file if specified.
+                      tmpDirSizeLimit:
+                        type: string
+                        pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                        description: Defines the total amount (for example `1Gi`)
+                          of local storage required for temporary EmptyDir volume
+                          (`/tmp`). Default value is `1Mi`.
                       enableServiceLinks:
                         type: boolean
                         description: Indicates whether information about services
@@ -1021,6 +1029,8 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                              hostProcess:
+                                type: boolean
                               runAsUserName:
                                 type: string
                         description: Security context for the container.
@@ -1094,6 +1104,8 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                              hostProcess:
+                                type: boolean
                               runAsUserName:
                                 type: string
                         description: Security context for the container.
@@ -1250,6 +1262,8 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                              hostProcess:
+                                type: boolean
                               runAsUserName:
                                 type: string
                         description: Configures pod-level security attributes and
@@ -1595,6 +1609,12 @@ spec:
                         description: The pod's HostAliases. HostAliases is an optional
                           list of hosts and IPs that will be injected into the Pod's
                           hosts file if specified.
+                      tmpDirSizeLimit:
+                        type: string
+                        pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                        description: Defines the total amount (for example `1Gi`)
+                          of local storage required for temporary EmptyDir volume
+                          (`/tmp`). Default value is `1Mi`.
                       enableServiceLinks:
                         type: boolean
                         description: Indicates whether information about services
@@ -1701,6 +1721,8 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                              hostProcess:
+                                type: boolean
                               runAsUserName:
                                 type: string
                         description: Security context for the container.
@@ -1724,7 +1746,12 @@ spec:
                             description: Annotations added to the resource template.
                               Can be applied to different resources such as `StatefulSets`,
                               `Deployments`, `Pods`, and `Services`.
-                        description: Metadata applied to the resource.
+                        description: Metadata to apply to the `PodDistruptionBugetTemplate`
+                          resource.
+                      pullSecret:
+                        type: string
+                        description: Container Registry Secret with the credentials
+                          for pulling the base image.
                     description: Template for the Kafka Connect BuildConfig used to
                       build new container images. The BuildConfig is used only on
                       OpenShift.
@@ -1748,6 +1775,27 @@ spec:
                               `Deployments`, `Pods`, and `Services`.
                         description: Metadata applied to the resource.
                     description: Template for the Kafka Connect Build service account.
+                  jmxSecret:
+                    type: object
+                    properties:
+                      metadata:
+                        type: object
+                        properties:
+                          labels:
+                            x-kubernetes-preserve-unknown-fields: true
+                            type: object
+                            description: Labels added to the resource template. Can
+                              be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
+                          annotations:
+                            x-kubernetes-preserve-unknown-fields: true
+                            type: object
+                            description: Annotations added to the resource template.
+                              Can be applied to different resources such as `StatefulSets`,
+                              `Deployments`, `Pods`, and `Services`.
+                        description: Metadata applied to the resource.
+                    description: Template for Secret of the Kafka Connect Cluster
+                      JMX authentication.
                 description: Template for Kafka Connect and Kafka Mirror Maker 2 resources.
                   The template allows users to specify how the `Deployment`, `Pods`
                   and `Service` are generated.
@@ -1925,37 +1973,65 @@ spec:
                           items:
                             type: object
                             properties:
+                              artifact:
+                                type: string
+                                description: Maven artifact id. Applicable to the
+                                  `maven` artifact type only.
                               fileName:
                                 type: string
                                 description: Name under which the artifact will be
                                   stored.
+                              group:
+                                type: string
+                                description: Maven group id. Applicable to the `maven`
+                                  artifact type only.
+                              insecure:
+                                type: boolean
+                                description: By default, connections using TLS are
+                                  verified to check they are secure. The server certificate
+                                  used must be valid, trusted, and contain the server
+                                  name. By setting this option to `true`, all TLS
+                                  verification is disabled and the artifact will be
+                                  downloaded, even when the server is considered insecure.
+                              repository:
+                                type: string
+                                description: Maven repository to download the artifact
+                                  from. Applicable to the `maven` artifact type only.
                               sha512sum:
                                 type: string
-                                description: SHA512 checksum of the artifact. Optional.
+                                description: 'SHA512 checksum of the artifact. Optional.
                                   If specified, the checksum will be verified while
                                   building the new container. If not specified, the
-                                  downloaded artifact will not be verified.
+                                  downloaded artifact will not be verified. Not applicable
+                                  to the `maven` artifact type. '
                               type:
                                 type: string
                                 enum:
                                 - jar
                                 - tgz
                                 - zip
+                                - maven
                                 - other
                                 description: Artifact type. Currently, the supported
-                                  artifact types are `tgz`, `jar`, and `zip`.
+                                  artifact types are `tgz`, `jar`, `zip`, `other`
+                                  and `maven`.
                               url:
                                 type: string
-                                pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]
+                                pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]$
                                 description: URL of the artifact which will be downloaded.
                                   Strimzi does not do any security scanning of the
                                   downloaded artifacts. For security reasons, you
                                   should first verify the artifacts manually and configure
                                   the checksum verification to make sure the same
-                                  artifact is used in the automated build. Required.
+                                  artifact is used in the automated build. Required
+                                  for `jar`, `zip`, `tgz` and `other` artifacts. Not
+                                  applicable to the `maven` artifact type.
+                              version:
+                                type: string
+                                description: Maven version number. Applicable to the
+                                  `maven` artifact type only.
                             required:
                             - type
-                            - url
                           description: List of artifacts which belong to this connector
                             plugin. Required.
                       required:

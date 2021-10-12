@@ -17,7 +17,7 @@ spec:
       serviceAccountName: strimzi-topic-operator
       containers:
         - name: strimzi-topic-operator
-          image: quay.io/strimzi/operator:0.25.0
+          image: quay.io/strimzi/operator:0.26.0-rc1
           args:
           - /opt/strimzi/bin/topic_operator_run.sh
           env:

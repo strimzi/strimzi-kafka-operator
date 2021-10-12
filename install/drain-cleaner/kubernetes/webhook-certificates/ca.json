@@ -1,0 +1,14 @@
+{
+    "CN": "StrimziDrainCleanerCA",
+    "names": [
+        {
+            "C":  "CZ",
+            "L":  "Prague",
+            "O":  "Strimzi Drain Cleaner"
+        }
+    ],
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    }
+}
