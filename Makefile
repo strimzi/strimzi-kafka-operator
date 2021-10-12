@@ -64,10 +64,6 @@ release_maven:
 	mvn versions:set -DnewVersion=$(shell echo $(RELEASE_VERSION) | tr a-z A-Z)
 	mvn versions:commit
 
-release_test_container:
-	echo "Update Strimzi version for test container to $(RELEASE_VERSION)"
-	echo "$(RELEASE_VERSION)" > test-container/src/main/resources/strimzi-version.txt
-
 release_pkg: helm_pkg	
 	tar -z -cf ./strimzi-$(RELEASE_VERSION).tar.gz strimzi-$(RELEASE_VERSION)/
 	zip -r ./strimzi-$(RELEASE_VERSION).zip strimzi-$(RELEASE_VERSION)/
