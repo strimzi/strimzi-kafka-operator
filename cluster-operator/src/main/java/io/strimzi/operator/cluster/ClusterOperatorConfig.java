@@ -39,6 +39,7 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
+    public static final String STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS";
     public static final String STRIMZI_CONNECT_BUILD_TIMEOUT_MS = "STRIMZI_CONNECT_BUILD_TIMEOUT_MS";
     public static final String STRIMZI_IMAGE_PULL_POLICY = "STRIMZI_IMAGE_PULL_POLICY";
     public static final String STRIMZI_IMAGE_PULL_SECRETS = "STRIMZI_IMAGE_PULL_SECRETS";
@@ -75,12 +76,14 @@ public class ClusterOperatorConfig {
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
+    public static final int DEFAULT_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = 10_000;
     public static final long DEFAULT_CONNECT_BUILD_TIMEOUT_MS = 300_000;
     public static final int DEFAULT_STRIMZI_OPERATIONS_THREAD_POOL_SIZE = 10;
 
     private final Set<String> namespaces;
     private final long reconciliationIntervalMs;
     private final long operationTimeoutMs;
+    private final int zkAdminSessionTimeoutMs;
     private final long connectBuildTimeoutMs;
     private final boolean createClusterRoles;
     private final boolean networkPolicyGeneration;
@@ -112,6 +115,7 @@ public class ClusterOperatorConfig {
      * @param customResourceSelector Labels used to filter the custom resources seen by the cluster operator
      * @param featureGates Configuration string with feature gates settings
      * @param operationsThreadPoolSize The size of the thread pool used for various operations
+     * @param zkAdminSessionTimeoutMs Session timeout for the Zookeeper Admin client used in ZK scaling operations
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     public ClusterOperatorConfig(
@@ -129,7 +133,8 @@ public class ClusterOperatorConfig {
             RbacScope rbacScope,
             Labels customResourceSelector,
             String featureGates,
-            int operationsThreadPoolSize) {
+            int operationsThreadPoolSize,
+            int zkAdminSessionTimeoutMs) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
@@ -145,6 +150,7 @@ public class ClusterOperatorConfig {
         this.customResourceSelector = customResourceSelector;
         this.featureGates = new FeatureGates(featureGates);
         this.operationsThreadPoolSize = operationsThreadPoolSize;
+        this.zkAdminSessionTimeoutMs = zkAdminSessionTimeoutMs;
     }
 
     /**
@@ -173,7 +179,7 @@ public class ClusterOperatorConfig {
 
     /**
      * Loads configuration parameters from a related map and custom KafkaVersion.Lookup instance.
-     * THis is used for testing.
+     * This is used for testing.
      *
      * @param map   map from which loading configuration parameters
      * @param lookup KafkaVersion.Lookup instance with the supported Kafka version information
@@ -194,6 +200,7 @@ public class ClusterOperatorConfig {
         Labels customResourceSelector = parseLabels(map, STRIMZI_CUSTOM_RESOURCE_SELECTOR);
         String featureGates = map.getOrDefault(STRIMZI_FEATURE_GATES, "");
         int operationsThreadPoolSize = parseInt(map.get(STRIMZI_OPERATIONS_THREAD_POOL_SIZE), DEFAULT_STRIMZI_OPERATIONS_THREAD_POOL_SIZE);
+        int zkAdminSessionTimeout = parseInt(map.get(STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS), DEFAULT_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS);
 
         return new ClusterOperatorConfig(
                 namespaces,
@@ -210,7 +217,8 @@ public class ClusterOperatorConfig {
                 rbacScope,
                 customResourceSelector,
                 featureGates,
-                operationsThreadPoolSize);
+                operationsThreadPoolSize,
+                zkAdminSessionTimeout);
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {
@@ -428,6 +436,13 @@ public class ClusterOperatorConfig {
     }
 
     /**
+     * @return  how many milliseconds should we wait for Zookeeper Admin Sessions to timeout
+     */
+    public int getZkAdminSessionTimeoutMs() {
+        return zkAdminSessionTimeoutMs;
+    }
+
+    /**
      * @return  How many milliseconds should we wait for Kafka Connect build to complete
      */
     public long getConnectBuildTimeoutMs() {
@@ -522,6 +537,7 @@ public class ClusterOperatorConfig {
                 ",rbacScope=" + rbacScope +
                 ",customResourceSelector=" + customResourceSelector +
                 ",featureGates=" + featureGates +
+                ",zkAdminSessionTimeoutMS=" + zkAdminSessionTimeoutMs +
                 ")";
     }
 }

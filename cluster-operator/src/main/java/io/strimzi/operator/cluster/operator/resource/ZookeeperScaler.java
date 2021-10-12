@@ -41,6 +41,7 @@ public class ZookeeperScaler implements AutoCloseable {
     private final Function<Integer, String> zkNodeAddress;
 
     private final long operationTimeoutMs;
+    private final int zkAdminSessionTimeoutMs;
 
     private final Secret clusterCaCertSecret;
     private final Secret coKeySecret;
@@ -63,10 +64,13 @@ public class ZookeeperScaler implements AutoCloseable {
      * @param clusterCaCertSecret           Secret with Kafka cluster CA public key
      * @param coKeySecret                   Secret with Cluster Operator public and private key
      * @param operationTimeoutMs            Operation timeout
+     * @param zkAdminSessionTimeoutMs       Zookeeper Admin session timeout
      *
-     * @return  ZookeeperScaler instance
      */
-    protected ZookeeperScaler(Reconciliation reconciliation, Vertx vertx, ZooKeeperAdminProvider zooAdminProvider, String zookeeperConnectionString, Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
+    protected ZookeeperScaler(Reconciliation reconciliation, Vertx vertx, ZooKeeperAdminProvider zooAdminProvider,
+                              String zookeeperConnectionString, Function<Integer, String> zkNodeAddress,
+                              Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs,
+                              int zkAdminSessionTimeoutMs) {
         this.reconciliation = reconciliation;
 
         LOGGER.debugCr(reconciliation, "Creating Zookeeper Scaler for cluster {}", zookeeperConnectionString);
@@ -76,6 +80,7 @@ public class ZookeeperScaler implements AutoCloseable {
         this.zookeeperConnectionString = zookeeperConnectionString;
         this.zkNodeAddress = zkNodeAddress;
         this.operationTimeoutMs = operationTimeoutMs;
+        this.zkAdminSessionTimeoutMs = zkAdminSessionTimeoutMs;
         this.clusterCaCertSecret = clusterCaCertSecret;
         this.coKeySecret = coKeySecret;
 
@@ -148,7 +153,7 @@ public class ZookeeperScaler implements AutoCloseable {
         try {
             ZooKeeperAdmin zkAdmin = zooAdminProvider.createZookeeperAdmin(
                 this.zookeeperConnectionString,
-                10_000,
+                zkAdminSessionTimeoutMs,
                 watchedEvent -> LOGGER.debugCr(reconciliation, "Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zookeeperConnectionString),
                 clientConfig);
 

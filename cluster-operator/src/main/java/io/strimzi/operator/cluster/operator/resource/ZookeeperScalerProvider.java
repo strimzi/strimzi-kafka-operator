@@ -24,8 +24,11 @@ public interface ZookeeperScalerProvider {
      * @param clusterCaCertSecret           Secret with Kafka cluster CA public key
      * @param coKeySecret                   Secret with Cluster Operator public and private key
      * @param operationTimeoutMs            Operation timeout
+     * @param zkAdminSessionTimeoutMs       Zookeeper Admin client session timeout
      *
      * @return  ZookeeperScaler instance
      */
-    ZookeeperScaler createZookeeperScaler(Reconciliation reconciliation, Vertx vertx, String zookeeperConnectionString, Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs);
+    ZookeeperScaler createZookeeperScaler(Reconciliation reconciliation, Vertx vertx, String zookeeperConnectionString,
+                                          Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret,
+                                          Secret coKeySecret, long operationTimeoutMs, int zkAdminSessionTimeoutMs);
 }

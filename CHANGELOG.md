@@ -2,6 +2,8 @@
 
 ## 0.27.0
 
+* Added the option to configure the Cluster Operator's Zookeeper admin client session timeout via an new env var: `STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS`
+
 ## 0.26.0
 
 * Add support for Kafka 2.8.1 and 3.0.0; remove Kafka 2.7.0 and 2.7.1
