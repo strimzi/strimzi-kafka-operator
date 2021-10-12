@@ -26,11 +26,6 @@ make docker_build
 make docu_html
 make docu_htmlnoheader
 
-# Run tests for strimzi-test-container
-# We need to tag built images even in fork repos to make images available for test container locally
-DOCKER_REGISTRY=quay.io DOCKER_ORG=strimzi DOCKER_TAG=latest make docker_tag
-mvn test -f test-container/pom.xml -Dsurefire.rerunFailingTestsCount=3
-
 if [ ! -e documentation/modules/appendix_crds.adoc ] ; then
     echo "ERROR: documentation/modules/appendix_crds.adoc does not exist!"
     exit 1
