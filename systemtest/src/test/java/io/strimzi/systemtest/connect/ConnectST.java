@@ -88,6 +88,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -152,7 +153,7 @@ class ConnectST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(SMOKE)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testKafkaConnectWithFileSinkPlugin(ExtensionContext extensionContext) {
+    void testKafkaConnectAndPausedConnectorWithFileSinkPlugin(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
@@ -162,6 +163,9 @@ class ConnectST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, 1)
+            .editMetadata()
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
             .editSpec()
                 .addToConfig("key.converter.schemas.enable", false)
                 .addToConfig("value.converter.schemas.enable", false)
@@ -175,7 +179,17 @@ class ConnectST extends AbstractST {
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespaceName, kafkaConnectPodName);
 
-        KafkaConnectorUtils.createFileSinkConnector(namespaceName, kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, namespaceName, 8083));
+        LOGGER.info("Creating KafkaConnector with 'pause: true'");
+
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
+            .editSpec()
+                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                .addToConfig("topics", topicName)
+                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+            .endSpec()
+            .build());
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
@@ -190,6 +204,31 @@ class ConnectST extends AbstractST {
             internalKafkaClient.sendMessagesPlain(),
             internalKafkaClient.receiveMessagesPlain()
         );
+
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+
+        LOGGER.info("Pausing KafkaConnector: {}", clusterName);
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(clusterName,
+            kafkaConnector -> kafkaConnector.getSpec().setPause(true), namespaceName);
+
+        KafkaConnectorUtils.waitForConnectorReady(clusterName);
+
+        LOGGER.info("Clearing FileSink file to check if KafkaConnector will be really paused");
+        KafkaConnectUtils.clearFileSinkFile(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
+
+        internalKafkaClient.checkProducedAndConsumedMessages(
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
+        );
+
+        LOGGER.info("Because KafkaConnector is paused, no messages should appear to FileSink file");
+        assertThrows(Exception.class, () -> KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99"));
+
+        LOGGER.info("Unpausing KafkaConnector, messages should again appear to FileSink file");
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(clusterName,
+            kafkaConnector -> kafkaConnector.getSpec().setPause(false), namespaceName);
+
+        KafkaConnectorUtils.waitForConnectorReady(clusterName);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
