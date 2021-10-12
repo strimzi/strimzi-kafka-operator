@@ -39,7 +39,6 @@ import static org.hamcrest.CoreMatchers.is;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-@Disabled("Issue with OPA -> users in allowedList or superusers are not able to producer/consume messages")
 public class OpaIntegrationST extends AbstractST {
     public static final String NAMESPACE = "opa-cluster-test";
     private static final Logger LOGGER = LogManager.getLogger(OpaIntegrationST.class);
