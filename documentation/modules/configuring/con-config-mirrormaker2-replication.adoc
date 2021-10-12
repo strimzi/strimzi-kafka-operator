@@ -38,6 +38,7 @@ The expectation is that producers and consumers connect to active clusters only.
 
 A MirrorMaker 2.0 cluster is required at each target destination.
 
+[id=unidirectional_replication_activepassive]
 == Bidirectional replication (active/active)
 
 The MirrorMaker 2.0 architecture supports bidirectional replication in an _active/active_ cluster configuration.
