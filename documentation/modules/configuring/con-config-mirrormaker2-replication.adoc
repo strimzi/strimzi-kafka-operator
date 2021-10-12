@@ -38,7 +38,6 @@ The expectation is that producers and consumers connect to active clusters only.
 
 A MirrorMaker 2.0 cluster is required at each target destination.
 
-[id=unidirectional_replication_activepassive]
 == Bidirectional replication (active/active)
 
 The MirrorMaker 2.0 architecture supports bidirectional replication in an _active/active_ cluster configuration.
@@ -55,6 +54,7 @@ By flagging the originating cluster, topics are not replicated back to that clus
 The concept of replication through _remote_ topics is useful when configuring an architecture that requires data aggregation.
 Consumers can subscribe to source and remote topics within the same cluster, without the need for a separate aggregation cluster.
 
+[id=unidirectional_replication_activepassive]
 == Unidirectional replication (active/passive)
 
 The MirrorMaker 2.0 architecture supports unidirectional replication in an _active/passive_ cluster configuration.
