@@ -13,6 +13,8 @@ The release process should normally look like this:
 1. Create a release branch
 2. On the `main` git branch of the operators repository:
   * Update the versions to the next SNAPSHOT version using the `next_version` `make` target. For example to update the next version to `0.6.0-SNAPSHOT` run: `make NEXT_VERSION=0.6.0-SNAPSHOT next_version`.
+  * Update the product version in `attributes.adoc` to the next version
+  * Add a header for the new release to the `CHANGELOG.md` file
 
 3. Run `make clean`
 4. Export the desired version into the environment variable `RELEASE_VERSION`
