@@ -197,11 +197,6 @@ Specify topic names as a comma-separated list.
   ]
 }
 ----
-
-NOTE: If you use `spec.topicName` to name your topics, specify that name in the list.
-Otherwise, the `kafka-reassign-partitions.sh` tool will not return the topic.
-If you don't use `spec.topicName`, specify the `metadata.name` for the topic.
-
 --
 
 . Copy the `_topics.json_` file to the interactive pod container.
