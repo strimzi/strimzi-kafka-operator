@@ -1531,6 +1531,7 @@ public class KafkaClusterTest {
                                 .withHostAliases(hostAlias1, hostAlias2)
                                 .withTopologySpreadConstraints(tsc1, tsc2)
                                 .withEnableServiceLinks(false)
+                                .withTmpDirSizeLimit("10Mi")
                             .endPod()
                             .withNewBootstrapService()
                                 .withNewMetadata()
@@ -1609,6 +1610,9 @@ public class KafkaClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
         assertThat(sts.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(sts.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream()
+            .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
+            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
 
         // Check Service
         Service svc = kc.generateService();
