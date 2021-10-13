@@ -4,8 +4,6 @@
  */
 package io.strimzi.systemtest.bridge;
 
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
@@ -23,7 +21,6 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
@@ -43,9 +40,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Random;
 
@@ -137,8 +131,7 @@ class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .endMetadata()
             .editSpec()
                 .editKafka()
-                .withListeners(
-                    new GenericKafkaListenerBuilder()
+                .withListeners(new GenericKafkaListenerBuilder()
                         .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
                         .withPort(9093)
                         .withType(KafkaListenerType.INTERNAL)
@@ -217,63 +210,7 @@ class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .endMetadata()
             .build());
 
-        EnvVar clusterCaCert = new EnvVarBuilder()
-            .withName("CA_CRT")
-            .withNewValueFrom()
-                .withNewSecretKeyRef()
-                .withName(KafkaResources.clusterCaCertificateSecretName(clusterName))
-                .withKey("ca.crt")
-            .endSecretKeyRef()
-            .endValueFrom()
-            .build();
-
-        List<EnvVar> envsVarsOfKafkaClient = new ArrayList<>();
-        envsVarsOfKafkaClient.add(clusterCaCert);
-
         final String kafkaProducerExternalName = "kafka-producer-external" + new Random().nextInt(Integer.MAX_VALUE);
-        String producerConfig = "";
-
-        if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
-            producerConfig =
-                // tls
-                "ssl.endpoint.identification.algorithm=\n" +
-                "sasl.mechanism=GSSAPI\n" +
-                "security.protocol=" + securityProtocol.name() + "\n";
-
-            EnvVar userCrt = new EnvVarBuilder()
-                .withName("USER_CRT")
-                .withNewValueFrom()
-                    .withNewSecretKeyRef()
-                        .withName(weirdUserName)
-                        .withKey("user.crt")
-                    .endSecretKeyRef()
-                .endValueFrom()
-                .build();
-
-            EnvVar userKey = new EnvVarBuilder()
-                .withName("USER_KEY")
-                .withNewValueFrom()
-                    .withNewSecretKeyRef()
-                        .withName(weirdUserName)
-                        .withKey("user.key")
-                    .endSecretKeyRef()
-                .endValueFrom()
-                .build();
-
-            envsVarsOfKafkaClient.add(userCrt);
-            envsVarsOfKafkaClient.add(userKey);
-        } else {
-            // fetch secret
-            final String saslJaasConfigEncrypted = ResourceManager.kubeClient().getSecret(NAMESPACE, weirdUserName).getData().get("sasl.jaas.config");
-            final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
-
-            producerConfig =
-                // scram-sha
-                "ssl.endpoint.identification.algorithm=\n" +
-                "sasl.mechanism=SCRAM-SHA-512\n" +
-                "security.protocol=" + securityProtocol.name() + "\n" +
-                "sasl.jaas.config=" + saslJaasConfigDecrypted;
-        }
 
         final List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getListeners();
         final String externalBootstrapServers = listenerStatusList.stream().filter(listener -> listener.getType().equals(Constants.EXTERNAL_LISTENER_DEFAULT_NAME))
@@ -287,20 +224,15 @@ class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .withNamespaceName(NAMESPACE)
             .withTopicName(topicName)
             .withMessageCount(100)
-            .withAdditionalConfig(producerConfig)
             .build();
 
-        resourceManager.createResource(extensionContext, externalKafkaProducer.producerStrimzi()
-            .editSpec()
-                .editTemplate()
-                    .editSpec()
-                        .editFirstContainer()
-                            .addAllToEnv(envsVarsOfKafkaClient)
-                    .endContainer()
-                .endSpec()
-            .endTemplate()
-            .endSpec()
-            .build());
+        if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
+            // tls producer
+            resourceManager.createResource(extensionContext, externalKafkaProducer.producerTlsStrimzi(clusterName, weirdUserName).build());
+        } else {
+            // scram-sha producer
+            resourceManager.createResource(extensionContext, externalKafkaProducer.producerScramShaStrimzi(clusterName, weirdUserName).build());
+        }
 
         ClientUtils.waitForClientSuccess(kafkaProducerExternalName, NAMESPACE, 100);
 

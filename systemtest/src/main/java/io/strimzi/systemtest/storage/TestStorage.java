@@ -19,8 +19,8 @@ import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
  */
 final public class TestStorage {
 
-    private static final String PRODUCER_JOB_NAME = "hello-world-producer";
-    private static final String CONSUMER_JOB_NAME = "hello-world-consumer";
+    private static final String PRODUCER = "hello-world-producer";
+    private static final String CONSUMER = "hello-world-consumer";
     private static final String CLUSTER_NAME_PREFIX = "my-cluster-";
 
     private ExtensionContext extensionContext;
@@ -39,8 +39,8 @@ final public class TestStorage {
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.streamsTopicTargetName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
-        this.producerName = clusterName + "-" + PRODUCER_JOB_NAME;
-        this.consumerName = clusterName  + "-" + CONSUMER_JOB_NAME;
+        this.producerName = clusterName + "-" + PRODUCER;
+        this.consumerName = clusterName  + "-" + CONSUMER;
 
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, namespaceName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CLUSTER_KEY, clusterName);

@@ -4,15 +4,21 @@
  */
 package io.strimzi.systemtest.resources.crd.kafkaclients;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.ClientUtils;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidParameterException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -191,6 +197,70 @@ public class KafkaBasicExampleClients {
         return defaultProducerStrimzi();
     }
 
+    public JobBuilder producerScramShaStrimzi(final String clusterName, final String kafkaUserName) {
+        // fetch secret
+        final String saslJaasConfigEncrypted = ResourceManager.kubeClient().getSecret(namespaceName, kafkaUserName).getData().get("sasl.jaas.config");
+        final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
+
+        additionalConfig +=
+            // scram-sha
+            "ssl.endpoint.identification.algorithm=\n" +
+                "sasl.mechanism=SCRAM-SHA-512\n" +
+                "security.protocol=" + SecurityProtocol.SASL_SSL + "\n" +
+                "sasl.jaas.config=" + saslJaasConfigDecrypted;
+
+        return defaultConsumerStrimzi()
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            .addToEnv(getClusterCaCertEnv(clusterName))
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec();
+    }
+
+    public JobBuilder producerTlsStrimzi(final String clusterName, final String kafkaUserName) {
+        additionalConfig +=
+            // tls
+            "ssl.endpoint.identification.algorithm=\n" +
+            "sasl.mechanism=GSSAPI\n" +
+            "security.protocol=" + SecurityProtocol.SSL + "\n";
+
+        EnvVar userCrt = new EnvVarBuilder()
+            .withName("USER_CRT")
+            .withNewValueFrom()
+                .withNewSecretKeyRef()
+                    .withName(kafkaUserName)
+                    .withKey("user.crt")
+                .endSecretKeyRef()
+            .endValueFrom()
+            .build();
+
+        EnvVar userKey = new EnvVarBuilder()
+            .withName("USER_KEY")
+            .withNewValueFrom()
+                .withNewSecretKeyRef()
+                    .withName(kafkaUserName)
+                    .withKey("user.key")
+                .endSecretKeyRef()
+            .endValueFrom()
+            .build();
+
+        return defaultConsumerStrimzi()
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            .addToEnv(getClusterCaCertEnv(clusterName), userCrt, userKey)
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec();
+    }
+
+
     public JobBuilder consumerStrimzi() {
         return defaultConsumerStrimzi();
     }
@@ -333,5 +403,17 @@ public class KafkaBasicExampleClients {
                     .endSpec()
                 .endTemplate()
             .endSpec();
+    }
+
+    protected EnvVar getClusterCaCertEnv(String clusterName) {
+        return new EnvVarBuilder()
+            .withName("CA_CRT")
+            .withNewValueFrom()
+                .withNewSecretKeyRef()
+                    .withName(KafkaResources.clusterCaCertificateSecretName(clusterName))
+                    .withKey("ca.crt")
+                .endSecretKeyRef()
+            .endValueFrom()
+            .build();
     }
 }

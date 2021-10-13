@@ -16,7 +16,6 @@ import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -32,7 +31,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.Collections;
 import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
@@ -95,8 +93,6 @@ class HttpBridgeTlsST extends AbstractST {
     void testReceiveSimpleMessageTls(ExtensionContext extensionContext) {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaBridgeExampleClients kafkaBridgeClientJobConsume = kafkaBridgeClientJob.toBuilder().withTopicName(topicName).build();
-
-        NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(NAMESPACE));
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeTlsClusterName, topicName)
             .editMetadata()

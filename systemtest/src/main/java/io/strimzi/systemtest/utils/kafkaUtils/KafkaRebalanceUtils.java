@@ -87,9 +87,9 @@ public class KafkaRebalanceUtils {
             waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.ProposalReady);
         }
 
-        LOGGER.infoCr(reconciliation, "===================================================================");
+        LOGGER.infoCr(reconciliation, String.join("", Collections.nCopies(76, "=")));
         LOGGER.infoCr(reconciliation, KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(rebalanceName).get().getStatus().getConditions().get(0).getType());
-        LOGGER.infoCr(reconciliation, "===================================================================");
+        LOGGER.infoCr(reconciliation, String.join("", Collections.nCopies(76, "=")));
 
         LOGGER.infoCr(reconciliation, "Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
 
