@@ -48,7 +48,7 @@ release_prepare:
 release_version:
 	# TODO: This would be replaced ideally once Helm Chart templating is used for cluster and topic operator examples
 	echo "Changing Docker image tags in install to :$(RELEASE_VERSION)"
-	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/image: "\?quay.io\/strimzi\/[a-zA-Z0-9_.-]\+:[a-zA-Z0-9_.-]\+"\?/s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/g' {} \;
+	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/image: "\?quay.io\/strimzi\/operator:[a-zA-Z0-9_.-]\+"\?/s/:[a-zA-Z0-9_.-]\+/:$(RELEASE_VERSION)/g' {} \;
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/operator:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/operator:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/operator:$(RELEASE_VERSION)/g' {} \;
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kafka-bridge:[a-zA-Z0-9_.-]\+/quay.io\/strimzi\/kafka-bridge:$(BRIDGE_VERSION)/g' {} \;
 	$(FIND) ./packaging/install -name '*.yaml' -type f -exec $(SED) -i '/value: "\?quay.io\/strimzi\/kafka:[a-zA-Z0-9_.-]\+"\?/s/quay.io\/strimzi\/kafka:[a-zA-Z0-9_.-]\+-kafka-\([0-9.]\+\)/quay.io\/strimzi\/kafka:$(RELEASE_VERSION)-kafka-\1/g' {} \;
