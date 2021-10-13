@@ -532,6 +532,9 @@ public class KafkaClusterTest {
         assertThat(containers.get(0).getPorts().get(1).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
         assertThat(containers.get(0).getPorts().get(1).getContainerPort(), is(KafkaCluster.REPLICATION_PORT));
         assertThat(containers.get(0).getPorts().get(1).getProtocol(), is("TCP"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream()
+            .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
+            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
 
         if (cm.getSpec().getKafka().getRack() != null) {
 
