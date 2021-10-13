@@ -532,6 +532,9 @@ public class KafkaClusterTest {
         assertThat(containers.get(0).getPorts().get(1).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
         assertThat(containers.get(0).getPorts().get(1).getContainerPort(), is(KafkaCluster.REPLICATION_PORT));
         assertThat(containers.get(0).getPorts().get(1).getProtocol(), is("TCP"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream()
+            .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
+            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
 
         if (cm.getSpec().getKafka().getRack() != null) {
 
@@ -1531,6 +1534,7 @@ public class KafkaClusterTest {
                                 .withHostAliases(hostAlias1, hostAlias2)
                                 .withTopologySpreadConstraints(tsc1, tsc2)
                                 .withEnableServiceLinks(false)
+                                .withTmpDirSizeLimit("10Mi")
                             .endPod()
                             .withNewBootstrapService()
                                 .withNewMetadata()
@@ -1609,6 +1613,9 @@ public class KafkaClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
         assertThat(sts.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(sts.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream()
+            .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
+            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
 
         // Check Service
         Service svc = kc.generateService();

@@ -269,6 +269,10 @@ public class KafkaMirrorMakerClusterTest {
         assertThat(dep.getSpec().getStrategy().getType(), is("RollingUpdate"));
         assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge().getIntVal(), is(Integer.valueOf(1)));
         assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable().getIntVal(), is(Integer.valueOf(0)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream()
+            .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
+            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
+
         checkOwnerReference(mm.createOwnerReference(), dep);
     }
 
@@ -556,6 +560,7 @@ public class KafkaMirrorMakerClusterTest {
                             .withSchedulerName("my-scheduler")
                             .withHostAliases(hostAlias1, hostAlias2)
                             .withEnableServiceLinks(false)
+                            .withTmpDirSizeLimit("10Mi")
                         .endPod()
                         .withNewPodDisruptionBudget()
                             .withNewMetadata()
@@ -588,6 +593,9 @@ public class KafkaMirrorMakerClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(dep.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream()
+            .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
+            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
 
         // Check PodDisruptionBudget
         PodDisruptionBudget pdb = mmc.generatePodDisruptionBudget();

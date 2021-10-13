@@ -208,6 +208,10 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge().getIntVal(), is(Integer.valueOf(1)));
         assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable().getIntVal(), is(Integer.valueOf(0)));
         assertThat(AbstractModel.containerEnvVars(dep.getSpec().getTemplate().getSpec().getContainers().get(0)).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_TLS), is(nullValue()));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().stream()
+            .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
+            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
+
         checkOwnerReference(kbc.createOwnerReference(), dep);
     }
 
@@ -424,6 +428,7 @@ public class KafkaBridgeClusterTest {
                             .withTolerations(tolerations)
                             .withTopologySpreadConstraints(tsc1, tsc2)
                             .withEnableServiceLinks(false)
+                            .withTmpDirSizeLimit("10Mi")
                         .endPod()
                         .withNewApiService()
                             .withNewMetadata()
@@ -466,7 +471,7 @@ public class KafkaBridgeClusterTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getTolerations(), is(tolerations));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
-        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
 
         // Check Service
         Service svc = kbc.generateService();
