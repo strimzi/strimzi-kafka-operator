@@ -516,7 +516,9 @@ public class SetupClusterOperator {
         } else {
             // clear all resources related to the extension context
             try {
-                ResourceManager.getInstance().deleteResources(BeforeAllOnce.getSharedExtensionContext());
+                if (!Environment.SKIP_TEARDOWN) {
+                    ResourceManager.getInstance().deleteResources(BeforeAllOnce.getSharedExtensionContext());
+                }
             } catch (Exception e) {
                 Thread.currentThread().interrupt();
                 e.printStackTrace();
