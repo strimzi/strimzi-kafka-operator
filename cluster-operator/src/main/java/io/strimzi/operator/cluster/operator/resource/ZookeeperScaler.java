@@ -284,6 +284,7 @@ public class ZookeeperScaler implements AutoCloseable {
 
                 clientConfig.setProperty("zookeeper.clientCnxnSocket", "org.apache.zookeeper.ClientCnxnSocketNetty");
                 clientConfig.setProperty("zookeeper.client.secure", "true");
+                clientConfig.setProperty("zookeeper.sasl.client", "false");
                 clientConfig.setProperty("zookeeper.ssl.trustStore.location", trustStoreFile.getAbsolutePath());
                 clientConfig.setProperty("zookeeper.ssl.trustStore.password", trustStorePassword);
                 clientConfig.setProperty("zookeeper.ssl.trustStore.type", "PKCS12");
