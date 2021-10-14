@@ -116,7 +116,7 @@ You can set the value to `plain`, `scram-sha-256`, or `scram-sha-512`.
 The default value is "PLAINTEXT".
 You can set the value to `PLAINTEXT`, `SSL`, `SASL_PLAINTEXT`, or `SASL_SSL`.
 
-. If you want to connect to Kafka brokers that are using certificates from a public certificate authority, set `STRIMZI_PUBLIC_CA` to `true`. Set this property to `true`, for example, if you are using Kafka on Amazon Web Services (AWS).
+. If you want to connect to Kafka brokers that are using certificates from a public certificate authority, set `STRIMZI_PUBLIC_CA` to `true`. Set this property to `true`, for example, if you are using Amazon AWS MSK service.
 . If you enabled TLS with the `STRIMZI_TLS_ENABLED` environment variable, specify the keystore and truststore used to authenticate connection to the Kafka cluster.
 +
 .Example TLS configuration
@@ -134,9 +134,9 @@ env:
     value: "__KEYSTORE-PASSWORD__"
 # ...
 ----
-<1> The truststore contains the public key (`ca.crt`) value of the Certificate Authority used to sign new user certificates for TLS client authentication.
+<1> The truststore contains the public keys of the Certificate Authorities used to sign the Kafka and ZooKeeper server certificates.
 <2> The password for accessing the truststore.
-<3> The keystore contains the private key (`ca.key`) of the Certificate Authority for signing new user certificates for TLS client authentication.
+<3> The keystore contains the private key for TLS client authentication.
 <4> The password for accessing the keystore.
 
 . Deploy the Topic Operator.

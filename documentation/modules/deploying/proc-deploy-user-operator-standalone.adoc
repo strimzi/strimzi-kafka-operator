@@ -109,12 +109,12 @@ env:
   - name: STRIMZI_CLUSTER_CA_CERT_SECRET_NAME <1>
     value: my-cluster-cluster-cert
   - name: STRIMZI_EO_KEY_SECRET_NAME <2>
-    value: my-cluster-cluster-ca
+    value: my-cluster-entity-operator-certs
 # ..."
 ----
 <1> The Kubernetes `Secret` that contains the public key (`ca.crt`) value of the Certificate Authority that signs Kafka broker certificates for TLS client authentication.
-<2> The Kubernetes `Secret` that contains the keystore (`entity-operator_.p12`) with the private key and certificate for TLS authentication against the Kafka cluster.
-The `Secret` must also contain the password (`entity-operator_.password`) for accessing the keystore.
+<2> The Kubernetes `Secret` that contains the keystore (`entity-operator.p12`) with the private key and certificate for TLS authentication against the Kafka cluster.
+The `Secret` must also contain the password (`entity-operator.password`) for accessing the keystore.
 
 . Deploy the User Operator.
 +
