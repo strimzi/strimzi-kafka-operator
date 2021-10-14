@@ -160,6 +160,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaAssemblyOperator.class.getName());
 
     private final long operationTimeoutMs;
+    private final int zkAdminSessionTimeoutMs;
     private final String operatorNamespace;
     private final Labels operatorNamespaceLabels;
     private final FeatureGates featureGates;
@@ -196,6 +197,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         super(vertx, pfa, Kafka.RESOURCE_KIND, certManager, passwordGenerator,
                 supplier.kafkaOperator, supplier, config);
         this.operationTimeoutMs = config.getOperationTimeoutMs();
+        this.zkAdminSessionTimeoutMs = config.getZkAdminSessionTimeoutMs();
         this.operatorNamespace = config.getOperatorNamespace();
         this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
@@ -1325,7 +1327,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace,
                                         KafkaResources.zookeeperHeadlessServiceName(name), zkCluster.getPodName(i));
 
-                        ZookeeperScaler zkScaler = zkScalerProvider.createZookeeperScaler(reconciliation, vertx, zkConnectionString(connectToReplicas, zkNodeAddress), zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs);
+                        ZookeeperScaler zkScaler = zkScalerProvider.createZookeeperScaler(
+                                reconciliation, vertx, zkConnectionString(connectToReplicas, zkNodeAddress), zkNodeAddress,
+                                clusterCaCertSecret, coKeySecret, operationTimeoutMs, zkAdminSessionTimeoutMs);
 
                         return Future.succeededFuture(zkScaler);
                     });

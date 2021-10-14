@@ -631,7 +631,10 @@ public class ResourceUtils {
     public static ZookeeperScalerProvider zookeeperScalerProvider() {
         return new ZookeeperScalerProvider() {
             @Override
-            public ZookeeperScaler createZookeeperScaler(Reconciliation reconciliation, Vertx vertx, String zookeeperConnectionString, Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
+            public ZookeeperScaler createZookeeperScaler(
+                    Reconciliation reconciliation, Vertx vertx, String zookeeperConnectionString,
+                    Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret,
+                    long operationTimeoutMs, int zkAdminSessionTimoutMs) {
                 ZookeeperScaler mockZooScaler = mock(ZookeeperScaler.class);
                 when(mockZooScaler.scale(anyInt())).thenReturn(Future.succeededFuture());
                 return mockZooScaler;
@@ -758,7 +761,8 @@ public class ResourceUtils {
                 ClusterOperatorConfig.RbacScope.CLUSTER,
                 null,
                 "",
-                10);
+                10,
+                10_000);
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfigRolesOnly(KafkaVersion.Lookup versions, long operationTimeoutMs) {
@@ -777,7 +781,8 @@ public class ResourceUtils {
                 ClusterOperatorConfig.RbacScope.NAMESPACE,
                 null,
                 "",
-                10);
+                10,
+                10_000);
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions) {

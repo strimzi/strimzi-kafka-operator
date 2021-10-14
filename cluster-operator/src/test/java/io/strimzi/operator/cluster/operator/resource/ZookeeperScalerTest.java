@@ -187,7 +187,8 @@ public class ZookeeperScalerTest {
             }
         };
 
-        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyCaSecret, dummyCoSecret, 1_000);
+        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
+                vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyCaSecret, dummyCoSecret, 1_000, 10_000);
 
         Checkpoint check = context.checkpoint();
         scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
@@ -214,7 +215,8 @@ public class ZookeeperScalerTest {
             }
         };
 
-        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
+        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
+                vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000, 10_000);
 
         Checkpoint check = context.checkpoint();
         scaler.scale(1).onComplete(context.succeeding(res -> context.verify(() -> {
@@ -246,7 +248,8 @@ public class ZookeeperScalerTest {
             }
         };
 
-        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
+        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
+                vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000, 10_000);
 
         Checkpoint check = context.checkpoint();
         scaler.scale(1).onComplete(context.succeeding(res -> context.verify(() -> {
@@ -275,7 +278,8 @@ public class ZookeeperScalerTest {
             }
         };
 
-        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000);
+        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
+                vertx, zooKeeperAdminProvider, "zookeeper:2181", zkNodeAddress, dummyCaSecret, dummyCoSecret, 1_000, 10_000);
 
         Checkpoint check = context.checkpoint();
         scaler.scale(1).onComplete(context.failing(cause -> context.verify(() -> {
@@ -287,7 +291,8 @@ public class ZookeeperScalerTest {
 
     @Test
     public void testConnectionToNonExistingHost(VertxTestContext context)  {
-        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, new DefaultZooKeeperAdminProvider(), "i-do-not-exist.com:2181", null, dummyCaSecret, dummyCoSecret, 2_000);
+        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
+                vertx, new DefaultZooKeeperAdminProvider(), "i-do-not-exist.com:2181", null, dummyCaSecret, dummyCoSecret, 2_000, 10_000);
 
         Checkpoint check = context.checkpoint();
         scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {
@@ -310,7 +315,8 @@ public class ZookeeperScalerTest {
             }
         };
 
-        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"), vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyCaSecret, dummyCoSecret, 1_000);
+        ZookeeperScaler scaler = new ZookeeperScaler(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"),
+                vertx, zooKeeperAdminProvider, "zookeeper:2181", null, dummyCaSecret, dummyCoSecret, 1_000, 10_000);
 
         Checkpoint check = context.checkpoint();
         scaler.scale(5).onComplete(context.failing(cause -> context.verify(() -> {

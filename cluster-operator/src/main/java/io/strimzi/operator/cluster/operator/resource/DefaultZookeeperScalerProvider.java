@@ -29,7 +29,10 @@ public class DefaultZookeeperScalerProvider implements ZookeeperScalerProvider {
      *
      * @return  ZookeeperScaler instance
      */
-    public ZookeeperScaler createZookeeperScaler(Reconciliation reconciliation, Vertx vertx, String zookeeperConnectionString, Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret, Secret coKeySecret, long operationTimeoutMs) {
-        return new ZookeeperScaler(reconciliation, vertx, zooAdminProvider, zookeeperConnectionString, zkNodeAddress, clusterCaCertSecret, coKeySecret, operationTimeoutMs);
+    public ZookeeperScaler createZookeeperScaler(Reconciliation reconciliation, Vertx vertx, String zookeeperConnectionString,
+                                                 Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret,
+                                                 Secret coKeySecret, long operationTimeoutMs, int zkAdminSessionTimeoutMs) {
+        return new ZookeeperScaler(reconciliation, vertx, zooAdminProvider, zookeeperConnectionString, zkNodeAddress,
+                clusterCaCertSecret, coKeySecret, operationTimeoutMs, zkAdminSessionTimeoutMs);
     }
 }
