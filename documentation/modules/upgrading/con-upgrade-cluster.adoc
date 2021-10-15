@@ -34,7 +34,7 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:
   partitions: 1
-  replicas: 1
+  replicas: 3
   config:
     # ...
     default.replication.factor: 3

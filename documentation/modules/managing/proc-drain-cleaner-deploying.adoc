@@ -27,7 +27,7 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:
   partitions: 1
-  replicas: 1
+  replicas: 3
   config:
     # ...
     default.replication.factor: 3
@@ -86,7 +86,7 @@ spec:
   # ...
 ----
 +
-Reducing the maximum pod disruption budget to zero prevents voluntary disruptions, so pods must be evicted manually.
+Reducing the maximum pod disruption budget to zero prevents voluntary disruptions, so pods must be evicted manually by the Strimzi Drain Cleaner.
 +
 Add the same configuration for ZooKeeper if you want to use Strimzi Drain Cleaner to drain ZooKeeper nodes.
 
@@ -101,20 +101,20 @@ kubectl apply -f _<kafka-configuration-file>_
 ifdef::StrimziUpgrades[]
 You can use link:https://cert-manager.io/docs/[`cert-manager`^] in the deployment process.
 
-* If you are using `cert-manager`, apply the resources in the `/install/certmanager` directory.
+* If you are using `cert-manager`, apply the resources in the `/install/drain-cleaner/certmanager` directory.
 +
 [source,shell,subs="attributes+"]
 ----
-kubectl apply -f ./install/certmanager
+kubectl apply -f ./install/drain-cleaner/certmanager
 ----
 +
 The TLS certificates for the webhook are generated automatically and injected into the webhook configuration.
 
-* If you are not using `cert-manager`, apply the resources in the `/install/kubernetes` directory.
+* If you are not using `cert-manager`, apply the resources in the `/install/drain-cleaner/kubernetes` directory.
 +
 [source,shell,subs="attributes+"]
 ----
-kubectl apply -f ./install/kubernetes
+kubectl apply -f ./install/drain-cleaner/kubernetes
 ----
 +
 The resources are configured with TLS certificates that have already been generated.
@@ -130,6 +130,6 @@ endif::StrimziUpgrades[]
 ifndef::StrimziUpgrades[]
 [source,shell,subs="attributes+"]
 ----
-kubectl apply -f ./install/openshift
+kubectl apply -f ./install/drain-cleaner/openshift
 ----
 endif::StrimziUpgrades[]

@@ -10,8 +10,11 @@ When multiple pods from the same `StatefulSet` are annotated, consecutive rollin
 
 .Prerequisites
 
-* You have a highly available Kafka cluster deployment running with nodes that you wish to update.
-* Topics are replicated for high availability.
+You can perform a rolling update on a Kafka cluster regardless of the topic replication factor used.
+But for Kafka to stay operational during the update, you'll need the following:
+
+* A highly available Kafka cluster deployment running with nodes that you wish to update.
+* Topics replicated for high availability.
 +
 Topic configuration specifies a replication factor of at least 3 and a minimum number of in-sync replicas to 1 less than the replication factor.
 +
@@ -26,7 +29,7 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:
   partitions: 1
-  replicas: 1
+  replicas: 3
   config:
     # ...
     default.replication.factor: 3

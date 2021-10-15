@@ -6,12 +6,13 @@
 = Evicting pods with Strimzi Drain Cleaner
 
 [role="_abstract"]
-If your Kafka broker and ZooKeeper pods were deployed by Strimzi, you can use the Strimzi Drain Cleaner tool to evict them from nodes.
-You might want to evict pods for voluntary disruptions during maintenance or upgrade.
+Kafka and ZooKeeper pods might be evicted during Kubernetes upgrades, maintenance or pod rescheduling.
+If your Kafka broker and ZooKeeper pods were deployed by Strimzi, you can use the Strimzi Drain Cleaner tool to handle the pod evictions.
+You need to set the `podDisruptionBudget` for your Kafka deployment to 0 (zero) for the Strimzi Drain Cleaner to work.
 
 By deploying the Strimzi Drain Cleaner, you can use the Cluster Operator to move Kafka pods instead of Kubernetes.
 Why is this beneficial? The Cluster Operator ensures that topics are never under-replicated.
-As broker nodes are drained consecutively, the Cluster Operator waits until topics are synchronized.
+As Kubernetes worker nodes are drained consecutively, the Cluster Operator waits until topics are synchronized.
 This means that Kafka can remain operational during the eviction process.
 
 An admission webhook notifies the Strimzi Drain Cleaner of pod eviction requests to the Kubernetes API.
@@ -63,8 +64,10 @@ webhooks:
 To deploy and use the Strimzi Drain Cleaner, you need to download the deployment files.
 
 ifdef::Downloading[]
-The Strimzi Drain Cleaner deployment files are accessible from the
-link:https://github.com/strimzi/drain-cleaner[GitHub repository^].
+The Strimzi Drain Cleaner deployment files are accessible from the following locations:
+
+* link:{ReleaseDownload} release archive (stable)
+* link:https://github.com/strimzi/drain-cleaner[Strimzi Drain Cleaner GitHub repository^]
 endif::Downloading[]
 
 ifndef::Downloading[]
