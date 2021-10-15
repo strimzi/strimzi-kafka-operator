@@ -6,7 +6,7 @@
 = Upgrading Kubernetes with minimal downtime
 
 [role="_abstract"]
-If you are upgrading Kubernetes, refer the Kubernertes upgrade documentation to check the upgrade path and the steps to upgrade your nodes correctly.
+If you are upgrading Kubernetes, refer to the Kubernetes upgrade documentation to check the upgrade path and the steps to upgrade your nodes correctly.
 Before upgrading Kubernetes, link:{supported-configurations}[check the supported versions for your version of Strimzi^].
 
 When performing your upgrade, you'll want to keep your Kafka clusters available.
@@ -76,8 +76,6 @@ spec:
 # ...
 ----
 
-
-
 == Rolling pods manually while keeping topics available
 
 During an upgrade, you can trigger a manual rolling update of pods through the Cluster Operator.
@@ -102,6 +100,7 @@ For example, `my-cluster-kafka-0`.
 [role="_additional-resources"]
 .Additional resources
 * {kubernetes-docs}[Kubernetes documentation^]
+* link:{BookURLUsing}#proc-drain-cleaner-{context}[Draining pods using the Strimzi Drain Cleaner]
 * link:{BookURLUsing}#replicating_topics_for_high_availability[Replicating topics for high availability^]
 * link:{BookURLUsing}#type-PodDisruptionBudgetTemplate-reference[PodDisruptionBudgetTemplate schema reference^]
 * link:{BookURLUsing}#proc-manual-rolling-update-pods-str[Performing a rolling update using a pod annotation^]

@@ -1,0 +1,135 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-drain-cleaner.adoc
+
+[id='proc-drain-cleaner-deploying-{context}']
+= Deploying the Strimzi Drain Cleaner
+
+[role="_abstract"]
+Deploy the Strimzi Drain Cleaner to the Kubernetes cluster where the Cluster Operator and Kafka cluster is running.
+
+.Prerequisites
+
+* You have xref:drain-cleaner-prereqs-str[downloaded the Strimzi Drain Cleaner deployment files].
+* You have a highly available Kafka cluster deployment running with nodes that you wish to update.
+* Topics are replicated for high availability.
++
+Topic configuration specifies a replication factor of at least 3 and a minimum number of in-sync replicas to 1 less than the replication factor.
++
+.Kafka topic replicated for high availability
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaTopicApiVersion}
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    # ...
+    default.replication.factor: 3
+    min.insync.replicas: 2
+    # ...
+----
+
+.Excluding ZooKeeper
+
+If you don't want to include ZooKeeper, you can remove the `--zookeeper` command option from the Strimzi Drain Cleaner `Deployment` configuration file.
+
+[source,yaml,subs="attributes+"]
+----
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  # ...
+  template:
+    spec:
+      serviceAccountName: strimzi-drain-cleaner
+      containers:
+        - name: strimzi-drain-cleaner
+          # ...
+          command:
+            - "/application"
+            - "-Dquarkus.http.host=0.0.0.0"
+            - "--kafka"
+            - "--zookeeper" <1>
+          # ...
+----
+<1> Remove this option to exclude ZooKeeper from Strimzi Drain Cleaner operations.
+
+.Procedure
+
+. Configure a pod disruption budget of 0 (zero) for your Kafka deployment using `template` settings in the `Kafka` resource.
++
+.Specifying a pod disruption budget
+[source,yaml,subs=attributes+]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+  namespace: myproject
+spec:
+  kafka:
+    template:
+      podDisruptionBudget:
+        maxUnavailable: 0
+
+  # ...
+  zookeeper:
+    template:
+      podDisruptionBudget:
+        maxUnavailable: 0
+  # ...
+----
++
+Reducing the maximum pod disruption budget to zero prevents voluntary disruptions, so pods must be evicted manually.
++
+Add the same configuration for ZooKeeper if you want to use Strimzi Drain Cleaner to drain ZooKeeper nodes.
+
+. Update the `Kafka` resource:
++
+[source,shell,subs=+quotes]
+kubectl apply -f _<kafka-configuration-file>_
+
+. Deploy the Strimzi Drain Cleaner.
++
+--
+ifdef::StrimziUpgrades[]
+You can use link:https://cert-manager.io/docs/[`cert-manager`^] in the deployment process.
+
+* If you are using `cert-manager`, apply the resources in the `/install/certmanager` directory.
++
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f ./install/certmanager
+----
++
+The TLS certificates for the webhook are generated automatically and injected into the webhook configuration.
+
+* If you are not using `cert-manager`, apply the resources in the `/install/kubernetes` directory.
++
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f ./install/kubernetes
+----
++
+The resources are configured with TLS certificates that have already been generated.
+Use these certificates if you are not changing any configuration for the Strimzi Drain Cleaner, such as namespaces, or service and pod names.
+--
++
+NOTE: You can use the build script and files provided in link:https://github.com/strimzi/drain-cleaner/tree/main/install/kubernetes/webhook-certificates[`webhook-certificates`^]
+to generate your own certificates. The script uses the link:https://github.com/cloudflare/cfssl[`CFSSL`^] and link:https://www.openssl.org/[openSSL] tools to generate the certificates.
+After you have generated the certificates, you need to add them to the `040-Secret.yaml` and `070-ValidatingWebhookConfiguration.yaml` files.
+
+endif::StrimziUpgrades[]
+
+ifndef::StrimziUpgrades[]
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f ./install/openshift
+----
+endif::StrimziUpgrades[]
