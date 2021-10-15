@@ -3,6 +3,13 @@
 ## 0.27.0
 
 * Added the option to configure the Cluster Operator's Zookeeper admin client session timeout via an new env var: `STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS`
+* The `ControlPlaneListener` and `ServiceAccountPatching` feature gates are now in the _beta_ phase and are enabled by default. 
+
+### Changes, deprecations and removals
+
+* The `ControlPlaneListener` feature gate is now enabled by default.
+  When upgrading from Strimzi 0.22 or earlier, you have to disable the `ControlPlaneListener` feature gate when upgrading the cluster operator to make sure the Kafka cluster stays available during the upgrade.
+  When downgrading to Strimzi 0.22 or earlier, you have to disable the `ControlPlaneListener` feature gate before downgrading the cluster operator to make sure the Kafka cluster stays available during the downgrade.
 
 ## 0.26.0
 

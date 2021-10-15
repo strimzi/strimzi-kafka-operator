@@ -218,11 +218,11 @@ Feature gates have three stages of maturity:
 
 * Alpha — typically disabled by default
 * Beta — typically enabled by default
-* General Availability (GA) — typically enabled by default
+* General Availability (GA) — typically always enabled
 
 Alpha stage features might be experimental or unstable, subject to change, or not sufficiently tested for production use.
 Beta stage features are well tested and their functionality is not likely to change.
-GA stage features are stable and should not change in future.
+GA stage features are stable and should not change in the future.
 Alpha and beta stage features are removed if they do not prove to be useful.
 
 NOTE: Feature gates might be removed when they reach GA. This means that the feature was incorporated into the Strimzi core features and can no longer be disabled.
@@ -238,12 +238,12 @@ NOTE: Feature gates might be removed when they reach GA. This means that the fea
 
 ¦`ControlPlaneListener`
 ¦0.23.0
-¦ -
+¦0.27.0
 ¦ -
 
 ¦`ServiceAccountPatching`
 ¦0.24.0
-¦ -
+¦0.27.0
 ¦ -
 
 |===
@@ -266,11 +266,6 @@ env:
 === Control plane listener feature gate
 
 Use the `ControlPlaneListener` feature gate to change the communication paths used for inter-broker communications within your Kafka cluster.
-
-The Kubernetes control plane manages the workloads running on the worker nodes.
-Services such as the Kubernetes API server and the controller manager run on the control plane.
-The Kubernetes data plane provides resources to containers, including CPU, memory, network, and storage.
-
 In Strimzi, control plane traffic consists of controller connections that maintain the desired state of the Kafka cluster.
 Data plane traffic mainly consists of data replication between the leader broker and the follower brokers.
 
@@ -282,30 +277,28 @@ Data plane traffic continues to use the internal listener on port 9091.
 
 Using control plane listeners might improve performance because important controller connections, such as partition leadership changes, are not delayed by data replication across brokers.
 
-.Enabling the control plane listener feature gate
+.Disabling the control plane listener feature gate
 
-The `ControlPlaneListener` feature gate is in the alpha stage and has a default state of _disabled_.
-To enable it, specify `+ControlPlaneListener` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+The `ControlPlaneListener` feature gate is in the beta stage and has a default state of _enabled_.
+To disable it, specify `-ControlPlaneListener` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 This feature gate must be disabled when:
 
 * Upgrading from Strimzi 0.22 and earlier
 * Downgrading to Strimzi 0.22 and earlier
 
-NOTE: The `ControlPlaneListener` feature gate was introduced in Strimzi 0.23.0 and is expected to remain in the alpha stage for a number of releases before moving to the beta stage.
+NOTE: The `ControlPlaneListener` feature gate moved to beta stage in Strimzi 0.27.0 and is expected to remain in the beta stage until Strimzi 0.31.
 
 === Service Account patching feature gate
 
-By default, the Cluster Operator does not update service accounts.
-To allow the Cluster Operator to apply updates, enable the `ServiceAccountPatching` feature gate.
-
-Add `+ServiceAccountPatching` to the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
-
-The feature gate is currently in the alpha phase and disabled by default.
-With the feature gate enabled, the Cluster Operator applies updates to service account configuration in every reconciliation.
+The `ServiceAccountPatching` feature gate is currently in the beta phase and enabled by default.
+By default, the Cluster Operator reconciles service accounts and updates them when needed.
 For example, you can change service account labels and annotations after the operands are already created.
+To disable service account patching, disable the `ServiceAccountPatching` feature gate.
 
-NOTE: The `ServiceAccountPatching` feature gate was introduced in Strimzi 0.24.0 and is expected to remain in the alpha phase for a number of releases before it moves to the beta phase and is enabled by default.
+Add `-ServiceAccountPatching` to the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+
+NOTE: The `ServiceAccountPatching` feature gate moved to beta stage in Strimzi 0.27.0 and is expected to remain in the beta stage until Strimzi 0.30.
 
 == Logging configuration by ConfigMap
 
