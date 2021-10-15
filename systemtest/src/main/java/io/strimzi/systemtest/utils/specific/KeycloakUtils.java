@@ -8,13 +8,14 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.executor.ExecResult;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KeycloakUtils {
 
@@ -53,15 +54,16 @@ public class KeycloakUtils {
 
     /**
      * Returns token from Keycloak API
+     * @param namespaceName
      * @param baseURI base uri for accessing Keycloak API
      * @param userName name of user
      * @param password password of user
      * @return user token
      */
-    public static String getToken(String baseURI, String userName, String password) {
-        String coPodName = kubeClient().getClusterOperatorPodName();
+    public static String getToken(String namespaceName, String baseURI, String userName, String password) {
+        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
         return new JsonObject(
-            cmdKubeClient().execInPod(
+            cmdKubeClient(namespaceName).execInPod(
                 coPodName,
                 "curl",
                 "-v",
@@ -75,14 +77,15 @@ public class KeycloakUtils {
 
     /**
      * Returns specific realm from Keycloak API
+     * @param namespaceName namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param desiredRealm realm we want to get
      * @return JsonObject with whole desired realm from Keycloak
      */
-    public static JsonObject getKeycloakRealm(String baseURI, String token, String desiredRealm) {
-        String coPodName = kubeClient().getClusterOperatorPodName();
-        return new JsonObject(cmdKubeClient().execInPod(
+    public static JsonObject getKeycloakRealm(String namespaceName, String baseURI, String token, String desiredRealm) {
+        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        return new JsonObject(cmdKubeClient(namespaceName).execInPod(
             coPodName,
             "curl",
             "-v",
@@ -96,14 +99,15 @@ public class KeycloakUtils {
 
     /**
      * Returns all clients for specific realm
+     * @param namespaceName namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param desiredRealm realm we want to get clients from
      * @return JsonArray with all clients set for the specific realm
      */
-    public static JsonArray getKeycloakRealmClients(String baseURI, String token, String desiredRealm) {
-        String coPodName = kubeClient().getClusterOperatorPodName();
-        return new JsonArray(cmdKubeClient().execInPod(
+    public static JsonArray getKeycloakRealmClients(String namespaceName, String baseURI, String token, String desiredRealm) {
+        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        return new JsonArray(cmdKubeClient(namespaceName).execInPod(
             coPodName,
             "curl",
             "-v",
@@ -117,18 +121,20 @@ public class KeycloakUtils {
 
     /**
      * Returns all policies from client of specific realm
+     * @param namespaceName namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param desiredRealm realm we want to get clients from
      * @param clientId id of desired client
      * @return JsonArray with all policies for clients in specific realm
      */
-    public static JsonArray getPoliciesFromRealmClient(String baseURI, String token, String desiredRealm, String clientId) {
-        return getConfigFromResourceServerOfRealm(baseURI, token, desiredRealm, clientId, "policy");
+    public static JsonArray getPoliciesFromRealmClient(String namespaceName, String baseURI, String token, String desiredRealm, String clientId) {
+        return getConfigFromResourceServerOfRealm(namespaceName, baseURI, token, desiredRealm, clientId, "policy");
     }
 
     /**
      * Returns "resources" for desired endpoint -> policies, resources ...
+     * @param namespaceName namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param desiredRealm realm we want to get clients from
@@ -136,9 +142,9 @@ public class KeycloakUtils {
      * @param endpoint endpoint for "resource" - resource, policy etc.
      * @return JsonArray with results from endpoint
      */
-    private static JsonArray getConfigFromResourceServerOfRealm(String baseURI, String token, String desiredRealm, String clientId, String endpoint) {
-        String coPodName = kubeClient().getClusterOperatorPodName();
-        return new JsonArray(cmdKubeClient().execInPod(
+    private static JsonArray getConfigFromResourceServerOfRealm(String namespaceName, String baseURI, String token, String desiredRealm, String clientId, String endpoint) {
+        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        return new JsonArray(cmdKubeClient(namespaceName).execInPod(
             coPodName,
             "curl",
             "-v",
@@ -152,15 +158,16 @@ public class KeycloakUtils {
 
     /**
      * Puts new configuration to the specific realm
+     * @param namespaceName namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param desiredRealm realm where the config should be put
      * @param config configuration we want to put into the realm
      * @return response from server
      */
-    public static String putConfigurationToRealm(String baseURI, String token, JsonObject config, String desiredRealm) {
-        String coPodName = kubeClient().getClusterOperatorPodName();
-        return cmdKubeClient().execInPod(
+    public static String putConfigurationToRealm(String namespaceName, String baseURI, String token, JsonObject config, String desiredRealm) {
+        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        return cmdKubeClient(namespaceName).execInPod(
             coPodName,
             "curl",
             "-v",
@@ -176,6 +183,7 @@ public class KeycloakUtils {
 
     /**
      * Updates policies of specific client in realm
+     * @param namespaceName namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param desiredRealm realm where the client policies should be updated
@@ -183,9 +191,9 @@ public class KeycloakUtils {
      * @param clientId id of client where we want to update policies
      * @return response from server
      */
-    public static String updatePolicyOfRealmClient(String baseURI, String token, JsonObject policy, String desiredRealm, String clientId) {
-        String coPodName = kubeClient().getClusterOperatorPodName();
-        return cmdKubeClient().execInPod(
+    public static String updatePolicyOfRealmClient(String namespaceName, String baseURI, String token, JsonObject policy, String desiredRealm, String clientId) {
+        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        return cmdKubeClient(namespaceName).execInPod(
             coPodName,
             "curl",
             "-v",
@@ -200,7 +208,7 @@ public class KeycloakUtils {
     }
 
     public static String getValidKeycloakVersion() {
-        if (Double.parseDouble(kubeClient().clusterKubernetesVersion()) >= 1.22) {
+        if (Double.parseDouble(KubeClusterResource.getInstance().client().clusterKubernetesVersion()) >= 1.22) {
             return LATEST_KEYCLOAK_VERSION;
         } else {
             return OLD_KEYCLOAK_VERSION;

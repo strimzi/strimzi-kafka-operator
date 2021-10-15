@@ -11,8 +11,8 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -39,6 +39,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -46,10 +47,10 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
+@IsolatedSuite
 public class MultipleListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleListenersST.class);
-    public static final String NAMESPACE = "multi-listener";
     private Object lock = new Object();
 
     // only 4 type of listeners
@@ -189,7 +190,7 @@ public class MultipleListenersST extends AbstractST {
                     if (isTlsEnabled) {
                         ExternalKafkaClient externalTlsKafkaClient = new ExternalKafkaClient.Builder()
                             .withTopicName(topicName)
-                            .withNamespaceName(NAMESPACE)
+                            .withNamespaceName(INFRA_NAMESPACE)
                             .withClusterName(clusterName)
                             .withMessageCount(MESSAGE_COUNT)
                             .withKafkaUsername(kafkaUsername)
@@ -208,7 +209,7 @@ public class MultipleListenersST extends AbstractST {
                     } else {
                         ExternalKafkaClient externalPlainKafkaClient = new ExternalKafkaClient.Builder()
                             .withTopicName(topicName)
-                            .withNamespaceName(NAMESPACE)
+                            .withNamespaceName(INFRA_NAMESPACE)
                             .withClusterName(clusterName)
                             .withMessageCount(MESSAGE_COUNT)
                             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
@@ -237,7 +238,7 @@ public class MultipleListenersST extends AbstractST {
                             .withUsingPodName(kafkaClientsTlsPodName)
                             .withListenerName(listener.getName())
                             .withTopicName(topicName)
-                            .withNamespaceName(NAMESPACE)
+                            .withNamespaceName(INFRA_NAMESPACE)
                             .withClusterName(clusterName)
                             .withKafkaUsername(kafkaUsername)
                             .withMessageCount(MESSAGE_COUNT)
@@ -256,7 +257,7 @@ public class MultipleListenersST extends AbstractST {
                             .withUsingPodName(kafkaClientsPlainPodName)
                             .withListenerName(listener.getName())
                             .withTopicName(topicName)
-                            .withNamespaceName(NAMESPACE)
+                            .withNamespaceName(INFRA_NAMESPACE)
                             .withClusterName(clusterName)
                             .withMessageCount(MESSAGE_COUNT)
                             .build();
@@ -361,12 +362,6 @@ public class MultipleListenersST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(NAMESPACE)
-            .createInstallation()
-            .runInstallation();
-
         generateTestCases();
     }
 }

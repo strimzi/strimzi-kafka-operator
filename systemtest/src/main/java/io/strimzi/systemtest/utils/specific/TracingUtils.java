@@ -6,12 +6,12 @@ package io.strimzi.systemtest.utils.specific;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 
@@ -105,7 +105,7 @@ public class TracingUtils {
     }
 
     public static String getValidTracingVersion() {
-        if (Double.parseDouble(kubeClient().clusterKubernetesVersion()) >= 1.22) {
+        if (Double.parseDouble(KubeClusterResource.getInstance().client().clusterKubernetesVersion()) >= 1.22) {
             return LATEST_TRACING_VERSION;
         } else {
             return OLD_TRACING_VERSION;

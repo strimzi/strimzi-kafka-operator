@@ -8,6 +8,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -15,23 +16,25 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.test.annotations.IsolatedSuite;
+import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.HELM;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 
 @Tag(HELM)
 @Tag(REGRESSION)
+@IsolatedSuite
 class HelmChartST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartST.class);
-    static final String NAMESPACE = "helm-chart-cluster-test";
-    private HelmResource helmResource = new HelmResource(NAMESPACE);
+    private HelmResource helmResource = new HelmResource(INFRA_NAMESPACE);
 
     @IsolatedTest
     void testStrimziComponentsViaHelmChart(ExtensionContext extensionContext) {
@@ -59,13 +62,23 @@ class HelmChartST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
+        // shared classic CO operator removed
+        install.unInstall();
+
         LOGGER.info("Creating resources before the test class");
-        cluster.createNamespace(NAMESPACE);
+        cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), INFRA_NAMESPACE);
+        // Helm CO created
         helmResource.create(extensionContext);
     }
 
-    @AfterAll
-    protected void tearDownEnvironmentAfterAll() {
-        cluster.deleteNamespaces();
+    @Override
+    protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
+        // Helm CO deleted
+        helmResource.delete();
+
+        // shared classic CO deployed
+        install = SetupClusterOperator.defaultInstallation()
+            .createInstallation()
+            .runInstallation();
     }
 }

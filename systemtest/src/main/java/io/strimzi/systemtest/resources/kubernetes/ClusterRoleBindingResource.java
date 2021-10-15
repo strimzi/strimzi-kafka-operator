@@ -10,9 +10,12 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
+
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBinding> {
 
@@ -24,15 +27,18 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
     }
     @Override
     public ClusterRoleBinding get(String namespace, String name) {
-        return ResourceManager.kubeClient().namespace(namespace).getClusterRoleBinding(name);
+        // ClusterRoleBinding his operation namespace is only 'default'
+        return kubeClient().namespace(KubeClusterResource.getInstance().defaultNamespace()).getClusterRoleBinding(name);
     }
     @Override
     public void create(ClusterRoleBinding resource) {
-        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createOrReplaceClusterRoleBinding(resource);
+        kubeClient().createOrReplaceClusterRoleBinding(resource);
     }
     @Override
     public void delete(ClusterRoleBinding resource) {
-        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteClusterRoleBinding(resource);
+        // ClusterRoleBinding his operation namespace is only 'default'
+        resource.getMetadata().setNamespace(KubeClusterResource.getInstance().defaultNamespace());
+        kubeClient().deleteClusterRoleBinding(resource);
     }
     @Override
     public boolean waitForReadiness(ClusterRoleBinding resource) {

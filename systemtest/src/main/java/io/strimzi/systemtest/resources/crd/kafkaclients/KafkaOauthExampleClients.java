@@ -112,6 +112,11 @@ public class KafkaOauthExampleClients extends KafkaBasicExampleClients {
         }
 
         @Override
+        public Builder withNamespaceName(String namespaceName) {
+            return (Builder) super.withNamespaceName(namespaceName);
+        }
+
+        @Override
         public KafkaOauthExampleClients build() {
             return new KafkaOauthExampleClients(this);
         }

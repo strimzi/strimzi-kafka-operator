@@ -4,15 +4,21 @@
  */
 package io.strimzi.systemtest.resources.crd.kafkaclients;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.ClientUtils;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidParameterException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,7 +37,7 @@ public class KafkaBasicExampleClients {
     protected long delayMs;
     protected String namespaceName;
 
-    public static class Builder {
+    public static class Builder<SELF extends Builder<SELF>> {
         private String producerName;
         private String consumerName;
         private String bootstrapAddress;
@@ -43,54 +49,59 @@ public class KafkaBasicExampleClients {
         private long delayMs;
         private String namespaceName;
 
-        public Builder withProducerName(String producerName) {
+        public SELF withProducerName(String producerName) {
             this.producerName = producerName;
-            return this;
+            return self();
         }
 
-        public Builder withConsumerName(String consumerName) {
+        public SELF withConsumerName(String consumerName) {
             this.consumerName = consumerName;
-            return this;
+            return self();
         }
 
-        public Builder withBootstrapAddress(String bootstrapAddress) {
+        public SELF withBootstrapAddress(String bootstrapAddress) {
             this.bootstrapAddress = bootstrapAddress;
-            return this;
+            return self();
         }
 
-        public Builder withTopicName(String topicName) {
+        public SELF withTopicName(String topicName) {
             this.topicName = topicName;
-            return this;
+            return self();
         }
 
-        public Builder withMessageCount(int messageCount) {
+        public SELF withMessageCount(int messageCount) {
             this.messageCount = messageCount;
-            return this;
+            return self();
         }
 
-        public Builder withMessage(String message) {
+        public SELF withMessage(String message) {
             this.message = message;
-            return this;
+            return self();
         }
 
-        public Builder withAdditionalConfig(String additionalConfig) {
+        public SELF withAdditionalConfig(String additionalConfig) {
             this.additionalConfig = additionalConfig;
-            return this;
+            return self();
         }
 
-        public Builder withConsumerGroup(String consumerGroup) {
+        public SELF withConsumerGroup(String consumerGroup) {
             this.consumerGroup = consumerGroup;
-            return this;
+            return self();
         }
 
-        public Builder withDelayMs(long delayMs) {
+        public SELF withDelayMs(long delayMs) {
             this.delayMs = delayMs;
-            return this;
+            return self();
         }
 
-        public Builder withNamespaceName(String namespaceName) {
+        public SELF withNamespaceName(String namespaceName) {
             this.namespaceName = namespaceName;
-            return this;
+            return self();
+        }
+
+        @SuppressWarnings("unchecked")
+        protected SELF self() {
+            return (SELF) this;
         }
 
         public KafkaBasicExampleClients build() {
@@ -185,6 +196,70 @@ public class KafkaBasicExampleClients {
     public JobBuilder producerStrimzi() {
         return defaultProducerStrimzi();
     }
+
+    public JobBuilder producerScramShaStrimzi(final String clusterName, final String kafkaUserName) {
+        // fetch secret
+        final String saslJaasConfigEncrypted = ResourceManager.kubeClient().getSecret(namespaceName, kafkaUserName).getData().get("sasl.jaas.config");
+        final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
+
+        additionalConfig +=
+            // scram-sha
+            "ssl.endpoint.identification.algorithm=\n" +
+                "sasl.mechanism=SCRAM-SHA-512\n" +
+                "security.protocol=" + SecurityProtocol.SASL_SSL + "\n" +
+                "sasl.jaas.config=" + saslJaasConfigDecrypted;
+
+        return defaultConsumerStrimzi()
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            .addToEnv(getClusterCaCertEnv(clusterName))
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec();
+    }
+
+    public JobBuilder producerTlsStrimzi(final String clusterName, final String kafkaUserName) {
+        additionalConfig +=
+            // tls
+            "ssl.endpoint.identification.algorithm=\n" +
+            "sasl.mechanism=GSSAPI\n" +
+            "security.protocol=" + SecurityProtocol.SSL + "\n";
+
+        EnvVar userCrt = new EnvVarBuilder()
+            .withName("USER_CRT")
+            .withNewValueFrom()
+                .withNewSecretKeyRef()
+                    .withName(kafkaUserName)
+                    .withKey("user.crt")
+                .endSecretKeyRef()
+            .endValueFrom()
+            .build();
+
+        EnvVar userKey = new EnvVarBuilder()
+            .withName("USER_KEY")
+            .withNewValueFrom()
+                .withNewSecretKeyRef()
+                    .withName(kafkaUserName)
+                    .withKey("user.key")
+                .endSecretKeyRef()
+            .endValueFrom()
+            .build();
+
+        return defaultConsumerStrimzi()
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            .addToEnv(getClusterCaCertEnv(clusterName), userCrt, userKey)
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec();
+    }
+
 
     public JobBuilder consumerStrimzi() {
         return defaultConsumerStrimzi();
@@ -328,5 +403,17 @@ public class KafkaBasicExampleClients {
                     .endSpec()
                 .endTemplate()
             .endSpec();
+    }
+
+    protected EnvVar getClusterCaCertEnv(String clusterName) {
+        return new EnvVarBuilder()
+            .withName("CA_CRT")
+            .withNewValueFrom()
+                .withNewSecretKeyRef()
+                    .withName(KafkaResources.clusterCaCertificateSecretName(clusterName))
+                    .withKey("ca.crt")
+                .endSecretKeyRef()
+            .endValueFrom()
+            .build();
     }
 }

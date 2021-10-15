@@ -35,10 +35,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static io.strimzi.systemtest.Constants.ISOLATED_SUITE;
 import static io.strimzi.systemtest.Constants.PARALLEL_NAMESPACE;
+import static io.strimzi.systemtest.Constants.PARALLEL_SUITE;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -55,6 +58,12 @@ public class StUtils {
 
     private static final Pattern BETWEEN_JSON_OBJECTS_PATTERN = Pattern.compile("}[\\n\\r]+\\{");
     private static final Pattern ALL_BEFORE_JSON_PATTERN = Pattern.compile("(.*\\s)}, \\{", Pattern.DOTALL);
+    private static final BiFunction<String, ExtensionContext, Boolean> CONTAINS_ANNOTATION =
+        (annotationName, extensionContext) -> Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
+            annotation -> annotation.annotationType().getName()
+                .toLowerCase(Locale.ENGLISH)
+                // more than one because in some cases the TestSuite can inherit the annotation
+                .contains(annotationName)).count() >= 1;
 
     private StUtils() { }
 
@@ -366,10 +375,25 @@ public class StUtils {
      * @return true if test case contains annotation ParallelNamespaceTest, otherwise false
      */
     public static boolean isParallelNamespaceTest(ExtensionContext extensionContext) {
-        return Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
-            annotation -> annotation.annotationType().getName()
-                .toLowerCase(Locale.ENGLISH)
-                .contains(PARALLEL_NAMESPACE)).count() == 1;
+        return CONTAINS_ANNOTATION.apply(PARALLEL_NAMESPACE, extensionContext);
+    }
+
+    /**
+     * Checking if test case contains annotation ParallelSuite
+     * @param extensionContext context of the test case
+     * @return true if test case contains annotation ParallelSuite, otherwise false
+     */
+    public static boolean isParallelSuite(ExtensionContext extensionContext) {
+        return CONTAINS_ANNOTATION.apply(PARALLEL_SUITE, extensionContext);
+    }
+
+    /**
+     * Checking if test case contains annotation IsolatedSuite
+     * @param extensionContext context of the test case
+     * @return true if test case contains annotation IsolatedSuite, otherwise false
+     */
+    public static boolean isIsolatedSuite(ExtensionContext extensionContext) {
+        return CONTAINS_ANNOTATION.apply(ISOLATED_SUITE, extensionContext);
     }
 
     /**

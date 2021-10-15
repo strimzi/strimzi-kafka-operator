@@ -47,6 +47,7 @@ public interface Constants {
     long CO_OPERATION_TIMEOUT_SHORT = Duration.ofSeconds(30).toMillis();
     long CO_OPERATION_TIMEOUT_MEDIUM = Duration.ofMinutes(2).toMillis();
     long RECONCILIATION_INTERVAL = Duration.ofSeconds(30).toMillis();
+    long SAFETY_RECONCILIATION_INTERVAL = (RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis()) * 2;
     long LOGGING_RELOADING_INTERVAL = Duration.ofSeconds(30).toMillis();
     long CC_LOG_CONFIG_RELOAD = Duration.ofSeconds(5).toMillis();
 
@@ -86,7 +87,12 @@ public interface Constants {
     String DEPLOYMENT = "Deployment";
     String DEPLOYMENT_TYPE = "deployment-type";
     String SERVICE = "Service";
+    String CONFIG_MAP = "ConfigMap";
+    String SERVICE_ACCOUNT = "ServiceAccount";
+    String CLUSTER_ROLE = "ClusterRole";
     String CLUSTER_ROLE_BINDING = "ClusterRoleBinding";
+    String CUSTOM_RESOURCE_DEFINITION = "CustomResourceDefinition";
+    String CUSTOM_RESOURCE_DEFINITION_SHORT = "Crd";
     String ROLE_BINDING = "RoleBinding";
     String ROLE = "Role";
     String DEPLOYMENT_CONFIG = "DeploymentConfig";
@@ -289,6 +295,10 @@ public interface Constants {
      * Tag for tests which executing in parallel namespaces
      */
     String PARALLEL_NAMESPACE = "parallelnamespace";
+    // label for test case used for parallel execution of test suites
+    String PARALLEL_SUITE = "parallelsuite";
+    // label for test case used for isolation of test suites
+    String ISOLATED_SUITE = "isolatedsuite";
 
     /**
      * Cruise Control related parameters
@@ -312,11 +322,20 @@ public interface Constants {
      */
     String LOAD_BALANCER_CLEANUP = "service.kubernetes.io/load-balancer-cleanup";
 
+    // parallel namespaces
+    String INFRA_NAMESPACE = "infra-namespace";
+    String BRIDGE_KAFKA_CORS_NAMESPACE = "bridge-kafka-cors-namespace";
+    String BRIDGE_KAFKA_EXTERNAL_LISTENER_NAMESPACE = "bridge-kafka-external-listener-namespace";
+    String BRIDGE_SCRAM_SHA_NAMESPACE = "bridge-scram-sha-namespace";
+    String BRIDGE_HTTP_TLS_NAMESPACE = "http-bridge-tls-namespace";
+    String METRICS_SECOND_NAMESPACE = "second-metrics-cluster-test";
+
     /**
      * Auxiliary variables for storing data across our tests
      */
     String NAMESPACE_KEY = "NAMESPACE_NAME";
     String PREPARE_OPERATOR_ENV_KEY = "PREPARE_OPERATOR_ENV";
+    String PARALLEL_CLASS_COUNT = "PARALLEL_CLASS_COUNT";
 
     /**
      * Auxiliary variable for cluster operator deployment
@@ -331,4 +350,13 @@ public interface Constants {
     String CONSUMER_KEY = "CONSUMER_NAME";
     String KAFKA_CLIENTS_POD_KEY = "KAFKA_CLIENTS_POD_NAME";
     String KAFKA_TRACING_CLIENT_KEY = "KAFKA_TRACING_CLIENT";
+
+    /**
+     * Resource constants for Cluster Operator. In case we execute more than 5 test cases in parallel we at least these configuration
+     * (because if we use default configuration, the Cluster Operator Pod occasionally restarting because of OOM)
+     */
+    String CLUSTER_OPERATOR_RESOURCE_CPU_LIMITS = "1000m";
+    String CLUSTER_OPERATOR_RESOURCE_MEMORY_LIMITS = "2048Mi";
+    String CLUSTER_OPERATOR_RESOURCE_CPU_REQUESTS = "200m";
+    String CLUSTER_OPERATOR_RESOURCE_MEMORY_REQUESTS = "1024Mi";
 }

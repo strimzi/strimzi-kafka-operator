@@ -175,6 +175,7 @@ public class KafkaTemplates {
         return new KafkaBuilder(kafka)
             .withNewMetadata()
                 .withName(name)
+                .withClusterName(name)
                 .withNamespace(kubeClient().getNamespace())
             .endMetadata()
             .editSpec()

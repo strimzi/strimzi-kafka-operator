@@ -36,7 +36,7 @@ public class RoleResource implements ResourceType<Role> {
     }
     @Override
     public boolean waitForReadiness(Role resource) {
-        return resource != null;
+        return resource != null && get(resource.getMetadata().getNamespace(), resource.getMetadata().getName()) != null;
     }
 
     public static void role(ExtensionContext extensionContext, String yamlPath, String namespace) {

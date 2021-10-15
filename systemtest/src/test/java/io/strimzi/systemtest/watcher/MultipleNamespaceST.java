@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.watcher;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.strimzi.systemtest.BeforeAllOnce;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.Arrays;
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -27,6 +30,7 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 
 @Tag(REGRESSION)
+@IsolatedSuite
 class MultipleNamespaceST extends AbstractNamespaceST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleNamespaceST.class);
@@ -43,8 +47,8 @@ class MultipleNamespaceST extends AbstractNamespaceST {
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_NAMESPACE_CLUSTER_NAME, 0);
         assertThat(topics, not(hasItems(topicName)));
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(MAIN_NAMESPACE_CLUSTER_NAME, topicName, CO_NAMESPACE).build());
-        KafkaTopicResource.kafkaTopicClient().inNamespace(CO_NAMESPACE).withName(topicName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(MAIN_NAMESPACE_CLUSTER_NAME, topicName, INFRA_NAMESPACE).build());
+        KafkaTopicResource.kafkaTopicClient().inNamespace(INFRA_NAMESPACE).withName(topicName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
     /**
@@ -72,11 +76,12 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     }
 
     private void deployTestSpecificResources(ExtensionContext extensionContext) {
+        install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(CO_NAMESPACE)
-            .withWatchingNamespaces(String.join(",", CO_NAMESPACE, SECOND_NAMESPACE))
-            .withBindingsNamespaces(Arrays.asList(CO_NAMESPACE, SECOND_NAMESPACE))
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withNamespace(INFRA_NAMESPACE)
+            .withWatchingNamespaces(String.join(",", INFRA_NAMESPACE, SECOND_NAMESPACE))
+            .withBindingsNamespaces(Arrays.asList(INFRA_NAMESPACE, SECOND_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
@@ -86,12 +91,12 @@ class MultipleNamespaceST extends AbstractNamespaceST {
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
-                        .withWatchedNamespace(CO_NAMESPACE)
+                        .withWatchedNamespace(INFRA_NAMESPACE)
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec()
             .build());
 
-        cluster.setNamespace(CO_NAMESPACE);
+        cluster.setNamespace(INFRA_NAMESPACE);
     }
 }

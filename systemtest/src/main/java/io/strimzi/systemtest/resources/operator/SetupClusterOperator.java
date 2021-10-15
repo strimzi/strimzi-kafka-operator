@@ -4,11 +4,21 @@
  */
 package io.strimzi.systemtest.resources.operator;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.api.model.rbac.Role;
+import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
+import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
+import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
@@ -35,20 +45,25 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+/**
+ * SetupClusterOperator encapsulates the whole installation process of Cluster Operator (i.e., RoleBinding, ClusterRoleBinding,
+ * ConfigMap, Deployment, CustomResourceDefinition, preparation of the Namespace). Based on the @code{Environment}
+ * values, this class decides how Cluster Operator should be installed (i.e., Olm, Helm, Bundle). Moreover, it provides
+ * @code{rollbackToDefaultConfiguration()} method, which basically re-install Cluster Operator to the default values. In
+ * case user wants to edit specific installation, one can use @code{defaultInstallation()}, which returns SetupClusterOperatorBuilder.
+ */
 public class SetupClusterOperator {
 
     private static final Logger LOGGER = LogManager.getLogger(SetupClusterOperator.class);
     public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../packaging/install/cluster-operator";
 
     private KubeClusterResource cluster = KubeClusterResource.getInstance();
-    private Stack<String> clusterOperatorConfigs = new Stack<>();
     private HelmResource helmResource;
     private OlmResource olmResource;
 
@@ -62,6 +77,9 @@ public class SetupClusterOperator {
     private List<EnvVar> extraEnvVars;
     private Map<String, String> extraLabels;
     private ClusterOperatorRBACType clusterOperatorRBACType;
+
+    private String testClassName;
+    private String testMethodName;
 
     public SetupClusterOperator() {}
     public SetupClusterOperator(SetupClusterOperatorBuilder builder) {
@@ -77,14 +95,58 @@ public class SetupClusterOperator {
         this.clusterOperatorRBACType = builder.clusterOperatorRBACType;
 
         // assign defaults is something is not specified
-        if (this.clusterOperatorName == null || this.clusterOperatorName.isEmpty()) this.clusterOperatorName = Constants.STRIMZI_DEPLOYMENT_NAME;
-        if (this.namespaceToWatch == null) this.namespaceToWatch = this.namespaceInstallTo;
-        if (this.bindingsNamespaces == null) this.bindingsNamespaces = Collections.singletonList(this.namespaceInstallTo);
-        if (this.operationTimeout == 0) this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
-        if (this.reconciliationInterval == 0) this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
-        if (this.extraEnvVars == null) this.extraEnvVars = new ArrayList<>();
-        if (this.extraLabels == null) this.extraLabels = new HashMap<>();
-        if (this.clusterOperatorRBACType == null) this.clusterOperatorRBACType = ClusterOperatorRBACType.CLUSTER;
+        if (this.clusterOperatorName == null || this.clusterOperatorName.isEmpty()) {
+            this.clusterOperatorName = Constants.STRIMZI_DEPLOYMENT_NAME;
+        }
+        // if namespace is not set we install operator to 'infra-namespace'
+        if (this.namespaceInstallTo == null || this.namespaceInstallTo.isEmpty()) {
+            this.namespaceInstallTo = Constants.INFRA_NAMESPACE;
+        }
+        if (this.namespaceToWatch == null) {
+            this.namespaceToWatch = this.namespaceInstallTo;
+        }
+        if (this.bindingsNamespaces == null) {
+            this.bindingsNamespaces = Collections.singletonList(this.namespaceInstallTo);
+        }
+        if (this.operationTimeout == 0) {
+            this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
+        }
+        if (this.reconciliationInterval == 0) {
+            this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
+        }
+        if (this.extraEnvVars == null) {
+            this.extraEnvVars = new ArrayList<>();
+        }
+        if (this.extraLabels == null) {
+            this.extraLabels = new HashMap<>();
+        }
+        if (this.clusterOperatorRBACType == null) {
+            this.clusterOperatorRBACType = ClusterOperatorRBACType.CLUSTER;
+        }
+    }
+
+    /**
+     * Auxiliary method, which check if Cluster Operator namespace is created.
+     * @return true if Cluster Operator namespace not created, otherwise false (i.e., namespace already created)
+     */
+    private boolean isClusterOperatorNamespaceNotCreated() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null;
+    }
+
+    public static SetupClusterOperatorBuilder defaultInstallation() {
+        if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
+            LOGGER.debug("Building default installation for RBAC Cluster operator.");
+            return new SetupClusterOperator.SetupClusterOperatorBuilder()
+                .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+                .withNamespace(Constants.INFRA_NAMESPACE)
+                .withWatchingNamespaces(ParallelNamespacesSuitesNames.getRbacNamespacesToWatch())
+                .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces());
+        }
+        LOGGER.debug("Building default installation for Cluster operator.");
+        return new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withNamespace(Constants.INFRA_NAMESPACE)
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES);
     }
 
     /**
@@ -93,8 +155,12 @@ public class SetupClusterOperator {
      * Don't use this method in tests, where specific configuration of CO is needed.
      */
     public SetupClusterOperator runInstallation() {
-        String testClassName = extensionContext.getRequiredTestClass().getName();
-        String testMethodName = testClassName.contains(extensionContext.getDisplayName()) ? "" : extensionContext.getDisplayName();
+        LOGGER.info("Cluster operator installation configuration:\n{}", this::toString);
+        // if it's shared context (before suite) skip
+        if (BeforeAllOnce.getSharedExtensionContext() != extensionContext) {
+            testClassName = extensionContext.getRequiredTestClass() != null ? extensionContext.getRequiredTestClass().getName() : "";
+            testMethodName = extensionContext.getDisplayName() != null ? extensionContext.getDisplayName() : "";
+        }
 
         if (Environment.isOlmInstall()) {
             LOGGER.info("Going to install ClusterOperator via OLM");
@@ -102,7 +168,7 @@ public class SetupClusterOperator {
             if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
                 // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
                 if (!Environment.isNamespaceRbacScope()) {
-                    if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
+                    if (isClusterOperatorNamespaceNotCreated()) {
                         cluster.setNamespace(namespaceInstallTo);
 
                         cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
@@ -112,9 +178,9 @@ public class SetupClusterOperator {
                     olmResource = new OlmResource(cluster.getDefaultOlmNamespace());
                     olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
                 }
-            // single-namespace olm co-operator
+                // single-namespace olm co-operator
             } else {
-                if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
+                if (isClusterOperatorNamespaceNotCreated()) {
                     cluster.setNamespace(namespaceInstallTo);
                     cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                     extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
@@ -125,7 +191,7 @@ public class SetupClusterOperator {
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
             helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
-            if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
+            if (isClusterOperatorNamespaceNotCreated()) {
                 cluster.setNamespace(namespaceInstallTo);
                 cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                 extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
@@ -138,16 +204,15 @@ public class SetupClusterOperator {
     }
 
     public SetupClusterOperator runBundleInstallation() {
+        LOGGER.info("Cluster operator installation configuration:\n{}", this::toString);
         bundleInstallation();
         return this;
     }
 
     private void bundleInstallation() {
         LOGGER.info("Going to install ClusterOperator via Yaml bundle");
-        String testClassName = extensionContext.getRequiredTestClass().getName();
-        String testMethodName = testClassName.contains(extensionContext.getDisplayName()) ? "" : extensionContext.getDisplayName();
-
-        if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null) {
+        // check if namespace is already created
+        if (isClusterOperatorNamespaceNotCreated()) {
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
         } else {
@@ -297,13 +362,51 @@ public class SetupClusterOperator {
 
         for (File operatorFile : operatorFiles) {
             File createFile = operatorFile;
-            if (operatorFile.getName().contains("ClusterRole-")) {
+
+            if (createFile.getName().contains(Constants.CLUSTER_ROLE + "-")) {
                 createFile = switchClusterRolesToRolesIfNeeded(createFile);
             }
 
-            LOGGER.info("Creating configuration file: {}", createFile.getAbsolutePath());
-            cmdKubeClient().namespace(namespace).createOrReplace(createFile);
-            clusterOperatorConfigs.push(createFile.getPath());
+            final String resourceType = createFile.getName().split("-")[1];
+            LOGGER.debug("Installation resource type: {}", resourceType);
+
+            switch (resourceType) {
+                case Constants.ROLE:
+                    Role role = TestUtils.configFromYaml(createFile, Role.class);
+                    ResourceManager.getInstance().createResource(extensionContext, new RoleBuilder(role)
+                        .editMetadata()
+                            .withNamespace(namespace)
+                        .endMetadata()
+                        .build());
+                    break;
+                case Constants.CLUSTER_ROLE:
+                    ClusterRole clusterRole = TestUtils.configFromYaml(createFile, ClusterRole.class);
+                    ResourceManager.getInstance().createResource(extensionContext, clusterRole);
+                    break;
+                case Constants.SERVICE_ACCOUNT:
+                    ServiceAccount serviceAccount = TestUtils.configFromYaml(createFile, ServiceAccount.class);
+                    ResourceManager.getInstance().createResource(extensionContext, new ServiceAccountBuilder(serviceAccount)
+                        .editMetadata()
+                            .withNamespace(namespace)
+                        .endMetadata()
+                        .build());
+                    break;
+                case Constants.CONFIG_MAP:
+                    ConfigMap configMap = TestUtils.configFromYaml(createFile, ConfigMap.class);
+                    ResourceManager.getInstance().createResource(extensionContext, new ConfigMapBuilder(configMap)
+                        .editMetadata()
+                            .withNamespace(namespace)
+                        .endMetadata()
+                        .build());
+                    break;
+                case Constants.CUSTOM_RESOURCE_DEFINITION_SHORT:
+                    CustomResourceDefinition customResourceDefinition = TestUtils.configFromYaml(createFile, CustomResourceDefinition.class);
+                    ResourceManager.getInstance().createResource(extensionContext, customResourceDefinition);
+                    break;
+                default:
+                    LOGGER.error("Unknown installation resource type: {}", resourceType);
+                    throw new RuntimeException("Unknown installation resource type:" + resourceType);
+            }
         }
     }
 
@@ -316,7 +419,11 @@ public class SetupClusterOperator {
 
         if (Environment.isNamespaceRbacScope() || isRbacScope || this.clusterOperatorRBACType == ClusterOperatorRBACType.NAMESPACE) {
             try {
-                File tmpFile = File.createTempFile("rbac-" + oldFile.getName().replace(".yaml", ""), ".yaml");
+                final String[] fileNameArr = oldFile.getName().split("-");
+                // change ClusterRole to Role
+                fileNameArr[1] = "Role";
+                final String changeFileName = Arrays.stream(fileNameArr).map(item -> "-" + item).collect(Collectors.joining()).substring(1);
+                File tmpFile = File.createTempFile(changeFileName.replace(".yaml", ""), ".yaml");
                 TestUtils.writeFile(tmpFile.getAbsolutePath(), TestUtils.readFile(oldFile).replace("ClusterRole", "Role"));
                 LOGGER.info("Replaced ClusterRole for Role in {}", oldFile.getAbsolutePath());
 
@@ -338,7 +445,7 @@ public class SetupClusterOperator {
         RoleBindingResource.roleBinding(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace, bindingsNamespace);
     }
 
-    public void applyRoles(String namespace) {
+    public void applyRoles(ExtensionContext extensionContext, String namespace) {
         File roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml");
         RoleResource.role(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
 
@@ -362,9 +469,10 @@ public class SetupClusterOperator {
         if (Environment.isNamespaceRbacScope() || this.clusterOperatorRBACType.equals(ClusterOperatorRBACType.NAMESPACE)) {
             // if roles only, only deploy the rolebindings
             for (String bindingsNamespace : bindingsNamespaces) {
-                applyRoles(bindingsNamespace);
+                applyRoles(extensionContext, bindingsNamespace);
                 applyRoleBindings(extensionContext, namespaceInstallTo, bindingsNamespace);
             }
+            // RoleBindings also deployed in CO namespace
             applyRoleBindings(extensionContext, namespaceInstallTo, namespaceInstallTo);
         } else {
             for (String bindingsNamespace : bindingsNamespaces) {
@@ -394,14 +502,92 @@ public class SetupClusterOperator {
         ClusterRoleBindingResource.clusterRoleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
     }
 
-    /**
-     * Delete ServiceAccount, Roles and CRDs from kubernetes cluster.
-     */
-    public void deleteClusterOperatorInstallFiles() {
-        while (!clusterOperatorConfigs.empty()) {
-            String clusterOperatorConfig = clusterOperatorConfigs.pop();
-            LOGGER.info("Deleting configuration file: {}", clusterOperatorConfig);
-            cmdKubeClient().delete(clusterOperatorConfig);
+    public void unInstall() {
+        LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+        LOGGER.info("Un-installing cluster operator from {} namespace", namespaceInstallTo);
+        LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+        BeforeAllOnce.getSharedExtensionContext().getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, null);
+
+        // trigger that we will again create namespace
+        if (Environment.isHelmInstall()) {
+            helmResource.delete();
+        } else if (Environment.isOlmInstall()) {
+            olmResource.delete();
+        } else {
+            // clear all resources related to the extension context
+            try {
+                if (!Environment.SKIP_TEARDOWN) {
+                    ResourceManager.getInstance().deleteResources(BeforeAllOnce.getSharedExtensionContext());
+                }
+            } catch (Exception e) {
+                Thread.currentThread().interrupt();
+                e.printStackTrace();
+            }
+
+            KubeClusterResource.getInstance().deleteNamespace(
+                CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo);
         }
     }
+
+    public SetupClusterOperator rollbackToDefaultConfiguration() {
+        // un-install old cluster operator
+        unInstall();
+
+        // install new one with default configuration
+        return defaultInstallation()
+            .createInstallation()
+            .runInstallation();
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) {
+            return true;
+        }
+        if (other == null || getClass() != other.getClass()) {
+            return false;
+        }
+        SetupClusterOperator otherInstallation = (SetupClusterOperator) other;
+
+        return operationTimeout == otherInstallation.operationTimeout &&
+            reconciliationInterval == otherInstallation.reconciliationInterval &&
+            Objects.equals(cluster, otherInstallation.cluster) &&
+            Objects.equals(helmResource, otherInstallation.helmResource) &&
+            Objects.equals(olmResource, otherInstallation.olmResource) &&
+            Objects.equals(clusterOperatorName, otherInstallation.clusterOperatorName) &&
+            Objects.equals(namespaceInstallTo, otherInstallation.namespaceInstallTo) &&
+            Objects.equals(namespaceToWatch, otherInstallation.namespaceToWatch) &&
+            Objects.equals(bindingsNamespaces, otherInstallation.bindingsNamespaces) &&
+            Objects.equals(extraEnvVars, otherInstallation.extraEnvVars) &&
+            Objects.equals(extraLabels, otherInstallation.extraLabels) &&
+            clusterOperatorRBACType == otherInstallation.clusterOperatorRBACType;
+    }
+    @Override
+    public int hashCode() {
+        return Objects.hash(cluster, helmResource, olmResource, extensionContext,
+            clusterOperatorName, namespaceInstallTo, namespaceToWatch, bindingsNamespaces, operationTimeout,
+            extraEnvVars, extraLabels, clusterOperatorRBACType);
+    }
+
+    @Override
+    public String toString() {
+        return "SetupClusterOperator{" +
+            "cluster=" + cluster +
+            ", helmResource=" + helmResource +
+            ", olmResource=" + olmResource +
+            ", extensionContext=" + extensionContext +
+            ", clusterOperatorName='" + clusterOperatorName + '\'' +
+            ", namespaceInstallTo='" + namespaceInstallTo + '\'' +
+            ", namespaceToWatch='" + namespaceToWatch + '\'' +
+            ", bindingsNamespaces=" + bindingsNamespaces +
+            ", operationTimeout=" + operationTimeout +
+            ", reconciliationInterval=" + reconciliationInterval +
+            ", extraEnvVars=" + extraEnvVars +
+            ", extraLabels=" + extraLabels +
+            ", clusterOperatorRBACType=" + clusterOperatorRBACType +
+            ", testClassName='" + testClassName + '\'' +
+            ", testMethodName='" + testMethodName + '\'' +
+            '}';
+    }
+
 }

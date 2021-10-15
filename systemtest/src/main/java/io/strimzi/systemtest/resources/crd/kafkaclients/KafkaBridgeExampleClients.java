@@ -7,7 +7,6 @@ package io.strimzi.systemtest.resources.crd.kafkaclients;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.ResourceManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -73,6 +72,16 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
         }
 
         @Override
+        public Builder withNamespaceName(String namespaceName) {
+            return (Builder) super.withNamespaceName(namespaceName);
+        }
+
+        @Override
+        public KafkaBasicExampleClients.Builder withMessage(String message) {
+            return (Builder) super.withMessage(message);
+        }
+
+        @Override
         public KafkaBridgeExampleClients build() {
             return new KafkaBridgeExampleClients(this);
         }
@@ -115,7 +124,7 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
 
         return new JobBuilder()
             .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withNamespace(namespaceName)
                 .withLabels(producerLabels)
                 .withName(producerName)
             .endMetadata()
@@ -165,7 +174,7 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
 
         return new JobBuilder()
             .withNewMetadata()
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withNamespace(namespaceName)
                 .withLabels(consumerLabels)
                 .withName(consumerName)
             .endMetadata()

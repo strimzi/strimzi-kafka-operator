@@ -12,14 +12,17 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.annotations.IsolatedTest;
@@ -34,6 +37,7 @@ import java.util.Map;
 import java.util.Random;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -46,9 +50,9 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * https://github.com/strimzi/proposals/blob/main/022-feature-gates.md
  */
 @Tag(REGRESSION)
+@IsolatedSuite
 public class FeatureGatesST extends AbstractST {
 
-    static final String NAMESPACE = "feature-gates-tests";
     private static final Logger LOGGER = LogManager.getLogger(FeatureGatesST.class);
 
     /**
@@ -70,9 +74,10 @@ public class FeatureGatesST extends AbstractST {
 
         testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+ControlPlaneListener", null));
 
+        install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(NAMESPACE)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withExtraEnvVars(testEnvVars)
             .createInstallation()
@@ -81,12 +86,12 @@ public class FeatureGatesST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas).build());
 
         LOGGER.info("Check for presence of ContainerPort 9090/tcp (tcp-ctrlplane) in first Kafka pod.");
-        final Pod kafkaPod = PodUtils.getPodsByPrefixInNameWithDynamicWait(NAMESPACE, clusterName + "-kafka-").get(0);
+        final Pod kafkaPod = PodUtils.getPodsByPrefixInNameWithDynamicWait(INFRA_NAMESPACE, clusterName + "-kafka-").get(0);
         ContainerPort expectedControlPlaneContainerPort = new ContainerPort(9090, null, null, "tcp-ctrlplane", "TCP");
         List<ContainerPort> kafkaPodPorts = kafkaPod.getSpec().getContainers().get(0).getPorts();
         assertTrue(kafkaPodPorts.contains(expectedControlPlaneContainerPort));
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(NAMESPACE, kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(INFRA_NAMESPACE, kafkaStatefulSetName(clusterName));
 
         LOGGER.info("Try to send some messages to Kafka over next few minutes.");
         KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(clusterName, topicName)
@@ -104,29 +109,30 @@ public class FeatureGatesST extends AbstractST {
             .withTopicName(topicName)
             .withMessageCount(messageCount)
             .withDelayMs(500)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(INFRA_NAMESPACE)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+        JobUtils.waitForJobRunning(consumerName, INFRA_NAMESPACE);
 
         LOGGER.info("Delete first found Kafka broker pod.");
-        kubeClient(NAMESPACE).deletePod(NAMESPACE, kafkaPod);
+        kubeClient(INFRA_NAMESPACE).deletePod(INFRA_NAMESPACE, kafkaPod);
         StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), kafkaReplicas);
 
         LOGGER.info("Force Rolling Update of Kafka via annotation.");
         kafkaPods.keySet().forEach(podName -> {
-            kubeClient(NAMESPACE).editPod(podName).edit(pod -> new PodBuilder(pod)
+            kubeClient(INFRA_NAMESPACE).editPod(podName).edit(pod -> new PodBuilder(pod)
                     .editMetadata()
                         .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
                     .endMetadata()
                     .build());
         });
         LOGGER.info("Wait for next reconciliation to happen.");
-        StatefulSetUtils.waitTillSsHasRolled(NAMESPACE, kafkaStatefulSetName(clusterName), kafkaReplicas, kafkaPods);
+        StatefulSetUtils.waitTillSsHasRolled(INFRA_NAMESPACE, kafkaStatefulSetName(clusterName), kafkaReplicas, kafkaPods);
 
         LOGGER.info("Waiting for clients to finish sending/receiving messages.");
-        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
-        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 }

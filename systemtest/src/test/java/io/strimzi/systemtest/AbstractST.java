@@ -15,10 +15,12 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
+import io.strimzi.systemtest.parallel.ParallelSuiteController;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
@@ -46,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -61,7 +64,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@ExtendWith(TestExecutionWatcher.class)
+@ExtendWith({TestExecutionWatcher.class, BeforeAllOnce.class})
 @DisplayNameGeneration(IndicativeSentences.class)
 public abstract class AbstractST implements TestSeparator {
 
@@ -75,7 +78,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
-    protected SetupClusterOperator install = new SetupClusterOperator();
+    protected SetupClusterOperator install;
     protected OlmResource olmResource;
     protected KubeClusterResource cluster;
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
@@ -87,6 +90,7 @@ public abstract class AbstractST implements TestSeparator {
     protected static Map<String, String> mapWithTestTopics = new HashMap<>();
     protected static Map<String, String> mapWithTestUsers = new HashMap<>();
     protected static Map<String, String> mapWithKafkaClientNames = new HashMap<>();
+    protected static ConcurrentHashMap<ExtensionContext, TestStorage> storageMap = new ConcurrentHashMap<>();
 
     private AtomicInteger counterOfNamespaces = new AtomicInteger(0);
 
@@ -104,15 +108,6 @@ public abstract class AbstractST implements TestSeparator {
     public static final int MESSAGE_COUNT = 100;
     public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
     public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
-
-    /**
-     * Clear cluster from all created namespaces and configurations files for cluster operator.
-     */
-    protected void teardownEnvForOperator() {
-        install.deleteClusterOperatorInstallFiles();
-        cluster.deleteCustomResources();
-        cluster.deleteNamespaces();
-    }
 
     protected void assertResources(String namespace, String podName, String containerName, String memoryLimit, String cpuLimit, String memoryRequest, String cpuRequest) {
         Pod po = kubeClient(namespace).getPod(namespace, podName);
@@ -546,7 +541,22 @@ public abstract class AbstractST implements TestSeparator {
     protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(extensionContext);
-            teardownEnvForOperator();
+        }
+        if (StUtils.isParallelSuite(extensionContext)) {
+            ParallelSuiteController.removeParallelSuite(extensionContext);
+        }
+
+        // 1st case = contract that we always change configuration of CO when we annotate suite to 'isolated' and therefore
+        // we need to rollback to default configuration, which most of the suites use.
+        // ----
+        // 2nd case = transition from if previous suite is @IsolatedSuite and now @ParallelSuite is running we must do
+        // additional check that configuration is in default
+        if (install != null && !SetupClusterOperator.defaultInstallation().createInstallation().equals(install)) {
+            // install configuration differs from default one we are gonna roll-back
+            LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+            LOGGER.info("Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.");
+            LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+            install = install.rollbackToDefaultConfiguration();
         }
     }
 
@@ -607,6 +617,15 @@ public abstract class AbstractST implements TestSeparator {
      */
     protected void beforeAllMayOverride(ExtensionContext extensionContext) {
         cluster = KubeClusterResource.getInstance();
+        install = BeforeAllOnce.getInstall();
+
+        if (StUtils.isParallelSuite(extensionContext)) {
+            ParallelSuiteController.addParallelSuite(extensionContext);
+        }
+        if (StUtils.isIsolatedSuite(extensionContext)) {
+            cluster.setNamespace(Constants.INFRA_NAMESPACE);
+            ParallelSuiteController.waitUntilZeroParallelSuites();
+        }
     }
 
     @BeforeEach

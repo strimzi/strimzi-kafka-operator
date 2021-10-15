@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
@@ -19,9 +18,9 @@ import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -29,6 +28,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -41,11 +41,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  * Metadata for upgrade/downgrade procedure are loaded from kafka-versions.yaml in root dir of this repository.
  */
 @Tag(UPGRADE)
+@IsolatedSuite
 public class KafkaUpgradeDowngradeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUpgradeDowngradeST.class);
-
-    public static final String NAMESPACE = "kafka-upgrade-test";
 
     private final String continuousTopicName = "continuous-topic";
     private final int continuousClientsMessageCount = 1000;
@@ -71,7 +70,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, INFRA_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
@@ -96,7 +95,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, INFRA_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
@@ -134,7 +133,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, INFRA_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
@@ -156,7 +155,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, INFRA_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
@@ -167,7 +166,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
         boolean sameMinorVersion = initialVersion.protocolVersion().equals(newVersion.protocolVersion());
 
-        if (KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get() == null) {
+        if (KafkaResource.kafkaClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get() == null) {
             LOGGER.info("Deploying initial Kafka version {} with logMessageFormat={} and interBrokerProtocol={}", initialVersion.version(), initLogMsgFormat, initInterBrokerProtocol);
             KafkaBuilder kafka = KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas, zkReplicas)
                 .editSpec()
@@ -270,8 +269,8 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), kafkaPods);
         LOGGER.info("1st Kafka roll (image change) is complete");
 
-        Object currentLogMessageFormat = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("log.message.format.version");
-        Object currentInterBrokerProtocol = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version");
+        Object currentLogMessageFormat = KafkaResource.kafkaClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("log.message.format.version");
+        Object currentInterBrokerProtocol = KafkaResource.kafkaClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version");
 
         if (isUpgrade && !sameMinorVersion) {
             LOGGER.info("Kafka version is increased, two RUs remaining for increasing IBPV and LMFV");
@@ -333,29 +332,20 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
 
         if (!isUpgrade) {
             LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", initLogMsgFormat);
-            assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(clusterName)
+            assertThat(Crds.kafkaOperation(kubeClient(INFRA_NAMESPACE).getClient()).inNamespace(INFRA_NAMESPACE).withName(clusterName)
                     .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(initLogMsgFormat));
             LOGGER.info("Verifying that inter.broker.protocol.version attribute updated correctly to version {}", initInterBrokerProtocol);
-            assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(clusterName)
+            assertThat(Crds.kafkaOperation(kubeClient(INFRA_NAMESPACE).getClient()).inNamespace(INFRA_NAMESPACE).withName(clusterName)
                     .get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version"), is(initInterBrokerProtocol));
         } else {
             if (currentLogMessageFormat != null || currentInterBrokerProtocol != null) {
                 LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
-                assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(clusterName)
+                assertThat(Crds.kafkaOperation(kubeClient(INFRA_NAMESPACE).getClient()).inNamespace(INFRA_NAMESPACE).withName(clusterName)
                         .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(newVersion.messageVersion()));
                 LOGGER.info("Verifying that inter.broker.protocol.version attribute updated correctly to version {}", newVersion.protocolVersion());
-                assertThat(Crds.kafkaOperation(kubeClient(NAMESPACE).getClient()).inNamespace(NAMESPACE).withName(clusterName)
+                assertThat(Crds.kafkaOperation(kubeClient(INFRA_NAMESPACE).getClient()).inNamespace(INFRA_NAMESPACE).withName(clusterName)
                         .get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version"), is(newVersion.protocolVersion()));
             }
         }
-    }
-
-    @BeforeAll
-    void setup(ExtensionContext extensionContext) {
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(NAMESPACE)
-            .createInstallation()
-            .runBundleInstallation();
     }
 }

@@ -10,6 +10,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
@@ -22,6 +23,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
+import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DeploymentTypes;
@@ -35,12 +37,16 @@ import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.kubernetes.ClusterOperatorCustomResourceDefinition;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
+import io.strimzi.systemtest.resources.kubernetes.ClusterRoleResource;
+import io.strimzi.systemtest.resources.kubernetes.ConfigMapResource;
 import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.resources.kubernetes.JobResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleResource;
+import io.strimzi.systemtest.resources.kubernetes.ServiceAccountResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.StUtils;
@@ -118,7 +124,11 @@ public class ResourceManager {
         new NetworkPolicyResource(),
         new RoleBindingResource(),
         new ServiceResource(),
-        new RoleResource()
+        new ConfigMapResource(),
+        new ServiceAccountResource(),
+        new RoleResource(),
+        new ClusterRoleResource(),
+        new ClusterOperatorCustomResourceDefinition()
     };
 
     @SafeVarargs
@@ -133,12 +143,15 @@ public class ResourceManager {
             LOGGER.info("Create/Update of {} {} in namespace {}",
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
 
-            // if it is parallel namespace test we are gonna replace resource a namespace
-            if (StUtils.isParallelNamespaceTest(testContext)) {
-                if (!Environment.isNamespaceRbacScope()) {
-                    final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-                    LOGGER.info("Using namespace: {}", namespace);
-                    resource.getMetadata().setNamespace(namespace);
+            // ignore test context of shared Cluster Operator
+            if (testContext != BeforeAllOnce.getSharedExtensionContext()) {
+                // if it is parallel namespace test we are gonna replace resource a namespace
+                if (StUtils.isParallelNamespaceTest(testContext)) {
+                    if (!Environment.isNamespaceRbacScope()) {
+                        final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+                        LOGGER.info("Using namespace: {}", namespace);
+                        resource.getMetadata().setNamespace(namespace);
+                    }
                 }
             }
 
@@ -185,8 +198,8 @@ public class ResourceManager {
         assertNotNull(resource.getMetadata());
         assertNotNull(resource.getMetadata().getName());
 
-        // cluster role binding does not need namespace...
-        if (!(resource instanceof ClusterRoleBinding)) {
+        // cluster role binding and custom resource definition does not need namespace...
+        if (!(resource instanceof ClusterRoleBinding || resource instanceof CustomResourceDefinition)) {
             assertNotNull(resource.getMetadata().getNamespace());
         }
 

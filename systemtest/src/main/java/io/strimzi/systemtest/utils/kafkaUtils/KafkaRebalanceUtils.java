@@ -19,6 +19,7 @@ import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.test.TestUtils;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -71,6 +72,10 @@ public class KafkaRebalanceUtils {
     }
 
     public static void doRebalancingProcess(Reconciliation reconciliation, String namespaceName, String rebalanceName) {
+        LOGGER.infoCr(reconciliation, String.join("", Collections.nCopies(76, "=")));
+        LOGGER.infoCr(reconciliation, KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(rebalanceName).get().getStatus().getConditions().get(0).getType());
+        LOGGER.infoCr(reconciliation, String.join("", Collections.nCopies(76, "=")));
+
         // it can sometimes happen that KafkaRebalance is already in the ProposalReady state -> race condition prevention
         if (!rebalanceStateCondition(reconciliation, namespaceName, rebalanceName).getType().equals(KafkaRebalanceState.ProposalReady.name())) {
             LOGGER.infoCr(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
@@ -81,6 +86,10 @@ public class KafkaRebalanceUtils {
 
             waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.ProposalReady);
         }
+
+        LOGGER.infoCr(reconciliation, String.join("", Collections.nCopies(76, "=")));
+        LOGGER.infoCr(reconciliation, KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(rebalanceName).get().getStatus().getConditions().get(0).getType());
+        LOGGER.infoCr(reconciliation, String.join("", Collections.nCopies(76, "=")));
 
         LOGGER.infoCr(reconciliation, "Triggering the rebalance with annotation {} of KafkaRebalance resource", "strimzi.io/rebalance=approve");
 

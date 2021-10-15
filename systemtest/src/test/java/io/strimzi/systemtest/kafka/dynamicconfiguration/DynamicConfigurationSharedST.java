@@ -9,7 +9,7 @@ import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.Type;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -41,10 +41,10 @@ import static org.hamcrest.CoreMatchers.is;
  */
 @Tag(REGRESSION)
 @Tag(DYNAMIC_CONFIGURATION)
+@IsolatedSuite
 public class DynamicConfigurationSharedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfigurationSharedST.class);
-    private static final String NAMESPACE = "kafka-configuration-shared-cluster-test";
     private final String dynamicConfigurationSharedClusterName = "dynamic-configuration-shared-cluster-name";
 
     @TestFactory
@@ -213,12 +213,6 @@ public class DynamicConfigurationSharedST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(NAMESPACE)
-            .createInstallation()
-            .runInstallation();
-
         LOGGER.info("Deploying shared Kafka across all test cases!");
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(dynamicConfigurationSharedClusterName, 3).build());
     }
