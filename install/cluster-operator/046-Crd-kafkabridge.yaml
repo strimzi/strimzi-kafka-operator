@@ -315,11 +315,11 @@ spec:
                     description: A map of -XX options to the JVM.
                   "-Xms":
                     type: string
-                    pattern: '[0-9]+[mMgG]?'
+                    pattern: ^[0-9]+[mMgG]?$
                     description: -Xms option to to the JVM.
                   "-Xmx":
                     type: string
-                    pattern: '[0-9]+[mMgG]?'
+                    pattern: ^[0-9]+[mMgG]?$
                     description: -Xmx option to to the JVM.
                   gcLoggingEnabled:
                     type: boolean
@@ -550,6 +550,8 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                              hostProcess:
+                                type: boolean
                               runAsUserName:
                                 type: string
                         description: Configures pod-level security attributes and
@@ -895,6 +897,12 @@ spec:
                         description: The pod's HostAliases. HostAliases is an optional
                           list of hosts and IPs that will be injected into the Pod's
                           hosts file if specified.
+                      tmpDirSizeLimit:
+                        type: string
+                        pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                        description: Defines the total amount (for example `1Gi`)
+                          of local storage required for temporary EmptyDir volume
+                          (`/tmp`). Default value is `1Mi`.
                       enableServiceLinks:
                         type: boolean
                         description: Indicates whether information about services
@@ -1075,6 +1083,8 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                              hostProcess:
+                                type: boolean
                               runAsUserName:
                                 type: string
                         description: Security context for the container.

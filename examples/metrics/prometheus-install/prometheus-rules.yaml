@@ -10,13 +10,13 @@ spec:
   - name: kafka
     rules:
     - alert: KafkaRunningOutOfSpace
-      expr: kubelet_volume_stats_available_bytes{persistentvolumeclaim=~"data-([0-9]+)?-(.+)-kafka-[0-9]+"} < 5368709120
+      expr: kubelet_volume_stats_available_bytes{persistentvolumeclaim=~"data(-[0-9]+)?-(.+)-kafka-[0-9]+"} * 100 / kubelet_volume_stats_capacity_bytes{persistentvolumeclaim=~"data(-[0-9]+)?-(.+)-kafka-[0-9]+"} < 15
       for: 10s
       labels:
         severity: warning
       annotations:
         summary: 'Kafka is running out of free disk space'
-        description: 'There are only {{ $value }} bytes available at {{ $labels.persistentvolumeclaim }} PVC'
+        description: 'There are only {{ $value }} percent available at {{ $labels.persistentvolumeclaim }} PVC'
     - alert: UnderReplicatedPartitions
       expr: kafka_server_replicamanager_underreplicatedpartitions > 0
       for: 10s

@@ -52,5 +52,3 @@ spec:
       password: password
   http:
     port: 8080
- 
-
