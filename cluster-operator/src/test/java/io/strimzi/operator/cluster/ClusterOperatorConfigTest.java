@@ -43,7 +43,7 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE, "operator-namespace");
-        envVars.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "+ControlPlaneListener");
+        envVars.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "-ControlPlaneListener");
     }
 
     @Test
@@ -62,7 +62,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getConnectBuildTimeoutMs(), is(ClusterOperatorConfig.DEFAULT_CONNECT_BUILD_TIMEOUT_MS));
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
         assertThat(config.getOperatorNamespaceLabels(), is(nullValue()));
-        assertThat(config.featureGates().controlPlaneListenerEnabled(), is(false));
+        assertThat(config.featureGates().controlPlaneListenerEnabled(), is(true));
     }
 
     @Test
@@ -101,7 +101,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getOperationTimeoutMs(), is(30_000L));
         assertThat(config.getConnectBuildTimeoutMs(), is(40_000L));
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
-        assertThat(config.featureGates().controlPlaneListenerEnabled(), is(true));
+        assertThat(config.featureGates().controlPlaneListenerEnabled(), is(false));
     }
 
     @Test
