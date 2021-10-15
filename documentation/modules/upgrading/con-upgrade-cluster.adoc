@@ -100,7 +100,7 @@ For example, `my-cluster-kafka-0`.
 [role="_additional-resources"]
 .Additional resources
 * {kubernetes-docs}[Kubernetes documentation^]
-* link:{BookURLUsing}#proc-drain-cleaner-{context}[Draining pods using the Strimzi Drain Cleaner]
+* link:{BookURLUsing}#assembly-drain-cleaner-str[Draining pods using the Strimzi Drain Cleaner]
 * link:{BookURLUsing}#replicating_topics_for_high_availability[Replicating topics for high availability^]
 * link:{BookURLUsing}#type-PodDisruptionBudgetTemplate-reference[PodDisruptionBudgetTemplate schema reference^]
 * link:{BookURLUsing}#proc-manual-rolling-update-pods-str[Performing a rolling update using a pod annotation^]
