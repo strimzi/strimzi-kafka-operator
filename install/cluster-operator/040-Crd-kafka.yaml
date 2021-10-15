@@ -538,8 +538,7 @@ spec:
                               type: integer
                               description: The maximum connection creation rate we
                                 allow in this listener at any time. New connections
-                                will be throttled if the limit is reached.Supported
-                                only on Kafka 2.7.0 and newer.
+                                will be throttled if the limit is reached.
                             maxConnections:
                               type: integer
                               description: The maximum number of connections we allow
@@ -972,11 +971,11 @@ spec:
                         description: A map of -XX options to the JVM.
                       "-Xms":
                         type: string
-                        pattern: '[0-9]+[mMgG]?'
+                        pattern: ^[0-9]+[mMgG]?$
                         description: -Xms option to to the JVM.
                       "-Xmx":
                         type: string
-                        pattern: '[0-9]+[mMgG]?'
+                        pattern: ^[0-9]+[mMgG]?$
                         description: -Xmx option to to the JVM.
                       gcLoggingEnabled:
                         type: boolean
@@ -1201,6 +1200,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Configures pod-level security attributes
@@ -1547,6 +1548,12 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the Pod's hosts file if specified.
+                          tmpDirSizeLimit:
+                            type: string
+                            pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                            description: Defines the total amount (for example `1Gi`)
+                              of local storage required for temporary EmptyDir volume
+                              (`/tmp`). Default value is `1Mi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services
@@ -1921,6 +1928,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
@@ -1994,6 +2003,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
@@ -2039,6 +2050,27 @@ spec:
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
                         description: Template for the Kafka service account.
+                      jmxSecret:
+                        type: object
+                        properties:
+                          metadata:
+                            type: object
+                            properties:
+                              labels:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Labels added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                              annotations:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Annotations added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                            description: Metadata applied to the resource.
+                        description: Template for Secret of the Kafka Cluster JMX
+                          authentication.
                       clusterRoleBinding:
                         type: object
                         properties:
@@ -2215,11 +2247,11 @@ spec:
                         description: A map of -XX options to the JVM.
                       "-Xms":
                         type: string
-                        pattern: '[0-9]+[mMgG]?'
+                        pattern: ^[0-9]+[mMgG]?$
                         description: -Xms option to to the JVM.
                       "-Xmx":
                         type: string
-                        pattern: '[0-9]+[mMgG]?'
+                        pattern: ^[0-9]+[mMgG]?$
                         description: -Xmx option to to the JVM.
                       gcLoggingEnabled:
                         type: boolean
@@ -2239,6 +2271,24 @@ spec:
                         description: A map of additional system properties which will
                           be passed using the `-D` option to the JVM.
                     description: JVM Options for pods.
+                  jmxOptions:
+                    type: object
+                    properties:
+                      authentication:
+                        type: object
+                        properties:
+                          type:
+                            type: string
+                            enum:
+                            - password
+                            description: Authentication type. Currently the only supported
+                              types are `password`.`password` type creates a username
+                              and protected port with no TLS.
+                        required:
+                        - type
+                        description: Authentication configuration for connecting to
+                          the JMX port.
+                    description: JMX Options for Zookeeper nodes.
                   resources:
                     type: object
                     properties:
@@ -2426,6 +2476,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Configures pod-level security attributes
@@ -2772,6 +2824,12 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the Pod's hosts file if specified.
+                          tmpDirSizeLimit:
+                            type: string
+                            pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                            description: Defines the total amount (for example `1Gi`)
+                              of local storage required for temporary EmptyDir volume
+                              (`/tmp`). Default value is `1Mi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services
@@ -3023,6 +3081,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
@@ -3047,6 +3107,27 @@ spec:
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
                         description: Template for the ZooKeeper service account.
+                      jmxSecret:
+                        type: object
+                        properties:
+                          metadata:
+                            type: object
+                            properties:
+                              labels:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Labels added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                              annotations:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Annotations added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                            description: Metadata applied to the resource.
+                        description: Template for Secret of the Zookeeper Cluster
+                          JMX authentication.
                     description: Template for ZooKeeper cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.
@@ -3226,11 +3307,11 @@ spec:
                             description: A map of -XX options to the JVM.
                           "-Xms":
                             type: string
-                            pattern: '[0-9]+[mMgG]?'
+                            pattern: ^[0-9]+[mMgG]?$
                             description: -Xms option to to the JVM.
                           "-Xmx":
                             type: string
-                            pattern: '[0-9]+[mMgG]?'
+                            pattern: ^[0-9]+[mMgG]?$
                             description: -Xmx option to to the JVM.
                           gcLoggingEnabled:
                             type: boolean
@@ -3388,11 +3469,11 @@ spec:
                             description: A map of -XX options to the JVM.
                           "-Xms":
                             type: string
-                            pattern: '[0-9]+[mMgG]?'
+                            pattern: ^[0-9]+[mMgG]?$
                             description: -Xms option to to the JVM.
                           "-Xmx":
                             type: string
-                            pattern: '[0-9]+[mMgG]?'
+                            pattern: ^[0-9]+[mMgG]?$
                             description: -Xmx option to to the JVM.
                           gcLoggingEnabled:
                             type: boolean
@@ -3614,6 +3695,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Configures pod-level security attributes
@@ -3960,6 +4043,12 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the Pod's hosts file if specified.
+                          tmpDirSizeLimit:
+                            type: string
+                            pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                            description: Defines the total amount (for example `1Gi`)
+                              of local storage required for temporary EmptyDir volume
+                              (`/tmp`). Default value is `1Mi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services
@@ -4065,6 +4154,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
@@ -4138,6 +4229,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
@@ -4211,6 +4304,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
@@ -4503,11 +4598,11 @@ spec:
                         description: A map of -XX options to the JVM.
                       "-Xms":
                         type: string
-                        pattern: '[0-9]+[mMgG]?'
+                        pattern: ^[0-9]+[mMgG]?$
                         description: -Xms option to to the JVM.
                       "-Xmx":
                         type: string
-                        pattern: '[0-9]+[mMgG]?'
+                        pattern: ^[0-9]+[mMgG]?$
                         description: -Xmx option to to the JVM.
                       gcLoggingEnabled:
                         type: boolean
@@ -4666,6 +4761,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Configures pod-level security attributes
@@ -5012,6 +5109,12 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the Pod's hosts file if specified.
+                          tmpDirSizeLimit:
+                            type: string
+                            pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                            description: Defines the total amount (for example `1Gi`)
+                              of local storage required for temporary EmptyDir volume
+                              (`/tmp`). Default value is `1Mi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services
@@ -5195,6 +5298,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
@@ -5268,6 +5373,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
@@ -5310,12 +5417,12 @@ spec:
                           as a percentage (0 - 100).
                       inboundNetwork:
                         type: string
-                        pattern: '[0-9]+([KMG]i?)?B/s'
+                        pattern: ^[0-9]+([KMG]i?)?B/s$
                         description: Broker capacity for inbound network throughput
                           in bytes per second, for example, 10000KB/s.
                       outboundNetwork:
                         type: string
-                        pattern: '[0-9]+([KMG]i?)?B/s'
+                        pattern: ^[0-9]+([KMG]i?)?B/s$
                         description: Broker capacity for outbound network throughput
                           in bytes per second, for example 10000KB/s.
                     description: The Cruise Control `brokerCapacity` configuration.
@@ -5330,9 +5437,10 @@ spec:
                       webserver.session.path, webserver.accesslog., two.step., request.reason.required,metric.reporter.sampler.bootstrap.servers,
                       metric.reporter.topic, partition.metric.sample.store.topic,
                       broker.metric.sample.store.topic,capacity.config.file, self.healing.,
-                      anomaly.detection., ssl. (with the exception of: ssl.cipher.suites,
-                      ssl.protocol, ssl.enabled.protocols, webserver.http.cors.enabled,webserver.http.cors.origin,
-                      webserver.http.cors.exposeheaders).'
+                      ssl. (with the exception of: ssl.cipher.suites, ssl.protocol,
+                      ssl.enabled.protocols, webserver.http.cors.enabled, webserver.http.cors.origin,
+                      webserver.http.cors.exposeheaders, webserver.security.enable,
+                      webserver.ssl.enable).'
                   metricsConfig:
                     type: object
                     properties:
@@ -5567,6 +5675,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Configures pod-level security attributes
@@ -5913,6 +6023,12 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the Pod's hosts file if specified.
+                          tmpDirSizeLimit:
+                            type: string
+                            pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                            description: Defines the total amount (for example `1Gi`)
+                              of local storage required for temporary EmptyDir volume
+                              (`/tmp`). Default value is `1Mi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services
@@ -6018,6 +6134,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
@@ -6077,8 +6195,8 @@ spec:
                   logging:
                     type: string
                     description: 'Only log messages with the given severity or above.
-                      Valid levels: [`debug`, `info`, `warn`, `error`, `fatal`]. Default
-                      log level is `info`.'
+                      Valid levels: [`info`, `debug`, `trace`]. Default log level
+                      is `info`.'
                   enableSaramaLogging:
                     type: boolean
                     description: Enable Sarama logging, a Go client library used by
@@ -6190,6 +6308,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Configures pod-level security attributes
@@ -6536,6 +6656,12 @@ spec:
                             description: The pod's HostAliases. HostAliases is an
                               optional list of hosts and IPs that will be injected
                               into the Pod's hosts file if specified.
+                          tmpDirSizeLimit:
+                            type: string
+                            pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
+                            description: Defines the total amount (for example `1Gi`)
+                              of local storage required for temporary EmptyDir volume
+                              (`/tmp`). Default value is `1Mi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services
@@ -6661,6 +6787,8 @@ spec:
                                     type: string
                                   gmsaCredentialSpecName:
                                     type: string
+                                  hostProcess:
+                                    type: boolean
                                   runAsUserName:
                                     type: string
                             description: Security context for the container.
