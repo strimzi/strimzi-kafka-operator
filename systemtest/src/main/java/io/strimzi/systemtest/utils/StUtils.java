@@ -403,7 +403,11 @@ public class StUtils {
      * @return single or parallel namespace based on cluster configuration
      */
     public static String getNamespaceBasedOnRbac(String namespace, ExtensionContext extensionContext) {
-        return Environment.isNamespaceRbacScope() ? namespace : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY) == null) {
+            return namespace;
+        } else {
+            return Environment.isNamespaceRbacScope() ? namespace : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        }
     }
 
     /**

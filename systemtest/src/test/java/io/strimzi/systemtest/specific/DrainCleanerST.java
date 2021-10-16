@@ -8,12 +8,14 @@ import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
 import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.draincleaner.SetupDrainCleaner;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -24,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -36,6 +39,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 @Tag(REGRESSION)
+@IsolatedSuite
 public class DrainCleanerST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DrainCleanerST.class);
@@ -44,13 +48,16 @@ public class DrainCleanerST extends AbstractST {
     @IsolatedTest
     @RequiredMinKubeApiVersion(version = 1.17)
     void testDrainCleanerWithComponents(ExtensionContext extensionContext) {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final String producerName = clusterName + "-producer";
-        final String consumerName = clusterName + "-consumer";
+        cluster.setNamespace(Constants.DRAIN_CLEANER_NAMESPACE);
+
+        TestStorage testStorage = new TestStorage(extensionContext);
+
         final int replicas = 3;
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, replicas)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas)
+            .editMetadata()
+                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
+            .endMetadata()
             .editSpec()
                 .editKafka()
                     .editOrNewTemplate()
@@ -69,19 +76,23 @@ public class DrainCleanerST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName())
+            .editMetadata()
+                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
+            .endMetadata()
+            .build());
         drainCleaner.createDrainCleaner(extensionContext);
 
-        String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
-        String zkName = KafkaResources.zookeeperStatefulSetName(clusterName);
+        String kafkaName = KafkaResources.kafkaStatefulSetName(testStorage.getClusterName());
+        String zkName = KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName());
 
         KafkaBasicExampleClients kafkaBasicExampleClients = new KafkaBasicExampleClients.Builder()
             .withMessageCount(300)
-            .withTopicName(topicName)
+            .withTopicName(testStorage.getTopicName())
             .withNamespaceName(Constants.DRAIN_CLEANER_NAMESPACE)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
-            .withProducerName(producerName)
-            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
             .withDelayMs(1000)
             .build();
 
@@ -90,8 +101,8 @@ public class DrainCleanerST extends AbstractST {
             kafkaBasicExampleClients.consumerStrimzi().build());
 
         for (int i = 0; i < replicas; i++) {
-            String zkPodName = KafkaResources.zookeeperPodName(clusterName, i);
-            String kafkaPodName = KafkaResources.kafkaPodName(clusterName, i);
+            String zkPodName = KafkaResources.zookeeperPodName(testStorage.getClusterName(), i);
+            String kafkaPodName = KafkaResources.kafkaPodName(testStorage.getClusterName(), i);
 
             Map<String, String> kafkaPod = StatefulSetUtils.ssSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, kafkaName).entrySet()
                 .stream().filter(snapshot -> snapshot.getKey().equals(kafkaPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -106,27 +117,30 @@ public class DrainCleanerST extends AbstractST {
             StatefulSetUtils.waitTillSsHasRolled(Constants.DRAIN_CLEANER_NAMESPACE, kafkaName, replicas, kafkaPod);
         }
 
-        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, Constants.DRAIN_CLEANER_NAMESPACE, 300);
+        ClientUtils.waitTillContinuousClientsFinish(testStorage.getProducerName(), testStorage.getConsumerName(), Constants.DRAIN_CLEANER_NAMESPACE, 300);
     }
 
     @IsolatedTest
     @MultiNodeClusterOnly
     void testDrainCleanerWithComponentsDuringNodeDraining(ExtensionContext extensionContext) {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final String producerName = clusterName + "-producer";
-        final String consumerName = clusterName + "-consumer";
+        cluster.setNamespace(Constants.DRAIN_CLEANER_NAMESPACE);
+
+        TestStorage testStorage = new TestStorage(extensionContext);
+
         String rackKey = "rack-key";
         final int replicas = 3;
 
         int size = 5;
 
-        List<String> topicNames = IntStream.range(0, size).boxed().map(i -> topicName + "-" + i).collect(Collectors.toList());
-        List<String> producerNames = IntStream.range(0, size).boxed().map(i -> producerName + "-" + i).collect(Collectors.toList());
-        List<String> consumerNames = IntStream.range(0, size).boxed().map(i -> consumerName + "-" + i).collect(Collectors.toList());
+        List<String> topicNames = IntStream.range(0, size).boxed().map(i -> testStorage.getTopicName() + "-" + i).collect(Collectors.toList());
+        List<String> producerNames = IntStream.range(0, size).boxed().map(i -> testStorage.getProducerName() + "-" + i).collect(Collectors.toList());
+        List<String> consumerNames = IntStream.range(0, size).boxed().map(i -> testStorage.getConsumerName() + "-" + i).collect(Collectors.toList());
         List<String> continuousConsumerGroups = IntStream.range(0, size).boxed().map(i -> "continuous-consumer-group-" + i).collect(Collectors.toList());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, replicas)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas)
+            .editMetadata()
+                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
+            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withNewRack()
@@ -182,11 +196,15 @@ public class DrainCleanerST extends AbstractST {
             .endSpec()
             .build());
 
-        topicNames.forEach(topic -> resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topic, 3, 3, 2).build()));
+        topicNames.forEach(topic -> resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), topic, 3, 3, 2)
+            .editMetadata()
+                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
+            .endMetadata()
+            .build()));
         drainCleaner.createDrainCleaner(extensionContext);
 
-        String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
-        String zkName = KafkaResources.zookeeperStatefulSetName(clusterName);
+        String kafkaName = KafkaResources.kafkaStatefulSetName(testStorage.getClusterName());
+        String zkName = KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName());
 
         Map<String, List<String>> nodesWithPods = NodeUtils.getPodsForEachNodeInNamespace(Constants.DRAIN_CLEANER_NAMESPACE);
         // remove all pods from map, which doesn't contain "kafka" or "zookeeper" in its name
@@ -205,7 +223,7 @@ public class DrainCleanerST extends AbstractST {
                 .withConsumerGroup(continuousConsumerGroups.get(i))
                 .withMessageCount(300)
                 .withNamespaceName(Constants.DRAIN_CLEANER_NAMESPACE)
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
                 .withDelayMs(1000)
                 .withAdditionalConfig(producerAdditionConfiguration)
                 .build();
@@ -239,10 +257,13 @@ public class DrainCleanerST extends AbstractST {
     }
 
     @AfterEach
-    void teardown(ExtensionContext extensionContext) throws Exception {
-        drainCleaner.teardownDrainCleaner();
+    void teardown() {
         kubeClient().getClusterNodes().forEach(node -> NodeUtils.cordonNode(node.getMetadata().getName(), true));
-        super.afterEachMayOverride(extensionContext);
+    }
+
+    @BeforeEach
+    void setNamespace(ExtensionContext extensionContext) {
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, Constants.DRAIN_CLEANER_NAMESPACE);
     }
 
     @BeforeAll

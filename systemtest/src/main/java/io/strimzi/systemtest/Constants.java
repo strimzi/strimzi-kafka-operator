@@ -109,6 +109,7 @@ public interface Constants {
     String POD = "Pod";
     String NETWORK_POLICY = "NetworkPolicy";
     String JOB = "job";
+    String VALIDATION_WEBHOOK_CONFIG = "ValidatingWebhookConfiguration";
 
     /**
      * Kafka Bridge JSON encoding with JSON embedded format
