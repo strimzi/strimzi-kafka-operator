@@ -19,7 +19,7 @@ Partition dumps can be useful to troubleshoot Kafka issues. For example, we can 
 
 Advanced analysis also requires correlation with Kafka broker logs. If transactions are enabled, then also logs from producer's `TransactionManager` are useful.
 
-```sh
+```shell
 # Kafka broker
 kubectl edit k $CLUSTER_NAME
 spec:
@@ -53,7 +53,7 @@ EOF
 
 This example shows how to dump partitions related to a simple word count transactional application running on Kubernetes. In this case we have 2 disks per broker and an output topic with 1 partition and RF=1.
 
-```sh
+```shell
 # Print partition segments across the cluster
 ./klog-dump.sh partition --namespace test --cluster test-cluster \
   --topic wc-output --partition 0 --dry-run
@@ -91,7 +91,7 @@ wc-output-0 segments in kafka-2-disk-1
 No segment found
 
 # Dump consumer group offsets segments
-./klog-dump.sh offsets --namespace test --cluster test-cluster \
+./klog-dump.sh group_offsets --namespace test --cluster test-cluster \
   --group-id my-group --out-path ~/Downloads/my-dump
   
 brokers: 3, storage: jbod, disks: 2
@@ -110,8 +110,8 @@ __consumer_offsets-12 segments in kafka-2-disk-1
 No segment found
 
 # Dump application transaction state segments
-./klog-dump.sh tx_state --namespace test --cluster test-cluster \
-  --trans-id kafka-trans-my-group-wc-input-0 --out-path ~/Downloads/my-dump
+./klog-dump.sh txn_state --namespace test --cluster test-cluster \
+  --txn-id kafka-trans-my-group-wc-input-0 --out-path ~/Downloads/my-dump
   
 brokers: 3, storage: jbod, disks: 2
 kafka-trans-my-group-wc-input-0 coordinating partition: 31
