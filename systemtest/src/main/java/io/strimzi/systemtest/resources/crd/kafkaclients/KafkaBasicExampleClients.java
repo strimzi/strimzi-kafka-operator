@@ -209,7 +209,7 @@ public class KafkaBasicExampleClients {
                 "security.protocol=" + SecurityProtocol.SASL_SSL + "\n" +
                 "sasl.jaas.config=" + saslJaasConfigDecrypted;
 
-        return defaultConsumerStrimzi()
+        return defaultProducerStrimzi()
             .editSpec()
                 .editTemplate()
                     .editSpec()
@@ -248,7 +248,7 @@ public class KafkaBasicExampleClients {
             .endValueFrom()
             .build();
 
-        return defaultConsumerStrimzi()
+        return defaultProducerStrimzi()
             .editSpec()
                 .editTemplate()
                     .editSpec()
