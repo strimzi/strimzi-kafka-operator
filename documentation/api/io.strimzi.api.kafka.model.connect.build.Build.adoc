@@ -184,7 +184,7 @@ spec:
       - name: my-plugin
         artifacts:
           - type: tgz <1>
-            url: https://my-domain.tld/my-connector-archive.jar <2>
+            url: https://my-domain.tld/my-connector-archive.tgz <2>
             sha512sum: 158...jg10 <3>
   #...
 ----
@@ -195,7 +195,7 @@ spec:
 .Using Maven artifacts
 
 `maven` artifacts are used to specify connector plugin artifacts as Maven coordinates.
-The Maven coordinates identify the plugin artifacts and fetch them from a Maven repository.
+The Maven coordinates identify plugin artifacts and dependencies so that they can be located and fetched from a Maven repository.
 
 NOTE: The Maven repository must be accessible for the connector build process to add the artifacts to the container image.
 
