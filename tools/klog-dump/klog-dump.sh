@@ -5,12 +5,11 @@ if [[ $(uname -s) == "Darwin" ]]; then
   alias echo="gecho"; alias dirname="gdirname"; alias grep="ggrep"; alias readlink="greadlink"
   alias tar="gtar"; alias sed="gsed"; alias start_offsetrt="gstart_offsetrt"; alias date="gdate"; alias wc="gwc"
 fi
-__HOME="" && pushd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" >/dev/null \
-  && { __HOME=$PWD; popd >/dev/null; } && readonly __HOME
-__KAFKA_BROKERS=0
-__STORAGE_TYPE=""
-__JBOD_DISKS=0
+KAFKA_BROKERS=0
+STORAGE_TYPE=""
+JBOD_DISKS=0
 
+# user input
 COMMAND=""
 OUT_PATH="/tmp/klog-dump"
 NAMESPACE=""
@@ -24,35 +23,35 @@ NUM_PART=50
 DRY_RUN=false
 DATA=false
 
-__error() {
+error() {
     echo "$@" 1>&2
     exit 1
 }
 
-__check_number() {
+check_number() {
   local value="$1"
   local regex='^[0-9]+$'
   if ! [[ $value =~ $regex ]]; then
-     __error "Not a number"
+     error "Not a number"
   fi
 }
 
-__check_kube_conn() {
+check_kube_conn() {
     kubectl version --request-timeout=10s 1>/dev/null
 }
 
-__get_kafka_setup() {
-  __KAFKA_BROKERS=$(kubectl -n $NAMESPACE get k $CLUSTER -o yaml 2>/dev/null | yq eval ".spec.kafka.replicas" -) ||true
-  __STORAGE_TYPE=$(kubectl -n $NAMESPACE get k $CLUSTER -o yaml 2>/dev/null | yq eval ".spec.kafka.storage.type" -) ||true
-  __JBOD_DISKS=$(kubectl -n $NAMESPACE get k $CLUSTER -o yaml 2>/dev/null | yq eval ".spec.kafka.storage.volumes | length" -) ||true
-  if [[ $__KAFKA_BROKERS != "null" ]]; then
-    echo "brokers: $__KAFKA_BROKERS, storage: $__STORAGE_TYPE, disks: $__JBOD_DISKS"
+get_kafka_setup() {
+  KAFKA_BROKERS=$(kubectl -n $NAMESPACE get k $CLUSTER -o yaml 2>/dev/null | yq eval ".spec.kafka.replicas" -) ||true
+  STORAGE_TYPE=$(kubectl -n $NAMESPACE get k $CLUSTER -o yaml 2>/dev/null | yq eval ".spec.kafka.storage.type" -) ||true
+  JBOD_DISKS=$(kubectl -n $NAMESPACE get k $CLUSTER -o yaml 2>/dev/null | yq eval ".spec.kafka.storage.volumes | length" -) ||true
+  if [[ $KAFKA_BROKERS != "null" ]]; then
+    echo "brokers: $KAFKA_BROKERS, storage: $STORAGE_TYPE, disks: $JBOD_DISKS"
   else
-    __error "Kafka cluster $CLUSTER not found in namespace $NAMESPACE"
+    error "Kafka cluster $CLUSTER not found in namespace $NAMESPACE"
   fi
 }
 
-__dump_part_segments() {
+dump_part_segments() {
   local topic="$1"
   local partition="$2"
   local broker="$3"
@@ -69,7 +68,7 @@ __dump_part_segments() {
       out_dir="$OUT_PATH/$topic/kafka-$broker-disk-$disk-$topic-$partition"
     fi
     local flags="--deep-iteration"
-    if [[ $topic == "__transaction_state" ]]; then
+    if [[ $topic == "transaction_state" ]]; then
       flags="--transaction-log-decoder"
     fi
     if [[ $DATA == true ]]; then
@@ -99,74 +98,74 @@ __dump_part_segments() {
     fi
     
   else
-    __error "Missing required parameters"
+    error "Missing required parameters"
   fi
 }
 
 partition() {
   if [[ -n $NAMESPACE && -n $CLUSTER && -n $TOPIC && -n $PARTITION ]]; then
-    __check_kube_conn
-    __get_kafka_setup
+    check_kube_conn
+    get_kafka_setup
     
     # dump topic partition across the cluster (including replicas)
-    for i in $(seq 0 $(($__KAFKA_BROKERS-1))); do
-      if [[ $__STORAGE_TYPE == "jbod" ]]; then
-        for j in $(seq 0 $(($__JBOD_DISKS-1))); do
-          __dump_part_segments $TOPIC $PARTITION $i $j
+    for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
+      if [[ $STORAGE_TYPE == "jbod" ]]; then
+        for j in $(seq 0 $(($JBOD_DISKS-1))); do
+          dump_part_segments $TOPIC $PARTITION $i $j
         done
       else 
-        __dump_part_segments $TOPIC $PARTITION $i
+        dump_part_segments $TOPIC $PARTITION $i
       fi
     done
     
   else
-    __error "Missing required options"
+    error "Missing required options"
   fi
 }
 
 group_offsets() {
   if [[ -n $NAMESPACE && -n $CLUSTER && -n $GROUP_ID ]]; then
-      __check_kube_conn
-      __get_kafka_setup
+      check_kube_conn
+      get_kafka_setup
           
-      # dump __consumer_offsets coordinating partition across the cluster (including replicas)
+      # dump consumer_offsets coordinating partition across the cluster (including replicas)
       local group_part=$(klog group-coordinating-partition $GROUP_ID num-partitions=$NUM_PART)
       echo "$GROUP_ID coordinating partition: $group_part"
-      for i in $(seq 0 $(($__KAFKA_BROKERS-1))); do
-        if [[ $__STORAGE_TYPE == "jbod" ]]; then
-          for j in $(seq 0 $(($__JBOD_DISKS-1))); do
-            __dump_part_segments "__consumer_offsets" $group_part $i $j
+      for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
+        if [[ $STORAGE_TYPE == "jbod" ]]; then
+          for j in $(seq 0 $(($JBOD_DISKS-1))); do
+            dump_part_segments "consumer_offsets" $group_part $i $j
           done
         else
-          __dump_part_segments "__consumer_offsets" $group_part $i
+          dump_part_segments "consumer_offsets" $group_part $i
         fi
       done
     
     else
-      __error "Missing required options"
+      error "Missing required options"
   fi
 }
 
 txn_state() {
   if [[ -n $NAMESPACE && -n $CLUSTER && -n $TXN_ID ]]; then
-    __check_kube_conn
-    __get_kafka_setup
+    check_kube_conn
+    get_kafka_setup
         
-    # dump __transaction_state coordinating partition across the cluster (including replicas)
+    # dump transaction_state coordinating partition across the cluster (including replicas)
     local txn_part=$(klog txn-coordinating-partition $TXN_ID num-partitions=$NUM_PART)
     echo "$TXN_ID coordinating partition: $txn_part"
-    for i in $(seq 0 $(($__KAFKA_BROKERS-1))); do
-      if [[ $__STORAGE_TYPE == "jbod" ]]; then
-        for j in $(seq 0 $(($__JBOD_DISKS-1))); do
-          __dump_part_segments "__transaction_state" $txn_part $i $j
+    for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
+      if [[ $STORAGE_TYPE == "jbod" ]]; then
+        for j in $(seq 0 $(($JBOD_DISKS-1))); do
+          dump_part_segments "transaction_state" $txn_part $i $j
         done
       else
-        __dump_part_segments "__transaction_state" $txn_part $i
+        dump_part_segments "transaction_state" $txn_part $i
       fi
     done
 
   else
-    __error "Missing required options"
+    error "Missing required options"
   fi
 }
 
@@ -218,7 +217,7 @@ for param in $PARAMS; do
         --partition)
             export PARTITION=${PARRAY[i]}
             readonly PARTITION
-            __check_number $PARTITION
+            check_number $PARTITION
             ;;
         --segment)
             export SEGMENT=${PARRAY[i]}
@@ -235,7 +234,7 @@ for param in $PARAMS; do
         --num-part)
             export NUM_PART=${PARRAY[i]}
             readonly NUM_PART
-            __check_number $NUM_PART
+            check_number $NUM_PART
             ;;
         --out-path)
             export OUT_PATH=${PARRAY[i]}
@@ -263,6 +262,6 @@ case "$COMMAND" in
         txn_state
         ;;
     *)
-        __error "$USAGE"
+        error "$USAGE"
         ;;
 esac
