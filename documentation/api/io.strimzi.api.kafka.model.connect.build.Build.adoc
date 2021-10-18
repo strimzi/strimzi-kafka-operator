@@ -40,9 +40,9 @@ spec:
   #...
   build:
     output:
-      type: docker # <1>
-      image: my-registry.io/my-org/my-connect-cluster:latest # <2>
-      pushSecret: my-registry-credentials # <3>
+      type: docker <1>
+      image: my-registry.io/my-org/my-connect-cluster:latest <2>
+      pushSecret: my-registry-credentials <3>
   #...
 ----
 <1> (Required) Type of output used by Strimzi.
