@@ -147,7 +147,7 @@ public class PlatformFeaturesAvailability {
 
         vertx.executeBlocking(request -> {
             try {
-                request.complete(client.getVersion());
+                request.complete(client.getKubernetesVersion());
             } catch (Exception e) {
                 LOGGER.error("Detection of Kubernetes version failed.", e);
                 request.fail(e);
