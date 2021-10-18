@@ -40,9 +40,9 @@ spec:
   #...
   build:
     output:
-      type: docker # <1>
-      image: my-registry.io/my-org/my-connect-cluster:latest # <2>
-      pushSecret: my-registry-credentials # <3>
+      type: docker <1>
+      image: my-registry.io/my-org/my-connect-cluster:latest <2>
+      pushSecret: my-registry-credentials <3>
   #...
 ----
 <1> (Required) Type of output used by Strimzi.
@@ -97,7 +97,7 @@ spec:
   build:
     output:
       #...
-    plugins: # <1>
+    plugins: <1>
       - name: debezium-postgres-connector
         artifacts:
           - type: tgz
@@ -114,9 +114,12 @@ spec:
 
 Strimzi supports the following types of artifacts:
 
+--
 * JAR files, which are downloaded and used directly
 * TGZ archives, which are downloaded and unpacked
+* Maven artifacts, which uses Maven coordinates
 * Other artifacts, which are downloaded and used directly
+--
 
 IMPORTANT: Strimzi does not perform any security scanning of the downloaded artifacts.
 For security reasons, you should first verify the artifacts manually, and configure the checksum verification to make sure the same artifact is used in the automated build and in the Kafka Connect deployment.
@@ -144,9 +147,9 @@ spec:
     plugins:
       - name: my-plugin
         artifacts:
-          - type: jar # <1>
-            url: https://my-domain.tld/my-jar.jar # <2>
-            sha512sum: 589...ab4 # <3>
+          - type: jar <1>
+            url: https://my-domain.tld/my-jar.jar <2>
+            sha512sum: 589...ab4 <3>
           - type: jar
             url: https://my-domain.tld/my-jar2.jar
   #...
@@ -180,14 +183,49 @@ spec:
     plugins:
       - name: my-plugin
         artifacts:
-          - type: tgz # <1>
-            url: https://my-domain.tld/my-connector-archive.jar # <2>
-            sha512sum: 158...jg10 # <3>
+          - type: tgz <1>
+            url: https://my-domain.tld/my-connector-archive.tgz <2>
+            sha512sum: 158...jg10 <3>
   #...
 ----
 <1> (Required) Type of artifact.
 <2> (Required) URL from which the archive is downloaded.
 <3> (Optional) SHA-512 checksum to verify the artifact.
+
+.Using Maven artifacts
+
+`maven` artifacts are used to specify connector plugin artifacts as Maven coordinates.
+The Maven coordinates identify plugin artifacts and dependencies so that they can be located and fetched from a Maven repository.
+
+NOTE: The Maven repository must be accessible for the connector build process to add the artifacts to the container image.
+
+[source,yaml,subs=attributes+,options="nowrap"]
+.Example Maven artifact
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect-cluster
+spec:
+  #...
+  build:
+    output:
+      #...
+    plugins:
+      - name: my-plugin
+        artifacts:
+          - type: maven <1>
+          - repository: https://mvnrepository.com <2>
+          - group: org.apache.camel.kafkaconnector <3>
+          - artifact: camel-kafka-connector <4>
+          - version: 0.11.0 <5>
+  #...
+----
+<1> (Required) Type of artifact.
+<2> (Optional) Maven repository to download the artifacts from. If you do not specify a repository, {MavenCentral} is used by default.
+<3> (Required) Maven group ID.
+<4> (Required) Maven artifact type.
+<5> (Required) Maven version number.
 
 .Using `other` artifacts
 
