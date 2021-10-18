@@ -8,8 +8,8 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -29,7 +29,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.kafka.clients.admin.Admin;
 
 /**
  * <p>Manages the rolling restart or reconfiguration of a Kafka cluster.</p>
@@ -94,6 +93,7 @@ import org.apache.kafka.clients.admin.Admin;
 public class KafkaRoller {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaRoller.class);
+
     private final PodOperator podOperations;
     protected final long operationTimeoutMs;
     protected final Vertx vertx;
@@ -101,15 +101,15 @@ public class KafkaRoller {
     private final Secret clusterCaCertSecret;
     private final Secret coKeySecret;
     private final Integer numPods;
-    protected String namespace;
-    private final AdminClientProvider adminClientProvider;
+    protected final String namespace;
+    private final KafkaAvailability kafkaAvailability;
     private final String kafkaConfig;
     private final String kafkaLogging;
     private final KafkaVersion kafkaVersion;
     private final Reconciliation reconciliation;
     private final boolean allowReconfiguration;
-    private Admin _allClient;
-    private Function<Pod, List<String>> podNeedsRestart;
+    private final Function<Pod, List<String>> podNeedsRestart;
+    private final PriorityBlockingQueue<BrokerActionContext> queue;
 
     /* Since restarting a broker won't result in its instantaneous removal from observed ISR
      * (it will take a while for the leader to remove it from the ISR and for the metadata to propagate)
@@ -118,35 +118,107 @@ public class KafkaRoller {
      * This allows for some parallelism in restart.
      */
     Set<Integer> restartingBrokers = new HashSet<>();
-    int parallelism = 2;
 
-    public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
-                       long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
-                       StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
-                       String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
-        this(reconciliation, vertx, podOperations, pollingIntervalMs, operationTimeoutMs, backOffSupplier,
-                sts, clusterCaCertSecret, coKeySecret, new DefaultAdminClientProvider(), kafkaConfig, kafkaLogging, kafkaVersion, allowReconfiguration);
+    public KafkaRoller(Reconciliation reconciliation,
+                       Vertx vertx,
+                       PodOperator podOperations,
+                       long pollingIntervalMs,
+                       long operationTimeoutMs,
+                       Supplier<BackOff> backOffSupplier,
+                       StatefulSet sts,
+                       Secret clusterCaCertSecret,
+                       Secret coKeySecret,
+                       String kafkaConfig,
+                       String kafkaLogging,
+                       KafkaVersion kafkaVersion,
+                       boolean allowReconfiguration,
+                       Function<Pod, List<String>> podNeedsRestart) {
+        this(reconciliation,
+                vertx,
+                podOperations,
+                pollingIntervalMs,
+                operationTimeoutMs,
+                backOffSupplier,
+                sts,
+                clusterCaCertSecret,
+                coKeySecret,
+                new DefaultAdminClientProvider(),
+                kafkaConfig,
+                kafkaLogging,
+                kafkaVersion,
+                allowReconfiguration,
+                podNeedsRestart);
     }
 
-    public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
-                       long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
-                       StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
-                       AdminClientProvider adminClientProvider,
-                       String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
-        this.namespace = sts.getMetadata().getNamespace();
-        this.cluster = Labels.cluster(sts);
-        this.numPods = sts.getSpec().getReplicas();
+    public KafkaRoller(Reconciliation reconciliation,
+                       Vertx vertx,
+                       PodOperator podOperations,
+                       long pollingIntervalMs,
+                       long operationTimeoutMs,
+                       Supplier<BackOff> backOffSupplier,
+                       StatefulSet sts,
+                       Secret clusterCaCertSecret,
+                       Secret coKeySecret,
+                       AdminClientProvider kafkaAvailability,
+                       String kafkaConfig,
+                       String kafkaLogging,
+                       KafkaVersion kafkaVersion,
+                       boolean allowReconfiguration,
+                       Function<Pod, List<String>> podNeedsRestart) {
+        this(reconciliation,
+                vertx,
+                podOperations,
+                operationTimeoutMs,
+                sts.getMetadata().getNamespace(),
+                Labels.cluster(sts),
+                sts.getSpec().getReplicas(),
+                clusterCaCertSecret,
+                coKeySecret,
+                ((Supplier<KafkaAvailability>) () -> {
+                    var admin = kafkaAvailability.createAdminClient(KafkaCluster.headlessServiceName(Labels.cluster(sts)),
+                            clusterCaCertSecret, coKeySecret, "cluster-operator");
+                    return new KafkaAvailability(reconciliation, vertx, admin);
+                }).get(),
+                kafkaConfig,
+                kafkaLogging,
+                kafkaVersion,
+                allowReconfiguration,
+                podNeedsRestart);
+    }
+    /* test */ KafkaRoller(Reconciliation reconciliation,
+                       Vertx vertx,
+                       PodOperator podOperations,
+                       long operationTimeoutMs,
+                       String namespace,
+                       String cluster,
+                       int replicas,
+                       Secret clusterCaCertSecret,
+                       Secret coKeySecret,
+                       KafkaAvailability kafkaAvailability,
+                       String kafkaConfig,
+                       String kafkaLogging,
+                       KafkaVersion kafkaVersion,
+                       boolean allowReconfiguration,
+                       Function<Pod, List<String>> podNeedsRestart) {
+        this.namespace = namespace;
+        this.cluster = cluster;
+        this.numPods = replicas;
         this.clusterCaCertSecret = clusterCaCertSecret;
         this.coKeySecret = coKeySecret;
         this.vertx = vertx;
         this.operationTimeoutMs = operationTimeoutMs;
         this.podOperations = podOperations;
-        this.adminClientProvider = adminClientProvider;
+        this.kafkaAvailability = kafkaAvailability;
         this.kafkaConfig = kafkaConfig;
         this.kafkaLogging = kafkaLogging;
         this.kafkaVersion = kafkaVersion;
         this.reconciliation = reconciliation;
         this.allowReconfiguration = allowReconfiguration;
+        this.queue = new PriorityBlockingQueue<>(numPods,
+                Comparator.comparing(BrokerActionContext::state)
+                        .thenComparing(BrokerActionContext::notBefore)
+                        .thenComparing(BrokerActionContext::podId));
+        this.podNeedsRestart = podNeedsRestart;
     }
 
     /**
@@ -157,67 +229,47 @@ public class KafkaRoller {
         return podOperations.getAsync(namespace, KafkaCluster.kafkaPodName(cluster, podId));
     }
 
-    private Admin adminClient() {
-        if (this._allClient == null) {
-            this._allClient = adminClientProvider.createAdminClient(KafkaCluster.headlessServiceName(cluster),
-                    this.clusterCaCertSecret, this.coKeySecret, "cluster-operator");
-        }
-        return this._allClient;
-    }
-
      /**
      * Asynchronously perform a rolling restart of some subset of the pods,
      * completing the returned Future when rolling is complete.
      * Which pods get rolled is determined by {@code podNeedsRestart}.
      * The pods may not be rolled in id order, due to the {@linkplain KafkaRoller rolling algorithm}.
-     * @param podNeedsRestart Predicate for determining whether a pod should be rolled.
      * @return A Future completed when rolling is complete.
      */
-    public Future<Void> rollingRestart(Function<Pod, List<String>> podNeedsRestart) {
-        this.podNeedsRestart = podNeedsRestart;
-        Promise<Void> result = Promise.promise();
+    public Future<Void> rollingRestart() {
+        Promise<Void> rollResult = Promise.promise();
         BrokerActionContext.assertEventLoop(vertx);
         // There's nowhere for the group state to reside
-        buildQueue().compose(queue -> {
-            // create a queue
-            if (queue.isEmpty()) {
-                // handle empty queue (in theory impossible)
-                result.complete();
-            }
-            Handler<Long> longHandler = new Handler<>() {
+        buildQueue().compose(i -> {
+            vertx.setTimer(0, new Handler<>() {
                 @Override
                 public void handle(Long timerId) {
-                    BrokerActionContext.assertEventLoop(vertx);
-                    var context = queue.remove();
-                    if (context.state().isEndState()) {
-                        // TODO handle unschedulable -> We should end up with some condition in the status.
-                        // The head of the queue is done, due to the ordering that means all the contexts are done done.
-                        LOGGER.debugCr(reconciliation, "Rolling actions complete");
-                        result.complete();
+                    try {
+                        progressOneContext().compose(delay -> {
+                            if (delay != null) {
+                                vertx.setTimer(delay, this);
+                            } else {
+                                rollResult.complete();
+                            }
+                            return null;
+                        }, error -> {
+                            rollResult.fail(error);
+                            return null;
+                        });
+                    } catch (Exception e) {
+                        rollResult.tryFail(e);
                     }
-                    LOGGER.debugCr(reconciliation, "Progressing {}", context);
-
-                    context.progressOne().map(i -> {
-                        BrokerActionContext.assertEventLoop(vertx);
-                        requeue(context);
-                        return null;
-                    });
                 }
-
-                private void requeue(BrokerActionContext context) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debugCr(reconciliation, "Requeuing {}", context);
-                    }
-                    queue.add(context);
-                    vertx.setTimer(context.actualDelayMs(), this);
-                }
-            };
-            vertx.setTimer(0, longHandler);
+            });
             return Future.succeededFuture();
+        }).recover(error -> {
+            rollResult.fail(error);
+            return Future.failedFuture(error);
         });
-        return result.future().eventually(i -> vertx.executeBlocking(promise -> {
+        return rollResult.future().eventually(i -> vertx.executeBlocking(promise -> {
             try {
-                _allClient.close(Duration.ofSeconds(30));
+                LOGGER.debugCr(reconciliation, "Closing KafkaAvailability");
+                kafkaAvailability.close(Duration.ofSeconds(30));
                 promise.complete();
             } catch (Exception e) {
                 promise.fail(e);
@@ -225,15 +277,16 @@ public class KafkaRoller {
         }));
     }
 
+    /* test */ PriorityBlockingQueue<BrokerActionContext> queue() {
+        return queue;
+    }
+
     /**
      * Build an initial list of contexts.
      */
-    private Future<PriorityQueue<BrokerActionContext>> buildQueue() {
+    /* test */ Future<Void> buildQueue() {
         return vertx.executeBlocking(p -> {
-            var queue = new PriorityQueue<>(numPods,
-                    Comparator.comparing(BrokerActionContext::state)
-                            .thenComparing(BrokerActionContext::notBefore)
-                            .thenComparing(BrokerActionContext::podId));
+            // TODO why is this executeBlocking?
             for (int podId = 0; podId < numPods; podId++) {
                 // Order the podIds unready first otherwise repeated reconciliations might each restart a pod
                 // only for it not to become ready and thus drive the cluster to a worse state.
@@ -249,34 +302,53 @@ public class KafkaRoller {
                         kafkaConfig,
                         kafkaLogging,
                         podNeedsRestart,
-                        new KafkaAvailability(reconciliation, vertx, adminClient()),
+                        kafkaAvailability,
                         restartingBrokers);
                 queue.add(context);
             }
-            p.complete(queue);
+            p.complete(null);
         });
     }
 
-
-    /** Exceptions which we're prepared to ignore (thus forcing a restart) in some circumstances. */
-    static final class ForceableProblem extends Exception {
-        final boolean forceNow;
-        ForceableProblem(String msg) {
-            this(msg, null);
-        }
-
-        ForceableProblem(String msg, Throwable cause) {
-            this(msg, cause, false);
-        }
-
-        ForceableProblem(String msg, boolean forceNow) {
-            this(msg, null, forceNow);
-        }
-
-        ForceableProblem(String msg, Throwable cause, boolean forceNow) {
-            super(msg, cause);
-            this.forceNow = forceNow;
+    /**
+     * Polls the queue for the next context to be run.
+     * If there is a next context then calls {@link BrokerActionContext#progressOne()} on it, re-queues it and
+     * the returned Future is completed with the delay before that context should next be progressed
+     * If there is not a next context then the returned Future is completed with null and the rolling is complete.
+     * If an error occurs such that the rolling should be stopped (e.g. the existence of unschedulable pods) then
+     * the returned Future is failed.
+     */
+    /* test */ Future<Long> progressOneContext() {
+        BrokerActionContext.assertEventLoop(vertx);
+        var context = queue.poll();
+        if (context == null) {
+            LOGGER.debugCr(reconciliation, "All rolling actions complete");
+            return Future.succeededFuture();
+        } else {
+            if (context.state().isEndState()) {
+                if (context.state() == BrokerActionContext.State.UNSCHEDULABLE) {
+                    return Future.failedFuture(new RuntimeException("Unschedulable pod " + context.podId()));
+                } else {
+                    LOGGER.debugCr(reconciliation, "Rolling action on {} complete", context.podId());
+                    // Because of the order of the queue the only way to see DONE if is every context is done
+                    return Future.succeededFuture();
+                }
+            } else {
+                LOGGER.debugCr(reconciliation, "Progressing {}", context);
+                return context.progressOne().compose(i -> {
+                    BrokerActionContext.assertEventLoop(vertx);
+                    LOGGER.debugCr(reconciliation, "Progressed {}", context);
+                    return Future.succeededFuture(requeue(context));
+                });
+            }
         }
     }
 
+    private long requeue(BrokerActionContext context) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debugCr(reconciliation, "Requeuing {}", context);
+        }
+        queue.add(context);
+        return context.actualDelayMs();
+    }
 }

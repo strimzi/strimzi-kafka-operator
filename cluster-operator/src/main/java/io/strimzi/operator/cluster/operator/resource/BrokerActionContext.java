@@ -40,6 +40,7 @@ import static io.strimzi.operator.cluster.operator.resource.BrokerActionContext.
 import static io.strimzi.operator.cluster.operator.resource.BrokerActionContext.State.READY;
 import static io.strimzi.operator.cluster.operator.resource.BrokerActionContext.State.START;
 import static io.strimzi.operator.cluster.operator.resource.BrokerActionContext.State.UNREADY;
+import static io.strimzi.operator.cluster.operator.resource.BrokerActionContext.State.UNSCHEDULABLE;
 
 /**
  * <p>Implements a state machine for performing actions on an individual broker.</p>
@@ -67,6 +68,7 @@ class BrokerActionContext {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(BrokerActionContext.class);
 
     static void assertEventLoop(Vertx vertx) {
+        // This doesn't work, see javadoc of isEventLoopContext
         if (!vertx.getOrCreateContext().isEventLoopContext()) {
             throw new IllegalStateException("Not executing on event loop thread");
         }
@@ -77,6 +79,16 @@ class BrokerActionContext {
         // in KafkaRoller to guarantee things like UNREADY pods always being restarted first.
         /** The start state. */
         START,
+        /** The pod is unschedulable (a final, but unsuccessful) state*/
+        UNSCHEDULABLE,
+        /** Waiting to observe leadership following an action */
+        AWAITING_LEADERSHIP,
+        /** Waiting to observe readiness following an action */
+        AWAITING_READY,
+        /** A pod needs restart */
+        NEEDS_RESTART,
+        /** A pod needs reconfig (may transition to NEEDS_RESTART if the reconfig fails) */
+        NEEDS_RECONFIG,
         /** A pod is unready (and should be rolled in the first batch) */
         UNREADY,
         /** An unknown state (e.g. due to an error during {@link BrokerActionContext#classify()}, or it not having been called yet). */
@@ -85,17 +97,7 @@ class BrokerActionContext {
         READY,
         /** A pod is the controller (and should be rolled in the final singleton batch) */
         CONTROLLER,
-        /** A pod needs reconfig (may transition to NEEDS_RESTART if the reconfig fails) */
-        NEEDS_RECONFIG,
-        /** A pod needs restart */
-        NEEDS_RESTART,
-        /** Waiting to observe readiness following an action */
-        AWAITING_READY,
-        /** Waiting to observe leadership following an action */
-        AWAITING_LEADERSHIP,
-        /** The pod is unschedulable */
-        UNSCHEDULABLE,
-        /** The final state */
+        /** The final successful state */
         DONE;
         void assertIsOneOf(State... states) {
             List<State> list = Arrays.asList(states);
@@ -255,6 +257,8 @@ class BrokerActionContext {
      */
     Future<Void> progressOne() {
         assertEventLoop(vertx);
+        var state = this.state;
+        LOGGER.debugCr(reconciliation, "Making one transition of {}", this);
         switch (state) {
             case START:
             case NEEDS_CLASSIFY:
@@ -308,6 +312,7 @@ class BrokerActionContext {
 //        }
 
     private State makeTransition(Transition transition) {
+        LOGGER.debugCr(reconciliation, "Transition {} to {} with delay {}ms", this, transition.state, transition.delayMs);
         return makeTransition(transition.state, transition.delayMs);
     }
 
@@ -318,10 +323,11 @@ class BrokerActionContext {
     public State makeTransition(State newState, long delay) {
         assertEventLoop(vertx);
         // Prevent restarting any pod more than once
-        if (this.state.ordinal() >= NEEDS_RESTART.ordinal()
-                && newState.ordinal() <= NEEDS_RESTART.ordinal()) {
-            throw new IllegalStateException("Illegal state transition " + this.state + " -> " + newState);
-        }
+        // TODO reinstate this check!
+//        if (this.state.ordinal() >= NEEDS_RESTART.ordinal()
+//                && newState.ordinal() <= NEEDS_RESTART.ordinal()) {
+//            throw new IllegalStateException("Illegal state transition " + this.state + " -> " + newState);
+//        }
         if (this.state == newState) {
             this.actualDelayMs *= 2;
             this.numSelfTransitions++;
@@ -344,11 +350,18 @@ class BrokerActionContext {
         return vertx.<Transition>executeBlocking(p -> {
             Transition transition = null;
             try {
+                LOGGER.debugCr(reconciliation, "Get pod for broker {}", podId);
                 this.pod = podOperations.get(reconciliation.namespace(), podName);
-                if (Readiness.isPodReady(pod)) {
+                if (isUnschedulable(pod)) {
+                    LOGGER.debugCr(reconciliation, "Pod {} is unschedulable", podId);
+                    transition = new Transition(UNSCHEDULABLE, 0);
+                } else if (Readiness.isPodReady(pod)) {
+                    LOGGER.debugCr(reconciliation, "Broker {} is ready. Determine whether it is in log recovery", podId);
                     if (isInLogRecovery()) {
+                        LOGGER.debugCr(reconciliation, "Broker {} is in log recovery", podId);
                         transition = new Transition(NEEDS_CLASSIFY, 10_000); // retry in a while
                     } else {
+                        LOGGER.debugCr(reconciliation, "Broker {} is not in log recovery", podId);
                         transition = new Transition(READY, 0);
                     }
                 }
@@ -360,16 +373,20 @@ class BrokerActionContext {
             if (transition == null) { // not ready
                 return Future.succeededFuture(new Transition(UNREADY, 0));
             } else {
+                LOGGER.debugCr(reconciliation, "Determine whether broker {} is controller", podId);
                 return kafkaAvailability.controller(podId).map(isController -> {
                     if (isController) {
+                        LOGGER.debugCr(reconciliation, "Broker {} is controller", podId);
                         return new Transition(CONTROLLER, 0);
                     } else {
+                        LOGGER.debugCr(reconciliation, "Broker {} is not controller", podId);
                         return transition;
                         // TODO would need the map(this::makeTransition) to handle the failure case.
                     }
                 });
             }
         }).otherwise(error -> {
+            LOGGER.debugCr(reconciliation, "Error classifying broker {}", podId, error);
             return new Transition(NEEDS_CLASSIFY, 10_000); // retry in a while
         }).map(this::makeTransition).map((Void) null);
     }
@@ -381,48 +398,51 @@ class BrokerActionContext {
     Future<Void> buildPlan() {
         assertEventLoop(vertx);
         state.assertIsOneOf(READY, CONTROLLER);
-        Future<Transition> map = podOperations.getAsync(reconciliation.namespace(), podName).compose((Function<Pod, Future<Transition>>) pod -> {
-            List<String> reasonToRestartPod = Objects.requireNonNull(podNeedsRestart.apply(pod));
-            boolean podStuck = pod != null && isUnschedulable(pod);
-            if (podStuck && !reasonToRestartPod.contains("Pod has old generation")) {
-                // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
-                // Treat this as fatal because if it's not possible to schedule one pod then it's likely that proceeding
-                // and deleting a different pod in the meantime will likely result in another unschedulable pod.
-                return Future.succeededFuture(new Transition(State.UNSCHEDULABLE, 0));
-            }
-            // Unless the annotation is present, check the pod is at least ready.
-            boolean needsRestart = !reasonToRestartPod.isEmpty();
-
-            if (needsRestart) {
-                LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted. Reason: {}", podId, reasonToRestartPod);
-                return Future.succeededFuture(new Transition(NEEDS_RESTART, 0));
-            } else {
-                // Always get the broker config. This request gets sent to that specific broker, so it's a proof that we can
-                // connect to the broker and that it's capable of responding.
-                return kafkaAvailability.brokerConfigDiffs(podId, kafkaVersion, kafkaConfig, kafkaLogging).map(diffResult -> {
-                    this.configDiff = diffResult.configDiff;
-                    this.loggersDiff = diffResult.loggersDiff;
-                    if (configDiff.getDiffSize() > 0) {
-                        if (configDiff.canBeUpdatedDynamically()) {
-                            LOGGER.debugCr(reconciliation, "Pod {} needs to be reconfigured.", podId);
-                            return new Transition(allowReconfiguration ? NEEDS_RECONFIG : NEEDS_RESTART, 0);
-                        } else {
-                            LOGGER.debugCr(reconciliation, "Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", podId);
-                            return new Transition(NEEDS_RESTART, 0);
-                        }
-                    } else if (loggersDiff.getDiffSize() > 0) {
-                        LOGGER.debugCr(reconciliation, "Pod {} logging needs to be reconfigured.", podId);
-                        return new Transition(allowReconfiguration ? NEEDS_RECONFIG : NEEDS_RESTART, 0);
-                    } else {
-                        return new Transition(AWAITING_READY, 0);
+        return podOperations.getAsync(reconciliation.namespace(), podName)
+                .compose(pod -> {
+                    assertEventLoop(vertx);
+                    List<String> reasonToRestartPod = Objects.requireNonNull(podNeedsRestart.apply(pod));
+                    boolean podStuck = pod != null && isUnschedulable(pod);
+                    if (podStuck && !reasonToRestartPod.contains("Pod has old generation")) {
+                        // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
+                        // Treat this as fatal because if it's not possible to schedule one pod then it's likely that proceeding
+                        // and deleting a different pod in the meantime will likely result in another unschedulable pod.
+                        return Future.succeededFuture(new Transition(State.UNSCHEDULABLE, 0));
                     }
-                });
-            }
+                    // Unless the annotation is present, check the pod is at least ready.
+                    boolean needsRestart = !reasonToRestartPod.isEmpty();
+
+                    if (needsRestart) {
+                        LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted. Reason: {}", podId, reasonToRestartPod);
+                        return Future.succeededFuture(new Transition(NEEDS_RESTART, 0));
+                    } else {
+                        // Always get the broker config. This request gets sent to that specific broker, so it's a proof that we can
+                        // connect to the broker and that it's capable of responding.
+                        return kafkaAvailability.brokerConfigDiffs(podId, kafkaVersion, kafkaConfig, kafkaLogging).map(diffResult -> {
+                            this.configDiff = diffResult.configDiff;
+                            this.loggersDiff = diffResult.loggersDiff;
+                            if (configDiff.getDiffSize() > 0) {
+                                if (configDiff.canBeUpdatedDynamically()) {
+                                    LOGGER.debugCr(reconciliation, "Pod {} needs to be reconfigured.", podId);
+                                    return new Transition(allowReconfiguration ? NEEDS_RECONFIG : NEEDS_RESTART, 0);
+                                } else {
+                                    LOGGER.debugCr(reconciliation, "Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", podId);
+                                    return new Transition(NEEDS_RESTART, 0);
+                                }
+                            } else if (loggersDiff.getDiffSize() > 0) {
+                                LOGGER.debugCr(reconciliation, "Pod {} logging needs to be reconfigured.", podId);
+                                return new Transition(allowReconfiguration ? NEEDS_RECONFIG : NEEDS_RESTART, 0);
+                            } else {
+                                return new Transition(AWAITING_READY, 0);
+                            }
+                        });
+                    }
         }).otherwise(error -> {
             LOGGER.errorCr(reconciliation, "Error classifying action on broker {}", podId);
             return new Transition(NEEDS_CLASSIFY, 10_000);
-        });
-        return map.map(this::makeTransition).map((Void) null);
+        }).map(
+                this::makeTransition
+        ).map((Void) null);
     }
 
     Future<Void> dynamicUpdateBrokerConfig() {
@@ -493,16 +513,18 @@ class BrokerActionContext {
     Future<Void> checkForReadiness() {
         assertEventLoop(vertx);
         state.assertIsOneOf(AWAITING_READY);
+        // TODO IS this how we want to handle readiness, where it doesn't happen via the state machine, but lower down?
+        // It relinquishes control so makes checking for things like continued existence of the Kafka CR more difficult.
         return podOperations.readiness(reconciliation, reconciliation.namespace(), podName, 1_000, 120_000)
                 .map(new Transition(AWAITING_LEADERSHIP, 0))
                 .otherwise(new Transition(AWAITING_READY, 0))
                 .map(this::makeTransition)
-                .map(null);
+                .map((Void) null);
     }
 
     Future<Void> checkForLeadership() {
         assertEventLoop(vertx);
-        state.assertIsOneOf(AWAITING_READY);
+        state.assertIsOneOf(AWAITING_LEADERSHIP);
 
         return kafkaAvailability.partitionsWithPreferredButNotCurrentLeader(podId).compose(partitions -> {
                     assertEventLoop(vertx);

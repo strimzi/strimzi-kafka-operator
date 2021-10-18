@@ -7,12 +7,9 @@ package io.strimzi.operator.cluster.operator.resource;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.TopicPartition;
@@ -55,41 +52,6 @@ public class KafkaAvailabilityTest {
         }
     }
 
-    private static <T> T await(Future<T> future) {
-        CountDownLatch latch = new CountDownLatch(1);
-        future.onComplete(ar -> latch.countDown());
-        try {
-            if (latch.await(1, TimeUnit.SECONDS)) {
-                if (future.failed()) {
-                    Assertions.fail(future.cause());
-                }
-                return future.result();
-            } else {
-                Assertions.fail("Future wasn't completed within timeout");
-                throw new RuntimeException(); // to appease definite return checking
-            }
-        } catch (InterruptedException e) {
-            throw new UncheckedInterruptedException(e);
-        }
-    }
-
-    private static Throwable awaitThrows(Future<?> future) {
-        CountDownLatch latch = new CountDownLatch(1);
-        future.onComplete(ar -> latch.countDown());
-        try {
-            if (latch.await(1, TimeUnit.SECONDS)) {
-                if (future.succeeded()) {
-                    Assertions.fail("Expected future to have failed");
-                }
-                return future.cause();
-            } else {
-                Assertions.fail("Future wasn't completed within timeout");
-                throw new RuntimeException(); // to appease definite return checking
-            }
-        } catch (InterruptedException e) {
-            throw new UncheckedInterruptedException(e);
-        }
-    }
 
     private ClusterModel clusterWithTwoTopics(int numBrokers, int minIsr, List<Integer> isr) {
         return new ClusterModel()
@@ -147,7 +109,7 @@ public class KafkaAvailabilityTest {
                                                  Set<Integer> rollingBrokers) {
         return brokers.stream().collect(Collectors.toMap(
                 brokerId -> brokerId,
-                brokerId -> await(kafkaAvailability.canRoll(brokerId, rollingBrokers))));
+                brokerId -> RollingTestUtils.await(kafkaAvailability.canRoll(brokerId, rollingBrokers))));
     }
 
     @Test
@@ -173,7 +135,7 @@ public class KafkaAvailabilityTest {
 
         ka(clusterModel.buildAdminClient());
         for (Integer brokerId : clusterModel.brokerIds()) {
-            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+            boolean canRoll = RollingTestUtils.await(kafkaAvailability.canRoll(brokerId, Set.of()));
             if (brokerId == 2) {
                 assertTrue(canRoll,
                         "broker " + brokerId + " should be rollable, having no partitions");
@@ -190,7 +152,7 @@ public class KafkaAvailabilityTest {
         ClusterModel clusterModel = clusterWithTwoTopics(3, 3, List.of(0, 1, 2));
         ka(clusterModel.buildAdminClient());
         for (Integer brokerId : clusterModel.brokerIds()) {
-            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+            boolean canRoll = RollingTestUtils.await(kafkaAvailability.canRoll(brokerId, Set.of()));
             Assertions.assertTrue(canRoll, "broker " + brokerId + " should be rollable, since it has no URP");
         }
     }
@@ -221,7 +183,7 @@ public class KafkaAvailabilityTest {
         ka(clusterModel.buildAdminClient());
         for (Integer brokerId : clusterModel.brokerIds()) {
 
-            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+            boolean canRoll = RollingTestUtils.await(kafkaAvailability.canRoll(brokerId, Set.of()));
             assertTrue(canRoll,
                     "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
         }
@@ -243,7 +205,7 @@ public class KafkaAvailabilityTest {
 
         ka(clusterModel.buildAdminClient());
         for (Integer brokerId : clusterModel.brokerIds()) {
-            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+            boolean canRoll = RollingTestUtils.await(kafkaAvailability.canRoll(brokerId, Set.of()));
             assertTrue(canRoll,
                     "broker " + brokerId + " should be rollable, being minisr = 3, but only 3 replicas");
         }
@@ -264,7 +226,7 @@ public class KafkaAvailabilityTest {
 
         ka(clusterModel.buildAdminClient());
         for (Integer brokerId : clusterModel.brokerIds()) {
-            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+            boolean canRoll = RollingTestUtils.await(kafkaAvailability.canRoll(brokerId, Set.of()));
             assertTrue(canRoll,
                     "broker " + brokerId + " should be rollable, being minisr = 2, but only 1 replicas");
         }
@@ -294,7 +256,7 @@ public class KafkaAvailabilityTest {
 
         ka(clusterModel.buildAdminClient());
         for (Integer brokerId : clusterModel.brokerIds()) {
-            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+            boolean canRoll = RollingTestUtils.await(kafkaAvailability.canRoll(brokerId, Set.of()));
             if (brokerId == 0) {
                 assertFalse(canRoll,
                         "broker " + brokerId + " should not be rollable, because B/0 would be below min isr");
@@ -326,7 +288,7 @@ public class KafkaAvailabilityTest {
 
         ka(clusterModel.buildAdminClient());
         for (Integer brokerId : clusterModel.brokerIds()) {
-            boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+            boolean canRoll = RollingTestUtils.await(kafkaAvailability.canRoll(brokerId, Set.of()));
             assertTrue(canRoll,
                     "broker " + brokerId + " should be rollable, being minisr = 1 and having two brokers in its isr");
         }
@@ -359,7 +321,7 @@ public class KafkaAvailabilityTest {
 
         ka(clusterModel.buildAdminClient());
         for (Integer brokerId : clusterModel.brokerIds()) {
-            Throwable cause = awaitThrows(kafkaAvailability.canRoll(brokerId, Set.of()));
+            Throwable cause = RollingTestUtils.awaitThrows(kafkaAvailability.canRoll(brokerId, Set.of()));
             assertTrue(cause instanceof AdminClientException);
             assertEquals("KafkaAvailability call of Admin.listTopics failed", cause.getMessage());
             assertEquals(ex, cause.getCause());
@@ -392,7 +354,7 @@ public class KafkaAvailabilityTest {
 
         ka(clusterModel.buildAdminClient());
         for (Integer brokerId : clusterModel.brokerIds()) {
-            Throwable cause = awaitThrows(kafkaAvailability.canRoll(brokerId, Set.of()));
+            Throwable cause = RollingTestUtils.awaitThrows(kafkaAvailability.canRoll(brokerId, Set.of()));
             assertTrue(cause instanceof AdminClientException);
             assertEquals("KafkaAvailability call of Admin.describeTopics failed", cause.getMessage());
             assertEquals(ex, cause.getCause());
@@ -426,12 +388,12 @@ public class KafkaAvailabilityTest {
         ka(clusterModel.buildAdminClient());
         for (Integer brokerId : clusterModel.brokerIds()) {
             if (brokerId <= 2) {
-                Throwable cause = awaitThrows(kafkaAvailability.canRoll(brokerId, Set.of()));
+                Throwable cause = RollingTestUtils.awaitThrows(kafkaAvailability.canRoll(brokerId, Set.of()));
                 assertTrue(cause instanceof AdminClientException);
                 assertEquals("KafkaAvailability call of Admin.describeConfigs (topics) failed", cause.getMessage());
                 assertEquals(ex, cause.getCause());
             } else {
-                boolean canRoll = await(kafkaAvailability.canRoll(brokerId, Set.of()));
+                boolean canRoll = RollingTestUtils.await(kafkaAvailability.canRoll(brokerId, Set.of()));
                 // TODO assertion
                 assertTrue(canRoll);
             }
@@ -468,7 +430,7 @@ public class KafkaAvailabilityTest {
         var map = clusterModel.brokerIds().stream()
                 .collect(Collectors.toMap(
                         brokerId -> brokerId,
-                        broker -> await(kafkaAvailability.partitionsWithPreferredButNotCurrentLeader(broker))));
+                        broker -> RollingTestUtils.await(kafkaAvailability.partitionsWithPreferredButNotCurrentLeader(broker))));
         assertEquals(Map.of(
                 0, Set.of(new TopicPartition("B", 0)),
                 1, Set.of(),
@@ -506,7 +468,7 @@ public class KafkaAvailabilityTest {
 
         ka(clusterModel.buildAdminClient());
         for (var brokerId : clusterModel.brokerIds()) {
-            var cause = awaitThrows(kafkaAvailability.partitionsWithPreferredButNotCurrentLeader(brokerId));
+            var cause = RollingTestUtils.awaitThrows(kafkaAvailability.partitionsWithPreferredButNotCurrentLeader(brokerId));
             assertTrue(cause instanceof AdminClientException);
             assertEquals("KafkaAvailability call of Admin.describeTopics failed", cause.getMessage());
             assertEquals(ex, cause.getCause());

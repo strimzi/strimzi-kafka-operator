@@ -7,15 +7,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.PodStatus;
+import io.fabric8.kubernetes.api.model.PodStatusBuilder;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.operator.resource.BrokerActionContext.State;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -33,7 +34,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -61,23 +61,7 @@ class BrokerActionContextTest {
         vertx.close();
     }
 
-    private static <T> T await(Future<T> future) {
-        CountDownLatch latch = new CountDownLatch(1);
-        future.onComplete(ar -> latch.countDown());
-        try {
-            if (latch.await(1, TimeUnit.SECONDS)) {
-                if (future.failed()) {
-                    fail(future.cause());
-                }
-                return future.result();
-            } else {
-                fail("Future wasn't completed within timeout");
-                throw new RuntimeException(); // to appease definite return checking
-            }
-        } catch (InterruptedException e) {
-            throw new KafkaAvailabilityTest.UncheckedInterruptedException(e);
-        }
-    }
+
 
     // TODO test repeated UNREADY has exponential backoff behaviour
 
@@ -105,7 +89,7 @@ class BrokerActionContextTest {
         assertEquals(State.NEEDS_CLASSIFY, context.state());
         assertEquals(0, context.numSelfTransitions());
 
-        await(context.progressOne());
+        RollingTestUtils.await(context.progressOne());
 
         assertEquals(State.NEEDS_CLASSIFY, context.state());
         assertEquals(1, context.numSelfTransitions());
@@ -117,7 +101,7 @@ class BrokerActionContextTest {
 
     private void transitionFromNeedsClassify(boolean podReady, boolean controller) {
         PodOperator podOps = mock(PodOperator.class);
-        when(podOps.get(eq(NAMESPACE), eq(POD_NAME))).thenReturn(unreadyPod(podReady));
+        when(podOps.get(eq(NAMESPACE), eq(POD_NAME))).thenReturn(pod(POD_ID, true, podReady));
         KafkaAvailability ka = mock(KafkaAvailability.class);
         when(ka.controller(eq(POD_ID))).thenReturn(Future.succeededFuture(controller));
 
@@ -138,7 +122,7 @@ class BrokerActionContextTest {
         assertEquals(State.NEEDS_CLASSIFY, context.state());
         assertEquals(0, context.numSelfTransitions());
 
-        await(context.progressOne());
+        RollingTestUtils.await(context.progressOne());
 
         assertEquals(!podReady ? State.UNREADY : controller ? State.CONTROLLER : State.READY, context.state());
         assertEquals(0, context.numSelfTransitions());
@@ -146,27 +130,32 @@ class BrokerActionContextTest {
         verify(ka, times(podReady ? 1 : 0)).controller(eq(POD_ID));
     }
 
-    private Pod unreadyPod(boolean podReady) {
+    public static Pod pod(int id, boolean scheduled, boolean ready) {
+        if (!scheduled && ready) {
+            throw new IllegalArgumentException();
+        }
         return new PodBuilder()
-                .withNewStatus()
-                    .addNewCondition()
-                        .withType("Ready")
-                        .withStatus(podReady ? "True" : "False")
-                    .endCondition()
-                .endStatus().build();
+                .withNewMetadata()
+                    .withNamespace(Reconciliation.DUMMY_RECONCILIATION.namespace())
+                    .withName(KafkaCluster.kafkaPodName(Reconciliation.DUMMY_RECONCILIATION.name(), id))
+                .endMetadata()
+                .withStatus(podStatus(scheduled, ready))
+            .build();
     }
 
-    private Pod unschedulablePod(boolean scheduled) {
-
-        return new PodBuilder()
-                .withNewStatus()
-                .withPhase("Pending")
+    public static PodStatus podStatus(boolean scheduled, boolean ready) {
+        return new PodStatusBuilder()
+                .withPhase(scheduled && ready ? "Ready" : "Pending")
                 .addNewCondition()
-                .withType("PodScheduled")
-                .withStatus(scheduled ? "True" : "False")
-                .withReason(scheduled ? null : "Unschedulable")
+                    .withType("PodScheduled")
+                    .withStatus(scheduled ? "True" : "False")
+                    .withReason(scheduled ? null : "Unschedulable")
                 .endCondition()
-                .endStatus().build();
+                    .addNewCondition()
+                    .withType("Ready")
+                    .withStatus(ready ? "True" : "False")
+                .endCondition()
+            .build();
     }
 
     @Test
@@ -222,7 +211,7 @@ class BrokerActionContextTest {
         assertEquals(initialState, context.state());
         assertEquals(0, context.numSelfTransitions());
 
-        await(context.progressOne());
+        RollingTestUtils.await(context.progressOne());
 
         assertEquals(expectedState, context.state());
         // TODO assertions on times
@@ -280,7 +269,7 @@ class BrokerActionContextTest {
     @MethodSource("readyOrController")
     public void inReadyOrController_unschedulable(State initalState) {
         transitionFromReadyOrController(initalState,
-                Future.succeededFuture(unschedulablePod(false)),
+                Future.succeededFuture(pod(POD_ID, false, false)),
                 List.of(),
                 "", "",
                 Future.succeededFuture(loggerOnlyDiff()),
@@ -305,7 +294,7 @@ class BrokerActionContextTest {
     @MethodSource("readyOrController")
     public void inReadyOrController_errorGettingConfigs(State initalState) {
         var context = transitionFromReadyOrController(initalState,
-                Future.succeededFuture(unschedulablePod(true)),
+                Future.succeededFuture(pod(POD_ID, true, true)),
                 List.of(),
                 "", "",
                 Future.failedFuture(new AdminClientException("Something went wrong", null)),
@@ -319,7 +308,7 @@ class BrokerActionContextTest {
     @MethodSource("readyOrController")
     public void inReadyOrController_needsRestart(State initalState) {
         var context = transitionFromReadyOrController(initalState,
-                Future.succeededFuture(unschedulablePod(true)),
+                Future.succeededFuture(pod(POD_ID, true, true)),
                 List.of("some reason"),
                 "", "",
                 Future.succeededFuture(unreconfigurableBrokerDiff()),
@@ -332,7 +321,7 @@ class BrokerActionContextTest {
     @MethodSource("readyOrController")
     public void inReadyOrController_needsBrokerReconfigAndAllowed(State initalState) {
         var context = transitionFromReadyOrController(initalState,
-                Future.succeededFuture(unschedulablePod(true)),
+                Future.succeededFuture(pod(POD_ID, true, true)),
                 List.of(),
                 "", "",
                 Future.succeededFuture(reconfigurableBrokerDiff()),
@@ -345,7 +334,7 @@ class BrokerActionContextTest {
     @MethodSource("readyOrController")
     public void inReadyOrController_needsBrokerReconfigButNotAllowed(State initalState) {
         var context = transitionFromReadyOrController(initalState,
-                Future.succeededFuture(unschedulablePod(true)),
+                Future.succeededFuture(pod(POD_ID, true, true)),
                 List.of(),
                 "", "",
                 Future.succeededFuture(reconfigurableBrokerDiff()),
@@ -358,7 +347,7 @@ class BrokerActionContextTest {
     @MethodSource("readyOrController")
     public void inReadyOrController_needsLoggersReconfigAndAllowed(State initalState) {
         var context = transitionFromReadyOrController(initalState,
-                Future.succeededFuture(unschedulablePod(true)),
+                Future.succeededFuture(pod(POD_ID, true, true)),
                 List.of(),
                 "", "",
                 Future.succeededFuture(loggerOnlyDiff()),
@@ -371,7 +360,7 @@ class BrokerActionContextTest {
     @MethodSource("readyOrController")
     public void inReadyOrController_needsLoggersReconfigButNotAllowed(State initalState) {
         var context = transitionFromReadyOrController(initalState,
-                Future.succeededFuture(unschedulablePod(true)),
+                Future.succeededFuture(pod(POD_ID, true, true)),
                 List.of(),
                 "", "",
                 Future.succeededFuture(loggerOnlyDiff()),
@@ -384,7 +373,7 @@ class BrokerActionContextTest {
     @MethodSource("readyOrController")
     public void inReadyOrController_noActionNeeded(State initalState) {
         var context = transitionFromReadyOrController(initalState,
-                Future.succeededFuture(unschedulablePod(true)),
+                Future.succeededFuture(pod(POD_ID, true, true)),
                 List.of(),
                 "my.config=foo", "com.example=DEBUG",
                 Future.succeededFuture(noopDiff()),
@@ -425,7 +414,7 @@ class BrokerActionContextTest {
         assertEquals(State.NEEDS_RESTART, context.state());
         assertEquals(0, context.numSelfTransitions());
 
-        await(context.progressOne());
+        RollingTestUtils.await(context.progressOne());
 
         assertEquals(State.AWAITING_READY, context.state());
         assertTrue(restartingBrokers.contains(POD_ID));
@@ -470,7 +459,7 @@ class BrokerActionContextTest {
         assertEquals(State.NEEDS_RECONFIG, context.state());
         assertEquals(0, context.numSelfTransitions());
 
-        await(context.progressOne());
+        RollingTestUtils.await(context.progressOne());
 
         assertEquals(State.AWAITING_READY, context.state());
 

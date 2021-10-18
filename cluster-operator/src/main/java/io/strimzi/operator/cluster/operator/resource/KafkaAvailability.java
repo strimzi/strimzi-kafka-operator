@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -241,6 +242,10 @@ class KafkaAvailability {
                     .map(mapOfConfigs -> mapOfConfigs.entrySet().stream()
                             .collect(Collectors.toMap(entry -> entry.getKey().type(), Map.Entry::getValue)))
                     .recover(ex -> adminClientFailure(ex, "Admin.describeConfigs (broker)"));
+    }
+
+    public void close(Duration timeout) {
+        admin.close(timeout);
     }
 
     static class ConfigDiff {
