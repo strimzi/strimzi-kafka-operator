@@ -10,6 +10,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
+import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
@@ -38,8 +39,8 @@ import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
-import io.strimzi.systemtest.resources.kubernetes.ClusterOperatorCustomResourceDefinition;
 import io.strimzi.systemtest.resources.draincleaner.DrainCleanerResource;
+import io.strimzi.systemtest.resources.kubernetes.ClusterOperatorCustomResourceDefinition;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleResource;
 import io.strimzi.systemtest.resources.kubernetes.ConfigMapResource;
@@ -48,8 +49,10 @@ import io.strimzi.systemtest.resources.kubernetes.JobResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.RoleResource;
+import io.strimzi.systemtest.resources.kubernetes.SecretResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceAccountResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
+import io.strimzi.systemtest.resources.kubernetes.ValidatingWebhookConfigurationResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
@@ -130,7 +133,9 @@ public class ResourceManager {
         new ServiceAccountResource(),
         new RoleResource(),
         new ClusterRoleResource(),
-        new ClusterOperatorCustomResourceDefinition()
+        new ClusterOperatorCustomResourceDefinition(),
+        new SecretResource(),
+        new ValidatingWebhookConfigurationResource()
     };
 
     @SafeVarargs
@@ -201,7 +206,7 @@ public class ResourceManager {
         assertNotNull(resource.getMetadata().getName());
 
         // cluster role binding and custom resource definition does not need namespace...
-        if (!(resource instanceof ClusterRoleBinding || resource instanceof CustomResourceDefinition || resource instanceof ClusterRole)) {
+        if (!(resource instanceof ClusterRoleBinding || resource instanceof CustomResourceDefinition)) {
             assertNotNull(resource.getMetadata().getNamespace());
         }
 

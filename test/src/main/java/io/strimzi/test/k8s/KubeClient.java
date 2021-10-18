@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -1001,5 +1002,21 @@ public class KubeClient {
     public List<Node> getClusterWorkers() {
         return getClusterNodes().stream().filter(node ->
                 node.getMetadata().getLabels().containsKey("node-role.kubernetes.io/worker")).collect(Collectors.toList());
+    }
+
+    // ======================================================
+    // ---------> VALIDATING WEBHOOK CONFIGURATION <---------
+    // ======================================================
+
+    public ValidatingWebhookConfiguration getValidatingWebhookConfiguration(String webhookName) {
+        return client.admissionRegistration().v1().validatingWebhookConfigurations().withName(webhookName).get();
+    }
+
+    public ValidatingWebhookConfiguration createValidatingWebhookConfiguration(ValidatingWebhookConfiguration validatingWebhookConfiguration) {
+        return client.admissionRegistration().v1().validatingWebhookConfigurations().createOrReplace(validatingWebhookConfiguration);
+    }
+
+    public Boolean deleteValidatingWebhookConfiguration(ValidatingWebhookConfiguration validatingWebhookConfiguration) {
+        return client.admissionRegistration().v1().validatingWebhookConfigurations().delete(validatingWebhookConfiguration);
     }
 }

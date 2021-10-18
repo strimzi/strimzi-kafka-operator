@@ -48,8 +48,6 @@ public class DrainCleanerST extends AbstractST {
     @IsolatedTest
     @RequiredMinKubeApiVersion(version = 1.17)
     void testDrainCleanerWithComponents(ExtensionContext extensionContext) {
-        cluster.setNamespace(Constants.DRAIN_CLEANER_NAMESPACE);
-
         TestStorage testStorage = new TestStorage(extensionContext);
 
         final int replicas = 3;
@@ -123,8 +121,6 @@ public class DrainCleanerST extends AbstractST {
     @IsolatedTest
     @MultiNodeClusterOnly
     void testDrainCleanerWithComponentsDuringNodeDraining(ExtensionContext extensionContext) {
-        cluster.setNamespace(Constants.DRAIN_CLEANER_NAMESPACE);
-
         TestStorage testStorage = new TestStorage(extensionContext);
 
         String rackKey = "rack-key";
@@ -268,6 +264,7 @@ public class DrainCleanerST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
+        install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
