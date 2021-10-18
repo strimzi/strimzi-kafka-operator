@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -72,6 +73,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CON
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_CONNECTOR;
 import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_TASK;
+import static java.util.Collections.emptyMap;
 
 /**
  * <p>Assembly operator for a "Kafka MirrorMaker 2.0" assembly, which manages:</p>
@@ -290,8 +292,20 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         prepareMirrorMaker2ConnectorConfig(reconciliation, mirror, clusterMap.get(sourceClusterAlias), clusterMap.get(targetClusterAlias), connectorSpec, mirrorMaker2Cluster);
                         LOGGER.debugCr(reconciliation, "creating/updating connector {} config: {}", connectorName, asJson(reconciliation, connectorSpec).toString());
                         return reconcileMirrorMaker2Connector(reconciliation, mirrorMaker2, apiClient, host, connectorName, connectorSpec, mirrorMaker2Status);
-                    })                            
+                    })
                     .collect(Collectors.toList()))
+                    .compose(i -> {
+                        Optional<Map<String, Object>> failedOpt = mirrorMaker2Status.getConnectors().stream()
+                                .filter(connector -> {
+                                    Object state = ((Map) connector.getOrDefault("connector", emptyMap())).get("state");
+                                    return "FAILED".equalsIgnoreCase(state.toString());
+                                }).findFirst();
+                        if (failedOpt.isPresent()) {
+                            return Future.failedFuture("One or more connectors are in FAILED state");
+                        } else {
+                            return Future.succeededFuture();
+                        }
+                    })
                     .map((Void) null)
                     .compose(i -> apiClient.updateConnectLoggers(reconciliation, host, KafkaConnectCluster.REST_API_PORT, desiredLogging, mirrorMaker2Cluster.getDefaultLogConfig()))
                     .map((Void) null);
