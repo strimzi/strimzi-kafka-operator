@@ -87,6 +87,7 @@
 :K8sServiceDiscovery: https://kubernetes.io/docs/concepts/services-networking/service/#discovering-services[Discovering services^]
 :K8sWellKnownLabelsAnnotationsAndTaints: link:https://kubernetes.io/docs/reference/kubernetes-api/labels-annotations-taints/[Well-Known Labels, Annotations and Taints^]
 :K8sDockerSecret: link:https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/#registry-secret-existing-credentials[Create a Secret based on existing Docker credentials^]
+:MavenCentral: https://mvnrepository.com/repos/central[Maven Central repository^]
 :Minikube: link:https://kubernetes.io/docs/tasks/tools/install-minikube/[Install and start Minikube]
 :NginxIngressController: link:https://github.com/kubernetes/ingress-nginx[NGINX Ingress Controller for Kubernetes^]
 :NginxIngressControllerTLSPassthrough: link:https://kubernetes.github.io/ingress-nginx/user-guide/tls/#ssl-passthrough[TLS passthrough documentation]
