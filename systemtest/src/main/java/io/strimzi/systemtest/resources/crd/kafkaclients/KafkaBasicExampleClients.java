@@ -118,6 +118,7 @@ public class KafkaBasicExampleClients {
             builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
         }
         if (builder.message == null || builder.message.isEmpty()) builder.message = "Hello-world";
+        if (builder.additionalConfig == null || builder.additionalConfig.isEmpty()) builder.additionalConfig = "";
 
         producerName = builder.producerName;
         consumerName = builder.consumerName;
