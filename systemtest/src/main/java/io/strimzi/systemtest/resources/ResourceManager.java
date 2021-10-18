@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
@@ -199,7 +200,7 @@ public class ResourceManager {
         assertNotNull(resource.getMetadata().getName());
 
         // cluster role binding and custom resource definition does not need namespace...
-        if (!(resource instanceof ClusterRoleBinding || resource instanceof CustomResourceDefinition)) {
+        if (!(resource instanceof ClusterRoleBinding || resource instanceof CustomResourceDefinition || resource instanceof ClusterRole)) {
             assertNotNull(resource.getMetadata().getNamespace());
         }
 

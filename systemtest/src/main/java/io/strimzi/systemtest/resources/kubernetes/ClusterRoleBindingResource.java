@@ -28,17 +28,16 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
     @Override
     public ClusterRoleBinding get(String namespace, String name) {
         // ClusterRoleBinding his operation namespace is only 'default'
-        return kubeClient().namespace(KubeClusterResource.getInstance().defaultNamespace()).getClusterRoleBinding(name);
+        return kubeClient(KubeClusterResource.getInstance().defaultNamespace()).getClusterRoleBinding(name);
     }
     @Override
     public void create(ClusterRoleBinding resource) {
-        kubeClient().createOrReplaceClusterRoleBinding(resource);
+        kubeClient(KubeClusterResource.getInstance().defaultNamespace()).createOrReplaceClusterRoleBinding(resource);
     }
     @Override
     public void delete(ClusterRoleBinding resource) {
         // ClusterRoleBinding his operation namespace is only 'default'
-        resource.getMetadata().setNamespace(KubeClusterResource.getInstance().defaultNamespace());
-        kubeClient().deleteClusterRoleBinding(resource);
+        kubeClient(KubeClusterResource.getInstance().defaultNamespace()).deleteClusterRoleBinding(resource);
     }
     @Override
     public boolean waitForReadiness(ClusterRoleBinding resource) {
