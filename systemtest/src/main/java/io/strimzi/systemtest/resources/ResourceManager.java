@@ -206,7 +206,7 @@ public class ResourceManager {
         assertNotNull(resource.getMetadata().getName());
 
         // cluster role binding and custom resource definition does not need namespace...
-        if (!(resource instanceof ClusterRoleBinding || resource instanceof CustomResourceDefinition)) {
+        if (!(resource instanceof ClusterRoleBinding || resource instanceof CustomResourceDefinition || resource instanceof ClusterRole || resource instanceof ValidatingWebhookConfiguration)) {
             assertNotNull(resource.getMetadata().getNamespace());
         }
 

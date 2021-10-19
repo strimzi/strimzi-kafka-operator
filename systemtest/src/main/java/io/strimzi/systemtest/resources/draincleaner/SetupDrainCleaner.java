@@ -35,7 +35,7 @@ public class SetupDrainCleaner {
             .collect(Collectors.toList());
 
         drainCleanerFiles.forEach(file -> {
-            if (!file.getName().contains("README") && !file.getName().contains("Namespace")) {
+            if (!file.getName().contains("README") && !file.getName().contains("Namespace") && !file.getName().contains("Deployment")) {
                 final String resourceType = file.getName().split("-")[1].split(".yaml")[0];
 
                 switch (resourceType) {

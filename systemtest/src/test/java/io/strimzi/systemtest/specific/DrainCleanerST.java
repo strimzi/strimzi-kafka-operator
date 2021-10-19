@@ -26,7 +26,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -48,7 +47,7 @@ public class DrainCleanerST extends AbstractST {
     @IsolatedTest
     @RequiredMinKubeApiVersion(version = 1.17)
     void testDrainCleanerWithComponents(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        TestStorage testStorage = new TestStorage(extensionContext, Constants.DRAIN_CLEANER_NAMESPACE);
 
         final int replicas = 3;
 
@@ -121,7 +120,7 @@ public class DrainCleanerST extends AbstractST {
     @IsolatedTest
     @MultiNodeClusterOnly
     void testDrainCleanerWithComponentsDuringNodeDraining(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        TestStorage testStorage = new TestStorage(extensionContext, Constants.DRAIN_CLEANER_NAMESPACE);
 
         String rackKey = "rack-key";
         final int replicas = 3;
@@ -255,11 +254,6 @@ public class DrainCleanerST extends AbstractST {
     @AfterEach
     void teardown() {
         kubeClient().getClusterNodes().forEach(node -> NodeUtils.cordonNode(node.getMetadata().getName(), true));
-    }
-
-    @BeforeEach
-    void setNamespace(ExtensionContext extensionContext) {
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, Constants.DRAIN_CLEANER_NAMESPACE);
     }
 
     @BeforeAll
