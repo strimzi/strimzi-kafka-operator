@@ -15,6 +15,8 @@ import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhoo
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 public class SetupDrainCleaner {
 
     public static final String PATH_TO_DC_CONFIG = TestUtils.USER_PATH + "/../packaging/install/drain-cleaner/kubernetes";
+    private static final Logger LOGGER = LogManager.getLogger(SetupDrainCleaner.class);
 
     public void applyInstallFiles(ExtensionContext extensionContext) {
         List<File> drainCleanerFiles = Arrays.stream(new File(PATH_TO_DC_CONFIG).listFiles()).sorted()
@@ -64,6 +67,9 @@ public class SetupDrainCleaner {
                         ValidatingWebhookConfiguration webhookConfiguration = TestUtils.configFromYaml(file, ValidatingWebhookConfiguration.class);
                         ResourceManager.getInstance().createResource(extensionContext, webhookConfiguration);
                         break;
+                    default:
+                        LOGGER.error("Unknown installation resource type: {}", resourceType);
+                        throw new RuntimeException("Unknown installation resource type:" + resourceType);
                 }
             }
         });
