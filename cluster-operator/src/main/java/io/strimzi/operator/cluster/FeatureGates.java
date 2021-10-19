@@ -20,8 +20,8 @@ public class FeatureGates {
     private static final String SERVICE_ACCOUNT_PATCHING = "ServiceAccountPatching";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
-    private final FeatureGate controlPlaneListener = new FeatureGate(CONTROL_PLANE_LISTENER, false);
-    private final FeatureGate serviceAccountPatching = new FeatureGate(SERVICE_ACCOUNT_PATCHING, false);
+    private final FeatureGate controlPlaneListener = new FeatureGate(CONTROL_PLANE_LISTENER, true);
+    private final FeatureGate serviceAccountPatching = new FeatureGate(SERVICE_ACCOUNT_PATCHING, true);
 
     /**
      * Constructs the feature gates configuration.
