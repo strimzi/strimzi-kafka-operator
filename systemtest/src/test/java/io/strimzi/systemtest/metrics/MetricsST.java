@@ -51,6 +51,7 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -115,6 +116,7 @@ public class MetricsST extends AbstractST {
 
     private String bridgeTopic = KafkaTopicUtils.generateRandomNameOfTopic();
     private String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+    private final String kafkaExporterTopic = KafkaTopicUtils.generateRandomNameOfTopic();
 
     private MetricsCollector collector;
 
@@ -130,7 +132,7 @@ public class MetricsST extends AbstractST {
     void testKafkaTopicPartitions() {
         Pattern topicPartitions = Pattern.compile("kafka_server_replicamanager_partitioncount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsCollector.collectSpecificMetric(topicPartitions, kafkaMetricsData);
-        assertThat("Topic partitions count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is(423.0));
+        assertThat("Topic partitions count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is(437.0));
     }
 
     @ParallelTest
@@ -212,10 +214,10 @@ public class MetricsST extends AbstractST {
     @IsolatedTest
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
-    void testKafkaExporterDataAfterExchange() {
+    void testKafkaExporterDataAfterExchange(ExtensionContext extensionContext) {
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
+            .withTopicName(kafkaExporterTopic)
             .withNamespaceName(INFRA_NAMESPACE)
             .withClusterName(metricsClusterName)
             .withMessageCount(5000)
@@ -228,6 +230,7 @@ public class MetricsST extends AbstractST {
         );
 
         kafkaExporterMetricsData = collector.toBuilder()
+            .withNamespaceName(INFRA_NAMESPACE)
             .withComponentType(ComponentType.KafkaExporter)
             .build()
             .collectMetricsFromPods();
@@ -237,9 +240,9 @@ public class MetricsST extends AbstractST {
                 assertThat("Kafka Exporter metrics should be non-empty", kafkaExporterMetricsData.size() > 0);
                 kafkaExporterMetricsData.forEach((key, value) -> {
                     assertThat("Value from collected metric should be non-empty", !value.isEmpty());
-                    assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_current_offset"));
-                    assertThat("Metrics doesn't contain specific values", value.contains("kafka_consumergroup_lag"));
-                    assertThat("Metrics doesn't contain specific values", value.contains("kafka_topic_partitions{topic=\"" + topicName + "\"} 7"));
+                    assertThat(value, CoreMatchers.containsString("kafka_consumergroup_current_offset"));
+                    assertThat(value, CoreMatchers.containsString("kafka_consumergroup_lag"));
+                    assertThat(value, CoreMatchers.containsString("kafka_topic_partitions{topic=\"" + kafkaExporterTopic + "\"} 7"));
                 });
 
                 return true;
@@ -676,6 +679,7 @@ public class MetricsST extends AbstractST {
         resourceManager.synchronizeResources(extensionContext);
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, topicName, 7, 2).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, kafkaExporterTopic, 7, 2).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, bridgeTopic).build());
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(metricsClusterName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
@@ -730,6 +734,7 @@ public class MetricsST extends AbstractST {
         list.add("heartbeats");
         list.add(topicName);
         list.add(bridgeTopic);
+        list.add(kafkaExporterTopic);
         list.add(CruiseControlUtils.CRUISE_CONTROL_METRICS_TOPIC);
         list.add(CruiseControlUtils.CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
         list.add(CruiseControlUtils.CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);

@@ -140,8 +140,8 @@ public class PodUtils {
         return result.get();
     }
 
-    public static String getFirstPodNameContaining(String searchTerm) {
-        return kubeClient().listPods().stream().filter(pod -> pod.getMetadata().getName().contains(searchTerm))
+    public static String getFirstPodNameContaining(final String namespaceName, String searchTerm) {
+        return kubeClient(namespaceName).listPods(namespaceName).stream().filter(pod -> pod.getMetadata().getName().contains(searchTerm))
                 .findFirst().orElseThrow().getMetadata().getName();
     }
 
