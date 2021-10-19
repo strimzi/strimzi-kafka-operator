@@ -64,9 +64,7 @@ webhooks:
 To deploy and use the Strimzi Drain Cleaner, you need to download the deployment files.
 
 ifdef::Downloading[]
-The Strimzi Drain Cleaner deployment files are accessible from the following locations:
-
-* link:https://github.com/strimzi/drain-cleaner[Strimzi Drain Cleaner GitHub repository^]
+The Strimzi Drain Cleaner deployment files are accessible from the link:{ReleaseDownload} release archive.
 endif::Downloading[]
 
 ifndef::Downloading[]
