@@ -118,6 +118,7 @@ public class KafkaBasicExampleClients {
             builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
         }
         if (builder.message == null || builder.message.isEmpty()) builder.message = "Hello-world";
+        if (builder.additionalConfig == null || builder.additionalConfig.isEmpty()) builder.additionalConfig = "";
 
         producerName = builder.producerName;
         consumerName = builder.consumerName;
@@ -209,7 +210,7 @@ public class KafkaBasicExampleClients {
                 "security.protocol=" + SecurityProtocol.SASL_SSL + "\n" +
                 "sasl.jaas.config=" + saslJaasConfigDecrypted;
 
-        return defaultConsumerStrimzi()
+        return defaultProducerStrimzi()
             .editSpec()
                 .editTemplate()
                     .editSpec()
@@ -248,7 +249,7 @@ public class KafkaBasicExampleClients {
             .endValueFrom()
             .build();
 
-        return defaultConsumerStrimzi()
+        return defaultProducerStrimzi()
             .editSpec()
                 .editTemplate()
                     .editSpec()

@@ -241,5 +241,4 @@ class HttpBridgeKafkaExternalListenersST extends AbstractST {
 
         ClientUtils.waitForClientSuccess(clusterName + "-" + consumerName, NAMESPACE, MESSAGE_COUNT);
     }
-
 }
