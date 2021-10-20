@@ -298,18 +298,25 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
+    public ExecResult exec(List<String> command) {
+        return exec(true, true, command);
+    }
+
+    @Override
     public ExecResult exec(boolean throwError, String... command) {
-        List<String> cmd = new ArrayList<>();
-        cmd.add(cmd());
-        cmd.addAll(asList(command));
-        return Exec.exec(null, cmd, 0, true, throwError);
+        return exec(throwError, true, asList(command));
     }
 
     @Override
     public ExecResult exec(boolean throwError, boolean logToOutput, String... command) {
+        return exec(throwError, logToOutput, asList(command));
+    }
+
+    @Override
+    public ExecResult exec(boolean throwError, boolean logToOutput, List<String> command) {
         List<String> cmd = new ArrayList<>();
         cmd.add(cmd());
-        cmd.addAll(asList(command));
+        cmd.addAll(command);
         return Exec.exec(null, cmd, 0, logToOutput, throwError);
     }
 

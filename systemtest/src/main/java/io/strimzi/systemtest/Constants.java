@@ -75,6 +75,12 @@ public interface Constants {
     String IF_NOT_PRESENT_IMAGE_PULL_POLICY = "IfNotPresent";
 
     /**
+     * Drain Cleaner related constants
+     */
+    String DRAIN_CLEANER_DEPLOYMENT_NAME = "strimzi-drain-cleaner";
+    String DRAIN_CLEANER_NAMESPACE = "strimzi-drain-cleaner";
+
+    /**
      * Constants for specific ports
      */
     int COMPONENTS_METRICS_PORT = 9404;
@@ -103,6 +109,7 @@ public interface Constants {
     String POD = "Pod";
     String NETWORK_POLICY = "NetworkPolicy";
     String JOB = "job";
+    String VALIDATION_WEBHOOK_CONFIG = "ValidatingWebhookConfiguration";
 
     /**
      * Kafka Bridge JSON encoding with JSON embedded format

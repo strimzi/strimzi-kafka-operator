@@ -89,6 +89,11 @@
             <artifactId>openshift-client</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-model-admissionregistration</artifactId>
+            <version>${fabric8.kubernetes-model.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
             <scope>compile</scope>
