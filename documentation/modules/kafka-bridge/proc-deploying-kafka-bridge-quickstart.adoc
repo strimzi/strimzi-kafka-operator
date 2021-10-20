@@ -5,7 +5,9 @@
 [id='proc-deploying-kafka-bridge-quickstart-{context}']
 = Deploying the Kafka Bridge to your Kubernetes cluster
 
-Strimzi includes a YAML example that specifies the configuration of the Strimzi Kafka Bridge. Make some minimal changes to this file and then deploy an instance of the Kafka Bridge to your Kubernetes cluster.
+[role="_abstract"]
+Strimzi includes a YAML example that specifies the configuration of the Strimzi Kafka Bridge.
+Make some minimal changes to this file and then deploy an instance of the Kafka Bridge to your Kubernetes cluster.
 
 .Procedure
 
@@ -56,6 +58,7 @@ my-cluster-entity-operator         1/1     1            1          24h
 
 After deploying the Kafka Bridge to your Kubernetes cluster, xref:proc-exposing-kafka-bridge-service-local-machine-{context}[expose the Kafka Bridge service to your local machine].
 
+[role="_additional-resources"]
 .Additional resources
 
 * For more detailed information about configuring the Kafka Bridge, see xref:assembly-config-kafka-bridge-str[].

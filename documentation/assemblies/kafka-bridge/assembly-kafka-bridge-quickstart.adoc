@@ -13,6 +13,7 @@
 
 :context: kafka-bridge-quickstart
 
+[role="_abstract"]
 Use this quickstart to try out the Strimzi Kafka Bridge in your local development environment. You will learn how to:
 
 * Deploy the Kafka Bridge to your Kubernetes cluster
@@ -36,22 +37,22 @@ In this quickstart, you will produce and consume messages in JSON format, not bi
 * A running Kafka cluster, deployed by the Cluster Operator, in a Kubernetes namespace.
 * The Entity Operator is deployed and running as part of the Kafka cluster.
 
-include::../modules/proc-deploying-kafka-bridge-quickstart.adoc[leveloffset=+1]
+include::modules/proc-deploying-kafka-bridge-quickstart.adoc[leveloffset=+1]
 
-include::../modules/proc-exposing-kafka-bridge-service-local-machine.adoc[leveloffset=+1]
+include::modules/proc-exposing-kafka-bridge-service-local-machine.adoc[leveloffset=+1]
 
-include::../modules/proc-producing-messages-from-bridge-topics-partitions.adoc[leveloffset=+1]
+include::modules/proc-producing-messages-from-bridge-topics-partitions.adoc[leveloffset=+1]
 
-include::../modules/proc-creating-kafka-bridge-consumer.adoc[leveloffset=+1]
+include::modules/proc-creating-kafka-bridge-consumer.adoc[leveloffset=+1]
 
-include::../modules/proc-bridge-subscribing-consumer-topics.adoc[leveloffset=+1]
+include::modules/proc-bridge-subscribing-consumer-topics.adoc[leveloffset=+1]
 
-include::../modules/proc-bridge-retrieving-latest-messages-from-consumer.adoc[leveloffset=+1]
+include::modules/proc-bridge-retrieving-latest-messages-from-consumer.adoc[leveloffset=+1]
 
-include::../modules/proc-bridge-committing-consumer-offsets-to-log.adoc[leveloffset=+1]
+include::modules/proc-bridge-committing-consumer-offsets-to-log.adoc[leveloffset=+1]
 
-include::../modules/proc-bridge-seeking-offsets-for-partition.adoc[leveloffset=+1]
+include::modules/proc-bridge-seeking-offsets-for-partition.adoc[leveloffset=+1]
 
-include::../modules/proc-bridge-deleting-consumer.adoc[leveloffset=+1]
+include::modules/proc-bridge-deleting-consumer.adoc[leveloffset=+1]
 
 :context: {parent-context-kafka-bridge-quickstart}
