@@ -214,7 +214,7 @@ class ConnectST extends AbstractST {
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(clusterName,
             kafkaConnector -> kafkaConnector.getSpec().setPause(true), namespaceName);
 
-        KafkaConnectorUtils.waitForConnectorReady(clusterName);
+        KafkaConnectorUtils.waitForConnectorReady(namespaceName, clusterName);
 
         LOGGER.info("Clearing FileSink file to check if KafkaConnector will be really paused");
         KafkaConnectUtils.clearFileSinkFile(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
@@ -231,7 +231,7 @@ class ConnectST extends AbstractST {
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(clusterName,
             kafkaConnector -> kafkaConnector.getSpec().setPause(false), namespaceName);
 
-        KafkaConnectorUtils.waitForConnectorReady(clusterName);
+        KafkaConnectorUtils.waitForConnectorReady(namespaceName, clusterName);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
@@ -950,7 +950,7 @@ class ConnectST extends AbstractST {
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
         PodUtils.waitForPodsReady(kubeClient(namespaceName).getDeploymentSelectors(connectDeploymentName), 0, true);
 
-        connectPods = kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName));
+        connectPods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaConnectResources.deploymentName(clusterName));
         KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
 
         assertThat(connectPods.size(), is(0));
