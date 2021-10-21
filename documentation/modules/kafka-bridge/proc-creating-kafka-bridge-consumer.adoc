@@ -5,11 +5,12 @@
 [id='proc-creating-kafka-bridge-consumer-{context}']
 = Creating a Kafka Bridge consumer
 
+[role="_abstract"]
 Before you can perform any consumer operations in the Kafka cluster, you must first create a consumer by using the link:https://strimzi.io/docs/bridge/latest/#_createconsumer[consumers^] endpoint. The consumer is referred to as a __Kafka Bridge consumer__.
 
 .Procedure
 
-. Create a Kafka Bridge consumer in a new consumer group named `bridge-quickstart-consumer-group`: 
+. Create a Kafka Bridge consumer in a new consumer group named `bridge-quickstart-consumer-group`:
 +
 [source,curl,subs=attributes+]
 ----
@@ -48,6 +49,7 @@ If the request is successful, the Kafka Bridge returns the consumer ID (`instanc
 
 Now that you have created a Kafka Bridge consumer, you can  xref:proc-bridge-subscribing-consumer-topics-{context}[subscribe it to topics].
 
+[role="_additional-resources"]
 .Additional resources
 
 * link:https://strimzi.io/docs/bridge/latest/#_createconsumer[POST /consumers/{groupid}^] in the API reference documentation.
