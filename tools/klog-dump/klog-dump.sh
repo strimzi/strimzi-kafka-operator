@@ -5,6 +5,8 @@ if [[ $(uname -s) == "Darwin" ]]; then
   alias echo="gecho"; alias dirname="gdirname"; alias grep="ggrep"; alias readlink="greadlink"
   alias tar="gtar"; alias sed="gsed"; alias start_offsetrt="gstart_offsetrt"; alias date="gdate"; alias wc="gwc"
 fi
+readonly CO_TOPIC="__consumer_offsets"
+readonly TS_TOPIC="__transaction_state"
 KAFKA_BROKERS=0
 STORAGE_TYPE=""
 JBOD_DISKS=0
@@ -51,7 +53,52 @@ get_kafka_setup() {
   fi
 }
 
-dump_part_segments() {
+find_segments() {
+  local broker="$1"
+  local log_dir="$2"
+  if [[ -n $broker && -n $log_dir ]]; then
+    local seg_files=$(kubectl -n $NAMESPACE exec $CLUSTER-kafka-$broker -- \
+      find $log_dir -printf "%f\n" 2>/dev/null | grep ".log")
+    echo $seg_files
+  else
+    error "Missing required parameters"
+  fi
+}
+
+dump_segments() {
+  local seg_files="$1"
+  if [[ -n $seg_files && $(echo "$seg_files" | sed '/^\s*$/d' | wc -l) -gt 0 ]]; then
+    
+    local flags="--deep-iteration"
+    if [[ $topic == $CO_TOPIC ]]; then
+      flags="--offsets-decoder"
+    fi
+    if [[ $topic == $TS_TOPIC ]]; then
+      flags="--transaction-log-decoder"
+    fi
+    if [[ $DATA == true ]]; then
+      flags="$flags --print-data-log"
+    fi
+    flags="$flags --files"
+    
+    for seg_file in $(echo $seg_files); do
+      if [[ -n $SEGMENT && $SEGMENT != "${seg_file%.log}" ]]; then
+        continue
+      fi
+      echo $seg_file
+      if [[ $DRY_RUN == false ]]; then
+        mkdir -p $out_dir
+        kubectl -n $NAMESPACE exec $CLUSTER-kafka-$i -- \
+          ./bin/kafka-dump-log.sh $flags $log_dir/$seg_file > $out_dir/$seg_file
+      fi
+    done
+    
+  else
+    echo "No segment found"
+  fi
+}
+
+dump_partition() {
   local topic="$1"
   local partition="$2"
   local broker="$3"
@@ -62,40 +109,17 @@ dump_part_segments() {
     local disk_label="$topic-$partition segments in kafka-$broker"
     local log_dir="/var/lib/kafka/data/kafka-log$broker/$topic-$partition"
     local out_dir="$OUT_PATH/$topic/kafka-$broker-$topic-$partition"
+    
     if [[ -n $disk && $disk -ge 0 ]]; then
       disk_label="$topic-$partition segments in kafka-$broker-disk-$disk"
       log_dir="/var/lib/kafka/data-$disk/kafka-log$broker/$topic-$partition";
       out_dir="$OUT_PATH/$topic/kafka-$broker-disk-$disk-$topic-$partition"
     fi
-    local flags="--deep-iteration"
-    if [[ $topic == "transaction_state" ]]; then
-      flags="--transaction-log-decoder"
-    fi
-    if [[ $DATA == true ]]; then
-      flags="$flags --print-data-log"
-    fi
-    flags="$flags --files"
     
-    # find segments
-    local seg_files=$(kubectl -n $NAMESPACE exec $CLUSTER-kafka-$broker -- find $log_dir -printf "%f\n" 2>/dev/null | grep ".log")
-    local seg_num=$(echo "$seg_files" | sed '/^\s*$/d' | wc -l)
-    
-    # dump segments
+    # segment dump
+    local seg_files=$(find_segments $broker $log_dir)
     echo $disk_label
-    if [[ $seg_num -gt 0 ]]; then
-      for seg_file in $(echo $seg_files); do
-        if [[ -n $SEGMENT && $SEGMENT != "${seg_file%.log}" ]]; then
-          continue
-        fi
-        echo $seg_file
-        if [[ $DRY_RUN == false ]]; then
-          mkdir -p $out_dir
-          kubectl -n $NAMESPACE exec $CLUSTER-kafka-$i -- ./bin/kafka-dump-log.sh $flags $log_dir/$seg_file > $out_dir/$seg_file
-        fi
-      done
-    else
-      echo "No segment found"
-    fi
+    dump_segments "$seg_files"
     
   else
     error "Missing required parameters"
@@ -111,10 +135,10 @@ partition() {
     for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
       if [[ $STORAGE_TYPE == "jbod" ]]; then
         for j in $(seq 0 $(($JBOD_DISKS-1))); do
-          dump_part_segments $TOPIC $PARTITION $i $j
+          dump_partition $TOPIC $PARTITION $i $j
         done
       else 
-        dump_part_segments $TOPIC $PARTITION $i
+        dump_partition $TOPIC $PARTITION $i
       fi
     done
     
@@ -134,10 +158,10 @@ group_offsets() {
       for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
         if [[ $STORAGE_TYPE == "jbod" ]]; then
           for j in $(seq 0 $(($JBOD_DISKS-1))); do
-            dump_part_segments "consumer_offsets" $group_part $i $j
+            dump_partition $CO_TOPIC $group_part $i $j
           done
         else
-          dump_part_segments "consumer_offsets" $group_part $i
+          dump_partition $CO_TOPIC $group_part $i
         fi
       done
     
@@ -157,10 +181,10 @@ txn_state() {
     for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
       if [[ $STORAGE_TYPE == "jbod" ]]; then
         for j in $(seq 0 $(($JBOD_DISKS-1))); do
-          dump_part_segments "transaction_state" $txn_part $i $j
+          dump_partition $TS_TOPIC $txn_part $i $j
         done
       else
-        dump_part_segments "transaction_state" $txn_part $i
+        dump_partition $TS_TOPIC $txn_part $i
       fi
     done
 
@@ -200,68 +224,73 @@ readonly PARAMS="${@}"
 readonly PARRAY=($PARAMS)
 i=0
 for param in $PARAMS; do
-    i=$(($i+1))
-    case $param in
-        --namespace)
-            export NAMESPACE=${PARRAY[i]}
-            readonly NAMESPACE
-            ;;
-        --cluster)
-            export CLUSTER=${PARRAY[i]}
-            readonly CLUSTER
-            ;;
-        --topic)
-            export TOPIC=${PARRAY[i]}
-            readonly TOPIC
-            ;;
-        --partition)
-            export PARTITION=${PARRAY[i]}
-            readonly PARTITION
-            check_number $PARTITION
-            ;;
-        --segment)
-            export SEGMENT=${PARRAY[i]}
-            readonly SEGMENT
-            ;;
-        --group-id)
-            export GROUP_ID=${PARRAY[i]}
-            readonly GROUP_ID
-            ;;
-        --txn-id)
-            export TXN_ID=${PARRAY[i]}
-            readonly TXN_ID
-            ;;
-        --num-part)
-            export NUM_PART=${PARRAY[i]}
-            readonly NUM_PART
-            check_number $NUM_PART
-            ;;
-        --out-path)
-            export OUT_PATH=${PARRAY[i]}
-            readonly OUT_PATH
-            ;;
-        --dry-run)
-            export DRY_RUN=true
-            readonly DRY_RUN
-            ;;
-        --data)
-            export DATA=true
-            readonly DATA
-            ;;
-    esac
+  i=$(($i+1))
+  case $param in
+    --namespace)
+      export NAMESPACE=${PARRAY[i]}
+      readonly NAMESPACE
+      ;;
+    --cluster)
+      export CLUSTER=${PARRAY[i]}
+      readonly CLUSTER
+      ;;
+    --topic)
+      export TOPIC=${PARRAY[i]}
+      readonly TOPIC
+      ;;
+    --partition)
+      export PARTITION=${PARRAY[i]}
+      readonly PARTITION
+      check_number $PARTITION
+      ;;
+    --segment)
+      export SEGMENT=${PARRAY[i]}
+      readonly SEGMENT
+      ;;
+    --group-id)
+      export GROUP_ID=${PARRAY[i]}
+      readonly GROUP_ID
+      ;;
+    --txn-id)
+      export TXN_ID=${PARRAY[i]}
+      readonly TXN_ID
+      ;;
+    --num-part)
+      export NUM_PART=${PARRAY[i]}
+      readonly NUM_PART
+      check_number $NUM_PART
+      ;;
+    --out-path)
+      export OUT_PATH=${PARRAY[i]}
+      readonly OUT_PATH
+      ;;
+    --dry-run)
+      export DRY_RUN=true
+      readonly DRY_RUN
+      ;;
+    --data)
+      export DATA=true
+      readonly DATA
+      ;;
+    *)
+      if [[ $param == --* ]]; then
+        error "Unknown parameter $param" 
+      fi
+      ;;
+  esac
 done
 readonly COMMAND="${1-}"
 case "$COMMAND" in
-    partition)
-        partition
-        ;;
-    group_offsets)
-        group_offsets
-        ;;
-    txn_state)
-        txn_state
-        ;;
-    *)
-        error "$USAGE"
-        ;;
+  partition)
+    partition
+    ;;
+  group_offsets)
+    group_offsets
+    ;;
+  txn_state)
+    txn_state
+    ;;
+  *)
+    error "$USAGE"
+    ;;
 esac
