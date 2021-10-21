@@ -10,22 +10,22 @@
 
 [id='assembly-kafka-bridge-overview-{context}']
 = Kafka Bridge overview
+
+[role="_abstract"]
 You can use the Strimzi Kafka Bridge as an interface to make specific types of HTTP requests to the Kafka cluster.
 
 :context: kafka-bridge-overview
 
-include::../modules/overview/con-overview-components-kafka-bridge.adoc[leveloffset=+1]
+include::../../modules/overview/con-overview-components-kafka-bridge.adoc[leveloffset=+1]
 
-include::../modules/overview/con-overview-components-kafka-bridge-clients.adoc[leveloffset=+1]
+include::../../modules/overview/con-overview-components-kafka-bridge-clients.adoc[leveloffset=+1]
 
-include::../modules/con-securing-kafka-bridge.adoc[leveloffset=+1]
+include::modules/con-securing-kafka-bridge.adoc[leveloffset=+1]
 
-include::../modules/con-accessing-kafka-bridge-from-outside.adoc[leveloffset=+1]
+include::modules/con-accessing-kafka-bridge-from-outside.adoc[leveloffset=+1]
 
-include::../modules/con-requests-kafka-bridge.adoc[leveloffset=+1]
+include::modules/con-requests-kafka-bridge.adoc[leveloffset=+1]
 
-include::../modules/ref-api-resources-kafka-bridge.adoc[leveloffset=+1]
-
-include::../modules/con-deployment-kafka-bridge.adoc[leveloffset=+1]
+include::modules/con-deployment-kafka-bridge.adoc[leveloffset=+1]
 
 :context: {parent-context-kafka-bridge-overview}

@@ -5,11 +5,12 @@
 [id='proc-bridge-committing-consumer-offsets-to-log-{context}']
 = Commiting offsets to the log
 
-Next, use the link:https://strimzi.io/docs/bridge/latest/#_commit[offsets^] endpoint to manually commit  offsets to the log for all messages received by the Kafka Bridge consumer. This is required because the Kafka Bridge consumer that you created earlier, in xref:proc-creating-kafka-bridge-consumer-{context}[Creating a Kafka Bridge consumer], was configured with the `enable.auto.commit` setting as `false`.
+[role="_abstract"]
+Use the link:https://strimzi.io/docs/bridge/latest/#_commit[offsets^] endpoint to manually commit offsets to the log for all messages received by the Kafka Bridge consumer. This is required because the Kafka Bridge consumer that you created earlier, in xref:proc-creating-kafka-bridge-consumer-{context}[Creating a Kafka Bridge consumer], was configured with the `enable.auto.commit` setting as `false`.
 
 .Procedure
 
-* Commit offsets to the log for the `bridge-quickstart-consumer`: 
+* Commit offsets to the log for the `bridge-quickstart-consumer`:
 +
 [source,curl,subs=attributes+]
 ----
@@ -24,6 +25,7 @@ If the request is successful, the Kafka Bridge returns a `204` code only.
 
 After committing offsets to the log, try out the endpoints for xref:proc-bridge-seeking-offset-for-partition-{context}[seeking to offsets].
 
+[role="_additional-resources"]
 .Additional resources
 
 * link:https://strimzi.io/docs/bridge/latest/#_commit[POST /consumers/{groupid}/instances/{name}/offsets] in the API reference documentation.

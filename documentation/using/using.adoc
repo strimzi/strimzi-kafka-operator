@@ -15,7 +15,7 @@ include::assemblies/assembly-securing-access.adoc[leveloffset=+1]
 
 include::assemblies/operators/assembly-operators.adoc[leveloffset=+1]
 
-include::assemblies/assembly-kafka-bridge-concepts.adoc[leveloffset=+1]
+include::assemblies/kafka-bridge/assembly-kafka-bridge-concepts.adoc[leveloffset=+1]
 
 include::assemblies/cruise-control/assembly-cruise-control-concepts.adoc[leveloffset=+1]
 

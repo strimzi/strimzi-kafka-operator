@@ -5,7 +5,8 @@
 [id='proc-bridge-retrieving-latest-messages-from-consumer-{context}']
 = Retrieving the latest messages from a Kafka Bridge consumer
 
-Next, retrieve the latest messages from the Kafka Bridge consumer by requesting data from the link:https://strimzi.io/docs/bridge/latest/#_poll[records^] endpoint. In production, HTTP clients can call this endpoint repeatedly (in a loop).
+[role="_abstract"]
+Retrieve the latest messages from the Kafka Bridge consumer by requesting data from the link:https://strimzi.io/docs/bridge/latest/#_poll[records^] endpoint. In production, HTTP clients can call this endpoint repeatedly (in a loop).
 
 .Procedure
 
@@ -48,12 +49,13 @@ content-type: application/vnd.kafka.json.v2+json
 #...
 ----
 +
-NOTE: If an empty response is returned, produce more records to the consumer as described in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions], and then try retrieving messages again. 
+NOTE: If an empty response is returned, produce more records to the consumer as described in xref:proc-producing-messages-from-bridge-topics-partitions-{context}[Producing messages to topics and partitions], and then try retrieving messages again.
 
 .What to do next
 
 After retrieving messages from a Kafka Bridge consumer, try xref:proc-bridge-committing-consumer-offsets-to-log-{context}[committing offsets to the log].
 
+[role="_additional-resources"]
 .Additional resources
 
 * link:https://strimzi.io/docs/bridge/latest/#_poll[GET /consumers/{groupid}/instances/{name}/records^] in the API reference documentation.
