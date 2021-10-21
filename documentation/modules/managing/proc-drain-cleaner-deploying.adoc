@@ -30,7 +30,6 @@ spec:
   replicas: 3
   config:
     # ...
-    default.replication.factor: 3
     min.insync.replicas: 2
     # ...
 ----
@@ -86,7 +85,8 @@ spec:
   # ...
 ----
 +
-Reducing the maximum pod disruption budget to zero prevents voluntary disruptions, so pods must be evicted manually by the Strimzi Drain Cleaner.
+Reducing the maximum pod disruption budget to zero prevents Kubernetes from automatically evicting (deleting) the pods in case of voluntary disruptions,
+so pods must be evicted by the Strimzi Drain Cleaner.
 +
 Add the same configuration for ZooKeeper if you want to use Strimzi Drain Cleaner to drain ZooKeeper nodes.
 
@@ -100,7 +100,7 @@ kubectl apply -f _<kafka-configuration-file>_
 --
 You can use link:https://cert-manager.io/docs/[`cert-manager`^] in the deployment process.
 
-* If you are using `cert-manager`, apply the resources in the `/install/drain-cleaner/certmanager` directory.
+* If you are using `cert-manager` with Kubernetes, apply the resources in the `/install/drain-cleaner/certmanager` directory.
 +
 [source,shell,subs="attributes+"]
 ----
@@ -109,7 +109,14 @@ kubectl apply -f ./install/drain-cleaner/certmanager
 +
 The TLS certificates for the webhook are generated automatically and injected into the webhook configuration.
 
-* If you are not using `cert-manager`, apply the resources in the `/install/drain-cleaner/kubernetes` directory.
+* If you are using OpenShift, apply the resources in the `/install/drain-cleaner/openshift` directory.
++
+[source,shell,subs="attributes+"]
+----
+kubectl apply -f ./install/drain-cleaner/openshift
+----
+
+* If you are not using `cert-manager` with Kubernetes, apply the resources in the `/install/drain-cleaner/kubernetes` directory.
 +
 [source,shell,subs="attributes+"]
 ----
@@ -122,10 +129,4 @@ Use these certificates if you are not changing any configuration for the Strimzi
 NOTE: You can use the build script and files provided in link:https://github.com/strimzi/drain-cleaner/tree/main/install/kubernetes/webhook-certificates[`webhook-certificates`^]
 to generate your own certificates. The script uses the link:https://github.com/cloudflare/cfssl[`CFSSL`^] and link:https://www.openssl.org/[openSSL] tools to generate the certificates.
 After you have generated the certificates, you need to add them to the `040-Secret.yaml` and `070-ValidatingWebhookConfiguration.yaml` files.
-
-* If you are using OpenShift, apply the resources in the `/install/drain-cleaner/openshift` directory.
-[source,shell,subs="attributes+"]
-----
-kubectl apply -f ./install/drain-cleaner/openshift
-----
 --

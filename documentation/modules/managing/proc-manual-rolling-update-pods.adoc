@@ -32,7 +32,6 @@ spec:
   replicas: 3
   config:
     # ...
-    default.replication.factor: 3
     min.insync.replicas: 2
     # ...
 ----
