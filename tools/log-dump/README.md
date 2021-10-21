@@ -4,7 +4,7 @@ Bash script for topic's partitions dump.
 
 Dumping partitions is not easy, because a single partition is composed by X segments, all segments are replicated in the same set of brokers, and they can be in any of the attached disks. 
 
-When dealing with internal topics (`__consumer_offsets` and `__transaction_state`) you need a way to identify which partition is needed, so that you don't have to download all 50 partitions (default value).
+When dealing with the internal topics `__consumer_offsets` and `__transaction_state`, you need a way to identify which partition is needed, so that you don't have to download all 50 partitions (default value).
 
 Partition dumps can be useful to troubleshoot Kafka issues. For example, we can identify a pending transaction causing `read_committed` consumers to hang and last stable offset (LSO) to grow indefinitely.
 
@@ -55,8 +55,8 @@ This example shows how to dump partitions related to a simple word count transac
 
 ```shell
 # Print partition segments across the cluster
-./klog-dump.sh partition --namespace test --cluster test-cluster \
-  --topic wc-output --partition 0 --dry-run
+./log-dump.sh partition --namespace test --cluster my-cluster \
+  --topic my-topic --partition 0 --dry-run
     
 brokers: 3, storage: jbod, disks: 2
 wc-output-0 segments in kafka-0-disk-0
@@ -73,8 +73,8 @@ wc-output-0 segments in kafka-2-disk-1
 No segment found
 
 # Dump partition segments across the cluster
-./klog-dump.sh partition --namespace test --cluster test-cluster \
-  --topic wc-output --partition 0 --out-path ~/Downloads/my-dump
+./log-dump.sh partition --namespace test --cluster my-cluster \
+  --topic my-topic --partition 0 --out-path ~/Downloads/my-dump
 
 brokers: 3, storage: jbod, disks: 2
 wc-output-0 segments in kafka-0-disk-0
@@ -91,7 +91,7 @@ wc-output-0 segments in kafka-2-disk-1
 No segment found
 
 # Dump consumer group offsets segments
-./klog-dump.sh group_offsets --namespace test --cluster test-cluster \
+./log-dump.sh cg_offsets --namespace test --cluster my-cluster \
   --group-id my-group --out-path ~/Downloads/my-dump
   
 brokers: 3, storage: jbod, disks: 2
@@ -110,8 +110,8 @@ __consumer_offsets-12 segments in kafka-2-disk-1
 No segment found
 
 # Dump application transaction state segments
-./klog-dump.sh txn_state --namespace test --cluster test-cluster \
-  --txn-id kafka-trans-my-group-wc-input-0 --out-path ~/Downloads/my-dump
+./log-dump.sh txn_state --namespace test --cluster my-cluster \
+  --txn-id my-app-my-group-my-topic-0 --out-path ~/Downloads/my-dump
   
 brokers: 3, storage: jbod, disks: 2
 kafka-trans-my-group-wc-input-0 coordinating partition: 31

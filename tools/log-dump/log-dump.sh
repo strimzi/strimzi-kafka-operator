@@ -7,13 +7,14 @@ if [[ $(uname -s) == "Darwin" ]]; then
 fi
 readonly CO_TOPIC="__consumer_offsets"
 readonly TS_TOPIC="__transaction_state"
+readonly CM_TOPIC="__cluster_metadata"
 KAFKA_BROKERS=0
 STORAGE_TYPE=""
 JBOD_DISKS=0
 
 # user input
 COMMAND=""
-OUT_PATH="/tmp/klog-dump"
+OUT_PATH="/tmp/log-dump"
 NAMESPACE=""
 CLUSTER=""
 TOPIC=""
@@ -21,25 +22,25 @@ PARTITION=0
 SEGMENT=""
 GROUP_ID=""
 TXN_ID=""
-NUM_PART=50
+TOT_PART=50
 DRY_RUN=false
 DATA=false
 
 error() {
-    echo "$@" 1>&2
-    exit 1
+  echo "$@" 1>&2
+  exit 1
 }
 
 check_number() {
   local value="$1"
   local regex='^[0-9]+$'
   if ! [[ $value =~ $regex ]]; then
-     error "Not a number"
+    error "Not a number"
   fi
 }
 
 check_kube_conn() {
-    kubectl version --request-timeout=10s 1>/dev/null
+  kubectl version --request-timeout=10s 1>/dev/null
 }
 
 get_kafka_setup() {
@@ -70,15 +71,17 @@ dump_segments() {
   if [[ -n $seg_files && $(echo "$seg_files" | sed '/^\s*$/d' | wc -l) -gt 0 ]]; then
     
     local flags="--deep-iteration"
-    if [[ $topic == $CO_TOPIC ]]; then
-      flags="--offsets-decoder"
-    fi
-    if [[ $topic == $TS_TOPIC ]]; then
-      flags="--transaction-log-decoder"
-    fi
-    if [[ $DATA == true ]]; then
-      flags="$flags --print-data-log"
-    fi
+    case "$topic" in
+      "$CO_TOPIC")
+        flags="$flags --offsets-decoder"
+        ;;
+      "$TS_TOPIC")
+        flags="$flags --transaction-log-decoder"
+        ;;
+      "$CM_TOPIC")
+        flags="$flags --cluster-metadata-decoder"
+        ;;
+    esac
     flags="$flags --files"
     
     for seg_file in $(echo $seg_files); do
@@ -147,26 +150,26 @@ partition() {
   fi
 }
 
-group_offsets() {
+cg_offsets() {
   if [[ -n $NAMESPACE && -n $CLUSTER && -n $GROUP_ID ]]; then
-      check_kube_conn
-      get_kafka_setup
+    check_kube_conn
+    get_kafka_setup
           
-      # dump consumer_offsets coordinating partition across the cluster (including replicas)
-      local group_part=$(klog group-coordinating-partition $GROUP_ID num-partitions=$NUM_PART)
-      echo "$GROUP_ID coordinating partition: $group_part"
-      for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
-        if [[ $STORAGE_TYPE == "jbod" ]]; then
-          for j in $(seq 0 $(($JBOD_DISKS-1))); do
-            dump_partition $CO_TOPIC $group_part $i $j
-          done
-        else
-          dump_partition $CO_TOPIC $group_part $i
-        fi
-      done
+    # dump CG offsets coordinating partition across the cluster (including replicas)
+    local partition=$(klog group-coordinating-partition "$GROUP_ID" num-partitions="$NUM_PART")
+    echo "$GROUP_ID coordinating partition: $partition"
+    for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
+      if [[ $STORAGE_TYPE == "jbod" ]]; then
+        for j in $(seq 0 $(($JBOD_DISKS-1))); do
+          dump_partition $CO_TOPIC $partition $i $j
+        done
+      else
+        dump_partition $CO_TOPIC $partition $i
+      fi
+    done
     
-    else
-      error "Missing required options"
+  else
+    error "Missing required options"
   fi
 }
 
@@ -175,16 +178,38 @@ txn_state() {
     check_kube_conn
     get_kafka_setup
         
-    # dump transaction_state coordinating partition across the cluster (including replicas)
-    local txn_part=$(klog txn-coordinating-partition $TXN_ID num-partitions=$NUM_PART)
-    echo "$TXN_ID coordinating partition: $txn_part"
+    # dump TX state coordinating partition across the cluster (including replicas)
+    local partition=$(klog txn-coordinating-partition "$TXN_ID" num-partitions="$NUM_PART")
+    echo "$TXN_ID coordinating partition: $partition"
     for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
       if [[ $STORAGE_TYPE == "jbod" ]]; then
         for j in $(seq 0 $(($JBOD_DISKS-1))); do
-          dump_partition $TS_TOPIC $txn_part $i $j
+          dump_partition $TS_TOPIC $partition $i $j
         done
       else
-        dump_partition $TS_TOPIC $txn_part $i
+        dump_partition $TS_TOPIC $partition $i
+      fi
+    done
+    
+  else
+    error "Missing required options"
+  fi
+}
+
+cluster_meta() {
+  if [[ -n $NAMESPACE && -n $CLUSTER ]]; then
+    check_kube_conn
+    get_kafka_setup
+        
+    # dump cluster metadata partition across the cluster (including replicas)
+    local partition="0"
+    for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
+      if [[ $STORAGE_TYPE == "jbod" ]]; then
+        for j in $(seq 0 $(($JBOD_DISKS-1))); do
+          dump_partition $CM_TOPIC $partition $i $j
+        done
+      else
+        dump_partition $CM_TOPIC $partition $i
       fi
     done
 
@@ -206,18 +231,23 @@ Usage: $0 [command] [params]
     --dry-run       Run without dumping (default: $DRY_RUN)
     --data          Include record payload (default: $DATA)
 
-  group_offsets   Dump offsets by group.id
+  cg_offsets      Dump consumer group offsets by group.id
     --namespace     Kubernetes namespace
     --cluster       Kafka cluster name
     --group-id      Consumer group id
-    --num-part      Consumer offsets partitions (default: $NUM_PART)
+    --tot-part      Consumer offsets partitions (default: $TOT_PART)
     --out-path      Output path (default: $OUT_PATH)
   
-  txn_state       Dump txn state by transactional.id
+  txn_state       Dump transactions state by transactional.id
     --namespace     Kubernetes namespace
     --cluster       Kafka cluster name
     --txn-id        Transactional id
-    --num-part      Transaction state partitions (default: $NUM_PART)
+    --tot-part      Transaction state partitions (default: $TOT_PART)
+    --out-path      Output path (default: $OUT_PATH)
+    
+  cluster_meta    Dump cluster metadata (KRaft)
+    --namespace     Kubernetes namespace
+    --cluster       Kafka cluster name
     --out-path      Output path (default: $OUT_PATH)
 "
 readonly PARAMS="${@}"
@@ -255,10 +285,10 @@ for param in $PARAMS; do
       export TXN_ID=${PARRAY[i]}
       readonly TXN_ID
       ;;
-    --num-part)
-      export NUM_PART=${PARRAY[i]}
-      readonly NUM_PART
-      check_number $NUM_PART
+    --tot-part)
+      export TOT_PART=${PARRAY[i]}
+      readonly TOT_PART
+      check_number $TOT_PART
       ;;
     --out-path)
       export OUT_PATH=${PARRAY[i]}
@@ -284,11 +314,14 @@ case "$COMMAND" in
   partition)
     partition
     ;;
-  group_offsets)
-    group_offsets
+  cg_offsets)
+    cg_offsets
     ;;
   txn_state)
     txn_state
+    ;;
+  cluster_meta)
+    cluster_meta
     ;;
   *)
     error "$USAGE"
