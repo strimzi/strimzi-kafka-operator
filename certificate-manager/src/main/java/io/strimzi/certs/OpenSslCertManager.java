@@ -36,6 +36,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -81,8 +82,8 @@ public class OpenSslCertManager implements CertManager {
     static void delete(Path fileOrDir) throws IOException {
         if (fileOrDir != null)
             if (Files.isDirectory(fileOrDir)) {
-                Files.walk(fileOrDir)
-                        .sorted(Comparator.reverseOrder())
+                try (Stream<Path> stream = Files.walk(fileOrDir)) {
+                    stream.sorted(Comparator.reverseOrder())
                         .forEach(path -> {
                             try {
                                 Files.delete(path);
@@ -90,6 +91,7 @@ public class OpenSslCertManager implements CertManager {
                                 LOGGER.debug("File could not be deleted: {}", fileOrDir);
                             }
                         });
+                }
             } else {
                 if (!Files.deleteIfExists(fileOrDir)) {
                     LOGGER.debug("File not deleted, because it did not exist: {}", fileOrDir);
