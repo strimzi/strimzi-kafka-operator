@@ -292,9 +292,14 @@ public class SetupClusterOperator {
             this.namespaceToWatch = namespaceToWatch;
             return self();
         }
+
         public SetupClusterOperatorBuilder addToTheWatchingNamespaces(String namespaceToWatch) {
-            if (!this.namespaceToWatch.equals("*")) {
-                this.namespaceToWatch += "," + namespaceToWatch;
+            if (this.namespaceToWatch != null) {
+                if (!this.namespaceToWatch.equals("*")) {
+                    this.namespaceToWatch += "," + namespaceToWatch;
+                }
+            } else {
+                this.namespaceToWatch = namespaceToWatch;
             }
             return self();
         }
@@ -305,7 +310,11 @@ public class SetupClusterOperator {
         }
 
         public SetupClusterOperatorBuilder addToTheBindingsNamespaces(String bindingsNamespace) {
-            this.bindingsNamespaces.add(bindingsNamespace);
+            if (this.bindingsNamespaces != null) {
+                this.bindingsNamespaces.add(bindingsNamespace);
+            } else {
+                this.bindingsNamespaces = Arrays.asList(bindingsNamespace);
+            }
             return self();
         }
 
