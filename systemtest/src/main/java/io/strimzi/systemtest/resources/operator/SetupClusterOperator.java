@@ -106,7 +106,8 @@ public class SetupClusterOperator {
             this.namespaceToWatch = this.namespaceInstallTo;
         }
         if (this.bindingsNamespaces == null) {
-            this.bindingsNamespaces = Collections.singletonList(this.namespaceInstallTo);
+            this.bindingsNamespaces = new ArrayList<>();
+            this.bindingsNamespaces.add(this.namespaceInstallTo);
         }
         if (this.operationTimeout == 0) {
             this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
@@ -248,6 +249,20 @@ public class SetupClusterOperator {
             ResourceManager.getInstance().createResource(extensionContext, clusterRoleBinding));
     }
 
+    public SetupClusterOperatorBuilder editInstallation() {
+        return new SetupClusterOperatorBuilder()
+            .withExtensionContext(this.extensionContext)
+            .withClusterOperatorName(this.clusterOperatorName)
+            .withNamespace(this.namespaceInstallTo)
+            .withWatchingNamespaces(this.namespaceToWatch)
+            .withBindingsNamespaces(this.bindingsNamespaces)
+            .withOperationTimeout(this.operationTimeout)
+            .withReconciliationInterval(this.reconciliationInterval)
+            .withExtraEnvVars(this.extraEnvVars)
+            .withExtraLabels(this.extraLabels)
+            .withClusterOperatorRBACType(this.clusterOperatorRBACType);
+    }
+
     public static class SetupClusterOperatorBuilder {
 
         private ExtensionContext extensionContext;
@@ -277,10 +292,23 @@ public class SetupClusterOperator {
             this.namespaceToWatch = namespaceToWatch;
             return self();
         }
+        public SetupClusterOperatorBuilder addToTheWatchingNamespaces(String namespaceToWatch) {
+            if (!this.namespaceToWatch.equals("*")) {
+                this.namespaceToWatch += "," + namespaceToWatch;
+            }
+            return self();
+        }
+
         public SetupClusterOperatorBuilder withBindingsNamespaces(List<String> bindingsNamespaces) {
             this.bindingsNamespaces = bindingsNamespaces;
             return self();
         }
+
+        public SetupClusterOperatorBuilder addToTheBindingsNamespaces(String bindingsNamespace) {
+            this.bindingsNamespaces.add(bindingsNamespace);
+            return self();
+        }
+
         public SetupClusterOperatorBuilder withOperationTimeout(long operationTimeout) {
             this.operationTimeout = operationTimeout;
             return self();
