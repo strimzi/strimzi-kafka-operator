@@ -83,7 +83,8 @@ public abstract class AbstractST implements TestSeparator {
     protected KubeClusterResource cluster;
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
-    private final Object lock = new Object();
+    // {thread-safe} this needs to be static because when more threads spawns diff. TestSuites it might produce race conditions
+    private static final Object LOCK = new Object();
 
     // maps for local variables {thread safe}
     protected static Map<String, String> mapWithClusterNames = new HashMap<>();
@@ -92,7 +93,8 @@ public abstract class AbstractST implements TestSeparator {
     protected static Map<String, String> mapWithKafkaClientNames = new HashMap<>();
     protected static ConcurrentHashMap<ExtensionContext, TestStorage> storageMap = new ConcurrentHashMap<>();
 
-    private AtomicInteger counterOfNamespaces = new AtomicInteger(0);
+    // we need to shared this number across all test suites
+    private static AtomicInteger counterOfNamespaces = new AtomicInteger(0);
 
     protected static final String CLUSTER_NAME_PREFIX = "my-cluster-";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
@@ -566,12 +568,12 @@ public abstract class AbstractST implements TestSeparator {
      * you your implementation in sub-class as you want.
      * @param extensionContext
      */
-    protected void beforeEachMayOverride(ExtensionContext extensionContext) {
+    protected synchronized void beforeEachMayOverride(ExtensionContext extensionContext) {
         // this is because we need to have different clusterName and kafkaClientsName in each test case without
         // synchronization it can produce `data-race`
         String testName = null;
 
-        synchronized (lock) {
+        synchronized (LOCK) {
             if (extensionContext.getTestMethod().isPresent()) {
                 testName = extensionContext.getTestMethod().get().getName();
             }

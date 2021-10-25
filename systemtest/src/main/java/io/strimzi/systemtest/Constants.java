@@ -336,6 +336,10 @@ public interface Constants {
     String BRIDGE_SCRAM_SHA_NAMESPACE = "bridge-scram-sha-namespace";
     String BRIDGE_HTTP_TLS_NAMESPACE = "http-bridge-tls-namespace";
     String METRICS_SECOND_NAMESPACE = "second-metrics-cluster-test";
+    // cruise control package
+    String CRUISE_CONTROL_NAMESPACE = "cruise-control-namespace";
+    String CRUISE_CONTROL_CONFIGURATION_NAMESPACE = "cruise-control-configuration-namespace";
+    String CRUISE_CONTROL_API_NAMESPACE = "cruise-control-api-namespace";
 
     /**
      * Auxiliary variables for storing data across our tests

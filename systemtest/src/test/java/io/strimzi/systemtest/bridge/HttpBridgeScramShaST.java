@@ -193,7 +193,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
-            .withDelayMs(1000)
+            .withDelayMs(100)
             .withPollInterval(1000)
             .withNamespaceName(NAMESPACE)
             .build();

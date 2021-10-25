@@ -216,6 +216,22 @@ public class KubeClusterResource {
         }
     }
 
+    public void deleteAllSetNamespaces() {
+        LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+        LOGGER.info("Deleting these namespaces:\n{}", MAP_WITH_SUITE_NAMESPACES::toString);
+        LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+
+        for (CollectorElement element : MAP_WITH_SUITE_NAMESPACES.keySet()) {
+            Set<String> namespacesNames = MAP_WITH_SUITE_NAMESPACES.get(element);
+
+            for (String namespaceName : namespacesNames) {
+                LOGGER.debug("Deleting {} namespace", namespaceName);
+                kubeClient().deleteNamespace(namespaceName);
+                cmdKubeClient().waitForResourceDeletion("Namespace", namespaceName);
+            }
+        }
+    }
+
     /**
      * Replaces custom resources for CO such as templates. Deletion is up to caller and can be managed
      * by calling {@link #deleteCustomResources()}

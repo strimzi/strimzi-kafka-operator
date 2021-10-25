@@ -62,8 +62,8 @@ public class ClientUtils {
         LOGGER.info("Waiting for producer/consumer:{} to finished", jobName);
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
             () -> {
-                LOGGER.debug("Job {} in namespace {}, has status {}", jobName, namespace, kubeClient().namespace(namespace).getJobStatus(jobName));
-                return kubeClient().namespace(namespace).checkSucceededJobStatus(jobName);
+                LOGGER.debug("Job {} in namespace {}, has status {}", jobName, namespace, kubeClient().namespace(namespace).getJobStatus(namespace, jobName));
+                return kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, jobName, 1);
             });
     }
 

@@ -20,10 +20,15 @@ public class ParallelNamespacesSuitesNames {
     private static final List<String> PARALLEL_NAMESPACE_SUITE_NAMES = Arrays.asList(
         // default namespace for cluster operator
         Constants.INFRA_NAMESPACE,
+        // bridge package
         Constants.BRIDGE_KAFKA_CORS_NAMESPACE,
         Constants.BRIDGE_KAFKA_EXTERNAL_LISTENER_NAMESPACE,
         Constants.BRIDGE_SCRAM_SHA_NAMESPACE,
-        Constants.BRIDGE_HTTP_TLS_NAMESPACE
+        Constants.BRIDGE_HTTP_TLS_NAMESPACE,
+        // cruise control package
+        Constants.CRUISE_CONTROL_NAMESPACE,
+        Constants.CRUISE_CONTROL_CONFIGURATION_NAMESPACE,
+        Constants.CRUISE_CONTROL_API_NAMESPACE
     );
 
     public static String getRbacNamespacesToWatch() {

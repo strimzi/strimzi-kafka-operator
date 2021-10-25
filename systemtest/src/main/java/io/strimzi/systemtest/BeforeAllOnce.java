@@ -23,6 +23,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
     private static SetupClusterOperator install;
     private static final Logger LOGGER = LogManager.getLogger(BeforeAllOnce.class);
     private static boolean systemReady = false;
+    private static final String SYSTEM_RESOURCES = "SYSTEM_RESOURCES";
     private static ExtensionContext sharedExtensionContext;
 
     /**
@@ -34,6 +35,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
         if (!systemReady) {
             // get root extension context to be different from others context (BeforeAll)
             sharedExtensionContext = extensionContext.getRoot();
+
             systemReady = true;
             LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
             LOGGER.debug("[BEFORE SUITE] - Going to setup testing system");
@@ -62,6 +64,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
             }
             // this is for correction because callback also count some randomly chosen class twice
             ParallelSuiteController.decrementCounter();
+            sharedExtensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(SYSTEM_RESOURCES, new BeforeAllOnce());
         }
     }
 
