@@ -568,7 +568,7 @@ public abstract class AbstractST implements TestSeparator {
      * you your implementation in sub-class as you want.
      * @param extensionContext
      */
-    protected synchronized void beforeEachMayOverride(ExtensionContext extensionContext) {
+    protected void beforeEachMayOverride(ExtensionContext extensionContext) {
         // this is because we need to have different clusterName and kafkaClientsName in each test case without
         // synchronization it can produce `data-race`
         String testName = null;
