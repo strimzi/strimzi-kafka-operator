@@ -193,7 +193,7 @@ class SecurityST extends AbstractST {
                 true,
                 /* eo needs new cert */
                 true,
-            true);
+                true);
     }
 
     @ParallelNamespaceTest
@@ -209,7 +209,7 @@ class SecurityST extends AbstractST {
                 true,
                 /* eo needs to generate new client certs */
                 true,
-            false);
+                false);
     }
 
     @ParallelNamespaceTest
@@ -223,7 +223,7 @@ class SecurityST extends AbstractST {
                 true,
                 true,
                 true,
-            true);
+                true);
     }
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
@@ -402,7 +402,7 @@ class SecurityST extends AbstractST {
                 false,
                 true,
                 true,
-            false);
+                false);
     }
 
     @ParallelNamespaceTest
@@ -415,7 +415,7 @@ class SecurityST extends AbstractST {
                 true,
                 true,
                 true,
-            true);
+                true);
     }
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
