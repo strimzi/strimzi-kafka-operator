@@ -293,6 +293,8 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         return reconcileMirrorMaker2Connector(reconciliation, mirrorMaker2, apiClient, host, connectorName, connectorSpec, mirrorMaker2Status);
                     })
                     .collect(Collectors.toList()))
+                    .map((Void) null)
+                    .compose(i -> apiClient.updateConnectLoggers(reconciliation, host, KafkaConnectCluster.REST_API_PORT, desiredLogging, mirrorMaker2Cluster.getDefaultLogConfig()))
                     .compose(i -> {
                         boolean failedConnector = mirrorMaker2Status.getConnectors().stream()
                                 .anyMatch(connector -> {
@@ -305,8 +307,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                             return Future.succeededFuture();
                         }
                     })
-                    .map((Void) null)
-                    .compose(i -> apiClient.updateConnectLoggers(reconciliation, host, KafkaConnectCluster.REST_API_PORT, desiredLogging, mirrorMaker2Cluster.getDefaultLogConfig()))
                     .map((Void) null);
     }
 
