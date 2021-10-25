@@ -14,8 +14,10 @@ import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -190,7 +192,8 @@ class SecurityST extends AbstractST {
                 /* brokers need new certs */
                 true,
                 /* eo needs new cert */
-                true);
+                true,
+            true);
     }
 
     @ParallelNamespaceTest
@@ -205,7 +208,8 @@ class SecurityST extends AbstractST {
                 /* brokers need to trust client certs with new cert */
                 true,
                 /* eo needs to generate new client certs */
-                true);
+                true,
+            false);
     }
 
     @ParallelNamespaceTest
@@ -218,7 +222,8 @@ class SecurityST extends AbstractST {
             extensionContext,
                 true,
                 true,
-                true);
+                true,
+            true);
     }
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
@@ -226,7 +231,8 @@ class SecurityST extends AbstractST {
             ExtensionContext extensionContext,
             boolean zkShouldRoll,
             boolean kafkaShouldRoll,
-            boolean eoShouldRoll) {
+            boolean eoShouldRoll,
+            boolean compShouldRoll) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
 
         createKafkaCluster(extensionContext);
@@ -276,6 +282,8 @@ class SecurityST extends AbstractST {
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(namespaceName, zookeeperStatefulSetName(clusterName));
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
         Map<String, String> eoPod = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
+        Map<String, String> ccPod = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName));
+        Map<String, String> kePod = DeploymentUtils.depSnapshot(namespaceName, KafkaExporterResources.deploymentName(clusterName));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaCerts = new HashMap<>();
@@ -304,6 +312,11 @@ class SecurityST extends AbstractST {
         if (eoShouldRoll) {
             LOGGER.info("Wait for EO to rolling restart ...");
             eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
+        }
+        if (compShouldRoll) {
+            LOGGER.info("Wait for CC and KE to rolling restart ...");
+            kePod = DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, kePod);
+            ccPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaExporterResources.deploymentName(clusterName), 1, ccPod);
         }
 
         LOGGER.info("Checking the certificates have been replaced");
@@ -360,6 +373,10 @@ class SecurityST extends AbstractST {
         if (!eoShouldRoll) {
             assertThat("EO pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)), is(eoPod));
         }
+        if (!compShouldRoll) {
+            assertThat("CC pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName)), is(ccPod));
+            assertThat("KE pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, KafkaExporterResources.deploymentName(clusterName)), is(kePod));
+        }
     }
 
     @ParallelNamespaceTest
@@ -369,6 +386,7 @@ class SecurityST extends AbstractST {
     void testAutoReplaceClusterCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
+                true,
                 true,
                 true,
                 true);
@@ -383,7 +401,8 @@ class SecurityST extends AbstractST {
             extensionContext,
                 false,
                 true,
-                true);
+                true,
+            false);
     }
 
     @ParallelNamespaceTest
@@ -395,14 +414,16 @@ class SecurityST extends AbstractST {
             extensionContext,
                 true,
                 true,
-                true);
+                true,
+            true);
     }
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
     void autoReplaceSomeKeysTriggeredByAnno(ExtensionContext extensionContext,
                                             boolean zkShouldRoll,
                                             boolean kafkaShouldRoll,
-                                            boolean eoShouldRoll) {
+                                            boolean eoShouldRoll,
+                                            boolean compShouldRoll) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
@@ -452,6 +473,8 @@ class SecurityST extends AbstractST {
         Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(namespaceName, zookeeperStatefulSetName(clusterName));
         Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
         Map<String, String> eoPod = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
+        Map<String, String> ccPod = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName));
+        Map<String, String> kePod = DeploymentUtils.depSnapshot(namespaceName, KafkaExporterResources.deploymentName(clusterName));
 
         LOGGER.info("Triggering CA cert renewal by adding the annotation");
         Map<String, String> initialCaKeys = new HashMap<>();
@@ -473,19 +496,28 @@ class SecurityST extends AbstractST {
             LOGGER.info("Wait for zk to rolling restart (1)...");
             zkPods = StatefulSetUtils.waitTillSsHasRolled(namespaceName, zookeeperStatefulSetName(clusterName), 3, zkPods);
         }
+
         if (kafkaShouldRoll) {
             LOGGER.info("Wait for kafka to rolling restart (1)...");
             kafkaPods = StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStatefulSetName(clusterName), kafkaPods);
         }
+
         if (eoShouldRoll) {
             LOGGER.info("Wait for EO to rolling restart (1)...");
             eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
+        }
+
+        if (compShouldRoll) {
+            LOGGER.info("Wait for KafkaExporter and CruiseControl to rolling restart (1)...");
+            kePod = DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, kePod);
+            ccPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaExporterResources.deploymentName(clusterName), 1, ccPod);
         }
 
         if (zkShouldRoll) {
             LOGGER.info("Wait for zk to rolling restart (2)...");
             zkPods = StatefulSetUtils.waitTillSsHasRolled(namespaceName, zookeeperStatefulSetName(clusterName), 3, zkPods);
         }
+
         if (kafkaShouldRoll) {
             LOGGER.info("Wait for kafka to rolling restart (2)...");
             kafkaPods = StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStatefulSetName(clusterName), 3, kafkaPods);
@@ -494,6 +526,12 @@ class SecurityST extends AbstractST {
         if (eoShouldRoll) {
             LOGGER.info("Wait for EO to rolling restart (2)...");
             eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
+        }
+
+        if (compShouldRoll) {
+            LOGGER.info("Wait for KafkaExporter and CruiseControl to rolling restart (2)...");
+            kePod = DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, kePod);
+            ccPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaExporterResources.deploymentName(clusterName), 1, ccPod);
         }
 
         LOGGER.info("Checking the certificates have been replaced");
@@ -551,6 +589,11 @@ class SecurityST extends AbstractST {
         if (!eoShouldRoll) {
             assertThat("EO pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)), is(eoPod));
         }
+
+        if (!compShouldRoll) {
+            assertThat("CC pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName)), is(ccPod));
+            assertThat("KE pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, KafkaExporterResources.deploymentName(clusterName)), is(kePod));
+        }
     }
 
     private void createKafkaCluster(ExtensionContext extensionContext) {
@@ -586,6 +629,10 @@ class SecurityST extends AbstractST {
                         .withDeleteClaim(true)
                     .endPersistentClaimStorage()
                 .endZookeeper()
+                .withNewCruiseControl()
+                .endCruiseControl()
+                .withNewKafkaExporter()
+                .endKafkaExporter()
             .endSpec()
             .build());
     }
