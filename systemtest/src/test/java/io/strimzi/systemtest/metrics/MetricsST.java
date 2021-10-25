@@ -35,6 +35,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -645,6 +646,17 @@ public class MetricsST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
+        install.unInstall();
+        install = SetupClusterOperator.defaultInstallation()
+            .createInstallation()
+            .editInstallation()
+                // add to the watching namespaces (this is needed for rbac installation)
+                .addToTheWatchingNamespaces(SECOND_NAMESPACE)
+                // add to the list of bindings
+                .addToTheBindingsNamespaces(SECOND_NAMESPACE)
+            .createInstallation()
+            .runInstallation();
+
         final String firstKafkaClientsName = INFRA_NAMESPACE + "-" + Constants.KAFKA_CLIENTS;
         final String secondKafkaClientsName = SECOND_NAMESPACE + "-" + Constants.KAFKA_CLIENTS;
 
