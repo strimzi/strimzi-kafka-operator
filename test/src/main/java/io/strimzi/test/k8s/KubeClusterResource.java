@@ -221,15 +221,14 @@ public class KubeClusterResource {
         LOGGER.info("Deleting these namespaces:\n{}", MAP_WITH_SUITE_NAMESPACES::toString);
         LOGGER.info(String.join("", Collections.nCopies(76, "=")));
 
-        for (CollectorElement element : MAP_WITH_SUITE_NAMESPACES.keySet()) {
-            Set<String> namespacesNames = MAP_WITH_SUITE_NAMESPACES.get(element);
-
-            for (String namespaceName : namespacesNames) {
-                LOGGER.debug("Deleting {} namespace", namespaceName);
-                kubeClient().deleteNamespace(namespaceName);
-                cmdKubeClient().waitForResourceDeletion("Namespace", namespaceName);
-            }
-        }
+        MAP_WITH_SUITE_NAMESPACES.values()
+            .forEach(setOfNamespaces ->
+                setOfNamespaces
+                    .forEach(namespaceName -> {
+                        LOGGER.debug("Deleting {} namespace", namespaceName);
+                        kubeClient().deleteNamespace(namespaceName);
+                        cmdKubeClient().waitForResourceDeletion("Namespace", namespaceName);
+                    }));
     }
 
     /**
