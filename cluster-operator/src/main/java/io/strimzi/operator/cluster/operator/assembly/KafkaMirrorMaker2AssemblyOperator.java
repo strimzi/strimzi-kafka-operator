@@ -10,7 +10,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -295,12 +294,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     })
                     .collect(Collectors.toList()))
                     .compose(i -> {
-                        Optional<Map<String, Object>> failedOpt = mirrorMaker2Status.getConnectors().stream()
-                                .filter(connector -> {
+                        boolean failedConnector = mirrorMaker2Status.getConnectors().stream()
+                                .anyMatch(connector -> {
                                     Object state = ((Map) connector.getOrDefault("connector", emptyMap())).get("state");
                                     return "FAILED".equalsIgnoreCase(state.toString());
-                                }).findFirst();
-                        if (failedOpt.isPresent()) {
+                                });
+                        if (failedConnector) {
                             return Future.failedFuture("One or more connectors are in FAILED state");
                         } else {
                             return Future.succeededFuture();
