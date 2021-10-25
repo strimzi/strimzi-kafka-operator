@@ -232,7 +232,7 @@ class SecurityST extends AbstractST {
             boolean zkShouldRoll,
             boolean kafkaShouldRoll,
             boolean eoShouldRoll,
-            boolean compShouldRoll) {
+            boolean keAndCCShouldRoll) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
 
         createKafkaCluster(extensionContext);
@@ -313,7 +313,7 @@ class SecurityST extends AbstractST {
             LOGGER.info("Wait for EO to rolling restart ...");
             eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
         }
-        if (compShouldRoll) {
+        if (keAndCCShouldRoll) {
             LOGGER.info("Wait for CC and KE to rolling restart ...");
             kePod = DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, kePod);
             ccPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaExporterResources.deploymentName(clusterName), 1, ccPod);
@@ -373,7 +373,7 @@ class SecurityST extends AbstractST {
         if (!eoShouldRoll) {
             assertThat("EO pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)), is(eoPod));
         }
-        if (!compShouldRoll) {
+        if (!keAndCCShouldRoll) {
             assertThat("CC pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName)), is(ccPod));
             assertThat("KE pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, KafkaExporterResources.deploymentName(clusterName)), is(kePod));
         }
@@ -423,7 +423,7 @@ class SecurityST extends AbstractST {
                                             boolean zkShouldRoll,
                                             boolean kafkaShouldRoll,
                                             boolean eoShouldRoll,
-                                            boolean compShouldRoll) {
+                                            boolean keAndCCShouldRoll) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
@@ -507,7 +507,7 @@ class SecurityST extends AbstractST {
             eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
         }
 
-        if (compShouldRoll) {
+        if (keAndCCShouldRoll) {
             LOGGER.info("Wait for KafkaExporter and CruiseControl to rolling restart (1)...");
             kePod = DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, kePod);
             ccPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaExporterResources.deploymentName(clusterName), 1, ccPod);
@@ -528,7 +528,7 @@ class SecurityST extends AbstractST {
             eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
         }
 
-        if (compShouldRoll) {
+        if (keAndCCShouldRoll) {
             LOGGER.info("Wait for KafkaExporter and CruiseControl to rolling restart (2)...");
             kePod = DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, kePod);
             ccPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaExporterResources.deploymentName(clusterName), 1, ccPod);
@@ -590,7 +590,7 @@ class SecurityST extends AbstractST {
             assertThat("EO pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)), is(eoPod));
         }
 
-        if (!compShouldRoll) {
+        if (!keAndCCShouldRoll) {
             assertThat("CC pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName)), is(ccPod));
             assertThat("KE pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, KafkaExporterResources.deploymentName(clusterName)), is(kePod));
         }
