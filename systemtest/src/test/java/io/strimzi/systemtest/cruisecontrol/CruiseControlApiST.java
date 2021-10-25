@@ -156,7 +156,6 @@ public class CruiseControlApiST extends AbstractST {
 
         LOGGER.info("Verifying that {} REST API is available using HTTP request without credentials", CRUISE_CONTROL_NAME);
 
-        LOGGER.debug("=========================================\n\n\n\n\n\n{}", response);
         assertThat(response, not(containsString("404")));
         assertThat(response, containsString("RUNNING"));
         assertThat(response, containsString("NO_TASK_IN_PROGRESS"));
