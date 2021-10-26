@@ -330,10 +330,10 @@ public class StUtils {
      * It's mostly used for use cases where we use direct kubectl command instead of fabric8 calls to api.
      * @param deploymentFile loaded Strimzi deployment file
      * @param namespace namespace where Strimzi should be installed
-     * @param fromVersion starting version of the upgrade process
+     * @param strimziFeatureGatesValue feature gates value
      * @return deployment file content as String
      */
-    public static String changeDeploymentNamespace(File deploymentFile, String namespace, final String fromVersion) {
+    public static String changeDeploymentNamespace(File deploymentFile, String namespace, final String strimziFeatureGatesValue) {
         YAMLMapper mapper = new YAMLMapper();
         try {
             JsonNode node = mapper.readTree(deploymentFile);
@@ -357,10 +357,10 @@ public class StUtils {
             imagePulPolicyEnvVar.put("value", Environment.COMPONENTS_IMAGE_PULL_POLICY);
 
             // this is for only 0.22.1 version (we have to turn-off `ControlPlaneListener` feature)
-            if (fromVersion != null && fromVersion.equals("0.22.1")) {
+            if (strimziFeatureGatesValue != null) {
                 ObjectNode strimziFeatureGates =  new ObjectMapper().createObjectNode();
                 strimziFeatureGates.put("name", "STRIMZI_FEATURE_GATES");
-                strimziFeatureGates.put("value", "-ControlPlaneListener");
+                strimziFeatureGates.put("value", strimziFeatureGatesValue);
                 ((ArrayNode) containerNode.get("env")).add(strimziFeatureGates);
             }
             ((ArrayNode) containerNode.get("env")).add(imagePulPolicyEnvVar);
