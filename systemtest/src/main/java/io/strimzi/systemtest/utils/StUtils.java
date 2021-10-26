@@ -356,7 +356,6 @@ public class StUtils {
             imagePulPolicyEnvVar.put("name", "STRIMZI_IMAGE_PULL_POLICY");
             imagePulPolicyEnvVar.put("value", Environment.COMPONENTS_IMAGE_PULL_POLICY);
 
-            // this is for only 0.22.1 version (we have to turn-off `ControlPlaneListener` feature)
             if (strimziFeatureGatesValue != null) {
                 ObjectNode strimziFeatureGates =  new ObjectMapper().createObjectNode();
                 strimziFeatureGates.put("name", "STRIMZI_FEATURE_GATES");
