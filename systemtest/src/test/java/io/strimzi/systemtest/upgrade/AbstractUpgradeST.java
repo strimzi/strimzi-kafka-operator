@@ -50,6 +50,7 @@ import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.Constants.GLOBAL_POLL_INTERVAL;
 import static io.strimzi.systemtest.Constants.GLOBAL_TIMEOUT;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.PATH_TO_KAFKA_TOPIC_CONFIG;
 import static io.strimzi.systemtest.Constants.PATH_TO_PACKAGING_EXAMPLES;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -223,7 +224,7 @@ public class AbstractUpgradeST extends AbstractST {
                 LOGGER.info("Going to set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
                 LOGGER.info("Wait until kafka rolling update is finished");
-                kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+                kafkaPods = StatefulSetUtils.waitTillSsHasRolled(INFRA_NAMESPACE, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
             }
 
             String logMessageVersion = procedures.getString("logMessageVersion");
@@ -243,7 +244,7 @@ public class AbstractUpgradeST extends AbstractST {
                 if ((currentInterBrokerProtocol != null && !currentInterBrokerProtocol.equals(interBrokerProtocolVersion)) ||
                         (currentLogMessageFormat != null) && !currentLogMessageFormat.equals(logMessageVersion)) {
                     LOGGER.info("Wait until kafka rolling update is finished");
-                    kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+                    kafkaPods = StatefulSetUtils.waitTillSsHasRolled(INFRA_NAMESPACE, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
                 }
                 makeSnapshots(clusterName);
             }
@@ -252,7 +253,7 @@ public class AbstractUpgradeST extends AbstractST {
                 LOGGER.info("Going to set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
                 LOGGER.info("Wait until kafka rolling update is finished");
-                kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+                kafkaPods = StatefulSetUtils.waitTillSsHasRolled(INFRA_NAMESPACE, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
             }
         }
     }

@@ -312,9 +312,10 @@ public class SetupClusterOperator {
 
         public SetupClusterOperatorBuilder addToTheBindingsNamespaces(String bindingsNamespace) {
             if (this.bindingsNamespaces != null) {
+                this.bindingsNamespaces = new ArrayList<>(this.bindingsNamespaces);
                 this.bindingsNamespaces.add(bindingsNamespace);
             } else {
-                this.bindingsNamespaces = Arrays.asList(bindingsNamespace);
+                this.bindingsNamespaces = new ArrayList<>(Arrays.asList(bindingsNamespace));
             }
             return self();
         }

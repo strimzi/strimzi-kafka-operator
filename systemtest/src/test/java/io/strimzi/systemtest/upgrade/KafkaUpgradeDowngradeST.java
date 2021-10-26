@@ -22,7 +22,6 @@ import io.strimzi.test.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
@@ -137,7 +136,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
         // ##############################
     }
 
-    @Test
+    @IsolatedTest
     void testUpgradeWithNoMessageAndProtocolVersionsSet(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
@@ -204,6 +203,7 @@ public class KafkaUpgradeDowngradeST extends AbstractST {
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
             KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
+                .withNamespaceName(INFRA_NAMESPACE)
                 .withProducerName(producerName)
                 .withConsumerName(consumerName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
