@@ -83,6 +83,9 @@ public abstract class AbstractST implements TestSeparator {
     protected KubeClusterResource cluster;
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
+
+    // {thread-safe} this lock ensures that no race-condition happen in @BeforeAll part
+    private static final Object BEFORE_ALL_LOCK = new Object();
     // {thread-safe} this needs to be static because when more threads spawns diff. TestSuites it might produce race conditions
     private static final Object LOCK = new Object();
 
@@ -540,7 +543,7 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
+    protected synchronized void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(extensionContext);
         }
@@ -617,16 +620,19 @@ public abstract class AbstractST implements TestSeparator {
      * you your implementation in sub-class as you want.
      * @param extensionContext
      */
-    protected void beforeAllMayOverride(ExtensionContext extensionContext) {
+    protected synchronized void beforeAllMayOverride(ExtensionContext extensionContext) {
         cluster = KubeClusterResource.getInstance();
         install = BeforeAllOnce.getInstall();
 
-        if (StUtils.isParallelSuite(extensionContext)) {
-            ParallelSuiteController.addParallelSuite(extensionContext);
-        }
-        if (StUtils.isIsolatedSuite(extensionContext)) {
-            cluster.setNamespace(Constants.INFRA_NAMESPACE);
-            ParallelSuiteController.waitUntilZeroParallelSuites();
+        // ensures that only one thread will modify @ParallelSuiteController and race-condition could not happen
+        synchronized (BEFORE_ALL_LOCK) {
+            if (StUtils.isParallelSuite(extensionContext)) {
+                ParallelSuiteController.addParallelSuite(extensionContext);
+            }
+            if (StUtils.isIsolatedSuite(extensionContext)) {
+                cluster.setNamespace(Constants.INFRA_NAMESPACE);
+                ParallelSuiteController.waitUntilZeroParallelSuites();
+            }
         }
     }
 

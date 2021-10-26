@@ -173,21 +173,25 @@ public class AbstractUpgradeST extends AbstractST {
         return parameters.stream();
     }
 
+    protected void makeSnapshots(String namespaceName, String clusterName) {
+        coPods = DeploymentUtils.depSnapshot(namespaceName, ResourceManager.getCoDeploymentName());
+        zkPods = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        eoPods = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
+    }
+
     protected void makeSnapshots(String clusterName) {
-        coPods = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
-        zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
-        kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
-        eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
+        makeSnapshots(kubeClient().getNamespace(), clusterName);
     }
 
     @SuppressWarnings("CyclomaticComplexity")
     protected void changeKafkaAndLogFormatVersion(JsonObject procedures, JsonObject testParameters, String clusterName, ExtensionContext extensionContext) throws IOException {
         // Get Kafka configurations
         String operatorVersion = testParameters.getString("toVersion");
-        String currentLogMessageFormat = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.config.log\\.message\\.format\\.version");
-        String currentInterBrokerProtocol = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.config.inter\\.broker\\.protocol\\.version");
+        String currentLogMessageFormat = cmdKubeClient(INFRA_NAMESPACE).getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.config.log\\.message\\.format\\.version");
+        String currentInterBrokerProtocol = cmdKubeClient(INFRA_NAMESPACE).getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.config.inter\\.broker\\.protocol\\.version");
         // Get Kafka version
-        String kafkaVersionFromCR = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.version");
+        String kafkaVersionFromCR = cmdKubeClient(INFRA_NAMESPACE).getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.version");
         kafkaVersionFromCR = kafkaVersionFromCR.equals("") ? null : kafkaVersionFromCR;
         String kafkaVersionFromProcedure = procedures.getString("kafkaVersion");
 
@@ -207,15 +211,15 @@ public class AbstractUpgradeST extends AbstractST {
         LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
         // Change kafka version of it's empty (null is for remove the version)
         String defaultValueForVersions = kafkaVersionFromCR == null ? null : TestKafkaVersion.getSpecificVersion(kafkaVersionFromCR).messageVersion();
-        cmdKubeClient().applyContent(KafkaUtils.changeOrRemoveKafkaConfiguration(kafkaYaml, kafkaVersionFromCR, defaultValueForVersions, defaultValueForVersions));
+        cmdKubeClient(INFRA_NAMESPACE).applyContent(KafkaUtils.changeOrRemoveKafkaConfiguration(kafkaYaml, kafkaVersionFromCR, defaultValueForVersions, defaultValueForVersions));
 
         kafkaUserYaml = new File(examplesPath + "/user/kafka-user.yaml");
         LOGGER.info("Going to deploy KafkaUser from: {}", kafkaUserYaml.getPath());
-        cmdKubeClient().applyContent(KafkaUserUtils.removeKafkaUserPart(kafkaUserYaml, "authorization"));
+        cmdKubeClient(INFRA_NAMESPACE).applyContent(KafkaUserUtils.removeKafkaUserPart(kafkaUserYaml, "authorization"));
 
         kafkaTopicYaml = new File(examplesPath + "/topic/kafka-topic.yaml");
         LOGGER.info("Going to deploy KafkaTopic from: {}", kafkaTopicYaml.getPath());
-        cmdKubeClient().applyContent(TestUtils.readFile(kafkaTopicYaml));
+        cmdKubeClient(INFRA_NAMESPACE).applyContent(TestUtils.readFile(kafkaTopicYaml));
         // #######################################################################
 
 
@@ -233,12 +237,12 @@ public class AbstractUpgradeST extends AbstractST {
             if (!logMessageVersion.isEmpty() || !interBrokerProtocolVersion.isEmpty()) {
                 if (!logMessageVersion.isEmpty()) {
                     LOGGER.info("Going to set log message format version to " + logMessageVersion);
-                    cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/config/log.message.format.version", logMessageVersion);
+                    cmdKubeClient(INFRA_NAMESPACE).patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/config/log.message.format.version", logMessageVersion);
                 }
 
                 if (!interBrokerProtocolVersion.isEmpty()) {
                     LOGGER.info("Going to set inter-broker protocol version to " + interBrokerProtocolVersion);
-                    cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/config/inter.broker.protocol.version", interBrokerProtocolVersion);
+                    cmdKubeClient(INFRA_NAMESPACE).patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/config/inter.broker.protocol.version", interBrokerProtocolVersion);
                 }
 
                 if ((currentInterBrokerProtocol != null && !currentInterBrokerProtocol.equals(interBrokerProtocolVersion)) ||
@@ -246,12 +250,12 @@ public class AbstractUpgradeST extends AbstractST {
                     LOGGER.info("Wait until kafka rolling update is finished");
                     kafkaPods = StatefulSetUtils.waitTillSsHasRolled(INFRA_NAMESPACE, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
                 }
-                makeSnapshots(clusterName);
+                makeSnapshots(INFRA_NAMESPACE, clusterName);
             }
 
             if (!kafkaVersionFromProcedure.isEmpty() && !kafkaVersionFromCR.contains(kafkaVersionFromProcedure) && extensionContext.getTestClass().get().getSimpleName().toLowerCase(Locale.ROOT).contains("downgrade")) {
                 LOGGER.info("Going to set Kafka version to " + kafkaVersionFromProcedure);
-                cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
+                cmdKubeClient(INFRA_NAMESPACE).patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
                 LOGGER.info("Wait until kafka rolling update is finished");
                 kafkaPods = StatefulSetUtils.waitTillSsHasRolled(INFRA_NAMESPACE, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
             }
@@ -515,7 +519,7 @@ public class AbstractUpgradeST extends AbstractST {
             // ##############################
         }
 
-        makeSnapshots(clusterName);
+        makeSnapshots(INFRA_NAMESPACE, clusterName);
         logPodImages(clusterName);
     }
 

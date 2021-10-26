@@ -137,7 +137,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getString("startingKafkaVersion"), INFRA_NAMESPACE);
         convertCRDs(conversionTool, INFRA_NAMESPACE);
         // Make snapshots of all pods
-        makeSnapshots(clusterName);
+        makeSnapshots(INFRA_NAMESPACE, clusterName);
 
         // Upgrade CO
         changeClusterOperator(acrossUpgradeData, INFRA_NAMESPACE, extensionContext);

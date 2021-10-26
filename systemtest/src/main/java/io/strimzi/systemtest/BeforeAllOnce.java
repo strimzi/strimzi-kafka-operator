@@ -7,6 +7,7 @@ package io.strimzi.systemtest;
 import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
 import io.strimzi.systemtest.parallel.ParallelSuiteController;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -62,8 +63,10 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
                     .createInstallation()
                     .runInstallation();
             }
-            // this is for correction because callback also count some randomly chosen class twice
-            ParallelSuiteController.decrementCounter();
+            // correction, because when @BeforeAllCallback is invoked firstly by @IsolatedSuite class it decrement counter which is not correct
+            if (StUtils.isParallelSuite(extensionContext)) {
+                ParallelSuiteController.decrementCounter();
+            }
             sharedExtensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(SYSTEM_RESOURCES, new BeforeAllOnce());
         }
     }
