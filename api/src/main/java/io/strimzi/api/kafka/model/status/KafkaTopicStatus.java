@@ -20,13 +20,15 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "topicName" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "topicName", "replicationFactor", "minISR" })
 @EqualsAndHashCode
 @ToString(callSuper = true)
 public class KafkaTopicStatus extends Status {
     private static final long serialVersionUID = 1L;
 
     private String topicName;
+    private Integer replicationFactor;
+    private Integer minISR;
 
     @Description("Topic name")
     public String getTopicName() {
@@ -35,5 +37,23 @@ public class KafkaTopicStatus extends Status {
 
     public void setTopicName(String topicName) {
         this.topicName = topicName;
+    }
+
+    @Description("Topic replication factor")
+    public Integer getReplicationFactor() {
+        return replicationFactor;
+    }
+
+    public void setReplicationFactor(Integer replicationFactor) {
+        this.replicationFactor = replicationFactor;
+    }
+
+    @Description("Topic minimum in sync replicas")
+    public Integer getMinISR() {
+        return minISR;
+    }
+
+    public void setMinISR(Integer minISR) {
+        this.minISR = minISR;
     }
 }

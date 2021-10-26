@@ -600,7 +600,7 @@ class TopicOperator {
                     .compose(ignore -> createInTopicStore(logContext, k8sTopic, involvedObject))
                     // Kafka will set the message.format.version, so we need to update the KafkaTopic to reflect
                     // that to avoid triggering another reconciliation
-                    .compose(ignored -> getFromKafka(logContext.toReconciliation(), k8sTopic.getTopicName()))
+                    .compose(ignored -> getFromKafka(logContext.toReconciliation(), reconciliation, k8sTopic.getTopicName()))
                     .compose(kafkaTopic2 -> {
                         LOGGER.debugCr(logContext.toReconciliation(), "Post-create kafka {}", kafkaTopic2);
                         if (kafkaTopic2 == null) {
@@ -868,6 +868,7 @@ class TopicOperator {
                     public Future<Void> execute() {
                         return kafka.topicMetadata(logContext.toReconciliation(), topicName)
                                 .compose(metadata -> {
+                                    this.setTopicMetadata(metadata);
                                     Topic topic = TopicSerialization.fromTopicMetadata(metadata);
                                     return reconcileOnTopicChange(logContext, topicName, topic, this);
                                 });
@@ -920,7 +921,11 @@ class TopicOperator {
                             promise.complete();
                         }
                     };
-                    kafka.topicMetadata(logContext.toReconciliation(), topicName).onComplete(handler);
+                    kafka.topicMetadata(logContext.toReconciliation(), topicName)
+                            .compose(topicMetadata -> {
+                                self.setTopicMetadata(topicMetadata);
+                                return Future.succeededFuture(topicMetadata);
+                            }).onComplete(handler);
                 });
                 return promise.future();
             }
@@ -983,7 +988,11 @@ class TopicOperator {
                     }
                 };
                 return awaitExistential(logContext, topicName, true).compose(exists ->  {
-                    kafka.topicMetadata(logContext.toReconciliation(), topicName).onComplete(handler);
+                    kafka.topicMetadata(logContext.toReconciliation(), topicName)
+                        .compose(topicMetadata -> {
+                            self.setTopicMetadata(topicMetadata);
+                            return Future.succeededFuture(topicMetadata);
+                        }).onComplete(handler);
                     return promise.future();
                 });
             }
@@ -994,6 +1003,7 @@ class TopicOperator {
     abstract class Reconciliation {
         private final LogContext logContext;
         private final String name;
+        private TopicMetadata topicMetadata;
         private final boolean watchedForMetrics;
         public AsyncResult<Void> result;
         public volatile KafkaTopic topic;
@@ -1008,6 +1018,10 @@ class TopicOperator {
                 this.reconciliationTimerSample = Timer.start(metrics.meterRegistry());
                 reconciliationsCounter.increment();
             }
+        }
+
+        public void setTopicMetadata(TopicMetadata topicMetadata) {
+            this.topicMetadata = topicMetadata;
         }
 
         public void failed() {
@@ -1062,6 +1076,12 @@ class TopicOperator {
 
                     if (Annotations.isReconciliationPausedWithAnnotation(topic)) {
                         kts.setConditions(singletonList(StatusUtils.getPausedCondition()));
+                    }
+
+                    // we can do this because TO puts RF back to the k8s resource
+                    kts.setReplicationFactor(topic.getSpec().getReplicas());
+                    if (topicMetadata != null && topicMetadata.getConfig().get("min.insync.replicas") != null) {
+                        kts.setMinISR(Integer.parseInt(topicMetadata.getConfig().get("min.insync.replicas").value()));
                     }
 
                     StatusDiff ksDiff = new StatusDiff(topic.getStatus(), kts);
@@ -1144,7 +1164,7 @@ class TopicOperator {
                             EventType.WARNING, eventResult -> { }));
                 }
             })
-            .compose(i -> CompositeFuture.all(getFromKafka(logContext.toReconciliation(), topicName), getFromTopicStore(topicName))
+            .compose(i -> CompositeFuture.all(getFromKafka(logContext.toReconciliation(), reconciliation, topicName), getFromTopicStore(topicName))
                 .compose(compositeResult -> {
                     Topic kafkaTopic = compositeResult.resultAt(0);
                     Topic privateTopic = compositeResult.resultAt(1);
@@ -1482,6 +1502,7 @@ class TopicOperator {
                 .compose(i -> kafka.topicMetadata(logContext.toReconciliation(), topicName))
                 .compose(kafkaTopicMeta -> {
                     Topic topicFromKafka = TopicSerialization.fromTopicMetadata(kafkaTopicMeta);
+                    reconciliation.setTopicMetadata(kafkaTopicMeta);
                     return reconcile(reconciliation, logContext, kafkaTopicResource, k8sTopic, topicFromKafka, privateTopic);
                 })
                 .onComplete(ar -> {
@@ -1506,8 +1527,13 @@ class TopicOperator {
         return topicPromise.future();
     }
 
-    Future<Topic> getFromKafka(io.strimzi.operator.common.Reconciliation reconciliation, TopicName topicName) {
-        return kafka.topicMetadata(reconciliation, topicName).map(TopicSerialization::fromTopicMetadata);
+    Future<Topic> getFromKafka(io.strimzi.operator.common.Reconciliation reconciliation, Reconciliation rec, TopicName topicName) {
+        Future<TopicMetadata> fut = kafka.topicMetadata(reconciliation, topicName);
+        return fut.compose(topicMetadata -> {
+            rec.setTopicMetadata(topicMetadata);
+            return Future.succeededFuture(topicMetadata);
+        })
+        .map(TopicSerialization::fromTopicMetadata);
     }
 
     Future<Topic> getFromTopicStore(TopicName topicName) {
@@ -1525,7 +1551,7 @@ class TopicOperator {
                             observedTopicFuture(kt);
                             return kt;
                         }),
-                        getFromKafka(logContext.toReconciliation(), topicName),
+                        getFromKafka(logContext.toReconciliation(), this, topicName),
                         getFromTopicStore(topicName))
                     .compose(compositeResult -> {
                         KafkaTopic ktr = compositeResult.resultAt(0);

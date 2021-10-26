@@ -2194,6 +2194,10 @@ Used in: xref:type-KafkaTopic-{context}[`KafkaTopic`]
 |integer
 |topicName           1.2+<.<a|Topic name.
 |string
+|replicationFactor   1.2+<.<a|Topic replication factor.
+|integer
+|minISR              1.2+<.<a|Topic minimum in sync replicas.
+|integer
 |====
 
 [id='type-KafkaUser-{context}']

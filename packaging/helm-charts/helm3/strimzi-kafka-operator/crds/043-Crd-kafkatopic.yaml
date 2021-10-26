@@ -97,6 +97,12 @@ spec:
                 topicName:
                   type: string
                   description: Topic name.
+                replicationFactor:
+                  type: integer
+                  description: Topic replication factor.
+                minISR:
+                  type: integer
+                  description: Topic minimum in sync replicas.
               description: The status of the topic.
     - name: v1beta1
       served: true
@@ -174,6 +180,12 @@ spec:
                 topicName:
                   type: string
                   description: Topic name.
+                replicationFactor:
+                  type: integer
+                  description: Topic replication factor.
+                minISR:
+                  type: integer
+                  description: Topic minimum in sync replicas.
               description: The status of the topic.
     - name: v1alpha1
       served: true
@@ -251,4 +263,10 @@ spec:
                 topicName:
                   type: string
                   description: Topic name.
+                replicationFactor:
+                  type: integer
+                  description: Topic replication factor.
+                minISR:
+                  type: integer
+                  description: Topic minimum in sync replicas.
               description: The status of the topic.
