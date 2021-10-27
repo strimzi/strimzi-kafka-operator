@@ -63,8 +63,8 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                                        CertManager certManager, PasswordGenerator passwordGenerator,
                                        ResourceOperatorSupplier supplier,
                                        ClusterOperatorConfig config) {
-        super(vertx, pfa, KafkaBridge.RESOURCE_KIND, certManager, passwordGenerator, supplier.kafkaBridgeOperator, supplier, config);
-        this.deploymentOperations = supplier.deploymentOperations;
+        super(vertx, pfa, KafkaBridge.RESOURCE_KIND, certManager, passwordGenerator, supplier.getKafkaBridgeOperator(), supplier, config);
+        this.deploymentOperations = supplier.getDeploymentOperations();
         this.versions = config.versions();
     }
 

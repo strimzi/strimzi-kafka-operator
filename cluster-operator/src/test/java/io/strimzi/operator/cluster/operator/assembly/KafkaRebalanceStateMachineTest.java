@@ -136,7 +136,7 @@ public class KafkaRebalanceStateMachineTest {
 
         CruiseControlApi client = new CruiseControlApiImpl(vertx, HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS, MockCruiseControl.CC_SECRET, MockCruiseControl.CC_API_SECRET, true, true);
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
         KafkaRebalanceAssemblyOperator kcrao = new KafkaRebalanceAssemblyOperator(vertx, pfa, supplier, ResourceUtils.dummyClusterOperatorConfig()) {
             @Override
@@ -161,7 +161,7 @@ public class KafkaRebalanceStateMachineTest {
 
         CrdOperator<KubernetesClient,
                 KafkaRebalance,
-                KafkaRebalanceList> mockRebalanceOps = supplier.kafkaRebalanceOperator;
+                KafkaRebalanceList> mockRebalanceOps = supplier.getKafkaRebalanceOperator();
 
         when(mockCmOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(Future.succeededFuture(new ConfigMap()));
         when(mockRebalanceOps.get(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(kcRebalance);

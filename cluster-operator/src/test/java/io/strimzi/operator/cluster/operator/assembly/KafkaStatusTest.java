@@ -137,7 +137,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
@@ -186,7 +186,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
@@ -222,7 +222,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
 
         Kafka readyKafka = new KafkaBuilder(kafka)
                 .editStatus()
@@ -283,7 +283,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
@@ -331,7 +331,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
 
         Kafka readyKafka = new KafkaBuilder(kafka)
                 .editStatus()
@@ -473,7 +473,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
@@ -481,11 +481,11 @@ public class KafkaStatusTest {
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the KafkaSetOperator
-        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
+        KafkaSetOperator mockKafkaSetOps = supplier.getKafkaSetOperations();
         when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
         when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
@@ -521,11 +521,11 @@ public class KafkaStatusTest {
         pods.add(pod1);
         pods.add(pod2);
 
-        PodOperator mockPodOps = supplier.podOperations;
+        PodOperator mockPodOps = supplier.getPodOperations();
         when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
 
         // Mock Node operator
-        NodeOperator mockNodeOps = supplier.nodeOperator;
+        NodeOperator mockNodeOps = supplier.getNodeOperator();
         when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(getClusterNodes()));
 
         MockNodePortStatusKafkaAssemblyOperator kao = new MockNodePortStatusKafkaAssemblyOperator(
@@ -590,7 +590,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
@@ -598,11 +598,11 @@ public class KafkaStatusTest {
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the KafkaSetOperator
-        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
+        KafkaSetOperator mockKafkaSetOps = supplier.getKafkaSetOperations();
         when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
         when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
@@ -638,11 +638,11 @@ public class KafkaStatusTest {
         pods.add(pod1);
         pods.add(pod2);
 
-        PodOperator mockPodOps = supplier.podOperations;
+        PodOperator mockPodOps = supplier.getPodOperations();
         when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
 
         // Mock Node operator
-        NodeOperator mockNodeOps = supplier.nodeOperator;
+        NodeOperator mockNodeOps = supplier.getNodeOperator();
         when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(getClusterNodes()));
 
         MockNodePortStatusKafkaAssemblyOperator kao = new MockNodePortStatusKafkaAssemblyOperator(
@@ -697,7 +697,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
@@ -705,11 +705,11 @@ public class KafkaStatusTest {
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the KafkaSetOperator
-        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
+        KafkaSetOperator mockKafkaSetOps = supplier.getKafkaSetOperations();
         when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
         when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
@@ -745,11 +745,11 @@ public class KafkaStatusTest {
         pods.add(pod1);
         pods.add(pod2);
 
-        PodOperator mockPodOps = supplier.podOperations;
+        PodOperator mockPodOps = supplier.getPodOperations();
         when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
 
         // Mock Node operator
-        NodeOperator mockNodeOps = supplier.nodeOperator;
+        NodeOperator mockNodeOps = supplier.getNodeOperator();
         when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(getClusterNodes()));
 
         MockNodePortStatusKafkaAssemblyOperator kao = new MockNodePortStatusKafkaAssemblyOperator(
@@ -801,7 +801,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
@@ -809,11 +809,11 @@ public class KafkaStatusTest {
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the KafkaSetOperator
-        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
+        KafkaSetOperator mockKafkaSetOps = supplier.getKafkaSetOperations();
         when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
         when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
@@ -849,11 +849,11 @@ public class KafkaStatusTest {
         pods.add(pod1);
         pods.add(pod2);
 
-        PodOperator mockPodOps = supplier.podOperations;
+        PodOperator mockPodOps = supplier.getPodOperations();
         when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
 
         // Mock Node operator
-        NodeOperator mockNodeOps = supplier.nodeOperator;
+        NodeOperator mockNodeOps = supplier.getNodeOperator();
         when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(getClusterNodes()));
 
         MockNodePortStatusKafkaAssemblyOperator kao = new MockNodePortStatusKafkaAssemblyOperator(
@@ -904,7 +904,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
@@ -912,11 +912,11 @@ public class KafkaStatusTest {
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the KafkaSetOperator
-        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
+        KafkaSetOperator mockKafkaSetOps = supplier.getKafkaSetOperations();
         when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
         when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock Pods Operator
@@ -932,11 +932,11 @@ public class KafkaStatusTest {
         List<Pod> pods = new ArrayList<>();
         pods.add(pod0);
 
-        PodOperator mockPodOps = supplier.podOperations;
+        PodOperator mockPodOps = supplier.getPodOperations();
         when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
 
         // Mock Node operator
-        NodeOperator mockNodeOps = supplier.nodeOperator;
+        NodeOperator mockNodeOps = supplier.getNodeOperator();
         when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(getClusterNodes()));
 
         MockNodePortStatusKafkaAssemblyOperator kao = new MockNodePortStatusKafkaAssemblyOperator(
@@ -972,7 +972,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
@@ -1010,7 +1010,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the Kafka Operator
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
@@ -1039,7 +1039,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
@@ -1047,7 +1047,7 @@ public class KafkaStatusTest {
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
         
         // Mock the KafkaSecretOperator
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(namespace), eq(KafkaResources.clusterCaCertificateSecretName(clusterName)))).thenReturn(Future.succeededFuture(secret));
         when(mockSecretOps.getAsync(eq(namespace), eq(ClusterOperator.secretName(clusterName)))).thenReturn(Future.succeededFuture(secret));
@@ -1090,7 +1090,7 @@ public class KafkaStatusTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
@@ -1098,15 +1098,15 @@ public class KafkaStatusTest {
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the KafkaSetOperator
-        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
+        KafkaSetOperator mockKafkaSetOps = supplier.getKafkaSetOperations();
         when(mockKafkaSetOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
 
         // Mock the ConfigMapOperator
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
         when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
 
         // Mock the PodOperator
-        PodOperator mockPodOps = supplier.podOperations;
+        PodOperator mockPodOps = supplier.getPodOperations();
         when(mockPodOps.listAsync(eq(namespace), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         MockModelWarningsStatusKafkaAssemblyOperator kao = new MockModelWarningsStatusKafkaAssemblyOperator(

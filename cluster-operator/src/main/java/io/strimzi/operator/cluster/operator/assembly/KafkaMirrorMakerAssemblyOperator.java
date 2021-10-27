@@ -67,8 +67,8 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                                             CertManager certManager, PasswordGenerator passwordGenerator,
                                             ResourceOperatorSupplier supplier,
                                             ClusterOperatorConfig config) {
-        super(vertx, pfa, KafkaMirrorMaker.RESOURCE_KIND, certManager, passwordGenerator, supplier.mirrorMakerOperator, supplier, config);
-        this.deploymentOperations = supplier.deploymentOperations;
+        super(vertx, pfa, KafkaMirrorMaker.RESOURCE_KIND, certManager, passwordGenerator, supplier.getMirrorMakerOperator(), supplier, config);
+        this.deploymentOperations = supplier.getDeploymentOperations();
         this.versions = config.versions();
     }
 

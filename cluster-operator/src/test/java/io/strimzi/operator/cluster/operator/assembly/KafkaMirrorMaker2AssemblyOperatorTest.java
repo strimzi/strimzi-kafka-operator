@@ -102,13 +102,13 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testCreateCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator mockMirrorMaker2Ops = supplier.getMirrorMaker2Operator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
+        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -191,13 +191,13 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testUpdateClusterNoDiff(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator mockMirrorMaker2Ops = supplier.getMirrorMaker2Operator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
+        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -272,13 +272,13 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testUpdateCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator mockMirrorMaker2Ops = supplier.getMirrorMaker2Operator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
+        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -393,13 +393,13 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testUpdateClusterWithFailingDeploymentFailure(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator mockMirrorMaker2Ops = supplier.getMirrorMaker2Operator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
+        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -455,13 +455,13 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         final int scaleTo = 4;
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator mockMirrorMaker2Ops = supplier.getMirrorMaker2Operator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
+        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -514,13 +514,13 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         int scaleTo = 2;
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator mockMirrorMaker2Ops = supplier.getMirrorMaker2Operator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
+        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -570,10 +570,10 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testReconcile(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        SecretOperator mockSecretOps = supplier.secretOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        CrdOperator mockMirrorMaker2Ops = supplier.getMirrorMaker2Operator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
 
         String kmm2Namespace = "test";
 
@@ -629,13 +629,13 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testCreateClusterStatusNotReady(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator mockMirrorMaker2Ops = supplier.getMirrorMaker2Operator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
+        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -678,13 +678,13 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testCreateClusterWithZeroReplicas(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator mockMirrorMaker2Ops = supplier.getMirrorMaker2Operator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
+        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -764,13 +764,13 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testCreateClusterWithJmxEnabled(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator mockMirrorMaker2Ops = supplier.getMirrorMaker2Operator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
+        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
 
         String kmm2Name = "foo";
         String kmm2Namespace = "test";
@@ -959,13 +959,13 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     }
 
     private ArgumentCaptor<KafkaMirrorMaker2> createMirrorMaker2CaptorMock(String targetNamespace, String kmm2Name, KafkaMirrorMaker2 kmm2, ResourceOperatorSupplier supplier) {
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator mockMirrorMaker2Ops = supplier.getMirrorMaker2Operator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
+        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
 
         when(mockMirrorMaker2Ops.get(targetNamespace, kmm2Name)).thenReturn(kmm2);
         when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));

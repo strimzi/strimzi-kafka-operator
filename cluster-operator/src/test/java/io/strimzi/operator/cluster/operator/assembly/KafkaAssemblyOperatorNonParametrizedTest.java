@@ -135,7 +135,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 .build();
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        SecretOperator secretOps = supplier.secretOperations;
+        SecretOperator secretOps = supplier.getSecretOperations();
 
         ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
@@ -215,7 +215,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 .build();
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        SecretOperator secretOps = supplier.secretOperations;
+        SecretOperator secretOps = supplier.getSecretOperations();
 
         ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
@@ -289,7 +289,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 .build();
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        SecretOperator secretOps = supplier.secretOperations;
+        SecretOperator secretOps = supplier.getSecretOperations();
 
         ArgumentCaptor<Secret> clusterCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
@@ -365,7 +365,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 .build();
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        ConfigMapOperator cmOps = supplier.configMapOperations;
+        ConfigMapOperator cmOps = supplier.getConfigMapOperations();
         when(cmOps.getAsync(eq(NAMESPACE), eq("my-metrics-cm"))).thenReturn(Future.failedFuture("Failed ConfigMap getAsync call"));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
@@ -385,7 +385,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
     @Test
     public void testDeleteClusterRoleBindings(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
+        ClusterRoleBindingOperator mockCrbOps = supplier.getClusterRoleBindingOperator();
         ArgumentCaptor<ClusterRoleBinding> desiredCrb = ArgumentCaptor.forClass(ClusterRoleBinding.class);
         when(mockCrbOps.reconcile(any(), eq(KafkaResources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
 
@@ -428,7 +428,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
@@ -462,14 +462,14 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     // beginning with success. It should not reconcile any resources other than getting the Kafka
                     // resource it self.
                     verifyZeroInteractions(
-                            supplier.kafkaSetOperations,
-                            supplier.zkSetOperations,
-                            supplier.serviceOperations,
-                            supplier.secretOperations,
-                            supplier.configMapOperations,
-                            supplier.podOperations,
-                            supplier.podDisruptionBudgetOperator,
-                            supplier.deploymentOperations
+                            supplier.getKafkaSetOperations(),
+                            supplier.getZkSetOperations(),
+                            supplier.getServiceOperations(),
+                            supplier.getSecretOperations(),
+                            supplier.getConfigMapOperations(),
+                            supplier.getPodOperations(),
+                            supplier.getPodDisruptionBudgetOperator(),
+                            supplier.getDeploymentOperations()
                     );
 
                     async.flag();
@@ -520,28 +520,28 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // Mock the KafkaSet operations
-        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
+        KafkaSetOperator mockKafkaSetOps = supplier.getKafkaSetOperations();
         when(mockKafkaSetOps.getAsync(eq(NAMESPACE), eq(KafkaCluster.kafkaClusterName(NAME)))).thenReturn(Future.succeededFuture());
 
         // Mock the Pod operations
-        PodOperator mockPodOps = supplier.podOperations;
+        PodOperator mockPodOps = supplier.getPodOperations();
         when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock ingress v1beta1 ops
-        IngressV1Beta1Operator mockIngressV1Beta1ops = supplier.ingressV1Beta1Operations;
+        IngressV1Beta1Operator mockIngressV1Beta1ops = supplier.getIngressV1Beta1Operations();
         ArgumentCaptor<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress> ingressV1Beta1Captor = ArgumentCaptor.forClass(io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress.class);
         when(mockIngressV1Beta1ops.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockIngressV1Beta1ops.reconcile(any(), anyString(), anyString(), ingressV1Beta1Captor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress())));
         when(mockIngressV1Beta1ops.hasIngressAddress(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock ingress v1 ops
-        IngressOperator mockIngressOps = supplier.ingressOperations;
+        IngressOperator mockIngressOps = supplier.getIngressOperations();
         ArgumentCaptor<Ingress> ingressCaptor = ArgumentCaptor.forClass(Ingress.class);
         when(mockIngressOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockIngressOps.reconcile(any(), anyString(), anyString(), ingressCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Ingress())));
@@ -609,28 +609,28 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // Mock the KafkaSet operations
-        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
+        KafkaSetOperator mockKafkaSetOps = supplier.getKafkaSetOperations();
         when(mockKafkaSetOps.getAsync(eq(NAMESPACE), eq(KafkaCluster.kafkaClusterName(NAME)))).thenReturn(Future.succeededFuture());
 
         // Mock the Pod operations
-        PodOperator mockPodOps = supplier.podOperations;
+        PodOperator mockPodOps = supplier.getPodOperations();
         when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock ingress v1beta1 ops
-        IngressV1Beta1Operator mockIngressV1Beta1ops = supplier.ingressV1Beta1Operations;
+        IngressV1Beta1Operator mockIngressV1Beta1ops = supplier.getIngressV1Beta1Operations();
         ArgumentCaptor<io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress> ingressV1Beta1Captor = ArgumentCaptor.forClass(io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress.class);
         when(mockIngressV1Beta1ops.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockIngressV1Beta1ops.reconcile(any(), anyString(), anyString(), ingressV1Beta1Captor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress())));
         when(mockIngressV1Beta1ops.hasIngressAddress(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // Mock ingress v1 ops
-        IngressOperator mockIngressOps = supplier.ingressOperations;
+        IngressOperator mockIngressOps = supplier.getIngressOperations();
         ArgumentCaptor<Ingress> ingressCaptor = ArgumentCaptor.forClass(Ingress.class);
         when(mockIngressOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockIngressOps.reconcile(any(), anyString(), anyString(), ingressCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Ingress())));

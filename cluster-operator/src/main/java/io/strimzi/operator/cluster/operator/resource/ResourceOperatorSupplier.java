@@ -53,37 +53,37 @@ import io.vertx.core.Vertx;
 // Deprecation is suppressed because of KafkaMirrorMaker
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "deprecation"})
 public class ResourceOperatorSupplier {
-    public final SecretOperator secretOperations;
-    public final ServiceOperator serviceOperations;
-    public final RouteOperator routeOperations;
-    public final ZookeeperSetOperator zkSetOperations;
-    public final KafkaSetOperator kafkaSetOperations;
-    public final ConfigMapOperator configMapOperations;
-    public final PvcOperator pvcOperations;
-    public final DeploymentOperator deploymentOperations;
-    public final ServiceAccountOperator serviceAccountOperations;
-    public final RoleBindingOperator roleBindingOperations;
-    public final RoleOperator roleOperations;
-    public final ClusterRoleBindingOperator clusterRoleBindingOperator;
-    public final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
-    public final CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> connectOperator;
-    public final CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList> mirrorMakerOperator;
-    public final CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList> kafkaBridgeOperator;
-    public final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> kafkaConnectorOperator;
-    public final CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mirrorMaker2Operator;
-    public final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
-    public final NetworkPolicyOperator networkPolicyOperator;
-    public final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
-    public final PodOperator podOperations;
-    public final IngressOperator ingressOperations;
-    public final IngressV1Beta1Operator ingressV1Beta1Operations;
-    public final BuildConfigOperator buildConfigOperations;
-    public final BuildOperator buildOperations;
-    public final StorageClassOperator storageClassOperations;
-    public final NodeOperator nodeOperator;
-    public final ZookeeperScalerProvider zkScalerProvider;
-    public final MetricsProvider metricsProvider;
-    public AdminClientProvider adminClientProvider;
+    private final SecretOperator secretOperations;
+    private final ServiceOperator serviceOperations;
+    private final RouteOperator routeOperations;
+    private final ZookeeperSetOperator zkSetOperations;
+    private final KafkaSetOperator kafkaSetOperations;
+    private final ConfigMapOperator configMapOperations;
+    private final PvcOperator pvcOperations;
+    private final DeploymentOperator deploymentOperations;
+    private final ServiceAccountOperator serviceAccountOperations;
+    private final RoleBindingOperator roleBindingOperations;
+    private final RoleOperator roleOperations;
+    private final ClusterRoleBindingOperator clusterRoleBindingOperator;
+    private final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
+    private final CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> connectOperator;
+    private final CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList> mirrorMakerOperator;
+    private final CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList> kafkaBridgeOperator;
+    private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> kafkaConnectorOperator;
+    private final CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mirrorMaker2Operator;
+    private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
+    private final NetworkPolicyOperator networkPolicyOperator;
+    private final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
+    private final PodOperator podOperations;
+    private final IngressOperator ingressOperations;
+    private final IngressV1Beta1Operator ingressV1Beta1Operations;
+    private final BuildConfigOperator buildConfigOperations;
+    private final BuildOperator buildOperations;
+    private final StorageClassOperator storageClassOperations;
+    private final NodeOperator nodeOperator;
+    private final ZookeeperScalerProvider zkScalerProvider;
+    private final MetricsProvider metricsProvider;
+    private AdminClientProvider adminClientProvider;
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
         this(vertx, client,
@@ -194,5 +194,129 @@ public class ResourceOperatorSupplier {
         this.zkScalerProvider = zkScalerProvider;
         this.metricsProvider = metricsProvider;
         this.adminClientProvider = adminClientProvider;
+    }
+
+    public SecretOperator getSecretOperations() {
+        return secretOperations;
+    }
+
+    public ServiceOperator getServiceOperations() {
+        return serviceOperations;
+    }
+
+    public RouteOperator getRouteOperations() {
+        return routeOperations;
+    }
+
+    public ZookeeperSetOperator getZkSetOperations() {
+        return zkSetOperations;
+    }
+
+    public KafkaSetOperator getKafkaSetOperations() {
+        return kafkaSetOperations;
+    }
+
+    public ConfigMapOperator getConfigMapOperations() {
+        return configMapOperations;
+    }
+
+    public PvcOperator getPvcOperations() {
+        return pvcOperations;
+    }
+
+    public DeploymentOperator getDeploymentOperations() {
+        return deploymentOperations;
+    }
+
+    public ServiceAccountOperator getServiceAccountOperations() {
+        return serviceAccountOperations;
+    }
+
+    public RoleBindingOperator getRoleBindingOperations() {
+        return roleBindingOperations;
+    }
+
+    public RoleOperator getRoleOperations() {
+        return roleOperations;
+    }
+
+    public ClusterRoleBindingOperator getClusterRoleBindingOperator() {
+        return clusterRoleBindingOperator;
+    }
+
+    public CrdOperator<KubernetesClient, Kafka, KafkaList> getKafkaOperator() {
+        return kafkaOperator;
+    }
+
+    public CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> getConnectOperator() {
+        return connectOperator;
+    }
+
+    public CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList> getMirrorMakerOperator() {
+        return mirrorMakerOperator;
+    }
+
+    public CrdOperator<KubernetesClient, KafkaBridge, KafkaBridgeList> getKafkaBridgeOperator() {
+        return kafkaBridgeOperator;
+    }
+
+    public CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> getKafkaConnectorOperator() {
+        return kafkaConnectorOperator;
+    }
+
+    public CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> getMirrorMaker2Operator() {
+        return mirrorMaker2Operator;
+    }
+
+    public CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> getKafkaRebalanceOperator() {
+        return kafkaRebalanceOperator;
+    }
+
+    public NetworkPolicyOperator getNetworkPolicyOperator() {
+        return networkPolicyOperator;
+    }
+
+    public PodDisruptionBudgetOperator getPodDisruptionBudgetOperator() {
+        return podDisruptionBudgetOperator;
+    }
+
+    public PodOperator getPodOperations() {
+        return podOperations;
+    }
+
+    public IngressOperator getIngressOperations() {
+        return ingressOperations;
+    }
+
+    public IngressV1Beta1Operator getIngressV1Beta1Operations() {
+        return ingressV1Beta1Operations;
+    }
+
+    public BuildConfigOperator getBuildConfigOperations() {
+        return buildConfigOperations;
+    }
+
+    public BuildOperator getBuildOperations() {
+        return buildOperations;
+    }
+
+    public StorageClassOperator getStorageClassOperations() {
+        return storageClassOperations;
+    }
+
+    public NodeOperator getNodeOperator() {
+        return nodeOperator;
+    }
+
+    public ZookeeperScalerProvider getZkScalerProvider() {
+        return zkScalerProvider;
+    }
+
+    public MetricsProvider getMetricsProvider() {
+        return metricsProvider;
+    }
+
+    public AdminClientProvider getAdminClientProvider() {
+        return adminClientProvider;
     }
 }

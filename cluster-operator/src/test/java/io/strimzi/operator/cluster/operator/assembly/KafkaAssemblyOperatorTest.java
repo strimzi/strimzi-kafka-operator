@@ -433,20 +433,20 @@ public class KafkaAssemblyOperatorTest {
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
-        var mockKafkaOps = supplier.kafkaOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ZookeeperSetOperator mockZsOps = supplier.zkSetOperations;
-        KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
-        PvcOperator mockPvcOps = supplier.pvcOperations;
-        PodOperator mockPodOps = supplier.podOperations;
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        SecretOperator mockSecretOps = supplier.secretOperations;
-        NetworkPolicyOperator mockPolicyOps = supplier.networkPolicyOperator;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        RouteOperator mockRouteOps = supplier.routeOperations;
-        IngressOperator mockIngressOps = supplier.ingressOperations;
-        NodeOperator mockNodeOps = supplier.nodeOperator;
+        var mockKafkaOps = supplier.getKafkaOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
+        ZookeeperSetOperator mockZsOps = supplier.getZkSetOperations();
+        KafkaSetOperator mockKsOps = supplier.getKafkaSetOperations();
+        PvcOperator mockPvcOps = supplier.getPvcOperations();
+        PodOperator mockPodOps = supplier.getPodOperations();
+        DeploymentOperator mockDepOps = supplier.getDeploymentOperations();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
+        NetworkPolicyOperator mockPolicyOps = supplier.getNetworkPolicyOperator();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        RouteOperator mockRouteOps = supplier.getRouteOperations();
+        IngressOperator mockIngressOps = supplier.getIngressOperations();
+        NodeOperator mockNodeOps = supplier.getNodeOperator();
 
         // Create a CM
         String kafkaName = kafka.getMetadata().getName();
@@ -914,20 +914,20 @@ public class KafkaAssemblyOperatorTest {
         // create CM, Service, headless service, statefulset and so on
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
-        var mockKafkaOps = supplier.kafkaOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ZookeeperSetOperator mockZsOps = supplier.zkSetOperations;
-        KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
-        PvcOperator mockPvcOps = supplier.pvcOperations;
-        PodOperator mockPodOps = supplier.podOperations;
-        DeploymentOperator mockDepOps = supplier.deploymentOperations;
-        SecretOperator mockSecretOps = supplier.secretOperations;
-        NetworkPolicyOperator mockPolicyOps = supplier.networkPolicyOperator;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        NodeOperator mockNodeOps = supplier.nodeOperator;
-        IngressOperator mockIngressOps = supplier.ingressOperations;
-        RouteOperator mockRouteOps = supplier.routeOperations;
+        var mockKafkaOps = supplier.getKafkaOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
+        ZookeeperSetOperator mockZsOps = supplier.getZkSetOperations();
+        KafkaSetOperator mockKsOps = supplier.getKafkaSetOperations();
+        PvcOperator mockPvcOps = supplier.getPvcOperations();
+        PodOperator mockPodOps = supplier.getPodOperations();
+        DeploymentOperator mockDepOps = supplier.getDeploymentOperations();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
+        NetworkPolicyOperator mockPolicyOps = supplier.getNetworkPolicyOperator();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        NodeOperator mockNodeOps = supplier.getNodeOperator();
+        IngressOperator mockIngressOps = supplier.getIngressOperations();
+        RouteOperator mockRouteOps = supplier.getRouteOperations();
 
         String clusterName = updatedAssembly.getMetadata().getName();
         String clusterNamespace = updatedAssembly.getMetadata().getNamespace();
@@ -1327,9 +1327,9 @@ public class KafkaAssemblyOperatorTest {
         // create CM, Service, headless service, statefulset
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
-        var mockKafkaOps = supplier.kafkaOperator;
-        KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        var mockKafkaOps = supplier.getKafkaOperator();
+        KafkaSetOperator mockKsOps = supplier.getKafkaSetOperations();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
         String kafkaNamespace = "test";
 
         Kafka foo = getKafkaAssembly("foo");
@@ -1418,9 +1418,9 @@ public class KafkaAssemblyOperatorTest {
         // create CM, Service, headless service, statefulset
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
-        var mockKafkaOps = supplier.kafkaOperator;
-        KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        var mockKafkaOps = supplier.getKafkaOperator();
+        KafkaSetOperator mockKsOps = supplier.getKafkaSetOperations();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
 
         Kafka foo = getKafkaAssembly("foo");
         foo.getMetadata().setNamespace("namespace1");

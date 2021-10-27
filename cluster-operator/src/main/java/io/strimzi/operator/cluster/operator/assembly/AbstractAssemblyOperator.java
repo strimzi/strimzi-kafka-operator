@@ -75,17 +75,17 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
                                        AbstractWatchableStatusedResourceOperator<C, T, L, R> resourceOperator,
                                        ResourceOperatorSupplier supplier,
                                        ClusterOperatorConfig config) {
-        super(vertx, kind, resourceOperator, supplier.metricsProvider, config.getCustomResourceSelector());
+        super(vertx, kind, resourceOperator, supplier.getMetricsProvider(), config.getCustomResourceSelector());
         this.pfa = pfa;
         this.certManager = certManager;
         this.passwordGenerator = passwordGenerator;
-        this.secretOperations = supplier.secretOperations;
-        this.networkPolicyOperator = supplier.networkPolicyOperator;
-        this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
-        this.configMapOperations = supplier.configMapOperations;
-        this.serviceOperations = supplier.serviceOperations;
-        this.clusterRoleBindingOperations = supplier.clusterRoleBindingOperator;
-        this.serviceAccountOperations = supplier.serviceAccountOperations;
+        this.secretOperations = supplier.getSecretOperations();
+        this.networkPolicyOperator = supplier.getNetworkPolicyOperator();
+        this.podDisruptionBudgetOperator = supplier.getPodDisruptionBudgetOperator();
+        this.configMapOperations = supplier.getConfigMapOperations();
+        this.serviceOperations = supplier.getServiceOperations();
+        this.clusterRoleBindingOperations = supplier.getClusterRoleBindingOperator();
+        this.serviceAccountOperations = supplier.getServiceAccountOperations();
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
         this.versions = config.versions();

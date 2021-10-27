@@ -195,28 +195,28 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                  ResourceOperatorSupplier supplier,
                                  ClusterOperatorConfig config) {
         super(vertx, pfa, Kafka.RESOURCE_KIND, certManager, passwordGenerator,
-                supplier.kafkaOperator, supplier, config);
+                supplier.getKafkaOperator(), supplier, config);
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.zkAdminSessionTimeoutMs = config.getZkAdminSessionTimeoutMs();
         this.operatorNamespace = config.getOperatorNamespace();
         this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.featureGates = config.featureGates();
-        this.routeOperations = supplier.routeOperations;
-        this.zkSetOperations = supplier.zkSetOperations;
-        this.kafkaSetOperations = supplier.kafkaSetOperations;
-        this.pvcOperations = supplier.pvcOperations;
-        this.deploymentOperations = supplier.deploymentOperations;
-        this.roleBindingOperations = supplier.roleBindingOperations;
-        this.roleOperations = supplier.roleOperations;
-        this.podOperations = supplier.podOperations;
-        this.ingressOperations = supplier.ingressOperations;
-        this.ingressV1Beta1Operations = supplier.ingressV1Beta1Operations;
-        this.storageClassOperator = supplier.storageClassOperations;
-        this.crdOperator = supplier.kafkaOperator;
-        this.nodeOperator = supplier.nodeOperator;
-        this.zkScalerProvider = supplier.zkScalerProvider;
-        this.adminClientProvider = supplier.adminClientProvider;
+        this.routeOperations = supplier.getRouteOperations();
+        this.zkSetOperations = supplier.getZkSetOperations();
+        this.kafkaSetOperations = supplier.getKafkaSetOperations();
+        this.pvcOperations = supplier.getPvcOperations();
+        this.deploymentOperations = supplier.getDeploymentOperations();
+        this.roleBindingOperations = supplier.getRoleBindingOperations();
+        this.roleOperations = supplier.getRoleOperations();
+        this.podOperations = supplier.getPodOperations();
+        this.ingressOperations = supplier.getIngressOperations();
+        this.ingressV1Beta1Operations = supplier.getIngressV1Beta1Operations();
+        this.storageClassOperator = supplier.getStorageClassOperations();
+        this.crdOperator = supplier.getKafkaOperator();
+        this.nodeOperator = supplier.getNodeOperator();
+        this.zkScalerProvider = supplier.getZkScalerProvider();
+        this.adminClientProvider = supplier.getAdminClientProvider();
     }
 
     @Override
