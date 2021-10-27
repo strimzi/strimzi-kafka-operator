@@ -333,7 +333,7 @@ public class StUtils {
      * @param strimziFeatureGatesValue feature gates value
      * @return deployment file content as String
      */
-    public static String changeDeploymentNamespace(File deploymentFile, String namespace, final String strimziFeatureGatesValue) {
+    public static String changeDeploymentConfiguration(File deploymentFile, String namespace, final String strimziFeatureGatesValue) {
         YAMLMapper mapper = new YAMLMapper();
         try {
             JsonNode node = mapper.readTree(deploymentFile);
@@ -356,7 +356,7 @@ public class StUtils {
             imagePulPolicyEnvVar.put("name", "STRIMZI_IMAGE_PULL_POLICY");
             imagePulPolicyEnvVar.put("value", Environment.COMPONENTS_IMAGE_PULL_POLICY);
 
-            if (strimziFeatureGatesValue != null) {
+            if (!strimziFeatureGatesValue.isEmpty()) {
                 ObjectNode strimziFeatureGates =  new ObjectMapper().createObjectNode();
                 strimziFeatureGates.put("name", "STRIMZI_FEATURE_GATES");
                 strimziFeatureGates.put("value", strimziFeatureGatesValue);

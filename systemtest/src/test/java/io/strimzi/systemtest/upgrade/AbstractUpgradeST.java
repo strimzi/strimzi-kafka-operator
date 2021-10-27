@@ -327,7 +327,7 @@ public class AbstractUpgradeST extends AbstractST {
             if (f.getName().matches(".*RoleBinding.*")) {
                 cmdKubeClient().replaceContent(TestUtils.changeRoleBindingSubject(f, namespace));
             } else if (f.getName().matches(".*Deployment.*")) {
-                cmdKubeClient().replaceContent(StUtils.changeDeploymentNamespace(f, namespace, strimziFeatureGatesValue));
+                cmdKubeClient().replaceContent(StUtils.changeDeploymentConfiguration(f, namespace, strimziFeatureGatesValue));
             } else {
                 cmdKubeClient().replaceContent(TestUtils.getContent(f, TestUtils::toYamlString));
             }

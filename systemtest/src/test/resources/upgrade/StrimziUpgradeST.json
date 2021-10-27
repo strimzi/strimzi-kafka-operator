@@ -67,7 +67,7 @@
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
     },
-    "strimziFeatureGatesFlags": null
+    "strimziFeatureGatesFlags": ""
   },
   {
     "fromVersion":"0.26.0",
@@ -102,6 +102,6 @@
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
     },
-    "strimziFeatureGatesFlags": null
+    "strimziFeatureGatesFlags": ""
   }
 ]
