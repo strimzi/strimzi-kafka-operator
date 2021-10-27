@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -1030,6 +1032,17 @@ public class KafkaAssemblyOperatorTest {
         // Mock pod ops
         when(mockPodOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockPodOps.listAsync(anyString(), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockPodOps.get(anyString(), anyString())).thenAnswer(invocation -> {
+            String namespace = invocation.getArgument(0);
+            String name = invocation.getArgument(1);
+            return new PodBuilder().withNewMetadata().withNamespace(namespace).withName(name).endMetadata()
+                    .withNewStatus()
+                    .addNewCondition()
+                    .withType("Ready").withStatus("True")
+                    .endCondition()
+                    .endStatus()
+                    .build();
+        });
 
         // Mock node ops
         when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));

@@ -46,7 +46,7 @@ public class KafkaAvailabilityTest {
         vertx.close();
     }
 
-    static class UncheckedInterruptedException extends RuntimeException{
+    static class UncheckedInterruptedException extends RuntimeException {
         public UncheckedInterruptedException(Throwable cause) {
             super(cause);
         }
@@ -108,8 +108,8 @@ public class KafkaAvailabilityTest {
     private Map<Integer, Boolean> canRollBrokers(Set<Integer> brokers,
                                                  Set<Integer> rollingBrokers) {
         return brokers.stream().collect(Collectors.toMap(
-                brokerId -> brokerId,
-                brokerId -> RollingTestUtils.await(kafkaAvailability.canRoll(brokerId, rollingBrokers))));
+            brokerId -> brokerId,
+            brokerId -> RollingTestUtils.await(kafkaAvailability.canRoll(brokerId, rollingBrokers))));
     }
 
     @Test
@@ -429,8 +429,8 @@ public class KafkaAvailabilityTest {
         ka(clusterModel.buildAdminClient());
         var map = clusterModel.brokerIds().stream()
                 .collect(Collectors.toMap(
-                        brokerId -> brokerId,
-                        broker -> RollingTestUtils.await(kafkaAvailability.partitionsWithPreferredButNotCurrentLeader(broker))));
+                    brokerId -> brokerId,
+                    broker -> RollingTestUtils.await(kafkaAvailability.partitionsWithPreferredButNotCurrentLeader(broker))));
         assertEquals(Map.of(
                 0, Set.of(new TopicPartition("B", 0)),
                 1, Set.of(),

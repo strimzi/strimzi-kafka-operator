@@ -597,6 +597,7 @@ public class ResourceUtils {
                 when(dcr.controller()).thenReturn(KafkaFutureImpl.completedFuture(new Node(0, "localhost", 9091)));
                 when(dcr.clusterId()).thenReturn(KafkaFutureImpl.completedFuture("CLUSTERID"));
                 when(mock.describeCluster()).thenReturn(dcr);
+                when(mock.describeCluster(any())).thenReturn(dcr);
 
                 ListTopicsResult ltr = mock(ListTopicsResult.class);
                 when(ltr.listings()).thenReturn(KafkaFuture.completedFuture(Set.of()));
@@ -617,7 +618,7 @@ public class ResourceUtils {
                 // ElectLeadersResult is final, so mockito cannot mock it.
                 ElectLeadersResult electLeadersMock;
                 try {
-                    Constructor<ElectLeadersResult> declaredConstructor = ElectLeadersResult.class.getDeclaredConstructor(KafkaFutureImpl.class);
+                    Constructor<ElectLeadersResult> declaredConstructor = ElectLeadersResult.class.getDeclaredConstructor(KafkaFuture.class);
                     declaredConstructor.setAccessible(true);
                     electLeadersMock = declaredConstructor.newInstance(KafkaFuture.completedFuture(Map.of()));
                 } catch (ReflectiveOperationException e) {

@@ -200,8 +200,8 @@ class KafkaAvailability {
                 .recover(ex -> adminClientFailure(ex, "Admin.describeConfigs (topics)"))
                 .map(topicNameToConfig -> topicNameToConfig.entrySet().stream()
                         .collect(Collectors.<Map.Entry<ConfigResource, Config>, String, Config>toMap(
-                                entry -> entry.getKey().name(),
-                                Map.Entry::getValue)));
+                            entry -> entry.getKey().name(),
+                            Map.Entry::getValue)));
     }
 
     private <T> Future<T> adminClientFailure(Throwable ex, String call) {
@@ -268,7 +268,7 @@ class KafkaAvailability {
         return Util.kafkaFutureToVertxFuture(
                         vertx,
                         admin.describeCluster(new DescribeClusterOptions().timeoutMs(5_000))
-                                .controller().thenApply(controller -> controller.id() == brokerId))
+                                .controller().thenApply(controller -> controller != null && controller.id() == brokerId))
                 .recover(ex -> adminClientFailure(ex, "Admin.describeCluster"));
     }
 
@@ -285,20 +285,21 @@ class KafkaAvailability {
         return Util.kafkaFutureToVertxFuture(vertx, values)
                 .recover(ex -> adminClientFailure(ex, "Admin.incrementalAlterConfigs"))
                 .map(map -> alterConfigsResult.values().entrySet().stream().collect(Collectors.toMap(
-                entry -> entry.getKey(),
-                entry -> {
-                    KafkaFuture<Void> value = entry.getValue();
-                    if (value.isCompletedExceptionally()) {
-                        try {
-                            value.getNow(null);
-                        } catch (ExecutionException e) {
-                            return e.getCause();
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e); // should never happen
+                    entry -> entry.getKey(),
+                    entry -> {
+                        KafkaFuture<Void> value = entry.getValue();
+                        if (value.isCompletedExceptionally()) {
+                            try {
+                                value.getNow(null);
+                            } catch (ExecutionException e) {
+                                return e.getCause();
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e); // should never happen
+                            }
                         }
-                    }
-                    return null;
-                })));
+                        return null;
+                    }))
+                );
 //        return values.entrySet().stream().collect(Collectors.toMap(
 //                        entry -> entry.getKey(),
 //                        entry -> {

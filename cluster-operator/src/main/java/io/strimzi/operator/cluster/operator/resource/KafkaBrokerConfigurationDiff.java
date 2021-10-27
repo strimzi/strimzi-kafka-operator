@@ -150,8 +150,8 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
 
         currentMap = brokerConfigs.entries().stream().collect(
                 Collectors.toMap(
-                        ConfigEntry::name,
-                        configEntry -> configEntry.value() == null ? "null" : configEntry.value()));
+                    ConfigEntry::name,
+                    configEntry -> configEntry.value() == null ? "null" : configEntry.value()));
 
         OrderedProperties orderedProperties = new OrderedProperties();
         orderedProperties.addStringPairs(desired);

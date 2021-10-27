@@ -740,9 +740,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
                 return zkRollFuture
                         .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
-                        .compose(sts -> new KafkaRoller(reconciliation, vertx, podOperations, 1_000, operationTimeoutMs,
-                            () -> new BackOff(250, 2, 10), sts, clusterCa.caCertSecret(), oldCoSecret, adminClientProvider,
-                            kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion(), true, rollPodAndLogReason)
+                        .compose(sts -> new KafkaRoller(reconciliation,
+                                vertx,
+                                podOperations,
+                                1_000,
+                                operationTimeoutMs,
+                                () -> new BackOff(250, 2, 10),
+                                sts,
+                                clusterCa.caCertSecret(),
+                                oldCoSecret,
+                                adminClientProvider,
+                                kafkaCluster.getBrokersConfiguration(),
+                                kafkaLogging,
+                                kafkaCluster.getKafkaVersion(),
+                                true,
+                                rollPodAndLogReason)
                             .rollingRestart())
                         .compose(i -> rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reason.toString()))
                         .compose(i -> rollDeploymentIfExists(KafkaExporter.kafkaExporterName(name), reason.toString()))
@@ -1127,10 +1139,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<Void> maybeRollKafka(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, boolean allowReconfiguration) {
             return adminClientSecrets()
-                .compose(compositeFuture -> new KafkaRoller(reconciliation, vertx, podOperations, 1_000, operationTimeoutMs,
-                    () -> new BackOff(250, 2, 10), sts, compositeFuture.resultAt(0), compositeFuture.resultAt(1),
+                .compose(compositeFuture -> new KafkaRoller(reconciliation,
+                        vertx,
+                        podOperations,
+                        1_000,
+                        operationTimeoutMs,
+                        () -> new BackOff(250, 2, 10),
+                        sts,
+                        compositeFuture.resultAt(0),
+                        compositeFuture.resultAt(1),
                         adminClientProvider,
-                        kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion(), allowReconfiguration, podNeedsRestart)
+                        kafkaCluster.getBrokersConfiguration(),
+                        kafkaLogging,
+                        kafkaCluster.getKafkaVersion(),
+                        allowReconfiguration,
+                        podNeedsRestart)
                     .rollingRestart());
         }
 

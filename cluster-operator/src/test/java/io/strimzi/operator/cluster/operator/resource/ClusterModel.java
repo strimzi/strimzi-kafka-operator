@@ -246,15 +246,15 @@ class ClusterModel {
                 when(dtr.all()).thenReturn(failedFuture(throwable));
             } else {
                 Map<String, TopicDescription> tds = topics.entrySet().stream().collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> {
-                            TopicState topicState = entry.getValue();
-                            return new TopicDescription(topicState.name, topicState.internal,
-                                    topicState.partitions.values().stream().map(partitionState -> new TopicPartitionInfo(partitionState.id,
-                                            asNode(partitionState.leader),
-                                            partitionState.replicas.stream().map(ClusterModel::asNode).collect(Collectors.toList()),
-                                            partitionState.isr.stream().map(ClusterModel::asNode).collect(Collectors.toList()))).collect(Collectors.toList()));
-                        }
+                    Map.Entry::getKey,
+                    entry -> {
+                        TopicState topicState = entry.getValue();
+                        return new TopicDescription(topicState.name, topicState.internal,
+                                topicState.partitions.values().stream().map(partitionState -> new TopicPartitionInfo(partitionState.id,
+                                        asNode(partitionState.leader),
+                                        partitionState.replicas.stream().map(ClusterModel::asNode).collect(Collectors.toList()),
+                                        partitionState.isr.stream().map(ClusterModel::asNode).collect(Collectors.toList()))).collect(Collectors.toList()));
+                    }
                 ));
                 when(dtr.all()).thenReturn(KafkaFuture.completedFuture(tds));
                 when(dtr.values()).thenThrow(notImplemented());
@@ -334,48 +334,6 @@ class ClusterModel {
 
     static final class Foo {
         private Foo() {}
-    }
-
-    public static void main(String[] a) {
-        Foo foo = mock(Foo.class);
-        ClusterModel mock = new ClusterModel();
-        Admin admin = mock.addNBrokers(3)
-                .addNewTopic("my-topic")
-                    .addNewPartition(1)
-                        .replicaOn(0, 1, 2)
-                        .isr(0, 1, 2)
-                        .leader(0)
-                    .endPartition()
-                .endTopic()
-                .buildAdminClient();
-        // Make admin calls
-        mock.shrinkIsr("my-topic", 1, 0);
-        assert !mock.partition("my-topic", 1).isr.contains(0);
-        assert 0 != mock.partition("my-topic", 1).leader;
-        mock.expandIsr("my-topic", 1, 0);
-        assert mock.partition("my-topic", 1).isr.contains(0);
-        assert 0 != mock.partition("my-topic", 1).leader;
-        mock.unelectLeader("my-topic", 1);
-        assert -1 == mock.partition("my-topic", 1).leader;
-        mock.electLeader("my-topic", 1, 0);
-        assert 0 == mock.partition("my-topic", 1).leader;
-        mock.electLeader("my-topic", 1, 1);
-        assert 1 == mock.partition("my-topic", 1).leader;
-        mock.electPreferredLeader("my-topic", 1);
-        assert 0 == mock.partition("my-topic", 1).leader;
-        assert Set.of(0, 1, 2).equals(mock.partition("my-topic", 1).isr);
-        mock.brokerDown(2);
-        assert 0 == mock.partition("my-topic", 1).leader;
-        assert Set.of(0, 1).equals(mock.partition("my-topic", 1).isr);
-        mock.brokerUp(2);
-        assert Set.of(0, 1).equals(mock.partition("my-topic", 1).isr);
-        mock.expandIsr("my-topic", 1, 2);
-        assert Set.of(0, 1, 2).equals(mock.partition("my-topic", 1).isr);
-        mock.brokerDown(0);
-        assert Set.of(1, 2).equals(mock.partition("my-topic", 1).isr);
-        assert 0 != mock.partition("my-topic", 1).leader;
-        // Make admin calls
-
     }
 
     /**

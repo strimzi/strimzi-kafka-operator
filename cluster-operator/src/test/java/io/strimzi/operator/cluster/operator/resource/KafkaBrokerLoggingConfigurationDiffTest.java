@@ -167,7 +167,7 @@ public class KafkaBrokerLoggingConfigurationDiffTest {
 
         KafkaBrokerLoggingConfigurationDiff kdiff = new KafkaBrokerLoggingConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, null, null);
 
-        Map<String, String> res = kdiff.readLog4jConfig(Reconciliation.DUMMY_RECONCILIATION,input);
+        Map<String, String> res = kdiff.readLog4jConfig(Reconciliation.DUMMY_RECONCILIATION, input);
         assertThat(res.get("root"), is("INFO"));
         assertThat(res.get("kafka.request.logger"), is("WARN"));
     }

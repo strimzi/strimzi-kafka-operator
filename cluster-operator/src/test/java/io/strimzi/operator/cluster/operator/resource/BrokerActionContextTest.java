@@ -1,7 +1,8 @@
-package io.strimzi.operator.cluster.operator.resource;/*
+/*
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
+package io.strimzi.operator.cluster.operator.resource;
 
 import java.util.HashSet;
 import java.util.List;
@@ -73,18 +74,18 @@ class BrokerActionContextTest {
         KafkaAvailability ka = mock(KafkaAvailability.class);
 
         BrokerActionContext context = new BrokerActionContext(vertx,
-                podOps,
-                100,
-                true,
-                Reconciliation.DUMMY_RECONCILIATION,
-                POD_ID,
-                POD_NAME,
-                KafkaVersionTestUtils.getLatestVersion(),
-                "",
-                "",
-                pod -> List.of("just because"),
-                ka,
-                Set.of());
+            podOps,
+            100,
+            true,
+            Reconciliation.DUMMY_RECONCILIATION,
+            POD_ID,
+            POD_NAME,
+            KafkaVersionTestUtils.getLatestVersion(),
+            "",
+            "",
+            pod -> List.of("just because"),
+            ka,
+            Set.of());
 
         assertEquals(State.NEEDS_CLASSIFY, context.state());
         assertEquals(0, context.numSelfTransitions());
@@ -106,18 +107,18 @@ class BrokerActionContextTest {
         when(ka.controller(eq(POD_ID))).thenReturn(Future.succeededFuture(controller));
 
         BrokerActionContext context = new BrokerActionContext(vertx,
-                podOps,
-                100,
-                true,
-                Reconciliation.DUMMY_RECONCILIATION,
-                POD_ID,
-                POD_NAME,
-                KafkaVersionTestUtils.getLatestVersion(),
-                "",
-                "",
-                pod -> List.of("just because"),
-                ka,
-                Set.of());
+            podOps,
+            100,
+            true,
+            Reconciliation.DUMMY_RECONCILIATION,
+            POD_ID,
+            POD_NAME,
+            KafkaVersionTestUtils.getLatestVersion(),
+            "",
+            "",
+            pod -> List.of("just because"),
+            ka,
+            Set.of());
 
         assertEquals(State.NEEDS_CLASSIFY, context.state());
         assertEquals(0, context.numSelfTransitions());
@@ -193,20 +194,20 @@ class BrokerActionContextTest {
         when(ka.brokerConfigDiffs(eq(POD_ID), any(), any(), any())).thenReturn(configDiff);
 
         BrokerActionContext context = new BrokerActionContext(
-                initialState,
-                vertx,
-                podOps,
-                100,
-                allowsReconfig,
-                Reconciliation.DUMMY_RECONCILIATION,
-                POD_ID,
-                POD_NAME,
-                KafkaVersionTestUtils.getLatestVersion(),
-                config,
-                loggers,
-                pod -> restartReasons,
-                ka,
-                Set.of());
+            initialState,
+            vertx,
+            podOps,
+            100,
+            allowsReconfig,
+            Reconciliation.DUMMY_RECONCILIATION,
+            POD_ID,
+            POD_NAME,
+            KafkaVersionTestUtils.getLatestVersion(),
+            config,
+            loggers,
+            pod -> restartReasons,
+            ka,
+            Set.of());
 
         assertEquals(initialState, context.state());
         assertEquals(0, context.numSelfTransitions());
@@ -396,20 +397,20 @@ class BrokerActionContextTest {
         Set<Integer> restartingBrokers = new HashSet<>();
 
         BrokerActionContext context = new BrokerActionContext(
-                State.NEEDS_RESTART,
-                vertx,
-                podOps,
-                100,
-                false,
-                Reconciliation.DUMMY_RECONCILIATION,
-                POD_ID,
-                POD_NAME,
-                KafkaVersionTestUtils.getLatestVersion(),
-                "my.config=foo",
-                "com.example=DEBUG",
-                pod -> List.of(),
-                ka,
-                restartingBrokers);
+            State.NEEDS_RESTART,
+            vertx,
+            podOps,
+            100,
+            false,
+            Reconciliation.DUMMY_RECONCILIATION,
+            POD_ID,
+            POD_NAME,
+            KafkaVersionTestUtils.getLatestVersion(),
+            "my.config=foo",
+            "com.example=DEBUG",
+            pod -> List.of(),
+            ka,
+            restartingBrokers);
 
         assertEquals(State.NEEDS_RESTART, context.state());
         assertEquals(0, context.numSelfTransitions());
@@ -439,20 +440,20 @@ class BrokerActionContextTest {
                 result));
 
         BrokerActionContext context = new BrokerActionContext(
-                State.NEEDS_RECONFIG,
-                vertx,
-                podOps,
-                100,
-                false,
-                Reconciliation.DUMMY_RECONCILIATION,
-                POD_ID,
-                POD_NAME,
-                KafkaVersionTestUtils.getLatestVersion(),
-                "my.config=foo",
-                "com.example=DEBUG",
-                pod -> List.of(),
-                ka,
-                Set.of()); // TODO it is right that we could reconfigure many brokers at the same time??
+            State.NEEDS_RECONFIG,
+            vertx,
+            podOps,
+            100,
+            false,
+            Reconciliation.DUMMY_RECONCILIATION,
+            POD_ID,
+            POD_NAME,
+            KafkaVersionTestUtils.getLatestVersion(),
+            "my.config=foo",
+            "com.example=DEBUG",
+            pod -> List.of(),
+            ka,
+            Set.of()); // TODO it is right that we could reconfigure many brokers at the same time??
         context.configDiff = noopDiff().configDiff;
         context.loggersDiff = loggerOnlyDiff().loggersDiff;
 

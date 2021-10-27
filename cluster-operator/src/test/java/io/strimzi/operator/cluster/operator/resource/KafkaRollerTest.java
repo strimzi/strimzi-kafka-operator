@@ -135,6 +135,7 @@ public class KafkaRollerTest {
         doHappyPath(brokerId -> false, podNeedsRestart);
     }
 
+    @SuppressWarnings("checkstyle:MethodLength")
     private void doHappyPath(IntPredicate reconfigure, Function<Pod, List<String>> podNeedsRestart) {
         String kafkaConfig = "";
         String loggersConfig = "";

@@ -20,7 +20,6 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
-import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
@@ -80,8 +79,8 @@ import io.vertx.core.Vertx;
  * <h4>Restart post-conditions</h4>
  * <ul>
  *     <li>the pod must become {@code Ready}</li>
- *     <li>the pod must become leader for all the partitions that is was leading before the restart (or, if that wasn't know, all the partitions</li>
- *     TODO figure out exactly what we want here.
+ *     <li>the pod must become leader for all the partitions that is was leading before the restart (or, if that wasn't know, all the partitions)</li>
+ *     <li>TODO figure out exactly what we want here.</li>
  * </ul>
  *
  * // TODO parallelism?? Also vertx?
@@ -128,38 +127,7 @@ public class KafkaRoller {
                        StatefulSet sts,
                        Secret clusterCaCertSecret,
                        Secret coKeySecret,
-                       String kafkaConfig,
-                       String kafkaLogging,
-                       KafkaVersion kafkaVersion,
-                       boolean allowReconfiguration,
-                       Function<Pod, List<String>> podNeedsRestart) {
-        this(reconciliation,
-                vertx,
-                podOperations,
-                pollingIntervalMs,
-                operationTimeoutMs,
-                backOffSupplier,
-                sts,
-                clusterCaCertSecret,
-                coKeySecret,
-                new DefaultAdminClientProvider(),
-                kafkaConfig,
-                kafkaLogging,
-                kafkaVersion,
-                allowReconfiguration,
-                podNeedsRestart);
-    }
-
-    public KafkaRoller(Reconciliation reconciliation,
-                       Vertx vertx,
-                       PodOperator podOperations,
-                       long pollingIntervalMs,
-                       long operationTimeoutMs,
-                       Supplier<BackOff> backOffSupplier,
-                       StatefulSet sts,
-                       Secret clusterCaCertSecret,
-                       Secret coKeySecret,
-                       AdminClientProvider kafkaAvailability,
+                       AdminClientProvider adminClientProvider,
                        String kafkaConfig,
                        String kafkaLogging,
                        KafkaVersion kafkaVersion,
@@ -174,17 +142,21 @@ public class KafkaRoller {
                 sts.getSpec().getReplicas(),
                 clusterCaCertSecret,
                 coKeySecret,
-                ((Supplier<KafkaAvailability>) () -> {
-                    var admin = kafkaAvailability.createAdminClient(KafkaCluster.headlessServiceName(Labels.cluster(sts)),
-                            clusterCaCertSecret, coKeySecret, "cluster-operator");
-                    return new KafkaAvailability(reconciliation, vertx, admin);
-                }).get(),
+                new Supplier<KafkaAvailability>() {
+                    @Override
+                    public KafkaAvailability get() {
+                        var admin = adminClientProvider.createAdminClient(KafkaCluster.headlessServiceName(Labels.cluster(sts)),
+                                clusterCaCertSecret, coKeySecret, "cluster-operator");
+                        return new KafkaAvailability(reconciliation, vertx, admin);
+                    }
+                }.get(),
                 kafkaConfig,
                 kafkaLogging,
                 kafkaVersion,
                 allowReconfiguration,
                 podNeedsRestart);
     }
+
     /* test */ KafkaRoller(Reconciliation reconciliation,
                        Vertx vertx,
                        PodOperator podOperations,
@@ -241,21 +213,23 @@ public class KafkaRoller {
         BrokerActionContext.assertEventLoop(vertx);
         // There's nowhere for the group state to reside
         buildQueue().compose(i -> {
-            vertx.setTimer(0, new Handler<>() {
+            vertx.setTimer(1, new Handler<>() {
                 @Override
                 public void handle(Long timerId) {
                     try {
-                        progressOneContext().compose(delay -> {
-                            if (delay != null) {
-                                vertx.setTimer(delay, this);
-                            } else {
-                                rollResult.complete();
-                            }
-                            return null;
-                        }, error -> {
-                            rollResult.fail(error);
-                            return null;
-                        });
+                        progressOneContext().compose(
+                            delay -> {
+                                if (delay != null) {
+                                    vertx.setTimer(delay, this);
+                                } else {
+                                    rollResult.complete();
+                                }
+                                return null;
+                            },
+                            error -> {
+                                rollResult.fail(error);
+                                return null;
+                            });
                     } catch (Exception e) {
                         rollResult.tryFail(e);
                     }

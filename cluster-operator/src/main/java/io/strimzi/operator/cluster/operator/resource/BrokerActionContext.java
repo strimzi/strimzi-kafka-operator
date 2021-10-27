@@ -178,6 +178,8 @@ class BrokerActionContext {
         this(NEEDS_CLASSIFY, vertx, podOperations, operationTimeoutMs, allowReconfiguration, reconciliation, podId,
                 podName, kafkaVersion, kafkaConfig, kafkaLogging, podNeedsRestart, kafkaAvailability, restartingBrokers);
     }
+
+    @SuppressWarnings("checkstyle:ParameterNumber")
     BrokerActionContext(State initialState,
                         Vertx vertx,
                         PodOperator podOperations,
@@ -437,12 +439,12 @@ class BrokerActionContext {
                             }
                         });
                     }
-        }).otherwise(error -> {
-            LOGGER.errorCr(reconciliation, "Error classifying action on broker {}", podId);
-            return new Transition(NEEDS_CLASSIFY, 10_000);
-        }).map(
-                this::makeTransition
-        ).map((Void) null);
+                }).otherwise(error -> {
+                    LOGGER.errorCr(reconciliation, "Error classifying action on broker {}", podId);
+                    return new Transition(NEEDS_CLASSIFY, 10_000);
+                }).map(
+                        this::makeTransition
+                ).map((Void) null);
     }
 
     Future<Void> dynamicUpdateBrokerConfig() {
@@ -492,7 +494,7 @@ class BrokerActionContext {
         // TODO should the restart path revert to UNKNOWN, so we have to prove non-controllership again
         state.assertIsOneOf(NEEDS_RESTART);
         if (restartingBrokers.size() > parallelism) {
-            makeTransition(NEEDS_RESTART, 10_000);// TODO have a future that is completed when restartingBrokers changes?
+            makeTransition(NEEDS_RESTART, 10_000); // TODO have a future that is completed when restartingBrokers changes?
             return Future.succeededFuture();
         } else {
             Future<Transition> otherwise = kafkaAvailability.canRoll(podId, Collections.unmodifiableSet(restartingBrokers)).compose(canRoll -> {
@@ -526,18 +528,19 @@ class BrokerActionContext {
         assertEventLoop(vertx);
         state.assertIsOneOf(AWAITING_LEADERSHIP);
 
-        return kafkaAvailability.partitionsWithPreferredButNotCurrentLeader(podId).compose(partitions -> {
-                    assertEventLoop(vertx);
-                    if (partitions.isEmpty()) {
-                        restartingBrokers.remove(podId);
-                        return Future.succeededFuture(new Transition(DONE, 0));
-                    } else {
-                        return kafkaAvailability.electPreferred(partitions)
-                                .map(new Transition(AWAITING_READY, 0))
-                                .otherwise(new Transition(AWAITING_READY, 10_000));
-                    }
-                }).map(this::makeTransition)
-                .map((Void) null);
+        return kafkaAvailability.partitionsWithPreferredButNotCurrentLeader(podId)
+            .compose(partitions -> {
+                assertEventLoop(vertx);
+                if (partitions.isEmpty()) {
+                    restartingBrokers.remove(podId);
+                    return Future.succeededFuture(new Transition(DONE, 0));
+                } else {
+                    return kafkaAvailability.electPreferred(partitions)
+                            .map(new Transition(AWAITING_READY, 0))
+                            .otherwise(new Transition(AWAITING_READY, 10_000));
+                }
+            }).map(this::makeTransition)
+            .map((Void) null);
     }
 
     private static boolean isPending(Pod pod) {
