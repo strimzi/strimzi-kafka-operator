@@ -77,7 +77,7 @@ public class OrderedProperties {
                 throw new InvalidConfigParameterException(key, "A null value is not allowed for this key");
             } else {
                 throw new InvalidConfigParameterException(key,
-                    " - Unsupported type " + value.getClass() + " in configuration for this key");
+                    "Unsupported type " + value.getClass() + " in configuration for this key");
             }
         }
         return this;
