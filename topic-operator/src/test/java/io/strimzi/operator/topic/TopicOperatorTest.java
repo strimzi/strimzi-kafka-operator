@@ -202,11 +202,14 @@ public class TopicOperatorTest {
         mockKafka.setTopicExistsResult(t -> Future.succeededFuture(false));
         mockTopicStore.setCreateTopicResponse(topicName, storeException);
 
+        int replicas = 2;
+        int retentionMs = 7200000;
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
                 .withMetadata(metadata)
                 .withNewSpec()
-                    .withReplicas(2)
+                    .withReplicas(replicas)
                     .withPartitions(10)
+                .withConfig(singletonMap("retention.ms", retentionMs))
                 .endSpec()
             .build();
         mockKafka.setTopicMetadataResponses(
@@ -240,6 +243,11 @@ public class TopicOperatorTest {
                 //TODO mockK8s.assertContainsEvent(context, e -> "Error".equals(e.getKind()));
             } else {
                 assertSucceeded(context, ar);
+                List<KafkaTopicStatus> statuses = mockK8s.getStatuses();
+                context.verify(() -> assertThat(statuses.size(), is(1)));
+                context.verify(() -> assertThat(statuses.get(0).getReplicas(), is(replicas)));
+                context.verify(() -> assertThat(statuses.get(0).getConfig().size(), is(1)));
+                context.verify(() -> assertThat(statuses.get(0).getConfig().get("retention.ms"), is(Integer.toString(retentionMs))));
                 Topic expectedTopic = TopicSerialization.fromTopicResource(kafkaTopic);
                 mockKafka.assertContains(context, expectedTopic);
                 mockTopicStore.assertContains(context, expectedTopic);

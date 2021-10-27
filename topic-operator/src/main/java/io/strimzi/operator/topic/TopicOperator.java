@@ -1079,9 +1079,11 @@ class TopicOperator {
                     }
 
                     // we can do this because TO puts RF back to the k8s resource
-                    kts.setReplicationFactor(topic.getSpec().getReplicas());
-                    if (topicMetadata != null && topicMetadata.getConfig().get("min.insync.replicas") != null) {
-                        kts.setMinISR(Integer.parseInt(topicMetadata.getConfig().get("min.insync.replicas").value()));
+                    kts.setReplicas(topic.getSpec().getReplicas());
+                    if (topicMetadata != null) {
+                        Map<String, Object> cfg = new HashMap<>();
+                        cfg.putAll(topicMetadata.getConfig().entries().stream().filter(configEntry -> !configEntry.isDefault()).collect(Collectors.toMap(e -> e.name(), e -> e.value())));
+                        kts.setConfig(cfg);
                     }
 
                     StatusDiff ksDiff = new StatusDiff(topic.getStatus(), kts);

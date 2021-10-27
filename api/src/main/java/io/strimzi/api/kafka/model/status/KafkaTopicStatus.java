@@ -12,6 +12,8 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import java.util.Map;
+
 /**
  * Represents a status of the KafkaTopic resource
  */
@@ -20,15 +22,15 @@ import lombok.ToString;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "topicName", "replicationFactor", "minISR" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "topicName", "replicas", "config" })
 @EqualsAndHashCode
 @ToString(callSuper = true)
 public class KafkaTopicStatus extends Status {
     private static final long serialVersionUID = 1L;
 
     private String topicName;
-    private Integer replicationFactor;
-    private Integer minISR;
+    private Integer replicas;
+    private Map<String, Object> config;
 
     @Description("Topic name")
     public String getTopicName() {
@@ -40,20 +42,20 @@ public class KafkaTopicStatus extends Status {
     }
 
     @Description("Topic replication factor")
-    public Integer getReplicationFactor() {
-        return replicationFactor;
+    public Integer getReplicas() {
+        return replicas;
     }
 
-    public void setReplicationFactor(Integer replicationFactor) {
-        this.replicationFactor = replicationFactor;
+    public void setReplicas(Integer replicas) {
+        this.replicas = replicas;
     }
 
-    @Description("Topic minimum in sync replicas")
-    public Integer getMinISR() {
-        return minISR;
+    @Description("Topic configuration")
+    public Map<String, Object> getConfig() {
+        return config;
     }
 
-    public void setMinISR(Integer minISR) {
-        this.minISR = minISR;
+    public void setConfig(Map<String, Object> config) {
+        this.config = config;
     }
 }
