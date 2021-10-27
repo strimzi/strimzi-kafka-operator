@@ -316,18 +316,18 @@ public class AbstractUpgradeST extends AbstractST {
             coDir = new File(dir, testParameters.getString("toExamples") + "/install/cluster-operator/");
         }
 
-        copyModifyApply(coDir, namespace, extensionContext);
+        copyModifyApply(coDir, namespace, extensionContext, testParameters.getString("strimziFeatureGatesFlags"));
 
         LOGGER.info("Waiting for CO upgrade");
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coPods);
     }
 
-    protected void copyModifyApply(File root, String namespace, ExtensionContext extensionContext) {
+    protected void copyModifyApply(File root, String namespace, ExtensionContext extensionContext, final String strimziFeatureGatesValue) {
         Arrays.stream(Objects.requireNonNull(root.listFiles())).sorted().forEach(f -> {
             if (f.getName().matches(".*RoleBinding.*")) {
                 cmdKubeClient().replaceContent(TestUtils.changeRoleBindingSubject(f, namespace));
             } else if (f.getName().matches(".*Deployment.*")) {
-                cmdKubeClient().replaceContent(StUtils.changeDeploymentNamespace(f, namespace));
+                cmdKubeClient().replaceContent(StUtils.changeDeploymentConfiguration(f, namespace, strimziFeatureGatesValue));
             } else {
                 cmdKubeClient().replaceContent(TestUtils.getContent(f, TestUtils::toYamlString));
             }
@@ -415,7 +415,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
 
         // Modify + apply installation files
-        copyModifyApply(coDir, namespace, extensionContext);
+        copyModifyApply(coDir, namespace, extensionContext, testParameters.getString("strimziFeatureGatesFlags"));
 
         LOGGER.info("Waiting for {} deployment", ResourceManager.getCoDeploymentName());
         DeploymentUtils.waitForDeploymentAndPodsReady(ResourceManager.getCoDeploymentName(), 1);

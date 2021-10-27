@@ -31,7 +31,8 @@
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on environment, where k8s server version is < 1.22"
-    }
+    },
+    "strimziFeatureGatesFlags": "-ControlPlaneListener"
   },
   {
     "fromVersion":"0.24.0",
@@ -65,7 +66,8 @@
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
-    }
+    },
+    "strimziFeatureGatesFlags": ""
   },
   {
     "fromVersion":"0.26.0",
@@ -99,6 +101,7 @@
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
-    }
+    },
+    "strimziFeatureGatesFlags": ""
   }
 ]

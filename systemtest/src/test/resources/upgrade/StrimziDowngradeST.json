@@ -24,6 +24,7 @@
       "status": "stable",
       "flakyEnvVariable": "none",
       "reason" : "Test is working on all environment used by QE."
-    }
+    },
+    "strimziFeatureGatesFlags": ""
   }
 ]
