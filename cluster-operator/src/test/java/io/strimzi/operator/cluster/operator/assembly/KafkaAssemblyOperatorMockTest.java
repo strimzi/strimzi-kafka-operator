@@ -284,7 +284,7 @@ public class KafkaAssemblyOperatorMockTest {
 
     private ResourceOperatorSupplier supplierWithMocks() {
         ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, client);
-        return new ResourceOperatorSupplier(vertx, client, leaderFinder,
+        return ResourceUtils.createResourceOperatorSupplier(vertx, client, leaderFinder,
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
                 ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(true, kubernetesVersion),
                 FeatureGates.NONE, 2_000);

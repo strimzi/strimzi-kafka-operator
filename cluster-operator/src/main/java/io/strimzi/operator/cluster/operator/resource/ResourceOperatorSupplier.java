@@ -85,53 +85,6 @@ public class ResourceOperatorSupplier {
     private final MetricsProvider metricsProvider;
     private AdminClientProvider adminClientProvider;
 
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
-        this(vertx, client,
-            new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
-            // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
-                () -> new BackOff(5_000, 2, 4)),
-                    new DefaultAdminClientProvider(),
-                    new DefaultZookeeperScalerProvider(),
-                    new MicrometerMetricsProvider(),
-                    pfa, gates, operationTimeoutMs);
-    }
-
-    public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, ZookeeperLeaderFinder zlf,
-                                    AdminClientProvider adminClientProvider, ZookeeperScalerProvider zkScalerProvider,
-                                    MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
-        this(new ServiceOperator(vertx, client),
-                pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs),
-                new KafkaSetOperator(vertx, client, operationTimeoutMs, adminClientProvider),
-                new ConfigMapOperator(vertx, client),
-                new SecretOperator(vertx, client),
-                new PvcOperator(vertx, client),
-                new DeploymentOperator(vertx, client),
-                new ServiceAccountOperator(vertx, client, gates.serviceAccountPatchingEnabled()),
-                new RoleBindingOperator(vertx, client),
-                new RoleOperator(vertx, client),
-                new ClusterRoleBindingOperator(vertx, client),
-                new NetworkPolicyOperator(vertx, client),
-                new PodDisruptionBudgetOperator(vertx, client),
-                new PodOperator(vertx, client),
-                new IngressOperator(vertx, client),
-                new IngressV1Beta1Operator(vertx, client),
-                pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, KafkaConnector.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaRebalance.class, KafkaRebalanceList.class, KafkaRebalance.RESOURCE_KIND),
-                new StorageClassOperator(vertx, client),
-                new NodeOperator(vertx, client),
-                zkScalerProvider,
-                metricsProvider,
-                adminClientProvider);
-    }
-
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
                                     RouteOperator routeOperations,
                                     ZookeeperSetOperator zkSetOperations,
@@ -194,6 +147,46 @@ public class ResourceOperatorSupplier {
         this.zkScalerProvider = zkScalerProvider;
         this.metricsProvider = metricsProvider;
         this.adminClientProvider = adminClientProvider;
+    }
+
+    public static ResourceOperatorSupplier createResourceOperatorSupplier(Vertx vertx,
+                                                                          KubernetesClient client,
+                                                                          PlatformFeaturesAvailability pfa,
+                                                                          FeatureGates gates,
+                                                                          long operationTimeoutMs) {
+        return new ResourceOperatorSupplier(new ServiceOperator(vertx, client),
+                                pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
+                                new ZookeeperSetOperator(vertx, client, new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
+                            // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
+                                () -> new BackOff(5_000, 2, 4)), operationTimeoutMs),
+                                new KafkaSetOperator(vertx, client, operationTimeoutMs, new DefaultAdminClientProvider()),
+                                new ConfigMapOperator(vertx, client),
+                                new SecretOperator(vertx, client),
+                                new PvcOperator(vertx, client),
+                                new DeploymentOperator(vertx, client),
+                                new ServiceAccountOperator(vertx, client, gates.serviceAccountPatchingEnabled()),
+                                new RoleBindingOperator(vertx, client),
+                                new RoleOperator(vertx, client),
+                                new ClusterRoleBindingOperator(vertx, client),
+                                new NetworkPolicyOperator(vertx, client),
+                                new PodDisruptionBudgetOperator(vertx, client),
+                                new PodOperator(vertx, client),
+                                new IngressOperator(vertx, client),
+                                new IngressV1Beta1Operator(vertx, client),
+                                pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
+                                pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
+                                new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),
+                                new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND),
+                                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND),
+                                new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND),
+                                new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, KafkaConnector.RESOURCE_KIND),
+                                new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND),
+                                new CrdOperator<>(vertx, client, KafkaRebalance.class, KafkaRebalanceList.class, KafkaRebalance.RESOURCE_KIND),
+                                new StorageClassOperator(vertx, client),
+                                new NodeOperator(vertx, client),
+                        new DefaultZookeeperScalerProvider(),
+                        new MicrometerMetricsProvider(),
+                        new DefaultAdminClientProvider());
     }
 
     public SecretOperator getSecretOperations() {

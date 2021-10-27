@@ -130,7 +130,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
             .addToData("foo", "bar")
             .build();
         client.secrets().inNamespace(namespace).create(secret);
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, client, mock(ZookeeperLeaderFinder.class),
+        ResourceOperatorSupplier supplier = ResourceUtils.createResourceOperatorSupplier(vertx, client, mock(ZookeeperLeaderFinder.class),
                 mock(AdminClientProvider.class), mock(ZookeeperScalerProvider.class),
                 mock(MetricsProvider.class), new PlatformFeaturesAvailability(false, KubernetesVersion.V1_20), FeatureGates.NONE, 10000);
         operator = new MockKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),

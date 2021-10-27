@@ -112,7 +112,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
     private Future<Void> createConnectCluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi, boolean reconciliationPaused) {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, this.mockClient,
+        ResourceOperatorSupplier supplier = ResourceUtils.createResourceOperatorSupplier(vertx, this.mockClient,
                 new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, this.mockClient),
                     // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
                     () -> new BackOff(5_000, 2, 4)),

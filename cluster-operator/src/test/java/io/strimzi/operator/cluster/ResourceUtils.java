@@ -15,11 +15,19 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.RouteBuilder;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
+import io.strimzi.api.kafka.KafkaBridgeList;
+import io.strimzi.api.kafka.KafkaConnectList;
+import io.strimzi.api.kafka.KafkaConnectorList;
+import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.KafkaMirrorMaker2List;
+import io.strimzi.api.kafka.KafkaMirrorMakerList;
+import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
@@ -31,6 +39,7 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
@@ -38,6 +47,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
+import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
@@ -49,6 +59,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
@@ -807,5 +818,47 @@ public class ResourceUtils {
         return resources.stream()
                 .filter(s -> s.getMetadata().getName().equals(name)).findFirst()
                 .orElse(null);
+    }
+
+    public static ResourceOperatorSupplier createResourceOperatorSupplier(Vertx vertx,
+                                                                          KubernetesClient client,
+                                                                          ZookeeperLeaderFinder zlf,
+                                                                          AdminClientProvider adminClientProvider,
+                                                                          ZookeeperScalerProvider zkScalerProvider,
+                                                                          MetricsProvider metricsProvider,
+                                                                          PlatformFeaturesAvailability pfa,
+                                                                          FeatureGates gates,
+                                                                          long operationTimeoutMs) {
+        return new ResourceOperatorSupplier(new ServiceOperator(vertx, client),
+                        pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
+                        new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs),
+                        new KafkaSetOperator(vertx, client, operationTimeoutMs, adminClientProvider),
+                        new ConfigMapOperator(vertx, client),
+                        new SecretOperator(vertx, client),
+                        new PvcOperator(vertx, client),
+                        new DeploymentOperator(vertx, client),
+                        new ServiceAccountOperator(vertx, client, gates.serviceAccountPatchingEnabled()),
+                        new RoleBindingOperator(vertx, client),
+                        new RoleOperator(vertx, client),
+                        new ClusterRoleBindingOperator(vertx, client),
+                        new NetworkPolicyOperator(vertx, client),
+                        new PodDisruptionBudgetOperator(vertx, client),
+                        new PodOperator(vertx, client),
+                        new IngressOperator(vertx, client),
+                        new IngressV1Beta1Operator(vertx, client),
+                        pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
+                        pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
+                        new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),
+                        new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND),
+                        new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND),
+                        new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND),
+                        new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, KafkaConnector.RESOURCE_KIND),
+                        new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND),
+                        new CrdOperator<>(vertx, client, KafkaRebalance.class, KafkaRebalanceList.class, KafkaRebalance.RESOURCE_KIND),
+                        new StorageClassOperator(vertx, client),
+                        new NodeOperator(vertx, client),
+                zkScalerProvider,
+                metricsProvider,
+                adminClientProvider);
     }
 }
