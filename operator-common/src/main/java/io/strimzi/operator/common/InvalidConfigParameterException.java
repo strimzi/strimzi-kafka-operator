@@ -11,7 +11,7 @@ public class InvalidConfigParameterException extends InvalidResourceException {
 
     private String key;
     public InvalidConfigParameterException(String key, String message) {
-        super(key + ":" + message);
+        super(key + ": " + message);
         this.key = key;
     }
 
