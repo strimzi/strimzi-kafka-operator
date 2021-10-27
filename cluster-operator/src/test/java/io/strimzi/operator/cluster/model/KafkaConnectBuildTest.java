@@ -166,6 +166,7 @@ public class KafkaConnectBuildTest {
                     .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpec()
+                    .withImage("my-source-image:latest")
                     .withBootstrapServers("my-kafka:9092")
                     .withNewBuild()
                         .withNewDockerOutput()
@@ -180,6 +181,8 @@ public class KafkaConnectBuildTest {
                 .build();
 
         KafkaConnectBuild build = KafkaConnectBuild.fromCrd(new Reconciliation("test", kc.getKind(), kc.getMetadata().getNamespace(), kc.getMetadata().getName()), kc, VERSIONS);
+
+        assertThat(build.baseImage, is("my-source-image:latest"));
 
         Pod pod = build.generateBuilderPod(true, ImagePullPolicy.IFNOTPRESENT, null, null);
         assertThat(pod.getMetadata().getName(), is(KafkaConnectResources.buildPodName(cluster)));

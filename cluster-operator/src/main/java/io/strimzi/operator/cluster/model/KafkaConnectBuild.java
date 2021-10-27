@@ -57,7 +57,7 @@ public class KafkaConnectBuild extends AbstractModel {
     private SecurityContext templateBuildContainerSecurityContext;
     private Map<String, String> templateBuildConfigLabels;
     private Map<String, String> templateBuildConfigAnnotations;
-    private String baseImage;
+    /*test*/ String baseImage;
     private List<String> additionalKanikoOptions;
     private String pullSecret;
 
@@ -116,9 +116,7 @@ public class KafkaConnectBuild extends AbstractModel {
             }
         }
 
-        if (spec.getImage() == null) {
-            build.baseImage = versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
-        }
+        build.baseImage = versions.kafkaConnectVersion(spec.getImage(), spec.getVersion());
 
         if (spec.getTemplate() != null) {
             KafkaConnectTemplate template = spec.getTemplate();
