@@ -123,10 +123,10 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider) {
-        super(vertx, pfa, KafkaMirrorMaker2.RESOURCE_KIND, supplier.mirrorMaker2Operator, supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT);
+        super(vertx, pfa, KafkaMirrorMaker2.RESOURCE_KIND, supplier.getMirrorMaker2Operator(), supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT);
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
-        this.deploymentOperations = supplier.deploymentOperations;
-        this.networkPolicyOperator = supplier.networkPolicyOperator;
+        this.deploymentOperations = supplier.getDeploymentOperations();
+        this.networkPolicyOperator = supplier.getNetworkPolicyOperator();
         this.versions = config.versions();
     }
 

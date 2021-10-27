@@ -100,11 +100,11 @@ public class KafkaBridgeAssemblyOperatorTest {
     @Test
     public void testCreateOrUpdateCreatesCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockBridgeOps = supplier.kafkaBridgeOperator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        var mockBridgeOps = supplier.getKafkaBridgeOperator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
 
         String kbName = "foo";
         String kbNamespace = "test";
@@ -181,11 +181,11 @@ public class KafkaBridgeAssemblyOperatorTest {
     @Test
     public void testCreateOrUpdateWithNoDiffCausesNoChanges(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockBridgeOps = supplier.kafkaBridgeOperator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        var mockBridgeOps = supplier.getKafkaBridgeOperator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
 
         String kbName = "foo";
         String kbNamespace = "test";
@@ -259,11 +259,11 @@ public class KafkaBridgeAssemblyOperatorTest {
     @Test
     public void testCreateOrUpdateUpdatesCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockBridgeOps = supplier.kafkaBridgeOperator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        var mockBridgeOps = supplier.getKafkaBridgeOperator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
 
         String kbName = "foo";
         String kbNamespace = "test";
@@ -367,11 +367,11 @@ public class KafkaBridgeAssemblyOperatorTest {
     @Test
     public void testCreateOrUpdateThrowsWhenCreateServiceThrows(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockBridgeOps = supplier.kafkaBridgeOperator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        var mockBridgeOps = supplier.getKafkaBridgeOperator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
 
         String kbName = "foo";
         String kbNamespace = "test";
@@ -431,11 +431,11 @@ public class KafkaBridgeAssemblyOperatorTest {
         final int scaleTo = 1;
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockBridgeOps = supplier.kafkaBridgeOperator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        var mockBridgeOps = supplier.getKafkaBridgeOperator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
 
         String kbName = "foo";
         String kbNamespace = "test";
@@ -485,11 +485,11 @@ public class KafkaBridgeAssemblyOperatorTest {
         int scaleTo = 1;
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockBridgeOps = supplier.kafkaBridgeOperator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        var mockBridgeOps = supplier.getKafkaBridgeOperator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
 
         String kbName = "foo";
         String kbNamespace = "test";
@@ -551,9 +551,9 @@ public class KafkaBridgeAssemblyOperatorTest {
         Checkpoint asyncCreatedOrUpdated = context.checkpoint(2);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockBridgeOps = supplier.kafkaBridgeOperator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        SecretOperator mockSecretOps = supplier.secretOperations;
+        var mockBridgeOps = supplier.getKafkaBridgeOperator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        SecretOperator mockSecretOps = supplier.getSecretOperations();
 
         String kbNamespace = "test";
 
@@ -618,11 +618,11 @@ public class KafkaBridgeAssemblyOperatorTest {
     @Test
     public void testCreateClusterStatusNotReady(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockBridgeOps = supplier.kafkaBridgeOperator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        var mockBridgeOps = supplier.getKafkaBridgeOperator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
 
         String kbName = "foo";
         String kbNamespace = "test";
@@ -667,11 +667,11 @@ public class KafkaBridgeAssemblyOperatorTest {
     @Test
     public void testCreateOrUpdateBridgeZeroReplica(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockBridgeOps = supplier.kafkaBridgeOperator;
-        DeploymentOperator mockDcOps = supplier.deploymentOperations;
-        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        var mockBridgeOps = supplier.getKafkaBridgeOperator();
+        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
+        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
+        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        ServiceOperator mockServiceOps = supplier.getServiceOperations();
 
         String kbName = "foo";
         String kbNamespace = "test";

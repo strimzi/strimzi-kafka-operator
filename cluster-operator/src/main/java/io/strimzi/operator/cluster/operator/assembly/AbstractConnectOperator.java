@@ -123,15 +123,15 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                    ResourceOperatorSupplier supplier, ClusterOperatorConfig config,
                                    Function<Vertx, KafkaConnectApi> connectClientProvider,
                                    int port) {
-        super(vertx, kind, resourceOperator, supplier.metricsProvider, config.getCustomResourceSelector());
-        this.connectorOperator = supplier.kafkaConnectorOperator;
+        super(vertx, kind, resourceOperator, supplier.getMetricsProvider(), config.getCustomResourceSelector());
+        this.connectorOperator = supplier.getKafkaConnectorOperator();
         this.connectClientProvider = connectClientProvider;
-        this.configMapOperations = supplier.configMapOperations;
-        this.clusterRoleBindingOperations = supplier.clusterRoleBindingOperator;
-        this.serviceOperations = supplier.serviceOperations;
-        this.secretOperations = supplier.secretOperations;
-        this.serviceAccountOperations = supplier.serviceAccountOperations;
-        this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
+        this.configMapOperations = supplier.getConfigMapOperations();
+        this.clusterRoleBindingOperations = supplier.getClusterRoleBindingOperator();
+        this.serviceOperations = supplier.getServiceOperations();
+        this.secretOperations = supplier.getSecretOperations();
+        this.serviceAccountOperations = supplier.getServiceAccountOperations();
+        this.podDisruptionBudgetOperator = supplier.getPodDisruptionBudgetOperator();
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
         this.operationTimeoutMs = config.getOperationTimeoutMs();

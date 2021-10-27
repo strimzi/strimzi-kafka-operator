@@ -91,13 +91,13 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                         ResourceOperatorSupplier supplier,
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider, int port) {
-        super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.connectOperator, supplier, config, connectClientProvider, port);
+        super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.getConnectOperator(), supplier, config, connectClientProvider, port);
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
-        this.deploymentOperations = supplier.deploymentOperations;
-        this.networkPolicyOperator = supplier.networkPolicyOperator;
-        this.podOperator = supplier.podOperations;
-        this.buildConfigOperator = supplier.buildConfigOperations;
-        this.buildOperator = supplier.buildOperations;
+        this.deploymentOperations = supplier.getDeploymentOperations();
+        this.networkPolicyOperator = supplier.getNetworkPolicyOperator();
+        this.podOperator = supplier.getPodOperations();
+        this.buildConfigOperator = supplier.getBuildConfigOperations();
+        this.buildOperator = supplier.getBuildOperations();
 
         this.versions = config.versions();
         this.connectBuildTimeoutMs = config.getConnectBuildTimeoutMs();

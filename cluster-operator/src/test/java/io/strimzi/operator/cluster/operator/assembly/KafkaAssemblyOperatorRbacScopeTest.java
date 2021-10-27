@@ -134,13 +134,13 @@ public class KafkaAssemblyOperatorRbacScopeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // Mock the operations for RoleBindings
-        RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
+        RoleBindingOperator mockRoleBindingOps = supplier.getRoleBindingOperations();
         // Capture the names of reconciled rolebindings and their patched state
         ArgumentCaptor<String> roleBindingNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<RoleBinding> roleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
@@ -179,7 +179,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                             .withName("test-instance-entity-operator")
                             .build()));
 
-                    verify(supplier.clusterRoleBindingOperator, never()).reconcile(any(), anyString(), any());
+                    verify(supplier.getClusterRoleBindingOperator(), never()).reconcile(any(), anyString(), any());
 
                     async.flag();
                 })));
@@ -215,13 +215,13 @@ public class KafkaAssemblyOperatorRbacScopeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // Mock the operations for RoleBindings
-        RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
+        RoleBindingOperator mockRoleBindingOps = supplier.getRoleBindingOperations();
         // Capture the names of reconciled rolebindings and their patched state
         ArgumentCaptor<String> roleBindingNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<RoleBinding> roleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
@@ -296,13 +296,13 @@ public class KafkaAssemblyOperatorRbacScopeTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
+        CrdOperator mockKafkaOps = supplier.getKafkaOperator();
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // Mock the operations for Roles
-        RoleOperator mockRoleOps = supplier.roleOperations;
+        RoleOperator mockRoleOps = supplier.getRoleOperations();
         // Capture the names of reconciled Roles and their patched state
         ArgumentCaptor<String> roleNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Role> roleCaptor = ArgumentCaptor.forClass(Role.class);
@@ -310,7 +310,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                 .thenReturn(Future.succeededFuture());
 
         // Mock the operations for RoleBindings
-        RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
+        RoleBindingOperator mockRoleBindingOps = supplier.getRoleBindingOperations();
         // Capture the names of reconciled RoleBindings and their patched state
         ArgumentCaptor<String> roleBindingNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<RoleBinding> roleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
