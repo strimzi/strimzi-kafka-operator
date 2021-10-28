@@ -14,7 +14,7 @@ import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
-import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplierBuilder;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
@@ -148,7 +148,7 @@ public class KafkaConnectorIT {
         MetricsProvider metrics = new MicrometerMetricsProvider();
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa,
-                new ResourceOperatorSupplierBuilder(null, null)
+                new ResourceOperatorSupplier.Builder(null, null)
                         .withServiceOperations(null)
                         .withRouteOperations(null)
                         .withZkSetOperations(null)

@@ -18,7 +18,6 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOpe
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplierBuilder;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -106,7 +105,7 @@ public class Main {
         Util.printEnvInfo();
 
         FeatureGates gates = config.featureGates();
-        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplierBuilder(vertx, client)
+        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier.Builder(vertx, client)
                 .withServiceAccountOperations(new ServiceAccountOperator(vertx, client, gates.serviceAccountPatchingEnabled()))
                 .withRoleBindingOperations(new RoleBindingOperator(vertx, client)).setRoleOperations(new RoleOperator(vertx, client))
                 .build(pfa, gates, config.getOperationTimeoutMs());

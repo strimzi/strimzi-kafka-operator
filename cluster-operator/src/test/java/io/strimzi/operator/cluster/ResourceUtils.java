@@ -67,7 +67,6 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplierBuilder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -687,7 +686,7 @@ public class ResourceUtils {
     public static ResourceOperatorSupplier supplierWithMocks(boolean openShift) {
         RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
 
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplierBuilder(null, null)
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier.Builder(null, null)
                 .withServiceOperations(mock(ServiceOperator.class))
                 .withRouteOperations(routeOps)
                 .withZkSetOperations(mock(ZookeeperSetOperator.class))
@@ -831,7 +830,7 @@ public class ResourceUtils {
                                                                           PlatformFeaturesAvailability pfa,
                                                                           FeatureGates gates,
                                                                           long operationTimeoutMs) {
-        return new ResourceOperatorSupplierBuilder(vertx, client)
+        return new ResourceOperatorSupplier.Builder(vertx, client)
                 .withServiceOperations(new ServiceOperator(vertx, client))
                 .withRouteOperations(pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null)
                 .withZkSetOperations(new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs))
