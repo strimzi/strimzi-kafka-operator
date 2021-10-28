@@ -26,12 +26,15 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
+import io.strimzi.operator.cluster.operator.resource.KafkaRollerSupplier;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.test.mockkube.MockKube;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -53,6 +56,10 @@ import java.util.concurrent.TimeoutException;
 import static io.strimzi.test.TestUtils.set;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class PartialRollingUpdateTest {
@@ -172,11 +179,28 @@ public class PartialRollingUpdateTest {
     }
 
     ResourceOperatorSupplier supplier(KubernetesClient bootstrapClient) {
-        return ResourceUtils.createResourceOperatorSupplier(vertx, bootstrapClient,
+
+
+        var rollerSupplier = mock(KafkaRollerSupplier.class);
+        when(rollerSupplier.kafkaRoller(any(), anyInt(), any(), any(), any(), any(), any())).thenAnswer(i -> {
+            var roller = mock(KafkaRoller.class);
+            when(roller.rollingRestart()).thenAnswer(i2 -> {
+                bootstrapClient.pods().list().getItems().forEach(pod -> {
+                    bootstrapClient.pods().delete(pod);
+                });
+                return Future.succeededFuture();
+            });
+            return roller;
+        });
+
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
+        return ResourceUtils.createResourceOperatorSupplierBuilder(vertx, bootstrapClient,
                 ResourceUtils.zookeeperLeaderFinder(vertx, bootstrapClient),
                 ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16),
-                FeatureGates.NONE, 60_000L);
+                ResourceUtils.metricsProvider(), pfa,
+                FeatureGates.NONE, 60_000L)
+                .withRollerSupplier(rollerSupplier)
+                .build(pfa, FeatureGates.NONE, 60_000L);
     }
 
     private void startKube() {

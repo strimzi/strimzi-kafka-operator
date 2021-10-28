@@ -4,6 +4,18 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
@@ -63,18 +75,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.storage.Storage.deleteClaim;
 import static java.util.Collections.singletonMap;
@@ -284,10 +284,18 @@ public class KafkaAssemblyOperatorMockTest {
 
     private ResourceOperatorSupplier supplierWithMocks() {
         ZookeeperLeaderFinder leaderFinder = ResourceUtils.zookeeperLeaderFinder(vertx, client);
-        return ResourceUtils.createResourceOperatorSupplier(vertx, client, leaderFinder,
-                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(),
-                ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(true, kubernetesVersion),
-                FeatureGates.NONE, 2_000);
+
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);
+        FeatureGates none = FeatureGates.NONE;
+        return ResourceUtils.createResourceOperatorSupplier(vertx,
+                client,
+                leaderFinder,
+                ResourceUtils.adminClientProvider(),
+                ResourceUtils.zookeeperScalerProvider(),
+                ResourceUtils.metricsProvider(),
+                pfa,
+                none,
+                2_000);
     }
 
     private void assertResourceRequirements(VertxTestContext context, String statefulSetName) {

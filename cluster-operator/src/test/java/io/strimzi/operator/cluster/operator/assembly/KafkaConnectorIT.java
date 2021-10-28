@@ -180,6 +180,7 @@ public class KafkaConnectorIT {
                         .withZkScalerProvider(null)
                         .withMetricsProvider(metrics)
                         .withAdminClientProvider(null)
+                        .withRollerSupplier(null)
                         .build(null, null, 0),
                 ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),

@@ -79,6 +79,8 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
+import io.strimzi.operator.cluster.operator.resource.KafkaRollerSupplier;
 import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
@@ -588,6 +590,14 @@ public class ResourceUtils {
             };
     }
 
+    public static KafkaRollerSupplier rollerSupplier() {
+        var mockRoller = mock(KafkaRoller.class);
+        when(mockRoller.rollingRestart()).thenReturn(Future.succeededFuture());
+        KafkaRollerSupplier mockSupplier = mock(KafkaRollerSupplier.class);
+        when(mockSupplier.kafkaRoller(any(), anyInt(), any(), any(), any(), any(), any())).thenReturn(mockRoller);
+        return mockSupplier;
+    }
+
     public static AdminClientProvider adminClientProvider() {
         return new AdminClientProvider() {
             @Override
@@ -709,6 +719,7 @@ public class ResourceUtils {
                 .withZkScalerProvider(zookeeperScalerProvider())
                 .withMetricsProvider(metricsProvider())
                 .withAdminClientProvider(adminClientProvider())
+                .withRollerSupplier(rollerSupplier())
                 .build(null, null, 0);
 
         when(supplier.getSecretOperations().getAsync(any(), any())).thenReturn(Future.succeededFuture());
@@ -812,7 +823,7 @@ public class ResourceUtils {
                 .orElse(null);
     }
 
-    public static ResourceOperatorSupplier createResourceOperatorSupplier(Vertx vertx,
+    public static ResourceOperatorSupplier.Builder createResourceOperatorSupplierBuilder(Vertx vertx,
                                                                           KubernetesClient client,
                                                                           ZookeeperLeaderFinder zlf,
                                                                           AdminClientProvider adminClientProvider,
@@ -851,7 +862,33 @@ public class ResourceUtils {
                 .withNodeOperator(new NodeOperator(vertx, client))
                 .withZkScalerProvider(zkScalerProvider)
                 .withMetricsProvider(metricsProvider)
-                .withAdminClientProvider(adminClientProvider)
-                .build(pfa, gates, operationTimeoutMs);
+                .withAdminClientProvider(adminClientProvider);
+    }
+    public static ResourceOperatorSupplier createResourceOperatorSupplier(Vertx vertx,
+                                                                          KubernetesClient client,
+                                                                          ZookeeperLeaderFinder zlf,
+                                                                          AdminClientProvider adminClientProvider,
+                                                                          ZookeeperScalerProvider zkScalerProvider,
+                                                                          MetricsProvider metricsProvider,
+                                                                          PlatformFeaturesAvailability pfa,
+                                                                          FeatureGates gates,
+                                                                          long operationTimeoutMs) {
+        var roller = mock(KafkaRoller.class);
+        when(roller.rollingRestart()).thenAnswer(i -> {
+
+            return Future.succeededFuture();
+        });
+
+        var rollerSupplier = mock(KafkaRollerSupplier.class);
+        when(rollerSupplier.kafkaRoller(any(), anyInt(), any(), any(), any(), any(), any())).thenReturn(roller);
+
+        return createResourceOperatorSupplierBuilder(vertx,
+                client,
+                zlf,
+                adminClientProvider,
+                zkScalerProvider,
+                metricsProvider, pfa, gates, operationTimeoutMs)
+            .withRollerSupplier(rollerSupplier)
+            .build(pfa, gates, operationTimeoutMs);
     }
 }

@@ -83,6 +83,7 @@ public class ResourceOperatorSupplier {
     private final ZookeeperScalerProvider zkScalerProvider;
     private final MetricsProvider metricsProvider;
     private final AdminClientProvider adminClientProvider;
+    private final KafkaRollerSupplier rollerSupplier;
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
                                     RouteOperator routeOperations,
@@ -114,7 +115,8 @@ public class ResourceOperatorSupplier {
                                     NodeOperator nodeOperator,
                                     ZookeeperScalerProvider zkScalerProvider,
                                     MetricsProvider metricsProvider,
-                                    AdminClientProvider adminClientProvider) {
+                                    AdminClientProvider adminClientProvider,
+                                    KafkaRollerSupplier rollerSupplier) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.zkSetOperations = zkSetOperations;
@@ -146,6 +148,7 @@ public class ResourceOperatorSupplier {
         this.zkScalerProvider = zkScalerProvider;
         this.metricsProvider = metricsProvider;
         this.adminClientProvider = adminClientProvider;
+        this.rollerSupplier = rollerSupplier;
     }
 
     public SecretOperator getSecretOperations() {
@@ -272,6 +275,10 @@ public class ResourceOperatorSupplier {
         return adminClientProvider;
     }
 
+    public KafkaRollerSupplier getRollerSupplier() {
+        return rollerSupplier;
+    }
+
     @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "deprecation"})
     public static class Builder {
         private ServiceOperator serviceOperations;
@@ -305,6 +312,7 @@ public class ResourceOperatorSupplier {
         private ZookeeperScalerProvider zkScalerProvider;
         private MetricsProvider metricsProvider;
         private AdminClientProvider adminClientProvider;
+        private KafkaRollerSupplier rollerSupplier;
 
         public Builder(Vertx vertx, KubernetesClient client) {
             this.vertx = vertx;
@@ -466,6 +474,11 @@ public class ResourceOperatorSupplier {
             return this;
         }
 
+        public Builder withRollerSupplier(KafkaRollerSupplier rollerSupplier) {
+            this.rollerSupplier = rollerSupplier;
+            return this;
+        }
+
         private Vertx vertx;
 
         private KubernetesClient client;
@@ -477,6 +490,7 @@ public class ResourceOperatorSupplier {
             var secretOperator = this.secretOperations != null ? this.secretOperations : new SecretOperator(vertx, client);
             var adminClientProvider = this.adminClientProvider != null ? this.adminClientProvider : new DefaultAdminClientProvider();
             var kafkaSetOperations = this.kafkaSetOperations != null ? this.kafkaSetOperations : new KafkaSetOperator(vertx, client, operationTimeoutMs, adminClientProvider);
+            PodOperator podOps = this.podOperations != null ? this.podOperations : new PodOperator(vertx, client);
             return new ResourceOperatorSupplier(serviceOperations != null ? serviceOperations : new ServiceOperator(vertx, client),
                     routeOperations != null ? routeOperations : pfa != null && pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                     zkSetOperations != null ? zkSetOperations : new ZookeeperSetOperator(vertx, client, new ZookeeperLeaderFinder(vertx, secretOperator,
@@ -493,7 +507,7 @@ public class ResourceOperatorSupplier {
                     clusterRoleBindingOperator != null ? clusterRoleBindingOperator : new ClusterRoleBindingOperator(vertx, client),
                     networkPolicyOperator != null ? networkPolicyOperator : new NetworkPolicyOperator(vertx, client),
                     podDisruptionBudgetOperator != null ? podDisruptionBudgetOperator : new PodDisruptionBudgetOperator(vertx, client),
-                    podOperations != null ? podOperations : new PodOperator(vertx, client),
+                    podOps,
                     ingressOperations != null ? ingressOperations : new IngressOperator(vertx, client),
                     ingressV1Beta1Operations != null ? ingressV1Beta1Operations : new IngressV1Beta1Operator(vertx, client),
                     buildConfigOperations != null ? buildConfigOperations : pfa != null && pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
@@ -509,7 +523,8 @@ public class ResourceOperatorSupplier {
                     nodeOperator != null ? nodeOperator : new NodeOperator(vertx, client),
                     zkScalerProvider != null ? zkScalerProvider : new DefaultZookeeperScalerProvider(),
                     metricsProvider != null ? metricsProvider : new MicrometerMetricsProvider(),
-                    adminClientProvider);
+                    adminClientProvider,
+                    rollerSupplier != null ? rollerSupplier : new DefaultKafkaRollerSupplier(vertx, podOps, adminClientProvider, operationTimeoutMs));
         }
     }
 }

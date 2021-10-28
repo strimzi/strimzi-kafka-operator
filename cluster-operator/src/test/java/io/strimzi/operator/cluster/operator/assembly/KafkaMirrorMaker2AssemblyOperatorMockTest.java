@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import java.util.Collections;
+import java.util.List;
+
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -43,9 +46,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.util.Collections;
-import java.util.List;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonMap;

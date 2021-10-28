@@ -25,6 +25,8 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
+import io.strimzi.operator.cluster.operator.resource.KafkaRollerSupplier;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -49,6 +51,10 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.stringContainsInOrder;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaUpgradeDowngradeMockTest {
@@ -117,8 +123,23 @@ public class KafkaUpgradeDowngradeMockTest {
                 .end()
                 .build();
 
-        ResourceOperatorSupplier supplier = ResourceUtils.createResourceOperatorSupplier(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
-                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.metricsProvider(), pfa, FeatureGates.NONE, 2_000);
+        var rollerSupplier = mock(KafkaRollerSupplier.class);
+        when(rollerSupplier.kafkaRoller(any(), anyInt(), any(), any(), any(), any(), any())).thenAnswer(i -> {
+            var roller = mock(KafkaRoller.class);
+            when(roller.rollingRestart()).thenAnswer(i2 -> {
+                client.pods().list().getItems().forEach(pod -> {
+                    client.pods().delete(pod);
+                });
+                return Future.succeededFuture();
+            });
+            return roller;
+        });
+
+
+        ResourceOperatorSupplier supplier = ResourceUtils.createResourceOperatorSupplierBuilder(vertx, client, ResourceUtils.zookeeperLeaderFinder(vertx, client),
+                ResourceUtils.adminClientProvider(), ResourceUtils.zookeeperScalerProvider(), ResourceUtils.metricsProvider(), pfa, FeatureGates.NONE, 2_000)
+                .withRollerSupplier(rollerSupplier)
+                .build(pfa, FeatureGates.NONE, 2_000);
 
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
 
