@@ -14,7 +14,7 @@ import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
-import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplierBuilder;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
@@ -148,10 +148,39 @@ public class KafkaConnectorIT {
         MetricsProvider metrics = new MicrometerMetricsProvider();
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa,
-                new ResourceOperatorSupplier(
-                        null, null, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null,
-                        null, null, connectCrdOperator, null, null, null, null, null, metrics, null),
+                new ResourceOperatorSupplierBuilder(null, null)
+                        .withServiceOperations(null)
+                        .withRouteOperations(null)
+                        .withZkSetOperations(null)
+                        .withKafkaSetOperations(null)
+                        .withConfigMapOperations(null)
+                        .withSecretOperations(null)
+                        .setPvcOperations(null)
+                        .withDeploymentOperations(null)
+                        .withServiceAccountOperations(null)
+                        .withRoleBindingOperations(null)
+                        .setRoleOperations(null)
+                        .withClusterRoleBindingOperator(null)
+                        .withNetworkPolicyOperator(null)
+                        .withPodDisruptionBudgetOperator(null)
+                        .withPodOperations(null)
+                        .withIngressOperations(null)
+                        .withIngressV1Beta1Operations(null)
+                        .withBuildConfigOperations(null)
+                        .withBuildOperations(null)
+                        .withKafkaOperator(null)
+                        .withConnectOperator(null)
+                        .withMirrorMakerOperator(null)
+                        .withKafkaBridgeOperator(null)
+                        .withKafkaConnectorOperator(connectCrdOperator)
+                        .withMirrorMaker2Operator(null)
+                        .withKafkaRebalanceOperator(null)
+                        .withStorageClassOperator(null)
+                        .withNodeOperator(null)
+                        .withZkScalerProvider(null)
+                        .withMetricsProvider(metrics)
+                        .withAdminClientProvider(null)
+                        .build(null, null, 0),
                 ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
             connectCluster.getPort() + 2

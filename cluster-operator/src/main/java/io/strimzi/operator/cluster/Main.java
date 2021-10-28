@@ -18,10 +18,14 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOpe
 import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMaker2AssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplierBuilder;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
+import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
+import io.strimzi.operator.common.operator.resource.RoleOperator;
+import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -101,7 +105,11 @@ public class Main {
     static CompositeFuture run(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
         Util.printEnvInfo();
 
-        ResourceOperatorSupplier resourceOperatorSupplier = ResourceOperatorSupplier.createResourceOperatorSupplier(vertx, client, pfa, config.featureGates(), config.getOperationTimeoutMs());
+        FeatureGates gates = config.featureGates();
+        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplierBuilder(vertx, client)
+                .withServiceAccountOperations(new ServiceAccountOperator(vertx, client, gates.serviceAccountPatchingEnabled()))
+                .withRoleBindingOperations(new RoleBindingOperator(vertx, client)).setRoleOperations(new RoleOperator(vertx, client))
+                .build(pfa, gates, config.getOperationTimeoutMs());
 
         OpenSslCertManager certManager = new OpenSslCertManager();
         PasswordGenerator passwordGenerator = new PasswordGenerator(12,

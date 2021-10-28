@@ -8,24 +8,19 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaBridgeList;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectorList;
-import io.strimzi.api.kafka.KafkaMirrorMakerList;
-import io.strimzi.api.kafka.KafkaMirrorMaker2List;
-import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.KafkaList;
-import io.strimzi.api.kafka.model.KafkaBridge;
+import io.strimzi.api.kafka.KafkaMirrorMaker2List;
+import io.strimzi.api.kafka.KafkaMirrorMakerList;
+import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.operator.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.common.AdminClientProvider;
-import io.strimzi.operator.common.BackOff;
-import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
-import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -45,10 +40,7 @@ import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
-import io.vertx.core.Vertx;
 
 // Deprecation is suppressed because of KafkaMirrorMaker
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "deprecation"})
@@ -83,7 +75,7 @@ public class ResourceOperatorSupplier {
     private final NodeOperator nodeOperator;
     private final ZookeeperScalerProvider zkScalerProvider;
     private final MetricsProvider metricsProvider;
-    private AdminClientProvider adminClientProvider;
+    private final AdminClientProvider adminClientProvider;
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
                                     RouteOperator routeOperations,
@@ -147,46 +139,6 @@ public class ResourceOperatorSupplier {
         this.zkScalerProvider = zkScalerProvider;
         this.metricsProvider = metricsProvider;
         this.adminClientProvider = adminClientProvider;
-    }
-
-    public static ResourceOperatorSupplier createResourceOperatorSupplier(Vertx vertx,
-                                                                          KubernetesClient client,
-                                                                          PlatformFeaturesAvailability pfa,
-                                                                          FeatureGates gates,
-                                                                          long operationTimeoutMs) {
-        return new ResourceOperatorSupplier(new ServiceOperator(vertx, client),
-                                pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                                new ZookeeperSetOperator(vertx, client, new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
-                            // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
-                                () -> new BackOff(5_000, 2, 4)), operationTimeoutMs),
-                                new KafkaSetOperator(vertx, client, operationTimeoutMs, new DefaultAdminClientProvider()),
-                                new ConfigMapOperator(vertx, client),
-                                new SecretOperator(vertx, client),
-                                new PvcOperator(vertx, client),
-                                new DeploymentOperator(vertx, client),
-                                new ServiceAccountOperator(vertx, client, gates.serviceAccountPatchingEnabled()),
-                                new RoleBindingOperator(vertx, client),
-                                new RoleOperator(vertx, client),
-                                new ClusterRoleBindingOperator(vertx, client),
-                                new NetworkPolicyOperator(vertx, client),
-                                new PodDisruptionBudgetOperator(vertx, client),
-                                new PodOperator(vertx, client),
-                                new IngressOperator(vertx, client),
-                                new IngressV1Beta1Operator(vertx, client),
-                                pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                                pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                                new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),
-                                new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND),
-                                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND),
-                                new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND),
-                                new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, KafkaConnector.RESOURCE_KIND),
-                                new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND),
-                                new CrdOperator<>(vertx, client, KafkaRebalance.class, KafkaRebalanceList.class, KafkaRebalance.RESOURCE_KIND),
-                                new StorageClassOperator(vertx, client),
-                                new NodeOperator(vertx, client),
-                        new DefaultZookeeperScalerProvider(),
-                        new MicrometerMetricsProvider(),
-                        new DefaultAdminClientProvider());
     }
 
     public SecretOperator getSecretOperations() {

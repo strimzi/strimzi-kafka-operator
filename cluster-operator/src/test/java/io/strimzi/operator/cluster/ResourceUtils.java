@@ -67,6 +67,7 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplierBuilder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -686,38 +687,39 @@ public class ResourceUtils {
     public static ResourceOperatorSupplier supplierWithMocks(boolean openShift) {
         RouteOperator routeOps = openShift ? mock(RouteOperator.class) : null;
 
-        ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
-                mock(ServiceOperator.class),
-                routeOps,
-                mock(ZookeeperSetOperator.class),
-                mock(KafkaSetOperator.class),
-                mock(ConfigMapOperator.class),
-                mock(SecretOperator.class),
-                mock(PvcOperator.class),
-                mock(DeploymentOperator.class),
-                mock(ServiceAccountOperator.class),
-                mock(RoleBindingOperator.class),
-                mock(RoleOperator.class),
-                mock(ClusterRoleBindingOperator.class),
-                mock(NetworkPolicyOperator.class),
-                mock(PodDisruptionBudgetOperator.class),
-                mock(PodOperator.class),
-                mock(IngressOperator.class),
-                mock(IngressV1Beta1Operator.class),
-                mock(BuildConfigOperator.class),
-                mock(BuildOperator.class),
-                mock(CrdOperator.class),
-                mock(CrdOperator.class),
-                mock(CrdOperator.class),
-                mock(CrdOperator.class),
-                mock(CrdOperator.class),
-                mock(CrdOperator.class),
-                mock(CrdOperator.class),
-                mock(StorageClassOperator.class),
-                mock(NodeOperator.class),
-                zookeeperScalerProvider(),
-                metricsProvider(),
-                adminClientProvider());
+        ResourceOperatorSupplier supplier = new ResourceOperatorSupplierBuilder(null, null)
+                .withServiceOperations(mock(ServiceOperator.class))
+                .withRouteOperations(routeOps)
+                .withZkSetOperations(mock(ZookeeperSetOperator.class))
+                .withKafkaSetOperations(mock(KafkaSetOperator.class))
+                .withConfigMapOperations(mock(ConfigMapOperator.class))
+                .withSecretOperations(mock(SecretOperator.class))
+                .setPvcOperations(mock(PvcOperator.class))
+                .withDeploymentOperations(mock(DeploymentOperator.class))
+                .withServiceAccountOperations(mock(ServiceAccountOperator.class))
+                .withRoleBindingOperations(mock(RoleBindingOperator.class))
+                .setRoleOperations(mock(RoleOperator.class))
+                .withClusterRoleBindingOperator(mock(ClusterRoleBindingOperator.class))
+                .withNetworkPolicyOperator(mock(NetworkPolicyOperator.class))
+                .withPodDisruptionBudgetOperator(mock(PodDisruptionBudgetOperator.class))
+                .withPodOperations(mock(PodOperator.class))
+                .withIngressOperations(mock(IngressOperator.class))
+                .withIngressV1Beta1Operations(mock(IngressV1Beta1Operator.class))
+                .withBuildConfigOperations(mock(BuildConfigOperator.class))
+                .withBuildOperations(mock(BuildOperator.class))
+                .withKafkaOperator(mock(CrdOperator.class))
+                .withConnectOperator(mock(CrdOperator.class))
+                .withMirrorMakerOperator(mock(CrdOperator.class))
+                .withKafkaBridgeOperator(mock(CrdOperator.class))
+                .withKafkaConnectorOperator(mock(CrdOperator.class))
+                .withMirrorMaker2Operator(mock(CrdOperator.class))
+                .withKafkaRebalanceOperator(mock(CrdOperator.class))
+                .withStorageClassOperator(mock(StorageClassOperator.class))
+                .withNodeOperator(mock(NodeOperator.class))
+                .withZkScalerProvider(zookeeperScalerProvider())
+                .withMetricsProvider(metricsProvider())
+                .withAdminClientProvider(adminClientProvider())
+                .build(null, null, 0);
 
         when(supplier.getSecretOperations().getAsync(any(), any())).thenReturn(Future.succeededFuture());
         when(supplier.getServiceAccountOperations().reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
@@ -829,36 +831,37 @@ public class ResourceUtils {
                                                                           PlatformFeaturesAvailability pfa,
                                                                           FeatureGates gates,
                                                                           long operationTimeoutMs) {
-        return new ResourceOperatorSupplier(new ServiceOperator(vertx, client),
-                        pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                        new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs),
-                        new KafkaSetOperator(vertx, client, operationTimeoutMs, adminClientProvider),
-                        new ConfigMapOperator(vertx, client),
-                        new SecretOperator(vertx, client),
-                        new PvcOperator(vertx, client),
-                        new DeploymentOperator(vertx, client),
-                        new ServiceAccountOperator(vertx, client, gates.serviceAccountPatchingEnabled()),
-                        new RoleBindingOperator(vertx, client),
-                        new RoleOperator(vertx, client),
-                        new ClusterRoleBindingOperator(vertx, client),
-                        new NetworkPolicyOperator(vertx, client),
-                        new PodDisruptionBudgetOperator(vertx, client),
-                        new PodOperator(vertx, client),
-                        new IngressOperator(vertx, client),
-                        new IngressV1Beta1Operator(vertx, client),
-                        pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                        pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                        new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),
-                        new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND),
-                        new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND),
-                        new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND),
-                        new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, KafkaConnector.RESOURCE_KIND),
-                        new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND),
-                        new CrdOperator<>(vertx, client, KafkaRebalance.class, KafkaRebalanceList.class, KafkaRebalance.RESOURCE_KIND),
-                        new StorageClassOperator(vertx, client),
-                        new NodeOperator(vertx, client),
-                zkScalerProvider,
-                metricsProvider,
-                adminClientProvider);
+        return new ResourceOperatorSupplierBuilder(vertx, client)
+                .withServiceOperations(new ServiceOperator(vertx, client))
+                .withRouteOperations(pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null)
+                .withZkSetOperations(new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs))
+                .withKafkaSetOperations(new KafkaSetOperator(vertx, client, operationTimeoutMs, adminClientProvider))
+                .withConfigMapOperations(new ConfigMapOperator(vertx, client))
+                .withSecretOperations(new SecretOperator(vertx, client))
+                .setPvcOperations(new PvcOperator(vertx, client))
+                .withDeploymentOperations(new DeploymentOperator(vertx, client)).withServiceAccountOperations(new ServiceAccountOperator(vertx, client, gates.serviceAccountPatchingEnabled()))
+                .withRoleBindingOperations(new RoleBindingOperator(vertx, client))
+                .setRoleOperations(new RoleOperator(vertx, client))
+                .withClusterRoleBindingOperator(new ClusterRoleBindingOperator(vertx, client))
+                .withNetworkPolicyOperator(new NetworkPolicyOperator(vertx, client))
+                .withPodDisruptionBudgetOperator(new PodDisruptionBudgetOperator(vertx, client))
+                .withPodOperations(new PodOperator(vertx, client))
+                .withIngressOperations(new IngressOperator(vertx, client))
+                .withIngressV1Beta1Operations(new IngressV1Beta1Operator(vertx, client))
+                .withBuildConfigOperations(pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null)
+                .withBuildOperations(pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null)
+                .withKafkaOperator(new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND))
+                .withConnectOperator(new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND))
+                .withMirrorMakerOperator(new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND))
+                .withKafkaBridgeOperator(new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND))
+                .withKafkaConnectorOperator(new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, KafkaConnector.RESOURCE_KIND))
+                .withMirrorMaker2Operator(new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND))
+                .withKafkaRebalanceOperator(new CrdOperator<>(vertx, client, KafkaRebalance.class, KafkaRebalanceList.class, KafkaRebalance.RESOURCE_KIND))
+                .withStorageClassOperator(new StorageClassOperator(vertx, client))
+                .withNodeOperator(new NodeOperator(vertx, client))
+                .withZkScalerProvider(zkScalerProvider)
+                .withMetricsProvider(metricsProvider)
+                .withAdminClientProvider(adminClientProvider)
+                .build(pfa, gates, operationTimeoutMs);
     }
 }
