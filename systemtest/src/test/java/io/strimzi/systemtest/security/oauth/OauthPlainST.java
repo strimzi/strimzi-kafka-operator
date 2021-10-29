@@ -723,7 +723,6 @@ public class OauthPlainST extends OauthAbstractST {
                                     .withEnablePlain(true)
                                     .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                                 .endKafkaListenerAuthenticationOAuth()
-
                                 .build(),
                             new GenericKafkaListenerBuilder()
                                 .withName(customClaimListener)

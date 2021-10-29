@@ -81,17 +81,17 @@ public class OauthAbstractST extends AbstractST {
             .withType(KafkaListenerType.INTERNAL)
             .withTls(true)
             .withNewKafkaListenerAuthenticationOAuth()
-            .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-            .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-            .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-            .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-            .withUserNameClaim(keycloakInstance.getUserNameClaim())
-            .withTlsTrustedCertificates(
-                new CertSecretSourceBuilder()
-                    .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
-                    .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
-                    .build())
-            .withDisableTlsHostnameVerification(true)
+                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+                .withUserNameClaim(keycloakInstance.getUserNameClaim())
+                .withTlsTrustedCertificates(
+                    new CertSecretSourceBuilder()
+                        .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                        .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
+                        .build())
+                .withDisableTlsHostnameVerification(true)
             .endKafkaListenerAuthenticationOAuth()
             .build();
     };
