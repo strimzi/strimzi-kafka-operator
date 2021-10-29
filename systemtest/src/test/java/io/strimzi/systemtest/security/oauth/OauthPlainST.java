@@ -18,6 +18,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthExampleClients;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -660,6 +661,35 @@ public class OauthPlainST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge().build());
         ClientUtils.waitForClientSuccess(bridgeProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, bridgeProducerName);
+    }
+
+    @ParallelTest
+    void testSaslPlainAuthenticationKafkaConnectIsAbleToConnectToKafkaOAuth(ExtensionContext extensionContext) {
+        TestStorage testStorage = new TestStorage(extensionContext);
+
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, testStorage.getKafkaClientsName()).build());
+        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(extensionContext, testStorage.getClusterName(), oauthClusterName, 1)
+            .withNewSpec()
+                .withReplicas(1)
+                .withBootstrapServers(KafkaResources.plainBootstrapAddress(oauthClusterName))
+                .withConfig(connectorConfig)
+                .addToConfig("key.converter.schemas.enable", false)
+                .addToConfig("value.converter.schemas.enable", false)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .withNewKafkaClientAuthenticationPlain()
+                    .withUsername("kafka-connect")
+                    .withNewPasswordSecret()
+                        .withSecretName(CONNECT_OAUTH_SECRET)
+                        .withPassword("clientSecret")
+                    .endPasswordSecret()
+                .endKafkaClientAuthenticationPlain()
+                .withTls(null)
+            .endSpec()
+            .build());
+
+        // verify that KafkaConnect is able to connect to Oauth Kafka configured as plain
+        KafkaConnectUtils.waitForConnectReady(testStorage.getClusterName());
     }
 
     @BeforeAll
