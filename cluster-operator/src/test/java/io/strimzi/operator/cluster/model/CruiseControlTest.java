@@ -140,6 +140,11 @@ public class CruiseControlTest {
     private final CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
             .withImage(ccImage)
             .withConfig(ccConfig)
+            .withNewTemplate()
+                .withNewPod()
+                    .withTmpDirSizeLimit("100Mi")
+                .endPod()
+            .endTemplate()
             .build();
 
     private final CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, createKafka(cruiseControlSpec), VERSIONS);
@@ -311,12 +316,12 @@ public class CruiseControlTest {
         volume = volumes.stream().filter(vol -> AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
         assertThat(volume.getEmptyDir().getMedium(), is("Memory"));
-        assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
+        assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("100Mi")));
 
         volume = volumes.stream().filter(vol -> CruiseControl.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
         assertThat(volume.getEmptyDir().getMedium(), is("Memory"));
-        assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
+        assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("100Mi")));
 
         // Test volume mounts
         // TLS sidecar container

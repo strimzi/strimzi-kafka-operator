@@ -421,7 +421,7 @@ public class CruiseControl extends AbstractModel {
     }
 
     protected List<Volume> getVolumes(boolean isOpenShift) {
-        return Arrays.asList(createTempDirVolume(),
+        return Arrays.asList(createTempDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
                 createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
                 createSecretVolume(TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.secretName(cluster), isOpenShift),
                 createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),

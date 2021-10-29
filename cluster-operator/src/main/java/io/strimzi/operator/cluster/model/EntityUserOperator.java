@@ -292,8 +292,7 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     public List<Volume> getVolumes() {
-        return asList(createTempDirVolume(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
-                VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        return asList(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
     }
 
     private List<VolumeMount> getVolumeMounts() {

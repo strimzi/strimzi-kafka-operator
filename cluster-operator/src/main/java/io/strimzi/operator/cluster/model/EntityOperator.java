@@ -47,6 +47,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.model.EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME;
+import static io.strimzi.operator.cluster.model.EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME;
+
 /**
  * Represents the Entity Operator deployment
  */
@@ -308,11 +311,13 @@ public class EntityOperator extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>(7);
 
         if (topicOperator != null) {
-            volumeList.addAll(topicOperator.getVolumes());
+            volumeList.addAll(topicOperator.getVolumes().stream().filter(volume -> !volume.getName().equalsIgnoreCase(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).collect(Collectors.toList()));
+            volumeList.add(createTempDirVolume(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         }
 
         if (userOperator != null) {
-            volumeList.addAll(userOperator.getVolumes());
+            volumeList.addAll(userOperator.getVolumes().stream().filter(volume -> !volume.getName().equalsIgnoreCase(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).collect(Collectors.toList()));
+            volumeList.add(createTempDirVolume(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         }
 
         volumeList.add(createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
