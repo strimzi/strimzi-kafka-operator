@@ -1,14 +1,14 @@
 # Strimzi: Apache Kafka on Kubernetes
 
-Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) cluster on 
+Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) cluster on
 [Kubernetes](https://kubernetes.io/) or [OpenShift](https://www.openshift.com/) in various deployment configurations.
 See our [website](https://strimzi.io) for more details about the project.
 
 ## CRD Upgrades
 
-**!!! IMPORTANT !!!** 
-Strimzi 0.23 and newer supports only the API version `v1beta2` of all Strimzi custom resources. 
-This is a required as part of the migration to `apiextensionsk8s.io/v1` which is needed because Kubernetes 1.22 will remove support for `apiextensions.k8s.io/v1beta1`. 
+**!!! IMPORTANT !!!**
+Strimzi 0.23 and newer supports only the API version `v1beta2` of all Strimzi custom resources.
+This is a required as part of the migration to `apiextensionsk8s.io/v1` which is needed because Kubernetes 1.22 will remove support for `apiextensions.k8s.io/v1beta1`.
 Migration to `v1beta2` needs to be completed for all Strimzi CRDs and CRs before the upgrade to 0.23 or newer.
 For more details about the CRD upgrades, see the [documentation](https://strimzi.io/docs/operators/0.24.0/deploying.html#assembly-upgrade-resources-str).
 
@@ -177,6 +177,7 @@ the documentation for more details.
 | `labels`                             | Add labels to Operator Pod                | `{}`                                                 |
 | `nodeSelector`                       | Add a node selector to Operator Pod       | `{}`                                                 |
 | `featureGates`                       | Feature Gates configuration               | `nil`                                                |
+| `tmpDirSizeLimit`                    | Set the `sizeLimit` for the tmp dir volume used by the operator  | `1Mi`                         |
 | `labelsExclusionPattern`             | Override the exclude pattern for exclude some labels             | `""`                          |
 | `generateNetworkPolicy`              | Controls whether Strimzi generates network policy resources      | `true`                        |
 | `connectBuildTimeoutMs`              | Overrides the default timeout value for building new Kafka Connect    | `300000`                 |
