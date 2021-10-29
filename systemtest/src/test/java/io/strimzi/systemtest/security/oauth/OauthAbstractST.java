@@ -5,7 +5,12 @@
 package io.strimzi.systemtest.security.oauth;
 
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
@@ -20,6 +25,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Base64;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,6 +73,28 @@ public class OauthAbstractST extends AbstractST {
         connectorConfig.put("offset.storage.replication.factor", 1);
         connectorConfig.put("status.storage.replication.factor", 1);
     }
+
+    protected static final Function<KeycloakInstance, GenericKafkaListener> BUILD_OAUTH_TLS_LISTENER = (keycloakInstance) -> {
+        return new GenericKafkaListenerBuilder()
+            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withPort(9093)
+            .withType(KafkaListenerType.INTERNAL)
+            .withTls(true)
+            .withNewKafkaListenerAuthenticationOAuth()
+            .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
+            .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
+            .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
+            .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
+            .withUserNameClaim(keycloakInstance.getUserNameClaim())
+            .withTlsTrustedCertificates(
+                new CertSecretSourceBuilder()
+                    .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                    .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
+                    .build())
+            .withDisableTlsHostnameVerification(true)
+            .endKafkaListenerAuthenticationOAuth()
+            .build();
+    };
 
     protected void setupCoAndKeycloak(ExtensionContext extensionContext, String namespace) {
         resourceManager.createResource(extensionContext, NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));

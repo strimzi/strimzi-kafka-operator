@@ -9,13 +9,14 @@ import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaOauthExampleClients;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -566,25 +567,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
         LOGGER.info("Changing configuration of Kafka back to it's original form");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
-            kafka.getSpec().getKafka().setListeners(Arrays.asList(new GenericKafkaListenerBuilder()
-                    .withName("tls")
-                    .withPort(9093)
-                    .withType(KafkaListenerType.INTERNAL)
-                    .withTls(true)
-                    .withNewKafkaListenerAuthenticationOAuth()
-                        .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                        .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                        .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                        .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                        .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                        .withTlsTrustedCertificates(
-                            new CertSecretSourceBuilder()
-                                .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
-                                .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
-                                .build())
-                        .withDisableTlsHostnameVerification(true)
-                    .endKafkaListenerAuthenticationOAuth()
-                .build()));
+            kafka.getSpec().getKafka().setListeners(Arrays.asList(OauthAbstractST.BUILD_OAUTH_TLS_LISTENER.apply(keycloakInstance)));
         }, INFRA_NAMESPACE);
 
         KafkaUtils.waitForKafkaReady(INFRA_NAMESPACE, oauthClusterName);
@@ -604,6 +587,66 @@ public class OauthAuthorizationST extends OauthAbstractST {
         // TODO: create more examples via cluster wide stuff
     }
 
+    @ParallelNamespaceTest
+    @Order(10)
+    void testKeycloakAuthorizerToDelegateToSimpleAuthorizer(ExtensionContext extensionContext) {
+        TestStorage testStorage = new TestStorage(extensionContext);
+
+        // we have to create keycloak, team-a-client and team-b-client secret from `infra-namespace` to the new namespace
+        resourceManager.createResource(extensionContext, kubeClient().getSecret(INFRA_NAMESPACE, KeycloakInstance.KEYCLOAK_SECRET_NAME));
+        resourceManager.createResource(extensionContext, kubeClient().getSecret(INFRA_NAMESPACE, TEAM_A_CLIENT_SECRET));
+        resourceManager.createResource(extensionContext, kubeClient().getSecret(INFRA_NAMESPACE, TEAM_B_CLIENT_SECRET));
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
+            .editSpec()
+                .editKafka()
+                    .withListeners(OauthAbstractST.BUILD_OAUTH_TLS_LISTENER.apply(keycloakInstance))
+                    .withNewKafkaAuthorizationKeycloak()
+                        .withClientId(KAFKA_CLIENT_ID)
+                        .withDisableTlsHostnameVerification(true)
+                        .withDelegateToKafkaAcls(true)
+                        // ca.crt a tls.crt
+                        .withTlsTrustedCertificates(
+                            new CertSecretSourceBuilder()
+                                .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
+                                .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
+                                .build()
+                        )
+                        .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                    .endKafkaAuthorizationKeycloak()
+                .endKafka()
+            .endSpec()
+            .build());
+
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), TEAM_A_CLIENT).build());
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), TEAM_B_CLIENT).build());
+
+        final String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
+        final String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
+        final String topicName = TOPIC_A + "-" + testStorage.getTopicName();
+        final String consumerGroup = "a-consumer_group-" + testStorage.getConsumerName();
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), topicName, testStorage.getNamespaceName()).build());
+
+        KafkaOauthExampleClients teamAOauthClientJob = new KafkaOauthExampleClients.Builder()
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(teamAProducerName)
+            .withConsumerName(teamAConsumerName)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withTopicName(topicName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withConsumerGroup(consumerGroup)
+            .withOAuthClientId(TEAM_A_CLIENT)
+            .withOAuthClientSecret(TEAM_A_CLIENT_SECRET)
+            .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .build();
+
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(testStorage.getClusterName()).build());
+        ClientUtils.waitForClientSuccess(teamAProducerName, testStorage.getNamespaceName(), MESSAGE_COUNT);
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(testStorage.getClusterName()).build());
+        ClientUtils.waitForClientSuccess(teamAConsumerName, testStorage.getNamespaceName(), MESSAGE_COUNT);
+    }
+
     @BeforeAll
     void setUp(ExtensionContext extensionContext)  {
         super.beforeAllMayOverride(extensionContext);
@@ -618,25 +661,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .endMetadata()
             .editSpec()
                 .editKafka()
-                    .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withNewKafkaListenerAuthenticationOAuth()
-                                .withValidIssuerUri(keycloakInstance.getValidIssuerUri())
-                                .withJwksExpirySeconds(keycloakInstance.getJwksExpireSeconds())
-                                .withJwksRefreshSeconds(keycloakInstance.getJwksRefreshSeconds())
-                                .withJwksEndpointUri(keycloakInstance.getJwksEndpointUri())
-                                .withUserNameClaim(keycloakInstance.getUserNameClaim())
-                                .withTlsTrustedCertificates(
-                                    new CertSecretSourceBuilder()
-                                        .withSecretName(KeycloakInstance.KEYCLOAK_SECRET_NAME)
-                                        .withCertificate(KeycloakInstance.KEYCLOAK_SECRET_CERT)
-                                        .build())
-                                .withDisableTlsHostnameVerification(true)
-                            .endKafkaListenerAuthenticationOAuth()
-                        .build())
+                    .withListeners(OauthAbstractST.BUILD_OAUTH_TLS_LISTENER.apply(keycloakInstance))
                     .withNewKafkaAuthorizationKeycloak()
                         .withClientId(KAFKA_CLIENT_ID)
                         .withDisableTlsHostnameVerification(true)
