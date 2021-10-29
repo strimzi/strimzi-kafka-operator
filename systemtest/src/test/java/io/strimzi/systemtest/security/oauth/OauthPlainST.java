@@ -689,7 +689,7 @@ public class OauthPlainST extends OauthAbstractST {
             .build());
 
         // verify that KafkaConnect is able to connect to Oauth Kafka configured as plain
-        KafkaConnectUtils.waitForConnectReady(testStorage.getClusterName());
+        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
     @BeforeAll
