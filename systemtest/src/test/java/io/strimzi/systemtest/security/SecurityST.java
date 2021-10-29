@@ -507,7 +507,7 @@ class SecurityST extends AbstractST {
             eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
         }
 
-//        TODO: Once issue with removal will be resolved (means RU CC and KE when cluster CA is changed) uncomment commented code
+//        TODO: Once issue with removal will be resolved (means RU CC and KE when cluster CA is changed) uncomment commented code - https://github.com/strimzi/strimzi-kafka-operator/issues/5810
 //        if (keAndCCShouldRoll) {
         LOGGER.info("Wait for KafkaExporter and CruiseControl to rolling restart (1)...");
         kePod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaExporterResources.deploymentName(clusterName), 1, kePod);
@@ -591,6 +591,7 @@ class SecurityST extends AbstractST {
             assertThat("EO pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)), is(eoPod));
         }
 
+//        TODO: Once issue with removal will be resolved (means RU CC and KE when cluster CA is changed) uncomment commented code - https://github.com/strimzi/strimzi-kafka-operator/issues/5810
 //        if (!keAndCCShouldRoll) {
 //            assertThat("CC pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName)), is(ccPod));
 //            assertThat("KE pod should not roll, but did.", DeploymentUtils.depSnapshot(namespaceName, KafkaExporterResources.deploymentName(clusterName)), is(kePod));
