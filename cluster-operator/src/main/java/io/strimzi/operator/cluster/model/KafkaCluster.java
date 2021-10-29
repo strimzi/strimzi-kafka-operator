@@ -1411,7 +1411,7 @@ public class KafkaCluster extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>(dataVolumes);
 
         if (rack != null || isExposedWithNodePort()) {
-            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "100Ki", "Memory"));
+            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
         }
 
         volumeList.add(createTempDirVolume());
