@@ -39,5 +39,6 @@ include::../../modules/configuring/proc-loading-config-with-provider.adoc[levelo
 
 [role="_additional-resources"]
 .Additional resources
-link:{BookURLDeploying}#deploy-examples-{context}[Example configuration files provided with Strimzi^]
-link:{BookURLDeploying}#assembly-metrics-str[Introduce metrics to monitor your Strimzi deployment^]
+
+* link:{BookURLDeploying}#deploy-examples-{context}[Example configuration files provided with Strimzi^]
+* link:{BookURLDeploying}#assembly-metrics-str[Introduce metrics to monitor your Strimzi deployment^]
