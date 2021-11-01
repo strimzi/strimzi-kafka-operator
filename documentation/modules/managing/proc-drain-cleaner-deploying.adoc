@@ -11,7 +11,7 @@ Deploy the Strimzi Drain Cleaner to the Kubernetes cluster where the Cluster Ope
 .Prerequisites
 
 * You have xref:drain-cleaner-prereqs-str[downloaded the Strimzi Drain Cleaner deployment files].
-* You have a highly available Kafka cluster deployment running with nodes that you wish to update.
+* You have a highly available Kafka cluster deployment running with Kubernetes worker nodes that you wish to update.
 * Topics are replicated for high availability.
 +
 Topic configuration specifies a replication factor of at least 3 and a minimum number of in-sync replicas to 1 less than the replication factor.
