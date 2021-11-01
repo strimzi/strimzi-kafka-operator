@@ -311,12 +311,12 @@ public class EntityOperator extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>(7);
 
         if (topicOperator != null) {
-            volumeList.addAll(topicOperator.getVolumes().stream().filter(volume -> !volume.getName().equalsIgnoreCase(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).collect(Collectors.toList()));
+            volumeList.addAll(topicOperator.getVolumes());
             volumeList.add(createTempDirVolume(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         }
 
         if (userOperator != null) {
-            volumeList.addAll(userOperator.getVolumes().stream().filter(volume -> !volume.getName().equalsIgnoreCase(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).collect(Collectors.toList()));
+            volumeList.addAll(userOperator.getVolumes());
             volumeList.add(createTempDirVolume(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
         }
 
