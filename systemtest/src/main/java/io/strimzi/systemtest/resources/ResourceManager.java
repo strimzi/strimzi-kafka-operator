@@ -154,11 +154,9 @@ public class ResourceManager {
             if (testContext != BeforeAllOnce.getSharedExtensionContext()) {
                 // if it is parallel namespace test we are gonna replace resource a namespace
                 if (StUtils.isParallelNamespaceTest(testContext)) {
-                    if (!Environment.isNamespaceRbacScope()) {
-                        final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-                        LOGGER.info("Using namespace: {}", namespace);
-                        resource.getMetadata().setNamespace(namespace);
-                    }
+                    final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+                    LOGGER.info("Using namespace: {}", namespace);
+                    resource.getMetadata().setNamespace(namespace);
                 }
             }
 

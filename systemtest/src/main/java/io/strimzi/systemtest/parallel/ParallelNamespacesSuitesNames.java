@@ -6,8 +6,10 @@ package io.strimzi.systemtest.parallel;
 
 import io.strimzi.systemtest.Constants;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -16,6 +18,13 @@ import java.util.stream.Collectors;
  * parallel when RBAC is set to NAMESPACE.
  */
 public class ParallelNamespacesSuitesNames {
+
+    // note that in the firstList and secondList must not be duplicates
+    private static final BiFunction<List<String>, List<String>, List<String>> MERGE_TO_LISTS = (firstList, secondList) -> {
+        List<String> mergedLists = new ArrayList<>(firstList);
+        mergedLists.addAll(secondList);
+        return mergedLists;
+    };
 
     private static final List<String> PARALLEL_NAMESPACE_SUITE_NAMES = Arrays.asList(
         // default namespace for cluster operator
@@ -26,14 +35,17 @@ public class ParallelNamespacesSuitesNames {
         Constants.BRIDGE_HTTP_TLS_NAMESPACE
     );
 
-    public static String getRbacNamespacesToWatch() {
-        return PARALLEL_NAMESPACE_SUITE_NAMES.stream()
+    private static final List<String> ALL_PARALLEL_NAMESPACE_NAMES =
+        MERGE_TO_LISTS.apply(PARALLEL_NAMESPACE_SUITE_NAMES, NamespaceWatcher.PARALLEL_NAMESPACE_TEST_NAMES);
+
+    public static String getAllNamespacesToWatch() {
+        return ALL_PARALLEL_NAMESPACE_NAMES.stream()
             .map(parallelSuiteName -> "," + parallelSuiteName)
             .collect(Collectors.joining())
             .substring(1);
     }
 
     public static List<String> getBindingNamespaces() {
-        return PARALLEL_NAMESPACE_SUITE_NAMES;
+        return ALL_PARALLEL_NAMESPACE_NAMES;
     }
 }

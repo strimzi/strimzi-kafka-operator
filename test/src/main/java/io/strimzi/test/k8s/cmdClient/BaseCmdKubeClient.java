@@ -370,8 +370,8 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         TestUtils.waitFor(resourceType + " " + resourceName + " removal",
             1_000L, 480_000L, () -> {
                 try {
-                    get(resourceType, resourceName);
-                    return false;
+                    final String resultFromKubectl = get(resourceType, resourceName);
+                    return resultFromKubectl.equals("Error from server (NotFound): " + resourceType + " \"" + resourceName + "\" not found");
                 } catch (KubeClusterException.NotFound e) {
                     return true;
                 }

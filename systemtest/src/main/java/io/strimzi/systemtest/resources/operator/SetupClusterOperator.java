@@ -135,19 +135,11 @@ public class SetupClusterOperator {
     }
 
     public static SetupClusterOperatorBuilder defaultInstallation() {
-        if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
-            LOGGER.debug("Building default installation for RBAC Cluster operator.");
-            return new SetupClusterOperator.SetupClusterOperatorBuilder()
-                .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-                .withNamespace(Constants.INFRA_NAMESPACE)
-                .withWatchingNamespaces(ParallelNamespacesSuitesNames.getRbacNamespacesToWatch())
-                .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces());
-        }
         LOGGER.debug("Building default installation for Cluster operator.");
         return new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(Constants.INFRA_NAMESPACE)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .withWatchingNamespaces(ParallelNamespacesSuitesNames.getAllNamespacesToWatch())
             .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces());
     }
 

@@ -40,28 +40,15 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
             LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
             LOGGER.debug("[BEFORE SUITE] - Going to setup testing system");
 
-            // When we set RBAC policy to NAMESPACE, we must copy all Roles to other (parallel) namespaces.
-            if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
-                LOGGER.debug("Watched namespaces: :\n{}", ParallelNamespacesSuitesNames.getRbacNamespacesToWatch());
+            // setup cluster operator before all suites only once
+            install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+                .withExtensionContext(sharedExtensionContext)
+                .withNamespace(Constants.INFRA_NAMESPACE)
+                .withWatchingNamespaces(ParallelNamespacesSuitesNames.getAllNamespacesToWatch())
+                .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
+                .createInstallation()
+                .runInstallation();
 
-                // setup cluster operator before all suites only once
-                install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                    .withExtensionContext(sharedExtensionContext)
-                    .withNamespace(Constants.INFRA_NAMESPACE)
-                    .withWatchingNamespaces(ParallelNamespacesSuitesNames.getRbacNamespacesToWatch())
-                    .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
-                    .createInstallation()
-                    .runInstallation();
-            } else {
-                // setup cluster operator before all suites only once
-                install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                    .withExtensionContext(sharedExtensionContext)
-                    .withNamespace(Constants.INFRA_NAMESPACE)
-                    .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-                    .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
-                    .createInstallation()
-                    .runInstallation();
-            }
             // correction, because when @BeforeAllCallback is invoked firstly by @IsolatedSuite class it decrement counter which is not correct
             if (StUtils.isParallelSuite(extensionContext)) {
                 ParallelSuiteController.decrementCounter();

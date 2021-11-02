@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
+import io.strimzi.systemtest.parallel.NamespaceWatcher;
 import io.strimzi.systemtest.parallel.ParallelSuiteController;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
@@ -78,6 +79,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
+    protected final NamespaceWatcher namespaceWatcher = new NamespaceWatcher();
     protected SetupClusterOperator install;
     protected OlmResource olmResource;
     protected KubeClusterResource cluster;
@@ -529,17 +531,15 @@ public abstract class AbstractST implements TestSeparator {
     protected void afterEachMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(extensionContext);
+        }
 
-            // if 'parallel namespace test' we are gonna delete namespace
-            if (StUtils.isParallelNamespaceTest(extensionContext)) {
-                // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
-                if (!Environment.isNamespaceRbacScope()) {
-                    final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String testName = extensionContext.getTestMethod().get().getName();
 
-                    LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, extensionContext.getDisplayName());
-                    cluster.deleteNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName()), namespaceToDelete);
-                }
-            }
+        // if 'parallel namespace test' we are gonna delete namespace
+        if (StUtils.isParallelNamespaceTest(extensionContext)) {
+            final String namespaceToUnlock = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(testName + "-" + Constants.NAMESPACE_KEY).toString();
+            LOGGER.info("Unlocking namespace:{} for test case:{}", namespaceToUnlock, testName);
+            namespaceWatcher.unlockNamespace(namespaceToUnlock);
         }
     }
 
@@ -571,7 +571,7 @@ public abstract class AbstractST implements TestSeparator {
      * you your implementation in sub-class as you want.
      * @param extensionContext
      */
-    protected void beforeEachMayOverride(ExtensionContext extensionContext) {
+    protected void beforeEachMayOverride(ExtensionContext extensionContext) throws InterruptedException {
         // this is because we need to have different clusterName and kafkaClientsName in each test case without
         // synchronization it can produce `data-race`
         String testName = null;
@@ -596,19 +596,12 @@ public abstract class AbstractST implements TestSeparator {
 
             // if 'parallel namespace test' we are gonna create namespace
             if (StUtils.isParallelNamespaceTest(extensionContext)) {
-                // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
-                if (!Environment.isNamespaceRbacScope()) {
-                    final String namespaceTestCase = "namespace-" + counterOfNamespaces.getAndIncrement();
+                final String namespaceTestCase = namespaceWatcher.pickAndLockNamespace();
 
-                    extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, namespaceTestCase);
-                    // create namespace by
-                    LOGGER.info("Creating namespace:{} for test case:{}", namespaceTestCase, testName);
+                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(testName + "-" + Constants.NAMESPACE_KEY, namespaceTestCase);
 
-                    cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName()), namespaceTestCase);
-                    NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
-                    if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
-                        StUtils.copyImagePullSecret(namespaceTestCase);
-                    }
+                if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+                    StUtils.copyImagePullSecret(namespaceTestCase);
                 }
             }
         }
@@ -637,7 +630,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     @BeforeEach
-    void setUpTestCase(ExtensionContext extensionContext) {
+    void setUpTestCase(ExtensionContext extensionContext) throws InterruptedException {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [BEFORE EACH] has been called", this.getClass().getName());
         beforeEachMayOverride(extensionContext);
