@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A Junit resource which discovers the running cluster and provides an appropriate KubeClient for it,
@@ -214,6 +215,22 @@ public class KubeClusterResource {
         if (collectorElement != null) {
             deleteNamespaceFromSet(collectorElement, testNamespace);
         }
+    }
+
+    public void deleteAllSetNamespaces() {
+        LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+        LOGGER.info("Deleting these namespaces:\n{}", MAP_WITH_SUITE_NAMESPACES::toString);
+        LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+
+        MAP_WITH_SUITE_NAMESPACES.values()
+            .forEach(setOfNamespaces ->
+                setOfNamespaces.parallelStream()
+                    .forEach(namespaceName -> {
+                        LOGGER.debug("Deleting {} namespace", namespaceName);
+                        kubeClient().deleteNamespace(namespaceName);
+                        client.getClient().namespaces().withName(namespaceName).waitUntilCondition(
+                            namespace -> client.getClient().namespaces().withName(namespaceName).get() == null, 4, TimeUnit.MINUTES);
+                    }));
     }
 
     /**
