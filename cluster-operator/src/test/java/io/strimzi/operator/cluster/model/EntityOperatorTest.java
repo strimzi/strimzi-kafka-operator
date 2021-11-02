@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
@@ -16,6 +17,7 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
+import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
@@ -97,6 +99,11 @@ public class EntityOperatorTest {
             .withTlsSidecar(tlsSidecar)
             .withTopicOperator(entityTopicOperatorSpec)
             .withUserOperator(entityUserOperatorSpec)
+            .withNewTemplate()
+                .withNewPod()
+                    .withTmpDirSizeLimit("100Mi")
+                .endPod()
+            .endTemplate()
             .build();
 
     private final Kafka resource =
@@ -138,6 +145,11 @@ public class EntityOperatorTest {
         assertThat(tlsSidecarContainer.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(tlsHealthTimeout)));
         assertThat(tlsSidecarContainer.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(tlsHealthDelay)));
         assertThat(tlsSidecarContainer.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(tlsHealthTimeout)));
+
+        List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
+        assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
+        assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
+        assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
     }
 
     @ParallelTest

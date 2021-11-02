@@ -1586,11 +1586,11 @@ public abstract class AbstractModel {
     }
 
     protected Volume createTempDirVolume() {
-        return VolumeUtils.createEmptyDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templateTmpDirSizeLimit == null ? "1Mi" : templateTmpDirSizeLimit, "Memory");
+        return createTempDirVolume(STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME);
     }
 
     protected Volume createTempDirVolume(String volumeName) {
-        return VolumeUtils.createEmptyDirVolume(volumeName, "1Mi", "Memory");
+        return VolumeUtils.createEmptyDirVolume(volumeName, templateTmpDirSizeLimit == null ? "1Mi" : templateTmpDirSizeLimit, "Memory");
     }
 
     protected VolumeMount createTempDirVolumeMount() {

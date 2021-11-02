@@ -93,6 +93,11 @@ public class KafkaExporterTest {
             .withTopicRegex(topicRegex)
             .withImage(keImage)
             .withEnableSaramaLogging(true)
+            .withNewTemplate()
+                .withNewPod()
+                    .withTmpDirSizeLimit("100Mi")
+                .endPod()
+            .endTemplate()
             .build();
     private final Kafka resource =
             new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
@@ -192,7 +197,7 @@ public class KafkaExporterTest {
         Volume volume = volumes.stream().filter(vol -> AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
         assertThat(volume.getEmptyDir().getMedium(), is("Memory"));
-        assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
+        assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("100Mi")));
 
         volume = volumes.stream().filter(vol -> KafkaExporter.CLUSTER_CA_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
