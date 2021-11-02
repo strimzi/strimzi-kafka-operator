@@ -1223,7 +1223,7 @@ class LoggingChangeST extends AbstractST {
     @ParallelNamespaceTest
     void testLoggingHierarchy(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String namespaceName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(extensionContext.getDisplayName() + "-" + Constants.NAMESPACE_KEY).toString();
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext,

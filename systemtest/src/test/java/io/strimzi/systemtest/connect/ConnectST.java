@@ -1387,9 +1387,7 @@ class ConnectST extends AbstractST {
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+        install = new SetupClusterOperator().defaultInstallation()
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();

@@ -171,9 +171,10 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .addToMatchLabels(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE)
             .build();
 
+        final String testCase = extensionContext.getDisplayName();
         final String namespaceName = StUtils.isParallelNamespaceTest(extensionContext) && !Environment.isNamespaceRbacScope() ?
             // if parallel namespace test use namespace from store and if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString() :
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(testCase + "-" + Constants.NAMESPACE_KEY).toString() :
             // otherwise use resource namespace
             resource.getMetadata().getNamespace();
 

@@ -46,7 +46,7 @@ final public class TestStorage {
         this.producerName = clusterName + "-" + PRODUCER;
         this.consumerName = clusterName  + "-" + CONSUMER;
 
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, this.namespaceName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(extensionContext.getDisplayName() + "-" + Constants.NAMESPACE_KEY, this.namespaceName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CLUSTER_KEY, this.clusterName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.TOPIC_KEY, this.topicName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.STREAM_TOPIC_KEY, this.streamsTopicTargetName);
@@ -64,7 +64,8 @@ final public class TestStorage {
     }
 
     public String getNamespaceName() {
-        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        final String testCase = this.extensionContext.getDisplayName();
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(testCase + "-" + Constants.NAMESPACE_KEY).toString();
     }
 
     public String getClusterName() {

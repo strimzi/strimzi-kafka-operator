@@ -198,6 +198,7 @@ public class BundleResource implements ResourceType<Deployment> {
         envVars.add(new EnvVar("STRIMZI_IMAGE_PULL_POLICY", Environment.COMPONENTS_IMAGE_PULL_POLICY, null));
         envVars.add(new EnvVar("STRIMZI_LOG_LEVEL", Environment.STRIMZI_LOG_LEVEL, null));
         envVars.add(new EnvVar("STRIMZI_RBAC_SCOPE", Environment.STRIMZI_RBAC_SCOPE, null));
+//        envVars.add(new EnvVar("KUBERNETES_WEBSOCKET_TIMEOUT", "100000", null));
 
         if (extraEnvVars != null) {
 

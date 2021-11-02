@@ -27,7 +27,7 @@ spec:
             name: strimzi-cluster-operator
       containers:
         - name: strimzi-cluster-operator
-          image: quay.io/strimzi/operator:latest
+          image: quay.io/morsak/operator:latest
           ports:
             - containerPort: 8080
               name: http

@@ -362,8 +362,8 @@ public interface Constants {
      * Resource constants for Cluster Operator. In case we execute more than 5 test cases in parallel we at least these configuration
      * (because if we use default configuration, the Cluster Operator Pod occasionally restarting because of OOM)
      */
-    String CLUSTER_OPERATOR_RESOURCE_CPU_LIMITS = "4000m";
+    String CLUSTER_OPERATOR_RESOURCE_CPU_LIMITS = "8000m";
     String CLUSTER_OPERATOR_RESOURCE_MEMORY_LIMITS = "9Gi";
-    String CLUSTER_OPERATOR_RESOURCE_CPU_REQUESTS = "800m";
+    String CLUSTER_OPERATOR_RESOURCE_CPU_REQUESTS = "1600m";
     String CLUSTER_OPERATOR_RESOURCE_MEMORY_REQUESTS = "4Gi";
 }
