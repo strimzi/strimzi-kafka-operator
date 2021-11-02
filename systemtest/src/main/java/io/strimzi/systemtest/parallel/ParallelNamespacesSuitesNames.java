@@ -23,7 +23,9 @@ public class ParallelNamespacesSuitesNames {
         Constants.BRIDGE_KAFKA_CORS_NAMESPACE,
         Constants.BRIDGE_KAFKA_EXTERNAL_LISTENER_NAMESPACE,
         Constants.BRIDGE_SCRAM_SHA_NAMESPACE,
-        Constants.BRIDGE_HTTP_TLS_NAMESPACE
+        Constants.BRIDGE_HTTP_TLS_NAMESPACE,
+        // metrics namespace
+        Constants.METRICS_SECOND_NAMESPACE
     );
 
     public static String getRbacNamespacesToWatch() {

@@ -646,8 +646,6 @@ public class MetricsST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
-        super.beforeAllMayOverride(extensionContext);
-
         install.unInstall();
         install = SetupClusterOperator.defaultInstallation()
             .createInstallation()
