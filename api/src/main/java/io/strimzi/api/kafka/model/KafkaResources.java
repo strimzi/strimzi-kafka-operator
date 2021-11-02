@@ -128,6 +128,17 @@ public class KafkaResources {
     }
 
     /**
+     * Returns the address (<em>&lt;host&gt;</em>.<em>&lt;namespace&gt;</em>.svc:<em>&lt;port&gt;</em>)
+     * of the internal plain bootstrap {@code Service} for a {@code Kafka} cluster of the given name and namespace.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The address of the corresponding bootstrap {@code Service}.
+     * @see #tlsBootstrapAddress(String)
+     */
+    public static String namespacedPlainBootstrapAddress(String clusterName, String namespace) {
+        return bootstrapServiceName(clusterName) + "." + namespace + ".svc:9092";
+    }
+
+    /**
      * Returns the address (<em>&lt;host&gt;</em>:<em>&lt;port&gt;</em>)
      * of the internal TLS bootstrap {@code Service} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
@@ -136,6 +147,18 @@ public class KafkaResources {
      */
     public static String tlsBootstrapAddress(String clusterName) {
         return bootstrapServiceName(clusterName) + ":9093";
+    }
+
+    /**
+     * Returns the address (<em>&lt;host&gt;</em>.<em>&lt;namespace&gt;</em>.svc:<em>&lt;port&gt;</em>)
+     * of the internal TLS bootstrap {@code Service} for a {@code Kafka} cluster of the given name and namespace.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @param namespace  The {@code metadata.namespace} of the {@code Kafka} resource.
+     * @return The address of the corresponding bootstrap {@code Service}.
+     * @see #plainBootstrapAddress(String)
+     */
+    public static String namespacedTlsBootstrapAddress(String clusterName, String namespace) {
+        return bootstrapServiceName(clusterName) + "." + namespace + ".svc:9093";
     }
 
     /**
