@@ -57,14 +57,14 @@ public class KafkaMirrorMaker2Templates {
     }
 
     private static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(KafkaMirrorMaker2 kafkaMirrorMaker2, String name, String kafkaTargetClusterName, String kafkaSourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
-        return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, kafkaTargetClusterName, kafkaSourceClusterName, kafkaMirrorMaker2Replicas, tlsListener, kafkaMirrorMaker2.getMetadata().getNamespace(), kafkaMirrorMaker2.getMetadata().getNamespace());
+        return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, kafkaTargetClusterName, kafkaSourceClusterName, kafkaMirrorMaker2Replicas, tlsListener, null, null);
     }
 
     private static KafkaMirrorMaker2Builder defaultKafkaMirrorMaker2(KafkaMirrorMaker2 kafkaMirrorMaker2, String name, String kafkaTargetClusterName, String kafkaSourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener, String sourceNs, String targetNs) {
 
         KafkaMirrorMaker2ClusterSpec targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
             .withAlias(kafkaTargetClusterName)
-            .withBootstrapServers(KafkaResources.namespacedPlainBootstrapAddress(kafkaTargetClusterName, sourceNs))
+            .withBootstrapServers(targetNs == null ? KafkaResources.plainBootstrapAddress(kafkaTargetClusterName) : KafkaResources.namespacedPlainBootstrapAddress(kafkaTargetClusterName, targetNs))
             .addToConfig("config.storage.replication.factor", 1)
             .addToConfig("offset.storage.replication.factor", 1)
             .addToConfig("status.storage.replication.factor", 1)
@@ -72,19 +72,19 @@ public class KafkaMirrorMaker2Templates {
 
         KafkaMirrorMaker2ClusterSpec sourceClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
             .withAlias(kafkaSourceClusterName)
-            .withBootstrapServers(KafkaResources.namespacedPlainBootstrapAddress(kafkaSourceClusterName, targetNs))
+            .withBootstrapServers(sourceNs == null ? KafkaResources.plainBootstrapAddress(kafkaSourceClusterName) : KafkaResources.namespacedPlainBootstrapAddress(kafkaSourceClusterName, sourceNs))
             .build();
 
         if (tlsListener) {
             targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder(targetClusterSpec)
-                .withBootstrapServers(KafkaResources.namespacedTlsBootstrapAddress(kafkaTargetClusterName, targetNs))
+                .withBootstrapServers(targetNs == null ? KafkaResources.tlsBootstrapAddress(kafkaTargetClusterName) : KafkaResources.namespacedTlsBootstrapAddress(kafkaTargetClusterName, targetNs))
                 .withNewTls()
                     .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaTargetClusterName)).withCertificate("ca.crt").build())
                 .endTls()
                 .build();
 
             sourceClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder(sourceClusterSpec)
-                .withBootstrapServers(KafkaResources.namespacedTlsBootstrapAddress(kafkaSourceClusterName, sourceNs))
+                .withBootstrapServers(sourceNs == null ? KafkaResources.tlsBootstrapAddress(kafkaSourceClusterName) : KafkaResources.namespacedTlsBootstrapAddress(kafkaSourceClusterName, sourceNs))
                 .withNewTls()
                     .withTrustedCertificates(new CertSecretSourceBuilder().withSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaSourceClusterName)).withCertificate("ca.crt").build())
                 .endTls()

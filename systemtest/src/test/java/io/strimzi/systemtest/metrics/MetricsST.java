@@ -683,7 +683,7 @@ public class MetricsST extends AbstractST {
             KafkaTemplates.kafkaWithMetrics(SECOND_CLUSTER, SECOND_NAMESPACE, 1, 1).build(),
             KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, firstKafkaClientsName).build(),
             KafkaClientsTemplates.kafkaClients(SECOND_NAMESPACE, false, secondKafkaClientsName).build(),
-            KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1, INFRA_NAMESPACE, SECOND_NAMESPACE).build(),
+            KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1, SECOND_NAMESPACE, INFRA_NAMESPACE).build(),
             KafkaBridgeTemplates.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, metricsClusterName, KafkaResources.plainBootstrapAddress(metricsClusterName), 1).build()
         );
 
