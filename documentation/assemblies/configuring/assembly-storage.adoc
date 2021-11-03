@@ -5,6 +5,7 @@
 [id='assembly-storage-{context}']
 = Kafka and ZooKeeper storage types
 
+[role="_abstract"]
 As stateful applications, Kafka and ZooKeeper need to store data on disk. Strimzi supports three storage types for this data:
 
 * Ephemeral
@@ -20,14 +21,13 @@ When configuring a `Kafka` resource, you can specify the type of storage used by
 
 The storage type is configured in the `type` field.
 
+Refer to the schema reference for more information on storage configuration properties:
+
+* xref:type-EphemeralStorage-reference[`EphemeralStorage` schema reference]
+* xref:type-PersistentClaimStorage-reference[`PersistentClaimStorage` schema reference]
+* xref:type-JbodStorage-reference[`JbodStorage` schema reference]
+
 WARNING: The storage type cannot be changed after a Kafka cluster is deployed.
-
-.Additional resources
-
-* For more information about ephemeral storage, see xref:type-EphemeralStorage-reference[ephemeral storage schema reference].
-* For more information about persistent storage, see xref:type-PersistentClaimStorage-reference[persistent storage schema reference].
-* For more information about JBOD storage, see xref:type-JbodStorage-reference[JBOD schema reference].
-* For more information about the schema for `Kafka`, see xref:type-Kafka-reference[`Kafka` schema reference].
 
 include::../../modules/configuring/con-considerations-for-data-storage.adoc[leveloffset=+1]
 

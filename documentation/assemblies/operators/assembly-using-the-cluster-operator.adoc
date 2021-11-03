@@ -9,12 +9,7 @@
 [role="_abstract"]
 The Cluster Operator is used to deploy a Kafka cluster and other Kafka components.
 
-The Cluster Operator is deployed using YAML installation files.
-
-[role="_additional-resources"]
-.Additional resources
-* link:{BookURLDeploying}#cluster-operator-str[Deploying the Cluster Operator^] in the _Deploying and Upgrading Strimzi_ guide.
-* xref:assembly-config-kafka-str[Kafka Cluster configuration].
+For information on deploying the Cluster Operator, see link:{BookURLDeploying}#cluster-operator-str[Deploying the Cluster Operator^].
 
 include::../../modules/operators/ref-operator-cluster.adoc[leveloffset=+1]
 //Passing proxy configuration variables from Cluster Operator

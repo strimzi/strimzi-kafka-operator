@@ -18,6 +18,12 @@ This chapter describes how to configure different aspects of the supported deplo
 NOTE: Labels applied to a custom resource are also applied to the Kubernetes resources making up its cluster.
 This provides a convenient mechanism for resources to be labeled as required.
 
+Strimzi provides link:{BookURLDeploying}#deploy-examples-{context}[example configuration files^], which can serve as a starting point when building your own Kafka component configuration for deployment.
+
+.Monitoring a Strimzi deployment
+You can use Prometheus and Grafana to monitor your Strimzi deployment.
+For more information, see link:{BookURLDeploying}#assembly-metrics-str[Introducing metrics to Kafka^].
+
 include::assembly-config-kafka.adoc[leveloffset=+1]
 
 include::assembly-config-kafka-connect.adoc[leveloffset=+1]
@@ -36,9 +42,3 @@ include::assembly-logging-configuration.adoc[leveloffset=+1]
 
 //Procedure to load configuration from external sources for all Kafka components
 include::../../modules/configuring/proc-loading-config-with-provider.adoc[leveloffset=+1]
-
-[role="_additional-resources"]
-.Additional resources
-
-* link:{BookURLDeploying}#deploy-examples-{context}[Example configuration files provided with Strimzi^]
-* link:{BookURLDeploying}#assembly-metrics-str[Introduce metrics to monitor your Strimzi deployment^]

@@ -22,7 +22,7 @@ endif::StrimziUpgrades[]
 * xref:con-upgrade-cluster-{context}[]
 --
 
-. When upgrading from {ConvertAfterProductVersion} or earlier, update existing custom resources to support the `v1beta2` API version.
+. When upgrading Strimzi from {ConvertAfterProductVersion} or earlier, update existing custom resources to support the `v1beta2` API version.
 +
 --
 * xref:assembly-upgrade-resources-{context}[]

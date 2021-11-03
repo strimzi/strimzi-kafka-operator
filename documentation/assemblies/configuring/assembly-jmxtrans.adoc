@@ -13,8 +13,6 @@ Strimzi supports using JmxTrans to read JMX metrics from Kafka brokers.
 JmxTrans reads JMX metrics data from secure or insecure Kafka brokers and pushes the data to remote sinks in various data formats.
 For example, JmxTrans can obtain JMX metrics about the request rate of each Kafka broker's network and then push the data to a Logstash database outside the Kubernetes cluster.
 
+For more information about JmxTrans, see the link:https://github.com/jmxtrans/jmxtrans[JmxTrans GitHub^].
+
 include::../../modules/configuring/proc-jmxtrans-deployment.adoc[leveloffset=+1]
-
-== Additional resources
-
-For more information about JmxTrans, see the link:https://github.com/jmxtrans/jmxtrans[JmxTrans github^].

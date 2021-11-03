@@ -5,6 +5,7 @@
 [id='proc-restricting-access-to-listeners-using-network-policies-{context}']
 = Restricting access to Kafka listeners using network policies
 
+[role="_abstract"]
 You can restrict access to a listener to only selected applications by using the `networkPolicyPeers` property.
 
 .Prerequisites
@@ -49,5 +50,8 @@ Use `kubectl apply`:
 [source,shell,subs=+quotes]
 kubectl apply -f _your-file_
 
+[role="_additional-resources"]
 .Additional resources
-* For more information about the schema, see the {K8sNetworkPolicyPeerAPI} and the xref:type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference].
+
+* xref:configuration-listener-network-policy-reference[`networkPolicyPeers` configuration]
+* {K8sNetworkPolicyPeerAPI}

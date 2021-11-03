@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-config-kafka-connect.adoc
+// assembly-deployment-configuration.adoc
 
 [id='proc-loading-config-with-provider-{context}']
 = Loading configuration values from external sources
@@ -151,8 +151,3 @@ spec:
 Placeholders for the property values in the ConfigMap are referenced in the connector configuration.
 The placeholder structure is `configmaps:__PATH-AND-FILE-NAME__:__PROPERTY__`.
 `KubernetesConfigMapConfigProvider` reads and extracts the _option1_ property value from the external ConfigMap.
-
-
-[role="_additional-resources"]
-.Additional resources
-* xref:type-ExternalConfiguration-reference[External configuration for Kafka Connect connectors]

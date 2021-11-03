@@ -22,12 +22,13 @@ NOTE: Strimzi provides example installation files for Prometheus and Grafana.
 You can use these files as a starting point when trying out monitoring of Strimzi.
 For further support, try engaging with the Prometheus and Grafana developer communities.
 
-[role="_additional-resources"]
-.Additional resources
-* link:https://prometheus.io/docs/introduction/overview/[Prometheus documentation]
+.Supporting documentation for metrics and monitoring tools
+For more information on the metrics and monitoring tools, refer to the supporting documentation:
+
+* {PrometheusHome}
 * {PrometheusConfig}
-* link:https://grafana.com/docs/guides/getting_started/[Grafana documentation]
 * {kafka-exporter-project}
+* {GrafanaHome}
 * link:http://kafka.apache.org/documentation/#monitoring[Apache Kafka Monitoring] describes JMX metrics exposed by Apache Kafka
 * link:https://zookeeper.apache.org/doc/current/zookeeperJMX.html[ZooKeeper JMX] describes JMX metrics exposed by Apache ZooKeeper
 

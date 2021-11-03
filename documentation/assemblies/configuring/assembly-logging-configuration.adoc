@@ -47,10 +47,11 @@ spec:
 Values for the `name` and `key` of the ConfigMap are mandatory.
 Default logging is used if the `name` or `key` is not set.
 
-[role="_additional-resources"]
-.Additional resources
+== Logging options for Kafka components and operators
 
-*Kafka component logging*
+For more information on configuring logging for specific Kafka components or operators, see the following sections.
+
+.Kafka component logging
 
 * xref:property-kafka-logging-reference[Kafka logging]
 * xref:property-zookeeper-logging-reference[Zookeeper logging]
@@ -59,9 +60,9 @@ Default logging is used if the `name` or `key` is not set.
 * xref:property-kafka-bridge-logging-reference[Kafka Bridge logging]
 * xref:ref-cruise-control-configuration-str[Cruise Control logging]
 
-*Operator logging*
+.Operator logging
 
-* xref:logging_configuration_by_configmap[Cluster Operatror logging]
+* xref:logging_configuration_by_configmap[Cluster Operator logging]
 * xref:property-topic-operator-logging-reference[Topic Operator logging]
 * xref:property-user-operator-logging-reference[User Operator logging]
 

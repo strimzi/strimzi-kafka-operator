@@ -5,6 +5,7 @@
 [id='assembly-securing-kafka-{context}']
 = Securing access to Kafka brokers
 
+[role="_abstract"]
 To establish secure access to Kafka brokers, you configure and apply:
 
 * A `Kafka` resource to:
@@ -38,12 +39,11 @@ Configure the `KafkaUser` resource to set up:
 
 The User Operator creates the user representing the client and the security credentials used for client authentication, based on the chosen authentication type.
 
-.Additional resources
+Refer to the schema reference for more information on access configuration properties:
 
-For more information about the schema for:
-
-* `Kafka`, see the xref:type-Kafka-reference[`Kafka` schema reference].
-* `KafkaUser`, see the xref:type-KafkaUser-reference[`KafkaUser` schema reference].
+* xref:type-Kafka-reference[`Kafka` schema reference]
+* xref:type-KafkaUser-reference[`KafkaUser` schema reference]
+* xref:type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference]
 
 //steps to secure the brokers
 include::../modules/proc-securing-kafka.adoc[leveloffset=+1]

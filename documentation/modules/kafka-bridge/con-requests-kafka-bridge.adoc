@@ -5,6 +5,7 @@
 [id='con-requests-kafka-bridge-{context}']
 = Requests to the Kafka Bridge
 
+[role="_abstract"]
 Specify data formats and HTTP headers to ensure valid requests are submitted to the Kafka Bridge.
 
 == Content Type headers
@@ -237,6 +238,7 @@ HTTP/1.1 200 OK
 Access-Control-Allow-Origin: https://strimzi.io
 ----
 
+[role="_additional-resources"]
 .Additional resources
 
-link:{external-cors-link}[Fetch^] CORS specification
+* link:{external-cors-link}[Fetch CORS specification^]
