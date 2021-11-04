@@ -30,9 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.Arrays.asList;
@@ -73,32 +71,32 @@ public class ClusterOperatorTest {
     }
 
     @Test
-    public void testStartStopSingleNamespaceOnOpenShift(VertxTestContext context) throws InterruptedException, TimeoutException, ExecutionException {
+    public void testStartStopSingleNamespaceOnOpenShift(VertxTestContext context) throws InterruptedException {
         startStop(context, "namespace", true);
     }
 
     @Test
-    public void testStartStopMultiNamespaceOnOpenShift(VertxTestContext context) throws InterruptedException, TimeoutException, ExecutionException {
+    public void testStartStopMultiNamespaceOnOpenShift(VertxTestContext context) throws InterruptedException {
         startStop(context, "namespace1,namespace2", true);
     }
 
     @Test
-    public void testStartStopSingleNamespaceOnK8s(VertxTestContext context) throws InterruptedException, TimeoutException, ExecutionException {
+    public void testStartStopSingleNamespaceOnK8s(VertxTestContext context) throws InterruptedException {
         startStop(context, "namespace", false);
     }
 
     @Test
-    public void testStartStopMultiNamespaceOnK8s(VertxTestContext context) throws InterruptedException, TimeoutException, ExecutionException {
+    public void testStartStopMultiNamespaceOnK8s(VertxTestContext context) throws InterruptedException {
         startStop(context, "namespace1,namespace2", false);
     }
 
     @Test
-    public void testStartStopAllNamespacesOnOpenShift(VertxTestContext context) throws InterruptedException, TimeoutException, ExecutionException {
+    public void testStartStopAllNamespacesOnOpenShift(VertxTestContext context) throws InterruptedException {
         startStopAllNamespaces(context, "*", true);
     }
 
     @Test
-    public void testStartStopAllNamespacesOnK8s(VertxTestContext context) throws InterruptedException, TimeoutException, ExecutionException {
+    public void testStartStopAllNamespacesOnK8s(VertxTestContext context) throws InterruptedException {
         startStopAllNamespaces(context, "*", false);
     }
 
@@ -108,7 +106,7 @@ public class ClusterOperatorTest {
      * @param context test context passed in for assertions
      * @param namespaces namespaces the operator should be watching and operating on
      */
-    private void startStop(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException, TimeoutException, ExecutionException {
+    private void startStop(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException {
         AtomicInteger numWatchers = new AtomicInteger(0);
 
         KubernetesClient client;
@@ -176,7 +174,7 @@ public class ClusterOperatorTest {
      * @param context test context passed in for assertions
      * @param namespaces namespaces the operator should be watching and operating on
      */
-    private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException, TimeoutException, ExecutionException {
+    private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException {
         AtomicInteger numWatchers = new AtomicInteger(0);
         KubernetesClient client;
         if (openShift) {

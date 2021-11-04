@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.vertx.core.VertxOptions;
+import io.vertx.core.impl.cpu.CpuCoreSensor;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.logging.log4j.LogManager;
@@ -66,13 +67,19 @@ public class Main {
         String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
         Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
 
+        LOGGER.info("====================================================");
+        LOGGER.info("Number of available CPUs:{}", CpuCoreSensor.availableProcessors());
+        LOGGER.info("====================================================");
+
         //Setup Micrometer metrics options
-        VertxOptions options = new VertxOptions().setMetricsOptions(
+        VertxOptions options = new VertxOptions()
+            .setEventLoopPoolSize(4 *  CpuCoreSensor.availableProcessors())
+            .setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
                         .setJvmMetricsEnabled(true)
                         .setEnabled(true))
-                        .setBlockedThreadCheckInterval(Duration.ofSeconds(121).toNanos());
+            .setBlockedThreadCheckInterval(Duration.ofSeconds(121).toNanos());
         Vertx vertx = Vertx.vertx(options);
         
         KubernetesClient client = new DefaultKubernetesClient();
@@ -115,153 +122,19 @@ public class Main {
 
                         // for each namespace create Cluster Operator verticle that watches resources
                         List<String> namespaces = new ArrayList<>(config.getNamespaces());
-
-                        // always 3 in a row
-                        if (namespaces.size() % 3 == 0) {
-                            for (int i = 0; i < namespaces.size(); i++) {
-                                // always run two cluster operator verticles at the time (where one waits on another) - elimination of CPU exhaustion
-                                final String namespaceName = namespaces.get(i);
-                                final String nextNamespaceName = namespaces.get(i + 1);
-                                final String nextNextNamespaceName = namespaces.get(i + 2);
-                                run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
-                                    kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
-                                    kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, namespaceName).onComplete(ar -> {
-                                        if (ar.failed()) {
-                                            LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", namespaceName, ar.cause());
-                                            System.exit(1);
-                                        }
-                                    }).compose(ignore ->
-                                    run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
-                                        kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
-                                        kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, nextNamespaceName).onComplete(ar -> {
-                                            if (ar.failed()) {
-                                                LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", nextNamespaceName, ar.cause());
-                                                System.exit(1);
-                                            }
-                                        })).compose(ignore -> run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
-                                        kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
-                                        kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, nextNextNamespaceName).onComplete(ar -> {
-                                            if (ar.failed()) {
-                                                LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", nextNextNamespaceName, ar.cause());
-                                                System.exit(1);
-                                            }
-                                        })
-                                        .onSuccess(handler -> LOGGER.info("Successfully deployed Cluster Operator verticles for namespaces:{},{}, {}", namespaceName, nextNamespaceName, nextNextNamespaceName))
-                                        .onFailure(handler -> LOGGER.error("Some error occurred:{}", handler.getCause())));
-                                // increment by 2 because we already compose two namespaces
-                                i += 2;
-                            }
-                        // the last 2 only two in a row
-                        } else if (namespaces.size() % 3 == 2) {
-                            for (int i = 0; i < namespaces.size(); i++) {
-                                // last iteration
-                                if (i == namespaces.size() - 2) {
-                                    final String namespaceName = namespaces.get(i);
-                                    final String nextNamespaceName = namespaces.get(i + 1);
-
-                                    run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
-                                        kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
-                                        kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, namespaceName).onComplete(ar -> {
-                                            if (ar.failed()) {
-                                                LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", namespaceName, ar.cause());
-                                                System.exit(1);
-                                            }
-                                        }).compose(ignore ->
-                                        run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
-                                            kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
-                                            kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, nextNamespaceName).onComplete(ar -> {
-                                                if (ar.failed()) {
-                                                    LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", nextNamespaceName, ar.cause());
-                                                    System.exit(1);
-                                                }
-                                            }))
-                                        .onSuccess(handler -> LOGGER.info("Successfully deployed Cluster Operator verticles for namespaces:{},{}", namespaceName, nextNamespaceName))
-                                        .onFailure(handler -> LOGGER.error("Some error occurred:{}", handler.getCause()));
-                                    // increment by 1 because we already compose one namespace
-                                    i++;
-                                } else {
-                                    // always run two cluster operator verticles at the time (where one waits on another) - elimination of CPU exhaustion
-                                    final String namespaceName = namespaces.get(i);
-                                    final String nextNamespaceName = namespaces.get(i + 1);
-                                    final String nextNextNamespaceName = namespaces.get(i + 2);
-                                    run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
-                                        kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
-                                        kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, namespaceName).onComplete(ar -> {
-                                            if (ar.failed()) {
-                                                LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", namespaceName, ar.cause());
-                                                System.exit(1);
-                                            }
-                                        }).compose(ignore ->
-                                        run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
-                                            kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
-                                            kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, nextNamespaceName).onComplete(ar -> {
-                                                if (ar.failed()) {
-                                                    LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", nextNamespaceName, ar.cause());
-                                                    System.exit(1);
-                                                }
-                                            })).compose(ignore -> run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
-                                        kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
-                                        kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, nextNextNamespaceName).onComplete(ar -> {
-                                            if (ar.failed()) {
-                                                LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", nextNextNamespaceName, ar.cause());
-                                                System.exit(1);
-                                            }
-                                        })
-                                        .onSuccess(handler -> LOGGER.info("Successfully deployed Cluster Operator verticles for namespaces:{},{}, {}", namespaceName, nextNamespaceName, nextNextNamespaceName))
-                                        .onFailure(handler -> LOGGER.error("Some error occurred:{}", handler.getCause())));
-                                    // increment by 2 because we already compose two namespaces
-                                    i += 2;
-                                }
-                            }
-                        // the last 1 only in a row
-                        } else {
-                            for (int i = 0; i < namespaces.size(); i++) {
-                                final String namespaceName = namespaces.get(i);
-                                // last iteration
-                                if (i == namespaces.size() - 1) {
-                                    run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
-                                        kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
-                                        kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, namespaceName).onComplete(ar -> {
-                                            if (ar.failed()) {
-                                                LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", namespaceName, ar.cause());
-                                                System.exit(1);
-                                            }
-                                        })
-                                        .onSuccess(handler -> LOGGER.info("Successfully deployed Cluster Operator verticle for namespaces:{}", namespaceName))
-                                        .onFailure(handler -> LOGGER.error("Some error occurred:{}", handler.getCause()));
-                                } else {
-                                    // always run two cluster operator verticles at the time (where one waits on another) - elimination of CPU exhaustion
-                                    final String nextNamespaceName = namespaces.get(i + 1);
-                                    final String nextNextNamespaceName = namespaces.get(i + 2);
-                                    run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
-                                        kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
-                                        kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, namespaceName).onComplete(ar -> {
-                                            if (ar.failed()) {
-                                                LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", namespaceName, ar.cause());
-                                                System.exit(1);
-                                            }
-                                        }).compose(ignore ->
-                                        run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
-                                            kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
-                                            kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, nextNamespaceName).onComplete(ar -> {
-                                                if (ar.failed()) {
-                                                    LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", nextNamespaceName, ar.cause());
-                                                    System.exit(1);
-                                                }
-                                            })).compose(ignore -> run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
-                                        kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
-                                        kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, nextNextNamespaceName).onComplete(ar -> {
-                                            if (ar.failed()) {
-                                                LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", nextNextNamespaceName, ar.cause());
-                                                System.exit(1);
-                                            }
-                                        })
-                                        .onSuccess(handler -> LOGGER.info("Successfully deployed Cluster Operator verticles for namespaces:{},{}, {}", namespaceName, nextNamespaceName, nextNextNamespaceName))
-                                        .onFailure(handler -> LOGGER.error("Some error occurred:{}", handler.getCause())));
-                                    // increment by 2 because we already compose two namespaces
-                                    i += 2;
-                                }
-                            }
+                        for (int i = 0; i < namespaces.size(); i++) {
+                            // always run two cluster operator verticles at the time (where one waits on another) - elimination of CPU exhaustion
+                            final String namespaceName = namespaces.get(i);
+                            run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
+                                kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
+                                kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, namespaceName).onComplete(ar -> {
+                                    if (ar.failed()) {
+                                        LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", namespaceName, ar.cause());
+                                        System.exit(1);
+                                    }
+                                })
+                                .onSuccess(handler -> LOGGER.info("Successfully deployed Cluster Operator verticles for namespaces:{}", namespaceName))
+                                .onFailure(handler -> LOGGER.error("Some error occurred:{}", handler.getCause()));
                         }
                     } else {
                         LOGGER.error("Failed to gather environment facts", pfa.cause());
@@ -281,7 +154,6 @@ public class Main {
                     KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator, KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator,
                     ResourceOperatorSupplier resourceOperatorSupplier, String namespace) {
         Promise<String> prom = Promise.promise();
-        Future<String> future = prom.future();
 
         ClusterOperator operator = new ClusterOperator(namespace,
                 config,
@@ -310,7 +182,7 @@ public class Main {
                 prom.handle(res);
             });
 
-        return future;
+        return prom.future();
     }
 
     /*test*/ static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {

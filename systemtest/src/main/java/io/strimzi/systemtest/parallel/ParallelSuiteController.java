@@ -10,7 +10,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Class responsible for synchronization of ParallelSuites. When ThreadPoolJoin run several tests in parallel, we
