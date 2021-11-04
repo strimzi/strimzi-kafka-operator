@@ -57,7 +57,7 @@ spec:
                   description: The docker image for the pods.
                 bootstrapServers:
                   type: string
-                  description: Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+                  description: Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.
                 tls:
                   type: object
                   properties:

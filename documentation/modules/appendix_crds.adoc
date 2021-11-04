@@ -1575,7 +1575,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |integer
 |image                  1.2+<.<a|The docker image for the pods.
 |string
-|bootstrapServers       1.2+<.<a|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:‍_<port>_ pairs.
+|bootstrapServers       1.2+<.<a|Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.
 |string
 |tls                    1.2+<.<a|TLS configuration.
 |xref:type-ClientTls-{context}[`ClientTls`]

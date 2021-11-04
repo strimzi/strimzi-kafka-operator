@@ -73,7 +73,7 @@ public class KafkaConnectSpec extends AbstractKafkaConnectSpec {
         this.rack = rack;
     }
 
-    @Description("Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:\u200D_<port>_ pairs.")
+    @Description("Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.")
     @JsonProperty(required = true)
     public String getBootstrapServers() {
         return bootstrapServers;
