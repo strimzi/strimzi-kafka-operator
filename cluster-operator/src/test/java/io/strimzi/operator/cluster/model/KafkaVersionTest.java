@@ -90,6 +90,12 @@ public class KafkaVersionTest {
     }
 
     @ParallelTest
+    public void compareEqualVersionMMPTest() {
+        assertThat(KafkaVersion.compareDottedVersions("3.0", "3.0.0"), is(0));
+        assertThat(KafkaVersion.compareDottedVersions("3.0.0", "3.0"), is(0));
+    }
+
+    @ParallelTest
     public void compareEqualVersionTest() {
         assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION, KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION), is(0));
     }

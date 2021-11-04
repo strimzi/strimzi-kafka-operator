@@ -436,7 +436,8 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                 return 1;
             }
         }
-        return components.length - otherComponents.length;
+        // mismatch was not found, but the versions are of different length, e.g. 2.8 and 2.8.0
+        return 0;
     }
 
     @Override
