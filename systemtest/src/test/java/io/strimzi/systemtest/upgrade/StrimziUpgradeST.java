@@ -11,11 +11,11 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.FileUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.IsolatedSuite;
@@ -102,8 +102,8 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         assertThat(KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(clusterName, 0)), containsString(startKafkaVersion));
 
         Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
-        Map<String, String> zooSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
-        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> zooSnapshot = PodUtils.podSnapshot(INFRA_NAMESPACE, zkSelector);
+        Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(INFRA_NAMESPACE, zkSelector);
         Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
 
         // Update CRDs, CRB, etc.
@@ -116,8 +116,8 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
             .runBundleInstallation();
 
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, operatorSnapshot);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zooSnapshot);
-        StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, zkSelector, 3, zooSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, zkSelector, 3, kafkaSnapshot);
         DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
 
         assertThat(KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(clusterName, 0)), containsString(latestKafkaVersion));
@@ -137,13 +137,13 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, producerName, consumerName, continuousTopicName, continuousConsumerGroup, acrossUpgradeData.getString("startingKafkaVersion"), INFRA_NAMESPACE);
         convertCRDs(conversionTool, INFRA_NAMESPACE);
         // Make snapshots of all pods
-        makeSnapshots(clusterName);
+        makeSnapshots();
 
         // Upgrade CO
         changeClusterOperator(acrossUpgradeData, INFRA_NAMESPACE, extensionContext);
         logPodImages(clusterName);
         //  Upgrade kafka
-        changeKafkaAndLogFormatVersion(acrossUpgradeData.getJsonObject("proceduresAfterOperatorUpgrade"), acrossUpgradeData, clusterName, extensionContext);
+        changeKafkaAndLogFormatVersion(acrossUpgradeData.getJsonObject("proceduresAfterOperatorUpgrade"), acrossUpgradeData, extensionContext);
         logPodImages(clusterName);
         checkAllImages(acrossUpgradeData.getJsonObject("imagesAfterKafkaUpgrade"));
         // Verify that pods are stable
@@ -171,14 +171,14 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         // Upgrade CO
         changeClusterOperator(acrossUpgradeData, INFRA_NAMESPACE, extensionContext);
         // Wait till first upgrade finished
-        zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, zkSelector, 3, zkPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, kafkaSelector, 3, kafkaPods);
         eoPods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
 
         LOGGER.info("Rolling to new images has finished!");
         logPodImages(clusterName);
         //  Upgrade kafka
-        changeKafkaAndLogFormatVersion(acrossUpgradeData.getJsonObject("proceduresAfterOperatorUpgrade"), acrossUpgradeData, clusterName, extensionContext);
+        changeKafkaAndLogFormatVersion(acrossUpgradeData.getJsonObject("proceduresAfterOperatorUpgrade"), acrossUpgradeData, extensionContext);
         logPodImages(clusterName);
         checkAllImages(acrossUpgradeData.getJsonObject("imagesAfterKafkaUpgrade"));
         // Verify that pods are stable
@@ -274,7 +274,7 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
 
         logPodImages(clusterName);
         // Upgrade kafka
-        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresAfterOperatorUpgrade"), testParameters, clusterName, extensionContext);
+        changeKafkaAndLogFormatVersion(testParameters.getJsonObject("proceduresAfterOperatorUpgrade"), testParameters, extensionContext);
         logPodImages(clusterName);
         checkAllImages(testParameters.getJsonObject("imagesAfterKafkaUpgrade"));
 

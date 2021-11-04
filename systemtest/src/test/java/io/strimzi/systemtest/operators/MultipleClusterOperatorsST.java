@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaRebalance;
@@ -17,7 +18,6 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
@@ -30,10 +30,10 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -160,6 +160,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
     @Tag(CRUISE_CONTROL)
     void testKafkaCCAndRebalanceWithMultipleCOs(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+
         int scaleTo = 4;
 
         deployCOInNamespace(extensionContext, FIRST_CO_NAME, DEFAULT_NAMESPACE, FIRST_CO_SELECTOR_ENV, false);
@@ -207,9 +209,9 @@ public class MultipleClusterOperatorsST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().setLabels(SECOND_CO_SELECTOR), DEFAULT_NAMESPACE);
 
         LOGGER.info("Waiting for Kafka to scales pods to {}", scaleTo);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(DEFAULT_NAMESPACE, KafkaResources.kafkaStatefulSetName(clusterName), scaleTo, ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET));
+        RollingUpdateUtils.waitForComponentAndPodsReady(DEFAULT_NAMESPACE, kafkaSelector, scaleTo);
 
-        assertThat(StatefulSetUtils.ssSnapshot(DEFAULT_NAMESPACE, KafkaResources.kafkaStatefulSetName(clusterName)).size(), is(scaleTo));
+        assertThat(PodUtils.podSnapshot(DEFAULT_NAMESPACE, kafkaSelector).size(), is(scaleTo));
 
         KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, SECOND_NAMESPACE, clusterName), DEFAULT_NAMESPACE, clusterName);
     }

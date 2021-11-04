@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.rollingupdate;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
@@ -31,11 +32,11 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.timemeasuring.Operation;
@@ -87,8 +88,12 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         String zkName = KafkaResources.zookeeperStatefulSetName(clusterName);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, kafkaName);
-        Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(namespaceName, zkName);
+
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaName);
+        LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, zkName);
+
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+        Map<String, String> zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         // ##############################
@@ -150,7 +155,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         assertThat(Boolean.parseBoolean(kubeClient(namespaceName).getStatefulSet(kafkaName)
             .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaName, 3, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
         // wait when annotation will be removed
         TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -175,7 +180,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         assertThat(Boolean.parseBoolean(kubeClient(namespaceName).getStatefulSet(zkName)
             .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, zkName, 3, zkPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkPods);
 
         // wait when annotation will be removed
         TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -224,7 +229,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
 
-        final Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             LOGGER.info("Adding new bootstrap dns: {} to external listeners", bootstrapDns);
@@ -250,7 +256,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
                 ));
         }, namespaceName);
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
         Map<String, String> secretData = kubeClient().getSecret(namespaceName, KafkaResources.brokersServiceName(clusterName)).getData();
@@ -272,8 +278,12 @@ class AlternativeReconcileTriggersST extends AbstractST {
     void testManualRollingUpdateForSinglePod(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
         final String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
         final String zkSsName = KafkaResources.zookeeperStatefulSetName(clusterName);
+
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3).build());
 
@@ -294,7 +304,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         // here we are waiting just to one pod's snapshot will be changed and all 3 pods ready -> if we set expectedPods to 1,
         // the check will pass immediately without waiting for all pods to be ready -> the method picks first ready pod and return true
-        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaSsName, 3, kafkaSnapshot);
+        kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
         kubeClient(namespaceName).editPod(KafkaResources.zookeeperPodName(clusterName, 0)).edit(pod -> new PodBuilder(pod)
             .editMetadata()
@@ -303,7 +313,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .build());
 
         // same as above
-        zkSnapshot = StatefulSetUtils.waitTillSsHasRolled(namespaceName, zkSsName, 3, zkSnapshot);
+        zkSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkSnapshot);
 
 
         LOGGER.info("Adding anno to all ZK and Kafka pods");
@@ -316,7 +326,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         });
 
         LOGGER.info("Checking if the rolling update will be successful for Kafka");
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaSsName, 3, kafkaSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
         zkSnapshot.keySet().forEach(podName -> {
             kubeClient(namespaceName).editPod(podName).edit(pod -> new PodBuilder(pod)
@@ -327,7 +337,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         });
 
         LOGGER.info("Checking if the rolling update will be successful for ZK");
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, zkSsName, 3, zkSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkSnapshot);
     }
 
     /**
@@ -352,7 +362,9 @@ class AlternativeReconcileTriggersST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaJBOD(clusterName, 3, 3, new JbodStorageBuilder().addToVolumes(vol0).build()).build());
 
         final String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, kafkaName);
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaName);
+
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         // ##############################
@@ -410,8 +422,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         }, namespaceName);
 
         // Wait util it rolls
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaName, 3, kafkaPods);
-        kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, kafkaName);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
         // Remove Jbod volume to Kafka => triggers RU
         LOGGER.info("Remove JBOD volume to the Kafka cluster {}", kafkaName);
@@ -423,7 +434,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         }, namespaceName);
 
         // Wait util it rolls
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaName, 3, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
         // ##############################
         // Validate that continuous clients finished successfully

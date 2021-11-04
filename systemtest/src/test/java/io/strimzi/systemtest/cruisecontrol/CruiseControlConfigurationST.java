@@ -6,6 +6,7 @@ package io.strimzi.systemtest.cruisecontrol;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
@@ -18,9 +19,9 @@ import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.WaitException;
@@ -41,7 +42,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
-import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -100,17 +100,18 @@ public class CruiseControlConfigurationST extends AbstractST {
     void testDeployAndUnDeployCruiseControl(ExtensionContext extensionContext) throws IOException {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             LOGGER.info("Removing Cruise Control to the classic Kafka.");
             kafka.getSpec().setCruiseControl(null);
         }, namespaceName);
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
         LOGGER.info("Verifying that in {} is not present in the Kafka cluster", Constants.CRUISE_CONTROL_NAME);
         assertThat(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getCruiseControl(), nullValue());
@@ -124,14 +125,12 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Cruise Control topics will not be deleted and will stay in the Kafka cluster");
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
 
-        kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
-
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             LOGGER.info("Adding Cruise Control to the classic Kafka.");
             kafka.getSpec().setCruiseControl(new CruiseControlSpec());
         }, namespaceName);
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
         LOGGER.info("Verifying that in Kafka config map there is configuration to cruise control metric reporter");
         CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(namespaceName, clusterName));
@@ -145,10 +144,11 @@ public class CruiseControlConfigurationST extends AbstractST {
     void testConfigurationDiskChangeDoNotTriggersRollingUpdateOfKafkaPods(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
 
-        Map<String, String> kafkaSnapShot = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaSnapShot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
         Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName));
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
@@ -168,7 +168,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, cruiseControlSnapShot);
 
         LOGGER.info("Verifying that Kafka pods did not roll");
-        StatefulSetUtils.waitForNoRollingUpdate(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), kafkaSnapShot);
+        RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, kafkaSelector, kafkaSnapShot);
 
         LOGGER.info("Verifying new configuration in the Kafka CR");
 
@@ -250,13 +250,14 @@ public class CruiseControlConfigurationST extends AbstractST {
     void testConfigurationPerformanceOptions(ExtensionContext extensionContext) throws IOException {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
 
         Container cruiseControlContainer;
         EnvVar cruiseControlConfiguration;
 
-        Map<String, String> kafkaSnapShot = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaSnapShot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
         Map<String, String> cruiseControlSnapShot = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName));
         Map<String, Object> performanceTuningOpts = new HashMap<String, Object>() {{
                 put(CruiseControlConfigurationParameters.CONCURRENT_INTRA_PARTITION_MOVEMENTS.getValue(), 2);
@@ -276,7 +277,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, cruiseControlSnapShot);
 
         LOGGER.info("Verifying that Kafka pods did not roll");
-        StatefulSetUtils.waitForNoRollingUpdate(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), kafkaSnapShot);
+        RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, kafkaSelector, kafkaSnapShot);
 
         LOGGER.info("Verifying new configuration in the Kafka CR");
         Pod cruiseControlPod = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-cruise-control-").get(0);

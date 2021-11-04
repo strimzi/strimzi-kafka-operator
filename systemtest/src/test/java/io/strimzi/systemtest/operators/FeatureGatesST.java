@@ -6,6 +6,7 @@ package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -16,14 +17,15 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
@@ -36,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -68,6 +69,8 @@ public class FeatureGatesST extends AbstractST {
         final String producerName = "producer-test-" + new Random().nextInt(Integer.MAX_VALUE);
         final String consumerName = "consumer-test-" + new Random().nextInt(Integer.MAX_VALUE);
         final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+
         int messageCount = 300;
         List<EnvVar> testEnvVars = new ArrayList<>();
         int kafkaReplicas = 3;
@@ -91,7 +94,7 @@ public class FeatureGatesST extends AbstractST {
         List<ContainerPort> kafkaPodPorts = kafkaPod.getSpec().getContainers().get(0).getPorts();
         assertTrue(kafkaPodPorts.contains(expectedControlPlaneContainerPort));
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(INFRA_NAMESPACE, kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);
 
         LOGGER.info("Try to send some messages to Kafka over next few minutes.");
         KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(clusterName, topicName)
@@ -118,7 +121,7 @@ public class FeatureGatesST extends AbstractST {
 
         LOGGER.info("Delete first found Kafka broker pod.");
         kubeClient(INFRA_NAMESPACE).deletePod(INFRA_NAMESPACE, kafkaPod);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), kafkaReplicas);
+        RollingUpdateUtils.waitForComponentAndPodsReady(kafkaSelector, kafkaReplicas);
 
         LOGGER.info("Force Rolling Update of Kafka via annotation.");
         kafkaPods.keySet().forEach(podName -> {
@@ -129,7 +132,7 @@ public class FeatureGatesST extends AbstractST {
                     .build());
         });
         LOGGER.info("Wait for next reconciliation to happen.");
-        StatefulSetUtils.waitTillSsHasRolled(INFRA_NAMESPACE, kafkaStatefulSetName(clusterName), kafkaReplicas, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, kafkaReplicas, kafkaPods);
 
         LOGGER.info("Waiting for clients to finish sending/receiving messages.");
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);

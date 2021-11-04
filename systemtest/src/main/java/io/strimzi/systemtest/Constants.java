@@ -357,6 +357,8 @@ public interface Constants {
     String CONSUMER_KEY = "CONSUMER_NAME";
     String KAFKA_CLIENTS_POD_KEY = "KAFKA_CLIENTS_POD_NAME";
     String KAFKA_TRACING_CLIENT_KEY = "KAFKA_TRACING_CLIENT";
+    String KAFKA_SELECTOR = "KAFKA_SELECTOR";
+    String ZOOKEEPER_SELECTOR = "ZOOKEEPER_SELECTOR";
 
     /**
      * Resource constants for Cluster Operator. In case we execute more than 5 test cases in parallel we at least these configuration

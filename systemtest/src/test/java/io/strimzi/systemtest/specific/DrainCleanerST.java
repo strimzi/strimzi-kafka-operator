@@ -19,8 +19,9 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NodeUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -101,17 +102,17 @@ public class DrainCleanerST extends AbstractST {
             String zkPodName = KafkaResources.zookeeperPodName(testStorage.getClusterName(), i);
             String kafkaPodName = KafkaResources.kafkaPodName(testStorage.getClusterName(), i);
 
-            Map<String, String> kafkaPod = StatefulSetUtils.ssSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, kafkaName).entrySet()
+            Map<String, String> kafkaPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector()).entrySet()
                 .stream().filter(snapshot -> snapshot.getKey().equals(kafkaPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            Map<String, String> zkPod = StatefulSetUtils.ssSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, zkName).entrySet()
+            Map<String, String> zkPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector()).entrySet()
                 .stream().filter(snapshot -> snapshot.getKey().equals(zkPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
             LOGGER.info("Evicting pods: {} and {}", zkPodName, kafkaPodName);
             kubeClient().getClient().pods().inNamespace(Constants.DRAIN_CLEANER_NAMESPACE).withName(zkPodName).evict();
             kubeClient().getClient().pods().inNamespace(Constants.DRAIN_CLEANER_NAMESPACE).withName(kafkaPodName).evict();
 
-            StatefulSetUtils.waitTillSsHasRolled(Constants.DRAIN_CLEANER_NAMESPACE, zkName, replicas, zkPod);
-            StatefulSetUtils.waitTillSsHasRolled(Constants.DRAIN_CLEANER_NAMESPACE, kafkaName, replicas, kafkaPod);
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector(), replicas, zkPod);
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector(), replicas, kafkaPod);
         }
 
         ClientUtils.waitTillContinuousClientsFinish(testStorage.getProducerName(), testStorage.getConsumerName(), Constants.DRAIN_CLEANER_NAMESPACE, 300);
@@ -234,16 +235,16 @@ public class DrainCleanerST extends AbstractST {
             String zkPodName = podList.stream().filter(podName -> podName.contains("zookeeper")).findFirst().get();
             String kafkaPodName = podList.stream().filter(podName -> podName.contains("kafka")).findFirst().get();
 
-            Map<String, String> kafkaPod = StatefulSetUtils.ssSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, kafkaName).entrySet()
+            Map<String, String> kafkaPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector()).entrySet()
                 .stream().filter(snapshot -> snapshot.getKey().equals(kafkaPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-            Map<String, String> zkPod = StatefulSetUtils.ssSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, zkName).entrySet()
+            Map<String, String> zkPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector()).entrySet()
                 .stream().filter(snapshot -> snapshot.getKey().equals(zkPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
             NodeUtils.drainNode(nodeName);
             NodeUtils.cordonNode(nodeName, true);
 
-            StatefulSetUtils.waitTillSsHasRolled(Constants.DRAIN_CLEANER_NAMESPACE, zkName, replicas, zkPod);
-            StatefulSetUtils.waitTillSsHasRolled(Constants.DRAIN_CLEANER_NAMESPACE, kafkaName, replicas, kafkaPod);
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector(), replicas, zkPod);
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector(), replicas, kafkaPod);
         });
 
         producerNames.forEach(producer -> ClientUtils.waitTillContinuousClientsFinish(producer, consumerNames.get(producerNames.indexOf(producer)), Constants.DRAIN_CLEANER_NAMESPACE, 300));

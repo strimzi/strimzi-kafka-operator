@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
@@ -32,9 +33,9 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
@@ -76,6 +77,8 @@ public class KafkaRollerST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String kafkaStsName = KafkaResources.kafkaStatefulSetName(clusterName);
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
@@ -90,8 +93,7 @@ public class KafkaRollerST extends AbstractST {
             .endSpec()
             .build());
 
-        String kafkaStsName = KafkaResources.kafkaStatefulSetName(clusterName);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", clusterName);
         final int initialReplicas = kubeClient(namespaceName).getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).getStatus().getReplicas();
@@ -101,7 +103,7 @@ public class KafkaRollerST extends AbstractST {
         int scaledUpReplicas = 4;
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(scaledUpReplicas), namespaceName);
 
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStsName, scaledUpReplicas, kafkaPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, scaledUpReplicas, kafkaPods);
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 4, 4, 4).build());
 
@@ -121,7 +123,7 @@ public class KafkaRollerST extends AbstractST {
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(scaledDownReplicas), namespaceName);
 
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStsName, scaledDownReplicas, kafkaPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, scaledDownReplicas, kafkaPods);
 
         PodUtils.verifyThatRunningPodsAreStable(namespaceName, clusterName);
 
@@ -132,7 +134,7 @@ public class KafkaRollerST extends AbstractST {
             .endMetadata()
             .build());
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, scaledDownReplicas, kafkaPods);
     }
 
     @ParallelNamespaceTest
@@ -140,12 +142,13 @@ public class KafkaRollerST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaName);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 1, 1).build());
 
-        String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, kafkaName);
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         LOGGER.info("Setting KafkaTopic's min.insync.replicas to be higher than replication factor");
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName, kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", 2), namespaceName);
@@ -160,8 +163,8 @@ public class KafkaRollerST extends AbstractST {
             .endMetadata()
             .build());
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaName, 3, kafkaPods);
-        assertThat(StatefulSetUtils.ssSnapshot(namespaceName, kafkaName), is(not(kafkaPods)));
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
+        assertThat(PodUtils.podSnapshot(namespaceName, kafkaSelector), is(not(kafkaPods)));
     }
 
     @ParallelNamespaceTest

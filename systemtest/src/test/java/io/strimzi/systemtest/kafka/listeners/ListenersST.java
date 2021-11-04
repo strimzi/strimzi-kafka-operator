@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.kafka.listeners;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -29,7 +30,6 @@ import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.systemtest.security.SystemTestCertAndKey;
@@ -38,11 +38,12 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.vertx.core.json.JsonArray;
@@ -75,7 +76,6 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.STATEFUL_SET;
 import static io.strimzi.systemtest.security.SystemTestCertManager.exportToPemFiles;
 import static io.strimzi.systemtest.security.SystemTestCertManager.generateIntermediateCaCertAndKey;
 import static io.strimzi.systemtest.security.SystemTestCertManager.generateEndEntityCertAndKey;
@@ -1226,6 +1226,7 @@ public class ListenersST extends AbstractST {
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
         final String clusterCustomCertServer2 = clusterName + "-" + customCertServer2;
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_1);
         SecretUtils.createCustomSecret(clusterCustomCertServer2, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_2);
@@ -1282,7 +1283,7 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
@@ -1316,8 +1317,7 @@ public class ListenersST extends AbstractST {
             ));
         }, namespaceName);
 
-        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
+        kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
         KafkaUtils.waitForKafkaStatusUpdate(namespaceName, clusterName);
 
@@ -1366,8 +1366,7 @@ public class ListenersST extends AbstractST {
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_2);
         SecretUtils.createCustomSecret(clusterCustomCertServer2, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_1);
 
-        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
+        kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
         externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, namespaceName, clusterName);
         externalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer1, "ca.crt");
@@ -1429,8 +1428,7 @@ public class ListenersST extends AbstractST {
             ));
         }, namespaceName);
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
         KafkaUtils.waitForKafkaStatusUpdate(namespaceName, clusterName);
 
@@ -1480,6 +1478,7 @@ public class ListenersST extends AbstractST {
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
         final String clusterCustomCertServer2 = clusterName + "-" + customCertServer2;
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_1);
         SecretUtils.createCustomSecret(clusterCustomCertServer2, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_2);
@@ -1533,7 +1532,7 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
@@ -1566,8 +1565,7 @@ public class ListenersST extends AbstractST {
             ));
         }, namespaceName);
 
-        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
+        kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
         KafkaUtils.waitForKafkaStatusUpdate(namespaceName, clusterName);
 
@@ -1619,8 +1617,7 @@ public class ListenersST extends AbstractST {
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_2);
         SecretUtils.createCustomSecret(clusterCustomCertServer2, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_1);
 
-        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
+        kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
         externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, namespaceName, clusterName);
         externalSecretCerts = getKafkaSecretCertificates(namespaceName, clusterCustomCertServer1, "ca.crt");
@@ -1682,8 +1679,7 @@ public class ListenersST extends AbstractST {
             ));
         }, namespaceName);
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
         KafkaUtils.waitForKafkaStatusUpdate(namespaceName, clusterName);
 
@@ -1733,6 +1729,7 @@ public class ListenersST extends AbstractST {
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
         final String clusterCustomCertServer2 = clusterName + "-" + customCertServer2;
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_1);
         SecretUtils.createCustomSecret(clusterCustomCertServer2, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_2);
@@ -1786,7 +1783,7 @@ public class ListenersST extends AbstractST {
             externalKafkaClient.receiveMessagesTls()
         );
 
-        Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             kafka.getSpec().getKafka().setListeners(asList(
@@ -1819,8 +1816,7 @@ public class ListenersST extends AbstractST {
             ));
         }, namespaceName);
 
-        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
+        kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
         KafkaUtils.waitForKafkaStatusUpdate(namespaceName, clusterName);
 
@@ -1870,8 +1866,7 @@ public class ListenersST extends AbstractST {
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_2);
         SecretUtils.createCustomSecret(clusterCustomCertServer2, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_1);
 
-        kafkaSnapshot = StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
+        kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
         externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, namespaceName, clusterName);
         externalSecretCerts = getKafkaSecretCertificates(namespaceName, clusterCustomCertServer1, "ca.crt");
@@ -1928,8 +1923,7 @@ public class ListenersST extends AbstractST {
             ));
         }, namespaceName);
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaSnapshot);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName,  KafkaResources.kafkaStatefulSetName(clusterName), 3, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
         KafkaUtils.waitForKafkaStatusUpdate(namespaceName, clusterName);
 
@@ -1974,6 +1968,7 @@ public class ListenersST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String nonExistingCertName = "non-existing-certificate";
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
             .editSpec()
@@ -1995,7 +1990,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName), 1, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
+        RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, zkSelector, 1);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName, ".*Secret " + nonExistingCertName + " with custom TLS certificate does not exist.*");
 
@@ -2008,6 +2003,7 @@ public class ListenersST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String nonExistingCertName = "non-existing-crt";
         final String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_1);
 
@@ -2031,7 +2027,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName), 1, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
+        RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, zkSelector, 1);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName,
                 ".*Secret " + clusterCustomCertServer1 + " does not contain certificate under the key " + nonExistingCertName + ".*");
@@ -2045,6 +2041,7 @@ public class ListenersST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String nonExistingCertKey = "non-existing-key";
         final String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
         SecretUtils.createCustomSecret(clusterCustomCertServer1, clusterName, namespaceName, STRIMZI_CERT_AND_KEY_1);
 
@@ -2068,7 +2065,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName), 1, ResourceOperation.getTimeoutForResourceReadiness(STATEFUL_SET));
+        RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, zkSelector, 1);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName,
                 ".*Secret " + clusterCustomCertServer1 + " does not contain custom certificate private key under the key " + nonExistingCertKey + ".*");
