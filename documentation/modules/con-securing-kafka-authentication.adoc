@@ -112,10 +112,6 @@ For more information, see xref:ref-operator-cluster-{context}[Cluster Operator c
 
 NOTE: Your configuration of Kubernetes must support ingress `NetworkPolicies` in order to use network policies in Strimzi.
 
-.Additional resources
-
-* xref:configuration-listener-network-policy-reference[`networkPolicyPeers`]
-
 == Additional listener configuration options
 
 You can use the properties of the xref:type-GenericKafkaListenerConfiguration-reference[GenericKafkaListenerConfiguration schema] to add further configuration to listeners.

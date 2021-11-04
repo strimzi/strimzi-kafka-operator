@@ -12,7 +12,7 @@ After a new custom resource type is added to your cluster by installing a CRD, y
 Depending on the cluster setup, installation typically requires cluster admin privileges.
 
 NOTE: Access to manage custom resources is limited to Strimzi administrators.
-For more information, see link:{BookURLDeploying}#adding-users-the-strimzi-admin-role-str[Designating Strimzi administrators^] in the _Deploying and Upgrading Strimzi_ guide.
+For more information, see link:{BookURLDeploying}#adding-users-the-strimzi-admin-role-str[Designating Strimzi administrators^].
 
 A CRD defines a new `kind` of resource, such as `kind:Kafka`, within a Kubernetes cluster.
 
@@ -109,3 +109,9 @@ Custom resources can be applied to a cluster through the platform CLI.
 When the custom resource is created, it uses the same validation as the built-in resources of the Kubernetes API.
 
 After a `KafkaTopic` custom resource is created, the Topic Operator is notified and corresponding Kafka topics are created in Strimzi.
+
+[role="_additional-resources"]
+.Additional resources
+
+* {K8sCRDs}
+* link:{BookURLDeploying}#deploy-examples-{context}[Example configuration files provided with Strimzi^]

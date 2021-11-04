@@ -28,7 +28,7 @@ Task IDs are non-negative integers, starting from 0.
 kubectl describe KafkaConnector _KAFKACONNECTOR-NAME_
 ----
 
-. To restart the connector task, annotate the `KafkaConnector` resource in Kubernetes. 
+. To restart the connector task, annotate the `KafkaConnector` resource in Kubernetes.
 For example, using `kubectl annotate` to restart task 0:
 +
 [source,shell,subs="+quotes"]
@@ -38,9 +38,5 @@ kubectl annotate KafkaConnector _KAFKACONNECTOR-NAME_ strimzi.io/restart-task=0
 
 . Wait for the next reconciliation to occur (every two minutes by default).
 +
-The Kafka connector task is restarted, as long as the annotation was detected by the reconciliation process. 
+The Kafka connector task is restarted, as long as the annotation was detected by the reconciliation process.
 When Kafka Connect accepts the restart request, the annotation is removed from the `KafkaConnector` custom resource.
-
-.Additional resources
-
-* link:{BookURLDeploying}#con-creating-managing-connectors-{context}[Creating and managing connectors^] in the _Deploying and Upgrading_ guide.

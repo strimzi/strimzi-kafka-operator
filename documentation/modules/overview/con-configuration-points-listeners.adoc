@@ -24,7 +24,7 @@ see the link:{BookURLUsing}#type-GenericKafkaListener-reference[`GenericKafkaLis
 
 .Configuring listeners to secure access to Kafka brokers
 You can configure listeners for secure connection using authentication.
-For more information on securing access to Kafka brokers, see xref:assembly-securing-kafka-str[Managing access to Kafka].
+For more information, see xref:assembly-securing-kafka-str[Securing access to Kafka brokers].
 
 .Configuring external listeners for client access outside Kubernetes
 You can configure external listeners for client access outside a Kubernetes environment using a specified connection mechanism, such as a loadbalancer.
