@@ -38,7 +38,9 @@ final public class TestStorage {
 
     public TestStorage(ExtensionContext extensionContext, String namespaceName) {
         this.extensionContext = extensionContext;
-        this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespaceName, extensionContext) : namespaceName;
+        this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ?
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(extensionContext.getDisplayName() + "-" + Constants.NAMESPACE_KEY).toString() :
+            namespaceName;
         this.clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.streamsTopicTargetName = KafkaTopicUtils.generateRandomNameOfTopic();

@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class BundleResource implements ResourceType<Deployment> {
@@ -199,6 +200,7 @@ public class BundleResource implements ResourceType<Deployment> {
         envVars.add(new EnvVar("STRIMZI_LOG_LEVEL", Environment.STRIMZI_LOG_LEVEL, null));
         envVars.add(new EnvVar("STRIMZI_RBAC_SCOPE", Environment.STRIMZI_RBAC_SCOPE, null));
 //        envVars.add(new EnvVar("KUBERNETES_WEBSOCKET_TIMEOUT", "100000", null));
+        envVars.add(new EnvVar("DEFAULT_MAX_WORKER_EXECUTE_TIME", String.valueOf(TimeUnit.MINUTES.toNanos(10)), null));
 
         if (extraEnvVars != null) {
 

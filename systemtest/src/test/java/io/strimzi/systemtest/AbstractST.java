@@ -578,7 +578,7 @@ public abstract class AbstractST implements TestSeparator {
 
         synchronized (LOCK) {
             if (extensionContext.getTestMethod().isPresent()) {
-                testName = extensionContext.getTestMethod().get().getName();
+                testName = extensionContext.getDisplayName();
             }
 
             LOGGER.info("Not first test we are gonna generate cluster name");

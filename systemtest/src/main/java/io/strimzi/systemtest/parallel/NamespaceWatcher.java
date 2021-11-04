@@ -19,7 +19,7 @@ public class NamespaceWatcher {
     private static final Logger LOGGER = LogManager.getLogger(NamespaceWatcher.class);
     private static final Random RNG = new Random();
 
-    private static final int NUMBER_OF_PARALLEL_TEST_NAMESPACES_TO_WATCH = 5;
+    private static final int NUMBER_OF_PARALLEL_TEST_NAMESPACES_TO_WATCH = 10;
     private static final Function<Integer, Map<String, Boolean>> CONSTRUCT_MAP_OF_NAMESPACES = numberOfNamespaces -> {
         // pre-allocate array to size `numberOfNamespaces` and avoid re-allocation...
         Map<String, Boolean> parallelNamespaceTestsMap = new HashMap<>(numberOfNamespaces);

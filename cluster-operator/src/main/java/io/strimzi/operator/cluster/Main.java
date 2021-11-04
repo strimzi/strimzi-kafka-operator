@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.security.Security;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -69,7 +70,8 @@ public class Main {
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
                         .setJvmMetricsEnabled(true)
-                        .setEnabled(true));
+                        .setEnabled(true))
+                        .setBlockedThreadCheckInterval(Duration.ofSeconds(121).toNanos());
         Vertx vertx = Vertx.vertx(options);
         
         KubernetesClient client = new DefaultKubernetesClient();
@@ -80,12 +82,72 @@ public class Main {
                     if (pfa.succeeded()) {
                         LOGGER.info("Environment facts gathered: {}", pfa.result());
 
-                        run(vertx, client, pfa.result(), config).onComplete(ar -> {
-                            if (ar.failed()) {
-                                LOGGER.error("Unable to start operator for 1 or more namespace", ar.cause());
-                                System.exit(1);
+                        PlatformFeaturesAvailability pfaRes = pfa.result();
+
+                        Util.printEnvInfo();
+
+                        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, pfaRes, config.featureGates(), config.getOperationTimeoutMs());
+
+                        OpenSslCertManager certManager = new OpenSslCertManager();
+                        PasswordGenerator passwordGenerator = new PasswordGenerator(12,
+                            "abcdefghijklmnopqrstuvwxyz" +
+                                "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                            "abcdefghijklmnopqrstuvwxyz" +
+                                "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+                                "0123456789");
+                        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfaRes,
+                            certManager, passwordGenerator, resourceOperatorSupplier, config);
+                        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfaRes,
+                            resourceOperatorSupplier, config);
+
+                        KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator =
+                            new KafkaMirrorMaker2AssemblyOperator(vertx, pfaRes, resourceOperatorSupplier, config);
+
+                        KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
+                            new KafkaMirrorMakerAssemblyOperator(vertx, pfaRes, certManager, passwordGenerator, resourceOperatorSupplier, config);
+
+                        KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator =
+                            new KafkaBridgeAssemblyOperator(vertx, pfaRes, certManager, passwordGenerator, resourceOperatorSupplier, config);
+
+                        KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator =
+                            new KafkaRebalanceAssemblyOperator(vertx, pfaRes, resourceOperatorSupplier, config);
+
+                        // for each namespace create Cluster Operator verticle that watches resources
+                        List<String> namespaces = new ArrayList<>(config.getNamespaces());
+                        for (int i = 0; i < namespaces.size(); i++) {
+                            final String namespaceName = namespaces.get(i);
+                            // last iteration we only create one verticle if and only if number of namespaces is odd
+                            if (i == namespaces.size() - 1 && i % 2 == 1) {
+                                run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
+                                    kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
+                                    kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, namespaceName).onComplete(ar -> {
+                                        if (ar.failed()) {
+                                            LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", namespaceName, ar.cause());
+                                            System.exit(1);
+                                        }
+                                    });
+                            } else {
+                                // always run two cluster operator verticles at the time (where one waits on another) - elimination of CPU exhaustion
+                                final String nextNamespaceName = namespaces.get(i + 1);
+                                run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
+                                    kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
+                                    kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, namespaceName).onComplete(ar -> {
+                                        if (ar.failed()) {
+                                            LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", namespaceName, ar.cause());
+                                            System.exit(1);
+                                        }
+                                    }).compose(dummy ->
+                                    run(vertx, client, pfaRes, config, kafkaClusterOperations, kafkaConnectClusterOperations,
+                                        kafkaMirrorMaker2AssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaBridgeAssemblyOperator,
+                                        kafkaRebalanceAssemblyOperator, resourceOperatorSupplier, nextNamespaceName).onComplete(ar -> {
+                                            if (ar.failed()) {
+                                                LOGGER.error("Unable to start Cluster Operator Verticle for namespace: {}", nextNamespaceName, ar.cause());
+                                                System.exit(1);
+                                            }
+                                        }));
+                                i++;
                             }
-                        });
+                        }
                     } else {
                         LOGGER.error("Failed to gather environment facts", pfa.cause());
                         System.exit(1);
@@ -98,65 +160,42 @@ public class Main {
         });
     }
 
-    static CompositeFuture run(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
-        Util.printEnvInfo();
+    static Future<String> run(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config,
+                    KafkaAssemblyOperator kafkaClusterOperations, KafkaConnectAssemblyOperator kafkaConnectClusterOperations,
+                    KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator, KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator,
+                    KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator, KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator,
+                    ResourceOperatorSupplier resourceOperatorSupplier, String namespace) {
+        Promise<String> prom = Promise.promise();
+        Future<String> future = prom.future();
 
-        ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, pfa, config.featureGates(), config.getOperationTimeoutMs());
+        ClusterOperator operator = new ClusterOperator(namespace,
+                config,
+                client,
+                kafkaClusterOperations,
+                kafkaConnectClusterOperations,
+                kafkaMirrorMakerAssemblyOperator,
+                kafkaMirrorMaker2AssemblyOperator,
+                kafkaBridgeAssemblyOperator,
+                kafkaRebalanceAssemblyOperator,
+                resourceOperatorSupplier.metricsProvider);
 
-        OpenSslCertManager certManager = new OpenSslCertManager();
-        PasswordGenerator passwordGenerator = new PasswordGenerator(12,
-                "abcdefghijklmnopqrstuvwxyz" +
-                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-                "abcdefghijklmnopqrstuvwxyz" +
-                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-                        "0123456789");
-        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa,
-                certManager, passwordGenerator, resourceOperatorSupplier, config);
-        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa,
-                resourceOperatorSupplier, config);
-
-        KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator =
-                new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
-
-        KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
-                new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
-
-        KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator =
-                new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
-
-        KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator =
-                new KafkaRebalanceAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
-
-        List<Future> futures = new ArrayList<>(config.getNamespaces().size());
-        for (String namespace : config.getNamespaces()) {
-            Promise<String> prom = Promise.promise();
-            futures.add(prom.future());
-            ClusterOperator operator = new ClusterOperator(namespace,
-                    config,
-                    client,
-                    kafkaClusterOperations,
-                    kafkaConnectClusterOperations,
-                    kafkaMirrorMakerAssemblyOperator,
-                    kafkaMirrorMaker2AssemblyOperator,
-                    kafkaBridgeAssemblyOperator,
-                    kafkaRebalanceAssemblyOperator,
-                    resourceOperatorSupplier.metricsProvider);
-            vertx.deployVerticle(operator,
-                res -> {
-                    if (res.succeeded()) {
-                        if (config.getCustomResourceSelector() != null) {
-                            LOGGER.info("Cluster Operator verticle started in namespace {} with label selector {}", namespace, config.getCustomResourceSelector());
-                        } else {
-                            LOGGER.info("Cluster Operator verticle started in namespace {} without label selector", namespace);
-                        }
+        vertx.deployVerticle(operator,
+            res -> {
+                if (res.succeeded()) {
+                    if (config.getCustomResourceSelector() != null) {
+                        LOGGER.info("Cluster Operator verticle started in namespace {} with label selector {}", namespace, config.getCustomResourceSelector());
                     } else {
-                        LOGGER.error("Cluster Operator verticle in namespace {} failed to start", namespace, res.cause());
-                        System.exit(1);
+                        LOGGER.info("Cluster Operator verticle started in namespace {} without label selector", namespace);
                     }
-                    prom.handle(res);
-                });
-        }
-        return CompositeFuture.join(futures);
+                } else {
+                    LOGGER.error("Cluster Operator verticle in namespace {} failed to start", namespace, res.cause());
+                    prom.fail("Failed to create Cluster Operator verticle in namespace " + namespace + ".");
+                    System.exit(1);
+                }
+                prom.handle(res);
+            });
+
+        return future;
     }
 
     /*test*/ static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
