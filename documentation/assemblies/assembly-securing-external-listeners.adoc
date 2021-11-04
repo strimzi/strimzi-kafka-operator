@@ -5,6 +5,7 @@
 [id='assembly-accessing-kafka-outside-cluster-{context}']
 = Accessing Kafka outside of the Kubernetes cluster
 
+[role="_abstract"]
 Use an external listener to expose your Strimzi Kafka cluster to a client outside a Kubernetes environment.
 
 Specify the connection `type` to expose Kafka in the external listener configuration.
@@ -16,11 +17,9 @@ Specify the connection `type` to expose Kafka in the external listener configura
 
 For more information on listener configuration, see xref:type-GenericKafkaListener-reference[`GenericKafkaListener` schema reference].
 
+If you want to know more about the pros and cons of each connection type, refer to {Externallisteners}.
+
 NOTE: `route` is only supported on OpenShift
-
-.Additional resources
-
-* {Externallisteners}
 
 include::../modules/proc-accessing-kafka-using-nodeports.adoc[leveloffset=+1]
 include::../modules/proc-accessing-kafka-using-loadbalancers.adoc[leveloffset=+1]

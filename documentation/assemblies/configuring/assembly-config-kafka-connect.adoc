@@ -5,6 +5,7 @@
 [id='assembly-kafka-connect-{context}']
 = Kafka Connect cluster configuration
 
+[role="_abstract"]
 This section describes how to configure a Kafka Connect deployment in your Strimzi cluster.
 
 Kafka Connect is an integration toolkit for streaming data between Kafka brokers and other systems using connector plugins.
@@ -12,13 +13,7 @@ Kafka Connect provides a framework for integrating Kafka with an external data s
 Connectors are plugins that provide the connection configuration needed.
 The full schema of the `KafkaConnect` resource is described in xref:type-KafkaConnect-reference[].
 
-.Additional resources
-
-* link:{BookURLDeploying}#con-creating-managing-connectors-str[Creating and managing connectors^]
-* link:{BookURLDeploying}#proc-deploying-kafkaconnector-str[Deploying a KafkaConnector resource to Kafka Connect^]
-* link:{BookURLDeploying}#proc-manual-restart-connector-str[Restart a Kafka connector by annotating a KafkaConnector resource^]
-* link:{BookURLDeploying}#proc-manual-restart-connector-task-str[Restart a Kafka connector task by annotating a KafkaConnector resource^]
-
+For more information on deploying connector plugins, see link:{BookURLDeploying}#using-kafka-connect-with-plug-ins-str[Extending Kafka Connect with connector plug-ins^].
 
 //procedure to configure Kafka Connect
 include::../../modules/configuring/proc-config-kafka-connect.adoc[leveloffset=+1]

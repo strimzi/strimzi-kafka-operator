@@ -5,6 +5,7 @@
 [id='proc-resizing-persistent-volumes-{context}']
 = Resizing persistent volumes
 
+[role="_abstract"]
 You can provision increased storage capacity by increasing the size of the persistent volumes used by an existing Strimzi cluster.
 Resizing persistent volumes is supported in clusters that use either a single persistent volume or multiple persistent volumes in a JBOD storage configuration.
 
@@ -53,6 +54,7 @@ Kubernetes increases the capacity of the selected persistent volumes in response
 When the resizing is complete, the Cluster Operator restarts all pods that use the resized persistent volumes.
 This happens automatically.
 
+[role="_additional-resources"]
 .Additional resources
 
-For more information about resizing persistent volumes in Kubernetes, see {K8sResizingPersistentVolumesUsingKubernetes}.
+* For more information about resizing persistent volumes in Kubernetes, see {K8sResizingPersistentVolumesUsingKubernetes}.

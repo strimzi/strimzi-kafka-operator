@@ -5,16 +5,17 @@
 [id='assembly-oauth-authentication_{context}']
 = Using OAuth 2.0 token-based authentication
 
-Strimzi supports the use of OAuth 2.0 authentication using the _OAUTHBEARER_ and _PLAIN_ mechanisms.
+[role="_abstract"]
+Strimzi supports the use of link:https://oauth.net/2/[OAuth 2.0 authentication^] using the _OAUTHBEARER_ and _PLAIN_ mechanisms.
 
 OAuth 2.0 enables standardized token-based authentication and authorization between applications, using a central authorization server to issue tokens that grant limited access to resources.
 
-Kafka brokers and clients both need to be configured to use OAuth 2.0. 
+Kafka brokers and clients both need to be configured to use OAuth 2.0.
 You can configure OAuth 2.0 authentication, then xref:assembly-oauth-authorization_{context}[OAuth 2.0 authorization].
 
 [NOTE]
 ====
-OAuth 2.0 authentication can be used in conjunction with xref:con-securing-kafka-authorization-str[Kafka authorization]. 
+OAuth 2.0 authentication can be used in conjunction with xref:con-securing-kafka-authorization-str[Kafka authorization].
 ====
 
 Using OAuth 2.0 authentication, application clients can access resources on application servers (called _resource servers_) without exposing account credentials.
@@ -34,10 +35,6 @@ For a deployment of Strimzi, OAuth 2.0 integration provides:
 
 * Server-side OAuth 2.0 support for Kafka brokers
 * Client-side OAuth 2.0 support for Kafka MirrorMaker, Kafka Connect and the Kafka Bridge
-
-.Additional resources
-
-* link:https://oauth.net/2/[OAuth 2.0 site^]
 
 include::modules/con-oauth-authentication-flow.adoc[leveloffset=+1]
 include::modules/con-oauth-authentication-broker.adoc[leveloffset=+1]

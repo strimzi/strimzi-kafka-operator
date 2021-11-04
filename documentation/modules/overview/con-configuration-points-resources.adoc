@@ -29,3 +29,8 @@ spec:
 ----
 
 There are many additional configuration options that can be incorporated into a YAML definition, some common and some specific to a particular component.
+
+[role="_additional-resources"]
+.Additional resources
+
+* {K8sCRDs}

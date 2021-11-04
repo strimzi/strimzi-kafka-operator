@@ -5,6 +5,7 @@
 [id='assembly-config-kafka-{context}']
 = Kafka cluster configuration
 
+[role="_abstract"]
 This section describes how to configure a Kafka deployment in your Strimzi cluster.
 A Kafka cluster is deployed with a ZooKeeper cluster. The deployment can also include the Topic Operator and User Operator, which manage Kafka topics and users.
 
@@ -13,6 +14,7 @@ Configuration options are also available for ZooKeeper and the Entity Operator w
 The Entity Operator comprises the Topic Operator and User Operator.
 
 The full schema of the `Kafka` resource is described in the xref:type-Kafka-reference[].
+For more information about Apache Kafka, see the {kafkaDoc}.
 
 .Listener configuration
 You configure listeners for connecting clients to Kafka brokers.
@@ -20,17 +22,13 @@ For more information on configuring listeners for connecting brokers, see xref:c
 
 .Authorizing access to Kafka
 You can configure your Kafka cluster to allow or decline actions executed by users.
-For more information on securing access to Kafka brokers, see xref:assembly-securing-kafka-str[Managing access to Kafka].
+For more information, see xref:assembly-securing-kafka-str[Securing access to Kafka brokers].
 
 .Managing TLS certificates
 When deploying Kafka, the Cluster Operator automatically sets up and renews TLS certificates to enable encryption and authentication within your cluster.
 If required, you can manually renew the cluster and client CA certificates before their renewal period ends.
 You can also replace the keys used by the cluster and client CA certificates.
 For more information, see xref:proc-renewing-ca-certs-manually-{context}[Renewing CA certificates manually] and xref:proc-replacing-private-keys-{context}[Replacing private keys].
-
-.Additional resources
-
-* For more information about Apache Kafka, see the http://kafka.apache.org[Apache Kafka website^].
 
 //procedure to configure Kafka
 include::../../modules/configuring/proc-config-kafka.adoc[leveloffset=+1]
