@@ -8,6 +8,34 @@
 This procedure describes how to manually trigger a rolling update of an existing Kafka cluster or ZooKeeper cluster using a Kubernetes `Pod` annotation.
 When multiple pods from the same `StatefulSet` are annotated, consecutive rolling updates are performed within the same reconciliation run.
 
+.Prerequisites
+
+You can perform a rolling update on a Kafka cluster regardless of the topic replication factor used.
+But for Kafka to stay operational during the update, you'll need the following:
+
+* A highly available Kafka cluster deployment running with nodes that you wish to update.
+* Topics replicated for high availability.
++
+Topic configuration specifies a replication factor of at least 3 and a minimum number of in-sync replicas to 1 less than the replication factor.
++
+.Kafka topic replicated for high availability
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaTopicApiVersion}
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 1
+  replicas: 3
+  config:
+    # ...
+    min.insync.replicas: 2
+    # ...
+----
+
 .Procedure
 
 . Find the name of the Kafka or ZooKeeper `Pod` you want to manually update.

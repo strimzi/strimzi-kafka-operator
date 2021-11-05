@@ -13,6 +13,9 @@ include::assembly-working-with-resources.adoc[leveloffset=+1]
 //pausing reconciliation of custom resources
 include::modules/proc-pausing-reconciliation.adoc[leveloffset=+1]
 
+//using drain cleaner to drain pods
+include::assembly-drain-cleaner.adoc[leveloffset=+1]
+
 //performing manual rolling updates
 include::assembly-rolling-updates.adoc[leveloffset=+1]
 

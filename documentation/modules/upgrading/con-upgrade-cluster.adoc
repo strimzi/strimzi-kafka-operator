@@ -6,7 +6,7 @@
 = Upgrading Kubernetes with minimal downtime
 
 [role="_abstract"]
-If you are upgrading Kubernetes, refer the Kubernertes upgrade documentation to check the upgrade path and the steps to upgrade your nodes correctly.
+If you are upgrading Kubernetes, refer to the Kubernetes upgrade documentation to check the upgrade path and the steps to upgrade your nodes correctly.
 Before upgrading Kubernetes, link:{supported-configurations}[check the supported versions for your version of Strimzi^].
 
 When performing your upgrade, you'll want to keep your Kafka clusters available.
@@ -34,10 +34,9 @@ metadata:
     strimzi.io/cluster: my-cluster
 spec:
   partitions: 1
-  replicas: 1
+  replicas: 3
   config:
     # ...
-    default.replication.factor: 3
     min.insync.replicas: 2
     # ...
 ----
@@ -56,7 +55,7 @@ During planned maintenance of Kafka broker pods, a pod disruption budget ensures
 You specify a pod disruption budget using a `template` customization for a Kafka component.
 By default, pod disruption budgets allow only a single pod to be unavailable at a given time.
 
-To do this, you set `maxUnavailable` to 0 (zero).
+To do this, you set `maxUnavailable` to `0` (zero).
 Reducing the maximum pod disruption budget to zero prevents voluntary disruptions, so pods must be evicted manually.
 
 .Specifying a pod disruption budget
@@ -75,8 +74,6 @@ spec:
         maxUnavailable: 0
 # ...
 ----
-
-
 
 == Rolling pods manually while keeping topics available
 
@@ -102,6 +99,7 @@ For example, `my-cluster-kafka-0`.
 [role="_additional-resources"]
 .Additional resources
 * {kubernetes-docs}[Kubernetes documentation^]
+* link:{BookURLUsing}#assembly-drain-cleaner-str[Draining pods using the Strimzi Drain Cleaner]
 * link:{BookURLUsing}#replicating_topics_for_high_availability[Replicating topics for high availability^]
 * link:{BookURLUsing}#type-PodDisruptionBudgetTemplate-reference[PodDisruptionBudgetTemplate schema reference^]
 * link:{BookURLUsing}#proc-manual-rolling-update-pods-str[Performing a rolling update using a pod annotation^]

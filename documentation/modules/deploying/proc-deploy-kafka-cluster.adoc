@@ -6,7 +6,7 @@
 = Deploying the Kafka cluster
 
 [role="_abstract"]
-This procedure shows how to deploy a Kafka cluster to your Kubernetes using the Cluster Operator.
+This procedure shows how to deploy a Kafka cluster to your Kubernetes cluster using the Cluster Operator.
 
 The deployment uses a YAML file to provide the specification to create a `Kafka` resource.
 
