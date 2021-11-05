@@ -6,7 +6,7 @@
 
 = Kafka versions
 
-Kafka's log message format version and inter-broker protocol version specify, respectively, the log format version appended to messages and the version of the Kafka protocol used in a cluster. 
+Kafka's log message format version and inter-broker protocol version specify, respectively, the log format version appended to messages and the version of the Kafka protocol used in a cluster.
 To ensure the correct versions are used, the upgrade process involves making configuration changes to existing Kafka brokers and code changes to client applications (consumers and producers).
 
 The following table shows the differences between Kafka versions:
@@ -15,23 +15,30 @@ include::snip-kafka-versions.adoc[leveloffset=+1]
 
 .Inter-broker protocol version
 
-In Kafka, the network protocol used for inter-broker communication is called the _inter-broker protocol_. 
-Each version of Kafka has a compatible version of the inter-broker protocol. 
+In Kafka, the network protocol used for inter-broker communication is called the _inter-broker protocol_.
+Each version of Kafka has a compatible version of the inter-broker protocol.
 The minor version of the protocol typically increases to match the minor version of Kafka, as shown in the preceding table.
 
-The inter-broker protocol version is set cluster wide in the `Kafka` resource.  
+The inter-broker protocol version is set cluster wide in the `Kafka` resource.
 To change it, you edit the `inter.broker.protocol.version` property in `Kafka.spec.kafka.config`.
 
 .Log message format version
 
 When a producer sends a message to a Kafka broker, the message is encoded using a specific format.
-The format can change between Kafka releases, so messages specify which version of the format they were encoded with. You can configure a Kafka broker to convert messages from newer format versions to a given older format version before the broker appends the message to the log.
+The format can change between Kafka releases, so messages specify which version of the message format they were encoded with.
 
-In Kafka, there are two different methods for setting the message format version:
+The properties used to set a specific message format version are as follows:
 
-* The `message.format.version` property is set on topics.
-* The `log.message.format.version` property is set on Kafka brokers.
+* `message.format.version` property for topics
+* `log.message.format.version` property for Kafka brokers
 
-The default value of `message.format.version` for a topic is defined by the `log.message.format.version` that is set on the Kafka broker. You can manually set the `message.format.version` of a topic by modifying its topic configuration.
+From Kafka {DefaultKafkaVersion}, the message format version values are assumed to match the `inter.broker.protocol.version` and don't need to be set.
+The values reflect the Kafka version used.
 
-The upgrade tasks in this section assume that the message format version is defined by the `log.message.format.version`.
+When upgrading to Kafka {DefaultKafkaVersion} or higher, you can remove these settings when you update the `inter.broker.protocol.version`.
+Otherwise, set the message format version version based on the Kafka version you are upgrading to.
+
+The default value of `message.format.version` for a topic is defined by the `log.message.format.version` that is set on the Kafka broker.
+You can manually set the `message.format.version` of a topic by modifying its topic configuration.
+
+The properties can be used for down-conversion to an earlier format depending on your chosen xref:con-strategies-for-upgrading-clients-str[strategy for upgrading clients].

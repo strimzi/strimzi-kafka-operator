@@ -28,7 +28,12 @@ ifdef::Kubernetes[HostPath volumes on Minikube or]
 Amazon EBS volumes in Amazon AWS deployments without any changes in the YAML files. The `PersistentVolumeClaim` can use a `StorageClass` to trigger automatic volume provisioning.
 
 The example YAML files specify the latest supported Kafka version, and configuration for its supported log message format version and inter-broker protocol version.
-Updates to these properties are required when xref:assembly-upgrading-kafka-versions-str[upgrading Kafka].
+The `inter.broker.protocol.version` property for the Kafka `config` must be the version supported by the specified Kafka version (`spec.kafka.version`).
+The property represents the version of Kafka protocol used in a Kafka cluster.
+
+From Kafka {DefaultKafkaVersion}, the `log.message.format.version` is assumed to match the `inter.broker.protocol.version` and doesn't need to be set.
+
+An update to the `inter.broker.protocol.version` is required when xref:assembly-upgrading-kafka-versions-str[upgrading Kafka].
 
 The example clusters are named `my-cluster` by default.
 The cluster name is defined by the name of the resource and cannot be changed after the cluster has been deployed.

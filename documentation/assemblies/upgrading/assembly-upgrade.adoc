@@ -22,7 +22,7 @@ Upgrading Strimzi from the previous minor version to version {ProductVersion}.
 Multi-version::
 Upgrading Strimzi from an old version to version {ProductVersion} within a single upgrade (skipping one or more intermediate versions).
 +
-For example, upgrading from Strimzi 0.20.0 directly to Strimzi {ConvertAfterProductVersion}.
+For example, upgrading from Strimzi 0.23.0 directly to Strimzi {ProductVersion}.
 
 .Upgrading from a version earlier than {ConvertAfterProductVersion}
 The `v1beta2` API version for all custom resources was introduced with Strimzi {ConvertAfterProductVersion}.

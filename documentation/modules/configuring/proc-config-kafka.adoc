@@ -23,10 +23,13 @@ This procedure shows only some of the possible configuration options, but those 
 
 .Kafka versions
 
-The `log.message.format.version` and `inter.broker.protocol.version` properties for the Kafka `config` must be the versions supported by the specified Kafka version (`spec.kafka.version`).
-The properties represent the log format version appended to messages and the version of Kafka protocol used in a Kafka cluster.
-Updates to these properties are required when upgrading your Kafka version.
-For more information, see link:{BookURLDeploying}#assembly-upgrading-kafka-versions-str[Upgrading Kafka] in the _Deploying and Upgrading Strimzi_ guide.
+The `inter.broker.protocol.version` property for the Kafka `config` must be the version supported by the specified Kafka version (`spec.kafka.version`).
+The property represents the version of Kafka protocol used in a Kafka cluster.
+
+From Kafka {DefaultKafkaVersion}, the `log.message.format.version` is assumed to match the `inter.broker.protocol.version` and doesn't need to be set.
+
+An update to the `inter.broker.protocol.version` is required when upgrading your Kafka version.
+For more information, see link:{BookURLDeploying}#assembly-upgrading-kafka-versions-str[Upgrading Kafka].
 
 .Prerequisites
 
@@ -104,7 +107,6 @@ spec:
       offsets.topic.replication.factor: 3
       transaction.state.log.replication.factor: 3
       transaction.state.log.min.isr: 2
-      log.message.format.version: {LogMsgVersHigher}
       inter.broker.protocol.version: {LogMsgVersHigher}
       ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <19>
       ssl.enabled.protocols: "TLSv1.2"
