@@ -17,6 +17,9 @@ Edit the `05-Deployment-strimzi-user-operator.yaml` deployment file to add the e
 .Prerequisites
 
 * You are running a Kafka cluster for the User Operator to connect to.
++
+As long as the standalone User Operator is correctly configured for connection,
+the Kafka cluster can be running on a bare-metal environment, a virtual machine, or as a managed cloud application service.
 
 .Procedure
 
