@@ -4,32 +4,28 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
-import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.operator.resource.HttpClientUtils;
 import io.fabric8.kubernetes.api.model.HTTPHeader;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.cluster.model.CruiseControl;
-import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpClientOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import io.vertx.core.net.PfxOptions;
+import io.vertx.core.net.PemTrustOptions;
 
-import java.io.File;
 import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
-import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
 import static io.strimzi.operator.cluster.model.CruiseControl.encodeToBase64;
 
 public class CruiseControlApiImpl implements CruiseControlApi {
-
     private static final boolean HTTP_CLIENT_ACTIVITY_LOGGING = false;
     public static final int HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS = -1; // use default internal HTTP client timeout
     private static final String STATUS_KEY = "Status";
@@ -38,16 +34,14 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     private final long idleTimeout;
     private boolean apiSslEnabled;
     private HTTPHeader authHttpHeader;
-    private File truststoreFile;
-    private String trustStorePassword;
+    private PemTrustOptions pto;
 
     public CruiseControlApiImpl(Vertx vertx, int idleTimeout, Secret ccSecret, Secret ccApiSecret, Boolean apiAuthEnabled, boolean apiSslEnabled) {
         this.vertx = vertx;
         this.idleTimeout = idleTimeout;
         this.apiSslEnabled = apiSslEnabled;
         this.authHttpHeader = getAuthHttpHeader(apiAuthEnabled, ccApiSecret);
-        this.trustStorePassword = new PasswordGenerator(12).generate();
-        this.truststoreFile = Util.createFileTrustStore(getClass().getName(), "ts", Set.of(Ca.cert(ccSecret, "cruise-control.crt")), trustStorePassword.toCharArray());
+        this.pto = new PemTrustOptions().addCertValue(Buffer.buffer(Util.decodeFromSecret(ccSecret, "cruise-control.crt")));
     }
 
     @Override
@@ -61,10 +55,8 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                 .setLogActivity(HTTP_CLIENT_ACTIVITY_LOGGING)
                 .setSsl(true)
                 .setVerifyHost(true)
-                .setPfxTrustOptions(
-                    new PfxOptions()
-                        .setPassword(trustStorePassword)
-                        .setPath(truststoreFile.getAbsolutePath())
+                .setPemTrustOptions(
+                    new PemTrustOptions(pto)
                 );
         } else {
             return new HttpClientOptions()
