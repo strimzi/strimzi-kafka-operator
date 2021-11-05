@@ -1,0 +1,49 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-drain-cleaner.adoc
+
+[id='proc-drain-cleaner-using-{context}']
+= Using the Strimzi Drain Cleaner
+
+[role="_abstract"]
+Use the Strimzi Drain Cleaner in combination with the Cluster Operator to move Kafka broker or ZooKeeper pods from nodes that are being drained.
+When you run the Strimzi Drain Cleaner, it annotates pods with a rolling update pod annotation.
+The Cluster Operator performs rolling updates based on the annotation.
+
+.Prerequisites
+
+* You have xref:proc-drain-cleaner-deploying-{context}[deployed the Strimzi Drain Cleaner].
+
+.Procedure
+
+. Drain a specified Kubernetes node hosting the Kafka broker or ZooKeeper pods.
++
+[source,shell,subs="+quotes"]
+----
+kubectl get nodes
+kubectl drain _<name-of-node>_ --delete-emptydir-data --ignore-daemonsets --timeout=6000s --force
+----
+
+. Check the eviction events in the Strimzi Drain Cleaner log to verify that the pods have been annotated for restart.
++
+.Strimzi Drain Cleaner log show annotations of pods
+[source,shell,subs="+quotes"]
+----
+INFO ... Received eviction webhook for Pod my-cluster-zookeeper-2 in namespace my-project
+INFO ... Pod my-cluster-zookeeper-2 in namespace my-project will be annotated for restart
+INFO ... Pod my-cluster-zookeeper-2 in namespace my-project found and annotated for restart
+
+INFO ... Received eviction webhook for Pod my-cluster-kafka-0 in namespace my-project
+INFO ... Pod my-cluster-kafka-0 in namespace my-project will be annotated for restart
+INFO ... Pod my-cluster-kafka-0 in namespace my-project found and annotated for restart
+----
+
+. Check the reconciliation events in the Cluster Operator log to verify the rolling updates.
++
+.Cluster Operator log shows rolling updates
+[source,shell,subs="+quotes"]
+----
+INFO  PodOperator:68 - Reconciliation #13(timer) Kafka(my-project/my-cluster): Rolling Pod my-cluster-zookeeper-2
+INFO  PodOperator:68 - Reconciliation #13(timer) Kafka(my-project/my-cluster): Rolling Pod my-cluster-kafka-0
+INFO  AbstractOperator:500 - Reconciliation #13(timer) Kafka(my-project/my-cluster): reconciled
+----

@@ -409,7 +409,7 @@ Messages are produced to Kafka successfully.
 . Press CTRL+C to exit the CLI application.
 
 . Check the Kafka container log for a debug log of `Authorization GRANTED` for the request.
-
++
 [source,shell,subs="attributes"]
 ----
 kubectl logs my-cluster-kafka-0 -f -n $NS

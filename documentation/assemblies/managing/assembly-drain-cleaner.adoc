@@ -1,0 +1,77 @@
+// This assembly is included in the following assemblies:
+//
+// using/assembly-management-tasks.adoc
+
+[id='assembly-drain-cleaner-{context}']
+= Evicting pods with Strimzi Drain Cleaner
+
+[role="_abstract"]
+Kafka and ZooKeeper pods might be evicted during Kubernetes upgrades, maintenance or pod rescheduling.
+If your Kafka broker and ZooKeeper pods were deployed by Strimzi, you can use the Strimzi Drain Cleaner tool to handle the pod evictions.
+You need to set the `podDisruptionBudget` for your Kafka deployment to `0` (zero) for the Strimzi Drain Cleaner to work.
+
+By deploying the Strimzi Drain Cleaner, you can use the Cluster Operator to move Kafka pods instead of Kubernetes.
+The Cluster Operator ensures that topics are never under-replicated.
+Kafka can remain operational during the eviction process.
+The Cluster Operator waits for topics to synchronize, as the Kubernetes worker nodes drain consecutively.
+
+An admission webhook notifies the Strimzi Drain Cleaner of pod eviction requests to the Kubernetes API.
+The Strimzi Drain Cleaner then adds a rolling update annotation to the pods to be drained.
+This informs the Cluster Operator to perform a rolling update of an evicted pod.
+
+NOTE: If you are not using the Strimzi Drain Cleaner, you can xref:proc-manual-rolling-update-pods-str[add pod annotations to perform rolling updates manually].
+
+.Webhook configuration
+The Strimzi Drain Cleaner deployment files include a `ValidatingWebhookConfiguration` resource file.
+The resource provides the configuration for registering the webhook with the Kubernetes API.
+
+The configuration defines the `rules` for the Kubernetes API to follow in the event of a pod eviction request.
+The rules specify that only `CREATE` operations related to `pods/eviction` sub-resources are intercepted.
+If these rules are met, the API forwards the notification.
+
+The `clientConfig` points to the Strimzi Drain Cleaner service and `/drainer` endpoint that exposes the webhook.
+The webhook uses a secure TLS connection, which requires authentication.
+The `caBundle` property specifies the certificate chain to validate HTTPS communication.
+Certificates are encoded in Base64.
+
+.Webhook configuration for pod eviction notifications
+[source,yaml,subs="attributes+"]
+----
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+# ...
+webhooks:
+  - name: strimzi-drain-cleaner.strimzi.io
+    rules:
+      - apiGroups:   [""]
+        apiVersions: ["v1"]
+        operations:  ["CREATE"]
+        resources:   ["pods/eviction"]
+        scope:       "Namespaced"
+    clientConfig:
+      service:
+        namespace: "strimzi-drain-cleaner"
+        name: "strimzi-drain-cleaner"
+        path: /drainer
+        port: 443
+        caBundle: Cg==
+    # ...
+----
+
+[id='drain-cleaner-prereqs-{context}']
+== Prerequisites
+
+To deploy and use the Strimzi Drain Cleaner, you need to download the deployment files.
+
+ifdef::Downloading[]
+The Strimzi Drain Cleaner deployment files are accessible from the link:{ReleaseDownload} release archive.
+endif::Downloading[]
+
+ifndef::Downloading[]
+The Strimzi Drain Cleaner deployment files are provided with the downloadable release artifacts from the {ZipDownload}.
+endif::Downloading[]
+
+//steps for deploying drain cleaner
+include::modules/proc-drain-cleaner-deploying.adoc[leveloffset=+1]
+//steps for using drain cleaner
+include::modules/proc-drain-cleaner-using.adoc[leveloffset=+1]
