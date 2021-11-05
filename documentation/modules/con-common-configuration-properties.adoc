@@ -438,12 +438,13 @@ The default values used for `-Xms` and `-Xmx` depend on whether there is a xref:
 * If there is a memory limit, the JVM's minimum and maximum memory is set to a value corresponding to the limit.
 * If there is no memory limit, the JVM's minimum memory is set to `128M`. The JVM's maximum memory is not defined to allow the memory to increase as needed. This is ideal for single node environments in test and development.
 
-Before setting `-Xmx` explicitly consider the following:
+Before setting `-Xmx` explicitly, consider the following:
 
-* The JVM's overall memory usage will be approximately 4 × the maximum heap, as configured by `-Xmx`.
-* If `-Xmx` is set without also setting an appropriate Kubernetes memory limit, it is possible that the container will be killed should the Kubernetes node experience memory pressure from other Pods running on it.
-* If `-Xmx` is set without also setting an appropriate Kubernetes memory request, it is possible that the container will be scheduled to a node with insufficient memory.
-In this case, the container will not start but crash immediately if `-Xms` is set to `-Xmx`, or at a later time if not.
+* Total JVM memory usage can be a lot more than the maximum heap size. Try experimenting to find a value for `-Xmx` that makes the best use of the container's memory request without exceeding it.
+* Setting an appropriate Kubernetes memory request.
+** Kubernetes might kill the container if there is pressure on memory from other pods running on the node.
+** Kubernetes might schedule the container to a node with insufficient memory.
+If `-Xms` is set to `-Xmx`, the container will crash immediately; if not, the container will crash at a later time.
 
 It is _recommended_ to:
 
