@@ -55,7 +55,7 @@ During planned maintenance of Kafka broker pods, a pod disruption budget ensures
 You specify a pod disruption budget using a `template` customization for a Kafka component.
 By default, pod disruption budgets allow only a single pod to be unavailable at a given time.
 
-To do this, you set `maxUnavailable` to 0 (zero).
+To do this, you set `maxUnavailable` to `0` (zero).
 Reducing the maximum pod disruption budget to zero prevents voluntary disruptions, so pods must be evicted manually.
 
 .Specifying a pod disruption budget

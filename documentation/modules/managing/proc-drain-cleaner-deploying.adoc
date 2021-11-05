@@ -6,12 +6,12 @@
 = Deploying the Strimzi Drain Cleaner
 
 [role="_abstract"]
-Deploy the Strimzi Drain Cleaner to the Kubernetes cluster where the Cluster Operator and Kafka cluster is running.
+Deploy the Strimzi Drain Cleaner to the Kubernetes cluster where the Cluster Operator and Kafka cluster are running.
 
 .Prerequisites
 
 * You have xref:drain-cleaner-prereqs-str[downloaded the Strimzi Drain Cleaner deployment files].
-* You have a highly available Kafka cluster deployment running with Kubernetes worker nodes that you wish to update.
+* You have a highly available Kafka cluster deployment running with Kubernetes worker nodes that you would like to update.
 * Topics are replicated for high availability.
 +
 Topic configuration specifies a replication factor of at least 3 and a minimum number of in-sync replicas to 1 less than the replication factor.
@@ -61,7 +61,7 @@ spec:
 
 .Procedure
 
-. Configure a pod disruption budget of 0 (zero) for your Kafka deployment using `template` settings in the `Kafka` resource.
+. Configure a pod disruption budget of `0` (zero) for your Kafka deployment using `template` settings in the `Kafka` resource.
 +
 .Specifying a pod disruption budget
 [source,yaml,subs=attributes+]
@@ -85,7 +85,7 @@ spec:
   # ...
 ----
 +
-Reducing the maximum pod disruption budget to zero prevents Kubernetes from automatically evicting (deleting) the pods in case of voluntary disruptions,
+Reducing the maximum pod disruption budget to zero prevents Kubernetes from automatically evicting the pods in case of voluntary disruptions,
 so pods must be evicted by the Strimzi Drain Cleaner.
 +
 Add the same configuration for ZooKeeper if you want to use Strimzi Drain Cleaner to drain ZooKeeper nodes.
@@ -124,7 +124,7 @@ kubectl apply -f ./install/drain-cleaner/kubernetes
 ----
 +
 The resources are configured with TLS certificates that have already been generated.
-Use these certificates if you are not changing any configuration for the Strimzi Drain Cleaner, such as namespaces, or service and pod names.
+Use these certificates if you are not changing any configuration for the Strimzi Drain Cleaner, such as namespaces, service names, or pod names.
 +
 NOTE: You can use the build script and files provided in link:https://github.com/strimzi/drain-cleaner/tree/main/install/kubernetes/webhook-certificates[`webhook-certificates`^]
 to generate your own certificates. The script uses the link:https://github.com/cloudflare/cfssl[`CFSSL`^] and link:https://www.openssl.org/[openSSL] tools to generate the certificates.

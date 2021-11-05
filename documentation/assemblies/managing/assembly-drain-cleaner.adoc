@@ -8,15 +8,15 @@
 [role="_abstract"]
 Kafka and ZooKeeper pods might be evicted during Kubernetes upgrades, maintenance or pod rescheduling.
 If your Kafka broker and ZooKeeper pods were deployed by Strimzi, you can use the Strimzi Drain Cleaner tool to handle the pod evictions.
-You need to set the `podDisruptionBudget` for your Kafka deployment to 0 (zero) for the Strimzi Drain Cleaner to work.
+You need to set the `podDisruptionBudget` for your Kafka deployment to `0` (zero) for the Strimzi Drain Cleaner to work.
 
 By deploying the Strimzi Drain Cleaner, you can use the Cluster Operator to move Kafka pods instead of Kubernetes.
-Why is this beneficial? The Cluster Operator ensures that topics are never under-replicated.
-As Kubernetes worker nodes are drained consecutively, the Cluster Operator waits until topics are synchronized.
-This means that Kafka can remain operational during the eviction process.
+The Cluster Operator ensures that topics are never under-replicated.
+Kafka can remain operational during the eviction process.
+The Cluster Operator waits for topics to synchronize, as the Kubernetes worker nodes drain consecutively.
 
 An admission webhook notifies the Strimzi Drain Cleaner of pod eviction requests to the Kubernetes API.
-The Strimzi Drain Cleaner then annotates the pods to be drained with a rolling update pod annotation.
+The Strimzi Drain Cleaner then adds a rolling update annotation to the pods to be drained.
 This informs the Cluster Operator to perform a rolling update of an evicted pod.
 
 NOTE: If you are not using the Strimzi Drain Cleaner, you can xref:proc-manual-rolling-update-pods-str[add pod annotations to perform rolling updates manually].
@@ -32,7 +32,7 @@ If these rules are met, the API forwards the notification.
 The `clientConfig` points to the Strimzi Drain Cleaner service and `/drainer` endpoint that exposes the webhook.
 The webhook uses a secure TLS connection, which requires authentication.
 The `caBundle` property specifies the certificate chain to validate HTTPS communication.
-Certificates are encoded in base64.
+Certificates are encoded in Base64.
 
 .Webhook configuration for pod eviction notifications
 [source,yaml,subs="attributes+"]
