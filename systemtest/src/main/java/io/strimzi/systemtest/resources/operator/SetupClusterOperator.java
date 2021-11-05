@@ -119,7 +119,8 @@ public class SetupClusterOperator {
                     cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                     extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
                 }
-                olmResource = new OlmResource(namespaceInstallTo);
+                applyBindings();
+                olmResource = new OlmResource(namespaceInstallTo, namespaceToWatch);
                 olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
             }
         } else if (Environment.isHelmInstall()) {
