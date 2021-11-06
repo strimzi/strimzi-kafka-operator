@@ -83,11 +83,12 @@ public class ResourceOperatorSupplier {
     public final NodeOperator nodeOperator;
     public final ZookeeperScalerProvider zkScalerProvider;
     public final MetricsProvider metricsProvider;
-    public AdminClientProvider adminClientProvider;
+    public final AdminClientProvider adminClientProvider;
+    public final ZookeeperLeaderFinder zookeeperLeaderFinder;
 
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
         this(vertx, client,
-            new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
+            new ZookeeperLeaderFinder(vertx,
             // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
                 () -> new BackOff(5_000, 2, 4)),
                     new DefaultAdminClientProvider(),
@@ -129,7 +130,8 @@ public class ResourceOperatorSupplier {
                 new NodeOperator(vertx, client),
                 zkScalerProvider,
                 metricsProvider,
-                adminClientProvider);
+                adminClientProvider,
+                zlf);
     }
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -162,7 +164,8 @@ public class ResourceOperatorSupplier {
                                     NodeOperator nodeOperator,
                                     ZookeeperScalerProvider zkScalerProvider,
                                     MetricsProvider metricsProvider,
-                                    AdminClientProvider adminClientProvider) {
+                                    AdminClientProvider adminClientProvider,
+                                    ZookeeperLeaderFinder zookeeperLeaderFinder) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.zkSetOperations = zkSetOperations;
@@ -194,5 +197,6 @@ public class ResourceOperatorSupplier {
         this.zkScalerProvider = zkScalerProvider;
         this.metricsProvider = metricsProvider;
         this.adminClientProvider = adminClientProvider;
+        this.zookeeperLeaderFinder = zookeeperLeaderFinder;
     }
 }

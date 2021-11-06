@@ -79,6 +79,8 @@ import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSpecChecker;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.ZooKeeperRoller;
+import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
@@ -181,6 +183,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> crdOperator;
     private final ZookeeperScalerProvider zkScalerProvider;
     private final AdminClientProvider adminClientProvider;
+    private final ZookeeperLeaderFinder zookeeperLeaderFinder;
 
     /**
      * @param vertx The Vertx instance
@@ -217,6 +220,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.nodeOperator = supplier.nodeOperator;
         this.zkScalerProvider = supplier.zkScalerProvider;
         this.adminClientProvider = supplier.adminClientProvider;
+        this.zookeeperLeaderFinder = supplier.zookeeperLeaderFinder;
     }
 
     @Override
@@ -265,10 +269,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.reconcileCas(this::dateSupplier))
                 .compose(state -> state.clusterOperatorSecret(this::dateSupplier))
                 .compose(state -> state.getKafkaClusterDescription())
+                .compose(state -> state.getZookeeperDescription()) // HAs to be before the rollingUpdateForNewCaKey
                 .compose(state -> state.prepareVersionChange())
                 // Roll everything if a new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaKey())
-                .compose(state -> state.getZookeeperDescription())
+
                 .compose(state -> state.zkModelWarnings())
                 .compose(state -> state.zkJmxSecret())
                 .compose(state -> state.zkManualPodCleaning())
@@ -733,10 +738,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 if (this.clusterCa.keyReplaced()) {
                     // ZooKeeper is rolled only for new Cluster CA key
-                    zkRollFuture = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
-                        .compose(sts -> zkSetOperations.maybeRollingUpdate(reconciliation, sts, rollPodAndLogReason,
-                        clusterCa.caCertSecret(),
-                        oldCoSecret));
+                    zkRollFuture = maybeRollZooKeeper(rollPodAndLogReason, clusterCa.caCertSecret(), oldCoSecret);
                 } else {
                     zkRollFuture = Future.succeededFuture();
                 }
@@ -855,11 +857,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /**
          * Does rolling update of Zoo pods based on the annotation on Pod level
          *
-         * @param sts   The Zoo StatefulSet definition needed for the rolling update
-         *
          * @return  Future with the result of the rolling update
          */
-        Future<Void> zkManualPodRollingUpdate(StatefulSet sts) {
+        Future<Void> zkManualPodRollingUpdate() {
             return podOperations.listAsync(namespace, zkCluster.getSelectorLabels())
                     .compose(pods -> {
                         List<String> podsToRoll = new ArrayList<>(0);
@@ -871,7 +871,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         }
 
                         if (!podsToRoll.isEmpty())  {
-                            return zkSetOperations.maybeRollingUpdate(reconciliation, sts, pod -> {
+                            return maybeRollZooKeeper(pod -> {
                                 if (pod != null && podsToRoll.contains(pod.getMetadata().getName())) {
                                     LOGGER.debugCr(reconciliation, "Rolling ZooKeeper pod {} due to manual rolling update annotation on a pod", pod.getMetadata().getName());
                                     return singletonList("manual rolling update annotation on a pod");
@@ -900,15 +900,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (sts != null) {
                         if (Annotations.booleanAnnotation(sts, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, false)) {
                             // User trigger rolling update of the whole StatefulSet
-                            return zkSetOperations.maybeRollingUpdate(reconciliation, sts, pod -> {
-                                LOGGER.debugCr(reconciliation, "Rolling Zookeeper pod {} due to manual rolling update",
-                                        pod.getMetadata().getName());
+                            return maybeRollZooKeeper(pod -> {
+                                LOGGER.debugCr(reconciliation, "Rolling Zookeeper pod {} due to manual rolling update", pod.getMetadata().getName());
                                 return singletonList("manual rolling update");
                             });
                         } else {
                             // The STS is not annotated to roll all pods.
                             // But maybe the individual pods are annotated to restart only some of them.
-                            return zkManualPodRollingUpdate(sts);
+                            return zkManualPodRollingUpdate();
                         }
                     } else {
                         // STS does not exist => nothing to roll
@@ -1094,24 +1093,48 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return Future.succeededFuture(this);
         }
 
+        /**
+         * Returns a composite future with two results => one with the Cluster CA secret and one with the
+         * Cluster Operator secret. These are used for the Kafka Admin client.
+         *
+         * @return
+         */
         protected CompositeFuture adminClientSecrets() {
-            Future<Secret> clusterCaCertSecretFuture = secretOperations.getAsync(
-                namespace, KafkaResources.clusterCaCertificateSecretName(name)).compose(secret -> {
-                    if (secret == null) {
-                        return Future.failedFuture(Util.missingSecretException(namespace, KafkaCluster.clusterCaCertSecretName(name)));
-                    } else {
-                        return Future.succeededFuture(secret);
-                    }
-                });
-            Future<Secret> coKeySecretFuture = secretOperations.getAsync(
-                namespace, ClusterOperator.secretName(name)).compose(secret -> {
-                    if (secret == null) {
-                        return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(name)));
-                    } else {
-                        return Future.succeededFuture(secret);
-                    }
-                });
-            return CompositeFuture.join(clusterCaCertSecretFuture, coKeySecretFuture);
+            return CompositeFuture.join(
+                    getSecret(namespace, KafkaResources.clusterCaCertificateSecretName(name)),
+                    getSecret(namespace, ClusterOperator.secretName(name))
+            );
+        }
+
+        /**
+         * Returns a composite future with two results => one with the Cluster CA secret and one with the
+         * Cluster Operator secret. These are used by the ZooKeeper clients => in leader finder and in scaler.
+         *
+         * @return
+         */
+        protected CompositeFuture zooKeeperClientSecrets() {
+            return CompositeFuture.join(
+                    getSecret(namespace, KafkaResources.clusterCaCertificateSecretName(name)),
+                    getSecret(namespace, ClusterOperator.secretName(name))
+            );
+        }
+
+        /**
+         * Gets asynchronously a secret with certificate. If it doesn't exist, it throws exception.
+         *
+         * @param namespace     Namespace where the secret is
+         * @param secretName    Name of the secret
+         *
+         * @return              Secret with the certificates
+         */
+        private Future<Secret> getSecret(String namespace, String secretName)  {
+            return secretOperations.getAsync(namespace, secretName).compose(secret -> {
+                if (secret == null) {
+                    return Future.failedFuture(Util.missingSecretException(namespace, secretName));
+                } else {
+                    return Future.succeededFuture(secret);
+                }
+            });
         }
 
         /**
@@ -1141,6 +1164,37 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     () -> new BackOff(250, 2, 10), sts, compositeFuture.resultAt(0), compositeFuture.resultAt(1), adminClientProvider,
                         kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion(), allowReconfiguration)
                     .rollingRestart(podNeedsRestart));
+        }
+
+        /**
+         * Checks if the ZooKeeper cluster needs rolling and if it does, it will roll it.
+         *
+         * @param podNeedsRestart   Function to determine if the ZooKeeper pod needs to be restarted
+         *
+         * @return
+         */
+        Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart) {
+            return zooKeeperClientSecrets()
+                    .compose(compositeFuture -> {
+                        Secret clusterCaCertSecret = compositeFuture.resultAt(0);
+                        Secret coKeySecret = compositeFuture.resultAt(1);
+
+                        return maybeRollZooKeeper(podNeedsRestart, clusterCaCertSecret, coKeySecret);
+                    });
+        }
+
+        /**
+         * Checks if the ZooKeeper cluster needs rolling and if it does, it will roll it.
+         *
+         * @param podNeedsRestart       Function to determine if the ZooKeeper pod needs to be restarted
+         * @param clusterCaCertSecret   Secret with the Cluster CA certificates
+         * @param coKeySecret           Secret with the Cluster Operator certificates
+         *
+         * @return
+         */
+        Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart, Secret clusterCaCertSecret, Secret coKeySecret) {
+            return new ZooKeeperRoller(podOperations, zookeeperLeaderFinder, operationTimeoutMs)
+                    .maybeRollingUpdate(reconciliation, zkCluster.getSelectorLabels(), podNeedsRestart, clusterCaCertSecret, coKeySecret);
         }
 
         Future<ReconciliationState> getZookeeperDescription() {
@@ -1182,8 +1236,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         return Future.succeededFuture(this);
                     });
         }
-
-
 
         Future<ReconciliationState> withZkDiff(Future<ReconcileResult<StatefulSet>> r) {
             return r.map(rr -> {
@@ -1277,10 +1329,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkRollingUpdate() {
-            // Scale-down and Scale-up might have change the STS. we should get a fresh one.
-            return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
-                    .compose(sts -> zkSetOperations.maybeRollingUpdate(reconciliation, sts,
-                        pod -> getReasonsToRestartPod(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa)))
+            return maybeRollZooKeeper(pod -> getReasonsToRestartPod(zkDiffs.resource(), pod, existingZookeeperCertsChanged, this.clusterCa))
                     .map(this);
         }
 
@@ -1316,22 +1365,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return                      Zookeeper scaler instance.
          */
         Future<ZookeeperScaler> zkScaler(int connectToReplicas)  {
-            Future<Secret> clusterCaCertSecretFuture = secretOperations.getAsync(namespace, KafkaResources.clusterCaCertificateSecretName(name));
-            Future<Secret> coKeySecretFuture = secretOperations.getAsync(namespace, ClusterOperator.secretName(name));
-
-            return CompositeFuture.join(clusterCaCertSecretFuture, coKeySecretFuture)
+            return zooKeeperClientSecrets()
                     .compose(compositeFuture -> {
-                        // Handle Cluster CA for connecting to Zoo
                         Secret clusterCaCertSecret = compositeFuture.resultAt(0);
-                        if (clusterCaCertSecret == null) {
-                            return Future.failedFuture(Util.missingSecretException(namespace, KafkaCluster.clusterCaKeySecretName(name)));
-                        }
-
-                        // Handle CO key for connecting to Zoo
                         Secret coKeySecret = compositeFuture.resultAt(1);
-                        if (coKeySecret == null) {
-                            return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(name)));
-                        }
 
                         Function<Integer, String> zkNodeAddress = (Integer i) ->
                                 DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace,

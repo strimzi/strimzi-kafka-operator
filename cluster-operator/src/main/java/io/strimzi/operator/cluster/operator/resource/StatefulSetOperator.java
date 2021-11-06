@@ -6,22 +6,15 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.operator.cluster.ClusterOperator;
-import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
@@ -35,11 +28,9 @@ import io.vertx.core.Vertx;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
- * Operations for {@code StatefulSets}s, which supports {@link #maybeRollingUpdate(Reconciliation, StatefulSet, Function)}
- * in addition to the usual operations.
+ * Operations for {@code StatefulSets}s
  */
 public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> {
     private static final int NO_GENERATION = -1;
@@ -80,104 +71,6 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
     @Override
     protected MixedOperation<StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> operation() {
         return client.apps().statefulSets();
-    }
-
-    /**
-     * Asynchronously perform a rolling update of all the pods in the StatefulSet identified by the given
-     * {@code namespace} and {@code name}, returning a Future that will complete when the rolling update
-     * is complete. Starting with pod 0, each pod will be deleted and re-created automatically by the ReplicaSet,
-     * once the pod has been recreated then given {@code isReady} function will be polled until it returns true,
-     * before the process proceeds with the pod with the next higher number.
-     * @param reconciliation The reconciliation
-     * @param sts The StatefulSet
-     * @param podNeedsRestart Function that returns a list is reasons why the given pod needs to be restarted, or an empty list if the pod does not need to be restarted.
-     * @return A future that completes when any necessary rolling has been completed.
-     */
-    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
-        return getSecrets(sts).compose(compositeFuture -> {
-            return maybeRollingUpdate(reconciliation, sts, podNeedsRestart, compositeFuture.resultAt(0), compositeFuture.resultAt(1));
-        });
-    }
-
-    protected CompositeFuture getSecrets(StatefulSet sts) {
-        String cluster = sts.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-        String namespace = sts.getMetadata().getNamespace();
-        Future<Secret> clusterCaCertSecretFuture = secretOperations.getAsync(
-            namespace, KafkaResources.clusterCaCertificateSecretName(cluster)).compose(secret -> {
-                if (secret == null) {
-                    return Future.failedFuture(Util.missingSecretException(namespace, KafkaCluster.clusterCaCertSecretName(cluster)));
-                } else {
-                    return Future.succeededFuture(secret);
-                }
-            });
-        Future<Secret> coKeySecretFuture = secretOperations.getAsync(
-            namespace, ClusterOperator.secretName(cluster)).compose(secret -> {
-                if (secret == null) {
-                    return Future.failedFuture(Util.missingSecretException(namespace, ClusterOperator.secretName(cluster)));
-                } else {
-                    return Future.succeededFuture(secret);
-                }
-            });
-        return CompositeFuture.join(clusterCaCertSecretFuture, coKeySecretFuture);
-    }
-
-    public abstract Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, Secret clusterCaSecret, Secret coKeySecret);
-
-    public Future<Void> deletePvc(Reconciliation reconciliation, StatefulSet sts, String pvcName) {
-        String namespace = sts.getMetadata().getNamespace();
-        Promise<Void> promise = Promise.promise();
-        Future<ReconcileResult<PersistentVolumeClaim>> r = pvcOperations.reconcile(reconciliation, namespace, pvcName, null);
-        r.onComplete(h -> {
-            if (h.succeeded()) {
-                promise.complete();
-            } else {
-                promise.fail(h.cause());
-            }
-        });
-        return promise.future();
-    }
-
-    /**
-     * Asynchronously apply the given {@code podNeedsRestart}, if it returns true then restart the pod
-     * given by {@code podName} by deleting it and letting it be recreated by K8s;
-     * in any case return a Future which completes when the given (possibly recreated) pod is ready.
-     * @param reconciliation Reconciliation object
-     * @param sts The StatefulSet.
-     * @param podName The name of the Pod to possibly restart.
-     * @param podNeedsRestart The function for deciding whether to restart the pod.
-     * @return a Future which completes when the given (possibly recreated) pod is ready.
-     */
-    Future<Void> maybeRestartPod(Reconciliation reconciliation, StatefulSet sts, String podName, Function<Pod, List<String>> podNeedsRestart) {
-        long pollingIntervalMs = 1_000;
-        long timeoutMs = operationTimeoutMs;
-        String namespace = sts.getMetadata().getNamespace();
-        String name = sts.getMetadata().getName();
-        return podOperations.getAsync(sts.getMetadata().getNamespace(), podName).compose(pod -> {
-            Future<Void> fut;
-            List<String> reasons = podNeedsRestart.apply(pod);
-            if (reasons != null && !reasons.isEmpty()) {
-                LOGGER.debugCr(reconciliation, "Rolling update of {}/{}: pod {} due to {}", namespace, name, podName, reasons);
-                fut = restartPod(reconciliation, pod);
-            } else {
-                LOGGER.debugCr(reconciliation, "Rolling update of {}/{}: pod {} no need to roll", namespace, name, podName);
-                fut = Future.succeededFuture();
-            }
-            return fut.compose(ignored -> {
-                LOGGER.debugCr(reconciliation, "Rolling update of {}/{}: wait for pod {} readiness", namespace, name, podName);
-                return podOperations.readiness(reconciliation, namespace, podName, pollingIntervalMs, timeoutMs);
-            });
-        });
-    }
-
-    /**
-     * Asynchronously delete the given pod, return a Future which completes when the Pod has been recreated.
-     * Note: The pod might not be ready when the returned Future completes.
-     * @param reconciliation The reconciliation
-     * @param pod The pod to be restarted
-     * @return a Future which completes when the Pod has been recreated
-     */
-    private Future<Void> restartPod(Reconciliation reconciliation, Pod pod) {
-        return podOperations.restart(reconciliation, pod, operationTimeoutMs);
     }
 
     @Override
