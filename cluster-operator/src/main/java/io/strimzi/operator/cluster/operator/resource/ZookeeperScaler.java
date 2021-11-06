@@ -88,9 +88,11 @@ public class ZookeeperScaler implements AutoCloseable {
         // We cannot use P12 because of custom CAs which for simplicity provide only PEM
         PasswordGenerator pg = new PasswordGenerator(12);
         trustStorePassword = pg.generate();
+        trustStoreFile = Util.createFileTrustStore(getClass().getName(), "p12", Ca.certs(clusterCaCertSecret), trustStorePassword.toCharArray());
 
         // Setup keystore from PKCS12 in cluster-operator secret
         keyStorePassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.US_ASCII);
+        keyStoreFile = Util.createFileStore(getClass().getName(), "p12", Util.decodeFromSecret(coKeySecret, "cluster-operator.p12"));
     }
 
     /**
@@ -131,13 +133,13 @@ public class ZookeeperScaler implements AutoCloseable {
     public void close() {
         if (trustStoreFile != null) {
             if (!trustStoreFile.delete())   {
-                LOGGER.debugCr(reconciliation, "Failed to delete file {}", trustStoreFile);
+                LOGGER.warnCr(reconciliation, "Failed to delete file {}", trustStoreFile);
             }
         }
 
         if (keyStoreFile != null)   {
             if (!keyStoreFile.delete())   {
-                LOGGER.debugCr(reconciliation, "Failed to delete file {}", keyStoreFile);
+                LOGGER.warnCr(reconciliation, "Failed to delete file {}", keyStoreFile);
             }
         }
     }
@@ -283,9 +285,6 @@ public class ZookeeperScaler implements AutoCloseable {
         vertx.executeBlocking(promise -> {
             try {
                 ZKClientConfig clientConfig = new ZKClientConfig();
-
-                trustStoreFile = Util.createFileTrustStore(getClass().getName(), "p12", Ca.certs(clusterCaCertSecret), trustStorePassword.toCharArray());
-                keyStoreFile = Util.createFileStore(getClass().getName(), "p12", Util.decodeFromSecret(coKeySecret, "cluster-operator.p12"));
 
                 clientConfig.setProperty("zookeeper.clientCnxnSocket", "org.apache.zookeeper.ClientCnxnSocketNetty");
                 clientConfig.setProperty("zookeeper.client.secure", "true");
