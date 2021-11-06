@@ -730,7 +730,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     LOGGER.debugCr(reconciliation, "Rolling Pod {} to {}", pod.getMetadata().getName(), reason);
                     return reason;
                 };
+
                 if (this.clusterCa.keyReplaced()) {
+                    // ZooKeeper is rolled only for new Cluster CA key
                     zkRollFuture = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
                         .compose(sts -> zkSetOperations.maybeRollingUpdate(reconciliation, sts, rollPodAndLogReason,
                         clusterCa.caCertSecret(),
@@ -738,15 +740,23 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 } else {
                     zkRollFuture = Future.succeededFuture();
                 }
+
                 return zkRollFuture
                         .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
                         .compose(sts -> new KafkaRoller(reconciliation, vertx, podOperations, 1_000, operationTimeoutMs,
                             () -> new BackOff(250, 2, 10), sts, clusterCa.caCertSecret(), oldCoSecret, adminClientProvider,
                             kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion(), true)
                             .rollingRestart(rollPodAndLogReason))
-                        .compose(i -> rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reason.toString()))
-                        .compose(i -> rollDeploymentIfExists(KafkaExporter.kafkaExporterName(name), reason.toString()))
-                        .compose(i -> rollDeploymentIfExists(CruiseControl.cruiseControlName(name), reason.toString()))
+                        .compose(i -> {
+                            if (this.clusterCa.keyReplaced()) {
+                                // EO, KE and CC need to be rolled only for new Cluster CA key.
+                                return rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reason.toString())
+                                        .compose(i2 -> rollDeploymentIfExists(KafkaExporter.kafkaExporterName(name), reason.toString()))
+                                        .compose(i2 -> rollDeploymentIfExists(CruiseControl.cruiseControlName(name), reason.toString()));
+                            } else {
+                                return Future.succeededFuture();
+                            }
+                        })
                         .map(i -> this);
             } else {
                 return Future.succeededFuture(this);
@@ -3329,8 +3339,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
                             Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCaCertGeneration));
-                    Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
-                            Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(clientsCaCertGeneration));
                     return deploymentOperations.reconcile(reconciliation, namespace, EntityOperator.entityOperatorName(name), eoDeployment);
                 }).compose(recon -> {
                     if (recon instanceof ReconcileResult.Noop)   {
