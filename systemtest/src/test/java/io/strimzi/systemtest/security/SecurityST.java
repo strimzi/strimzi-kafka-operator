@@ -208,7 +208,7 @@ class SecurityST extends AbstractST {
                 /* brokers need to trust client certs with new cert */
                 true,
                 /* eo needs to generate new client certs */
-                true,
+                false,
                 false);
     }
 
