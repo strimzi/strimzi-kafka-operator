@@ -98,7 +98,7 @@ public class ZooKeeperRoller {
                                 }
                             }
 
-                            // Check if we have a leader and if it needs tolling
+                            // Check if we have a leader and if it needs rolling
                             if (ZookeeperLeaderFinder.UNKNOWN_LEADER.equals(leader) || podsToRoll.get(leader) == null || podsToRoll.get(leader).isEmpty()) {
                                 return fut;
                             } else {
