@@ -27,7 +27,6 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
@@ -113,7 +112,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
     private Future<Void> createMirrorMaker2Cluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi, boolean reconciliationPaused) {
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, this.mockClient,
-                new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, this.mockClient),
+                new ZookeeperLeaderFinder(vertx,
                     // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
                     () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),

@@ -4,17 +4,10 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import java.util.List;
-import java.util.function.Function;
-
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 
 /**
@@ -63,16 +56,5 @@ public class KafkaSetOperator extends StatefulSetOperator {
             return false;
         }
         return false;
-    }
-
-    @Override
-    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
-        return maybeRollingUpdate(reconciliation, sts, podNeedsRestart, null, null);
-    }
-
-    @Override
-    public Future<Void> maybeRollingUpdate(Reconciliation reconciliation, StatefulSet sts, Function<Pod, List<String>> podNeedsRestart,
-                                           Secret clusterCaCertSecret, Secret coKeySecret) {
-        throw new UnsupportedOperationException();
     }
 }

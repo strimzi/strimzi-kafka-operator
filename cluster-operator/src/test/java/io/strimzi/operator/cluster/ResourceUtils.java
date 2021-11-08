@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LoadBalancerIngressBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
@@ -557,10 +556,9 @@ public class ResourceUtils {
     }
 
     public static ZookeeperLeaderFinder zookeeperLeaderFinder(Vertx vertx, KubernetesClient client) {
-        return new ZookeeperLeaderFinder(vertx, new SecretOperator(vertx, client),
-            () -> new BackOff(5_000, 2, 4)) {
+        return new ZookeeperLeaderFinder(vertx, () -> new BackOff(5_000, 2, 4)) {
                 @Override
-                protected Future<Boolean> isLeader(Reconciliation reconciliation, Pod pod, NetClientOptions options) {
+                protected Future<Boolean> isLeader(Reconciliation reconciliation, String podName, NetClientOptions options) {
                     return Future.succeededFuture(true);
                 }
 
@@ -706,7 +704,8 @@ public class ResourceUtils {
                 mock(NodeOperator.class),
                 zookeeperScalerProvider(),
                 metricsProvider(),
-                adminClientProvider());
+                adminClientProvider(),
+                mock(ZookeeperLeaderFinder.class));
 
         when(supplier.secretOperations.getAsync(any(), any())).thenReturn(Future.succeededFuture());
         when(supplier.serviceAccountOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());

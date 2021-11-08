@@ -4,9 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -14,8 +12,6 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -30,32 +26,27 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Base64;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static java.lang.Integer.parseInt;
 
 /**
  * Helper class for finding the leader of a ZK cluster
  */
 public class ZookeeperLeaderFinder {
-
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ZookeeperLeaderFinder.class);
 
     private static final Pattern LEADER_MODE_PATTERN = Pattern.compile("^Mode: leader$", Pattern.MULTILINE);
 
-    public static final int UNKNOWN_LEADER = -1;
+    public static final String UNKNOWN_LEADER = "-1";
 
     private final Vertx vertx;
-    final SecretOperator secretOperator;
     private final Supplier<BackOff> backOffSupplier;
 
-    public ZookeeperLeaderFinder(Vertx vertx, SecretOperator secretOperator, Supplier<BackOff> backOffSupplier) {
+    public ZookeeperLeaderFinder(Vertx vertx, Supplier<BackOff> backOffSupplier) {
         this.vertx = vertx;
-        this.secretOperator = secretOperator;
         this.backOffSupplier = backOffSupplier;
     }
 
@@ -89,7 +80,7 @@ public class ZookeeperLeaderFinder {
         for (Map.Entry<String, String> entry : clusterCaCertificateSecret.getData().entrySet()) {
             String entryName = entry.getKey();
             if (entryName.endsWith(".crt")) {
-                LOGGER.infoCr(reconciliation, "Trusting certificate {} from Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
+                LOGGER.debugCr(reconciliation, "Trusting certificate {} from Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
                 byte[] certBytes = decoder.decode(entry.getValue());
                 try {
                     x509.generateCertificate(new ByteArrayInputStream(certBytes));
@@ -98,7 +89,7 @@ public class ZookeeperLeaderFinder {
                 }
                 pto.addCertValue(Buffer.buffer(certBytes));
             } else {
-                LOGGER.warnCr(reconciliation, "Ignoring non-certificate {} in Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
+                LOGGER.debugCr(reconciliation, "Ignoring non-certificate {} in Secret {}", entryName, clusterCaCertificateSecret.getMetadata().getName());
             }
         }
         return pto;
@@ -132,39 +123,34 @@ public class ZookeeperLeaderFinder {
     }
 
     /**
-     * Returns a Future which completes with the the id of the Zookeeper leader.
+     * Returns a Future which completes with the id of the Zookeeper leader.
      * An exponential backoff is used if no ZK node is leader on the attempt to find it.
      * If there is no leader after 3 attempts then the returned Future completes with {@link #UNKNOWN_LEADER}.
      */
-    Future<Integer> findZookeeperLeader(Reconciliation reconciliation, String cluster, String namespace, List<Pod> pods, Secret coKeySecret) {
-        if (pods.size() <= 1) {
-            return Future.succeededFuture(pods.size() - 1);
+    Future<String> findZookeeperLeader(Reconciliation reconciliation, Set<String> pods, Secret clusterCaSecret, Secret coKeySecret) {
+        if (pods.size() == 0) {
+            return Future.succeededFuture(UNKNOWN_LEADER);
+        } else if (pods.size() == 1) {
+            return Future.succeededFuture(pods.stream().findFirst().get());
         }
-        String clusterCaSecretName = KafkaResources.clusterCaCertificateSecretName(cluster);
-        Future<Secret> clusterCaKeySecretFuture = secretOperator.getAsync(namespace, clusterCaSecretName);
-        return clusterCaKeySecretFuture.compose(clusterCaCertificateSecret -> {
-            if (clusterCaCertificateSecret  == null) {
-                return Future.failedFuture(Util.missingSecretException(namespace, clusterCaSecretName));
-            }
-            try {
-                NetClientOptions netClientOptions = clientOptions(reconciliation, coKeySecret, clusterCaCertificateSecret);
-                return zookeeperLeader(reconciliation, cluster, namespace, pods, netClientOptions);
-            } catch (Throwable e) {
-                return Future.failedFuture(e);
-            }
-        });
 
+        try {
+            NetClientOptions netClientOptions = clientOptions(reconciliation, coKeySecret, clusterCaSecret);
+            return zookeeperLeaderWithBackoff(reconciliation, pods, netClientOptions);
+        } catch (Throwable e) {
+            return Future.failedFuture(e);
+        }
     }
-    private Future<Integer> zookeeperLeader(Reconciliation reconciliation, String cluster, String namespace, List<Pod> pods,
-                                            NetClientOptions netClientOptions) {
-        Promise<Integer> result = Promise.promise();
+
+    private Future<String> zookeeperLeaderWithBackoff(Reconciliation reconciliation, Set<String> pods, NetClientOptions netClientOptions) {
+        Promise<String> result = Promise.promise();
         BackOff backOff = backOffSupplier.get();
         Handler<Long> handler = new Handler<Long>() {
             @Override
             public void handle(Long tid) {
                 zookeeperLeader(reconciliation, pods, netClientOptions).onComplete(leader -> {
                     if (leader.succeeded()) {
-                        if (leader.result() != UNKNOWN_LEADER) {
+                        if (!UNKNOWN_LEADER.equals(leader.result())) {
                             result.complete(leader.result());
                         } else {
                             rescheduleOrComplete(reconciliation, tid);
@@ -183,14 +169,14 @@ public class ZookeeperLeaderFinder {
             void rescheduleOrComplete(Reconciliation reconciliation, Long tid) {
                 if (backOff.done()) {
                     LOGGER.warnCr(reconciliation, "Giving up trying to find the leader of {}/{} after {} attempts taking {}ms",
-                            namespace, cluster, backOff.maxAttempts(), backOff.totalDelayMs());
+                            reconciliation.name(), reconciliation.namespace(), backOff.maxAttempts(), backOff.totalDelayMs());
                     result.complete(UNKNOWN_LEADER);
                 } else {
                     // Schedule ourselves to run again
                     long delay = backOff.delayMs();
                     LOGGER.infoCr(reconciliation, "No leader found for cluster {} in namespace {}; " +
                                     "backing off for {}ms (cumulative {}ms)",
-                            cluster, namespace, delay, backOff.cumulativeDelayMs());
+                            reconciliation.name(), reconciliation.namespace(), delay, backOff.cumulativeDelayMs());
                     if (delay < 1) {
                         this.handle(tid);
                     } else {
@@ -205,22 +191,20 @@ public class ZookeeperLeaderFinder {
 
     /**
      * Synchronously find the leader by testing each pod in the given list
-     * using {@link #isLeader(Reconciliation, Pod, NetClientOptions)}.
+     * using {@link #isLeader(Reconciliation, String, NetClientOptions)}.
      */
-    private Future<Integer> zookeeperLeader(Reconciliation reconciliation, List<Pod> pods, NetClientOptions netClientOptions) {
+    private Future<String> zookeeperLeader(Reconciliation reconciliation, Set<String> pods, NetClientOptions netClientOptions) {
         try {
-            Future<Integer> f = Future.succeededFuture(UNKNOWN_LEADER);
-            for (int i = 0; i < pods.size(); i++) {
-                final int podNum = i;
-                Pod pod = pods.get(i);
-                String podName = pod.getMetadata().getName();
+            Future<String> f = Future.succeededFuture(UNKNOWN_LEADER);
+
+            for (String podName : pods) {
                 f = f.compose(leader -> {
-                    if (leader == UNKNOWN_LEADER) {
+                    if (UNKNOWN_LEADER.equals(leader)) {
                         LOGGER.debugCr(reconciliation, "Checker whether {} is leader", podName);
-                        return isLeader(reconciliation, pod, netClientOptions).map(isLeader -> {
+                        return isLeader(reconciliation, podName, netClientOptions).map(isLeader -> {
                             if (isLeader != null && isLeader) {
                                 LOGGER.infoCr(reconciliation, "Pod {} is leader", podName);
-                                return podNum;
+                                return podName;
                             } else {
                                 LOGGER.infoCr(reconciliation, "Pod {} is not a leader", podName);
                                 return UNKNOWN_LEADER;
@@ -231,6 +215,7 @@ public class ZookeeperLeaderFinder {
                     }
                 });
             }
+
             return f;
         } catch (Throwable t) {
             return Future.failedFuture(t);
@@ -240,11 +225,11 @@ public class ZookeeperLeaderFinder {
     /**
      * Returns whether the given pod is the zookeeper leader.
      */
-    protected Future<Boolean> isLeader(Reconciliation reconciliation, Pod pod, NetClientOptions netClientOptions) {
+    protected Future<Boolean> isLeader(Reconciliation reconciliation, String podName, NetClientOptions netClientOptions) {
 
         Promise<Boolean> promise = Promise.promise();
-        String host = host(pod);
-        int port = port(pod);
+        String host = host(reconciliation, podName);
+        int port = port(podName);
         LOGGER.debugCr(reconciliation, "Connecting to zookeeper on {}:{}", host, port);
         vertx.createNetClient(netClientOptions)
             .connect(port, host, ar -> {
@@ -257,7 +242,7 @@ public class ZookeeperLeaderFinder {
                     socket.exceptionHandler(ex -> {
                         if (!promise.tryFail(ex)) {
                             LOGGER.debugCr(reconciliation, "ZK {}:{}: Ignoring error, since leader status of pod {} is already known: {}",
-                                    host, port, pod.getMetadata().getName(), ex);
+                                    host, port, podName, ex);
                         }
                     });
                     StringBuilder sb = new StringBuilder();
@@ -288,27 +273,33 @@ public class ZookeeperLeaderFinder {
                 }
 
             });
+
         return promise.future().recover(error -> {
-            LOGGER.debugOp("ZK {}:{}: Error trying to determine whether leader ({}) => not leader", host, port, error);
+            LOGGER.debugOp("ZK {}:{}: Error trying to determine leader ({}) => not leader", host, port, error);
             return Future.succeededFuture(Boolean.FALSE);
         });
     }
 
-    /** The hostname for connecting to zookeeper in the given pod. */
-    protected String host(Pod pod) {
-        String cluster = Labels.cluster(pod);
-        String podName = pod.getMetadata().getName();
-        int index = podName.lastIndexOf('-');
-        if (index == -1 || index >= podName.length()) {
-            // This should be impossible if the pod name conforms to the names used for STS pods
-            throw new RuntimeException();
-        }
-        int podId = parseInt(podName.substring(index + 1));
-        return ZookeeperCluster.podDnsName(pod.getMetadata().getNamespace(), cluster, podId);
+    /**
+     * The hostname for connecting to zookeeper in the given pod.
+     *
+     * @param reconciliation    Reconciliation used to obtain the namespace and cluster name
+     * @param podName           Name of the pod for which the hosname should be constructed
+     *
+     * @return                  Hostname of the ZooKeeper node
+     */
+    protected String host(Reconciliation reconciliation, String podName) {
+        return ZookeeperCluster.podDnsName(reconciliation.namespace(), reconciliation.name(), podName);
     }
 
-    /** The port number for connecting to zookeeper in the given pod. */
-    protected int port(Pod pod) {
+    /**
+     * The port number for connecting to zookeeper in the given pod.
+     *
+     * @param podName   Name of the pod for which we want to get the port number (not used here, but used in tests)
+     *
+     * @return          Port number of the ZooKeeper node
+     */
+    protected int port(String podName) {
         return ZookeeperCluster.CLIENT_TLS_PORT;
     }
 }

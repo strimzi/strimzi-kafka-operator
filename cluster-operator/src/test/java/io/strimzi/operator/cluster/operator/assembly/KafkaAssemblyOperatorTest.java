@@ -112,7 +112,6 @@ import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.set;
@@ -460,7 +459,6 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<StatefulSet> ssCaptor = ArgumentCaptor.forClass(StatefulSet.class);
         when(mockZsOps.reconcile(any(), anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new StatefulSet())));
         when(mockZsOps.scaleDown(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
-        when(mockZsOps.maybeRollingUpdate(any(), any(), any(Function.class))).thenReturn(Future.succeededFuture());
         when(mockZsOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         AtomicReference<StatefulSet> ref = new AtomicReference<>();
         when(mockKsOps.reconcile(any(), anyString(), anyString(), ssCaptor.capture())).thenAnswer(i -> {
@@ -475,7 +473,6 @@ public class KafkaAssemblyOperatorTest {
             return Future.succeededFuture(ReconcileResult.created(sts));
         });
         when(mockKsOps.scaleDown(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
-        when(mockKsOps.maybeRollingUpdate(any(), any(), any(Function.class))).thenReturn(Future.succeededFuture());
         when(mockKsOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockPolicyOps.reconcile(any(), anyString(), anyString(), policyCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
         when(mockZsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
@@ -1235,8 +1232,6 @@ public class KafkaAssemblyOperatorTest {
             StatefulSet sts = invocation.getArgument(3);
             return Future.succeededFuture(ReconcileResult.patched(sts));
         });
-        when(mockZsOps.maybeRollingUpdate(any(), any(), any(Function.class))).thenReturn(Future.succeededFuture());
-        when(mockKsOps.maybeRollingUpdate(any(), any(), any(Function.class))).thenReturn(Future.succeededFuture());
 
         when(mockZsOps.getAsync(clusterNamespace, ZookeeperCluster.zookeeperClusterName(clusterName))).thenReturn(
                 Future.succeededFuture(originalZookeeperCluster.generateStatefulSet(openShift, null, null))
