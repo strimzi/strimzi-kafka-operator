@@ -21,6 +21,7 @@ fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
 kubernetesServiceDnsDomain: cluster.local
 featureGates: ""
+extraEnvs: []
 
 tolerations: []
 affinity: {}
