@@ -186,7 +186,7 @@ public class OauthScopeST extends OauthAbstractST {
         final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaStatefulSetName(oauthClusterName));
 
         KafkaBasicExampleClients oauthInternalClientChecksJob = new KafkaBasicExampleClients.Builder()
             .withNamespaceName(INFRA_NAMESPACE)

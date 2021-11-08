@@ -340,7 +340,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         String teamBConsumerName = TEAM_B_CONSUMER_NAME + "-" + clusterName;
         // only write means that Team A can not create new topic 'x-.*'
         String topicXName = TOPIC_X + mapWithTestTopics.get(extensionContext.getDisplayName());
-        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaStatefulSetName(oauthClusterName));
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, INFRA_NAMESPACE).build());
 

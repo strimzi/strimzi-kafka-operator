@@ -1990,7 +1990,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, zkSelector, 1);
+        PodUtils.waitForPodsReady(namespaceName, zkSelector, 1, true);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName, ".*Secret " + nonExistingCertName + " with custom TLS certificate does not exist.*");
 
@@ -2027,7 +2027,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, zkSelector, 1);
+        PodUtils.waitForPodsReady(namespaceName, zkSelector, 1, true);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName,
                 ".*Secret " + clusterCustomCertServer1 + " does not contain certificate under the key " + nonExistingCertName + ".*");
@@ -2065,7 +2065,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, zkSelector, 1);
+        PodUtils.waitForPodsReady(namespaceName, zkSelector, 1, true);
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName,
                 ".*Secret " + clusterCustomCertServer1 + " does not contain custom certificate private key under the key " + nonExistingCertKey + ".*");

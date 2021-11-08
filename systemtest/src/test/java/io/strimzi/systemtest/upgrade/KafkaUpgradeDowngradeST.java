@@ -21,7 +21,6 @@ import io.strimzi.test.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
@@ -52,7 +51,6 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
     void testKafkaClusterUpgrade(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
-        String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
         String producerName = clusterName + "-producer";
         String consumerName = clusterName + "-consumer";
 
@@ -63,7 +61,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
             // If it is an upgrade test we keep the message format as the lower version number
             String logMsgFormat = initialVersion.messageVersion();
             String interBrokerProtocol = initialVersion.protocolVersion();
-            runVersionChange(initialVersion, newVersion, clusterName, producerName, consumerName, logMsgFormat, interBrokerProtocol, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, producerName, consumerName, logMsgFormat, interBrokerProtocol, 3, 3, testContext);
         }
 
         // ##############################
@@ -88,7 +86,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
             // If it is a downgrade then we make sure to use the lower version number for the message format
             String logMsgFormat = newVersion.messageVersion();
             String interBrokerProtocol = newVersion.protocolVersion();
-            runVersionChange(initialVersion, newVersion, clusterName, producerName, consumerName, logMsgFormat, interBrokerProtocol, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, producerName, consumerName, logMsgFormat, interBrokerProtocol, 3, 3, testContext);
         }
 
         // ##############################
@@ -126,7 +124,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x - 1);
 
-            runVersionChange(initialVersion, newVersion, clusterName, producerName, consumerName, initLogMsgFormat, interBrokerProtocol, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, producerName, consumerName, initLogMsgFormat, interBrokerProtocol, 3, 3, testContext);
         }
 
         // ##############################
@@ -136,7 +134,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
         // ##############################
     }
 
-    @Test
+    @IsolatedTest
     void testUpgradeWithNoMessageAndProtocolVersionsSet(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
@@ -148,7 +146,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
             TestKafkaVersion initialVersion = sortedVersions.get(x);
             TestKafkaVersion newVersion = sortedVersions.get(x + 1);
 
-            runVersionChange(initialVersion, newVersion, clusterName, producerName, consumerName, null, null, 3, 3, testContext);
+            runVersionChange(initialVersion, newVersion, producerName, consumerName, null, null, 3, 3, testContext);
         }
 
         // ##############################
@@ -159,7 +157,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})
-    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String clusterName, String producerName, String consumerName, String initLogMsgFormat, String initInterBrokerProtocol, int kafkaReplicas, int zkReplicas, ExtensionContext testContext) {
+    void runVersionChange(TestKafkaVersion initialVersion, TestKafkaVersion newVersion, String producerName, String consumerName, String initLogMsgFormat, String initInterBrokerProtocol, int kafkaReplicas, int zkReplicas, ExtensionContext testContext) {
         boolean isUpgrade = initialVersion.isUpgrade(newVersion);
         Map<String, String> kafkaPods;
 
