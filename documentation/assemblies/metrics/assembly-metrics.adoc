@@ -8,6 +8,15 @@
 [role="_abstract"]
 You can use Prometheus and Grafana to monitor your Strimzi deployment.
 
+You can monitor your Strimzi deployment by viewing key metrics on dashboards and setting up alerts that trigger under certain conditions.
+Metrics are available for each of the components of Strimzi.
+
+To provide metrics information, Strimzi uses Prometheus rules and Grafana dashboards.
+
+When configured with a set of rules for each component of Strimzi, Prometheus consumes key metrics from the pods that are running in your cluster.
+Grafana then visualizes those metrics on dashboards.
+Strimzi includes example Grafana dashboards that you can customize to suit your deployment.
+
 Depending on your requirements, you can:
 
 * xref:assembly-metrics-setup-{context}[Set up and deploy Prometheus to expose metrics]
