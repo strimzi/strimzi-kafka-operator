@@ -125,9 +125,6 @@ spec:
             - name: STRIMZI_CONNECT_BUILD_TIMEOUT_MS
               value: {{ .Values.connectBuildTimeoutMs | quote }}
             {{- end }}
-            {{- if .Values.extraEnvs }}
-            {{ toYaml .Values.extraEnvs | indent 12 }}
-            {{- end }}
           livenessProbe:
             httpGet:
               path: /healthy

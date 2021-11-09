@@ -110,7 +110,6 @@ the documentation for more details.
 | `operatorNamespaceLabels`            | Labels of the namespace where the operator runs | `nil`                                          |
 | `podSecurityContext`                 | Cluster Operator pod's security context    | `nil`                                               |
 | `securityContext`                    | Cluster Operator container's security context |  `nil`                                           |
-| `extraEnvs`                          | Extra environment variables for the Cluster operator container | `[]`                            |
 | `zookeeper.image.registry  `         | Override default ZooKeeper image registry | `nil`                                                |
 | `zookeeper.image.repository`         | Override default ZooKeeper image repository | `nil`                                              |
 | `zookeeper.image.name`               | ZooKeeper image name                      | `kafka`                                              |
