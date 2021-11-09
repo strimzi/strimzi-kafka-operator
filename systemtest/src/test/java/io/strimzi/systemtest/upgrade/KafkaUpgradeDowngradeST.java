@@ -138,7 +138,6 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
     void testUpgradeWithNoMessageAndProtocolVersionsSet(ExtensionContext testContext) {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
-        String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
         String producerName = clusterName + "-producer";
         String consumerName = clusterName + "-consumer";
 
@@ -263,7 +262,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
         LOGGER.info("1st Zookeeper roll (image change) is complete");
 
         // Wait for the kafka broker version change roll
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, kafkaSelector, kafkaReplicas, kafkaPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, kafkaPods);
         LOGGER.info("1st Kafka roll (image change) is complete");
 
         Object currentLogMessageFormat = KafkaResource.kafkaClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getSpec().getKafka().getConfig().get("log.message.format.version");
@@ -273,7 +272,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
             LOGGER.info("Kafka version is increased, two RUs remaining for increasing IBPV and LMFV");
 
             if (currentInterBrokerProtocol == null) {
-                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, kafkaSelector, kafkaReplicas, kafkaPods);
+                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, kafkaPods);
                 LOGGER.info("Kafka roll (inter.broker.protocol.version) is complete");
             }
 
