@@ -26,7 +26,7 @@ This procedure shows only some of the possible configuration options, but those 
 The `inter.broker.protocol.version` property for the Kafka `config` must be the version supported by the specified Kafka version (`spec.kafka.version`).
 The property represents the version of Kafka protocol used in a Kafka cluster.
 
-From Kafka {DefaultKafkaVersion}, the `log.message.format.version` is assumed to match the `inter.broker.protocol.version` and doesn't need to be set.
+From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or higher, the `log.message.format.version` option is ignored and doesn't need to be set.
 
 An update to the `inter.broker.protocol.version` is required when upgrading your Kafka version.
 For more information, see link:{BookURLDeploying}#assembly-upgrading-kafka-versions-str[Upgrading Kafka].

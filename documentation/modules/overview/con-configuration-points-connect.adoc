@@ -42,7 +42,7 @@ You can create a custom Kafka Connect image that includes your choice of plugins
 You can create the image in two ways:
 
 * link:{BookURLDeploying}#creating-new-image-using-kafka-connect-build-str[Automatically using Kafka Connect configuration^]
-* link:{BookURLDeploying}#creating-new-image-from-base-str[Manually using a Dockerfile and a Kafka container image from {DockerRepository} as a base image^]
+* link:{BookURLDeploying}#creating-new-image-from-base-str[Manually using a Dockerfile and a Kafka container image as a base image^]
 
 To create the container image automatically, you specify the plugins to add to your Kafka Connect cluster using the `build` property of the `KafkaConnect` resource.
 Strimzi automatically downloads and adds the plugin artifacts to a new container image.

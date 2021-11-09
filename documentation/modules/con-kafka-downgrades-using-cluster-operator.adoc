@@ -14,7 +14,7 @@ Whether and how the Cluster Operator will perform a downgrade depends on the dif
 If the downgraded version of Kafka has the same log message format version then downgrading is always possible.
 In this case, the Cluster Operator performs a downgrade with a single rolling restart of the brokers.
 
-From Kafka {DefaultKafkaVersion}, the `log.message.format.version` is assumed to match the `inter.broker.protocol.version` and doesn't need to be set.
+From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or higher, the `log.message.format.version` option is ignored and doesn't need to be set.
 
 If the downgraded version of Kafka has a different log message format version, then downgrading is only possible if
 the running cluster has _always_ had `log.message.format.version` set to the version used by the downgraded version.
