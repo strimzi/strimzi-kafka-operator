@@ -22,6 +22,7 @@ operationTimeoutMs: 300000
 kubernetesServiceDnsDomain: cluster.local
 featureGates: ""
 tmpDirSizeLimit: 1Mi
+extraEnvs: []
 
 tolerations: []
 affinity: {}
