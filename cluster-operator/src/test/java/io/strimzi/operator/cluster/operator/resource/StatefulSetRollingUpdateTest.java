@@ -24,10 +24,10 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class KafkaSetOperatorTest {
-
+public class StatefulSetRollingUpdateTest {
     public static final InlineLogging KAFKA_LOG_CONFIG = new InlineLogging();
     public static final InlineLogging ZOOKEEPER_LOG_CONFIG = new InlineLogging();
+
     static {
         KAFKA_LOG_CONFIG.setLoggers(singletonMap("zookeeper.root.logger", "OFF"));
         ZOOKEEPER_LOG_CONFIG.setLoggers(singletonMap("kafka.root.logger.level", "OFF"));
@@ -50,6 +50,7 @@ public class KafkaSetOperatorTest {
         String image = "bar";
         int healthDelay = 120;
         int healthTimeout = 30;
+
         return new KafkaBuilder(ResourceUtils.createKafka(kafkaNamespace, kafkaName,
                 replicas, image, healthDelay, healthTimeout))
                 .editSpec()
@@ -58,14 +59,14 @@ public class KafkaSetOperatorTest {
                             .withSize("123")
                             .withStorageClass("foo")
                             .withDeleteClaim(true)
-                            .endPersistentClaimStorage()
+                        .endPersistentClaimStorage()
                         .withLogging(KAFKA_LOG_CONFIG)
                     .endKafka()
                     .editZookeeper()
                         .withLogging(ZOOKEEPER_LOG_CONFIG)
                     .endZookeeper()
                 .endSpec()
-            .build();
+                .build();
     }
 
     private StatefulSetDiff createDiff() {
@@ -74,13 +75,13 @@ public class KafkaSetOperatorTest {
 
     @Test
     public void testNotNeedsRollingUpdateWhenIdentical() {
-        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(false));
+        assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(false));
     }
 
     @Test
     public void testNotNeedsRollingUpdateWhenReplicasDecrease() {
         currectSts.getSpec().setReplicas(desiredSts.getSpec().getReplicas() + 1);
-        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(false));
+        assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(false));
     }
 
     @Test
@@ -88,28 +89,28 @@ public class KafkaSetOperatorTest {
         Map<String, String> labels = new HashMap(desiredSts.getMetadata().getLabels());
         labels.put("foo", "bar");
         currectSts.getMetadata().setLabels(labels);
-        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
+        assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 
     @Test
     public void testNeedsRollingUpdateWhenImageChanges() {
         String newImage = currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getImage() + "-foo";
         currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(newImage);
-        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
+        assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 
     @Test
     public void testNeedsRollingUpdateWhenReadinessDelayChanges() {
         Integer newDelay = currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds() + 1;
         currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setInitialDelaySeconds(newDelay);
-        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
+        assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 
     @Test
     public void testNeedsRollingUpdateWhenReadinessTimeoutChanges() {
         Integer newTimeout = currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds() + 1;
         currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setTimeoutSeconds(newTimeout);
-        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
+        assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 
     @Test
@@ -117,6 +118,6 @@ public class KafkaSetOperatorTest {
         String envVar = "SOME_RANDOM_ENV";
         currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 "foo", null));
-        assertThat(KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
+        assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 }

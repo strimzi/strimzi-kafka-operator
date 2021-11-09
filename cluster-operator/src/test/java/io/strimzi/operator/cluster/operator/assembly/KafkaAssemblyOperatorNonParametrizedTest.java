@@ -26,8 +26,8 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -462,8 +462,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                     // beginning with success. It should not reconcile any resources other than getting the Kafka
                     // resource it self.
                     verifyZeroInteractions(
-                            supplier.kafkaSetOperations,
-                            supplier.zkSetOperations,
+                            supplier.stsOperations,
                             supplier.serviceOperations,
                             supplier.secretOperations,
                             supplier.configMapOperations,
@@ -526,8 +525,8 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // Mock the KafkaSet operations
-        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(NAMESPACE), eq(KafkaCluster.kafkaClusterName(NAME)))).thenReturn(Future.succeededFuture());
+        StatefulSetOperator mockStsOps = supplier.stsOperations;
+        when(mockStsOps.getAsync(eq(NAMESPACE), eq(KafkaCluster.kafkaClusterName(NAME)))).thenReturn(Future.succeededFuture());
 
         // Mock the Pod operations
         PodOperator mockPodOps = supplier.podOperations;
@@ -615,8 +614,8 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
         // Mock the KafkaSet operations
-        KafkaSetOperator mockKafkaSetOps = supplier.kafkaSetOperations;
-        when(mockKafkaSetOps.getAsync(eq(NAMESPACE), eq(KafkaCluster.kafkaClusterName(NAME)))).thenReturn(Future.succeededFuture());
+        StatefulSetOperator mockStsOps = supplier.stsOperations;
+        when(mockStsOps.getAsync(eq(NAMESPACE), eq(KafkaCluster.kafkaClusterName(NAME)))).thenReturn(Future.succeededFuture());
 
         // Mock the Pod operations
         PodOperator mockPodOps = supplier.podOperations;
