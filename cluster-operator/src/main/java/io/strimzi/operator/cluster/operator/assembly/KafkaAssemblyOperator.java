@@ -75,7 +75,6 @@ import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
-import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.KafkaSpecChecker;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
@@ -83,7 +82,6 @@ import io.strimzi.operator.cluster.operator.resource.ZooKeeperRoller;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
@@ -168,8 +166,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final FeatureGates featureGates;
     private final boolean isNetworkPolicyGeneration;
 
-    private final ZookeeperSetOperator zkSetOperations;
-    private final KafkaSetOperator kafkaSetOperations;
+    private final StatefulSetOperator stsOperations;
     private final RouteOperator routeOperations;
     private final PvcOperator pvcOperations;
     private final DeploymentOperator deploymentOperations;
@@ -206,8 +203,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.featureGates = config.featureGates();
         this.routeOperations = supplier.routeOperations;
-        this.zkSetOperations = supplier.zkSetOperations;
-        this.kafkaSetOperations = supplier.kafkaSetOperations;
+        this.stsOperations = supplier.stsOperations;
         this.pvcOperations = supplier.pvcOperations;
         this.deploymentOperations = supplier.deploymentOperations;
         this.roleBindingOperations = supplier.roleBindingOperations;
@@ -744,7 +740,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
 
                 return zkRollFuture
-                        .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
+                        .compose(i -> stsOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
                         .compose(sts -> new KafkaRoller(reconciliation, vertx, podOperations, 1_000, operationTimeoutMs,
                             () -> new BackOff(250, 2, 10), sts, clusterCa.caCertSecret(), oldCoSecret, adminClientProvider,
                             kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion(), true)
@@ -826,7 +822,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return  Future with the result of the rolling update
          */
         Future<ReconciliationState> kafkaManualRollingUpdate() {
-            Future<StatefulSet> futsts = kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
+            Future<StatefulSet> futsts = stsOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
             if (futsts != null) {
                 return futsts.compose(sts -> {
                     if (sts != null) {
@@ -894,7 +890,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return  Future with the result of the rolling update
          */
         Future<ReconciliationState> zkManualRollingUpdate() {
-            Future<StatefulSet> futsts = zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            Future<StatefulSet> futsts = stsOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
             if (futsts != null) {
                 return futsts.compose(sts -> {
                     if (sts != null) {
@@ -1198,7 +1194,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> getZookeeperDescription() {
-            return zkSetOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+            return stsOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
                     .compose(sts -> {
                         Storage oldStorage = getOldStorage(sts);
 
@@ -1325,7 +1321,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             StatefulSet zkSts = zkCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
             Annotations.annotations(zkSts.getSpec().getTemplate()).put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
             Annotations.annotations(zkSts.getSpec().getTemplate()).put(Annotations.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
-            return withZkDiff(zkSetOperations.reconcile(reconciliation, namespace, zkCluster.getName(), zkSts));
+            return withZkDiff(stsOperations.reconcile(reconciliation, namespace, zkCluster.getName(), zkSts));
         }
 
         Future<ReconciliationState> zkRollingUpdate() {
@@ -1415,7 +1411,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkScalingUpByOne(ZookeeperScaler zkScaler, int current, int desired) {
             if (current < desired) {
-                return zkSetOperations.scaleUp(reconciliation, namespace, zkCluster.getName(), current + 1)
+                return stsOperations.scaleUp(reconciliation, namespace, zkCluster.getName(), current + 1)
                         .compose(ignore -> podOperations.readiness(reconciliation, namespace, zkCluster.getPodName(current), 1_000, operationTimeoutMs))
                         .compose(ignore -> zkScaler.scale(current + 1))
                         .compose(ignore -> zkScalingUpByOne(zkScaler, current + 1, desired));
@@ -1461,7 +1457,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (current > desired) {
                 return podsReady(zkCluster, current - 1)
                         .compose(ignore -> zkScaler.scale(current - 1))
-                        .compose(ignore -> zkSetOperations.scaleDown(reconciliation, namespace, zkCluster.getName(), current - 1))
+                        .compose(ignore -> stsOperations.scaleDown(reconciliation, namespace, zkCluster.getName(), current - 1))
                         .compose(ignore -> zkScalingDownByOne(zkScaler, current - 1, desired));
             } else {
                 return Future.succeededFuture(this);
@@ -1518,7 +1514,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /*test*/ Future<ReconciliationState> getKafkaClusterDescription() {
-            return kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
+            return stsOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
                     .compose(sts -> {
                         Storage oldStorage = getOldStorage(sts);
 
@@ -1638,7 +1634,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaScaleDown() {
-            return withVoid(kafkaSetOperations.scaleDown(reconciliation, namespace, kafkaCluster.getName(), kafkaCluster.getReplicas()));
+            return withVoid(stsOperations.scaleDown(reconciliation, namespace, kafkaCluster.getName(), kafkaCluster.getReplicas()));
         }
 
         /**
@@ -2731,7 +2727,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     // At least one broker needs rolling update => we can trigger it without checking the other brokers
                                     LOGGER.debugCr(reconciliation, "Kafka brokers needs rolling update to add or remove JBOD volumes");
 
-                                    return kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
+                                    return stsOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
                                             .compose(sts -> {
                                                 if (sts != null) {
                                                     int lastPodIndex = Math.min(kafkaCurrentReplicas, kafkaCluster.getReplicas()) - 1;
@@ -2807,7 +2803,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaStatefulSet() {
-            return withKafkaDiff(kafkaSetOperations.reconcile(reconciliation, namespace, kafkaCluster.getName(), getKafkaStatefulSet()));
+            return withKafkaDiff(stsOperations.reconcile(reconciliation, namespace, kafkaCluster.getName(), getKafkaStatefulSet()));
         }
 
         Future<ReconciliationState> kafkaRollingUpdate() {
@@ -2816,7 +2812,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaScaleUp() {
-            return withVoid(kafkaSetOperations.scaleUp(reconciliation, namespace, kafkaCluster.getName(), kafkaCluster.getReplicas()));
+            return withVoid(stsOperations.scaleUp(reconciliation, namespace, kafkaCluster.getName(), kafkaCluster.getReplicas()));
         }
 
         Future<ReconciliationState> zkPodsReady() {
@@ -2863,7 +2859,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> zkManualPodCleaning() {
             String stsName = ZookeeperCluster.zookeeperClusterName(name);
-            Future<StatefulSet> futureSts = zkSetOperations.getAsync(namespace, stsName);
+            Future<StatefulSet> futureSts = stsOperations.getAsync(namespace, stsName);
             Promise<Void> resultPromise = Promise.promise();
 
             futureSts.onComplete(res -> {
@@ -2871,7 +2867,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     List<PersistentVolumeClaim> desiredPvcs = zkCluster.generatePersistentVolumeClaims();
                     Future<List<PersistentVolumeClaim>> existingPvcsFuture = pvcOperations.listAsync(namespace, zkCluster.getSelectorLabels());
 
-                    maybeCleanPodAndPvc(zkSetOperations, res.result(), desiredPvcs, existingPvcsFuture).onComplete(resultPromise);
+                    maybeCleanPodAndPvc(stsOperations, res.result(), desiredPvcs, existingPvcsFuture).onComplete(resultPromise);
                 } else {
                     resultPromise.fail(res.cause());
                 }
@@ -2887,7 +2883,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> kafkaManualPodCleaning() {
             String stsName = KafkaCluster.kafkaClusterName(name);
-            Future<StatefulSet> futureSts = kafkaSetOperations.getAsync(namespace, stsName);
+            Future<StatefulSet> futureSts = stsOperations.getAsync(namespace, stsName);
             Promise<Void> resultPromise = Promise.promise();
 
             futureSts.onComplete(res -> {
@@ -2901,7 +2897,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     Future<List<PersistentVolumeClaim>> existingPvcsFuture = pvcOperations.listAsync(namespace, kafkaCluster.getSelectorLabels());
 
-                    maybeCleanPodAndPvc(kafkaSetOperations, sts, desiredPvcs, existingPvcsFuture).onComplete(resultPromise);
+                    maybeCleanPodAndPvc(stsOperations, sts, desiredPvcs, existingPvcsFuture).onComplete(resultPromise);
                 } else {
                     resultPromise.fail(res.cause());
                 }

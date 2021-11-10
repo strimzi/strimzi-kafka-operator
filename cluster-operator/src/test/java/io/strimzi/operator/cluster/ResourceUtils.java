@@ -55,13 +55,12 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
 import io.strimzi.operator.common.AdminClientProvider;
-import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -676,8 +675,7 @@ public class ResourceUtils {
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(
                 mock(ServiceOperator.class),
                 routeOps,
-                mock(ZookeeperSetOperator.class),
-                mock(KafkaSetOperator.class),
+                mock(StatefulSetOperator.class),
                 mock(ConfigMapOperator.class),
                 mock(SecretOperator.class),
                 mock(PvcOperator.class),

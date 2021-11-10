@@ -56,8 +56,7 @@ public class ResourceOperatorSupplier {
     public final SecretOperator secretOperations;
     public final ServiceOperator serviceOperations;
     public final RouteOperator routeOperations;
-    public final ZookeeperSetOperator zkSetOperations;
-    public final KafkaSetOperator kafkaSetOperations;
+    public final StatefulSetOperator stsOperations;
     public final ConfigMapOperator configMapOperations;
     public final PvcOperator pvcOperations;
     public final DeploymentOperator deploymentOperations;
@@ -102,8 +101,7 @@ public class ResourceOperatorSupplier {
                                     MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, FeatureGates gates, long operationTimeoutMs) {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new ZookeeperSetOperator(vertx, client, zlf, operationTimeoutMs),
-                new KafkaSetOperator(vertx, client, operationTimeoutMs, adminClientProvider),
+                new StatefulSetOperator(vertx, client, operationTimeoutMs),
                 new ConfigMapOperator(vertx, client),
                 new SecretOperator(vertx, client),
                 new PvcOperator(vertx, client),
@@ -136,8 +134,7 @@ public class ResourceOperatorSupplier {
 
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
                                     RouteOperator routeOperations,
-                                    ZookeeperSetOperator zkSetOperations,
-                                    KafkaSetOperator kafkaSetOperations,
+                                    StatefulSetOperator stsOperations,
                                     ConfigMapOperator configMapOperations,
                                     SecretOperator secretOperations,
                                     PvcOperator pvcOperations,
@@ -168,8 +165,7 @@ public class ResourceOperatorSupplier {
                                     ZookeeperLeaderFinder zookeeperLeaderFinder) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
-        this.zkSetOperations = zkSetOperations;
-        this.kafkaSetOperations = kafkaSetOperations;
+        this.stsOperations = stsOperations;
         this.configMapOperations = configMapOperations;
         this.secretOperations = secretOperations;
         this.pvcOperations = pvcOperations;

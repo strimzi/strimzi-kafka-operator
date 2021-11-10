@@ -63,10 +63,9 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
-import io.strimzi.operator.cluster.operator.resource.KafkaSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetDiff;
-import io.strimzi.operator.cluster.operator.resource.ZookeeperSetOperator;
+import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -423,7 +422,6 @@ public class KafkaAssemblyOperatorTest {
         return pvcs;
     }
 
-    @SuppressWarnings("unchecked")
     private void createCluster(VertxTestContext context, Kafka kafka, List<Secret> secrets) {
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
@@ -435,8 +433,7 @@ public class KafkaAssemblyOperatorTest {
         var mockKafkaOps = supplier.kafkaOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ZookeeperSetOperator mockZsOps = supplier.zkSetOperations;
-        KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
+        StatefulSetOperator mockStsOps = supplier.stsOperations;
         PvcOperator mockPvcOps = supplier.pvcOperations;
         PodOperator mockPodOps = supplier.podOperations;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
@@ -457,11 +454,11 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<NetworkPolicy> policyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         ArgumentCaptor<StatefulSet> ssCaptor = ArgumentCaptor.forClass(StatefulSet.class);
-        when(mockZsOps.reconcile(any(), anyString(), anyString(), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new StatefulSet())));
-        when(mockZsOps.scaleDown(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
-        when(mockZsOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
+        when(mockStsOps.reconcile(any(), eq(kafkaNamespace), eq(ZookeeperCluster.zookeeperClusterName(kafkaName)), ssCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new StatefulSet())));
+        when(mockStsOps.scaleDown(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
+        when(mockStsOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         AtomicReference<StatefulSet> ref = new AtomicReference<>();
-        when(mockKsOps.reconcile(any(), anyString(), anyString(), ssCaptor.capture())).thenAnswer(i -> {
+        when(mockStsOps.reconcile(any(), eq(kafkaNamespace), eq(KafkaCluster.kafkaClusterName(kafkaName)), ssCaptor.capture())).thenAnswer(i -> {
             StatefulSet sts = new StatefulSetBuilder().withNewMetadata()
                     .withName(kafkaName + "kafka")
                     .withNamespace(kafkaNamespace)
@@ -472,11 +469,9 @@ public class KafkaAssemblyOperatorTest {
             ref.set(sts);
             return Future.succeededFuture(ReconcileResult.created(sts));
         });
-        when(mockKsOps.scaleDown(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(null));
-        when(mockKsOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(Future.succeededFuture(42));
         when(mockPolicyOps.reconcile(any(), anyString(), anyString(), policyCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
-        when(mockZsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
-        when(mockKsOps.getAsync(anyString(), anyString())).thenAnswer(i ->
+        when(mockStsOps.getAsync(eq(kafkaNamespace), eq(ZookeeperCluster.zookeeperClusterName(kafkaName)))).thenReturn(Future.succeededFuture());
+        when(mockStsOps.getAsync(eq(kafkaNamespace), eq(KafkaCluster.kafkaClusterName(kafkaName)))).thenAnswer(i ->
                 Future.succeededFuture(ref.get()));
         when(mockPdbOps.reconcile(any(), anyString(), anyString(), pdbCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
 
@@ -898,7 +893,6 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
-    @SuppressWarnings("unchecked")
     private void updateCluster(VertxTestContext context, Kafka originalAssembly, Kafka updatedAssembly) {
         KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, originalAssembly, VERSIONS);
         KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, updatedAssembly, VERSIONS);
@@ -914,8 +908,7 @@ public class KafkaAssemblyOperatorTest {
         var mockKafkaOps = supplier.kafkaOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
-        ZookeeperSetOperator mockZsOps = supplier.zkSetOperations;
-        KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
+        StatefulSetOperator mockStsOps = supplier.stsOperations;
         PvcOperator mockPvcOps = supplier.pvcOperations;
         PodOperator mockPodOps = supplier.podOperations;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
@@ -1146,10 +1139,10 @@ public class KafkaAssemblyOperatorTest {
         when(mockPdbOps.get(clusterNamespace, ZookeeperCluster.zookeeperClusterName(clusterName))).thenReturn(originalZookeeperCluster.generatePodDisruptionBudget());
 
         // Mock StatefulSet get
-        when(mockKsOps.get(clusterNamespace, KafkaCluster.kafkaClusterName(clusterName))).thenReturn(
+        when(mockStsOps.get(eq(clusterNamespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(
                 originalKafkaCluster.generateStatefulSet(openShift, null, null)
         );
-        when(mockZsOps.get(clusterNamespace, ZookeeperCluster.zookeeperClusterName(clusterName))).thenReturn(
+        when(mockStsOps.get(eq(clusterNamespace), eq(ZookeeperCluster.zookeeperClusterName(clusterName)))).thenReturn(
                 originalZookeeperCluster.generateStatefulSet(openShift, null, null)
         );
         // Mock Deployment get
@@ -1224,37 +1217,28 @@ public class KafkaAssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), eq(clusterNamespace), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock StatefulSet patch
-        when(mockZsOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(invocation -> {
+        when(mockStsOps.reconcile(any(), eq(clusterNamespace), eq(ZookeeperCluster.zookeeperClusterName(clusterName)), any())).thenAnswer(invocation -> {
             StatefulSet sts = invocation.getArgument(3);
             return Future.succeededFuture(ReconcileResult.patched(sts));
         });
-        when(mockKsOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(invocation -> {
+        when(mockStsOps.reconcile(any(), eq(clusterNamespace), eq(KafkaCluster.kafkaClusterName(clusterName)), any())).thenAnswer(invocation -> {
             StatefulSet sts = invocation.getArgument(3);
             return Future.succeededFuture(ReconcileResult.patched(sts));
         });
 
-        when(mockZsOps.getAsync(clusterNamespace, ZookeeperCluster.zookeeperClusterName(clusterName))).thenReturn(
+        when(mockStsOps.getAsync(eq(clusterNamespace), eq(ZookeeperCluster.zookeeperClusterName(clusterName)))).thenReturn(
                 Future.succeededFuture(originalZookeeperCluster.generateStatefulSet(openShift, null, null))
         );
-        when(mockKsOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockStsOps.getAsync(eq(clusterNamespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture());
 
         // Mock StatefulSet scaleUp
-        ArgumentCaptor<String> scaledUpCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockZsOps.scaleUp(any(), anyString(), scaledUpCaptor.capture(), anyInt())).thenReturn(
-                Future.succeededFuture(42)
-        );
-        // Mock StatefulSet scaleDown
-        ArgumentCaptor<String> scaledDownCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockZsOps.scaleDown(any(), anyString(), scaledDownCaptor.capture(), anyInt())).thenReturn(
-                Future.succeededFuture(42)
-        );
         //ArgumentCaptor<String> scaledUpCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockKsOps.scaleUp(any(), anyString(), scaledUpCaptor.capture(), anyInt())).thenReturn(
+        when(mockStsOps.scaleUp(any(), anyString(), anyString(), anyInt())).thenReturn(
                 Future.succeededFuture(42)
         );
         // Mock StatefulSet scaleDown
         //ArgumentCaptor<String> scaledDownCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockKsOps.scaleDown(any(), anyString(), scaledDownCaptor.capture(), anyInt())).thenReturn(
+        when(mockStsOps.scaleDown(any(), anyString(), anyString(), anyInt())).thenReturn(
                 Future.succeededFuture(42)
         );
 
@@ -1285,12 +1269,12 @@ public class KafkaAssemblyOperatorTest {
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // rolling restart
                 Set<String> expectedRollingRestarts = set();
-                if (KafkaSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION,
+                if (StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION,
                         new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, originalKafkaCluster.generateStatefulSet(openShift, null, null),
                         updatedKafkaCluster.generateStatefulSet(openShift, null, null)))) {
                     expectedRollingRestarts.add(originalKafkaCluster.getName());
                 }
-                if (ZookeeperSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION,
+                if (StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION,
                         new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, originalZookeeperCluster.generateStatefulSet(openShift, null, null),
                                 updatedZookeeperCluster.generateStatefulSet(openShift, null, null)))) {
                     expectedRollingRestarts.add(originalZookeeperCluster.getName());
@@ -1298,7 +1282,7 @@ public class KafkaAssemblyOperatorTest {
 
                 // Check that ZK scale-up happens when it should
                 boolean zkScaledUp = updatedAssembly.getSpec().getZookeeper().getReplicas() > originalAssembly.getSpec().getZookeeper().getReplicas();
-                verify(mockZsOps, times(zkScaledUp ? 1 : 0)).scaleUp(any(), anyString(), scaledUpCaptor.capture(), anyInt());
+                verify(mockStsOps, times(zkScaledUp ? 1 : 0)).scaleUp(any(), eq(clusterNamespace), eq(ZookeeperCluster.zookeeperClusterName(clusterName)), anyInt());
 
                 // No metrics config  => no CMs created
                 verify(mockCmOps, never()).createOrUpdate(any(), any());
@@ -1323,7 +1307,7 @@ public class KafkaAssemblyOperatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         var mockKafkaOps = supplier.kafkaOperator;
-        KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
+        StatefulSetOperator mockStsOps = supplier.stsOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
         String kafkaNamespace = "test";
 
@@ -1354,7 +1338,7 @@ public class KafkaAssemblyOperatorTest {
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND);
-        when(mockKsOps.list(eq(kafkaNamespace), eq(newLabels))).thenReturn(
+        when(mockStsOps.list(eq(kafkaNamespace), eq(newLabels))).thenReturn(
                 List.of(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null))
         );
 
@@ -1366,7 +1350,7 @@ public class KafkaAssemblyOperatorTest {
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS);
-        when(mockKsOps.list(eq(kafkaNamespace), eq(barLabels))).thenReturn(
+        when(mockStsOps.list(eq(kafkaNamespace), eq(barLabels))).thenReturn(
                 List.of(barCluster.generateStatefulSet(openShift, null, null))
         );
         when(mockSecretOps.list(eq(kafkaNamespace), eq(barLabels))).thenAnswer(
@@ -1414,7 +1398,7 @@ public class KafkaAssemblyOperatorTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(openShift);
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         var mockKafkaOps = supplier.kafkaOperator;
-        KafkaSetOperator mockKsOps = supplier.kafkaSetOperations;
+        StatefulSetOperator mockStsOps = supplier.stsOperations;
         SecretOperator mockSecretOps = supplier.secretOperations;
 
         Kafka foo = getKafkaAssembly("foo");
@@ -1444,14 +1428,14 @@ public class KafkaAssemblyOperatorTest {
 
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND);
-        when(mockKsOps.list(eq("*"), eq(newLabels))).thenReturn(
+        when(mockStsOps.list(eq("*"), eq(newLabels))).thenReturn(
                 List.of(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null))
         );
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS);
-        when(mockKsOps.list(eq("*"), eq(barLabels))).thenReturn(
+        when(mockStsOps.list(eq("*"), eq(barLabels))).thenReturn(
                 List.of(barCluster.generateStatefulSet(openShift, null, null))
         );
         when(mockSecretOps.list(eq("*"), eq(barLabels))).thenAnswer(

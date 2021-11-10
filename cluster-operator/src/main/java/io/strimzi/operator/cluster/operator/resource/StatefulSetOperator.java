@@ -32,7 +32,7 @@ import java.util.Map;
 /**
  * Operations for {@code StatefulSets}s
  */
-public abstract class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> {
+public class StatefulSetOperator extends AbstractScalableResourceOperator<KubernetesClient, StatefulSet, StatefulSetList, RollableScalableResource<StatefulSet>> {
     private static final int NO_GENERATION = -1;
     private static final int INIT_GENERATION = 0;
 
@@ -108,7 +108,33 @@ public abstract class StatefulSetOperator extends AbstractScalableResourceOperat
         setGeneration(desired, nextGeneration);
     }
 
-    protected abstract boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff);
+    protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
+        return !diff.isEmpty() && needsRollingUpdate(reconciliation, diff);
+    }
+
+    public static boolean needsRollingUpdate(Reconciliation reconciliation, StatefulSetDiff diff) {
+        if (diff.changesLabels()) {
+            LOGGER.debugCr(reconciliation, "Changed labels => needs rolling update");
+            return true;
+        }
+
+        if (diff.changesSpecTemplate()) {
+            LOGGER.debugCr(reconciliation, "Changed template spec => needs rolling update");
+            return true;
+        }
+
+        if (diff.changesVolumeClaimTemplates()) {
+            LOGGER.debugCr(reconciliation, "Changed volume claim template => needs rolling update");
+            return true;
+        }
+
+        if (diff.changesVolumeSize()) {
+            LOGGER.debugCr(reconciliation, "Changed size of the volume claim template => no need for rolling update");
+            return false;
+        }
+
+        return false;
+    }
 
     /**
      * Gets the {@code strimzi.io/generation} of the given StatefulSet.
