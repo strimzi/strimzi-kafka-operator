@@ -13,7 +13,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
@@ -188,6 +187,13 @@ public class MultipleClusterOperatorsST extends AbstractST {
             .editMetadata()
                 .withNamespace(DEFAULT_NAMESPACE)
             .endMetadata()
+            .editSpec()
+                .withGoals("DiskCapacityGoal", "CpuCapacityGoal",
+                    "NetworkInboundCapacityGoal", "MinTopicLeadersPerBrokerGoal",
+                    "NetworkOutboundCapacityGoal", "ReplicaCapacityGoal")
+                .withSkipHardGoalCheck(true)
+                // skip sanity check: because of removal 'RackAwareGoal'
+            .endSpec()
             .build());
 
         KafkaUtils.waitForClusterStability(DEFAULT_NAMESPACE, clusterName);
@@ -224,7 +230,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         envVarList.add(selectorEnv);
 
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withExtensionContext(extensionContext)
             .withNamespace(coNamespace)
             .withClusterOperatorName(coName)
             .withWatchingNamespaces(namespace)
