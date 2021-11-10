@@ -44,6 +44,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
         T extends HasMetadata,
         L extends KubernetesResourceList<T>,
         R extends Resource<T>> {
+    public final static String ANY_NAMESPACE = "*";
 
     protected static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
@@ -312,7 +313,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      * @return A list of matching resources.
      */
     public List<T> list(String namespace, Labels selector) {
-        if (AbstractWatchableResourceOperator.ANY_NAMESPACE.equals(namespace))  {
+        if (ANY_NAMESPACE.equals(namespace))  {
             return listInAnyNamespace(selector);
         } else {
             return listInNamespace(namespace, selector);
@@ -361,7 +362,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     public Future<List<T>> listAsync(String namespace, Labels selector) {
         FilterWatchListDeletable<T, L> x;
 
-        if (AbstractWatchableResourceOperator.ANY_NAMESPACE.equals(namespace))  {
+        if (ANY_NAMESPACE.equals(namespace))  {
             x = operation().inAnyNamespace();
         } else {
             x = operation().inNamespace(namespace);
@@ -376,7 +377,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
     public Future<List<T>> listAsync(String namespace, Optional<LabelSelector> selector) {
         FilterWatchListDeletable<T, L> x;
 
-        if (AbstractWatchableResourceOperator.ANY_NAMESPACE.equals(namespace))  {
+        if (ANY_NAMESPACE.equals(namespace))  {
             x = operation().inAnyNamespace();
         } else {
             x = operation().inNamespace(namespace);
