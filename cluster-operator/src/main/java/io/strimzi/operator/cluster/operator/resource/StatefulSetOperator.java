@@ -265,37 +265,4 @@ public class StatefulSetOperator extends AbstractScalableResourceOperator<Kubern
             return Future.failedFuture(e);
         }
     }
-
-    /**
-     * Asynchronously deletes the resource with the given {@code name} in the given {@code namespace}.
-     *
-     * @param reconciliation The reconciliation
-     * @param namespace Namespace of the resource which should be deleted
-     * @param name Name of the resource which should be deleted
-     * @param cascading Defines whether the deletion should be cascading or not
-     *
-     * @return A Future with True if the deletion succeeded and False when it failed.
-     */
-    public Future<Void> deleteAsync(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
-        Promise<Void> result = Promise.promise();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                try {
-                    Boolean deleted = operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L).delete();
-
-                    if (deleted) {
-                        LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been deleted", resourceKind, name, namespace);
-                        future.complete();
-                    } else  {
-                        LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been not been deleted", resourceKind, name, namespace);
-                        future.fail(resourceKind + " " + name + " in namespace " + namespace + " has been not been deleted");
-                    }
-                } catch (Exception e) {
-                    LOGGER.debugCr(reconciliation, "Caught exception while deleting {} {} in namespace {}", resourceKind, name, namespace, e);
-                    future.fail(e);
-                }
-            }, true, result
-        );
-        return result.future();
-    }
 }

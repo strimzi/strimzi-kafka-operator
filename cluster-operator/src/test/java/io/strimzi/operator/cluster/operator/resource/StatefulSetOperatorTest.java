@@ -13,6 +13,8 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.AppsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Deletable;
 import io.fabric8.kubernetes.client.dsl.EditReplacePatchDeletable;
@@ -257,6 +259,9 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         ArgumentCaptor<DeletionPropagation> cascadingCaptor = ArgumentCaptor.forClass(DeletionPropagation.class);
         when(mockRSR.withPropagationPolicy(cascadingCaptor.capture())).thenReturn(mockERPD);
 
+        ArgumentCaptor<Watcher> watcherCaptor = ArgumentCaptor.forClass(Watcher.class);
+        when(mockRSR.watch(watcherCaptor.capture())).thenReturn(mock(Watch.class));
+
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockRSR);
 
@@ -296,6 +301,8 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         RollableScalableResource mockRSR = mock(RollableScalableResource.class);
         ArgumentCaptor<DeletionPropagation> cascadingCaptor = ArgumentCaptor.forClass(DeletionPropagation.class);
         when(mockRSR.withPropagationPolicy(cascadingCaptor.capture())).thenReturn(mockERPD);
+        ArgumentCaptor<Watcher> watcherCaptor = ArgumentCaptor.forClass(Watcher.class);
+        when(mockRSR.watch(watcherCaptor.capture())).thenReturn(mock(Watch.class));
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockRSR);
@@ -367,6 +374,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         RollableScalableResource mockRSR = mock(RollableScalableResource.class);
         when(mockRSR.withPropagationPolicy(any(DeletionPropagation.class))).thenReturn(mockERPD);
+        when(mockRSR.watch(any())).thenReturn(mock(Watch.class));
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockRSR);
