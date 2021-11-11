@@ -939,7 +939,7 @@ class TopicOperator {
                 ResourceName resourceName = storeTopic != null ? storeTopic.getResourceName() : topicName.asKubeName();
                 return k8s.getFromName(resourceName).compose(topic -> {
                     reconciliation.observedTopicFuture(kafkaTopic != null ? topic : null);
-                    Topic k8sTopic = TopicSerialization.fromTopicResource(topic);
+                    Topic k8sTopic = TopicSerialization.fromTopicResource(topic, logContext.toReconciliation(), config.get(Config.KAFKA_VERSION));
                     return reconcile(reconciliation, logContext.withKubeTopic(topic), topic, k8sTopic, kafkaTopic, storeTopic);
                 });
             });
@@ -1107,7 +1107,7 @@ class TopicOperator {
                                 if (mt != null) {
                                     observedTopicFuture(mt);
                                     try {
-                                        k8sTopic = TopicSerialization.fromTopicResource(mt);
+                                        k8sTopic = TopicSerialization.fromTopicResource(mt, logContext.toReconciliation(), config.get(Config.KAFKA_VERSION));
                                     } catch (InvalidTopicException e) {
                                         return Future.failedFuture(e);
                                     }
@@ -1334,7 +1334,7 @@ class TopicOperator {
                     pausedTopicCounter.getAndIncrement();
                 }
                 LogContext logContext = LogContext.periodic(reconciliationType + "kube " + kt.getMetadata().getName(), kt.getMetadata().getNamespace(), kt.getMetadata().getName()).withKubeTopic(kt);
-                Topic topic = TopicSerialization.fromTopicResource(kt);
+                Topic topic = TopicSerialization.fromTopicResource(kt, logContext.toReconciliation(), config.get(Config.KAFKA_VERSION));
                 TopicName topicName = topic.getTopicName();
                 if (reconcileState.failed.containsKey(topicName)) {
                     // we already failed to reconcile this topic in reconcileFromKafka(), /
@@ -1470,7 +1470,7 @@ class TopicOperator {
         logContext.withKubeTopic(kafkaTopicResource);
         Promise<Void> topicPromise = Promise.promise();
         try {
-            Topic k8sTopic = kafkaTopicResource != null ? TopicSerialization.fromTopicResource(kafkaTopicResource) : null;
+            Topic k8sTopic = kafkaTopicResource != null ? TopicSerialization.fromTopicResource(kafkaTopicResource, logContext.toReconciliation(), config.get(Config.KAFKA_VERSION)) : null;
             checkForNameChange(topicName, kafkaTopicResource)
                 .onComplete(nameChanged -> {
                     if (nameChanged.failed()) {
@@ -1530,7 +1530,7 @@ class TopicOperator {
                     .compose(compositeResult -> {
                         KafkaTopic ktr = compositeResult.resultAt(0);
                         logContext.withKubeTopic(ktr);
-                        Topic k8sTopic = TopicSerialization.fromTopicResource(ktr);
+                        Topic k8sTopic = TopicSerialization.fromTopicResource(ktr, logContext.toReconciliation(), config.get(Config.KAFKA_VERSION));
                         Topic kafkaTopic = compositeResult.resultAt(1);
                         Topic privateTopic = compositeResult.resultAt(2);
                         return reconcile(self, logContext, involvedObject, k8sTopic, kafkaTopic, privateTopic);

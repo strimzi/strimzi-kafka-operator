@@ -3160,6 +3160,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             if (entityOperator != null) {
                 EntityTopicOperator topicOperator = entityOperator.getTopicOperator();
+                topicOperator.setKafkaVersion(kafkaCluster.getKafkaVersion().version());
                 EntityUserOperator userOperator = entityOperator.getUserOperator();
 
                 return CompositeFuture.join(

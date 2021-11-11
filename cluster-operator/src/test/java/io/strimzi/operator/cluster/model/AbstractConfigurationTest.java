@@ -10,6 +10,7 @@ import java.util.Map;
 
 import io.strimzi.operator.common.InvalidConfigParameterException;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.AbstractConfiguration;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;

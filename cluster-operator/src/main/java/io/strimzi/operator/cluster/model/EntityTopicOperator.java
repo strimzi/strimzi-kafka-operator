@@ -78,6 +78,7 @@ public class EntityTopicOperator extends AbstractModel {
     private int topicMetadataMaxAttempts;
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+    private String kafkaVersion = "";
 
     /**
      * @param reconciliation   The reconciliation
@@ -283,6 +284,7 @@ public class EntityTopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_VERSION, kafkaVersion));
         EntityOperator.javaOptions(varList, getJvmOptions(), javaSystemProperties);
 
         // Add shared environment variables used for all containers
@@ -358,4 +360,7 @@ public class EntityTopicOperator extends AbstractModel {
         return super.createLog4jProperties(properties);
     }
 
+    public void setKafkaVersion(String kafkaVersion) {
+        this.kafkaVersion = kafkaVersion;
+    }
 }

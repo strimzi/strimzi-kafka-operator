@@ -129,6 +129,7 @@ public class Config {
     public static final String TC_STORE_NAME = "STRIMZI_STORE_NAME";
     public static final String TC_APPLICATION_ID = "STRIMZI_APPLICATION_ID";
     public static final String TC_STALE_RESULT_TIMEOUT_MS = "STRIMZI_STALE_RESULT_TIMEOUT_MS";
+    public static final String TC_KAFKA_VERSION = "STRIMZI_KAFKA_VERSION";
 
     public static final String TC_USE_ZOOKEEPER_TOPIC_STORE = "STRIMZI_USE_ZOOKEEPER_TOPIC_STORE";
 
@@ -210,6 +211,9 @@ public class Config {
     /** Do we use old ZooKeeper based TopicStore */
     public static final Value<Boolean> USE_ZOOKEEPER_TOPIC_STORE = new Value<>(TC_USE_ZOOKEEPER_TOPIC_STORE, BOOLEAN, "false");
 
+    /** The version of Kafka */
+    public static final Value<String> KAFKA_VERSION = new Value<>(TC_KAFKA_VERSION, STRING, "");
+
     static {
         Map<String, Value<?>> configValues = CONFIG_VALUES;
         addConfigValue(configValues, LABELS);
@@ -240,6 +244,7 @@ public class Config {
         addConfigValue(configValues, APPLICATION_ID);
         addConfigValue(configValues, STALE_RESULT_TIMEOUT_MS);
         addConfigValue(configValues, USE_ZOOKEEPER_TOPIC_STORE);
+        addConfigValue(configValues, KAFKA_VERSION);
     }
 
     static void addConfigValue(Map<String, Value<?>> configValues, Value<?> cv) {

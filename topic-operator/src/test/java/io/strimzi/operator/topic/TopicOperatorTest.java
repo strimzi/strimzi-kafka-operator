@@ -83,6 +83,7 @@ public class TopicOperatorTest {
         MANDATORY_CONFIG.put(Config.CLIENT_ID.key, "default-client-id");
         // Not mandatory, but makes the time test quicker
         MANDATORY_CONFIG.put(Config.TOPIC_METADATA_MAX_ATTEMPTS.key, "3");
+        MANDATORY_CONFIG.put(Config.TC_KAFKA_VERSION, "3.0.0");
     }
 
     @BeforeAll
@@ -211,7 +212,7 @@ public class TopicOperatorTest {
             .build();
         mockKafka.setTopicMetadataResponses(
             topicName -> Future.succeededFuture(),
-            topicName -> Future.succeededFuture(Utils.getTopicMetadata(TopicSerialization.fromTopicResource(kafkaTopic))));
+            topicName -> Future.succeededFuture(Utils.getTopicMetadata(TopicSerialization.fromTopicResource(kafkaTopic, Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)))));
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.ADDED, kafkaTopic);
         Checkpoint async = context.checkpoint();
         mockK8s.setGetFromNameResponse(new ResourceName(kafkaTopic), Future.succeededFuture(kafkaTopic));
@@ -230,7 +231,7 @@ public class TopicOperatorTest {
                     ar.cause().printStackTrace();
                 }
                 context.verify(() -> assertThat(ar.cause().getMessage(),  ar.cause().getClass().getName(), is(expectedExceptionType.getName())));
-                TopicName topicName = TopicSerialization.fromTopicResource(kafkaTopic).getTopicName();
+                TopicName topicName = TopicSerialization.fromTopicResource(kafkaTopic, Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)).getTopicName();
                 if (createException != null) {
                     mockKafka.assertNotExists(context, topicName);
                 } else {
@@ -240,7 +241,7 @@ public class TopicOperatorTest {
                 //TODO mockK8s.assertContainsEvent(context, e -> "Error".equals(e.getKind()));
             } else {
                 assertSucceeded(context, ar);
-                Topic expectedTopic = TopicSerialization.fromTopicResource(kafkaTopic);
+                Topic expectedTopic = TopicSerialization.fromTopicResource(kafkaTopic, Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION));
                 mockKafka.assertContains(context, expectedTopic);
                 mockTopicStore.assertContains(context, expectedTopic);
                 mockK8s.assertNoEvents(context);
@@ -498,7 +499,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(resourceName).onComplete(ar2 -> {
                 assertSucceeded(context, ar2);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result()).getConfig().get("cleanup.policy"), is("baz")));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result(), Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)).getConfig().get("cleanup.policy"), is("baz")));
                 async.flag();
             });
 
@@ -633,7 +634,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result()), is(kafkaTopic)));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)), is(kafkaTopic)));
                 async.countDown();
             });
             try {
@@ -836,7 +837,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result()), is(mergedTopic)));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)), is(mergedTopic)));
                 async.countDown();
             });
             try {
@@ -897,7 +898,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result()), is(kafkaTopic)));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)), is(kafkaTopic)));
                 async.countDown();
             });
             try {
@@ -946,7 +947,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result()), is(resultTopic)));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)), is(resultTopic)));
                 topicStoreReadSuccess.countDown();
             });
             context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(resultTopic)));
@@ -1060,7 +1061,7 @@ public class TopicOperatorTest {
             mockK8s.getFromName(resourceName).onComplete(ar2 -> {
                 assertSucceeded(context, ar2);
                 context.verify(() -> assertThat(ar2.result(), is(notNullValue())));
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result()).getConfig().get("cleanup.policy"), is("baz")));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result(), Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)).getConfig().get("cleanup.policy"), is("baz")));
                 async.countDown();
             });
 
