@@ -428,4 +428,18 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
             timeoutMs,
             () -> predicate.test(namespace, name));
     }
+
+    /**
+     * Asynchronously deletes the resource with the given {@code name} in the given {@code namespace}.
+     *
+     * @param reconciliation    The reconciliation
+     * @param namespace         Namespace of the resource which should be deleted
+     * @param name              Name of the resource which should be deleted
+     * @param cascading         Defines whether the deletion should be cascading or not
+     *
+     * @return                  A Future with True if the deletion succeeded and False when it failed.
+     */
+    public Future<Void> deleteAsync(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
+        return internalDelete(reconciliation, namespace, name, cascading).map((Void) null);
+    }
 }
