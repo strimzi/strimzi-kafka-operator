@@ -957,7 +957,7 @@ include::../api/io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate.
 [options="header"]
 |====
 |Property               |Description
-|metadata        1.2+<.<a|Metadata to apply to the `PodDistruptionBugetTemplate` resource.
+|metadata        1.2+<.<a|Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |maxUnavailable  1.2+<.<a|Maximum number of unavailable pods to allow automatic Pod eviction. A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. Defaults to 1.
 |integer
@@ -1844,7 +1844,7 @@ Used in: xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 [options="header"]
 |====
 |Property           |Description
-|metadata    1.2+<.<a|Metadata to apply to the `PodDistruptionBugetTemplate` resource.
+|metadata    1.2+<.<a|Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
 |xref:type-MetadataTemplate-{context}[`MetadataTemplate`]
 |pullSecret  1.2+<.<a|Container Registry Secret with the credentials for pulling the base image.
 |string

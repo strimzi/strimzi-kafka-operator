@@ -33,7 +33,7 @@ public class BuildConfigTemplate implements Serializable, UnknownPropertyPreserv
     private String pullSecret;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Metadata to apply to the `PodDistruptionBugetTemplate` resource.")
+    @Description("Metadata to apply to the `PodDisruptionBudgetTemplate` resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public MetadataTemplate getMetadata() {
         return metadata;
