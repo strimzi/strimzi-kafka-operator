@@ -5,15 +5,13 @@
 package io.strimzi.build.kafka.metadata;
 
 import io.strimzi.kafka.config.model.ConfigModel;
-import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.kafka.config.model.Type;
 import kafka.api.ApiVersion;
 import kafka.api.ApiVersion$;
 import kafka.api.ApiVersionValidator$;
-import kafka.server.DynamicBrokerConfig$;
-import kafka.server.KafkaConfig$;
+import kafka.log.LogConfig$;
+import kafka.server.ThrottledReplicaListValidator$;
 import org.apache.kafka.common.config.ConfigDef;
-import org.apache.kafka.raft.RaftConfig;
 import scala.collection.Iterator;
 
 import java.lang.reflect.Field;
@@ -26,12 +24,12 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 @SuppressWarnings("unchecked")
-public class KafkaConfigModelGenerator extends CommonConfigModelGenerator {
+public class KafkaTopicConfigModelGenerator extends CommonConfigModelGenerator {
 
     @Override
     protected Map<String, ConfigModel> configs() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        ConfigDef def = brokerConfigs();
-        Map<String, String> dynamicUpdates = brokerDynamicUpdates();
+        ConfigDef def = topicConfigs();
+
         Method getConfigValueMethod = def.getClass().getDeclaredMethod("getConfigValue", ConfigDef.ConfigKey.class, String.class);
         getConfigValueMethod.setAccessible(true);
 
@@ -43,10 +41,8 @@ public class KafkaConfigModelGenerator extends CommonConfigModelGenerator {
         for (ConfigDef.ConfigKey key : keys) {
             String configName = String.valueOf(getConfigValueMethod.invoke(def, key, "Name"));
             Type type = parseType(String.valueOf(getConfigValueMethod.invoke(def, key, "Type")));
-            Scope scope = parseScope(dynamicUpdates.getOrDefault(key.name, "read-only"));
             ConfigModel descriptor = new ConfigModel();
             descriptor.setType(type);
-            descriptor.setScope(scope);
 
             if (key.validator instanceof ConfigDef.Range) {
                 descriptor = range(key, descriptor);
@@ -67,7 +63,7 @@ public class KafkaConfigModelGenerator extends CommonConfigModelGenerator {
                 descriptor.setPattern(String.join("|", versions));
             } else if (key.validator instanceof ConfigDef.NonEmptyString) {
                 descriptor.setPattern(".+");
-            } else if (key.validator instanceof RaftConfig.ControllerQuorumVotersValidator) {
+            } else if (key.validator instanceof ThrottledReplicaListValidator$)   {
                 continue;
             } else if (key.validator != null) {
                 throw new IllegalStateException("Invalid validator class " + key.validator.getClass() + " for option " + configName);
@@ -78,15 +74,11 @@ public class KafkaConfigModelGenerator extends CommonConfigModelGenerator {
         return result;
     }
 
-    static Map<String, String> brokerDynamicUpdates() {
-        return DynamicBrokerConfig$.MODULE$.dynamicConfigUpdateModes();
-    }
-
-    protected ConfigDef brokerConfigs() {
+    private ConfigDef topicConfigs() {
         try {
-            Field instance = getField(KafkaConfig$.class, "MODULE$");
-            KafkaConfig$ x = (KafkaConfig$) instance.get(null);
-            Field config = getOneOfFields(KafkaConfig$.class, "kafka$server$KafkaConfig$$configDef", "configDef");
+            Field instance = getField(LogConfig$.class, "MODULE$");
+            LogConfig$ x = (LogConfig$) instance.get(null);
+            Field config = getOneOfFields(LogConfig$.class, "kafka$log$LogConfig$$configDef", "configDef");
             return (ConfigDef) config.get(x);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);

@@ -28,6 +28,7 @@ spec:
       containers:
         - name: strimzi-cluster-operator
           image: quay.io/strimzi/operator:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
               name: http
