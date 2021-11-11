@@ -43,7 +43,6 @@ public class ClusterOperator extends AbstractVerticle {
 
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperator.class.getName());
 
-    public static final String STRIMZI_CLUSTER_OPERATOR_DOMAIN = "cluster.operator.strimzi.io";
     private static final String NAME_SUFFIX = "-cluster-operator";
     private static final String CERTS_SUFFIX = NAME_SUFFIX + "-certs";
 
