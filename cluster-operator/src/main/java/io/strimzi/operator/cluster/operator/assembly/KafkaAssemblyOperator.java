@@ -2921,7 +2921,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> manualPodCleaning(String ctlrResourceName, String podName, Labels selector, List<PersistentVolumeClaim> desiredPvcs) {
             return pvcOperations.listAsync(namespace, selector)
                     .compose(existingPvcs -> {
-                        // Find out which PVC need to be deleted
+                        // Find out which PVCs need to be deleted
                         List<PersistentVolumeClaim> deletePvcs;
 
                         if (existingPvcs != null) {
@@ -2946,8 +2946,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /**
          * Handles the deletion and recreation of the StatefulSet controlling the pod which should be cleaned. In order
-         * to clean the pod and its PVCs, we first need to delete the StatefulSet (non-cascading). Otherwise the
-         * StatefulSet will break the process by recreating the pods or PVCs. This method first deletes the SattefulSet
+         * to clean the pod and its PVCs, we first need to delete the StatefulSet (non-cascading). Otherwise, the
+         * StatefulSet will break the process by recreating the pods or PVCs. This method first deletes the StatefulSet
          * and then calls other method to delete the Pod, PVCs and create the new PVCs. Once this method completes, it
          * will recreate the StatefulSet again. The Pod will be then recreated by the StatefulSet and this method just
          * waits for it to become ready.
