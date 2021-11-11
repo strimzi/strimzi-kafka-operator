@@ -147,7 +147,8 @@ public class SetupClusterOperator {
         return new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(Constants.INFRA_NAMESPACE)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES);
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces());
     }
 
     /**
@@ -311,9 +312,9 @@ public class SetupClusterOperator {
 
         public SetupClusterOperatorBuilder addToTheBindingsNamespaces(String bindingsNamespace) {
             if (this.bindingsNamespaces != null) {
-                this.bindingsNamespaces.add(bindingsNamespace);
+                this.bindingsNamespaces = new ArrayList<>(this.bindingsNamespaces);
             } else {
-                this.bindingsNamespaces = Arrays.asList(bindingsNamespace);
+                this.bindingsNamespaces = new ArrayList<>(Arrays.asList(bindingsNamespace));
             }
             return self();
         }
@@ -561,8 +562,7 @@ public class SetupClusterOperator {
                 e.printStackTrace();
             }
 
-            KubeClusterResource.getInstance().deleteNamespace(
-                CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo);
+            KubeClusterResource.getInstance().deleteAllSetNamespaces();
         }
     }
 
