@@ -189,6 +189,10 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-micrometer-metrics</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>config-model</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

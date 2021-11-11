@@ -14,6 +14,9 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -37,6 +40,7 @@ import static java.lang.String.format;
  * Serialization of a {@link }Topic} to and from various other representations.
  */
 class TopicSerialization {
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicSerialization.class);
 
     // These are the keys in the JSON we store in ZK
     public static final String JSON_KEY_TOPIC_NAME = "topic-name";
@@ -45,10 +49,31 @@ class TopicSerialization {
     public static final String JSON_KEY_REPLICAS = "replicas";
     public static final String JSON_KEY_CONFIG = "config";
 
+    private static void validateConfiguration(Reconciliation reconciliation, KafkaTopic kafkaTopic, String desiredVersion, KafkaTopicConfiguration configuration) {
+        List<String> errorsInConfig = configuration.validate(desiredVersion);
+
+        if (!errorsInConfig.isEmpty()) {
+            for (String error : errorsInConfig) {
+                LOGGER.warnCr(reconciliation, "KafkaTopic {}/{} has invalid spec.config: {}",
+                        kafkaTopic.getMetadata().getNamespace(),
+                        kafkaTopic.getMetadata().getName(),
+                        error);
+            }
+
+            throw new InvalidResourceException("KafkaTopic " +
+                    kafkaTopic.getMetadata().getNamespace() + "/" + kafkaTopic.getMetadata().getName() +
+                    " has invalid spec.config: " +
+                    String.join(", ", errorsInConfig));
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    private static Map<String, String> topicConfigFromTopicConfig(KafkaTopic kafkaTopic) {
+    private static Map<String, String> topicConfigFromTopicConfig(KafkaTopic kafkaTopic, Reconciliation reconciliation, String kafkaVersion) {
         if (kafkaTopic.getSpec().getConfig() != null) {
-            Map<String, String> result = new HashMap<>(kafkaTopic.getSpec().getConfig().size());
+            KafkaTopicConfiguration cfg = new KafkaTopicConfiguration(reconciliation, kafkaTopic.getSpec().getConfig().entrySet());
+
+            validateConfiguration(reconciliation, kafkaTopic, kafkaVersion, cfg);
+            /*Map<String, String> result = new HashMap<>(kafkaTopic.getSpec().getConfig().size());
             for (Map.Entry<String, Object> entry : kafkaTopic.getSpec().getConfig().entrySet()) {
                 String key = entry.getKey();
                 Object v = entry.getValue();
@@ -73,6 +98,8 @@ class TopicSerialization {
                 }
             }
             return result;
+            */
+            return cfg.asOrderedProperties().asMap();
         } else {
             return Collections.EMPTY_MAP;
         }
@@ -83,14 +110,14 @@ class TopicSerialization {
      * Create a Topic to reflect the given KafkaTopic resource.
      * @throws InvalidTopicException
      */
-    public static Topic fromTopicResource(KafkaTopic kafkaTopic) {
+    public static Topic fromTopicResource(KafkaTopic kafkaTopic, Reconciliation reconciliation, String kafkaVersion) {
         if (kafkaTopic == null) {
             return null;
         }
         Topic.Builder builder = new Topic.Builder()
                 .withMapName(kafkaTopic.getMetadata().getName())
                 .withTopicName(getTopicName(kafkaTopic))
-                .withConfig(topicConfigFromTopicConfig(kafkaTopic))
+                .withConfig(topicConfigFromTopicConfig(kafkaTopic, reconciliation, kafkaVersion))
                 .withMetadata(kafkaTopic.getMetadata());
 
         if (kafkaTopic.getSpec().getPartitions() != null) {

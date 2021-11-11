@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.AbstractConfiguration;
 
 import java.util.Collections;
 import java.util.HashMap;
