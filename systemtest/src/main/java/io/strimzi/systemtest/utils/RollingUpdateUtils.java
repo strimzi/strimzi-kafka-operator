@@ -69,7 +69,10 @@ public class RollingUpdateUtils {
      */
     public static Map<String, String> waitTillComponentHasRolled(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
         String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
+
         LOGGER.info("Waiting for component with name: {} rolling update", componentName);
+        LOGGER.debug("Waiting for rolling update of component matching LabelSelector: {}", selector);
+
         TestUtils.waitFor("component with name " + componentName + " rolling update",
             Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> {
                 try {
@@ -81,6 +84,7 @@ public class RollingUpdateUtils {
             });
 
         LOGGER.info("Component with name: {} has been successfully rolled", componentName);
+        LOGGER.debug("Component matching LabelSelector: {} successfully rolled", selector);
         return PodUtils.podSnapshot(namespaceName, selector);
     }
 
