@@ -59,7 +59,7 @@ public class FeatureGatesST extends AbstractST {
      * Control Plane Listener
      * https://github.com/strimzi/proposals/blob/main/025-control-plain-listener.md
      */
-    @IsolatedTest("Feature Gates test for ControlPlainListener")
+    @IsolatedTest("Feature Gates test for disabled ControlPlainListener")
     @Tag(INTERNAL_CLIENTS_USED)
     public void testControlPlaneListenerFeatureGate(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
@@ -72,7 +72,7 @@ public class FeatureGatesST extends AbstractST {
         List<EnvVar> testEnvVars = new ArrayList<>();
         int kafkaReplicas = 3;
 
-        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+ControlPlaneListener", null));
+        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-ControlPlaneListener", null));
 
         install.unInstall();
         install = new SetupClusterOperator.SetupClusterOperatorBuilder()
