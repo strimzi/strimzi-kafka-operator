@@ -99,7 +99,8 @@ public class TopicOperatorMockTest {
             Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000",
             Config.NAMESPACE.key, "myproject",
             Config.CLIENT_ID.key, "myproject-client-id",
-            Config.FULL_RECONCILIATION_INTERVAL_MS.key, "10000"
+            Config.FULL_RECONCILIATION_INTERVAL_MS.key, "10000",
+            Config.KAFKA_VERSION.key, "3.0.0"
         ));
 
         session = new Session(kubeClient, topicConfig);

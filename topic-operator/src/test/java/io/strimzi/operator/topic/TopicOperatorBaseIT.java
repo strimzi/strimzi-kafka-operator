@@ -232,6 +232,7 @@ public abstract class TopicOperatorBaseIT {
         m.put(Config.CLIENT_ID.key, CLIENTID);
         m.put(Config.TC_RESOURCE_LABELS, io.strimzi.operator.common.model.Labels.STRIMZI_KIND_LABEL + "=topic");
         m.put(Config.FULL_RECONCILIATION_INTERVAL_MS.key, "20000");
+        m.put(Config.KAFKA_VERSION.key, "3.0.0");
         return m;
     }
 
