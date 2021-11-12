@@ -17,6 +17,8 @@ import scala.collection.Iterator;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,10 +33,17 @@ public class KafkaTopicConfigModelGenerator extends CommonConfigModelGenerator {
         ConfigDef def = topicConfigs();
 
         Method getConfigValueMethod = def.getClass().getDeclaredMethod("getConfigValue", ConfigDef.ConfigKey.class, String.class);
-        getConfigValueMethod.setAccessible(true);
+        AccessController.doPrivileged((PrivilegedAction) () -> {
+            getConfigValueMethod.setAccessible(true);
+            return null;
+        });
 
         Method sortedConfigs = ConfigDef.class.getDeclaredMethod("sortedConfigs");
-        sortedConfigs.setAccessible(true);
+        AccessController.doPrivileged((PrivilegedAction) () -> {
+            sortedConfigs.setAccessible(true);
+            return null;
+        });
+
 
         List<ConfigDef.ConfigKey> keys = (List) sortedConfigs.invoke(def);
         Map<String, ConfigModel> result = new TreeMap<>();

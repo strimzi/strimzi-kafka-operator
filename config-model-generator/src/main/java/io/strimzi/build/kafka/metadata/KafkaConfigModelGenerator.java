@@ -19,11 +19,14 @@ import scala.collection.Iterator;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.PrivilegedAction;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
+
+import static java.security.AccessController.doPrivileged;
 
 @SuppressWarnings("unchecked")
 public class KafkaConfigModelGenerator extends CommonConfigModelGenerator {
@@ -33,10 +36,17 @@ public class KafkaConfigModelGenerator extends CommonConfigModelGenerator {
         ConfigDef def = brokerConfigs();
         Map<String, String> dynamicUpdates = brokerDynamicUpdates();
         Method getConfigValueMethod = def.getClass().getDeclaredMethod("getConfigValue", ConfigDef.ConfigKey.class, String.class);
-        getConfigValueMethod.setAccessible(true);
+        doPrivileged((PrivilegedAction) () -> {
+            getConfigValueMethod.setAccessible(true);
+            return null;
+        });
 
         Method sortedConfigs = ConfigDef.class.getDeclaredMethod("sortedConfigs");
-        sortedConfigs.setAccessible(true);
+        doPrivileged((PrivilegedAction) () -> {
+            sortedConfigs.setAccessible(true);
+            return null;
+        });
+
 
         List<ConfigDef.ConfigKey> keys = (List) sortedConfigs.invoke(def);
         Map<String, ConfigModel> result = new TreeMap<>();

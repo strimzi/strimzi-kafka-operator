@@ -91,7 +91,11 @@ public abstract class CommonConfigModelGenerator {
     protected List<String> validList(ConfigDef.ConfigKey key) {
         try {
             Field f = ConfigDef.ValidList.class.getDeclaredField("validString");
-            f.setAccessible(true);
+            PrivilegedAction<Object> pa = () -> {
+                f.setAccessible(true);
+                return null;
+            };
+            AccessController.doPrivileged(pa);
             ConfigDef.ValidString itemValidator = (ConfigDef.ValidString) f.get(key.validator);
             List<String> validItems = enumer(itemValidator);
             return validItems;
@@ -126,16 +130,13 @@ public abstract class CommonConfigModelGenerator {
     }
 
     protected Field getField(Class<?> cls, String fieldName) {
-        return AccessController.doPrivileged(new PrivilegedAction<Field>() {
-            @Override
-            public Field run() {
-                try {
-                    Field f1 = cls.getDeclaredField(fieldName);
-                    f1.setAccessible(true);
-                    return f1;
-                } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException(e);
-                }
+        return AccessController.doPrivileged((PrivilegedAction<Field>) () -> {
+            try {
+                Field f1 = cls.getDeclaredField(fieldName);
+                f1.setAccessible(true);
+                return f1;
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
             }
         });
     }
