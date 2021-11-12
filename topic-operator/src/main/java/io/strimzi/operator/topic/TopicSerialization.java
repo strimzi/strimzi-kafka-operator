@@ -71,34 +71,7 @@ class TopicSerialization {
     private static Map<String, String> topicConfigFromTopicConfig(KafkaTopic kafkaTopic, Reconciliation reconciliation, String kafkaVersion) {
         if (kafkaTopic.getSpec().getConfig() != null) {
             KafkaTopicConfiguration cfg = new KafkaTopicConfiguration(reconciliation, kafkaTopic.getSpec().getConfig().entrySet());
-
             validateConfiguration(reconciliation, kafkaTopic, kafkaVersion, cfg);
-            /*Map<String, String> result = new HashMap<>(kafkaTopic.getSpec().getConfig().size());
-            for (Map.Entry<String, Object> entry : kafkaTopic.getSpec().getConfig().entrySet()) {
-                String key = entry.getKey();
-                Object v = entry.getValue();
-                boolean isNumberType = v instanceof Long
-                        || v instanceof Integer
-                        || v instanceof Short
-                        || v instanceof Double
-                        || v instanceof Float;
-                if (v instanceof String
-                        || isNumberType
-                        || v instanceof Boolean) {
-                    result.put(key, v.toString());
-                } else {
-                    String msg = "The value corresponding to the key must have a string, number or boolean value";
-                    if (v == null) {
-                        msg += " but the value was null";
-                    } else {
-                        msg += " but was of type " + v.getClass().getName();
-                    }
-                    throw new InvalidTopicException(kafkaTopic, "KafkaTopic's spec.config has invalid entry: " +
-                            "The key '" + key + "' of the topic config is invalid: " + msg);
-                }
-            }
-            return result;
-            */
             return cfg.asOrderedProperties().asMap();
         } else {
             return Collections.EMPTY_MAP;
