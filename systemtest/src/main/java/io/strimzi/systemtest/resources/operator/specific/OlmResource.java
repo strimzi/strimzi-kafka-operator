@@ -48,6 +48,7 @@ public class OlmResource implements SpecificResourceType {
 
     private String deploymentName;
     private String namespace;
+    private String namespaceToWatch;
     private String csvName;
 
     @Override
@@ -71,7 +72,11 @@ public class OlmResource implements SpecificResourceType {
     }
 
     public OlmResource(String namespace) {
+        this(namespace, namespace);
+    }
+    public OlmResource(String namespace, String namespaceToWatch) {
         this.namespace = namespace;
+        this.namespaceToWatch = namespaceToWatch;
     }
 
     private void clusterOperator(String namespace, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
@@ -224,12 +229,17 @@ public class OlmResource implements SpecificResourceType {
      * Creates OperatorGroup from `olm/operator-group.yaml` and modify "${OPERATOR_NAMESPACE}" attribute in YAML
      * @param namespace namespace where you want to apply OperatorGroup  kind
      */
-    private static void createOperatorGroup(String namespace) {
+    private void createOperatorGroup(String namespace) {
         try {
             File operatorGroupFile = File.createTempFile("operatorgroup", ".yaml");
             InputStream groupInputStream = OlmResource.class.getClassLoader().getResourceAsStream("olm/operator-group.yaml");
             String operatorGroup = TestUtils.readResource(groupInputStream);
-            TestUtils.writeFile(operatorGroupFile.getAbsolutePath(), operatorGroup.replace("${OPERATOR_NAMESPACE}", namespace));
+            TestUtils.writeFile(operatorGroupFile.getAbsolutePath(),
+                operatorGroup
+                    .replace("${OPERATOR_NAMESPACE}", namespace)
+                    .replace("${NAMESPACES_TO_WATCH}",
+                        namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES) ? "" : namespaceToWatch)
+            );
             ResourceManager.cmdKubeClient().apply(operatorGroupFile);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -261,7 +271,8 @@ public class OlmResource implements SpecificResourceType {
                     .replace("${STRIMZI_FULL_RECONCILIATION_INTERVAL_MS}", Long.toString(reconciliationInterval))
                     .replace("${STRIMZI_OPERATION_TIMEOUT_MS}", Long.toString(operationTimeout))
                     .replace("${STRIMZI_RBAC_SCOPE}", Environment.STRIMZI_RBAC_SCOPE)
-                    .replace("${STRIMZI_FEATURE_GATES}", Environment.STRIMZI_FEATURE_GATES));
+                    .replace("${STRIMZI_FEATURE_GATES}", Environment.STRIMZI_FEATURE_GATES)
+            );
 
             cmdKubeClient(namespace).apply(subscriptionFile);
         }  catch (IOException e) {

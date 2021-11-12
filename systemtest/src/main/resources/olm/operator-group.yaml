@@ -7,4 +7,4 @@ metadata:
     app: strimzi
 spec:
   targetNamespaces:
-  - ${OPERATOR_NAMESPACE}
+  - ${NAMESPACES_TO_WATCH}
