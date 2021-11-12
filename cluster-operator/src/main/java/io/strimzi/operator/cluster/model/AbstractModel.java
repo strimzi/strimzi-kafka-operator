@@ -227,7 +227,6 @@ public abstract class AbstractModel {
     protected boolean isMetricsEnabled;
     protected static final String METRICS_PORT_NAME = "tcp-prometheus";
     protected static final int METRICS_PORT = 9404;
-    protected static final String METRICS_PATH = "/metrics";
     protected MetricsConfig metricsConfigInCm;
     protected String ancillaryConfigMapName;
     protected String logAndMetricsConfigMountPath;
@@ -703,7 +702,7 @@ public abstract class AbstractModel {
     /**
      * Checks if the supplied PersistentClaimStorage has a valid size
      *
-     * @param storage
+     * @param storage   PersistentClaimStorage configuration
      *
      * @throws InvalidResourceException if the persistent storage size is not valid
      */
@@ -770,7 +769,7 @@ public abstract class AbstractModel {
     /**
      * Sets the affinity as configured by the user in the cluster CR.
      *
-     * @param affinity
+     * @param affinity  Affinity configured by the user
      */
     protected void setUserAffinity(Affinity affinity) {
         this.userAffinity = affinity;
@@ -1493,7 +1492,7 @@ public abstract class AbstractModel {
      * @param roleRef a reference to a Role to bind to
      * @param subjects a list of subject ServiceAccounts to bind the role to
      *
-     * @return The RoleBinding for the component with thee given name and namespace.
+     * @return The RoleBinding for the component with the given name and namespace.
      */
     public RoleBinding generateRoleBinding(String name, String namespace, RoleRef roleRef, List<Subject> subjects) {
         return new RoleBindingBuilder()

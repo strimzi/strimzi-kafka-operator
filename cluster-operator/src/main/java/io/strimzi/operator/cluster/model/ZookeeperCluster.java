@@ -90,7 +90,7 @@ public class ZookeeperCluster extends AbstractModel {
     private static final String ENV_VAR_ZOOKEEPER_JMX_PASSWORD = "ZOOKEEPER_JMX_PASSWORD";
 
     // Zookeeper configuration
-    private boolean isSnapshotCheckEnabled;
+    private final boolean isSnapshotCheckEnabled;
     private String version;
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
@@ -239,7 +239,7 @@ public class ZookeeperCluster extends AbstractModel {
         return fromCrd(reconciliation, kafkaAssembly, versions, null, 0);
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "deprecation"})
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
         ZookeeperCluster zk = new ZookeeperCluster(reconciliation, kafkaAssembly);
         zk.setOwnerReference(kafkaAssembly);
@@ -743,10 +743,6 @@ public class ZookeeperCluster extends AbstractModel {
         ConfigMap zkConfigMap = super.generateMetricsAndLogConfigMap(metricsAndLogging);
         zkConfigMap.getData().put(CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(getReplicas()));
         return zkConfigMap;
-    }
-
-    public boolean isJmxEnabled() {
-        return isJmxEnabled;
     }
 
     public void setJmxEnabled(boolean jmxEnabled) {

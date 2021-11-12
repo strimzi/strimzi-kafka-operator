@@ -58,7 +58,6 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
-import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -104,7 +103,6 @@ public class KafkaCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "kafka";
 
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
-    protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS_TYPE = "EXTERNAL_ADDRESS_TYPE";
 
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
 
@@ -1050,7 +1048,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(ingressName)
                         .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templateExternalBootstrapIngressLabels, ListenersUtils.bootstrapLabels(listener))).toMap())
-                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(ingressClass), templateExternalBootstrapIngressAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templateExternalBootstrapIngressAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -1106,7 +1104,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(ingressName)
                         .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templateExternalBootstrapIngressLabels, ListenersUtils.bootstrapLabels(listener))).toMap())
-                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(ingressClass), templateExternalBootstrapIngressAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templateExternalBootstrapIngressAnnotations, ListenersUtils.bootstrapAnnotations(listener)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -1166,7 +1164,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(ingressName)
                         .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templatePerPodIngressLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
-                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(ingressClass), templatePerPodIngressAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templatePerPodIngressAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -1221,7 +1219,7 @@ public class KafkaCluster extends AbstractModel {
                     .withNewMetadata()
                         .withName(ingressName)
                         .withLabels(getLabelsWithStrimziName(name, Util.mergeLabelsOrAnnotations(templatePerPodIngressLabels, ListenersUtils.brokerLabels(listener, pod))).toMap())
-                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(ingressClass), templatePerPodIngressAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
+                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), templatePerPodIngressAnnotations, ListenersUtils.brokerAnnotations(listener, pod)))
                         .withNamespace(namespace)
                         .withOwnerReferences(createOwnerReference())
                     .endMetadata()
@@ -1241,10 +1239,9 @@ public class KafkaCluster extends AbstractModel {
     /**
      * Generates the annotations needed to configure the Ingress as TLS passthrough
      *
-     * @param ingressClass Ingress class which should be used
      * @return Map with the annotations
      */
-    private Map<String, String> generateInternalIngressAnnotations(String ingressClass) {
+    private Map<String, String> generateInternalIngressAnnotations() {
         Map<String, String> internalAnnotations = new HashMap<>(3);
 
         internalAnnotations.put("ingress.kubernetes.io/ssl-passthrough", "true");
@@ -1352,14 +1349,14 @@ public class KafkaCluster extends AbstractModel {
      * @return The port of route for the external listener.
      */
     public int getRoutePort() {
-        return this.ROUTE_PORT;
+        return ROUTE_PORT;
     }
 
     /**
      * @return The port of ingress for the external listener.
      */
     public int getIngressPort() {
-        return this.INGRESS_PORT;
+        return INGRESS_PORT;
     }
 
     /**
@@ -1876,24 +1873,6 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Returns true when the Kafka cluster is exposed to the outside of OpenShift using OpenShift routes
-     *
-     * @return true when the Kafka cluster is exposed using OpenShift routes.
-     */
-    public boolean isExposedWithRoute() {
-        return ListenersUtils.hasRouteListener(listeners);
-    }
-
-    /**
-     * Returns true when the Kafka cluster is exposed to the outside using LoadBalancers
-     *
-     * @return true when the Kafka cluster is exposed using load balancer.
-     */
-    public boolean isExposedWithLoadBalancer() {
-        return ListenersUtils.hasLoadBalancerListener(listeners);
-    }
-
-    /**
      * Returns true when the Kafka cluster is exposed to the outside using NodePort type services
      *
      * @return true when the Kafka cluster is exposed to the outside using NodePort.
@@ -1919,7 +1898,7 @@ public class KafkaCluster extends AbstractModel {
      * @param listener Listener where the configuration should be found
      * @param podNumber Pod index
      * @param address   The advertised hostname
-     * @return The advertised hostname in format listenerIdentitifer_podNumber://address (e.g. LB_9094_1://my-broker-1)
+     * @return The advertised hostname in format listenerIdentifier_podNumber://address (e.g. LB_9094_1://my-broker-1)
      */
     public String getAdvertisedHostname(GenericKafkaListener listener, int podNumber, String address) {
         String advertisedHost = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
@@ -1941,7 +1920,7 @@ public class KafkaCluster extends AbstractModel {
      * @param listener Listener where the configuration should be found
      * @param podNumber Pod index
      * @param port      The advertised port
-     * @return The advertised port in format listenerIdentitifer_podNumber://port (e.g. LB_9094_1://9094)
+     * @return The advertised port in format listenerIdentifier_podNumber://port (e.g. LB_9094_1://9094)
      */
     public String getAdvertisedPort(GenericKafkaListener listener, int podNumber, Integer port) {
         Integer advertisedPort = ListenersUtils.brokerAdvertisedPort(listener, podNumber);
@@ -1963,21 +1942,6 @@ public class KafkaCluster extends AbstractModel {
 
     public void setJmxAuthenticated(boolean jmxAuthenticated) {
         isJmxAuthenticated = jmxAuthenticated;
-    }
-
-    /**
-     * Returns the preferred node address type if configured by the user. Returns null otherwise.
-     *
-     * @param listener Listener where the configuration should be found
-     *
-     * @return Preferred node address type as selected by the user
-     */
-    public NodeAddressType getPreferredNodeAddressType(GenericKafkaListener listener) {
-        if (KafkaListenerType.NODEPORT == listener.getType()) {
-            return ListenersUtils.preferredNodeAddressType(listener);
-        } else {
-            return null;
-        }
     }
 
     private String generateBrokerConfiguration(boolean controlPlaneListener)   {
@@ -2006,7 +1970,7 @@ public class KafkaCluster extends AbstractModel {
         cm.getData().put(BROKER_ADVERTISED_HOSTNAMES_FILENAME, String.join(" ", advertisedHostnames));
         cm.getData().put(BROKER_ADVERTISED_PORTS_FILENAME, String.join(" ", advertisedPorts));
         cm.getData().put(BROKER_LISTENERS_FILENAME,
-                listeners.stream().map(listener -> ListenersUtils.envVarIdentifier(listener)).collect(Collectors.joining(" ")));
+                listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")));
 
         return cm;
     }
