@@ -8,7 +8,7 @@
 [role="_abstract"]
 Deploy Prometheus metrics configuration to use Prometheus with Strimzi.
 
-You can use your own configuration or Strimzi's xref:ref-metrics-prometheus-metrics-config-{context}[example custom resource configuration files].
+You can use your own configuration or the xref:ref-metrics-prometheus-metrics-config-{context}[example custom resource configuration files provided with Strimzi].
 
 * `kafka-metrics.yaml`
 * `kafka-connect-metrics.yaml`

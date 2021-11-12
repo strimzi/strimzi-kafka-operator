@@ -8,7 +8,7 @@
 
 [role="_abstract"]
 If you deploy Prometheus to provide metrics,
-you can use Strimzi's example Grafana dashboards to monitor Strimzi components.
+you can use the example Grafana dashboards provided with Strimzi to monitor Strimzi components.
 
 Example dashboards are provided in the `examples/metrics/grafana-dashboards` directory as JSON files.
 

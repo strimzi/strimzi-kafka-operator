@@ -64,7 +64,7 @@ Note the port number for port forwarding.
 kubectl port-forward svc/grafana 3000:3000
 ----
 
-. Point a web browser to `http://localhost:3000`.
+. In a web browser, access the Grafana login screen using the URL `http://localhost:3000`.
 +
 The Grafana Log In page appears.
 
@@ -72,21 +72,20 @@ The Grafana Log In page appears.
 +
 The default Grafana user name and password are both `admin`. After logging in for the first time, you can change the password.
 
-. Add Prometheus as a _data source_.
+. In *Configuration > Data Sources*, add Prometheus as a _data source_.
 +
 * Specify a name
 * Add _Prometheus_ as the type
 * Specify a Prometheus server URL (\http://prometheus-operated:9090)
 +
 Save and test the connection when you have added the details.
-+
-image::grafana_prometheus_data_source.png[Add Prometheus data source]
 
-. From menu:Dashboards[Import], upload the example dashboards or paste the JSON directly.
+. Click the *+* icon and then click *Import*.
 
-. On the top header, click the dashboard drop-down menu, and then select the dashboard you want to view.
-+
-When the Prometheus server has been collecting metrics for a Strimzi cluster for some time, the dashboards are populated.
-+
-.Dashboard selection options
-image::grafana-dashboard-selection.png[Strimzi dashboard selection]
+. In `examples/metrics/grafana-dashboards`, copy the JSON of the dashboard to import.
+
+. Paste the JSON into the text box, and then click *Load*.
+
+. Repeat steps 7-9 for the other example Grafana dashboards.
+
+The imported Grafana dashboards are available to view from the *Dashboards* home page.
