@@ -194,7 +194,7 @@ class MockBuilder<T extends HasMetadata,
             String value = i.getArgument(1);
             return mockWithLabels(singletonMap(label, value));
         });
-        when(mixed.withLabelSelector(any())).thenAnswer(i -> {
+        when(mixed.withLabelSelector(any(LabelSelector.class))).thenAnswer(i -> {
             LabelSelector labelSelector = i.getArgument(0);
             Map<String, String> matchLabels = labelSelector.getMatchLabels();
             List<LabelSelectorRequirement> matchExpressions = labelSelector.getMatchExpressions();
