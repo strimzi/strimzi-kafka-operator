@@ -146,7 +146,6 @@ public abstract class AbstractModel {
     public static final String ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES = "STRIMZI_JAVA_SYSTEM_PROPERTIES";
     public static final String ENV_VAR_STRIMZI_JAVA_OPTS = "STRIMZI_JAVA_OPTS";
     public static final String ENV_VAR_STRIMZI_GC_LOG_ENABLED = "STRIMZI_GC_LOG_ENABLED";
-    public static final String ENV_VAR_STRIMZI_KAFKA_VERSION = "STRIMZI_KAFKA_VERSION";
 
     /*
      * Default values for the Strimzi temporary directory

@@ -3316,7 +3316,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                             if (topicOperator != null)  {
                                 this.topicOperatorMetricsAndLogsConfigMap = topicOperator.generateMetricsAndLogConfigMap(toMetricsAndLogging);
-                                topicOperator.setKafkaVersion(kafkaCluster.getKafkaVersion().version());
                             }
 
                             if (userOperator != null)   {
