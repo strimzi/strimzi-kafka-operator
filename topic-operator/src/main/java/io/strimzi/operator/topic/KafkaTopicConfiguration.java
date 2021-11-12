@@ -42,22 +42,22 @@ public class KafkaTopicConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Returns a KafkaConfiguration created without forbidden option filtering.
+     * Returns a KafkaTopicConfiguration created without forbidden option filtering.
      *
      * @param reconciliation The reconciliation
      * @param string A string representation of the Properties
-     * @return The KafkaConfiguration
+     * @return The KafkaTopicConfiguration
      */
     public static KafkaTopicConfiguration unvalidated(Reconciliation reconciliation, String string) {
         return new KafkaTopicConfiguration(reconciliation, string, emptyList());
     }
 
     /**
-     * Returns a KafkaConfiguration created without forbidden option filtering.
+     * Returns a KafkaTopicConfiguration created without forbidden option filtering.
      *
      * @param reconciliation The reconciliation
      * @param map A map representation of the Properties
-     * @return The KafkaConfiguration
+     * @return The KafkaTopicConfiguration
      */
     public static KafkaTopicConfiguration unvalidated(Reconciliation reconciliation, Map<String, String> map) {
         StringBuilder string = new StringBuilder();
@@ -66,7 +66,7 @@ public class KafkaTopicConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Validate the configs in this KafkaConfiguration returning a list of errors.
+     * Validate the configs in this KafkaTopicConfiguration returning a list of errors.
      * @param kafkaVersion The broker version.
      * @return A list of error messages.
      */
@@ -89,7 +89,7 @@ public class KafkaTopicConfiguration extends AbstractConfiguration {
     /**
      * Gets the config model for the given version of the Kafka broker.
      * @param kafkaVersion The broker version.
-     * @return The config model for that broker version.
+     * @return The topic config model for that broker version.
      */
     public static Map<String, ConfigModel> readConfigModel(String kafkaVersion) {
         String name = "/kafka-" + kafkaVersion + "-topic-config-model.json";
@@ -107,7 +107,7 @@ public class KafkaTopicConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Return the configs in this KafkaConfiguration which are not known broker configs.
+     * Return the configs in this KafkaTopicConfiguration which are not known topic configs.
      * These might be consumed by broker plugins.
      * @param kafkaVersion The broker version.
      * @return The unknown configs.
@@ -120,7 +120,7 @@ public class KafkaTopicConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Return the config properties with their values in this KafkaConfiguration which are not known broker configs.
+     * Return the config properties with their values in this KafkaTopicConfiguration which are not known topic configs.
      * These might be consumed by broker plugins.
      * @param kafkaVersion The broker version.
      * @return The unknown configs.
