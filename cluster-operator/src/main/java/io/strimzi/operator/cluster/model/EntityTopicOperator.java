@@ -56,6 +56,7 @@ public class EntityTopicOperator extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
     public static final String ENV_VAR_SECURITY_PROTOCOL = "STRIMZI_SECURITY_PROTOCOL";
+    public static final String ENV_VAR_STRIMZI_KAFKA_VERSION = "STRIMZI_KAFKA_VERSION";
 
     public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
 
@@ -247,6 +248,7 @@ public class EntityTopicOperator extends AbstractModel {
                 if (topicOperatorSpec.getLivenessProbe() != null) {
                     result.setLivenessProbe(topicOperatorSpec.getLivenessProbe());
                 }
+                result.setKafkaVersion(kafkaAssembly.getSpec().getKafka().getVersion());
             }
         }
         return result;
