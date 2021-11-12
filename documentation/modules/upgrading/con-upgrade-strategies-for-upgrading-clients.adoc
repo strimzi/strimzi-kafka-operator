@@ -27,8 +27,8 @@ Messages published to a topic in a new-version format will be visible to consume
 Common strategies you can use to upgrade your clients are described as follows.
 Other strategies for upgrading client applications are also possible.
 
-IMPORTANT: The steps outlined in each strategy change slightly when upgrading to Kafka {DefaultKafkaVersion} or later.
-From Kafka {DefaultKafkaVersion}, the message format version values are assumed to match the `inter.broker.protocol.version` and don't need to be set.
+IMPORTANT: The steps outlined in each strategy change slightly when upgrading to Kafka 3.0.0 or later.
+From Kafka 3.0.0, the message format version values are assumed to match the `inter.broker.protocol.version` and don't need to be set.
 
 .Broker-level consumers first strategy
 
