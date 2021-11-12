@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
 
 import java.io.IOException;
@@ -175,7 +176,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
          * @param version The version given in the CR.
          * @return The image to use.
          * @throws InvalidResourceException If no image was given in the CR and the version given
-         * was not present in ClusterOperatorConfig#STRIMZI_KAFKA_IMAGES.
+         * was not present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_IMAGES}.
          */
         public String kafkaImage(String image, String version) {
             try {
@@ -207,7 +208,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         }
 
         /**
-         * Validate that the given versions have images present in ClusterOperatorConfig#STRIMZI_KAFKA_IMAGES.
+         * Validate that the given versions have images present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_IMAGES}.
          * @param versions The versions to validate.
          * @throws NoImageException If one of the versions lacks an image.
          * @throws UnsupportedVersionException If any version with configured image is not supported
@@ -222,7 +223,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
          * @param version The version given in the CR.
          * @return The image to use.
          * @throws InvalidResourceException If no image was given in the CR and the version given
-         * was not present in ClusterOperatorConfig#STRIMZI_KAFKA_CONNECT_IMAGES.
+         * was not present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_CONNECT_IMAGES}.
          */
         public String kafkaConnectVersion(String image, String version) {
             try {
@@ -235,7 +236,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         }
 
         /**
-         * Validate that the given versions have images present in ClusterOperatorConfig#STRIMZI_KAFKA_CONNECT_IMAGES.
+         * Validate that the given versions have images present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_CONNECT_IMAGES}.
          * @param versions The versions to validate.
          * @throws NoImageException If one of the versions lacks an image.
          * @throws UnsupportedVersionException If any version with configured image is not supported
@@ -250,7 +251,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
          * @param version The version given in the CR.
          * @return The image to use.
          * @throws InvalidResourceException If no image was given in the CR and the version given
-         * was not present in ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_IMAGES.
+         * was not present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_IMAGES}.
          */
         public String kafkaMirrorMakerImage(String image, String version) {
             try {
@@ -269,7 +270,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         }
 
         /**
-         * Validate that the given versions have images present in ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_IMAGES.
+         * Validate that the given versions have images present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_IMAGES}.
          * @param versions The versions to validate.
          * @throws NoImageException If one of the versions lacks an image.
          * @throws UnsupportedVersionException If any version with configured image is not supported
@@ -284,7 +285,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
          * @param version The version given in the CR.
          * @return The image to use.
          * @throws InvalidResourceException If no image was given in the CR and the version given
-         * was not present in ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES.
+         * was not present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES}.
          */
         public String kafkaMirrorMaker2Version(String image, String version) {
             try {
@@ -297,7 +298,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         }
 
         /**
-         * Validate that the given versions have images present in ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES.
+         * Validate that the given versions have images present in {@link ClusterOperatorConfig#STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES}.
          * @param versions The versions to validate.
          * @throws NoImageException If one of the versions lacks an image.
          * @throws UnsupportedVersionException If any version with configured image is not supported
