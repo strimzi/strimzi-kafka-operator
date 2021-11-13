@@ -6,6 +6,7 @@ package io.strimzi.systemtest.kafka;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -44,6 +45,7 @@ import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -133,6 +135,8 @@ class KafkaST extends AbstractST {
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
         envVarGeneral.put("TEST_ENV_1", "test.env.one");
@@ -280,8 +284,8 @@ class KafkaST extends AbstractST {
                 .endSpec()
             .build());
 
-        final Map<String, String> kafkaSnapshot = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
-        final Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        final Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+        final Map<String, String> zkSnapshot = PodUtils.podSnapshot(namespaceName, zkSelector);
         final Map<String, String> eoPod = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
 
         LOGGER.info("Verify values before update");
@@ -373,8 +377,8 @@ class KafkaST extends AbstractST {
             entityOperatorSpec.getTemplate().getTlsSidecarContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
         }, namespaceName);
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName), 2, zkSnapshot);
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 2, kafkaSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 2, zkSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 2, kafkaSnapshot);
         DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
@@ -416,6 +420,8 @@ class KafkaST extends AbstractST {
     void testJvmAndResources(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
         ArrayList<SystemProperty> javaSystemProps = new ArrayList<>();
         javaSystemProps.add(new SystemPropertyBuilder().withName("javax.net.debug")
@@ -490,8 +496,8 @@ class KafkaST extends AbstractST {
         final String zkStsName = KafkaResources.zookeeperStatefulSetName(clusterName);
         final String kafkaStsName = kafkaStatefulSetName(clusterName);
         final String eoDepName = KafkaResources.entityOperatorDeploymentName(clusterName);
-        final Map<String, String> zkPods = StatefulSetUtils.ssSnapshot(namespaceName, zkStsName);
-        final Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStsName);
+        final Map<String, String> zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
+        final Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
         final Map<String, String> eoPods = DeploymentUtils.depSnapshot(namespaceName, eoDepName);
 
         assertResources(namespaceName, KafkaResources.kafkaPodName(clusterName, 0), "kafka",
@@ -541,8 +547,8 @@ class KafkaST extends AbstractST {
         });
 
         LOGGER.info("Checking no rolling update for Kafka cluster");
-        StatefulSetUtils.waitForNoRollingUpdate(namespaceName, zkStsName, zkPods);
-        StatefulSetUtils.waitForNoRollingUpdate(namespaceName, kafkaStsName, kafkaPods);
+        RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, zkSelector, zkPods);
+        RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, kafkaSelector, kafkaPods);
         DeploymentUtils.waitForNoRollingUpdate(namespaceName, eoDepName, eoPods);
     }
 
@@ -977,6 +983,7 @@ class KafkaST extends AbstractST {
     void testRegenerateCertExternalAddressChange(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         LOGGER.info("Creating kafka without external listener");
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
@@ -1007,7 +1014,7 @@ class KafkaST extends AbstractST {
             kafka.getSpec().getKafka().setListeners(lst);
         }, namespaceName);
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStatefulSetName(clusterName), 3, StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName)));
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, PodUtils.podSnapshot(namespaceName, kafkaSelector));
 
         Secret secretsWithExt = kubeClient(namespaceName).getSecret(namespaceName, brokerSecret);
 
@@ -1025,6 +1032,7 @@ class KafkaST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         Map<String, String> labels = new HashMap<>();
         final String[] labelKeys = {"label-name-1", "label-name-2", ""};
@@ -1053,7 +1061,7 @@ class KafkaST extends AbstractST {
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
         StatefulSetUtils.waitForStatefulSetLabelsChange(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), labels);
@@ -1109,7 +1117,7 @@ class KafkaST extends AbstractST {
 
         verifyPresentLabels(labels, statefulSet);
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
         LOGGER.info("Verifying via kafka pods");
         labels = kubeClient(namespaceName).getPod(namespaceName, KafkaResources.kafkaPodName(clusterName, 0)).getMetadata().getLabels();
@@ -1154,7 +1162,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("Verifying kafka labels via stateful set");
         verifyNullLabels(labelKeys, statefulSet);
 
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
         LOGGER.info("Waiting for kafka pod labels deletion {}", labels.toString());
         PodUtils.waitUntilPodLabelsDeletion(namespaceName, KafkaResources.kafkaPodName(clusterName, 0), labelKeys[0], labelKeys[1], labelKeys[2]);
@@ -1289,10 +1297,11 @@ class KafkaST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1).build());
 
-        Map<String, String> kafkaPodsSnapshot = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaPodsSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 1, 1).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
@@ -1344,7 +1353,7 @@ class KafkaST extends AbstractST {
         }
 
         LOGGER.info("Wait for kafka to rolling restart ...");
-        StatefulSetUtils.waitTillSsHasRolled(namespaceName, kafkaStatefulSetName(clusterName), 1, kafkaPodsSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 1, kafkaPodsSnapshot);
 
         LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(clusterName, 0));
         topicData = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c",

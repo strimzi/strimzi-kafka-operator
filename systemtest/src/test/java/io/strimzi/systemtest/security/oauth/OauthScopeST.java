@@ -4,17 +4,16 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -22,9 +21,9 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -187,6 +186,7 @@ public class OauthScopeST extends OauthAbstractST {
         final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaStatefulSetName(oauthClusterName));
 
         KafkaBasicExampleClients oauthInternalClientChecksJob = new KafkaBasicExampleClients.Builder()
             .withNamespaceName(INFRA_NAMESPACE)
@@ -210,7 +210,7 @@ public class OauthScopeST extends OauthAbstractST {
             kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
         }, INFRA_NAMESPACE);
 
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(INFRA_NAMESPACE, KafkaResources.kafkaStatefulSetName(oauthClusterName), 1, ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET));
+        RollingUpdateUtils.waitForComponentAndPodsReady(INFRA_NAMESPACE, kafkaSelector, 1);
 
         // verification phase client should fail here because clientScope is set to 'null'
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
@@ -234,7 +234,7 @@ public class OauthScopeST extends OauthAbstractST {
             kafka.getSpec().getKafka().getListeners().set(0, scopeListeners.get(0));
         }, INFRA_NAMESPACE);
 
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(INFRA_NAMESPACE, KafkaResources.kafkaStatefulSetName(oauthClusterName), 1, ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET));
+        RollingUpdateUtils.waitForComponentAndPodsReady(INFRA_NAMESPACE, kafkaSelector, 1);
     }
 
     @BeforeAll

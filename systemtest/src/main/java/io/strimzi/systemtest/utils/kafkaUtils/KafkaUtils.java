@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -23,7 +24,7 @@ import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
@@ -170,17 +171,24 @@ public class KafkaUtils {
 
     @SuppressWarnings("unchecked")
     public static void waitForClusterStability(String namespaceName, String clusterName) {
-        LOGGER.info("Waiting for cluster stability");
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaStatefulSetName(clusterName));
+        LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, zookeeperStatefulSetName(clusterName));
+
         Map<String, String>[] zkPods = new Map[1];
         Map<String, String>[] kafkaPods = new Map[1];
         Map<String, String>[] eoPods = new Map[1];
+
+        LOGGER.info("Waiting for cluster stability");
+
         int[] count = {0};
-        zkPods[0] = StatefulSetUtils.ssSnapshot(namespaceName, zookeeperStatefulSetName(clusterName));
-        kafkaPods[0] = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
+
+        zkPods[0] = PodUtils.podSnapshot(namespaceName, zkSelector);
+        kafkaPods[0] = PodUtils.podSnapshot(namespaceName, kafkaSelector);
         eoPods[0] = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
+
         TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
-            Map<String, String> zkSnapshot = StatefulSetUtils.ssSnapshot(namespaceName, zookeeperStatefulSetName(clusterName));
-            Map<String, String> kafkaSnaptop = StatefulSetUtils.ssSnapshot(namespaceName, kafkaStatefulSetName(clusterName));
+            Map<String, String> zkSnapshot = PodUtils.podSnapshot(namespaceName, zkSelector);
+            Map<String, String> kafkaSnaptop = PodUtils.podSnapshot(namespaceName, kafkaSelector);
             Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
             boolean zkSameAsLast = zkSnapshot.equals(zkPods[0]);
             boolean kafkaSameAsLast = kafkaSnaptop.equals(kafkaPods[0]);

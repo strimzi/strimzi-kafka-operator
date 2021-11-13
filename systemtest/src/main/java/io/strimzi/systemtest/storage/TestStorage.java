@@ -4,7 +4,10 @@
  */
 package io.strimzi.systemtest.storage;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -31,6 +34,8 @@ final public class TestStorage {
     private String kafkaClientsName;
     private String producerName;
     private String consumerName;
+    private LabelSelector kafkaSelector;
+    private LabelSelector zkSelector;
 
     public TestStorage(ExtensionContext extensionContext) {
         this(extensionContext, INFRA_NAMESPACE);
@@ -45,6 +50,8 @@ final public class TestStorage {
         this.kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;
         this.producerName = clusterName + "-" + PRODUCER;
         this.consumerName = clusterName  + "-" + CONSUMER;
+        this.kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        this.zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, this.namespaceName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CLUSTER_KEY, this.clusterName);
@@ -53,6 +60,8 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_CLIENTS_KEY, this.kafkaClientsName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PRODUCER_KEY, this.producerName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CONSUMER_KEY, this.consumerName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_SELECTOR, this.kafkaSelector);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ZOOKEEPER_SELECTOR, this.zkSelector);
     }
 
     public void addToTestStorage(String key, Object value) {
@@ -70,6 +79,7 @@ final public class TestStorage {
     public String getClusterName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString();
     }
+
     public String getTopicName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TOPIC_KEY).toString();
     }
@@ -77,10 +87,20 @@ final public class TestStorage {
     public String getKafkaClientsName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_CLIENTS_KEY).toString();
     }
+
     public String getProducerName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PRODUCER_KEY).toString();
     }
+
     public String getConsumerName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CONSUMER_KEY).toString();
+    }
+
+    public LabelSelector getKafkaSelector() {
+        return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_SELECTOR);
+    }
+
+    public LabelSelector getZookeeperSelector() {
+        return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ZOOKEEPER_SELECTOR);
     }
 }

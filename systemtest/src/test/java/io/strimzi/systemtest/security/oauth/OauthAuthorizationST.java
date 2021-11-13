@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -21,9 +22,10 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.WaitException;
 import io.vertx.core.cli.annotations.Description;
@@ -338,6 +340,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         String teamBConsumerName = TEAM_B_CONSUMER_NAME + "-" + clusterName;
         // only write means that Team A can not create new topic 'x-.*'
         String topicXName = TOPIC_X + mapWithTestTopics.get(extensionContext.getDisplayName());
+        LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaStatefulSetName(oauthClusterName));
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, INFRA_NAMESPACE).build());
 
@@ -385,7 +388,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         JobUtils.waitForJobFailure(teamAConsumerName, INFRA_NAMESPACE, 30_000);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAConsumerName);
 
-        Map<String, String> kafkaPods = StatefulSetUtils.ssSnapshot(INFRA_NAMESPACE, KafkaResources.kafkaStatefulSetName(oauthClusterName));
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
 
@@ -396,7 +399,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             ((KafkaAuthorizationKeycloak) kafka.getSpec().getKafka().getAuthorization()).setSuperUsers(superUsers);
         }, INFRA_NAMESPACE);
 
-        StatefulSetUtils.waitTillSsHasRolled(INFRA_NAMESPACE, KafkaResources.kafkaStatefulSetName(oauthClusterName), 1, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, 1, kafkaPods);
 
         LOGGER.info("Verifying that team B is able to write to topic starting with 'x-' and break authorization rule");
 

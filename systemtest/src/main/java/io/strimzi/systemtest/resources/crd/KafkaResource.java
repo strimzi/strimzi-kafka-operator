@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.resources.crd;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -20,6 +22,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.platform.commons.util.Preconditions;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -101,5 +105,16 @@ public class KafkaResource implements ResourceType<Kafka> {
 
     public static KafkaStatus getKafkaStatus(String clusterName, String namespace) {
         return kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus();
+    }
+
+    public static LabelSelector getLabelSelector(String clusterName, String componentName) {
+        Map<String, String> matchLabels = new HashMap<>();
+        matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        matchLabels.put(Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND);
+        matchLabels.put(Labels.STRIMZI_NAME_LABEL, componentName);
+
+        return new LabelSelectorBuilder()
+            .withMatchLabels(matchLabels)
+            .build();
     }
 }

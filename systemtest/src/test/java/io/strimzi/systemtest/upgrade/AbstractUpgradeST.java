@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.upgrade;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.Kafka;
@@ -12,18 +13,20 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.IsolatedSuite;
 import io.strimzi.test.executor.Exec;
@@ -50,6 +53,7 @@ import java.util.stream.Stream;
 
 import static io.strimzi.systemtest.Constants.GLOBAL_POLL_INTERVAL;
 import static io.strimzi.systemtest.Constants.GLOBAL_TIMEOUT;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.PATH_TO_KAFKA_TOPIC_CONFIG;
 import static io.strimzi.systemtest.Constants.PATH_TO_PACKAGING_EXAMPLES;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -67,12 +71,17 @@ public class AbstractUpgradeST extends AbstractST {
     protected File coDir = null;
     protected File kafkaTopicYaml = null;
     protected File kafkaUserYaml = null;
+
+    protected final String clusterName = "my-cluster";
+
     protected Map<String, String> zkPods;
     protected Map<String, String> kafkaPods;
     protected Map<String, String> eoPods;
     protected Map<String, String> coPods;
 
-    protected final String clusterName = "my-cluster";
+    protected LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+    protected LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+
 
     protected final String topicName = "my-topic";
     protected final String userName = "my-user";
@@ -172,15 +181,15 @@ public class AbstractUpgradeST extends AbstractST {
         return parameters.stream();
     }
 
-    protected void makeSnapshots(String clusterName) {
+    protected void makeSnapshots() {
         coPods = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
-        zkPods = StatefulSetUtils.ssSnapshot(KafkaResources.zookeeperStatefulSetName(clusterName));
-        kafkaPods = StatefulSetUtils.ssSnapshot(KafkaResources.kafkaStatefulSetName(clusterName));
+        zkPods = PodUtils.podSnapshot(INFRA_NAMESPACE, zkSelector);
+        kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);
         eoPods = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(clusterName));
     }
 
     @SuppressWarnings("CyclomaticComplexity")
-    protected void changeKafkaAndLogFormatVersion(JsonObject procedures, JsonObject testParameters, String clusterName, ExtensionContext extensionContext) throws IOException {
+    protected void changeKafkaAndLogFormatVersion(JsonObject procedures, JsonObject testParameters, ExtensionContext extensionContext) throws IOException {
         // Get Kafka configurations
         String operatorVersion = testParameters.getString("toVersion");
         String currentLogMessageFormat = cmdKubeClient().getResourceJsonPath(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, ".spec.kafka.config.log\\.message\\.format\\.version");
@@ -223,7 +232,7 @@ public class AbstractUpgradeST extends AbstractST {
                 LOGGER.info("Going to set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
                 LOGGER.info("Wait until kafka rolling update is finished");
-                kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, 3, kafkaPods);
             }
 
             String logMessageVersion = procedures.getString("logMessageVersion");
@@ -243,16 +252,16 @@ public class AbstractUpgradeST extends AbstractST {
                 if ((currentInterBrokerProtocol != null && !currentInterBrokerProtocol.equals(interBrokerProtocolVersion)) ||
                         (currentLogMessageFormat != null) && !currentLogMessageFormat.equals(logMessageVersion)) {
                     LOGGER.info("Wait until kafka rolling update is finished");
-                    kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+                    kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, 3, kafkaPods);
                 }
-                makeSnapshots(clusterName);
+                makeSnapshots();
             }
 
             if (!kafkaVersionFromProcedure.isEmpty() && !kafkaVersionFromCR.contains(kafkaVersionFromProcedure) && extensionContext.getTestClass().get().getSimpleName().toLowerCase(Locale.ROOT).contains("downgrade")) {
                 LOGGER.info("Going to set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
                 LOGGER.info("Wait until kafka rolling update is finished");
-                kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, kafkaPods);
             }
         }
     }
@@ -287,9 +296,9 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void waitForKafkaClusterRollingUpdate() {
         LOGGER.info("Waiting for ZK StatefulSet roll");
-        zkPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.zookeeperStatefulSetName(clusterName), 3, zkPods);
+        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, zkSelector, 3, zkPods);
         LOGGER.info("Waiting for Kafka StatefulSet roll");
-        kafkaPods = StatefulSetUtils.waitTillSsHasRolled(KafkaResources.kafkaStatefulSetName(clusterName), 3, kafkaPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, kafkaSelector, 3, kafkaPods);
         LOGGER.info("Waiting for EO Deployment roll");
         // Check the TO and UO also got upgraded
         eoPods = DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
@@ -297,9 +306,9 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void waitForReadinessOfKafkaCluster() {
         LOGGER.info("Waiting for Zookeeper StatefulSet");
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.zookeeperStatefulSetName(clusterName), 3);
+        RollingUpdateUtils.waitForComponentAndPodsReady(zkSelector, 3);
         LOGGER.info("Waiting for Kafka StatefulSet");
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(KafkaResources.kafkaStatefulSetName(clusterName), 3);
+        RollingUpdateUtils.waitForComponentAndPodsReady(kafkaSelector, 3);
         LOGGER.info("Waiting for EO Deployment");
         DeploymentUtils.waitForDeploymentAndPodsReady(KafkaResources.entityOperatorDeploymentName(clusterName), 1);
     }
@@ -514,7 +523,7 @@ public class AbstractUpgradeST extends AbstractST {
             // ##############################
         }
 
-        makeSnapshots(clusterName);
+        makeSnapshots();
         logPodImages(clusterName);
     }
 

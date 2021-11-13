@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.client.internal.readiness.Readiness;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceOperation;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -41,6 +40,10 @@ public class PodUtils {
             .collect(
                 Collectors.toMap(pod -> pod.getMetadata().getName(),
                     pod -> pod.getMetadata().getUid()));
+    }
+
+    public static Map<String, String> podSnapshot(LabelSelector selector) {
+        return podSnapshot(kubeClient().getNamespace(), selector);
     }
 
     public static String getFirstContainerImageNameFromPod(String namespaceName, String podName) {
@@ -109,7 +112,9 @@ public class PodUtils {
 
     /**
      * The method to wait when all pods of specific prefix will be deleted
-     * To wait for the cluster to be updated, the following methods must be used: {@link StatefulSetUtils#ssHasRolled(String, Map)}, {@link StatefulSetUtils#waitTillSsHasRolled(String, int, Map)} )}
+     * To wait for the cluster to be updated, the following methods must be used:
+     * {@link io.strimzi.systemtest.utils.RollingUpdateUtils#componentHasRolled(String, LabelSelector, Map)},
+     * {@link io.strimzi.systemtest.utils.RollingUpdateUtils#waitTillComponentHasRolled(LabelSelector, int, Map)} )}
      * @param podsNamePrefix Cluster name where pods should be deleted
      */
     public static void waitForPodsWithPrefixDeletion(String podsNamePrefix) {
