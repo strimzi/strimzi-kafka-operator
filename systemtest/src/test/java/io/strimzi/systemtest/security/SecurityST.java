@@ -497,12 +497,12 @@ class SecurityST extends AbstractST {
 
         if (zkShouldRoll) {
             LOGGER.info("Wait for zk to rolling restart (1)...");
-            zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, zkSelector, 3, zkPods);
+            zkPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, zkPods);
         }
 
         if (kafkaShouldRoll) {
             LOGGER.info("Wait for kafka to rolling restart (1)...");
-            kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, kafkaSelector, 3, kafkaPods);
+            kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, kafkaPods);
         }
 
         if (eoShouldRoll) {
