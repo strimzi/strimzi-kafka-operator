@@ -995,10 +995,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             && !kafkaCluster.getKafkaVersion().protocolVersion().equals(highestInterBrokerProtocolVersion)) {
                         LOGGER.infoCr(reconciliation, "Upgrading Kafka inter.broker.protocol.version from {} to {}", highestInterBrokerProtocolVersion, kafkaCluster.getKafkaVersion().protocolVersion());
 
-                        if (kafkaCluster.getLogMessageFormatVersion() == null
+                        if (compareDottedVersions(kafkaCluster.getKafkaVersion().protocolVersion(), "3.0") >= 0) {
+                            // From Kafka 3.0.0, the LMFV is ignored when IBPV is set to 3.0 or higher
+                            // We set the LMFV immediately to the same version as IPBV to avoid unnecessary rolling update
+                            kafkaCluster.setLogMessageFormatVersion(kafkaCluster.getKafkaVersion().messageVersion());
+                        } else if (kafkaCluster.getLogMessageFormatVersion() == null
                             && highestLogMessageFormatVersion != null) {
-                            // IBPV and LMFV should not change in the same rolling update. When this rolling update is going
-                            // to change the IPBV, we keep the old LGFV
+                            // For Kafka versions older than 3.0.0, IBPV and LMFV should not change in the same rolling
+                            // update. When this rolling update is going to change the IPBV, we keep the old LMFV
                             kafkaCluster.setLogMessageFormatVersion(highestLogMessageFormatVersion);
                         }
                     }
@@ -1019,7 +1023,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 if (versionChange.isUpgrade()) {
                     LOGGER.infoCr(reconciliation, "Kafka is upgrading from {} to {}", versionChange.from().version(), versionChange.to().version());
 
-                    // We make sure that the highest log.message.format.version or inter.broker.protocol.version version
+                    // We make sure that the highest log.message.format.version or inter.broker.protocol.version
                     // used by any of the brokers is not higher than the broker version we upgrade from.
                     if ((highestLogMessageFormatVersion != null && compareDottedVersions(versionChange.from().messageVersion(), highestLogMessageFormatVersion) < 0)
                             || (highestInterBrokerProtocolVersion != null && compareDottedVersions(versionChange.from().protocolVersion(), highestInterBrokerProtocolVersion) < 0)) {
