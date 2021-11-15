@@ -27,7 +27,6 @@ import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.common.errors.InvalidRequestException;
 import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -150,13 +149,13 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         KafkaTopic changedTopic = new KafkaTopicBuilder(operation().inNamespace(NAMESPACE).withName(resourceName).get())
                 .editOrNewSpec().addToConfig("min.insync.replicas", "x").endSpec().build();
         KafkaTopic replaced = operation().inNamespace(NAMESPACE).withName(resourceName).replace(changedTopic);
-        assertStatusNotReady(topicName, InvalidRequestException.class,
+        assertStatusNotReady(topicName, InvalidTopicException.class,
                 expectedMessage);
         // Now modify Kafka-side to cause another reconciliation: We want the same status.
         alterTopicConfigInKafka(topicName, "compression.type", value -> "snappy".equals(value) ? "lz4" : "snappy");
         // Wait for a periodic reconciliation
         Thread.sleep(30_000);
-        assertStatusNotReady(topicName, InvalidRequestException.class,
+        assertStatusNotReady(topicName, InvalidTopicException.class,
                 expectedMessage);
     }
 
@@ -193,7 +192,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     public void testKafkaTopicAddedWithUnknownConfig() throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError("test-resource-created-with-unknown-config",
                 singletonMap("aardvark", "zebra"), 1,
-               "org.apache.kafka.common.errors.InvalidConfigurationException: Unknown topic config name: aardvark");
+               "KafkaTopic topic-operator-it/test-resource-created-with-unknown-config has invalid spec.config: aardvark with value 'zebra' is not one of the known options");
     }
 
     @Test

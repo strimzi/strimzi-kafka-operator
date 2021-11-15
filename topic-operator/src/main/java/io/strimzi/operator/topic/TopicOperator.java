@@ -1334,8 +1334,7 @@ class TopicOperator {
                     pausedTopicCounter.getAndIncrement();
                 }
                 LogContext logContext = LogContext.periodic(reconciliationType + "kube " + kt.getMetadata().getName(), kt.getMetadata().getNamespace(), kt.getMetadata().getName()).withKubeTopic(kt);
-                Topic topic = TopicSerialization.fromTopicResource(kt, logContext.toReconciliation(), config.get(Config.KAFKA_VERSION));
-                TopicName topicName = topic.getTopicName();
+                TopicName topicName = new TopicName(TopicSerialization.getTopicName(kt));
                 if (reconcileState.failed.containsKey(topicName)) {
                     // we already failed to reconcile this topic in reconcileFromKafka(), /
                     // don't bother trying again
@@ -1349,7 +1348,7 @@ class TopicOperator {
                     successfulReconciliationsCounter.increment();
                 } else if (reconcileState.undetermined.contains(topicName)) {
                     // The topic didn't exist in topicStore, but now we know which KT it corresponds to
-                    futs.add(reconcileWithKubeTopic(logContext, kt, reconciliationType, new ResourceName(kt), topic.getTopicName()).compose(r -> {
+                    futs.add(reconcileWithKubeTopic(logContext, kt, reconciliationType, new ResourceName(kt), topicName).compose(r -> {
                         // if success then remove from undetermined add to success
                         reconcileState.undetermined.remove(topicName);
                         reconcileState.succeeded.add(topicName);
@@ -1358,7 +1357,7 @@ class TopicOperator {
                 } else {
                     // Topic exists in kube, but not in Kafka
                     LOGGER.debugCr(logContext.toReconciliation(), "Topic {} exists in Kubernetes, but not Kafka", topicName, logTopic(kt));
-                    futs.add(reconcileWithKubeTopic(logContext, kt, reconciliationType, new ResourceName(kt), topic.getTopicName()).compose(r -> {
+                    futs.add(reconcileWithKubeTopic(logContext, kt, reconciliationType, new ResourceName(kt), topicName).compose(r -> {
                         // if success then add to success
                         reconcileState.succeeded.add(topicName);
                         return Future.succeededFuture(Boolean.TRUE);
