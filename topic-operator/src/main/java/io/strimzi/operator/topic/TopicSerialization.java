@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import org.apache.kafka.clients.admin.Config;
@@ -60,7 +59,7 @@ class TopicSerialization {
                         error);
             }
 
-            throw new InvalidResourceException("KafkaTopic " +
+            throw new InvalidTopicException(kafkaTopic, "KafkaTopic " +
                     kafkaTopic.getMetadata().getNamespace() + "/" + kafkaTopic.getMetadata().getName() +
                     " has invalid spec.config: " +
                     String.join(", ", errorsInConfig));
@@ -77,7 +76,6 @@ class TopicSerialization {
             return Collections.EMPTY_MAP;
         }
     }
-
 
     /**
      * Create a Topic to reflect the given KafkaTopic resource.

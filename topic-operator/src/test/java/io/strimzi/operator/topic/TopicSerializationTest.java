@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
-import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.InvalidConfigParameterException;
 import io.strimzi.operator.common.Reconciliation;
 import org.apache.kafka.clients.admin.Config;
@@ -350,7 +349,7 @@ public class TopicSerializationTest {
         try {
             TopicSerialization.fromTopicResource(kafkaTopic, Reconciliation.DUMMY_RECONCILIATION, kafkaVersion);
             fail("Should throw");
-        } catch (InvalidResourceException e) {
+        } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), is("KafkaTopic test/my-topic has invalid spec.config: compression.type has value '42' which is not one of the allowed values: [uncompressed, zstd, lz4, snappy, gzip, producer]"));
         }
     }
@@ -369,7 +368,7 @@ public class TopicSerializationTest {
         try {
             TopicSerialization.fromTopicResource(kafkaTopic, Reconciliation.DUMMY_RECONCILIATION, kafkaVersion);
             fail("Should throw");
-        } catch (InvalidResourceException e) {
+        } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), is("KafkaTopic test/my-topic has invalid spec.config: delete.retention.ms has value 'week' which is not a long"));
         }
     }
@@ -388,7 +387,7 @@ public class TopicSerializationTest {
         try {
             TopicSerialization.fromTopicResource(kafkaTopic, Reconciliation.DUMMY_RECONCILIATION, kafkaVersion);
             fail("Should throw");
-        } catch (InvalidResourceException e) {
+        } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), is("KafkaTopic test/my-topic has invalid spec.config: preallocate has value 'yes' which is not a boolean"));
         }
     }
@@ -407,7 +406,7 @@ public class TopicSerializationTest {
         try {
             TopicSerialization.fromTopicResource(kafkaTopic, Reconciliation.DUMMY_RECONCILIATION, kafkaVersion);
             fail("Should throw");
-        } catch (InvalidResourceException e) {
+        } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), anyOf(is("KafkaTopic test/my-topic has invalid spec.config: retention.bytes has value 'tisic' which is not a long, preallocate has value 'yes' which is not a boolean"),
                     is("KafkaTopic test/my-topic has invalid spec.config: preallocate has value 'yes' which is not a boolean, retention.bytes has value 'tisic' which is not a long")));
         }
