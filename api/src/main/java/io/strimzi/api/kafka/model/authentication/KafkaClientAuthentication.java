@@ -23,6 +23,7 @@ import java.util.Map;
         property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = KafkaClientAuthenticationTls.TYPE_TLS, value = KafkaClientAuthenticationTls.class),
+    @JsonSubTypes.Type(name = KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256, value = KafkaClientAuthenticationScramSha256.class),
     @JsonSubTypes.Type(name = KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512, value = KafkaClientAuthenticationScramSha512.class),
     @JsonSubTypes.Type(name = KafkaClientAuthenticationPlain.TYPE_PLAIN, value = KafkaClientAuthenticationPlain.class),
     @JsonSubTypes.Type(name = KafkaClientAuthenticationOAuth.TYPE_OAUTH, value = KafkaClientAuthenticationOAuth.class),
