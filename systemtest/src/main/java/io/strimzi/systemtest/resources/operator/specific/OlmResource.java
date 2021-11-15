@@ -259,7 +259,11 @@ public class OlmResource implements SpecificResourceType {
                     .replace("${STRIMZI_FULL_RECONCILIATION_INTERVAL_MS}", Long.toString(reconciliationInterval))
                     .replace("${STRIMZI_OPERATION_TIMEOUT_MS}", Long.toString(operationTimeout))
                     .replace("${STRIMZI_RBAC_SCOPE}", Environment.STRIMZI_RBAC_SCOPE)
-                    .replace("${STRIMZI_FEATURE_GATES}", Environment.STRIMZI_FEATURE_GATES));
+                    .replace("${STRIMZI_FEATURE_GATES}", Environment.STRIMZI_FEATURE_GATES)
+                    .replace("${STRIMZI_RESOURCES_REQUEST_MEMORY}", Constants.CLUSTER_OPERATOR_RESOURCE_MEMORY_REQUESTS)
+                    .replace("${STRIMZI_RESOURCES_REQUEST_CPU}", Constants.CLUSTER_OPERATOR_RESOURCE_CPU_REQUESTS)
+                    .replace("${STRIMZI_RESOURCES_LIMITS_MEMORY}", Constants.CLUSTER_OPERATOR_RESOURCE_MEMORY_REQUESTS)
+                    .replace("${STRIMZI_RESOURCES_LIMITS_CPU}", Constants.CLUSTER_OPERATOR_RESOURCE_CPU_LIMITS));
 
             cmdKubeClient(namespace).apply(subscriptionFile);
         }  catch (IOException e) {

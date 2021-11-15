@@ -13,6 +13,13 @@ spec:
   channel: stable
   installPlanApproval: ${OLM_INSTALL_PLAN_APPROVAL}
   config:
+    resources:
+      requests:
+        memory: "${STRIMZI_RESOURCES_REQUEST_MEMORY}"
+        cpu: "${STRIMZI_RESOURCES_REQUEST_CPU}"
+      limits:
+        memory: "${STRIMZI_RESOURCES_LIMITS_MEMORY}"
+        cpu: "${STRIMZI_RESOURCES_LIMITS_CPU}"
     env:
       - name: STRIMZI_LOG_LEVEL
         value: "DEBUG"
