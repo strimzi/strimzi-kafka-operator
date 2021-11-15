@@ -100,7 +100,7 @@ class TopicSerialization {
         return builder.build();
     }
 
-    private static String getTopicName(KafkaTopic kafkaTopic) {
+    public static String getTopicName(KafkaTopic kafkaTopic) {
         String prefix = "KafkaTopics's spec.topicName property is invalid as a topic name: ";
         String topicName = kafkaTopic.getSpec().getTopicName();
         if (topicName == null) {

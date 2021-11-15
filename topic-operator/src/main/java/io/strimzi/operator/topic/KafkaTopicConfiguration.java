@@ -78,9 +78,9 @@ public class KafkaTopicConfiguration extends AbstractConfiguration {
             String value = entry.getValue();
             ConfigModel config = models.get(key);
             if (config != null) {
-                // It's not an error if config _is_ null because extra configs
-                // might be intended for plugins
                 errors.addAll(config.validate(key, value));
+            } else {
+                errors.add(key + " with value '" + value + "' is not one of the known options");
             }
         }
         return errors;
