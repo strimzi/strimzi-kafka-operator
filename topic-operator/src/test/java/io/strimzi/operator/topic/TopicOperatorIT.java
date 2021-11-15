@@ -144,7 +144,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     @Test
     public void testInvalidConfig() throws Exception {
         String topicName = "topic-invalid-config";
-        String expectedMessage = "Invalid config value for resource ConfigResource(type=TOPIC, name='" + topicName + "'): Invalid value x for configuration min.insync.replicas: Not a number of type INT";
+        String expectedMessage = "KafkaTopic topic-operator-it/" + topicName + " has invalid spec.config: min.insync.replicas has value 'x' which is not an int";
 
         String resourceName = createTopic(topicName, new NewTopic(topicName, 2, (short) 1));
         KafkaTopic changedTopic = new KafkaTopicBuilder(operation().inNamespace(NAMESPACE).withName(resourceName).get())
@@ -200,7 +200,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     public void testKafkaTopicAddedWithInvalidConfig() throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError("test-resource-created-with-invalid-config",
                 singletonMap("message.format.version", "zebra"), 1,
-               "org.apache.kafka.common.errors.InvalidConfigurationException: Invalid value zebra for configuration message.format.version: Version `zebra` is not a valid version");
+               "KafkaTopic topic-operator-it/test-resource-created-with-invalid-config has invalid spec.config: message.format.version has value 'zebra' which does not match the required pattern: \\Q0.8.0\\E(\\.[0-9]+)*|\\Q0.8.0\\E|\\Q0.8.1\\E(\\.[0-9]+)*|\\Q0.8.1\\E|\\Q0.8.2\\E(\\.[0-9]+)*|\\Q0.8.2\\E|\\Q0.9.0\\E(\\.[0-9]+)*|\\Q0.9.0\\E|\\Q0.10.0\\E(\\.[0-9]+)*|\\Q0.10.0-IV0\\E|\\Q0.10.0-IV1\\E|\\Q0.10.1\\E(\\.[0-9]+)*|\\Q0.10.1-IV0\\E|\\Q0.10.1-IV1\\E|\\Q0.10.1-IV2\\E|\\Q0.10.2\\E(\\.[0-9]+)*|\\Q0.10.2-IV0\\E|\\Q0.11.0\\E(\\.[0-9]+)*|\\Q0.11.0-IV0\\E|\\Q0.11.0-IV1\\E|\\Q0.11.0-IV2\\E|\\Q1.0\\E(\\.[0-9]+)*|\\Q1.0-IV0\\E|\\Q1.1\\E(\\.[0-9]+)*|\\Q1.1-IV0\\E|\\Q2.0\\E(\\.[0-9]+)*|\\Q2.0-IV0\\E|\\Q2.0-IV1\\E|\\Q2.1\\E(\\.[0-9]+)*|\\Q2.1-IV0\\E|\\Q2.1-IV1\\E|\\Q2.1-IV2\\E|\\Q2.2\\E(\\.[0-9]+)*|\\Q2.2-IV0\\E|\\Q2.2-IV1\\E|\\Q2.3\\E(\\.[0-9]+)*|\\Q2.3-IV0\\E|\\Q2.3-IV1\\E|\\Q2.4\\E(\\.[0-9]+)*|\\Q2.4-IV0\\E|\\Q2.4-IV1\\E|\\Q2.5\\E(\\.[0-9]+)*|\\Q2.5-IV0\\E|\\Q2.6\\E(\\.[0-9]+)*|\\Q2.6-IV0\\E|\\Q2.7\\E(\\.[0-9]+)*|\\Q2.7-IV0\\E|\\Q2.7-IV1\\E|\\Q2.7-IV2\\E|\\Q2.8\\E(\\.[0-9]+)*|\\Q2.8-IV0\\E|\\Q2.8-IV1\\E|\\Q3.0\\E(\\.[0-9]+)*|\\Q3.0-IV0\\E|\\Q3.0-IV1\\E");
     }
 
     @Test
