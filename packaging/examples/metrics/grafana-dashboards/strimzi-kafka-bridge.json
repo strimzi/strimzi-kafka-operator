@@ -652,7 +652,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "count(strimzi_bridge_kafka_consumer_last_heartbeat_seconds_ago != -1)",
+          "expr": "sum(strimzi_bridge_kafka_consumer_last_heartbeat_seconds_ago != bool -1)",
           "format": "time_series",
           "instant": true,
           "interval": "",

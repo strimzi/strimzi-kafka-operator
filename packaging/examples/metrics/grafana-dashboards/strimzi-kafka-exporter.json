@@ -679,7 +679,7 @@
       "tableColumn": "",
       "targets": [
         {
-          "expr": "count(kafka_topic_partition_leader_is_preferred{topic=~\"$topic\"}<1)",
+          "expr": "sum(kafka_topic_partition_leader_is_preferred{topic=~\"$topic\"} < bool 1)",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A"
