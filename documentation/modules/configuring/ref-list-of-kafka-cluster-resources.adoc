@@ -9,89 +9,88 @@ The following resources are created by the Cluster Operator in the Kubernetes cl
 
 .Shared resources
 
-`_<cluster_name>_-cluster-ca`:: Secret with the Cluster CA private key used to encrypt the cluster communication.
-`_<cluster_name>_-cluster-ca-cert`:: Secret with the Cluster CA public key. This key can be used to verify the identity of the Kafka brokers.
-`_<cluster_name>_-clients-ca`::  Secret with the Clients CA private key used to sign user certificates
-`_<cluster_name>_-clients-ca-cert`:: Secret with the Clients CA public key. This key can be used to verify the identity of the Kafka users.
-`_<cluster_name>_-cluster-operator-certs`:: Secret with Cluster operators keys for communication with Kafka and ZooKeeper.
+`_cluster-name_-cluster-ca`:: Secret with the Cluster CA private key used to encrypt the cluster communication.
+`_cluster-name_-cluster-ca-cert`:: Secret with the Cluster CA public key. This key can be used to verify the identity of the Kafka brokers.
+`_cluster-name_-clients-ca`::  Secret with the Clients CA private key used to sign user certificates
+`_cluster-name_-clients-ca-cert`:: Secret with the Clients CA public key. This key can be used to verify the identity of the Kafka users.
+`_cluster-name_-cluster-operator-certs`:: Secret with Cluster operators keys for communication with Kafka and ZooKeeper.
 
-.Zookeeper nodes
+.ZooKeeper nodes
 
-`_<cluster_name>_-zookeeper`:: StatefulSet which is in charge of managing the ZooKeeper node pods.
-`_<cluster_name>_-zookeeper-_<idx>_`:: Pods created by the Zookeeper StatefulSet.
-`_<cluster_name>_-zookeeper-nodes`:: Headless Service needed to have DNS resolve the ZooKeeper pods IP addresses directly.
-`_<cluster_name>_-zookeeper-client`:: Service used by Kafka brokers to connect to ZooKeeper nodes as clients.
-`_<cluster_name>_-zookeeper-config`:: ConfigMap that contains the ZooKeeper ancillary configuration, and is mounted as a volume by the ZooKeeper node pods.
-`_<cluster_name>_-zookeeper-nodes`:: Secret with ZooKeeper node keys.
-`_<cluster_name>_-zookeeper`:: Service account used by the Zookeeper nodes.
-`_<cluster_name>_-zookeeper`:: Pod Disruption Budget configured for the ZooKeeper nodes.
-`_<cluster_name>_-network-policy-zookeeper`:: Network policy managing access to the ZooKeeper services.
-`data-_<cluster_name>_-zookeeper-_<idx>_`:: Persistent Volume Claim for the volume used for storing data for the ZooKeeper node pod `_idx_`. This resource will be created only if persistent storage is selected for provisioning persistent volumes to store data.
+`_cluster-name_-zookeeper`:: StatefulSet which is in charge of managing the ZooKeeper node pods.
+`_cluster-name_-zookeeper-_idx_`:: Pods created by the ZooKeeper StatefulSet.
+`_cluster-name_-zookeeper-nodes`:: Headless Service needed to have DNS resolve the ZooKeeper pods IP addresses directly.
+`_cluster-name_-zookeeper-client`:: Service used by Kafka brokers to connect to ZooKeeper nodes as clients.
+`_cluster-name_-zookeeper-config`:: ConfigMap that contains the ZooKeeper ancillary configuration, and is mounted as a volume by the ZooKeeper node pods.
+`_cluster-name_-zookeeper-nodes`:: Secret with ZooKeeper node keys.
+`_cluster-name_-zookeeper`:: Service account used by the ZooKeeper nodes.
+`_cluster-name_-zookeeper`:: Pod Disruption Budget configured for the ZooKeeper nodes.
+`_cluster-name_-network-policy-zookeeper`:: Network policy managing access to the ZooKeeper services.
+`data-_cluster-name_-zookeeper-_idx_`:: Persistent Volume Claim for the volume used for storing data for the ZooKeeper node pod `_idx_`. This resource will be created only if persistent storage is selected for provisioning persistent volumes to store data.
 
 .Kafka brokers
 
-`_<cluster_name>_-kafka`:: StatefulSet which is in charge of managing the Kafka broker pods.
-`_<cluster_name>_-kafka-_<idx>_`:: Pods created by the Kafka StatefulSet.
-`_<cluster_name>_-kafka-brokers`:: Service needed to have DNS resolve the Kafka broker pods IP addresses directly.
-`_<cluster_name>_-kafka-bootstrap`:: Service can be used as bootstrap servers for Kafka clients connecting from within the Kubernetes cluster.
-`_<cluster_name>_-kafka-external-bootstrap`:: Bootstrap service for clients connecting from outside the Kubernetes cluster. This resource is created only when an external listener is enabled. The old service name will be used for backwards compatibility when the listener name is `external` and port is `9094`.
-`_<cluster_name>_-kafka-_<pod_id>_`:: Service used to route traffic from outside the Kubernetes cluster to individual pods. This resource is created only when an external listener is enabled. The old service name will be used for backwards compatibility when the listener name is `external` and port is `9094`.
-`_<cluster_name>_-kafka-external-bootstrap`:: Bootstrap route for clients connecting from outside the Kubernetes cluster. This resource is created only when an external listener is enabled and set to type `route`. The old route name will be used for backwards compatibility when the listener name is `external` and port is `9094`.
-`_<cluster_name>_-kafka-_<pod_id>_`:: Route for traffic from outside the Kubernetes cluster to individual pods. This resource is created only when an external listener is enabled and set to type `route`. The old route name will be used for backwards compatibility when the listener name is `external` and port is `9094`.
-`_<cluster_name>_-kafka-_listener-name_-bootstrap`:: Bootstrap service for clients connecting from outside the Kubernetes cluster. This resource is created only when an external listener is enabled. The new service name will be used for all other external listeners.
-`_<cluster_name>_-kafka-_listener-name_-_<pod_id>_`:: Service used to route traffic from outside the Kubernetes cluster to individual pods. This resource is created only when an external listener is enabled. The new service name will be used for all other external listeners.
-`_<cluster_name>_-kafka-_listener-name_-bootstrap`:: Bootstrap route for clients connecting from outside the Kubernetes cluster. This resource is created only when an external listener is enabled and set to type `route`. The new route name will be used for all other external listeners.
-`_<cluster_name>_-kafka-_listener-name_-_<pod_id>_`:: Route for traffic from outside the Kubernetes cluster to individual pods. This resource is created only when an external listener is enabled and set to type `route`. The new route name will be used for all other external listeners.
-`_<cluster_name>_-kafka-config`:: ConfigMap which contains the Kafka ancillary configuration and is mounted as a volume by the Kafka broker pods.
-`_<cluster_name>_-kafka-brokers`:: Secret with Kafka broker keys.
-`_<cluster_name>_-kafka`:: Service account used by the Kafka brokers.
-`_<cluster_name>_-kafka`:: Pod Disruption Budget configured for the Kafka brokers.
-`_<cluster_name>_-network-policy-kafka`:: Network policy managing access to the Kafka services.
-`strimzi-_namespace-name_-_<cluster_name>_-kafka-init`:: Cluster role binding used by the Kafka brokers.
-`_<cluster_name>_-jmx`:: Secret with JMX username and password used to secure the Kafka broker port. This resource is created only when JMX is enabled in Kafka.
-`data-_<cluster_name>_-kafka-_<idx>_`:: Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `_<idx>_`. This resource is created only if persistent storage is selected for provisioning persistent volumes to store data.
-`data-_<id>_-_<cluster_name>_-kafka-_<idx>_`:: Persistent Volume Claim for the volume `_<id>_` used for storing data for the Kafka broker pod `_<idx>_`. This resource is created only if persistent storage is selected for JBOD volumes when provisioning persistent volumes to store data.
+`_cluster-name_-kafka`:: StatefulSet which is in charge of managing the Kafka broker pods.
+`_cluster-name_-kafka-_idx_`:: Pods created by the Kafka StatefulSet.
+`_cluster-name_-kafka-brokers`:: Service needed to have DNS resolve the Kafka broker pods IP addresses directly.
+`_cluster-name_-kafka-bootstrap`:: Service can be used as bootstrap servers for Kafka clients connecting from within the Kubernetes cluster.
+`_cluster-name_-kafka-external-bootstrap`:: Bootstrap service for clients connecting from outside the Kubernetes cluster. This resource is created only when an external listener is enabled. The old service name will be used for backwards compatibility when the listener name is `external` and port is `9094`.
+`_cluster-name_-kafka-_pod-id_`:: Service used to route traffic from outside the Kubernetes cluster to individual pods. This resource is created only when an external listener is enabled. The old service name will be used for backwards compatibility when the listener name is `external` and port is `9094`.
+`_cluster-name_-kafka-external-bootstrap`:: Bootstrap route for clients connecting from outside the Kubernetes cluster. This resource is created only when an external listener is enabled and set to type `route`. The old route name will be used for backwards compatibility when the listener name is `external` and port is `9094`.
+`_cluster-name_-kafka-_pod-id_`:: Route for traffic from outside the Kubernetes cluster to individual pods. This resource is created only when an external listener is enabled and set to type `route`. The old route name will be used for backwards compatibility when the listener name is `external` and port is `9094`.
+`_cluster-name_-kafka-_listener-name_-bootstrap`:: Bootstrap service for clients connecting from outside the Kubernetes cluster. This resource is created only when an external listener is enabled. The new service name will be used for all other external listeners.
+`_cluster-name_-kafka-_listener-name_-_pod-id_`:: Service used to route traffic from outside the Kubernetes cluster to individual pods. This resource is created only when an external listener is enabled. The new service name will be used for all other external listeners.
+`_cluster-name_-kafka-_listener-name_-bootstrap`:: Bootstrap route for clients connecting from outside the Kubernetes cluster. This resource is created only when an external listener is enabled and set to type `route`. The new route name will be used for all other external listeners.
+`_cluster-name_-kafka-_listener-name_-_pod-id_`:: Route for traffic from outside the Kubernetes cluster to individual pods. This resource is created only when an external listener is enabled and set to type `route`. The new route name will be used for all other external listeners.
+`_cluster-name_-kafka-config`:: ConfigMap which contains the Kafka ancillary configuration and is mounted as a volume by the Kafka broker pods.
+`_cluster-name_-kafka-brokers`:: Secret with Kafka broker keys.
+`_cluster-name_-kafka`:: Service account used by the Kafka brokers.
+`_cluster-name_-kafka`:: Pod Disruption Budget configured for the Kafka brokers.
+`_cluster-name_-network-policy-kafka`:: Network policy managing access to the Kafka services.
+`strimzi-_namespace-name_-_cluster-name_-kafka-init`:: Cluster role binding used by the Kafka brokers.
+`_cluster-name_-jmx`:: Secret with JMX username and password used to secure the Kafka broker port. This resource is created only when JMX is enabled in Kafka.
+`data-_cluster-name_-kafka-_idx_`:: Persistent Volume Claim for the volume used for storing data for the Kafka broker pod `_idx_`. This resource is created only if persistent storage is selected for provisioning persistent volumes to store data.
+`data-_id_-_cluster-name_-kafka-_idx_`:: Persistent Volume Claim for the volume `_id_` used for storing data for the Kafka broker pod `_idx_`. This resource is created only if persistent storage is selected for JBOD volumes when provisioning persistent volumes to store data.
 
 .Entity Operator
 
 These resources are only created if the Entity Operator is deployed using the Cluster Operator.
 
-`_<cluster_name>_-entity-operator`:: Deployment with Topic and User Operators.
-`_<cluster_name>_-entity-operator-_<random_string>_`:: Pod created by the Entity Operator deployment.
-`_<cluster_name>_-entity-topic-operator-config`:: ConfigMap with ancillary configuration for Topic Operators.
-`_<cluster_name>_-entity-user-operator-config`:: ConfigMap with ancillary configuration for User Operators.
-`_<cluster_name>_-entity-operator-certs`:: Secret with Entity Operator keys for communication with Kafka and ZooKeeper.
-`_<cluster_name>_-entity-operator`:: Service account used by the Entity Operator.
-`strimzi-_<cluster_name>_-entity-topic-operator`:: Role binding used by the Entity Topic Operator.
-`strimzi-_<cluster_name>_-entity-user-operator`:: Role binding used by the Entity User Operator.
+`_cluster-name_-entity-operator`:: Deployment with Topic and User Operators.
+`_cluster-name_-entity-operator-_random-string_`:: Pod created by the Entity Operator deployment.
+`_cluster-name_-entity-topic-operator-config`:: ConfigMap with ancillary configuration for Topic Operators.
+`_cluster-name_-entity-user-operator-config`:: ConfigMap with ancillary configuration for User Operators.
+`_cluster-name_-entity-operator-certs`:: Secret with Entity Operator keys for communication with Kafka and ZooKeeper.
+`_cluster-name_-entity-operator`:: Service account used by the Entity Operator.
+`strimzi-_cluster-name_-entity-topic-operator`:: Role binding used by the Entity Topic Operator.
+`strimzi-_cluster-name_-entity-user-operator`:: Role binding used by the Entity User Operator.
 
 .Kafka Exporter
 
 These resources are only created if the Kafka Exporter is deployed using the Cluster Operator.
 
-`_<cluster_name>_-kafka-exporter`:: Deployment with Kafka Exporter.
-`_<cluster_name>_-kafka-exporter-_<random_string>_`:: Pod created by the Kafka Exporter deployment.
-`_<cluster_name>_-kafka-exporter-certs`:: Secret with Kafka Exporter keys for communication with Kafka and ZooKeeper.
-`_<cluster_name>_-kafka-exporter`:: Service used to collect consumer lag metrics.
-`_<cluster_name>_-kafka-exporter`:: Service account used by the Kafka Exporter.
+`_cluster-name_-kafka-exporter`:: Deployment with Kafka Exporter.
+`_cluster-name_-kafka-exporter-_random-string_`:: Pod created by the Kafka Exporter deployment.
+`_cluster-name_-kafka-exporter`:: Service used to collect consumer lag metrics.
+`_cluster-name_-kafka-exporter`:: Service account used by the Kafka Exporter.
 
 .Cruise Control
 
 These resources are only created if Cruise Control was deployed using the Cluster Operator.
 
-`_<cluster_name>_-cruise-control`:: Deployment with Cruise Control.
-`_<cluster_name>_-cruise-control-_<random_string>_`:: Pod created by the Cruise Control deployment.
-`_<cluster_name>_-cruise-control-config`:: ConfigMap that contains the Cruise Control ancillary configuration, and is mounted as a volume by the Cruise Control pods.
-`_<cluster_name>_-cruise-control-certs`:: Secret with Cruise Control keys for communication with Kafka and ZooKeeper.
-`_<cluster_name>_-cruise-control`:: Service used to communicate with Cruise Control.
-`_<cluster_name>_-cruise-control`:: Service account used by Cruise Control.
-`_<cluster_name>_-network-policy-cruise-control`:: Network policy managing access to the Cruise Control service.
+`_cluster-name_-cruise-control`:: Deployment with Cruise Control.
+`_cluster-name_-cruise-control-_random-string_`:: Pod created by the Cruise Control deployment.
+`_cluster-name_-cruise-control-config`:: ConfigMap that contains the Cruise Control ancillary configuration, and is mounted as a volume by the Cruise Control pods.
+`_cluster-name_-cruise-control-certs`:: Secret with Cruise Control keys for communication with Kafka and ZooKeeper.
+`_cluster-name_-cruise-control`:: Service used to communicate with Cruise Control.
+`_cluster-name_-cruise-control`:: Service account used by Cruise Control.
+`_cluster-name_-network-policy-cruise-control`:: Network policy managing access to the Cruise Control service.
 
 .JMXTrans
 
 These resources are only created if JMXTrans is deployed using the Cluster Operator.
 
-`_<cluster_name>_-jmxtrans`:: Deployment with JMXTrans.
-`_<cluster_name>_-jmxtrans-_<random_string>_`:: Pod created by the JMXTrans deployment.
-`_<cluster_name>_-jmxtrans-config`:: ConfigMap that contains the JMXTrans ancillary configuration, and is mounted as a volume by the JMXTrans pods.
-`_<cluster_name>_-jmxtrans`:: Service account used by JMXTrans.
+`_cluster-name_-jmxtrans`:: Deployment with JMXTrans.
+`_cluster-name_-jmxtrans-_random-string_`:: Pod created by the JMXTrans deployment.
+`_cluster-name_-jmxtrans-config`:: ConfigMap that contains the JMXTrans ancillary configuration, and is mounted as a volume by the JMXTrans pods.
+`_cluster-name_-jmxtrans`:: Service account used by JMXTrans.

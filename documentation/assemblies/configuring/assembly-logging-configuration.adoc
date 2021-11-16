@@ -54,7 +54,7 @@ For more information on configuring logging for specific Kafka components or ope
 .Kafka component logging
 
 * xref:property-kafka-logging-reference[Kafka logging]
-* xref:property-zookeeper-logging-reference[Zookeeper logging]
+* xref:property-zookeeper-logging-reference[ZooKeeper logging]
 * xref:property-kafka-connect-logging-reference[Kafka Connect and Mirror Maker 2.0 logging]
 * xref:property-mm-loggers-reference[MirrorMaker logging]
 * xref:property-kafka-bridge-logging-reference[Kafka Bridge logging]
