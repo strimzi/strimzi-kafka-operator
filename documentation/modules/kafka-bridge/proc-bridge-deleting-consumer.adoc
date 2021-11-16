@@ -5,8 +5,8 @@
 [id='proc-bridge-deleting-consumer-{context}']
 = Deleting a Kafka Bridge consumer
 
-[role="_additional-resources"]
-Delete the Kafa Bridge consumer that you used throughout this quickstart.
+[role="_abstract"]
+Delete the Kafka Bridge consumer that you used throughout this quickstart.
 
 .Procedure
 
@@ -17,7 +17,7 @@ Delete the Kafa Bridge consumer that you used throughout this quickstart.
 curl -X DELETE http://localhost:8080/consumers/bridge-quickstart-consumer-group/instances/bridge-quickstart-consumer
 ----
 +
-If the request is successful, the Kafka Bridge returns a `204` code only.
+If the request is successful, the Kafka Bridge returns a `204` code.
 
 [role="_additional-resources"]
 .Additional resources
