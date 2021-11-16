@@ -14,8 +14,8 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.kafka.config.model.ConfigModel;
+import io.strimzi.kafka.config.model.ConfigModels;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -23,15 +23,18 @@ import org.apache.kafka.common.config.ConfigResource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -39,7 +42,6 @@ import static java.lang.String.format;
  * Serialization of a {@link }Topic} to and from various other representations.
  */
 class TopicSerialization {
-    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicSerialization.class);
 
     // These are the keys in the JSON we store in ZK
     public static final String JSON_KEY_TOPIC_NAME = "topic-name";
@@ -48,17 +50,52 @@ class TopicSerialization {
     public static final String JSON_KEY_REPLICAS = "replicas";
     public static final String JSON_KEY_CONFIG = "config";
 
-    private static void validateConfiguration(Reconciliation reconciliation, KafkaTopic kafkaTopic, String desiredVersion, KafkaTopicConfiguration configuration) {
-        List<String> errorsInConfig = configuration.validate(desiredVersion);
+    /**
+     * Gets the config model for the given version of the Kafka broker.
+     * @param kafkaVersion The broker version.
+     * @return The topic config model for that broker version.
+     */
+    private static Map<String, ConfigModel> readConfigModel(String kafkaVersion) {
+        String name = "/kafka-" + kafkaVersion + "-topic-config-model.json";
+        try {
+            try (InputStream in = TopicSerialization.class.getResourceAsStream(name)) {
+                ConfigModels configModels = new ObjectMapper().readValue(in, ConfigModels.class);
+                if (!kafkaVersion.equals(configModels.getVersion())) {
+                    throw new RuntimeException("Incorrect version");
+                }
+                return configModels.getConfigs();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading from classpath resource " + name, e);
+        }
+    }
+
+    /**
+     * Validate the configs in this KafkaTopicConfiguration returning a list of errors.
+     * @param topicConfiguration The topic configuration.
+     * @param kafkaVersion The broker version.
+     * @return A list of error messages.
+     */
+    private static List<String> validate(Map<String, String> topicConfiguration, String kafkaVersion) {
+        List<String> errors = new ArrayList<>();
+        Map<String, ConfigModel> models = readConfigModel(kafkaVersion);
+        for (Map.Entry<String, String> entry: topicConfiguration.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            ConfigModel config = models.get(key);
+            if (config != null) {
+                errors.addAll(config.validate(key, value));
+            } else {
+                errors.add(key + " with value '" + value + "' is not one of the known options");
+            }
+        }
+        return errors;
+    }
+
+    private static void validateConfiguration(KafkaTopic kafkaTopic, String desiredVersion, Map<String, String> configuration) {
+        List<String> errorsInConfig = validate(configuration, desiredVersion);
 
         if (!errorsInConfig.isEmpty()) {
-            for (String error : errorsInConfig) {
-                LOGGER.warnCr(reconciliation, "KafkaTopic {}/{} has invalid spec.config: {}",
-                        kafkaTopic.getMetadata().getNamespace(),
-                        kafkaTopic.getMetadata().getName(),
-                        error);
-            }
-
             throw new InvalidTopicException(kafkaTopic, "KafkaTopic " +
                     kafkaTopic.getMetadata().getNamespace() + "/" + kafkaTopic.getMetadata().getName() +
                     " has invalid spec.config: " +
@@ -67,11 +104,11 @@ class TopicSerialization {
     }
 
     @SuppressWarnings("unchecked")
-    private static Map<String, String> topicConfigFromTopicConfig(KafkaTopic kafkaTopic, Reconciliation reconciliation, String kafkaVersion) {
+    private static Map<String, String> topicConfigFromTopicConfig(KafkaTopic kafkaTopic, String kafkaVersion) {
         if (kafkaTopic.getSpec().getConfig() != null) {
-            KafkaTopicConfiguration cfg = new KafkaTopicConfiguration(reconciliation, kafkaTopic.getSpec().getConfig().entrySet());
-            validateConfiguration(reconciliation, kafkaTopic, kafkaVersion, cfg);
-            return cfg.asOrderedProperties().asMap();
+            Map<String, String> map = kafkaTopic.getSpec().getConfig().entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> Objects.toString(e.getValue())));
+            validateConfiguration(kafkaTopic, kafkaVersion, map);
+            return map;
         } else {
             return Collections.EMPTY_MAP;
         }
@@ -81,14 +118,14 @@ class TopicSerialization {
      * Create a Topic to reflect the given KafkaTopic resource.
      * @throws InvalidTopicException
      */
-    public static Topic fromTopicResource(KafkaTopic kafkaTopic, Reconciliation reconciliation, String kafkaVersion) {
+    public static Topic fromTopicResource(KafkaTopic kafkaTopic, String kafkaVersion) {
         if (kafkaTopic == null) {
             return null;
         }
         Topic.Builder builder = new Topic.Builder()
                 .withMapName(kafkaTopic.getMetadata().getName())
                 .withTopicName(getTopicName(kafkaTopic))
-                .withConfig(topicConfigFromTopicConfig(kafkaTopic, reconciliation, kafkaVersion))
+                .withConfig(topicConfigFromTopicConfig(kafkaTopic, kafkaVersion))
                 .withMetadata(kafkaTopic.getMetadata());
 
         if (kafkaTopic.getSpec().getPartitions() != null) {
