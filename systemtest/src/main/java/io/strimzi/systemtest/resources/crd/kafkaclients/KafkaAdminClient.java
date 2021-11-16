@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.resources.crd.kafkaclients;
 
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -15,7 +17,9 @@ import org.apache.logging.log4j.Logger;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidParameterException;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -144,6 +148,13 @@ public class KafkaAdminClient {
         adminLabels.put("app", adminName);
         adminLabels.put(Constants.KAFKA_ADMIN_CLIENT_LABEL_KEY, Constants.KAFKA_ADMIN_CLIENT_LABEL_VALUE);
 
+        PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
+
+        if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+            List<LocalObjectReference> imagePullSecrets = Collections.singletonList(new LocalObjectReference(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET));
+            podSpecBuilder.withImagePullSecrets(imagePullSecrets);
+        }
+
         return new JobBuilder()
             .withNewMetadata()
                 .withNamespace(namespaceName)
@@ -158,7 +169,7 @@ public class KafkaAdminClient {
                         .withNamespace(namespaceName)
                         .withLabels(adminLabels)
                     .endMetadata()
-                    .withNewSpec()
+                    .withNewSpecLike(podSpecBuilder.build())
                         .withRestartPolicy("Never")
                             .withContainers()
                                 .addNewContainer()
