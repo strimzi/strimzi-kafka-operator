@@ -173,7 +173,7 @@ public class ResourceUtils {
                         .withLivenessProbe(probe)
                         .withReadinessProbe(probe)
                         .withStorage(new EphemeralStorage())
-                        .withVersion("3.0.0")
+                        .withVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION)
                     .endKafka()
                     .withNewZookeeper()
                         .withReplicas(replicas)

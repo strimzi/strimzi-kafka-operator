@@ -12,7 +12,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
-import io.strimzi.operator.common.InvalidConfigParameterException;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
@@ -155,24 +154,24 @@ public class TopicOperatorTest {
     @Test
     public void testOnKafkaTopicAdded_invalidResource(VertxTestContext context) {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
-                .withMetadata(new ObjectMetaBuilder().withName("invalid").withLabels(labels.labels()).build())
+                .withMetadata(new ObjectMetaBuilder().withNamespace("test").withName("invalid").withLabels(labels.labels()).build())
                 .withNewSpec()
                     .withReplicas(1)
                     .withPartitions(1)
                     .withConfig(singletonMap(null, null))
                 .endSpec()
             .build();
-        String errorMessage = "null: A null value is not allowed for this key";
+        String errorMessage = "KafkaTopic test/invalid has invalid spec.config: null with value 'null' is not one of the known options";
         mockK8s.setGetFromNameResponse(new ResourceName(kafkaTopic), Future.succeededFuture(kafkaTopic));
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.ADDED, kafkaTopic);
         Checkpoint async = context.checkpoint();
         topicOperator.onResourceEvent(logContext, kafkaTopic, ADDED).onComplete(ar -> {
             assertFailed(context, ar);
-            context.verify(() -> assertThat(ar.cause(), instanceOf(InvalidConfigParameterException.class)));
+            context.verify(() -> assertThat(ar.cause(), instanceOf(InvalidTopicException.class)));
             context.verify(() -> assertThat(ar.cause().getMessage(), is(errorMessage)));
             mockKafka.assertEmpty(context);
             mockTopicStore.assertEmpty(context);
-            assertNotReadyStatus(context, (InvalidConfigParameterException) ar.cause());
+            assertNotReadyStatus(context, (InvalidTopicException) ar.cause());
             context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
 
@@ -213,7 +212,7 @@ public class TopicOperatorTest {
             .build();
         mockKafka.setTopicMetadataResponses(
             topicName -> Future.succeededFuture(),
-            topicName -> Future.succeededFuture(Utils.getTopicMetadata(TopicSerialization.fromTopicResource(kafkaTopic, Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)))));
+            topicName -> Future.succeededFuture(Utils.getTopicMetadata(TopicSerialization.fromTopicResource(kafkaTopic, config.get(Config.KAFKA_VERSION)))));
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.ADDED, kafkaTopic);
         Checkpoint async = context.checkpoint();
         mockK8s.setGetFromNameResponse(new ResourceName(kafkaTopic), Future.succeededFuture(kafkaTopic));
@@ -232,7 +231,7 @@ public class TopicOperatorTest {
                     ar.cause().printStackTrace();
                 }
                 context.verify(() -> assertThat(ar.cause().getMessage(),  ar.cause().getClass().getName(), is(expectedExceptionType.getName())));
-                TopicName topicName = TopicSerialization.fromTopicResource(kafkaTopic, Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)).getTopicName();
+                TopicName topicName = TopicSerialization.fromTopicResource(kafkaTopic, config.get(Config.KAFKA_VERSION)).getTopicName();
                 if (createException != null) {
                     mockKafka.assertNotExists(context, topicName);
                 } else {
@@ -242,7 +241,7 @@ public class TopicOperatorTest {
                 //TODO mockK8s.assertContainsEvent(context, e -> "Error".equals(e.getKind()));
             } else {
                 assertSucceeded(context, ar);
-                Topic expectedTopic = TopicSerialization.fromTopicResource(kafkaTopic, Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION));
+                Topic expectedTopic = TopicSerialization.fromTopicResource(kafkaTopic, config.get(Config.KAFKA_VERSION));
                 mockKafka.assertContains(context, expectedTopic);
                 mockTopicStore.assertContains(context, expectedTopic);
                 mockK8s.assertNoEvents(context);
@@ -500,7 +499,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(resourceName).onComplete(ar2 -> {
                 assertSucceeded(context, ar2);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result(), Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)).getConfig().get("cleanup.policy"), is("compact")));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result(), config.get(Config.KAFKA_VERSION)).getConfig().get("cleanup.policy"), is("compact")));
                 async.flag();
             });
 
@@ -635,7 +634,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)), is(kafkaTopic)));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), config.get(Config.KAFKA_VERSION)), is(kafkaTopic)));
                 async.countDown();
             });
             try {
@@ -838,7 +837,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)), is(mergedTopic)));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), config.get(Config.KAFKA_VERSION)), is(mergedTopic)));
                 async.countDown();
             });
             try {
@@ -899,7 +898,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)), is(kafkaTopic)));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), config.get(Config.KAFKA_VERSION)), is(kafkaTopic)));
                 async.countDown();
             });
             try {
@@ -948,7 +947,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)), is(resultTopic)));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), config.get(Config.KAFKA_VERSION)), is(resultTopic)));
                 topicStoreReadSuccess.countDown();
             });
             context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(resultTopic)));
@@ -1062,7 +1061,7 @@ public class TopicOperatorTest {
             mockK8s.getFromName(resourceName).onComplete(ar2 -> {
                 assertSucceeded(context, ar2);
                 context.verify(() -> assertThat(ar2.result(), is(notNullValue())));
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result(), Reconciliation.DUMMY_RECONCILIATION, config.get(Config.KAFKA_VERSION)).getConfig().get("cleanup.policy"), is("delete")));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result(), config.get(Config.KAFKA_VERSION)).getConfig().get("cleanup.policy"), is("delete")));
                 async.countDown();
             });
 
