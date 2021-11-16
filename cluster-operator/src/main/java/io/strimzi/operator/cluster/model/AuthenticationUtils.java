@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -58,7 +59,7 @@ public class AuthenticationUtils {
             } else if (authentication instanceof KafkaClientAuthenticationScram)    {
                 KafkaClientAuthenticationScram auth = (KafkaClientAuthenticationScram) authentication;
                 if (auth.getUsername() == null || auth.getPasswordSecret() == null) {
-                    throw new InvalidResourceException(String.format("%s authentication selected, but username or password configuration is missing.", auth.getType().toUpperCase()));
+                    throw new InvalidResourceException(String.format("%s authentication selected, but username or password configuration is missing.", auth.getType().toUpperCase(Locale.ENGLISH)));
                 }
             } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                 KafkaClientAuthenticationPlain auth = (KafkaClientAuthenticationPlain) authentication;

@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.authentication;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.strimzi.api.kafka.model.Constants;
+import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
@@ -26,10 +27,33 @@ public class KafkaClientAuthenticationScramSha256 extends KafkaClientAuthenticat
 
     public static final String TYPE_SCRAM_SHA_256 = "scram-sha-256";
 
+    private String username;
+    private PasswordSecretSource passwordSecret;
+
     @Description("Must be `" + TYPE_SCRAM_SHA_256 + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
-       return TYPE_SCRAM_SHA_256;
+        return TYPE_SCRAM_SHA_256;
+    }
+
+    @Description("Reference to the `Secret` which holds the password.")
+    @Override
+    public PasswordSecretSource getPasswordSecret() {
+        return passwordSecret;
+    }
+
+    public void setPasswordSecret(PasswordSecretSource passwordSecret) {
+        this.passwordSecret = passwordSecret;
+    }
+
+    @Description("Username used for the authentication.")
+    @Override
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 }

@@ -18,24 +18,13 @@ import lombok.EqualsAndHashCode;
 public abstract class KafkaClientAuthenticationScram extends KafkaClientAuthentication {
     private static final long serialVersionUID = 1L;
 
-    private String username;
-    private PasswordSecretSource passwordSecret;
-
     @Description("Reference to the `Secret` which holds the password.")
-    public PasswordSecretSource getPasswordSecret() {
-        return passwordSecret;
-    }
+    public abstract PasswordSecretSource getPasswordSecret();
 
-    public void setPasswordSecret(PasswordSecretSource passwordSecret) {
-        this.passwordSecret = passwordSecret;
-    }
+    public abstract void setPasswordSecret(PasswordSecretSource passwordSecret);
 
     @Description("Username used for the authentication.")
-    public String getUsername() {
-        return username;
-    }
+    public abstract String getUsername();
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    public abstract void setUsername(String username);
 }
