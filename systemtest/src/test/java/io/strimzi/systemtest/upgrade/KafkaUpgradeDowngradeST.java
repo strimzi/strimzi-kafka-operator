@@ -276,7 +276,8 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
                 LOGGER.info("Kafka roll (inter.broker.protocol.version) is complete");
             }
 
-            if (currentLogMessageFormat == null) {
+            // Only Kafka versions before 3.0.0 require the second roll
+            if (currentLogMessageFormat == null && TestKafkaVersion.compareDottedVersions(newVersion.protocolVersion(), "3.0") < 0) {
                 kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, kafkaSelector, kafkaReplicas, kafkaPods);
                 LOGGER.info("Kafka roll (log.message.format.version) is complete");
             }
