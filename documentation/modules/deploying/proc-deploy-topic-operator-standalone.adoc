@@ -11,12 +11,16 @@ You can use a standalone Topic Operator with a Kafka cluster that is not managed
 
 A standalone deployment can operate with any Kafka cluster.
 
-Standalone deployment files are provided.
-Configure the `05-Deployment-strimzi-topic-operator.yaml` deployment file to add the environment variables that enable the Topic Operator to connect to a Kafka cluster.
+Standalone deployment files are provided with Strimzi.
+Use the `05-Deployment-strimzi-topic-operator.yaml` deployment file to deploy the Topic Operator.
+Add or set the environment variables needed to make a connection to a Kafka cluster.
 
 .Prerequisites
 
 * You are running a Kafka cluster for the Topic Operator to connect to.
++
+As long as the standalone Topic Operator is correctly configured for connection,
+the Kafka cluster can be running on a bare-metal environment, a virtual machine, or as a managed cloud application service.
 
 .Procedure
 
