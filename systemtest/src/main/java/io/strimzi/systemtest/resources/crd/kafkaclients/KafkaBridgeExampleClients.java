@@ -174,6 +174,13 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
         consumerLabels.put("app", consumerName);
         consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
 
+        PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
+
+        if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+            List<LocalObjectReference> imagePullSecrets = Collections.singletonList(new LocalObjectReference(Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET));
+            podSpecBuilder.withImagePullSecrets(imagePullSecrets);
+        }
+
         return new JobBuilder()
             .withNewMetadata()
                 .withNamespace(ResourceManager.kubeClient().getNamespace())
@@ -186,7 +193,7 @@ public class KafkaBridgeExampleClients extends KafkaBasicExampleClients {
                     .withNewMetadata()
                         .withLabels(consumerLabels)
                     .endMetadata()
-                    .withNewSpec()
+                    .withNewSpecLike(podSpecBuilder.build())
                         .withRestartPolicy("OnFailure")
                         .withContainers()
                             .addNewContainer()
