@@ -89,7 +89,6 @@ data:
 ====
 For Kafka Bridge, you specify the `enableMetrics` property and set it to `true`.
 
-.Enabling metrics for Kafka Bridge
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaApiVersion}
