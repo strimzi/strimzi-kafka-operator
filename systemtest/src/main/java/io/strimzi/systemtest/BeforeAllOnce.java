@@ -90,6 +90,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
         // clean data from system
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [AFTER SUITE] has been called", this.getClass().getName());
+        systemReady = false;
         install.unInstall();
     }
 
