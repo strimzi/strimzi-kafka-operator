@@ -41,7 +41,7 @@ mkdir -p /tmp/zookeeper
 
 # Generate and print the config file
 echo "Starting Zookeeper with configuration:"
-./zookeeper_config_generator.sh | tee /tmp/zookeeper.properties
+./zookeeper_config_generator.sh | tee /tmp/zookeeper.properties | sed -e 's/password=.*/password=[hidden]/g'
 echo ""
 
 if [ -z "$KAFKA_LOG4J_OPTS" ]; then
