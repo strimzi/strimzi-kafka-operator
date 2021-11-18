@@ -13,7 +13,7 @@ You cannot revert to the previous Kafka version if that version does not support
 or messages have been added to message logs that use a newer `log.message.format.version`.
 
 The `inter.broker.protocol.version` determines the schemas used for persistent metadata stored by the broker, such as the schema for messages written to `__consumer_offsets`.
-If you downgrade to a version of Kafka that does not understand an `inter.broker.protocol.version` that has (ever) been previously used in the cluster the broker will encounter data it cannot understand.
+If you downgrade to a version of Kafka that does not understand an `inter.broker.protocol.version` that has ever been previously used in the cluster the broker will encounter data it cannot understand.
 
 If the target downgrade version of Kafka has:
 
@@ -40,4 +40,6 @@ spec:
       # ...
 ----
 
-The downgrade would not be possible if the `log.message.format.version` was set at `"{LogMsgVersHigher}"` or a value was absent (so that the parameter took the default value for a {KafkaVersionHigher} broker of {LogMsgVersHigher}).
+The downgrade would not be possible if the `log.message.format.version` was set at `"{LogMsgVersHigher}"` or a value was absent, so that the parameter took the default value for a {KafkaVersionHigher} broker of {LogMsgVersHigher}.
+
+IMPORTANT: From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or higher, the `log.message.format.version` option is ignored and doesn't need to be set.

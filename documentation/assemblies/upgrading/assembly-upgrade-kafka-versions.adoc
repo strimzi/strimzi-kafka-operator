@@ -31,6 +31,9 @@ Changing each will trigger a further rolling update.
 
 |===
 
+IMPORTANT: From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or higher, the `log.message.format.version` option is ignored and doesn't need to be set.
+The `log.message.format.version` property for brokers and the `message.format.version` property for topics are deprecated and will be removed in a future release of Kafka.
+
 As part of the Kafka upgrade, the Cluster Operator initiates rolling updates for ZooKeeper.
 
 * A single rolling update occurs even if the ZooKeeper version is unchanged.
