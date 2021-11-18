@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
 import io.strimzi.systemtest.parallel.ParallelSuiteController;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -33,10 +34,10 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
      */
     synchronized private static void systemSetup(ExtensionContext extensionContext) throws Exception {
         // 'if' is used to make sure procedure will be executed only once, not before every class
-        if (!systemReady) {
+        if (!BeforeAllOnce.systemReady) {
             // get root extension context to be different from others context (BeforeAll)
             sharedExtensionContext = extensionContext.getRoot();
-            systemReady = true;
+            BeforeAllOnce.systemReady = true;
             LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
             LOGGER.debug("[BEFORE SUITE] - Going to setup testing system");
 
@@ -86,10 +87,15 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
      * With such steps close() method will be executed only once in the end of test execution
      */
     @Override
-    public void close() throws Exception {
+    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
+    // Correctly updating a static field from a non-static method is tricky to get right and could easily lead to bugs
+    // if there are multiple class instances and/or multiple threads in play.
+    // In this case only `one` thread at a time will access the close() method because of `synchronized` monitor.
+    public synchronized void close() throws Exception {
         // clean data from system
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [AFTER SUITE] has been called", this.getClass().getName());
+        BeforeAllOnce.systemReady = false;
         install.unInstall();
     }
 
