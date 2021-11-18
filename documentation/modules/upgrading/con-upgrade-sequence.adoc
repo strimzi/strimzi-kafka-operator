@@ -1,0 +1,53 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-upgrade.adoc
+
+[id='con-upgrade-sequence-{context}']
+= Required upgrade sequence
+
+[role="_abstract"]
+To upgrade brokers and clients without downtime, you _must_ complete the Strimzi upgrade procedures in the following order:
+
+. Make sure your Kubernetes cluster version is supported.
++
+--
+ifdef::StrimziUpgrades[]
+Strimzi {ProductVersion} requires Kubernetes {KubernetesVersion}.
+endif::StrimziUpgrades[]
+ifndef::StrimziUpgrades[]
+Strimzi {ProductVersion} requires OpenShift {OpenShiftVersion}.
+endif::StrimziUpgrades[]
+--
++
+--
+You can xref:con-upgrade-cluster-{context}[upgrade Kubernetes with minimal downtime].
+--
+
+. When upgrading Strimzi from {ConvertAfterProductVersion} or earlier,  xref:assembly-upgrade-resources-{context}[update existing custom resources to support the `v1beta2` API version].
+. Update your Cluster Operator to a new Strimzi version.
+. xref:assembly-upgrading-kafka-versions-{context}[Upgrade all Kafka brokers and client applications] to the latest supported Kafka version.
+
+. Optional: Upgrade consumers and Kafka Streams applications xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[to use the _incremental cooperative rebalance_ protocol] for partition rebalances.
+
+[id='con-upgrade-sequence-options-{context}']
+== Cluster Operator upgrade options
+
+How you upgrade the Cluster Operator depends on the way you deployed it.
+
+Using installation files:: If you deployed the Cluster Operator using the installation YAML files, perform your upgrade by modifying the Operator installation files, as described in xref:proc-upgrading-the-co-{context}[Upgrading the Cluster Operator].
+
+Using the OperatorHub.io:: If you deployed Strimzi from {OperatorHub}, use the Operator Lifecycle Manager (OLM) to change the update channel for the Strimzi operators to a new Strimzi version.
++
+Depending on your chosen upgrade strategy, after updating the channel, either:
++
+** An automatic upgrade is initiated
++
+** A manual upgrade will require approval before the installation begins
++
+For more information on using OperatorHub.io to upgrade Operators, see the {OLMOperatorDocs}.
+
+Using a Helm chart:: If you deployed the Cluster Operator using a Helm chart, use `helm upgrade`.
++
+The `helm upgrade` command does not upgrade the {HelmCustomResourceDefinitions}.
+Install the new CRDs manually after upgrading the Cluster Operator.
+You can access the CRDs from {ReleaseDownload} or find them in the `crd` subdirectory inside the Helm Chart.

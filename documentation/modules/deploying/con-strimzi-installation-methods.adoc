@@ -1,0 +1,32 @@
+// This downstream module is included in:
+//
+// deploying.adoc (downstream)
+
+[id="con-strimzi-installation-methods_{context}"]
+= Strimzi installation methods
+
+[role="_abstract"]
+You can install Strimzi on Kubernetes {KubernetesVersion} in three ways.
+
+[cols="2*",options="header"]
+|===
+
+|Installation method
+|Description
+
+|xref:deploy-tasks_str[Installation artifacts (YAML files)]
+|Download the release artifacts from {ReleaseDownload} {ZipDownload}.
+Deploy the YAML installation artifacts to your Kubernetes cluster using `kubectl`.
+You start by deploying the Cluster Operator from `install/cluster-operator` to a single namespace, multiple namespaces, or all namespaces.
+
+|xref:deploying-strimzi-from-operator-hub-str[OperatorHub.io]
+|Use the *Strimzi Kafka* operator in the OperatorHub.io to deploy the Cluster Operator. You then deploy Strimzi components using custom resources.
+
+|xref:deploying-cluster-operator-helm-chart-str[Helm chart]
+|Use a Helm chart to deploy the Cluster Operator. You then deploy Strimzi components using custom resources.
+
+|===
+
+For the greatest flexibility, choose the installation artifacts method.
+The OperatorHub.io method provides a standard configuration and allows you to take advantage of automatic updates.
+Helm charts provide a convenient way to manage the installation of applications.

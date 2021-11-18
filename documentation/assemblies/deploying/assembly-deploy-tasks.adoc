@@ -3,25 +3,27 @@
 // deploying/deploying.adoc
 
 [id="deploy-tasks_{context}"]
-= Deploying Strimzi
+= Deploying Strimzi using installation artifacts
 
-Having xref:deploy-tasks-prereqs_{context}[prepared your environment for a deployment of Strimzi], this section shows:
+[role="_abstract"]
+Having xref:deploy-tasks-prereqs_{context}[prepared your environment for a deployment of Strimzi], you can deploy Strimzi to a Kubernetes cluster.
+You can use the deployment files provided with the release artifacts.
 
-* xref:deploy-create-cluster_{context}[How to create the Kafka cluster]
-* Optional procedures to deploy other Kafka components according to your requirements:
-** xref:kafka-connect-{context}[Kafka Connect]
-** xref:kafka-mirror-maker-{context}[Kafka MirrorMaker]
-** xref:kafka-bridge-{context}[Kafka Bridge]
+Use the deployment files to deploy xref:deploy-create-cluster_{context}[create the Kafka cluster]
 
-The procedures assume a Kubernetes cluster is available and running.
+Optionally, you can deploy the following Kafka components according to your requirements:
+
+* xref:kafka-connect-{context}[Kafka Connect]
+* xref:kafka-mirror-maker-{context}[Kafka MirrorMaker]
+* xref:kafka-bridge-{context}[Kafka Bridge]
 
 ifdef::Downloading[]
-This section describes the procedures to deploy Strimzi on Kubernetes {KubernetesVersion}.
+You can deploy Strimzi {ProductVersion} on Kubernetes {KubernetesVersion}.
 endif::Downloading[]
 
 ifndef::Downloading[]
-Strimzi is based on Strimzi {StrimziVersion}.
-This section describes the procedures to deploy Strimzi on OpenShift {OpenShiftVersion}.
+Strimzi is based on {StrimziVersion}.
+You can deploy Strimzi {ProductVersion} on OpenShift {OpenShiftVersion}.
 endif::Downloading[]
 
 NOTE: To run the commands in this guide, your cluster user must have the rights to manage role-based access control (RBAC) and CRDs.
