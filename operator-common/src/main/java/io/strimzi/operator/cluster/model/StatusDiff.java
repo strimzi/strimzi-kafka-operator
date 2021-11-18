@@ -43,9 +43,11 @@ public class StatusDiff extends AbstractJsonDiff {
                 continue;
             }
 
-            LOGGER.debugOp("Status differs: {}", d);
-            LOGGER.debugOp("Current Status path {} has value {}", pathValue, lookupPath(source, pathValue));
-            LOGGER.debugOp("Desired Status path {} has value {}", pathValue, lookupPath(target, pathValue));
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debugOp("Status differs: {}", d);
+                LOGGER.debugOp("Current Status path {} has value {}", pathValue, lookupPath(source, pathValue));
+                LOGGER.debugOp("Desired Status path {} has value {}", pathValue, lookupPath(target, pathValue));
+            }
 
             num++;
         }

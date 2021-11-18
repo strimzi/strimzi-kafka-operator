@@ -133,7 +133,7 @@ public class MetricsST extends AbstractST {
     void testKafkaTopicPartitions() {
         Pattern topicPartitions = Pattern.compile("kafka_server_replicamanager_partitioncount ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
         ArrayList<Double> values = MetricsCollector.collectSpecificMetric(topicPartitions, kafkaMetricsData);
-        assertThat("Topic partitions count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is(437.0));
+        assertThat("Topic partitions count doesn't match expected value", values.stream().mapToDouble(i -> i).sum(), is(438.0));
     }
 
     @ParallelTest
@@ -682,14 +682,14 @@ public class MetricsST extends AbstractST {
                 .build(),
             KafkaTemplates.kafkaWithMetrics(SECOND_CLUSTER, SECOND_NAMESPACE, 1, 1).build(),
             KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, firstKafkaClientsName).build(),
-            KafkaClientsTemplates.kafkaClients(SECOND_NAMESPACE, false, secondKafkaClientsName).build(),
-            KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1).build(),
-            KafkaBridgeTemplates.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, metricsClusterName, KafkaResources.plainBootstrapAddress(metricsClusterName), 1).build()
+            KafkaClientsTemplates.kafkaClients(SECOND_NAMESPACE, false, secondKafkaClientsName).build()
         );
 
         // sync resources
         resourceManager.synchronizeResources(extensionContext);
 
+        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridgeWithMetrics(BRIDGE_CLUSTER, metricsClusterName, KafkaResources.plainBootstrapAddress(metricsClusterName), 1).build());
+        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(MIRROR_MAKER_CLUSTER, metricsClusterName, SECOND_CLUSTER, 1, SECOND_NAMESPACE, INFRA_NAMESPACE).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, topicName, 7, 2).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, kafkaExporterTopic, 7, 2).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(metricsClusterName, bridgeTopic).build());
@@ -752,6 +752,7 @@ public class MetricsST extends AbstractST {
         list.add(CruiseControlUtils.CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
         list.add("strimzi-store-topic");
         list.add("strimzi-topic-operator-kstreams-topic-store-changelog");
+        list.add("__consumer-offsets---hash");
         return list;
     }
 }

@@ -465,4 +465,16 @@ public class KafkaUtils {
             throw new RuntimeException(e);
         }
     }
+
+    public static String namespacedPlainBootstrapAddress(String clusterName, String namespace) {
+        return namespacedBootstrapAddress(clusterName, namespace, 9092);
+    }
+
+    public static String namespacedTlsBootstrapAddress(String clusterName, String namespace) {
+        return namespacedBootstrapAddress(clusterName, namespace, 9093);
+    }
+
+    private static String namespacedBootstrapAddress(String clusterName, String namespace, int port) {
+        return KafkaResources.bootstrapServiceName(clusterName) + "." + namespace + ".svc:" + port;
+    }
 }
