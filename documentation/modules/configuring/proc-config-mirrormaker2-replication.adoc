@@ -190,7 +190,7 @@ spec:
 <3> xref:type-KafkaMirrorMaker2Spec-reference[Kafka cluster alias] for Kafka Connect, which must specify the *target* Kafka cluster. The Kafka cluster is used by Kafka Connect for its internal topics.
 <4> xref:type-KafkaMirrorMaker2ClusterSpec-reference[Specification] for the Kafka clusters being synchronized.
 <5> xref:type-KafkaMirrorMaker2ClusterSpec-reference[Cluster alias] for the source Kafka cluster.
-<6> Authentication for the source cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
+<6> Authentication for the source cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha256-reference[SCRAM-SHA-256]/xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
 <7> xref:con-common-configuration-bootstrap-reference[Bootstrap server] for connection to the source Kafka cluster.
 <8> xref:con-common-configuration-trusted-certificates-reference[TLS encryption] with key names under which TLS certificates are stored in X.509 format for the source Kafka cluster. If certificates are stored in the same secret, it can be listed multiple times.
 <9> xref:type-KafkaMirrorMaker2ClusterSpec-reference[Cluster alias] for the target Kafka cluster.

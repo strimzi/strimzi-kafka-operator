@@ -158,7 +158,7 @@ spec:
 <1> Use `KafkaConnect`.
 <2> Enables KafkaConnectors for the Kafka Connect cluster.
 <3> xref:con-common-configuration-replicas-reference[The number of replica nodes].
-<4> Authentication for the Kafka Connect cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
+<4> Authentication for the Kafka Connect cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha256-reference[SCRAM-SHA-256]/xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
 By default, Kafka Connect connects to Kafka brokers using a plain text connection.
 <5> xref:con-common-configuration-bootstrap-reference[Bootstrap server] for connection to the Kafka Connect cluster.
 <6> xref:con-common-configuration-trusted-certificates-reference[TLS encryption] with key names under which TLS certificates are stored in X.509 format for the cluster. If certificates are stored in the same secret, it can be listed multiple times.
