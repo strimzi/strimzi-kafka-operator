@@ -10,20 +10,11 @@ To upgrade brokers and clients without downtime, you _must_ complete the Strimzi
 
 . Make sure your Kubernetes cluster version is supported.
 +
---
-ifdef::StrimziUpgrades[]
 Strimzi {ProductVersion} requires Kubernetes {KubernetesVersion}.
-endif::StrimziUpgrades[]
-ifndef::StrimziUpgrades[]
-Strimzi {ProductVersion} requires OpenShift {OpenShiftVersion}.
-endif::StrimziUpgrades[]
---
 +
---
 You can xref:con-upgrade-cluster-{context}[upgrade Kubernetes with minimal downtime].
---
 
-. When upgrading Strimzi from {ConvertAfterProductVersion} or earlier,  xref:assembly-upgrade-resources-{context}[update existing custom resources to support the `v1beta2` API version].
+. When upgrading Strimzi from {ConvertAfterProductVersion} or earlier, xref:assembly-upgrade-resources-{context}[update existing custom resources to support the `v1beta2` API version].
 . Update your Cluster Operator to a new Strimzi version.
 . xref:assembly-upgrading-kafka-versions-{context}[Upgrade all Kafka brokers and client applications] to the latest supported Kafka version.
 
