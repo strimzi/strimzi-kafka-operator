@@ -11,12 +11,14 @@ This procedure describes how you can downgrade a Strimzi Kafka cluster to a lowe
 
 .Prerequisites
 
-For the `Kafka` resource to be downgraded, check:
+Before you downgrade the Strimzi Kafka cluster, check the following for the `Kafka` resource:
 
 * IMPORTANT: xref:con-target-downgrade-version-{context}[Compatibility of Kafka versions].
 * The Cluster Operator, which supports both versions of Kafka, is up and running.
 * The `Kafka.spec.kafka.config` does not contain options that are not supported by the Kafka version being downgraded to.
 * The `Kafka.spec.kafka.config` has a `log.message.format.version` and `inter.broker.protocol.version` that is supported by the Kafka version being downgraded to.
++
+From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or higher, the `log.message.format.version` option is ignored and doesn't need to be set.
 
 .Procedure
 
@@ -46,7 +48,7 @@ spec:
 <2> Message format version is unchanged.
 <3> Inter-broker protocol version is unchanged.
 +
-NOTE: You must format the value of `log.message.format.version` and `inter.broker.protocol.version` as a string to prevent it from being interpreted as a floating point number.
+NOTE: The value of `log.message.format.version` and `inter.broker.protocol.version` must be strings to prevent them from being interpreted as floating point numbers.
 
 . If the image for the Kafka version is different from the image defined in `STRIMZI_KAFKA_IMAGES` for the Cluster Operator, update `Kafka.spec.kafka.image`.
 +
@@ -77,7 +79,7 @@ Reconciliation #_NUM_(watch) Kafka(_NAMESPACE_/_NAME_): Kafka version downgrade 
 +
 The Kafka cluster and clients are now using the previous Kafka version.
 
-. If you are reverting back to a version of Strimzi earlier than 0.22, which uses ZooKeeper for the storage of topic metadata, delete the internal topic store topics from the Kafka cluster.
+. If you are reverting back to a version of Strimzi earlier than {ConvertAfterProductVersion}, which uses ZooKeeper for the storage of topic metadata, delete the internal topic store topics from the Kafka cluster.
 +
 [source,shell,subs=attributes+]
 ----

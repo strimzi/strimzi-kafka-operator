@@ -12,8 +12,11 @@ Whether and how the Cluster Operator will perform a downgrade depends on the dif
 * The version of ZooKeeper used by the two Kafka versions
 
 If the downgraded version of Kafka has the same log message format version then downgrading is always possible.
-In this case the Cluster Operator will be able to downgrade by performing a single rolling restart of the brokers.
+In this case, the Cluster Operator performs a downgrade with a single rolling restart of the brokers.
 
-If the downgraded version of Kafka has a different log message format version, then downgrading is only possible if the running cluster has _always_ had `log.message.format.version` set to the version used by the downgraded version. 
+From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or higher, the `log.message.format.version` option is ignored and doesn't need to be set.
+
+If the downgraded version of Kafka has a different log message format version, then downgrading is only possible if
+the running cluster has _always_ had `log.message.format.version` set to the version used by the downgraded version.
 This is typically only the case if the upgrade procedure was aborted before the `log.message.format.version` was changed.
 In this case the downgrade will require two rolling restarts of the brokers if the interbroker protocol of the two versions is different, or a single rolling restart if they are the same.

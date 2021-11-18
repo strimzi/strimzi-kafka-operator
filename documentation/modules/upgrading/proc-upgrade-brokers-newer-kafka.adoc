@@ -143,6 +143,8 @@ spec:
       inter.broker.protocol.version: "{InterBrokVersHigher}"
       # ...
 ----
++
+IMPORTANT: From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or higher, the `log.message.format.version` option is ignored and doesn't need to be set.
 
 . Wait for the Cluster Operator to update the cluster.
 +
