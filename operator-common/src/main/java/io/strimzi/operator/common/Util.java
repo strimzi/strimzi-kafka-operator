@@ -585,7 +585,7 @@ public class Util {
     private static Future<Integer> addSecretHash(SecretOperator secretOperations, String namespace, GenericSecretSource genericSecretSource) {
         if (genericSecretSource != null) {
             return secretOperations.getAsync(namespace, genericSecretSource.getSecretName())
-                    .compose(secret -> Future.succeededFuture(secret.getData().get(genericSecretSource.getKey()).hashCode()));
+                    .compose(secret -> secret == null ? Future.failedFuture("Secret " + genericSecretSource.getSecretName() + " not found") : Future.succeededFuture(secret.getData().get(genericSecretSource.getKey()).hashCode()));
         }
         return Future.succeededFuture(0);
     }
