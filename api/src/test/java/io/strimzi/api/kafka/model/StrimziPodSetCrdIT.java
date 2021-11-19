@@ -32,7 +32,7 @@ public class StrimziPodSetCrdIT extends AbstractCrdIT {
             KubeClusterException.class,
             () -> createDeleteCustomResource("StrimziPodSet-with-missing-required-property.yaml"));
 
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "pods");
+        assertMissingRequiredPropertiesMessage(exception.getMessage(), "pods", "selector");
     }
 
     @BeforeAll

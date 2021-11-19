@@ -4,6 +4,10 @@ kind: "StrimziPodSet"
 metadata:
   name: "test-strimzi-pod-set"
 spec:
+  selector:
+    matchLabels:
+      label1: "value1"
+      label2: "value2"
   pods:
   - apiVersion: "v1"
     kind: "Pod"

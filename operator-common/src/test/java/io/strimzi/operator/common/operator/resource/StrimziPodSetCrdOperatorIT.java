@@ -7,6 +7,7 @@ package io.strimzi.operator.common.operator.resource;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -75,6 +76,7 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
                     .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(Map.of("role", "broker")).build())
                     .withPods(mapper.convertValue(pod, new TypeReference<Map<String, Object>>() { }))
                 .endSpec()
                 .withNewStatus()
