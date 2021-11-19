@@ -100,7 +100,7 @@ public class TopicOperatorMockTest {
             Config.NAMESPACE.key, "myproject",
             Config.CLIENT_ID.key, "myproject-client-id",
             Config.FULL_RECONCILIATION_INTERVAL_MS.key, "10000",
-            Config.KAFKA_VERSION.key, "3.0.0"
+            Config.KAFKA_VERSION.key, Utils.getLatestKafkaVersion()
         ));
 
         session = new Session(kubeClient, topicConfig);

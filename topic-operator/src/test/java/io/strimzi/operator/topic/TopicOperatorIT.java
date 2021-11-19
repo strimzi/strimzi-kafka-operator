@@ -198,8 +198,8 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     @Test
     public void testKafkaTopicAddedWithInvalidConfig() throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError("test-resource-created-with-invalid-config",
-                singletonMap("message.format.version", "zebra"), 1,
-               "KafkaTopic topic-operator-it/test-resource-created-with-invalid-config has invalid spec.config: message.format.version has value 'zebra' which does not match the required pattern: \\Q0.8.0\\E(\\.[0-9]+)*|\\Q0.8.0\\E|\\Q0.8.1\\E(\\.[0-9]+)*|\\Q0.8.1\\E|\\Q0.8.2\\E(\\.[0-9]+)*|\\Q0.8.2\\E|\\Q0.9.0\\E(\\.[0-9]+)*|\\Q0.9.0\\E|\\Q0.10.0\\E(\\.[0-9]+)*|\\Q0.10.0-IV0\\E|\\Q0.10.0-IV1\\E|\\Q0.10.1\\E(\\.[0-9]+)*|\\Q0.10.1-IV0\\E|\\Q0.10.1-IV1\\E|\\Q0.10.1-IV2\\E|\\Q0.10.2\\E(\\.[0-9]+)*|\\Q0.10.2-IV0\\E|\\Q0.11.0\\E(\\.[0-9]+)*|\\Q0.11.0-IV0\\E|\\Q0.11.0-IV1\\E|\\Q0.11.0-IV2\\E|\\Q1.0\\E(\\.[0-9]+)*|\\Q1.0-IV0\\E|\\Q1.1\\E(\\.[0-9]+)*|\\Q1.1-IV0\\E|\\Q2.0\\E(\\.[0-9]+)*|\\Q2.0-IV0\\E|\\Q2.0-IV1\\E|\\Q2.1\\E(\\.[0-9]+)*|\\Q2.1-IV0\\E|\\Q2.1-IV1\\E|\\Q2.1-IV2\\E|\\Q2.2\\E(\\.[0-9]+)*|\\Q2.2-IV0\\E|\\Q2.2-IV1\\E|\\Q2.3\\E(\\.[0-9]+)*|\\Q2.3-IV0\\E|\\Q2.3-IV1\\E|\\Q2.4\\E(\\.[0-9]+)*|\\Q2.4-IV0\\E|\\Q2.4-IV1\\E|\\Q2.5\\E(\\.[0-9]+)*|\\Q2.5-IV0\\E|\\Q2.6\\E(\\.[0-9]+)*|\\Q2.6-IV0\\E|\\Q2.7\\E(\\.[0-9]+)*|\\Q2.7-IV0\\E|\\Q2.7-IV1\\E|\\Q2.7-IV2\\E|\\Q2.8\\E(\\.[0-9]+)*|\\Q2.8-IV0\\E|\\Q2.8-IV1\\E|\\Q3.0\\E(\\.[0-9]+)*|\\Q3.0-IV0\\E|\\Q3.0-IV1\\E");
+                singletonMap("compression.type", "zebra"), 1,
+               "KafkaTopic topic-operator-it/test-resource-created-with-invalid-config has invalid spec.config: compression.type has value 'zebra' which is not one of the allowed values: [uncompressed, zstd, lz4, snappy, gzip, producer]");
     }
 
     @Test
