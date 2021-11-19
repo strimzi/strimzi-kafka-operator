@@ -31,6 +31,8 @@ public class KafkaConfiguration extends AbstractConfiguration {
 
     public static final String INTERBROKER_PROTOCOL_VERSION = "inter.broker.protocol.version";
     public static final String LOG_MESSAGE_FORMAT_VERSION = "log.message.format.version";
+    public static final String DEFAULT_REPLICATION_FACTOR = "default.replication.factor";
+    public static final String MIN_INSYNC_REPLICAS = "min.insync.replicas";
 
     private static final List<String> FORBIDDEN_PREFIXES;
     private static final List<String> FORBIDDEN_PREFIX_EXCEPTIONS;
