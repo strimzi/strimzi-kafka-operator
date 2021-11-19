@@ -209,6 +209,7 @@ public class EntityTopicOperator extends AbstractModel {
      *
      * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Topic Operator one
+     * @param versions Version of Kafka brokers TO communicates with
      * @return Entity Topic Operator instance, null if not configured in the ConfigMap
      */
     public static EntityTopicOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
