@@ -83,7 +83,7 @@ public class TopicOperatorTest {
         MANDATORY_CONFIG.put(Config.CLIENT_ID.key, "default-client-id");
         // Not mandatory, but makes the time test quicker
         MANDATORY_CONFIG.put(Config.TOPIC_METADATA_MAX_ATTEMPTS.key, "3");
-        MANDATORY_CONFIG.put(Config.TC_KAFKA_VERSION, "3.0.0");
+        MANDATORY_CONFIG.put(Config.TC_KAFKA_VERSION, Utils.getLatestKafkaVersion());
     }
 
     @BeforeAll

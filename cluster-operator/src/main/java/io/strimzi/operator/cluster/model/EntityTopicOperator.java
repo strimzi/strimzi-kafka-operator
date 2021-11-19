@@ -217,7 +217,7 @@ public class EntityTopicOperator extends AbstractModel {
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Topic Operator one
      * @return Entity Topic Operator instance, null if not configured in the ConfigMap
      */
-    public static EntityTopicOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly) {
+    public static EntityTopicOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         EntityTopicOperator result = null;
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
         if (entityOperatorSpec != null) {
@@ -254,7 +254,7 @@ public class EntityTopicOperator extends AbstractModel {
                 if (topicOperatorSpec.getLivenessProbe() != null) {
                     result.setLivenessProbe(topicOperatorSpec.getLivenessProbe());
                 }
-                result.setKafkaVersion(kafkaAssembly.getSpec().getKafka().getVersion());
+                result.kafkaVersion = kafkaAssembly.getSpec().getKafka().getVersion() == null ? versions.defaultVersion().version() : kafkaAssembly.getSpec().getKafka().getVersion();
             }
         }
         return result;

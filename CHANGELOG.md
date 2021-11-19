@@ -15,7 +15,7 @@
 * Update OPA Authorizer to 1.3.0
 * Update to Cruise Control version 2.5.79
 * Update Log4j2 to 2.17.0
-* Validate `spec.config` in the KafkaTopic resources
+* Validate `spec.config` in the KafkaTopic resources against available Kafka topic configuration options
 
 ### Changes, deprecations and removals
 
