@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 /**
  * Checks for potential problems in the configuration requested by the user, to provide
  * warnings and share best practice. The intent is this class will generate warnings about
@@ -58,10 +57,36 @@ public class KafkaSpecChecker {
         List<Condition> warnings = new ArrayList<>();
         checkKafkaLogMessageFormatVersion(warnings);
         checkKafkaInterBrokerProtocolVersion(warnings);
+        checkKafkaReplicationConfig(warnings);
         checkKafkaStorage(warnings);
         checkZooKeeperStorage(warnings);
         checkZooKeeperReplicas(warnings);
         return warnings;
+    }
+
+    /**
+     * Checks if the default.replication.factor and min.insync.replicas are set. When not, adds status warnings
+     * suggesting setting them.
+     *
+     * @param warnings List to add a warning to, if appropriate.
+     */
+    private void checkKafkaReplicationConfig(List<Condition> warnings) {
+        String defaultReplicationFactor = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR);
+        String minInsyncReplicas = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.MIN_INSYNC_REPLICAS);
+
+        if (defaultReplicationFactor == null && kafkaCluster.getReplicas() > 1)   {
+            warnings.add(StatusUtils.buildWarningCondition("KafkaDefaultReplicationFactor",
+                    "default.replication.factor option is not configured. " +
+                            "It defaults to 1 which does not guarantee reliability and availability. " +
+                            "You should configure this option in .spec.kafka.config."));
+        }
+
+        if (minInsyncReplicas == null && kafkaCluster.getReplicas() > 1)   {
+            warnings.add(StatusUtils.buildWarningCondition("KafkaMinInsyncReplicas",
+                    "min.insync.replicas option is not configured. " +
+                            "It defaults to 1 which does not guarantee reliability and availability. " +
+                            "You should configure this option in .spec.kafka.config."));
+        }
     }
 
     /**
