@@ -117,6 +117,7 @@ Strimzi supports the following types of artifacts:
 --
 * JAR files, which are downloaded and used directly
 * TGZ archives, which are downloaded and unpacked
+* ZIP archives, which are downloaded and unpacked
 * Maven artifacts, which uses Maven coordinates
 * Other artifacts, which are downloaded and used directly
 --
@@ -191,6 +192,12 @@ spec:
 <1> (Required) Type of artifact.
 <2> (Required) URL from which the archive is downloaded.
 <3> (Optional) SHA-512 checksum to verify the artifact.
+
+.Using ZIP artifacts
+
+ZIP artifacts are used to download ZIP compressed archives.
+ZIP artifacts can be used in the same way as the TGZ artifacts described in the previous section.
+The only difference is that instead of `type: tgz`, `type: zip` is used.
 
 .Using Maven artifacts
 
