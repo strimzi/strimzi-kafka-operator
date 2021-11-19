@@ -10,8 +10,6 @@ import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionInfo;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,8 +55,8 @@ public class Utils {
     public static String getLatestKafkaVersion() {
         // load {kafka.version} from pom file
         // or we could refactor KafkaVersion to operator-common and use its methods here
-        final Properties properties = new Properties();
-            String path = Utils.class.getClassLoader().getResource("test.properties").getFile().replace("test-classes", "classes");
+        Properties properties = new Properties();
+        String path = Utils.class.getClassLoader().getResource("test.properties").getFile().replace("test-classes", "classes");
         try {
             FileReader f = new FileReader(path);
             properties.load(f);

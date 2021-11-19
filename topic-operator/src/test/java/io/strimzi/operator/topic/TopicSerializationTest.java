@@ -36,7 +36,7 @@ public class TopicSerializationTest {
     private final Labels labels = new Labels(
             "app", "strimzi");
 
-    String kafkaVersion = "3.0.0";
+    String kafkaVersion = Utils.getLatestKafkaVersion();
 
     @Test
     public void testTopicCommandSerde() {
