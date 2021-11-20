@@ -7,6 +7,7 @@ package io.strimzi.systemtest.operators;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -41,6 +42,7 @@ import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.generateRandomNameOfKafka;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 @IsolatedSuite
@@ -69,6 +71,11 @@ class RecoveryST extends AbstractST {
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromKafkaStatefulSetDeletion(ExtensionContext extensionContext) {
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/STSREMOVAL
+        StatefulSet kafkaSts = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(sharedClusterName));
+        assumeTrue(kafkaSts != null);
+
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
         // kafka cluster already deployed
@@ -88,6 +95,11 @@ class RecoveryST extends AbstractST {
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromZookeeperStatefulSetDeletion(ExtensionContext extensionContext) {
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/STSREMOVAL
+        StatefulSet zooSts = kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(sharedClusterName));
+        assumeTrue(zooSts != null);
+
         String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
         // kafka cluster already deployed

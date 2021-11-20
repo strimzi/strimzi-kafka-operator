@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -73,6 +74,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(AlternativeReconcileTriggersST.class);
 
     @ParallelNamespaceTest
+    @SuppressWarnings("checkstyle:MethodLength")
     void testManualTriggeringRollingUpdate(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -141,51 +143,62 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         internalKafkaClient.produceTlsMessagesUntilOperationIsSuccessful(MESSAGE_COUNT);
 
-        // rolling update for kafka
-        LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
-        String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
-        // set annotation to trigger Kafka rolling update
-        kubeClient(namespaceName).statefulSet(kafkaName).withPropagationPolicy(DeletionPropagation.ORPHAN).edit(sts -> new StatefulSetBuilder(sts)
-            .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-            .endMetadata()
-            .build());
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/STSREMOVAL
+        StatefulSet kafkaSts = kubeClient(namespaceName).getStatefulSet(namespaceName, kafkaName);
+        if (kafkaSts != null) {
+            // rolling update for kafka
+            String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
-        // check annotation to trigger rolling update
-        assertThat(Boolean.parseBoolean(kubeClient(namespaceName).getStatefulSet(kafkaName)
-            .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
+            // set annotation to trigger Kafka rolling update
+            LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
+            kubeClient(namespaceName).statefulSet(kafkaName).withPropagationPolicy(DeletionPropagation.ORPHAN).edit(sts -> new StatefulSetBuilder(sts)
+                    .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                    .endMetadata()
+                    .build());
 
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
+            // check annotation to trigger rolling update
+            assertThat(Boolean.parseBoolean(kubeClient(namespaceName).getStatefulSet(kafkaName)
+                    .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
 
-        // wait when annotation will be removed
-        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> kubeClient(namespaceName).getStatefulSet(kafkaName).getMetadata().getAnnotations() == null
-                || !kubeClient(namespaceName).getStatefulSet(kafkaName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
+            RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
-        // rolling update for zookeeper
-        LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
-        operationId = timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
+            // wait when annotation will be removed
+            TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
+                    () -> kubeClient(namespaceName).getStatefulSet(kafkaName).getMetadata().getAnnotations() == null
+                            || !kubeClient(namespaceName).getStatefulSet(kafkaName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
+        }
 
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(MESSAGE_COUNT));
 
-        // set annotation to trigger Zookeeper rolling update
-        kubeClient(namespaceName).statefulSet(zkName).withPropagationPolicy(DeletionPropagation.ORPHAN).edit(sts -> new StatefulSetBuilder(sts)
-            .editMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-            .endMetadata()
-            .build());
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/STSREMOVAL
+        StatefulSet zooSts = kubeClient(namespaceName).getStatefulSet(namespaceName, zkName);
+        if (zooSts != null) {
+            // rolling update for zookeeper
+            String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
-        // check annotation to trigger rolling update
-        assertThat(Boolean.parseBoolean(kubeClient(namespaceName).getStatefulSet(zkName)
-            .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
+            // set annotation to trigger Zookeeper rolling update
+            LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
+            kubeClient(namespaceName).statefulSet(zkName).withPropagationPolicy(DeletionPropagation.ORPHAN).edit(sts -> new StatefulSetBuilder(sts)
+                    .editMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                    .endMetadata()
+                    .build());
 
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkPods);
+            // check annotation to trigger rolling update
+            assertThat(Boolean.parseBoolean(kubeClient(namespaceName).getStatefulSet(zkName)
+                    .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
 
-        // wait when annotation will be removed
-        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> kubeClient(namespaceName).getStatefulSet(zkName).getMetadata().getAnnotations() == null
-                || !kubeClient(namespaceName).getStatefulSet(zkName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
+            RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkPods);
+
+            // wait when annotation will be removed
+            TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
+                    () -> kubeClient(namespaceName).getStatefulSet(zkName).getMetadata().getAnnotations() == null
+                            || !kubeClient(namespaceName).getStatefulSet(zkName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
+        }
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())

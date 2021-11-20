@@ -286,8 +286,7 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", clusterName);
 
-        final int initialReplicas = kubeClient(namespaceName).getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).getStatus().getReplicas();
-
+        final int initialReplicas = kubeClient(namespaceName).getClient().pods().inNamespace(namespaceName).withLabelSelector(kafkaSelector).list().getItems().size();
         assertEquals(3, initialReplicas);
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 3, initialReplicas, initialReplicas).build());
@@ -400,7 +399,7 @@ class RollingUpdateST extends AbstractST {
 
         // kafka cluster already deployed
         LOGGER.info("Running zookeeperScaleUpScaleDown with cluster {}", clusterName);
-        final int initialZkReplicas = kubeClient(namespaceName).getStatefulSet(KafkaResources.zookeeperStatefulSetName(clusterName)).getStatus().getReplicas();
+        final int initialZkReplicas = kubeClient(namespaceName).getClient().pods().inNamespace(namespaceName).withLabelSelector(zkSelector).list().getItems().size();
         assertThat(initialZkReplicas, is(3));
 
         resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName, user).build());
