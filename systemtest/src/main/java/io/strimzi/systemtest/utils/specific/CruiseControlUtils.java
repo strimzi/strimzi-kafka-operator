@@ -119,7 +119,7 @@ public class CruiseControlUtils {
 
     public static void verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(String namespaceName, long timeout) {
         final int numberOfPartitionsMetricTopic = 1;
-        final int numberOfReplicasMetricTopic = 1;
+        final int numberOfReplicasMetricTopic = 3;
 
         TestUtils.waitFor("Verify that kafka contains cruise control topics with related configuration.",
             Constants.GLOBAL_POLL_INTERVAL, timeout, () -> {

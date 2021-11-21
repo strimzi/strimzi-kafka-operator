@@ -69,10 +69,10 @@ public class OauthAbstractST extends AbstractST {
     public static Map<String, Object> connectorConfig;
     static {
         connectorConfig = new HashMap<>();
-        connectorConfig.put("config.storage.replication.factor", 1);
+        connectorConfig.put("config.storage.replication.factor", -1);
         connectorConfig.put("config.topic.cleanup.policy", "compact");
-        connectorConfig.put("offset.storage.replication.factor", 1);
-        connectorConfig.put("status.storage.replication.factor", 1);
+        connectorConfig.put("offset.storage.replication.factor", -1);
+        connectorConfig.put("status.storage.replication.factor", -1);
     }
 
     protected static final Function<KeycloakInstance, GenericKafkaListener> BUILD_OAUTH_TLS_LISTENER = (keycloakInstance) -> {
