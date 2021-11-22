@@ -394,7 +394,7 @@ class LogSettingST extends AbstractST {
         assertThat("Bridge GC logging is disabled", checkGcLoggingDeployments(INFRA_NAMESPACE, bridgeDepName), is(false));
 
         kubectlGetStrimziUntilOperationIsSuccessful(INFRA_NAMESPACE, bridgeName);
-        checkContainersHaveProcessOneAsTiniWithoutPs(INFRA_NAMESPACE, bridgeName);
+        checkContainersHaveProcessOneAsTini(INFRA_NAMESPACE, bridgeName);
     }
 
     @IsolatedTest("Updating shared Kafka")
@@ -436,26 +436,6 @@ class LogSettingST extends AbstractST {
 
     // only one thread can access (eliminate data-race)
     private synchronized void checkContainersHaveProcessOneAsTini(String namespaceName, String resourceClusterName) {
-        //Used [/] in the grep command so that grep process does not return itself
-        String command = "ps -ef | grep '[/]usr/bin/tini' | awk '{ print $2}'";
-
-        for (Pod pod : kubeClient(namespaceName).listPods(Labels.STRIMZI_CLUSTER_LABEL, resourceClusterName)) {
-            String podName = pod.getMetadata().getName();
-            if (!podName.contains("build") && !podName.contains("deploy") && !podName.contains("kafka-clients")) {
-                for (Container container : pod.getSpec().getContainers()) {
-                    String containerName = container.getName();
-
-                    PodUtils.waitForPodContainerReady(namespaceName, podName, containerName);
-                    LOGGER.info("Checking tini process for pod {} with container {}", podName, containerName);
-                    boolean isPresent = cmdKubeClient().namespace(namespaceName).execInPodContainer(false, podName, containerName, "/bin/bash", "-c", command).out().trim().equals("1");
-                    assertThat(isPresent, is(true));
-                }
-            }
-        }
-    }
-
-    // only one thread can access (eliminate data-race)
-    private synchronized void checkContainersHaveProcessOneAsTiniWithoutPs(String namespaceName, String resourceClusterName) {
         //Used [/] in the grep command so that grep process does not return itself
         String command = "cat /proc/1/cmdline";
 
