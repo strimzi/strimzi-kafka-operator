@@ -110,9 +110,9 @@ class MirrorMaker2ST extends AbstractST {
                 "config.storage.topic=mirrormaker2-cluster-configs\n" +
                 "status.storage.topic=mirrormaker2-cluster-status\n" +
                 "offset.storage.topic=mirrormaker2-cluster-offsets\n" +
-                "config.storage.replication.factor=1\n" +
-                "status.storage.replication.factor=1\n" +
-                "offset.storage.replication.factor=1\n" + 
+                "config.storage.replication.factor=-1\n" +
+                "status.storage.replication.factor=-1\n" +
+                "offset.storage.replication.factor=-1\n" +
                 "config.providers=file\n" + 
                 "config.providers.file.class=org.apache.kafka.common.config.provider.FileConfigProvider\n");
 
@@ -370,9 +370,9 @@ class MirrorMaker2ST extends AbstractST {
                 .withNewTls()
                     .withTrustedCertificates(certSecretTarget)
                 .endTls()
-                .addToConfig("config.storage.replication.factor", 1)
-                .addToConfig("offset.storage.replication.factor", 1)
-                .addToConfig("status.storage.replication.factor", 1)
+                .addToConfig("config.storage.replication.factor", -1)
+                .addToConfig("offset.storage.replication.factor", -1)
+                .addToConfig("status.storage.replication.factor", -1)
                 .build();
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, true)
@@ -571,9 +571,9 @@ class MirrorMaker2ST extends AbstractST {
                 .withNewTls()
                     .withTrustedCertificates(certSecretTarget)
                 .endTls()
-                .addToConfig("config.storage.replication.factor", 1)
-                .addToConfig("offset.storage.replication.factor", 1)
-                .addToConfig("status.storage.replication.factor", 1)
+                .addToConfig("config.storage.replication.factor", -1)
+                .addToConfig("offset.storage.replication.factor", -1)
+                .addToConfig("status.storage.replication.factor", -1)
                 .build();
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, true)

@@ -628,9 +628,9 @@ class ConnectST extends AbstractST {
         envVarUpdated.put("TEST_ENV_3", "test.env.three");
 
         Map<String, Object> connectConfig = new HashMap<>();
-        connectConfig.put("config.storage.replication.factor", "1");
-        connectConfig.put("offset.storage.replication.factor", "1");
-        connectConfig.put("status.storage.replication.factor", "1");
+        connectConfig.put("config.storage.replication.factor", "-1");
+        connectConfig.put("offset.storage.replication.factor", "-1");
+        connectConfig.put("status.storage.replication.factor", "-1");
 
         final int initialDelaySeconds = 30;
         final int timeoutSeconds = 10;

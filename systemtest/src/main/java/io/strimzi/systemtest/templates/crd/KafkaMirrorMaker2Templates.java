@@ -66,9 +66,9 @@ public class KafkaMirrorMaker2Templates {
         KafkaMirrorMaker2ClusterSpec targetClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()
             .withAlias(kafkaTargetClusterName)
             .withBootstrapServers(targetNs == null ? KafkaResources.plainBootstrapAddress(kafkaTargetClusterName) : KafkaUtils.namespacedPlainBootstrapAddress(kafkaTargetClusterName, targetNs))
-            .addToConfig("config.storage.replication.factor", 1)
-            .addToConfig("offset.storage.replication.factor", 1)
-            .addToConfig("status.storage.replication.factor", 1)
+            .addToConfig("config.storage.replication.factor", -1)
+            .addToConfig("offset.storage.replication.factor", -1)
+            .addToConfig("status.storage.replication.factor", -1)
             .build();
 
         KafkaMirrorMaker2ClusterSpec sourceClusterSpec = new KafkaMirrorMaker2ClusterSpecBuilder()

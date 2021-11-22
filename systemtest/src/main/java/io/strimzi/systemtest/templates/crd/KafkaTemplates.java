@@ -187,6 +187,8 @@ public class KafkaTemplates {
                     .addToConfig("offsets.topic.replication.factor", Math.min(kafkaReplicas, 3))
                     .addToConfig("transaction.state.log.min.isr", Math.min(kafkaReplicas, 2))
                     .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
+                    .addToConfig("default.replication.factor", Math.min(kafkaReplicas, 3))
+                    .addToConfig("min.insync.replicas", Math.min(Math.max(kafkaReplicas - 1, 1), 2))
                     .withListeners(new GenericKafkaListenerBuilder()
                                 .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                                 .withPort(9092)

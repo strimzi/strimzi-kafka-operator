@@ -341,9 +341,9 @@ public class TracingST extends AbstractST {
             .build());
 
         Map<String, Object> configOfKafkaConnect = new HashMap<>();
-        configOfKafkaConnect.put("config.storage.replication.factor", "1");
-        configOfKafkaConnect.put("offset.storage.replication.factor", "1");
-        configOfKafkaConnect.put("status.storage.replication.factor", "1");
+        configOfKafkaConnect.put("config.storage.replication.factor", "-1");
+        configOfKafkaConnect.put("offset.storage.replication.factor", "-1");
+        configOfKafkaConnect.put("status.storage.replication.factor", "-1");
         configOfKafkaConnect.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         configOfKafkaConnect.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");

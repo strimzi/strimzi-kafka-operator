@@ -89,7 +89,7 @@ public class CruiseControlST extends AbstractST {
 
         LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_METRICS_TOPIC);
         assertThat(metricsTopic.getPartitions(), is(1));
-        assertThat(metricsTopic.getReplicas(), is(1));
+        assertThat(metricsTopic.getReplicas(), is(3));
 
         LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC);
         assertThat(modelTrainingTopic.getPartitions(), is(32));
