@@ -5,7 +5,6 @@
 package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.operator.cluster.model.Ca;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
@@ -42,37 +41,36 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
      */
     @Override
     public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
-        Admin ac;
-        String sslTruststoreCertificates = null;
-        String sslKeystoreKey = null;
-        String sslKeystoreCertificateChain = null;
+        String publicKeys = null;
+        String privateKey = null;
+        String certificateChain = null;
 
         // provided Secret with cluster CA certificate for TLS encryption
         if (clusterCaCertSecret != null) {
-            sslTruststoreCertificates = Ca.certsToString(clusterCaCertSecret);
+            publicKeys = Util.certsToString(clusterCaCertSecret);
         }
 
         // provided Secret and related key for getting the private key for TLS client authentication
         if (keyCertSecret != null && keyCertName != null && !keyCertName.isEmpty()) {
-            sslKeystoreKey = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".key"), StandardCharsets.US_ASCII);
-            sslKeystoreCertificateChain = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".crt"), StandardCharsets.US_ASCII);
+            privateKey = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".key"), StandardCharsets.US_ASCII);
+            certificateChain = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".crt"), StandardCharsets.US_ASCII);
         }
 
         Properties p = new Properties();
         p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapHostnames);
 
         // configuring TLS encryption if requested
-        if (sslTruststoreCertificates != null) {
+        if (publicKeys != null) {
             p.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
             p.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
-            p.setProperty(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, sslTruststoreCertificates);
+            p.setProperty(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, publicKeys);
         }
 
         // configuring TLS client authentication
-        if (sslKeystoreCertificateChain != null && sslKeystoreKey != null) {
+        if (certificateChain != null && privateKey != null) {
             p.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
-            p.setProperty(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, sslKeystoreCertificateChain);
-            p.setProperty(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, sslKeystoreKey);
+            p.setProperty(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, certificateChain);
+            p.setProperty(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, privateKey);
         }
 
         p.setProperty(AdminClientConfig.METADATA_MAX_AGE_CONFIG, "30000");
@@ -80,8 +78,6 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
         p.setProperty(AdminClientConfig.RETRIES_CONFIG, "3");
         p.setProperty(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, "40000");
 
-        ac = Admin.create(p);
-
-        return ac;
+        return Admin.create(p);
     }
 }

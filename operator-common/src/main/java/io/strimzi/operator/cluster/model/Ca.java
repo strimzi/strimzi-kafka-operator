@@ -878,32 +878,6 @@ public abstract class Ca {
         }
     }
 
-    /**
-     * Returns concatenated string of all public keys (all .crt records) from a secret
-     *
-     * @param secret    Kubernetes Secret with certificates
-     *
-     * @return          String secrets
-     */
-    public static String certsToString(Secret secret)  {
-        if (secret == null || secret.getData() == null) {
-            return "";
-        } else {
-            Base64.Decoder decoder = Base64.getDecoder();
-
-            return secret
-                    .getData()
-                    .entrySet()
-                    .stream()
-                    .filter(record -> record.getKey().endsWith(".crt"))
-                    .map(record -> {
-                        byte[] bytes = decoder.decode(record.getValue());
-                        return new String(bytes, StandardCharsets.UTF_8);
-                    })
-                    .collect(Collectors.joining("\n"));
-        }
-    }
-
     static X509Certificate x509Certificate(byte[] bytes) throws CertificateException {
         CertificateFactory factory = certificateFactory();
         return x509Certificate(factory, bytes);
