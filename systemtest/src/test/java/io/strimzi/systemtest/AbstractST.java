@@ -141,7 +141,7 @@ public abstract class AbstractST implements TestSeparator {
     private List<List<String>> commandLines(String namespaceName, String podName, String containerName) {
         List<List<String>> result = new ArrayList<>();
         String output = cmdKubeClient().namespace(namespaceName).execInPodContainer(podName, containerName, "/bin/bash", "-c",
-            "for pid in $(ps -C java -o pid h); do cat /proc/$pid/cmdline; done"
+            "for proc in $(ls -1 /proc/ | grep [0-9]); do if echo \"$(ls -lh /proc/$proc/exe 2>/dev/null || true)\" | grep -q java; then cat /proc/$proc/cmdline; fi; done"
         ).out();
         for (String cmdLine : output.split("\n")) {
             result.add(asList(cmdLine.split("\0")));
