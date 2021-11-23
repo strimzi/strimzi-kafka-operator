@@ -55,7 +55,7 @@ import static io.strimzi.operator.common.Util.async;
  * <li>uses the Fabric8 kubernetes API and implements
  * {@link #reconcile(Reconciliation)} by delegating to abstract {@link #createOrUpdate(Reconciliation, CustomResource)}
  * and {@link #delete(Reconciliation)} methods for subclasses to implement.
- * 
+ *
  * <li>add support for operator-side {@linkplain #validate(Reconciliation, CustomResource) validation}.
  *     This can be used to automatically log warnings about source resources which used deprecated part of the CR API.
  *ą
@@ -268,8 +268,11 @@ public abstract class AbstractOperator<
 
         Promise<Void> result = Promise.promise();
         handler.onComplete(reconcileResult -> {
-            handleResult(reconciliation, reconcileResult, reconciliationTimerSample);
-            result.handle(reconcileResult);
+            try {
+                handleResult(reconciliation, reconcileResult, reconciliationTimerSample);
+            } finally {
+                result.handle(reconcileResult);
+            }
         });
 
         return result.future();
