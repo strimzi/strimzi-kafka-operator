@@ -43,7 +43,7 @@ For more information on the metrics and monitoring tools, refer to the supportin
 
 //what is Consumer lag?
 include::modules/con_kafka-exporter-lag.adoc[leveloffset=+1]
-//what is Consumer lag?
+//Understanding metrics for Cruise Control
 include::modules/con-metrics-cruise-control.adoc[leveloffset=+1]
 //Example metrics files
 include::assembly-metrics-config-files.adoc[leveloffset=+1]

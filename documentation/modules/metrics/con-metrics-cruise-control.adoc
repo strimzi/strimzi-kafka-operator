@@ -9,11 +9,11 @@
 Kafka metrics are gathered by Cruise Control in order to track the utilization of brokers, topics and partitions.
 Cruise Control also provides a set of metrics for monitoring its own performance.
 
-The Cruise Control metrics reporter collects raw metrics data from Kafka brokers, which is produced to auto-created Cruise Control topics.
+The Cruise Control metrics reporter collects raw metrics data from Kafka brokers, which is produced to topics that are automatically created by Cruise Control.
 The metrics are used to link:{BookURLUsing}#proc-generating-optimization-proposals-str[generate optimization proposals for Kafka clusters^].
 
 Cruise Control metrics are available for real-time monitoring of Cruise Control operations.
-For example, you can use metrics to monitor the status of rebalancing operations that are running or provide alerts on any anomalies that are detected in its performance.
+For example, you can use Cruise Control metrics to monitor the status of rebalancing operations that are running or provide alerts on any anomalies that are detected in its performance.
 
 For a full list of available Cruise Control metrics, which are known as _sensors_, see the {CruiseControlSensorsDocs}.
 
@@ -67,10 +67,14 @@ The exposed metrics provide the monitoring data when you xref:proc-metrics-grafa
 Cruise Control metrics include balancedness scores.
 Balancedness is the measure of how evenly a workload is distributed in a Kafka cluster.
 
-The Cruise Control metric for balancedness score (`balancedness-score`) differs from the
-the balancedness score in the `KafkaRebalance` resource. The former is calculated using `anomaly.detection.goals`, while the latter is calculated using `default.goals`.
+The Cruise Control metric for balancedness score (`balancedness-score`) differs from the balancedness score in the `KafkaRebalance` resource.
+Cruise Control calculates each score using different goals.
+The former uses `anomaly.detection.goals`, while the latter uses `default.goals`.
+The goals are specified in the `spec.cruiseControl.config` of the `Kafka` custom resource.
 
-NOTE: Refreshing a `KafkaRebalance` resource fetches the latest state of a Kafka cluster. The refresh also requests an optimization proposal from Cruise Control. Continual refreshes can impact performance monitoring in certain circumstances. For example, the KafkaRebalance `goals` might differ from the `default.goals` used by Cruise Control.
+NOTE: Refreshing a `KafkaRebalance` resource fetches the latest state of a Kafka cluster.
+The refresh also requests an optimization proposal from Cruise Control. Continual refreshes can impact performance monitoring in certain circumstances.
+For example, the `goals` configured in the `KafkaRebalance` resource might differ from the `default.goals` used by Cruise Control.
 
 === Alerts on anomaly detection
 
