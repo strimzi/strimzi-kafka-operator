@@ -38,7 +38,6 @@ import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
-import io.strimzi.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.strimzi.KafkaVersionTestUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;

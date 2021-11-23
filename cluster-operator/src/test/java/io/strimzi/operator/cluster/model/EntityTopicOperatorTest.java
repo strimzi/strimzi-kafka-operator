@@ -18,7 +18,6 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
-import io.strimzi.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;

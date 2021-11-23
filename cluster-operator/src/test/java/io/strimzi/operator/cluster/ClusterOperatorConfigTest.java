@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
-import io.strimzi.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionTestUtils;

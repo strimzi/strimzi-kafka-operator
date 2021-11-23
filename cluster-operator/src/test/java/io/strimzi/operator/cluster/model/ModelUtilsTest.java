@@ -38,7 +38,6 @@ import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
-import io.strimzi.KafkaVersionTestUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.annotations.ParallelSuite;
