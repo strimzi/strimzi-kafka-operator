@@ -9,7 +9,7 @@
 Having xref:deploy-tasks-prereqs_{context}[prepared your environment for a deployment of Strimzi], you can deploy Strimzi to a Kubernetes cluster.
 You can use the deployment files provided with the release artifacts.
 
-Use the deployment files to deploy xref:deploy-create-cluster_{context}[create the Kafka cluster]
+Use the deployment files to xref:deploy-create-cluster_{context}[create the Kafka cluster].
 
 Optionally, you can deploy the following Kafka components according to your requirements:
 

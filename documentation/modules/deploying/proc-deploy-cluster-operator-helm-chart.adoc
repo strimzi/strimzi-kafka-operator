@@ -6,7 +6,7 @@
 = Deploying Strimzi using Helm
 
 [role="_abstract"]
-Kubernetes link:https://helm.sh/[Helm] charts are used to package, configure, and deploy Kubernetes resources.
+link:https://helm.sh/[Helm] charts are used to package, configure, and deploy Kubernetes resources.
 Strimzi provides a Helm chart to deploy the Cluster Operator.
 
 After you have deployed the Cluster Operator this way, you can deploy Strimzi components using custom resources.

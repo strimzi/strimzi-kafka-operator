@@ -6,13 +6,13 @@
 = Deploying Strimzi from OperatorHub.io
 
 [role="_abstract"]
-{OperatorHub} is a catalog of Kubernetes Operators sourced from multiple providers.
-It offers you an alternative way to install stable versions of Strimzi using the *Strimzi Kafka* operator.
+OperatorHub.io is a catalog of Kubernetes operators sourced from multiple providers.
+It offers you an alternative way to install a stable version of Strimzi.
 
-The {OperatorLifecycleManager} is used for the installation and management of all Operators published on OperatorHub.io.
+The {OperatorLifecycleManager} is used for the installation and management of all operators published on OperatorHub.io.
 {OperatorLifecycleManager} is a prerequisite for installing the Strimzi Kafka operator
 
-To install Strimzi from OperatorHub.io, locate _Strimzi_, and follow the instructions provided to deploy the Cluster Operator.
+To install Strimzi, locate _Strimzi_ from {OperatorHub}, and follow the instructions provided to deploy the Cluster Operator.
 After you have deployed the Cluster Operator, you can deploy Strimzi components using custom resources.
 For example, you can deploy the `Kafka` custom resource, and the installed Cluster Operator will create a Kafka cluster.
 
