@@ -27,6 +27,9 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Abstract class for loading a config model from Kafka classes.
+ */
 public abstract class CommonConfigModelGenerator {
     public void run(String fileName) throws Exception {
         String version = kafkaVersion();
@@ -115,18 +118,15 @@ public abstract class CommonConfigModelGenerator {
     }
 
     protected Field getOneOfFields(Class<?> cls, String... alternativeFields) {
+        Field ret = null;
         for (String field : alternativeFields)  {
-            try {
-                return getField(cls, field);
-            } catch (RuntimeException e)    {
-                if (e.getCause() instanceof NoSuchFieldException)   {
-                    continue;
-                } else {
-                    throw e;
-                }
-            }
+            ret = getField(cls, field);
         }
-        throw new RuntimeException("None of the alternative fields were found.");
+        if (ret == null) {
+            throw new RuntimeException("None of the alternative fields were found.");
+        } else {
+            return ret;
+        }
     }
 
     protected Field getField(Class<?> cls, String fieldName) {
@@ -135,8 +135,8 @@ public abstract class CommonConfigModelGenerator {
                 Field f1 = cls.getDeclaredField(fieldName);
                 f1.setAccessible(true);
                 return f1;
-            } catch (ReflectiveOperationException e) {
-                throw new RuntimeException(e);
+            } catch (NoSuchFieldException e) {
+                return null;
             }
         });
     }
@@ -163,7 +163,7 @@ public abstract class CommonConfigModelGenerator {
         }
     }
 
-    protected void closedRange(Matcher matcher, ConfigModel descriptor) {
+    private void closedRange(Matcher matcher, ConfigModel descriptor) {
         String maxStr = matcher.group(3);
         if (maxStr.contains("e") || maxStr.contains(".") && !maxStr.contains("..")) {
             descriptor.setMaximum(Double.parseDouble(maxStr));
@@ -184,7 +184,7 @@ public abstract class CommonConfigModelGenerator {
         }
     }
 
-    protected void openRange(Matcher matcher, ConfigModel descriptor) {
+    private void openRange(Matcher matcher, ConfigModel descriptor) {
         String maxStr = matcher.group(2);
         if (maxStr.contains("e") || maxStr.contains(".") && !maxStr.contains("..")) {
             descriptor.setMaximum(Double.parseDouble(maxStr));

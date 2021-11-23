@@ -5,7 +5,7 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
