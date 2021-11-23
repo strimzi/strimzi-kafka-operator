@@ -52,18 +52,4 @@ public class Utils {
                 partitions), new Config(configs));
     }
 
-    public static String getLatestKafkaVersion() {
-        // load {kafka.version} from pom file
-        // or we could refactor KafkaVersion to operator-common and use its methods here
-        Properties properties = new Properties();
-        String path = Utils.class.getClassLoader().getResource("test.properties").getFile().replace("test-classes", "classes");
-        try {
-            FileReader f = new FileReader(path);
-            properties.load(f);
-        } catch (IOException e) {
-            System.err.println("Kafka version could not be loaded\n" + e.getMessage());
-        }
-        return properties.getProperty("kafka.version");
-    }
-
 }
