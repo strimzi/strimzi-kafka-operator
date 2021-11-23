@@ -1,6 +1,6 @@
 Configures JMX connection options.
 
-Get JMX metrics from Kafka brokers, ZooKeeper nodes, Kafka Connect, and MirrorMaker 2.0. by opening a JMX port on 9999.
+Get JMX metrics from Kafka brokers, ZooKeeper nodes, Kafka Connect, and MirrorMaker 2.0. by connecting to port 9999.
 Use the `jmxOptions` property to configure a password-protected or an unprotected JMX port.
 Using password protection prevents unauthorized pods from accessing the port.
 
