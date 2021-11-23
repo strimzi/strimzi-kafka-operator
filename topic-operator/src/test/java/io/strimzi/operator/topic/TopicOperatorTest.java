@@ -162,7 +162,7 @@ public class TopicOperatorTest {
                     .withConfig(singletonMap(null, null))
                 .endSpec()
             .build();
-        String errorMessage = "KafkaTopic test/invalid has invalid spec.config: null with value 'null' is not one of the known options";
+        String errorMessage = "KafkaTopic test/invalid has invalid spec.config: key cannot be 'null'";
         mockK8s.setGetFromNameResponse(new ResourceName(kafkaTopic), Future.succeededFuture(kafkaTopic));
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.ADDED, kafkaTopic);
         Checkpoint async = context.checkpoint();

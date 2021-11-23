@@ -80,6 +80,11 @@ class TopicSerialization {
         List<String> errors = new ArrayList<>();
         Map<String, ConfigModel> models = readConfigModel(kafkaVersion);
         for (Map.Entry<String, String> entry: topicConfiguration.entrySet()) {
+
+            if (entry.getKey() == null) {
+                errors.add("key cannot be 'null'");
+                continue;
+            }
             String key = entry.getKey();
             String value = entry.getValue();
             ConfigModel config = models.get(key);
