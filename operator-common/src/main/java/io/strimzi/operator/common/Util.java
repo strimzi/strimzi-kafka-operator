@@ -677,7 +677,7 @@ public class Util {
      *
      * @return          String secrets
      */
-    public static String certsToString(Secret secret)  {
+    public static String certsToPemString(Secret secret)  {
         if (secret == null || secret.getData() == null) {
             return "";
         } else {

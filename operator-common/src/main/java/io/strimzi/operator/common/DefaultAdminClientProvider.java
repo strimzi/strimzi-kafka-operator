@@ -41,13 +41,13 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
      */
     @Override
     public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
-        String publicKeys = null;
+        String trustedCertificates = null;
         String privateKey = null;
         String certificateChain = null;
 
         // provided Secret with cluster CA certificate for TLS encryption
         if (clusterCaCertSecret != null) {
-            publicKeys = Util.certsToString(clusterCaCertSecret);
+            trustedCertificates = Util.certsToPemString(clusterCaCertSecret);
         }
 
         // provided Secret and related key for getting the private key for TLS client authentication
@@ -60,10 +60,10 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
         p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapHostnames);
 
         // configuring TLS encryption if requested
-        if (publicKeys != null) {
+        if (trustedCertificates != null) {
             p.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
             p.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
-            p.setProperty(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, publicKeys);
+            p.setProperty(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, trustedCertificates);
         }
 
         // configuring TLS client authentication
