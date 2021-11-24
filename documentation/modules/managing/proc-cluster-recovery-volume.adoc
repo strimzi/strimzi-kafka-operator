@@ -5,6 +5,7 @@
 [id="cluster-recovery-volume_{context}"]
 = Recovering a deleted cluster from persistent volumes
 
+[role="_abstract"]
 This procedure describes how to recover a deleted cluster from persistent volumes (PVs).
 
 In this situation, the Topic Operator identifies that topics exist in Kafka, but the `KafkaTopic` resources do not exist.
@@ -28,8 +29,8 @@ A `volumeName` is specified for the PVC and this must match the name of the PV.
 
 For more information, see:
 
-* xref:ref-persistent-storage-{context}#pvc-naming[Persistent Volume Claim naming]
-* xref:ref-jbod-storage-{context}#jbod-pvc[JBOD and Persistent Volume Claims]
+* xref:ref-persistent-storage-pvc-{context}[Persistent Volume Claim naming]
+* xref:ref-jbod-storage-pvc-{context}[JBOD and Persistent Volume Claims]
 
 NOTE: The procedure does not include recovery of `KafkaUser` resources, which must be recreated manually.
 If passwords and certificates need to be retained, secrets must be recreated before creating the `KafkaUser` resources.

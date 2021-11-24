@@ -5,6 +5,7 @@
 [id='ref-jbod-storage-{context}']
 = JBOD storage overview
 
+[role="_abstract"]
 You can configure Strimzi to use JBOD, a data storage configuration of multiple disks or volumes. JBOD is one approach to providing increased data storage for Kafka brokers. It can also improve performance.
 
 A JBOD configuration is described by one or more volumes, each of which can be either xref:ref-ephemeral-storage-{context}[ephemeral] or xref:ref-persistent-storage-{context}[persistent]. The rules and constraints for JBOD volume declarations are the same as those for ephemeral and persistent storage. For example, you cannot decrease the size of a persistent storage volume after it has been provisioned, or you cannot change the value of `sizeLimit` when type=ephemeral.
@@ -34,7 +35,7 @@ The ids cannot be changed once the JBOD volumes are created.
 
 Users can add or remove volumes from the JBOD configuration.
 
-[[jbod-pvc]]
+[id='ref-jbod-storage-pvc-{context}']
 == JBOD and Persistent Volume Claims
 
 When persistent storage is used to declare JBOD volumes, the naming scheme of the resulting Persistent Volume Claims is as follows:
