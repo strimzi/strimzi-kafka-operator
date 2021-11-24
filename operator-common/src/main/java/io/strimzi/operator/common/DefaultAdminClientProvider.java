@@ -41,6 +41,10 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
      */
     @Override
     public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+        return Admin.create(props(bootstrapHostnames, clusterCaCertSecret, keyCertSecret, keyCertName));
+    }
+
+    public Properties props(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
         String trustedCertificates = null;
         String privateKey = null;
         String certificateChain = null;
@@ -56,28 +60,32 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
             certificateChain = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".crt"), StandardCharsets.US_ASCII);
         }
 
-        Properties p = new Properties();
-        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapHostnames);
+        Properties properties = new Properties();
+        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapHostnames);
 
         // configuring TLS encryption if requested
         if (trustedCertificates != null) {
-            p.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
-            p.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
-            p.setProperty(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, trustedCertificates);
+            properties.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+            properties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
+            properties.setProperty(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, trustedCertificates);
         }
 
         // configuring TLS client authentication
         if (certificateChain != null && privateKey != null) {
-            p.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
-            p.setProperty(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, certificateChain);
-            p.setProperty(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, privateKey);
+            properties.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
+            properties.setProperty(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, certificateChain);
+            properties.setProperty(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, privateKey);
         }
 
-        p.setProperty(AdminClientConfig.METADATA_MAX_AGE_CONFIG, "30000");
-        p.setProperty(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
-        p.setProperty(AdminClientConfig.RETRIES_CONFIG, "3");
-        p.setProperty(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, "40000");
+        properties.setProperty(AdminClientConfig.METADATA_MAX_AGE_CONFIG, "30000");
+        properties.setProperty(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
+        properties.setProperty(AdminClientConfig.RETRIES_CONFIG, "3");
+        properties.setProperty(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, "40000");
 
-        return Admin.create(p);
+        return properties;
+    }
+
+    public Admin createAdminClient(Properties properties) {
+        return Admin.create(properties);
     }
 }

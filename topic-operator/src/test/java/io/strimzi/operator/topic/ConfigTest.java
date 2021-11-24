@@ -95,7 +95,7 @@ public class ConfigTest {
 
         Config config = new Config(map);
         Session session = new Session(kubeClient, config);
-        Properties adminClientProps = session.adminClientProperties();
+        Properties adminClientProps = session.adminClientProperties(null, null);
 
         assertThat(adminClientProps.getProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG), is("PLAINTEXT"));
         assertNull(adminClientProps.getProperty(SaslConfigs.SASL_MECHANISM));
@@ -111,7 +111,7 @@ public class ConfigTest {
 
         Config config = new Config(map);
         Session session = new Session(kubeClient, config);
-        Properties adminClientProps = session.adminClientProperties();
+        Properties adminClientProps = session.adminClientProperties(null, null);
 
         assertThat(adminClientProps.getProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG), is("HTTPS"));
         assertThat(adminClientProps.getProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG), is("SSL"));
@@ -126,7 +126,7 @@ public class ConfigTest {
 
         Config config = new Config(map);
         Session session = new Session(kubeClient, config);
-        Properties adminClientProps = session.adminClientProperties();
+        Properties adminClientProps = session.adminClientProperties(null, null);
 
         assertThat(adminClientProps.getProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG), is("HTTPS"));
         assertThat(adminClientProps.getProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG), is("SSL"));
@@ -141,7 +141,7 @@ public class ConfigTest {
 
         Config config = new Config(map);
         Session session = new Session(kubeClient, config);
-        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties());
+        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties(null, null));
 
         String username = "admin";
         String password = "password";
@@ -149,7 +149,7 @@ public class ConfigTest {
         map.put(Config.SASL_PASSWORD.key, password);
         Config configWithCredentials = new Config(map);
         Session sessionWithCredentials = new Session(kubeClient, configWithCredentials);
-        assertThrows(IllegalArgumentException.class, () -> sessionWithCredentials.adminClientProperties());
+        assertThrows(IllegalArgumentException.class, () -> sessionWithCredentials.adminClientProperties(null, null));
     }
 
     @Test
@@ -163,21 +163,7 @@ public class ConfigTest {
 
         Config config = new Config(map);
         Session session = new Session(kubeClient, config);
-        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties());
-    }
-
-    @Test
-    public void testInvalidKeystoreConfig() {
-        Map<String, String> map = new HashMap<>(MANDATORY);
-        map.put(Config.TLS_ENABLED.key, "true");
-        map.put(Config.TLS_TRUSTSTORE_PASSWORD.key, "password");
-
-        MockKube mockKube = new MockKube();
-        KubernetesClient kubeClient = mockKube.build();
-
-        Config config = new Config(map);
-        Session session = new Session(kubeClient, config);
-        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties());
+        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties(null, null));
     }
 
     @Test
@@ -199,7 +185,7 @@ public class ConfigTest {
         Config configSHA256 = new Config(map);
         Session sessionSHA256 = new Session(kubeClient, configSHA256);
 
-        Properties adminClientPropsSHA256 = sessionSHA256.adminClientProperties();
+        Properties adminClientPropsSHA256 = sessionSHA256.adminClientProperties(null, null);
         assertThat(adminClientPropsSHA256.getProperty(SaslConfigs.SASL_MECHANISM), is("SCRAM-SHA-256"));
         assertThat(adminClientPropsSHA256.getProperty(SaslConfigs.SASL_JAAS_CONFIG), is(scramJaasConfig));
 
@@ -207,7 +193,7 @@ public class ConfigTest {
         Config configSHA512 = new Config(map);
         Session sessionSHA512 = new Session(kubeClient, configSHA512);
 
-        Properties adminClientPropsSHA512 = sessionSHA512.adminClientProperties();
+        Properties adminClientPropsSHA512 = sessionSHA512.adminClientProperties(null, null);
         assertThat(adminClientPropsSHA512.getProperty(SaslConfigs.SASL_MECHANISM), is("SCRAM-SHA-512"));
         assertThat(adminClientPropsSHA512.getProperty(SaslConfigs.SASL_JAAS_CONFIG), is(scramJaasConfig));
 
@@ -215,7 +201,7 @@ public class ConfigTest {
         Config configPlain = new Config(map);
         Session sessionPlain = new Session(kubeClient, configPlain);
 
-        Properties adminClientPropsPlain = sessionPlain.adminClientProperties();
+        Properties adminClientPropsPlain = sessionPlain.adminClientProperties(null, null);
         assertThat(adminClientPropsPlain.getProperty(SaslConfigs.SASL_MECHANISM), is("PLAIN"));
         assertThat(adminClientPropsPlain.getProperty(SaslConfigs.SASL_JAAS_CONFIG), is(plainJaasConfig));
     }

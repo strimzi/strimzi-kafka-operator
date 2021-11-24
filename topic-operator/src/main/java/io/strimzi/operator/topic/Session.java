@@ -5,21 +5,25 @@
 package io.strimzi.operator.topic;
 
 import io.apicurio.registry.utils.ConcurrentUtil;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.http.HttpServer;
 import io.vertx.micrometer.backends.BackendRegistries;
-import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.config.SaslConfigs;
@@ -30,6 +34,7 @@ import org.apache.logging.log4j.Logger;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Security;
 import java.time.Duration;
 import java.util.Properties;
@@ -51,7 +56,7 @@ public class Session extends AbstractVerticle {
     private final KubernetesClient kubeClient;
 
     /*test*/ KafkaImpl kafka;
-    private AdminClient adminClient;
+    private Admin adminClient;
     /*test*/ K8sImpl k8s;
     private KafkaStreamsTopicStoreService service; // if used
     /*test*/ TopicOperator topicOperator;
@@ -157,110 +162,115 @@ public class Session extends AbstractVerticle {
         String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
         Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
 
-        this.adminClient = AdminClient.create(adminClientProperties());
-        LOGGER.debug("Using AdminClient {}", adminClient);
-        this.kafka = new KafkaImpl(adminClient, vertx);
-        LOGGER.debug("Using Kafka {}", kafka);
-        Labels labels = config.get(Config.LABELS);
-
         String namespace = config.get(Config.NAMESPACE);
-        LOGGER.debug("Using namespace {}", namespace);
-        this.k8s = new K8sImpl(vertx, kubeClient, labels, namespace);
-        LOGGER.debug("Using k8s {}", k8s);
+        SecretOperator secretOperator = new SecretOperator(vertx, kubeClient);
+        fetchSecretsFromK8s(secretOperator, namespace, config.get(Config.TLS_CA_CERT_SECRET_NAME), config.get(Config.TLS_EO_KEY_SECRET_NAME)).onComplete(secrets -> {
+            DefaultAdminClientProvider defaultAdminClientProvider = new DefaultAdminClientProvider();
+            Properties acProps = adminClientProperties(secrets.result().resultAt(0), secrets.result().resultAt(1));
+            this.adminClient = defaultAdminClientProvider.createAdminClient(acProps);
+            LOGGER.debug("Using AdminClient {}", adminClient);
+            this.kafka = new KafkaImpl(adminClient, vertx);
+            LOGGER.debug("Using Kafka {}", kafka);
+            Labels labels = config.get(Config.LABELS);
 
-        String clientId = config.get(Config.CLIENT_ID);
-        LOGGER.debug("Using client-Id {}", clientId);
+            LOGGER.debug("Using namespace {}", namespace);
+            this.k8s = new K8sImpl(vertx, kubeClient, labels, namespace);
+            LOGGER.debug("Using k8s {}", k8s);
 
-        Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT),
-                this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(),
-                this.config.get(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS).intValue(),
-            zkResult -> {
-                if (zkResult.failed()) {
-                    start.fail(zkResult.cause());
-                    return;
-                }
-                this.zk = zkResult.result();
-                LOGGER.debug("Using ZooKeeper {}", zk);
+            String clientId = config.get(Config.CLIENT_ID);
+            LOGGER.debug("Using client-Id {}", clientId);
 
-                String topicsPath = config.get(Config.TOPICS_PATH);
-                TopicStore topicStore;
-                if (config.get(Config.USE_ZOOKEEPER_TOPIC_STORE)) {
-                    topicStore = new ZkTopicStore(zk, topicsPath);
-                } else {
-                    boolean exists = zk.getPathExists(topicsPath);
-                    CompletionStage<KafkaStreamsTopicStoreService> cs;
-                    if (exists) {
-                        cs = Zk2KafkaStreams.upgrade(zk, config, adminClientProperties(), false);
-                    } else {
-                        KafkaStreamsTopicStoreService ksc = new KafkaStreamsTopicStoreService();
-                        cs = ksc.start(config, adminClientProperties()).thenCompose(s -> CompletableFuture.completedFuture(ksc));
-                    }
-                    topicStore = ConcurrentUtil.result(
-                            cs.handle((s, t) -> {
-                                if (t != null) {
-                                    LOGGER.error("Failed to create topic store.", t);
-                                    start.fail(t);
-                                    return null; // [1]
-                                } else {
-                                    service = s;
-                                    return s.store;
-                                }
-                            }));
-                    if (topicStore == null) {
-                        return; // [1]
-                    }
-                }
-
-                LOGGER.debug("Using TopicStore {}", topicStore);
-
-                this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, labels, namespace, config, new MicrometerMetricsProvider());
-                LOGGER.debug("Using Operator {}", topicOperator);
-
-                this.topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
-                LOGGER.debug("Using TopicConfigsWatcher {}", topicConfigsWatcher);
-                this.topicWatcher = new ZkTopicWatcher(topicOperator);
-                LOGGER.debug("Using TopicWatcher {}", topicWatcher);
-                this.topicsWatcher = new ZkTopicsWatcher(topicOperator, topicConfigsWatcher, topicWatcher);
-                LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
-                topicsWatcher.start(zk);
-
-                Promise<Void> initReconcilePromise = Promise.promise();
-
-                watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), this::startWatcher);
-                LOGGER.debug("Starting watcher");
-                startWatcher().compose(
-                    ignored -> {
-                        LOGGER.debug("Starting health server");
-                        return Future.<Void>succeededFuture();
-                    })
-                    .compose(i -> startHealthServer())
-                    .onComplete(finished -> {
-                        Session.this.healthServer = finished.result();
-                        start.complete();
-                    });
-
-                final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
-                Handler<Long> periodic = new Handler<>() {
-                    @Override
-                    public void handle(Long oldTimerId) {
-                        if (!stopped) {
-                            timerId = null;
-                            boolean isInitialReconcile = oldTimerId == null;
-                            topicOperator.getPeriodicReconciliationsCounter().increment();
-                            topicOperator.reconcileAllTopics(isInitialReconcile ? "initial " : "periodic ").onComplete(result -> {
-                                if (isInitialReconcile) {
-                                    initReconcilePromise.complete();
-                                }
-                                if (!stopped) {
-                                    timerId = vertx.setTimer(interval, this);
-                                }
-                            });
+            Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT),
+                    this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(),
+                    this.config.get(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS).intValue(),
+                    zkResult -> {
+                        if (zkResult.failed()) {
+                            start.fail(zkResult.cause());
+                            return;
                         }
-                    }
-                };
-                periodic.handle(null);
-                LOGGER.info("Started");
-            });
+                        this.zk = zkResult.result();
+                        LOGGER.debug("Using ZooKeeper {}", zk);
+
+                        String topicsPath = config.get(Config.TOPICS_PATH);
+                        TopicStore topicStore;
+                        if (config.get(Config.USE_ZOOKEEPER_TOPIC_STORE)) {
+                            topicStore = new ZkTopicStore(zk, topicsPath);
+                        } else {
+                            boolean exists = zk.getPathExists(topicsPath);
+                            CompletionStage<KafkaStreamsTopicStoreService> cs;
+                            if (exists) {
+                                cs = Zk2KafkaStreams.upgrade(zk, config, acProps, false);
+                            } else {
+                                KafkaStreamsTopicStoreService ksc = new KafkaStreamsTopicStoreService();
+                                cs = ksc.start(config, acProps).thenCompose(s -> CompletableFuture.completedFuture(ksc));
+                            }
+                            topicStore = ConcurrentUtil.result(
+                                    cs.handle((s, t) -> {
+                                        if (t != null) {
+                                            LOGGER.error("Failed to create topic store.", t);
+                                            start.fail(t);
+                                            return null; // [1]
+                                        } else {
+                                            service = s;
+                                            return s.store;
+                                        }
+                                    }));
+                            if (topicStore == null) {
+                                return; // [1]
+                            }
+                        }
+
+                        LOGGER.debug("Using TopicStore {}", topicStore);
+
+                        this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, labels, namespace, config, new MicrometerMetricsProvider());
+                        LOGGER.debug("Using Operator {}", topicOperator);
+
+                        this.topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
+                        LOGGER.debug("Using TopicConfigsWatcher {}", topicConfigsWatcher);
+                        this.topicWatcher = new ZkTopicWatcher(topicOperator);
+                        LOGGER.debug("Using TopicWatcher {}", topicWatcher);
+                        this.topicsWatcher = new ZkTopicsWatcher(topicOperator, topicConfigsWatcher, topicWatcher);
+                        LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
+                        topicsWatcher.start(zk);
+
+                        Promise<Void> initReconcilePromise = Promise.promise();
+
+                        watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), this::startWatcher);
+                        LOGGER.debug("Starting watcher");
+                        startWatcher().compose(
+                                ignored -> {
+                                    LOGGER.debug("Starting health server");
+                                    return Future.<Void>succeededFuture();
+                                })
+                                .compose(i -> startHealthServer())
+                                .onComplete(finished -> {
+                                    Session.this.healthServer = finished.result();
+                                    start.complete();
+                                });
+
+                        final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
+                        Handler<Long> periodic = new Handler<>() {
+                            @Override
+                            public void handle(Long oldTimerId) {
+                                if (!stopped) {
+                                    timerId = null;
+                                    boolean isInitialReconcile = oldTimerId == null;
+                                    topicOperator.getPeriodicReconciliationsCounter().increment();
+                                    topicOperator.reconcileAllTopics(isInitialReconcile ? "initial " : "periodic ").onComplete(result -> {
+                                        if (isInitialReconcile) {
+                                            initReconcilePromise.complete();
+                                        }
+                                        if (!stopped) {
+                                            timerId = vertx.setTimer(interval, this);
+                                        }
+                                    });
+                                }
+                            }
+                        };
+                        periodic.handle(null);
+                        LOGGER.info("Started");
+                    });
+        });
     }
 
     private void setSaslConfigs(Properties kafkaClientProps) {
@@ -297,7 +307,22 @@ public class Session extends AbstractVerticle {
         }
     }
 
-    Properties adminClientProperties() {
+    Properties adminClientProperties(Secret clusterCaCertSecret, Secret keyCertSecret) {
+
+        String trustedCertificates = null;
+        String privateKey = null;
+        String certificateChain = null;
+
+        // provided Secret with cluster CA certificate for TLS encryption
+        if (clusterCaCertSecret != null) {
+            trustedCertificates = Util.certsToPemString(clusterCaCertSecret);
+        }
+
+        // provided Secret and related key for getting the private key for TLS client authentication
+        if (keyCertSecret != null) {
+            privateKey = new String(Util.decodeFromSecret(keyCertSecret, "entity-operator.key"), StandardCharsets.US_ASCII);
+            certificateChain = new String(Util.decodeFromSecret(keyCertSecret, "entity-operator.crt"), StandardCharsets.US_ASCII);
+        }
         Properties kafkaClientProps = new Properties();
         kafkaClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         kafkaClientProps.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, config.get(Config.APPLICATION_ID));
@@ -322,20 +347,16 @@ public class Session extends AbstractVerticle {
         if (securityProtocol.equals("SASL_SSL") || securityProtocol.equals("SSL") || tlsEnabled) {
             kafkaClientProps.setProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, config.get(Config.TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM));
 
-            if (!config.get(Config.TLS_TRUSTSTORE_LOCATION).isEmpty()) {
-                kafkaClientProps.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, config.get(Config.TLS_TRUSTSTORE_LOCATION));
+            if (trustedCertificates != null) {
+                kafkaClientProps.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+                kafkaClientProps.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
+                kafkaClientProps.setProperty(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, trustedCertificates);
             }
 
-            if (!config.get(Config.TLS_TRUSTSTORE_PASSWORD).isEmpty()) {
-                if (config.get(Config.TLS_TRUSTSTORE_LOCATION).isEmpty()) {
-                    throw new InvalidConfigurationException("TLS_TRUSTSTORE_PASSWORD was supplied but TLS_TRUSTSTORE_LOCATION was not supplied");
-                }
-                kafkaClientProps.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, config.get(Config.TLS_TRUSTSTORE_PASSWORD));
-            }
-
-            if (!config.get(Config.TLS_KEYSTORE_LOCATION).isEmpty() && !config.get(Config.TLS_KEYSTORE_PASSWORD).isEmpty()) {
-                kafkaClientProps.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, config.get(Config.TLS_KEYSTORE_LOCATION));
-                kafkaClientProps.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, config.get(Config.TLS_KEYSTORE_PASSWORD));
+            if (certificateChain != null && privateKey != null) {
+                kafkaClientProps.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
+                kafkaClientProps.setProperty(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, certificateChain);
+                kafkaClientProps.setProperty(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, privateKey);
             }
         }
 
@@ -377,5 +398,23 @@ public class Session extends AbstractVerticle {
                     }
                 })
                 .listen(HEALTH_SERVER_PORT);
+    }
+
+    private static CompositeFuture fetchSecretsFromK8s(SecretOperator secretOperations, String namespace, String clusterCaCertSecretName, String eoKeySecretName) {
+
+        Future<Secret> clusterCaCertSecretFuture;
+        if (clusterCaCertSecretName != null && !clusterCaCertSecretName.isEmpty()) {
+            clusterCaCertSecretFuture = secretOperations.getAsync(namespace, clusterCaCertSecretName);
+        } else {
+            clusterCaCertSecretFuture = Future.succeededFuture(null);
+        }
+        Future<Secret> eoKeySecretFuture;
+        if (eoKeySecretName != null && !eoKeySecretName.isEmpty()) {
+            eoKeySecretFuture = secretOperations.getAsync(namespace, eoKeySecretName);
+        } else {
+            eoKeySecretFuture = Future.succeededFuture(null);
+        }
+
+        return CompositeFuture.join(clusterCaCertSecretFuture, eoKeySecretFuture);
     }
 }
