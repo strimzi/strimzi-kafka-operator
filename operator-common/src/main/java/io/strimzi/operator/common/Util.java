@@ -31,8 +31,10 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.config.SslConfigs;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -56,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -694,5 +697,46 @@ public class Util {
                     })
                     .collect(Collectors.joining("\n"));
         }
+    }
+
+    /**
+     * Returns TLS related properties generated from the secrets
+     * @param clusterCaCertSecret Cluster CA secret
+     * @param keyCertSecret trusted certificates
+     * @param keyCertName key int keyCertSecret secret
+     * @return TLS related properties generated from the secrets
+     */
+    public static Properties tlsProperties(Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
+        String trustedCertificates = null;
+        String privateKey = null;
+        String certificateChain = null;
+
+        // provided Secret with cluster CA certificate for TLS encryption
+        if (clusterCaCertSecret != null) {
+            trustedCertificates = Util.certsToPemString(clusterCaCertSecret);
+        }
+
+        // provided Secret and related key for getting the private key for TLS client authentication
+        if (keyCertSecret != null && keyCertName != null && !keyCertName.isEmpty()) {
+            privateKey = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".key"), StandardCharsets.US_ASCII);
+            certificateChain = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".crt"), StandardCharsets.US_ASCII);
+        }
+
+        Properties properties = new Properties();
+
+        // configuring TLS encryption if requested
+        if (trustedCertificates != null) {
+            properties.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+            properties.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
+            properties.setProperty(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, trustedCertificates);
+        }
+
+        // configuring TLS client authentication
+        if (certificateChain != null && privateKey != null) {
+            properties.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
+            properties.setProperty(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, certificateChain);
+            properties.setProperty(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, privateKey);
+        }
+        return properties;
     }
 }

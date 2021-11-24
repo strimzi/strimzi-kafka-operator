@@ -34,7 +34,6 @@ import org.apache.logging.log4j.Logger;
 
 import io.strimzi.operator.common.InvalidConfigurationException;
 
-import java.nio.charset.StandardCharsets;
 import java.security.Security;
 import java.time.Duration;
 import java.util.Properties;
@@ -308,21 +307,6 @@ public class Session extends AbstractVerticle {
     }
 
     Properties adminClientProperties(Secret clusterCaCertSecret, Secret keyCertSecret) {
-
-        String trustedCertificates = null;
-        String privateKey = null;
-        String certificateChain = null;
-
-        // provided Secret with cluster CA certificate for TLS encryption
-        if (clusterCaCertSecret != null) {
-            trustedCertificates = Util.certsToPemString(clusterCaCertSecret);
-        }
-
-        // provided Secret and related key for getting the private key for TLS client authentication
-        if (keyCertSecret != null) {
-            privateKey = new String(Util.decodeFromSecret(keyCertSecret, "entity-operator.key"), StandardCharsets.US_ASCII);
-            certificateChain = new String(Util.decodeFromSecret(keyCertSecret, "entity-operator.crt"), StandardCharsets.US_ASCII);
-        }
         Properties kafkaClientProps = new Properties();
         kafkaClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         kafkaClientProps.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, config.get(Config.APPLICATION_ID));
@@ -346,18 +330,7 @@ public class Session extends AbstractVerticle {
 
         if (securityProtocol.equals("SASL_SSL") || securityProtocol.equals("SSL") || tlsEnabled) {
             kafkaClientProps.setProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, config.get(Config.TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM));
-
-            if (trustedCertificates != null) {
-                kafkaClientProps.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
-                kafkaClientProps.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
-                kafkaClientProps.setProperty(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, trustedCertificates);
-            }
-
-            if (certificateChain != null && privateKey != null) {
-                kafkaClientProps.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
-                kafkaClientProps.setProperty(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, certificateChain);
-                kafkaClientProps.setProperty(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, privateKey);
-            }
+            kafkaClientProps.putAll(Util.tlsProperties(clusterCaCertSecret, keyCertSecret, keyCertSecret == null ? null : "entity-operator"));
         }
 
         if (Boolean.parseBoolean(config.get(Config.SASL_ENABLED))) {
