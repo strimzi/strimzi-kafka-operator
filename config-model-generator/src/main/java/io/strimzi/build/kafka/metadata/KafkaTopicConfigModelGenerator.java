@@ -22,7 +22,7 @@ public class KafkaTopicConfigModelGenerator extends CommonConfigModelGenerator {
 
     @Override
     protected Map<String, ConfigModel> configs() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        ConfigDef def = configsFromReflectivity();
+        ConfigDef def = configDefs();
         Method getConfigValueMethod = methodFromReflection(ConfigDef.class, "getConfigValue", ConfigDef.ConfigKey.class, String.class);
         Method sortedConfigs = methodFromReflection(ConfigDef.class, "sortedConfigs");
         List<ConfigDef.ConfigKey> keys = (List) sortedConfigs.invoke(def);
@@ -35,7 +35,7 @@ public class KafkaTopicConfigModelGenerator extends CommonConfigModelGenerator {
     }
 
     @Override
-    protected ConfigDef configsFromReflectivity() {
+    protected ConfigDef configDefs() {
         try {
             Field instance = getField(LogConfig$.class, "MODULE$");
             LogConfig$ x = (LogConfig$) instance.get(null);
