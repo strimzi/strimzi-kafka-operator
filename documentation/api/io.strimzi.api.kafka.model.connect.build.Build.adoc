@@ -222,10 +222,10 @@ spec:
       - name: my-plugin
         artifacts:
           - type: maven <1>
-          - repository: https://mvnrepository.com <2>
-          - group: org.apache.camel.kafkaconnector <3>
-          - artifact: camel-kafka-connector <4>
-          - version: 0.11.0 <5>
+            repository: https://mvnrepository.com <2>
+            group: org.apache.camel.kafkaconnector <3>
+            artifact: camel-kafka-connector <4>
+            version: 0.11.0 <5>
   #...
 ----
 <1> (Required) Type of artifact.
