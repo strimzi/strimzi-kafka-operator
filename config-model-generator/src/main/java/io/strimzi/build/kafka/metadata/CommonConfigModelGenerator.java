@@ -220,11 +220,15 @@ public abstract class CommonConfigModelGenerator {
         return method;
     }
 
-    protected abstract ConfigDef configsFromReflectivity();
+    protected abstract ConfigDef configDefs();
 
     protected abstract ConfigModel createDescriptor(Method getConfigValueMethod, ConfigDef def, ConfigDef.ConfigKey key, Map<String, String> dynamicUpdates) throws InvocationTargetException, IllegalAccessException;
 
-    protected void addConfigModel(Method getConfigValueMethod, ConfigDef.ConfigKey key, ConfigDef def, Map<String, String> dynamicUpdates, Map<String, ConfigModel> result) throws InvocationTargetException, IllegalAccessException {
+    protected void addConfigModel(Method getConfigValueMethod,
+                                  ConfigDef.ConfigKey key,
+                                  ConfigDef def,
+                                  Map<String, String> dynamicUpdates,
+                                  Map<String, ConfigModel> result) throws InvocationTargetException, IllegalAccessException {
         String configName = String.valueOf(getConfigValueMethod.invoke(def, key, "Name"));
         ConfigModel descriptor = createDescriptor(getConfigValueMethod, def, key, dynamicUpdates);
 
