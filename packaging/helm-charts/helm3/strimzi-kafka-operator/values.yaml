@@ -29,6 +29,7 @@ affinity: {}
 annotations: {}
 labels: {}
 nodeSelector: {}
+priorityClassName: ""
 
 podSecurityContext: {}
 securityContext: {}
