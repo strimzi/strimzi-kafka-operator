@@ -5,14 +5,12 @@
 package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.operator.cluster.model.Ca;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
@@ -43,61 +41,43 @@ public class DefaultAdminClientProvider implements AdminClientProvider {
      */
     @Override
     public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
-        Admin ac;
-        String trustStorePassword = null;
-        File truststoreFile = null;
+        String trustedCertificates = null;
+        String privateKey = null;
+        String certificateChain = null;
+
         // provided Secret with cluster CA certificate for TLS encryption
         if (clusterCaCertSecret != null) {
-            PasswordGenerator pg = new PasswordGenerator(12);
-            trustStorePassword = pg.generate();
-            truststoreFile = Util.createFileTrustStore(getClass().getName(), "ts", Ca.certs(clusterCaCertSecret), trustStorePassword.toCharArray());
+            trustedCertificates = Util.certsToPemString(clusterCaCertSecret);
         }
 
-        try {
-            String keyStorePassword = null;
-            File keystoreFile = null;
-            // provided Secret and related key for getting the private key for TLS client authentication
-            if (keyCertSecret != null && keyCertName != null && !keyCertName.isEmpty()) {
-                keyStorePassword = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".password"), StandardCharsets.US_ASCII);
-                keystoreFile = Util.createFileStore(getClass().getName(), "ts", Util.decodeFromSecret(keyCertSecret, keyCertName + ".p12"));
-            }
-
-            try {
-                Properties p = new Properties();
-                p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapHostnames);
-
-                // configuring TLS encryption if requested
-                if (truststoreFile != null && trustStorePassword != null) {
-                    p.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
-
-                    p.setProperty(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, truststoreFile.getAbsolutePath());
-                    p.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PKCS12");
-                    p.setProperty(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, trustStorePassword);
-                }
-
-                // configuring TLS client authentication
-                if (keystoreFile != null && keyStorePassword != null) {
-                    p.setProperty(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, keystoreFile.getAbsolutePath());
-                    p.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12");
-                    p.setProperty(SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, keyStorePassword);
-                }
-
-                p.setProperty(AdminClientConfig.METADATA_MAX_AGE_CONFIG, "30000");
-                p.setProperty(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
-                p.setProperty(AdminClientConfig.RETRIES_CONFIG, "3");
-                p.setProperty(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, "40000");
-
-                ac = Admin.create(p);
-            } finally {
-                if (keystoreFile != null && !keystoreFile.delete()) {
-                    LOGGER.warn("Unable to delete keystore file {}", keystoreFile);
-                }
-            }
-        } finally {
-            if (truststoreFile != null && !truststoreFile.delete()) {
-                LOGGER.warn("Unable to delete truststore file {}", truststoreFile);
-            }
+        // provided Secret and related key for getting the private key for TLS client authentication
+        if (keyCertSecret != null && keyCertName != null && !keyCertName.isEmpty()) {
+            privateKey = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".key"), StandardCharsets.US_ASCII);
+            certificateChain = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".crt"), StandardCharsets.US_ASCII);
         }
-        return ac;
+
+        Properties p = new Properties();
+        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapHostnames);
+
+        // configuring TLS encryption if requested
+        if (trustedCertificates != null) {
+            p.setProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
+            p.setProperty(SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, "PEM");
+            p.setProperty(SslConfigs.SSL_TRUSTSTORE_CERTIFICATES_CONFIG, trustedCertificates);
+        }
+
+        // configuring TLS client authentication
+        if (certificateChain != null && privateKey != null) {
+            p.setProperty(SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PEM");
+            p.setProperty(SslConfigs.SSL_KEYSTORE_CERTIFICATE_CHAIN_CONFIG, certificateChain);
+            p.setProperty(SslConfigs.SSL_KEYSTORE_KEY_CONFIG, privateKey);
+        }
+
+        p.setProperty(AdminClientConfig.METADATA_MAX_AGE_CONFIG, "30000");
+        p.setProperty(AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG, "10000");
+        p.setProperty(AdminClientConfig.RETRIES_CONFIG, "3");
+        p.setProperty(AdminClientConfig.DEFAULT_API_TIMEOUT_MS_CONFIG, "40000");
+
+        return Admin.create(p);
     }
 }

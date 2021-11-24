@@ -669,4 +669,30 @@ public class Util {
             return Future.failedFuture("Auth type " + auth.getType() + " does not have a password property");
         }
     }
+
+    /**
+     * Returns concatenated string of all public keys (all .crt records) from a secret
+     *
+     * @param secret    Kubernetes Secret with certificates
+     *
+     * @return          String secrets
+     */
+    public static String certsToPemString(Secret secret)  {
+        if (secret == null || secret.getData() == null) {
+            return "";
+        } else {
+            Base64.Decoder decoder = Base64.getDecoder();
+
+            return secret
+                    .getData()
+                    .entrySet()
+                    .stream()
+                    .filter(record -> record.getKey().endsWith(".crt"))
+                    .map(record -> {
+                        byte[] bytes = decoder.decode(record.getValue());
+                        return new String(bytes, StandardCharsets.US_ASCII);
+                    })
+                    .collect(Collectors.joining("\n"));
+        }
+    }
 }
