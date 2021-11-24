@@ -136,7 +136,7 @@ As a result of the configured `overrides` property, the volumes use the followin
 The `overrides` property is currently used only to override storage class configurations. Overriding other storage configuration fields is not currently supported.
 Other fields from the storage configuration are currently not supported.
 
-[[pvc-naming]]
+[id='ref-persistent-storage-pvc-{context}']
 == Persistent Volume Claim naming
 
 When persistent storage is used, it creates Persistent Volume Claims with the following names:
