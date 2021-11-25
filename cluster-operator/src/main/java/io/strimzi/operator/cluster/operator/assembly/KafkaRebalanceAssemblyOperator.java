@@ -164,13 +164,13 @@ public class KafkaRebalanceAssemblyOperator
      */
     public KafkaRebalanceAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                           ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-        super(vertx, KafkaRebalance.RESOURCE_KIND, supplier.getKafkaRebalanceOperator(), supplier.getMetricsProvider(), null);
+        super(vertx, KafkaRebalance.RESOURCE_KIND, supplier.kafkaRebalanceOperator, supplier.metricsProvider, null);
         this.kafkaSelector = (config.getCustomResourceSelector() == null || config.getCustomResourceSelector().toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, config.getCustomResourceSelector().toMap()));
         this.pfa = pfa;
-        this.kafkaRebalanceOperator = supplier.getKafkaRebalanceOperator();
-        this.kafkaOperator = supplier.getKafkaOperator();
-        this.configMapOperator = supplier.getConfigMapOperations();
-        this.secretOperations = supplier.getSecretOperations();
+        this.kafkaRebalanceOperator = supplier.kafkaRebalanceOperator;
+        this.kafkaOperator = supplier.kafkaOperator;
+        this.configMapOperator = supplier.configMapOperations;
+        this.secretOperations = supplier.secretOperations;
     }
 
     /**

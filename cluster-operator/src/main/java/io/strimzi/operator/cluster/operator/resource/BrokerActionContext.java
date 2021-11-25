@@ -137,7 +137,6 @@ class BrokerActionContext {
     private final KafkaAvailability kafkaAvailability;
     // TODO the following should be encapsulated (context shouldn't know about parallelism, only roller should)
     private final Set<Integer> restartingBrokers;
-    private final int parallelism = 2;
 
     // Mutable state accessed on multiple threads
     private volatile Pod pod;
@@ -493,7 +492,7 @@ class BrokerActionContext {
         assertEventLoop(vertx);
         // TODO should the restart path revert to UNKNOWN, so we have to prove non-controllership again
         state.assertIsOneOf(NEEDS_RESTART);
-        if (restartingBrokers.size() > parallelism) {
+        if (restartingBrokers.size() > 1) {
             makeTransition(NEEDS_RESTART, 10_000); // TODO have a future that is completed when restartingBrokers changes?
             return Future.succeededFuture();
         } else {

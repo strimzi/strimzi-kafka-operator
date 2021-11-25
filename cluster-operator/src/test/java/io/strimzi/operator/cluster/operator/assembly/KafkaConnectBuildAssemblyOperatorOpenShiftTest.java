@@ -121,17 +121,17 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDepOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        BuildOperator mockBuildOps = supplier.getBuildOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.getKafkaConnectorOperator();
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        BuildOperator mockBuildOps = supplier.buildOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -266,17 +266,17 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDepOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        BuildOperator mockBuildOps = supplier.getBuildOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.getKafkaConnectorOperator();
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        BuildOperator mockBuildOps = supplier.buildOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -400,17 +400,17 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDepOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        BuildOperator mockBuildOps = supplier.getBuildOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.getKafkaConnectorOperator();
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        BuildOperator mockBuildOps = supplier.buildOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -551,17 +551,17 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDepOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        BuildOperator mockBuildOps = supplier.getBuildOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.getKafkaConnectorOperator();
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        BuildOperator mockBuildOps = supplier.buildOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -672,17 +672,17 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDepOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        BuildOperator mockBuildOps = supplier.getBuildOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.getKafkaConnectorOperator();
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        BuildOperator mockBuildOps = supplier.buildOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -836,17 +836,17 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDepOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        BuildOperator mockBuildOps = supplier.getBuildOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.getKafkaConnectorOperator();
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        BuildOperator mockBuildOps = supplier.buildOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -1024,17 +1024,17 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDepOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        BuildOperator mockBuildOps = supplier.getBuildOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.getKafkaConnectorOperator();
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        BuildOperator mockBuildOps = supplier.buildOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -1214,17 +1214,17 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
 
         // Prepare and get mocks
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDepOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        BuildOperator mockBuildOps = supplier.getBuildOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.getKafkaConnectorOperator();
+        CrdOperator mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        BuildOperator mockBuildOps = supplier.buildOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));

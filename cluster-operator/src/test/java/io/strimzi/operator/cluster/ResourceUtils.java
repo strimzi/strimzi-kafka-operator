@@ -722,16 +722,16 @@ public class ResourceUtils {
                 .withRollerSupplier(rollerSupplier())
                 .build(null, null, 0);
 
-        when(supplier.getSecretOperations().getAsync(any(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.getServiceAccountOperations().reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.getRoleBindingOperations().reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.getRoleOperations().reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.getClusterRoleBindingOperator().reconcile(any(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.secretOperations.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceAccountOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.roleBindingOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.roleOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.clusterRoleBindingOperator.reconcile(any(), anyString(), any())).thenReturn(Future.succeededFuture());
 
         if (openShift) {
-            when(supplier.getRouteOperations().reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-            when(supplier.getRouteOperations().hasAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-            when(supplier.getRouteOperations().get(anyString(), anyString())).thenAnswer(i -> {
+            when(supplier.routeOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+            when(supplier.routeOperations.hasAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+            when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> {
                 return new RouteBuilder()
                         .withNewStatus()
                         .addNewIngress()
@@ -742,9 +742,9 @@ public class ResourceUtils {
             });
         }
 
-        when(supplier.getServiceOperations().hasIngressAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(supplier.getServiceOperations().hasNodePort(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(supplier.getServiceOperations().get(anyString(), anyString())).thenAnswer(i ->
+        when(supplier.serviceOperations.hasIngressAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceOperations.hasNodePort(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceOperations.get(anyString(), anyString())).thenAnswer(i ->
              new ServiceBuilder()
                     .withNewStatus()
                         .withNewLoadBalancer()

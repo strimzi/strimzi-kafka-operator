@@ -147,7 +147,7 @@ public class Main {
                     kafkaMirrorMaker2AssemblyOperator,
                     kafkaBridgeAssemblyOperator,
                     kafkaRebalanceAssemblyOperator,
-                    resourceOperatorSupplier.getMetricsProvider());
+                    resourceOperatorSupplier.metricsProvider);
             vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {

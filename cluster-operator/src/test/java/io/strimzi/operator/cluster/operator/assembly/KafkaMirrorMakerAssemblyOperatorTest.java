@@ -100,10 +100,10 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     @Test
     public void testCreateCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorOps = supplier.getMirrorMakerOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        CrdOperator mockMirrorOps = supplier.mirrorMakerOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
 
         String kmmName = "foo";
         String kmmNamespace = "test";
@@ -187,10 +187,10 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     @Test
     public void testUpdateClusterNoDiff(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorOps = supplier.getMirrorMakerOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        CrdOperator mockMirrorOps = supplier.mirrorMakerOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
 
         String kmmName = "foo";
         String kmmNamespace = "test";
@@ -263,10 +263,10 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     @Test
     public void testUpdateCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorOps = supplier.getMirrorMakerOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        CrdOperator mockMirrorOps = supplier.mirrorMakerOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
 
         String kmmName = "foo";
         String kmmNamespace = "test";
@@ -378,10 +378,10 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     @Test
     public void testUpdateClusterFailure(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorOps = supplier.getMirrorMakerOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        CrdOperator mockMirrorOps = supplier.mirrorMakerOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
 
         String kmmName = "foo";
         String kmmNamespace = "test";
@@ -444,10 +444,10 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         final int scaleTo = 4;
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorOps = supplier.getMirrorMakerOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        CrdOperator mockMirrorOps = supplier.mirrorMakerOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
 
         String kmmName = "foo";
         String kmmNamespace = "test";
@@ -505,10 +505,10 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         int scaleTo = 2;
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorOps = supplier.getMirrorMakerOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        CrdOperator mockMirrorOps = supplier.mirrorMakerOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
 
         String kmmName = "foo";
         String kmmNamespace = "test";
@@ -564,9 +564,9 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     @Test
     public void testReconcile(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorOps = supplier.getMirrorMakerOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
+        CrdOperator mockMirrorOps = supplier.mirrorMakerOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kmmNamespace = "test";
 
@@ -637,10 +637,10 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     @Test
     public void testCreateClusterStatusNotReady(VertxTestContext context) throws InterruptedException {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorOps = supplier.getMirrorMakerOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        CrdOperator mockMirrorOps = supplier.mirrorMakerOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
 
         String failureMsg = "failure";
         String kmmName = "foo";
@@ -694,10 +694,10 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     @Test
     public void testCreateOrUpdateZeroReplica(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorOps = supplier.getMirrorMakerOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
+        CrdOperator mockMirrorOps = supplier.mirrorMakerOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
 
         String kmmName = "foo";
         String kmmNamespace = "test";

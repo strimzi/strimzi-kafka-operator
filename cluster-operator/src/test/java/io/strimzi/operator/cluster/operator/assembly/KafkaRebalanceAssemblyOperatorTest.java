@@ -148,10 +148,10 @@ public class KafkaRebalanceAssemblyOperatorTest {
             }
         };
 
-        mockRebalanceOps = supplier.getKafkaRebalanceOperator();
-        mockKafkaOps = supplier.getKafkaOperator();
-        mockCmOps = supplier.getConfigMapOperations();
-        mockSecretOps = supplier.getSecretOperations();
+        mockRebalanceOps = supplier.kafkaRebalanceOperator;
+        mockKafkaOps = supplier.kafkaOperator;
+        mockCmOps = supplier.configMapOperations;
+        mockSecretOps = supplier.secretOperations;
     }
 
     @AfterEach
@@ -919,8 +919,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, new KafkaRebalanceSpecBuilder().build());
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        mockKafkaOps = supplier.getKafkaOperator();
-        mockRebalanceOps = supplier.getKafkaRebalanceOperator();
+        mockKafkaOps = supplier.kafkaOperator;
+        mockRebalanceOps = supplier.kafkaRebalanceOperator;
         when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka));
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, kubernetesVersion);

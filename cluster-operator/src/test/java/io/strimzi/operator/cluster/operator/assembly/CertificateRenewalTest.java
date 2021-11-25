@@ -121,7 +121,7 @@ public class CertificateRenewalTest {
 
     private Future<ArgumentCaptor<Secret>> reconcileCa(Vertx vertx, Kafka kafka, Supplier<Date> dateSupplier) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-        SecretOperator secretOps = supplier.getSecretOperations();
+        SecretOperator secretOps = supplier.secretOperations;
 
         when(secretOps.list(eq(NAMESPACE), any())).thenAnswer(invocation -> {
             Map<String, String> requiredLabels = ((Labels) invocation.getArgument(1)).toMap();

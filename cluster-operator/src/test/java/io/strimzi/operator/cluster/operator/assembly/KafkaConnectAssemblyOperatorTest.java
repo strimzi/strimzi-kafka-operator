@@ -113,16 +113,16 @@ public class KafkaConnectAssemblyOperatorTest {
 
     public void createKafkaConnectCluster(VertxTestContext context, KafkaConnect kc, boolean connectorOperator) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.getKafkaConnectorOperator();
+        var mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockConnectOps.get(kc.getMetadata().getNamespace(), kc.getMetadata().getName())).thenReturn(kc);
@@ -250,16 +250,16 @@ public class KafkaConnectAssemblyOperatorTest {
     @Test
     public void testCreateOrUpdateDoesNotUpdateWithNoDiff(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.getKafkaConnectorOperator();
+        var mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         String kcName = "foo";
         String kcNamespace = "test";
@@ -347,16 +347,16 @@ public class KafkaConnectAssemblyOperatorTest {
     @Test
     public void testCreateOrUpdateUpdatesCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.getKafkaConnectorOperator();
+        var mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         String kcName = "foo";
         String kcNamespace = "test";
@@ -489,13 +489,13 @@ public class KafkaConnectAssemblyOperatorTest {
     @Test
     public void testCreateOrUpdateFailsWhenDeploymentUpdateFails(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
+        var mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kcName = "foo";
         String kcNamespace = "test";
@@ -551,16 +551,16 @@ public class KafkaConnectAssemblyOperatorTest {
         final int scaleTo = 4;
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.getKafkaConnectorOperator();
+        var mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         String kcName = "foo";
         String kcNamespace = "test";
@@ -623,17 +623,17 @@ public class KafkaConnectAssemblyOperatorTest {
         int scaleTo = 2;
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
+        var mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.getKafkaConnectorOperator();
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         String kcName = "foo";
         String kcNamespace = "test";
@@ -699,11 +699,11 @@ public class KafkaConnectAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
+        var mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
 
         String kcNamespace = "test";
 
@@ -757,15 +757,15 @@ public class KafkaConnectAssemblyOperatorTest {
     @Test
     public void testUpdateClusterWithFailedScaleDownSetsStatusNotReady(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
+        var mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kcName = "foo";
         String kcNamespace = "test";
@@ -814,14 +814,14 @@ public class KafkaConnectAssemblyOperatorTest {
     @Test
     public void testCreateOrUpdateFailsWhenClusterRoleBindingRightsAreMissingButRequired(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        ClusterRoleBindingOperator mockCrbOps = supplier.getClusterRoleBindingOperator();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
+        var mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kcName = "foo";
         String kcNamespace = "test";
@@ -863,16 +863,16 @@ public class KafkaConnectAssemblyOperatorTest {
     @Test
     public void testCreateOrUpdatePassesWhenClusterRoleBindingRightsAreMissingAndNotRequired(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        var mockConnectOps = supplier.getConnectOperator();
-        DeploymentOperator mockDcOps = supplier.getDeploymentOperations();
-        PodDisruptionBudgetOperator mockPdbOps = supplier.getPodDisruptionBudgetOperator();
-        ConfigMapOperator mockCmOps = supplier.getConfigMapOperations();
-        ServiceOperator mockServiceOps = supplier.getServiceOperations();
-        NetworkPolicyOperator mockNetPolOps = supplier.getNetworkPolicyOperator();
-        PodOperator mockPodOps = supplier.getPodOperations();
-        BuildConfigOperator mockBcOps = supplier.getBuildConfigOperations();
-        ClusterRoleBindingOperator mockCrbOps = supplier.getClusterRoleBindingOperator();
-        SecretOperator mockSecretOps = supplier.getSecretOperations();
+        var mockConnectOps = supplier.connectOperator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        BuildConfigOperator mockBcOps = supplier.buildConfigOperations;
+        ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
 
         String kcName = "foo";
         String kcNamespace = "test";
@@ -916,11 +916,11 @@ public class KafkaConnectAssemblyOperatorTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        ClusterRoleBindingOperator mockCrbOps = supplier.getClusterRoleBindingOperator();
+        ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
         ArgumentCaptor<ClusterRoleBinding> desiredCrb = ArgumentCaptor.forClass(ClusterRoleBinding.class);
         when(mockCrbOps.reconcile(any(), eq(KafkaConnectResources.initContainerClusterRoleBindingName(kcName, kcNamespace)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
 
-        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockCntrOps = supplier.getKafkaConnectorOperator();
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockCntrOps = supplier.kafkaConnectorOperator;
         when(mockCntrOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),

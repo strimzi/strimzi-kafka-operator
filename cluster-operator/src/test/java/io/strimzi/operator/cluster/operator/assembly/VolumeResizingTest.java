@@ -110,7 +110,7 @@ public class VolumeResizingTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator
-        PvcOperator mockPvcOps = supplier.getPvcOperations();
+        PvcOperator mockPvcOps = supplier.pvcOperations;
 
         when(mockPvcOps.getAsync(eq(namespace), ArgumentMatchers.startsWith("data-"))).thenReturn(Future.succeededFuture());
 
@@ -118,7 +118,7 @@ public class VolumeResizingTest {
         when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the StorageClass Operator
-        StorageClassOperator mockSco = supplier.getStorageClassOperations();
+        StorageClassOperator mockSco = supplier.storageClassOperations;
 
         when(mockSco.getAsync(eq("mysc")))
                 .thenAnswer(invocation -> {
@@ -153,7 +153,7 @@ public class VolumeResizingTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator
-        PvcOperator mockPvcOps = supplier.getPvcOperations();
+        PvcOperator mockPvcOps = supplier.pvcOperations;
 
         List<PersistentVolumeClaim> realPvcs = kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage());
         when(mockPvcOps.getAsync(eq(namespace), ArgumentMatchers.startsWith("data-")))
@@ -166,7 +166,7 @@ public class VolumeResizingTest {
         when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the StorageClass Operator
-        StorageClassOperator mockSco = supplier.getStorageClassOperations();
+        StorageClassOperator mockSco = supplier.storageClassOperations;
 
         when(mockSco.getAsync(eq("mysc")))
                 .thenAnswer(invocation -> {
@@ -201,7 +201,7 @@ public class VolumeResizingTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator
-        PvcOperator mockPvcOps = supplier.getPvcOperations();
+        PvcOperator mockPvcOps = supplier.pvcOperations;
 
         List<PersistentVolumeClaim> realPvcs = kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage());
 
@@ -223,7 +223,7 @@ public class VolumeResizingTest {
         when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the StorageClass Operator
-        StorageClassOperator mockSco = supplier.getStorageClassOperations();
+        StorageClassOperator mockSco = supplier.storageClassOperations;
 
         when(mockSco.getAsync(eq("mysc")))
                 .thenAnswer(invocation -> {
@@ -258,7 +258,7 @@ public class VolumeResizingTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator
-        PvcOperator mockPvcOps = supplier.getPvcOperations();
+        PvcOperator mockPvcOps = supplier.pvcOperations;
 
         List<PersistentVolumeClaim> realPvcs = kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage());
 
@@ -280,7 +280,7 @@ public class VolumeResizingTest {
         when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the StorageClass Operator
-        StorageClassOperator mockSco = supplier.getStorageClassOperations();
+        StorageClassOperator mockSco = supplier.storageClassOperations;
 
         when(mockSco.getAsync(eq("mysc")))
                 .thenAnswer(invocation -> {
@@ -315,7 +315,7 @@ public class VolumeResizingTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator
-        PvcOperator mockPvcOps = supplier.getPvcOperations();
+        PvcOperator mockPvcOps = supplier.pvcOperations;
 
         List<PersistentVolumeClaim> realPvcs = kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage());
 
@@ -340,7 +340,7 @@ public class VolumeResizingTest {
         when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the StorageClass Operator
-        StorageClassOperator mockSco = supplier.getStorageClassOperations();
+        StorageClassOperator mockSco = supplier.storageClassOperations;
 
         when(mockSco.getAsync(eq("mysc")))
                 .thenAnswer(invocation -> {
@@ -375,7 +375,7 @@ public class VolumeResizingTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator
-        PvcOperator mockPvcOps = supplier.getPvcOperations();
+        PvcOperator mockPvcOps = supplier.pvcOperations;
 
         List<PersistentVolumeClaim> realPvcs = kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage());
 
@@ -400,7 +400,7 @@ public class VolumeResizingTest {
         when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the StorageClass Operator
-        StorageClassOperator mockSco = supplier.getStorageClassOperations();
+        StorageClassOperator mockSco = supplier.storageClassOperations;
 
         when(mockSco.getAsync(eq("mysc")))
                 .thenAnswer(invocation -> {
@@ -441,7 +441,7 @@ public class VolumeResizingTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         // Mock the PVC Operator
-        PvcOperator mockPvcOps = supplier.getPvcOperations();
+        PvcOperator mockPvcOps = supplier.pvcOperations;
 
         List<PersistentVolumeClaim> realPvcs = kafkaCluster.generatePersistentVolumeClaims(kafka.getSpec().getKafka().getStorage());
 
@@ -462,7 +462,7 @@ public class VolumeResizingTest {
         when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock the StorageClass Operator
-        StorageClassOperator mockSco = supplier.getStorageClassOperations();
+        StorageClassOperator mockSco = supplier.storageClassOperations;
 
         when(mockSco.getAsync(eq("mysc")))
                 .thenAnswer(invocation -> {
