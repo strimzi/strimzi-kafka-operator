@@ -54,7 +54,7 @@ public class CruiseControlUtils {
     @SuppressWarnings("Regexp")
     @SuppressFBWarnings("DM_CONVERT_CASE")
     public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, SupportedSchemes scheme, Boolean withCredentials) {
-        String ccPodName = PodUtils.getFirstPodNameContaining(CONTAINER_NAME);
+        String ccPodName = PodUtils.getFirstPodNameContaining(namespaceName, CONTAINER_NAME);
         String args = " -k ";
 
         if (withCredentials) {
@@ -69,7 +69,7 @@ public class CruiseControlUtils {
     @SuppressWarnings("Regexp")
     @SuppressFBWarnings("DM_CONVERT_CASE")
     public static String callApi(String namespaceName, SupportedHttpMethods method, String endpoint) {
-        String ccPodName = PodUtils.getFirstPodNameContaining(CONTAINER_NAME);
+        String ccPodName = PodUtils.getFirstPodNameContaining(namespaceName, CONTAINER_NAME);
 
         return cmdKubeClient(namespaceName).execInPodContainer(false, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
             "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_METRICS_PORT + endpoint).out();
