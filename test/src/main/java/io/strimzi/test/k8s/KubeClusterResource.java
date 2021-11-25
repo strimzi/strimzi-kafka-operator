@@ -212,7 +212,7 @@ public class KubeClusterResource {
         kubeClient().deleteNamespace(namespaceName);
         cmdKubeClient().waitForResourceDeletion("Namespace", namespaceName);
         if (collectorElement != null) {
-            deleteNamespaceFromSet(collectorElement, testNamespace);
+            deleteNamespaceFromSet(collectorElement, namespaceName);
         }
     }
 
