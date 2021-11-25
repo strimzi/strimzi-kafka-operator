@@ -1076,6 +1076,7 @@
                             </ignoredUnusedDeclaredDependencies>
                             <ignoredUsedUndeclaredDependencies>
                                 <ignoredUsedUndeclaredDependency>org.apache.kafka:kafka-raft:jar</ignoredUsedUndeclaredDependency>
+                                <ignoredUsedUndeclaredDependency>com.google.guava:guava:jar</ignoredUsedUndeclaredDependency>
                             </ignoredUsedUndeclaredDependencies>
                         </configuration>
                     </execution>
