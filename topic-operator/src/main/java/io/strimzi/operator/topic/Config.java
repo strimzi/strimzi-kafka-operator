@@ -112,7 +112,10 @@ public class Config {
     public static final String TC_TOPICS_PATH = "STRIMZI_TOPICS_PATH";
 
     public static final String TC_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
-
+    public static final String TC_TLS_TRUSTSTORE_LOCATION = "STRIMZI_TRUSTSTORE_LOCATION";
+    public static final String TC_TLS_TRUSTSTORE_PASSWORD = "STRIMZI_TRUSTSTORE_PASSWORD";
+    public static final String TC_TLS_KEYSTORE_LOCATION = "STRIMZI_KEYSTORE_LOCATION";
+    public static final String TC_TLS_KEYSTORE_PASSWORD = "STRIMZI_KEYSTORE_PASSWORD";
     public static final String TC_TLS_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
     public static final String TC_TLS_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
     public static final String TC_TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = "STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM";
@@ -174,6 +177,15 @@ public class Config {
 
     /** If the connection with Kafka has to be encrypted by TLS protocol */
     public static final Value<String> TLS_ENABLED = new Value<>(TC_TLS_ENABLED, STRING, "false");
+    /** The truststore with CA certificate for Kafka broker/server authentication */
+    public static final Value<String> TLS_TRUSTSTORE_LOCATION = new Value<>(TC_TLS_TRUSTSTORE_LOCATION, STRING, "");
+    /** The password for the truststore with CA certificate for Kafka broker/server authentication */
+    public static final Value<String> TLS_TRUSTSTORE_PASSWORD = new Value<>(TC_TLS_TRUSTSTORE_PASSWORD, STRING, "");
+    /** The keystore with private key and certificate for client authentication against Kafka broker */
+    public static final Value<String> TLS_KEYSTORE_LOCATION = new Value<>(TC_TLS_KEYSTORE_LOCATION, STRING, "");
+    /** The password for keystore with private key and certificate for client authentication against Kafka broker */
+    public static final Value<String> TLS_KEYSTORE_PASSWORD = new Value<>(TC_TLS_KEYSTORE_PASSWORD, STRING, "");
+
     /** The CA certificate for Kafka broker/server authentication */
     public static final Value<String> TLS_CA_CERT_SECRET_NAME = new Value<>(TC_TLS_CA_CERT_SECRET_NAME, STRING, "");
     public static final Value<String> TLS_EO_KEY_SECRET_NAME = new Value<>(TC_TLS_EO_KEY_SECRET_NAME, STRING, "");
@@ -221,6 +233,10 @@ public class Config {
         addConfigValue(configValues, TOPICS_PATH);
         addConfigValue(configValues, TLS_ENABLED);
         addConfigValue(configValues, SECURITY_PROTOCOL);
+        addConfigValue(configValues, TLS_TRUSTSTORE_LOCATION);
+        addConfigValue(configValues, TLS_TRUSTSTORE_PASSWORD);
+        addConfigValue(configValues, TLS_KEYSTORE_LOCATION);
+        addConfigValue(configValues, TLS_KEYSTORE_PASSWORD);
         addConfigValue(configValues, TLS_CA_CERT_SECRET_NAME);
         addConfigValue(configValues, TLS_EO_KEY_SECRET_NAME);
         addConfigValue(configValues, SASL_ENABLED);

@@ -163,7 +163,21 @@ public class ConfigTest {
 
         Config config = new Config(map);
         Session session = new Session(kubeClient, config);
-        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties(null, null));
+        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties());
+    }
+
+    @Test
+    public void testInvalidKeystoreConfig() {
+        Map<String, String> map = new HashMap<>(MANDATORY);
+        map.put(Config.TLS_ENABLED.key, "true");
+        map.put(Config.TLS_TRUSTSTORE_PASSWORD.key, "password");
+
+        MockKube mockKube = new MockKube();
+        KubernetesClient kubeClient = mockKube.build();
+
+        Config config = new Config(map);
+        Session session = new Session(kubeClient, config);
+        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties());
     }
 
     @Test

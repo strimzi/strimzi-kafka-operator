@@ -12,7 +12,7 @@
   When upgrading from Strimzi 0.22 or earlier, you have to disable the `ControlPlaneListener` feature gate when upgrading the cluster operator to make sure the Kafka cluster stays available during the upgrade.
   When downgrading to Strimzi 0.22 or earlier, you have to disable the `ControlPlaneListener` feature gate before downgrading the cluster operator to make sure the Kafka cluster stays available during the downgrade.
 * Update to Cruise Control version 2.5.74
-* Use PEM format for UO, CO and TO
+* Using of PKCS format is now deprecated in TO. PEM format should be used instead.
 
 ## 0.26.0
 
