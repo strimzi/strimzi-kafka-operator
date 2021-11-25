@@ -411,7 +411,7 @@ public class SetupClusterOperator {
             switch (resourceType) {
                 case Constants.ROLE:
                     Role role = TestUtils.configFromYaml(createFile, Role.class);
-                    ResourceManager.getInstance().createResource(extensionContext, false, new RoleBuilder(role)
+                    ResourceManager.getInstance().createResource(extensionContext, new RoleBuilder(role)
                         .editMetadata()
                             .withNamespace(namespace)
                         .endMetadata()
@@ -419,11 +419,11 @@ public class SetupClusterOperator {
                     break;
                 case Constants.CLUSTER_ROLE:
                     ClusterRole clusterRole = TestUtils.configFromYaml(createFile, ClusterRole.class);
-                    ResourceManager.getInstance().createResource(extensionContext, false, clusterRole);
+                    ResourceManager.getInstance().createResource(extensionContext, clusterRole);
                     break;
                 case Constants.SERVICE_ACCOUNT:
                     ServiceAccount serviceAccount = TestUtils.configFromYaml(createFile, ServiceAccount.class);
-                    ResourceManager.getInstance().createResource(extensionContext, false, new ServiceAccountBuilder(serviceAccount)
+                    ResourceManager.getInstance().createResource(extensionContext, new ServiceAccountBuilder(serviceAccount)
                         .editMetadata()
                             .withNamespace(namespace)
                         .endMetadata()
@@ -431,7 +431,7 @@ public class SetupClusterOperator {
                     break;
                 case Constants.CONFIG_MAP:
                     ConfigMap configMap = TestUtils.configFromYaml(createFile, ConfigMap.class);
-                    ResourceManager.getInstance().createResource(extensionContext, false, new ConfigMapBuilder(configMap)
+                    ResourceManager.getInstance().createResource(extensionContext, new ConfigMapBuilder(configMap)
                         .editMetadata()
                             .withNamespace(namespace)
                         .endMetadata()
@@ -439,15 +439,13 @@ public class SetupClusterOperator {
                     break;
                 case Constants.CUSTOM_RESOURCE_DEFINITION_SHORT:
                     CustomResourceDefinition customResourceDefinition = TestUtils.configFromYaml(createFile, CustomResourceDefinition.class);
-                    ResourceManager.getInstance().createResource(extensionContext, false, customResourceDefinition);
+                    ResourceManager.getInstance().createResource(extensionContext, customResourceDefinition);
                     break;
                 default:
                     LOGGER.error("Unknown installation resource type: {}", resourceType);
                     throw new RuntimeException("Unknown installation resource type:" + resourceType);
             }
         }
-        // sync point for all created resources Role, ClusterRole, CRDs..
-        ResourceManager.getInstance().synchronizeResources(extensionContext);
     }
 
     /**
