@@ -71,6 +71,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import static java.util.Arrays.asList;
@@ -271,8 +272,24 @@ public class ResourceManager {
         if (!STORED_RESOURCES.containsKey(testContext.getDisplayName()) || STORED_RESOURCES.get(testContext.getDisplayName()).isEmpty()) {
             LOGGER.info("In context {} is everything deleted.", testContext.getDisplayName());
         }
-        while (STORED_RESOURCES.containsKey(testContext.getDisplayName()) && !STORED_RESOURCES.get(testContext.getDisplayName()).isEmpty()) {
-            STORED_RESOURCES.get(testContext.getDisplayName()).pop().getThrowableRunner().run();
+
+
+        // if stack is created for specific test suite or test case
+        AtomicInteger numberOfResources = STORED_RESOURCES.get(testContext.getDisplayName()) != null ?
+            new AtomicInteger(STORED_RESOURCES.get(testContext.getDisplayName()).size()) :
+            // stack has no elements
+            new AtomicInteger(0);
+        while (STORED_RESOURCES.containsKey(testContext.getDisplayName()) && numberOfResources.get() > 0) {
+            STORED_RESOURCES.get(testContext.getDisplayName()).parallelStream().parallel().forEach(
+                resourceItem -> {
+                    try {
+                        resourceItem.getThrowableRunner().run();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    numberOfResources.decrementAndGet();
+                }
+            );
         }
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
         STORED_RESOURCES.remove(testContext.getDisplayName());
