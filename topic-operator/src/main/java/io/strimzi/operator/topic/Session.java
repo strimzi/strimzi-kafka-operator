@@ -5,7 +5,6 @@
 package io.strimzi.operator.topic;
 
 import io.apicurio.registry.utils.ConcurrentUtil;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -14,10 +13,8 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -160,19 +157,14 @@ public class Session extends AbstractVerticle {
 
         String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
         Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
-
         String namespace = config.get(Config.NAMESPACE);
-        SecretOperator secretOperator = new SecretOperator(vertx, kubeClient);
-
 
         if (pkcs12isUsed()) {
             Properties acProps = adminClientProperties();
             configureAndStart(namespace, acProps, start);
         } else {
-            fetchSecretsFromK8s(secretOperator, namespace, config.get(Config.TLS_CA_CERT_SECRET_NAME), config.get(Config.TLS_EO_KEY_SECRET_NAME)).onComplete(secrets -> {
-                Properties acProps = adminClientProperties(secrets.result().resultAt(0), secrets.result().resultAt(1));
-                configureAndStart(namespace, acProps, start);
-            });
+            Properties acProps = adminClientProperties(config.get(Config.TLS_CA_CERT_SECRET_DATA), config.get(Config.TLS_EO_KEY_SECRET_DATA), config.get(Config.TLS_EO_CERTIFICATE_CHAIN_DATA));
+            configureAndStart(namespace, acProps, start);
         }
     }
 
@@ -317,7 +309,7 @@ public class Session extends AbstractVerticle {
         }
     }
 
-    Properties adminClientProperties(Secret clusterCaCertSecret, Secret keyCertSecret) {
+    Properties adminClientProperties(String trustedCertificates, String privateKey, String certificateChain) {
         Properties kafkaClientProps = new Properties();
         kafkaClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         kafkaClientProps.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, config.get(Config.APPLICATION_ID));
@@ -341,7 +333,7 @@ public class Session extends AbstractVerticle {
 
         if (securityProtocol.equals("SASL_SSL") || securityProtocol.equals("SSL") || tlsEnabled) {
             kafkaClientProps.setProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, config.get(Config.TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM));
-            kafkaClientProps.putAll(Util.tlsProperties(clusterCaCertSecret, keyCertSecret, keyCertSecret == null ? null : "entity-operator"));
+            kafkaClientProps.putAll(Util.tlsProperties(trustedCertificates, privateKey, certificateChain));
         }
 
         if (Boolean.parseBoolean(config.get(Config.SASL_ENABLED))) {
@@ -400,8 +392,8 @@ public class Session extends AbstractVerticle {
     }
 
     private boolean pkcs12isUsed() {
-        return (config.get(Config.TLS_CA_CERT_SECRET_NAME) == null || config.get(Config.TLS_CA_CERT_SECRET_NAME).isEmpty()) &&
-                (config.get(Config.TLS_EO_KEY_SECRET_NAME) == null || config.get(Config.TLS_EO_KEY_SECRET_NAME).isEmpty());
+        return (config.get(Config.TLS_CA_CERT_SECRET_DATA) == null || config.get(Config.TLS_CA_CERT_SECRET_DATA).isEmpty()) &&
+                (config.get(Config.TLS_EO_KEY_SECRET_DATA) == null || config.get(Config.TLS_EO_KEY_SECRET_DATA).isEmpty());
     }
 
     Future<Void> startWatcher() {
@@ -436,23 +428,5 @@ public class Session extends AbstractVerticle {
                     }
                 })
                 .listen(HEALTH_SERVER_PORT);
-    }
-
-    private static CompositeFuture fetchSecretsFromK8s(SecretOperator secretOperations, String namespace, String clusterCaCertSecretName, String eoKeySecretName) {
-
-        Future<Secret> clusterCaCertSecretFuture;
-        if (clusterCaCertSecretName != null && !clusterCaCertSecretName.isEmpty()) {
-            clusterCaCertSecretFuture = secretOperations.getAsync(namespace, clusterCaCertSecretName);
-        } else {
-            clusterCaCertSecretFuture = Future.succeededFuture(null);
-        }
-        Future<Secret> eoKeySecretFuture;
-        if (eoKeySecretName != null && !eoKeySecretName.isEmpty()) {
-            eoKeySecretFuture = secretOperations.getAsync(namespace, eoKeySecretName);
-        } else {
-            eoKeySecretFuture = Future.succeededFuture(null);
-        }
-
-        return CompositeFuture.join(clusterCaCertSecretFuture, eoKeySecretFuture);
     }
 }

@@ -116,8 +116,9 @@ public class Config {
     public static final String TC_TLS_TRUSTSTORE_PASSWORD = "STRIMZI_TRUSTSTORE_PASSWORD";
     public static final String TC_TLS_KEYSTORE_LOCATION = "STRIMZI_KEYSTORE_LOCATION";
     public static final String TC_TLS_KEYSTORE_PASSWORD = "STRIMZI_KEYSTORE_PASSWORD";
-    public static final String TC_TLS_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
-    public static final String TC_TLS_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
+    public static final String TC_TLS_EO_CERTIFICATE_CHAIN = "STRIMZI_EO_CERTIFICATE_CHAIN_DATA";
+    public static final String TC_TLS_EO_KEY_SECRET_DATA = "STRIMZI_EO_KEY_DATA";
+    public static final String TC_TLS_CA_CERT_SECRET_DATA = "STRIMZI_CLUSTER_CA_CERT_SECRET_DATA";
     public static final String TC_TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = "STRIMZI_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM";
 
     public static final String TC_SASL_ENABLED = "STRIMZI_SASL_ENABLED";
@@ -187,8 +188,9 @@ public class Config {
     public static final Value<String> TLS_KEYSTORE_PASSWORD = new Value<>(TC_TLS_KEYSTORE_PASSWORD, STRING, "");
 
     /** The CA certificate for Kafka broker/server authentication */
-    public static final Value<String> TLS_CA_CERT_SECRET_NAME = new Value<>(TC_TLS_CA_CERT_SECRET_NAME, STRING, "");
-    public static final Value<String> TLS_EO_KEY_SECRET_NAME = new Value<>(TC_TLS_EO_KEY_SECRET_NAME, STRING, "");
+    public static final Value<String> TLS_CA_CERT_SECRET_DATA = new Value<>(TC_TLS_CA_CERT_SECRET_DATA, STRING, "");
+    public static final Value<String> TLS_EO_KEY_SECRET_DATA = new Value<>(TC_TLS_EO_KEY_SECRET_DATA, STRING, "");
+    public static final Value<String> TLS_EO_CERTIFICATE_CHAIN_DATA = new Value<>(TC_TLS_EO_CERTIFICATE_CHAIN, STRING, "");
 
     /** The endpoint identification algorithm used by clients to validate server host name. The default value is https. Clients including client connections created by the broker for inter-broker communication verify that the broker host name matches the host name in the broker’s certificate. Disable server host name verification by setting to an empty string.**/
     public static final Value<String> TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM = new Value<>(TC_TLS_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, STRING, "HTTPS");
@@ -237,8 +239,9 @@ public class Config {
         addConfigValue(configValues, TLS_TRUSTSTORE_PASSWORD);
         addConfigValue(configValues, TLS_KEYSTORE_LOCATION);
         addConfigValue(configValues, TLS_KEYSTORE_PASSWORD);
-        addConfigValue(configValues, TLS_CA_CERT_SECRET_NAME);
-        addConfigValue(configValues, TLS_EO_KEY_SECRET_NAME);
+        addConfigValue(configValues, TLS_CA_CERT_SECRET_DATA);
+        addConfigValue(configValues, TLS_EO_KEY_SECRET_DATA);
+        addConfigValue(configValues, TLS_EO_CERTIFICATE_CHAIN_DATA);
         addConfigValue(configValues, SASL_ENABLED);
         addConfigValue(configValues, SASL_MECHANISM);
         addConfigValue(configValues, SASL_USERNAME);

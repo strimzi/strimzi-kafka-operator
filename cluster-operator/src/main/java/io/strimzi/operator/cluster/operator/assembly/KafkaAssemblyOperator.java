@@ -3130,12 +3130,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             topicOperator == null ? Future.succeededFuture(null) :
                                 Util.metricsAndLogging(reconciliation, configMapOperations, kafkaAssembly.getMetadata().getNamespace(), topicOperator.getLogging(), null),
                             userOperator == null ? Future.succeededFuture(null) :
-                                Util.metricsAndLogging(reconciliation, configMapOperations, kafkaAssembly.getMetadata().getNamespace(), userOperator.getLogging(), null))
+                                Util.metricsAndLogging(reconciliation, configMapOperations, kafkaAssembly.getMetadata().getNamespace(), userOperator.getLogging(), null),
+                        secretOperations.getAsync(namespace, KafkaCluster.clusterCaCertSecretName(kafkaAssembly.getMetadata().getName())))
                         .compose(res -> {
                             MetricsAndLogging toMetricsAndLogging = res.resultAt(0);
                             MetricsAndLogging uoMetricsAndLogging = res.resultAt(1);
+                            Secret clusterCaCertSecret = res.resultAt(2);
 
                             if (topicOperator != null)  {
+                                topicOperator.setClusterCaCertSecret(clusterCaCertSecret);
                                 this.topicOperatorMetricsAndLogsConfigMap = topicOperator.generateMetricsAndLogConfigMap(toMetricsAndLogging);
                             }
 

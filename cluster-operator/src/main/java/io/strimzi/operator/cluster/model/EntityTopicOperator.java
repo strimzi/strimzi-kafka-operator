@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -24,6 +25,7 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.util.ArrayList;
@@ -59,6 +61,10 @@ public class EntityTopicOperator extends AbstractModel {
 
     public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
 
+    public static final String ENV_VAR_CLUSTER_CA_CERT_SECRET_DATA = "STRIMZI_CLUSTER_CA_CERT_SECRET_DATA";
+    public static final String ENV_VAR_EO_KEY_SECRET_DATA = "STRIMZI_EO_KEY_DATA";
+    public static final String ENV_VAR_EO_CERTIFICATE_CHAIN_DATA = "STRIMZI_EO_CERTIFICATE_CHAIN_DATA";
+
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withInitialDelaySeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY)
             .withTimeoutSeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT).build();
@@ -78,6 +84,8 @@ public class EntityTopicOperator extends AbstractModel {
     private int topicMetadataMaxAttempts;
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+
+    private Secret clusterCaCertSecret;
 
     /**
      * @param reconciliation   The reconciliation
@@ -284,8 +292,10 @@ public class EntityTopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        varList.add(buildEnvVar(ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME, KafkaCluster.clusterCaCertSecretName(cluster)));
-        varList.add(buildEnvVar(ENV_VAR_EO_KEY_SECRET_NAME, EntityOperator.secretName(cluster)));
+        varList.add(buildEnvVarFromSecret(ENV_VAR_EO_CERTIFICATE_CHAIN_DATA, EntityOperator.secretName(cluster), "entity-operator.crt"));
+        varList.add(buildEnvVarFromSecret(ENV_VAR_EO_KEY_SECRET_DATA, EntityOperator.secretName(cluster), "entity-operator.key"));
+        varList.add(buildEnvVar(ENV_VAR_CLUSTER_CA_CERT_SECRET_DATA, Util.certsToPemString(clusterCaCertSecret)));
+
         EntityOperator.javaOptions(varList, getJvmOptions(), javaSystemProperties);
 
         // Add shared environment variables used for all containers
@@ -359,6 +369,10 @@ public class EntityTopicOperator extends AbstractModel {
             properties.addPair("monitorInterval", "30");
         }
         return super.createLog4jProperties(properties);
+    }
+
+    public void setClusterCaCertSecret(Secret clusterCaCertSecret) {
+        this.clusterCaCertSecret = clusterCaCertSecret;
     }
 
 }

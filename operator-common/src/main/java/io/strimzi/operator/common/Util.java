@@ -722,6 +722,10 @@ public class Util {
             certificateChain = new String(Util.decodeFromSecret(keyCertSecret, keyCertName + ".crt"), StandardCharsets.US_ASCII);
         }
 
+        return tlsProperties(trustedCertificates, privateKey, certificateChain);
+    }
+
+    public static Properties tlsProperties(String trustedCertificates, String privateKey, String certificateChain) {
         Properties properties = new Properties();
 
         // configuring TLS encryption if requested
