@@ -8,8 +8,18 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.GenericSecretSource;
+import io.strimzi.api.kafka.model.GenericSecretSourceBuilder;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.vertx.core.Future;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -19,11 +29,15 @@ import java.util.Optional;
 import static io.strimzi.operator.common.Util.matchesSelector;
 import static io.strimzi.operator.common.Util.parseMap;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class UtilTest {
     @Test
@@ -187,5 +201,96 @@ public class UtilTest {
 
         selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2", "label1", "value1", "label3", "value3")).build());
         assertThat(matchesSelector(selector, testResource), is(false));
+    }
+
+    @Test
+    public void getHashOk() {
+        String namespace = "ns";
+
+        GenericSecretSource at = new GenericSecretSourceBuilder()
+                .withSecretName("top-secret-at")
+                .withKey("key")
+                .build();
+
+        GenericSecretSource cs = new GenericSecretSourceBuilder()
+                .withSecretName("top-secret-cs")
+                .withKey("key")
+                .build();
+
+        GenericSecretSource rt = new GenericSecretSourceBuilder()
+                .withSecretName("top-secret-rt")
+                .withKey("key")
+                .build();
+        KafkaClientAuthentication kcu = new KafkaClientAuthenticationOAuthBuilder()
+                .withAccessToken(at)
+                .withRefreshToken(rt)
+                .withClientSecret(cs)
+                .build();
+
+        CertSecretSource css = new CertSecretSourceBuilder()
+                .withCertificate("key")
+                .withSecretName("css-secret")
+                .build();
+
+        Secret secret = new SecretBuilder()
+                .withData(Map.of("key", "value"))
+                .build();
+
+        SecretOperator secretOps = mock(SecretOperator.class);
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-at"))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-rt"))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-cs"))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(Future.succeededFuture(secret));
+        Future<Integer> res = Util.authTlsHash(secretOps, "ns", kcu, singletonList(css));
+        res.onComplete(v -> {
+            assertThat(v.succeeded(), is(true));
+            // we are summing "value" hash four times
+            assertThat(v.result(), is("value".hashCode() * 4));
+        });
+    }
+
+    @Test
+    public void getHashFailure() {
+        String namespace = "ns";
+
+        GenericSecretSource at = new GenericSecretSourceBuilder()
+                .withSecretName("top-secret-at")
+                .withKey("key")
+                .build();
+
+        GenericSecretSource cs = new GenericSecretSourceBuilder()
+                .withSecretName("top-secret-cs")
+                .withKey("key")
+                .build();
+
+        GenericSecretSource rt = new GenericSecretSourceBuilder()
+                .withSecretName("top-secret-rt")
+                .withKey("key")
+                .build();
+        KafkaClientAuthentication kcu = new KafkaClientAuthenticationOAuthBuilder()
+                .withAccessToken(at)
+                .withRefreshToken(rt)
+                .withClientSecret(cs)
+                .build();
+
+        CertSecretSource css = new CertSecretSourceBuilder()
+                .withCertificate("key")
+                .withSecretName("css-secret")
+                .build();
+
+        Secret secret = new SecretBuilder()
+                .withData(Map.of("key", "value"))
+                .build();
+
+        SecretOperator secretOps = mock(SecretOperator.class);
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-at"))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-rt"))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-cs"))).thenReturn(Future.succeededFuture(null));
+        when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(Future.succeededFuture(secret));
+        Future<Integer> res = Util.authTlsHash(secretOps, "ns", kcu, singletonList(css));
+        res.onComplete(v -> {
+            assertThat(v.succeeded(), is(false));
+            assertThat(v.cause().getMessage(), is("Secret top-secret-cs not found"));
+        });
     }
 }

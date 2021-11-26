@@ -574,7 +574,8 @@ public class Util {
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getAccessToken()));
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getClientSecret()));
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getRefreshToken()));
-                return CompositeFuture.join(futureList).compose(hashes -> Future.succeededFuture(hashes.list().stream().collect(Collectors.summingInt(e -> (int) e))));
+                return CompositeFuture.join(futureList)
+                        .compose(hashes -> Future.succeededFuture(hashes.list().stream().collect(Collectors.summingInt(e -> (int) e))));
             } else {
                 // unknown Auth type
                 return tlsFuture;
@@ -585,7 +586,13 @@ public class Util {
     private static Future<Integer> addSecretHash(SecretOperator secretOperations, String namespace, GenericSecretSource genericSecretSource) {
         if (genericSecretSource != null) {
             return secretOperations.getAsync(namespace, genericSecretSource.getSecretName())
-                    .compose(secret -> Future.succeededFuture(secret.getData().get(genericSecretSource.getKey()).hashCode()));
+                    .compose(secret -> {
+                        if (secret == null) {
+                            return Future.failedFuture("Secret " + genericSecretSource.getSecretName() + " not found");
+                        } else {
+                            return Future.succeededFuture(secret.getData().get(genericSecretSource.getKey()).hashCode());
+                        }
+                    });
         }
         return Future.succeededFuture(0);
     }
