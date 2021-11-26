@@ -5,12 +5,14 @@
 [id='downloads-{context}']
 = Downloading Strimzi release artifacts
 
+[role="_abstract"]
 ifdef::Downloading[]
-To install Strimzi, download the release artifacts from {ReleaseDownload}.
-endif::Downloading[]
+To use deployment files to install Strimzi, download the release artifacts from {ReleaseDownload}.
 
+Download the `strimzi-_<version>_.zip` or `strimzi-_<version>_.tar.gz` archive file.
+endif::Downloading[]
 ifndef::Downloading[]
-To install Strimzi, download and extract the release artifacts from the `amq-streams-__<version>__-ocp-install-examples.zip` file from the {ZipDownload}.
+To use deployment files to install Strimzi, download and extract the *{ProductName} _<version>_ installation and example files* archive from the {ZipDownload}.
 endif::Downloading[]
 
 Strimzi release artifacts include sample YAML files to help you deploy the components of Strimzi to Kubernetes, perform common operations,
