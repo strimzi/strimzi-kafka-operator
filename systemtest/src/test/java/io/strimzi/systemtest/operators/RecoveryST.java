@@ -72,7 +72,7 @@ class RecoveryST extends AbstractST {
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromKafkaStatefulSetDeletion(ExtensionContext extensionContext) {
         // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/STSREMOVAL
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
         StatefulSet kafkaSts = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(sharedClusterName));
         assumeTrue(kafkaSts != null);
 
@@ -96,7 +96,7 @@ class RecoveryST extends AbstractST {
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromZookeeperStatefulSetDeletion(ExtensionContext extensionContext) {
         // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/STSREMOVAL
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
         StatefulSet zooSts = kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(sharedClusterName));
         assumeTrue(zooSts != null);
 

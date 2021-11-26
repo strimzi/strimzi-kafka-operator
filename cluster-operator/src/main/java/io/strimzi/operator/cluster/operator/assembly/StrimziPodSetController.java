@@ -230,7 +230,7 @@ public class StrimziPodSetController implements Runnable {
             try {
                 // This has to:
                 // 1) Create missing pods
-                // 2) Modify changed pods if possible (metadata change)
+                // 2) Modify changed pods if needed (patch owner reference)
                 // 3) Delete scaled down pods
 
                 // Will be used later to find out if any pod needs to be deleted
@@ -242,7 +242,7 @@ public class StrimziPodSetController implements Runnable {
                     Pod pod = MAPPER.convertValue(desiredPod, Pod.class);
                     desiredPods.add(pod.getMetadata().getName());
 
-                    maybeCreatePod(reconciliation, pod, ModelUtils.createOwnerReference(podSet), podCounter);
+                    maybeCreateOrPatchPod(reconciliation, pod, ModelUtils.createOwnerReference(podSet), podCounter);
                 }
 
                 // Check if any pods needs to be deleted
@@ -288,14 +288,15 @@ public class StrimziPodSetController implements Runnable {
     }
 
     /**
-     * Creates missing pod defined in the StrimziPodSet
+     * Creates missing pod defined in the StrimziPodSet. If the pod already exists, it checks the owner reference and if
+     * needed adds it to the Pod.
      *
      * @param reconciliation    Reconciliation in which this is executed
      * @param pod               Pod which should be checked and created if needed
      * @param owner             The OwnerReference which should be set to the pod
      * @param podCounter        Pod Counter used to count pods for the status
      */
-    private void maybeCreatePod(Reconciliation reconciliation, Pod pod, OwnerReference owner, PodCounter podCounter)    {
+    private void maybeCreateOrPatchPod(Reconciliation reconciliation, Pod pod, OwnerReference owner, PodCounter podCounter)    {
         Pod currentPod = podLister.namespace(reconciliation.namespace()).get(pod.getMetadata().getName());
 
         if (currentPod == null) {
@@ -304,9 +305,9 @@ public class StrimziPodSetController implements Runnable {
             pod.getMetadata().setOwnerReferences(List.of(owner));
             podOperator.client().inNamespace(reconciliation.namespace()).create(pod);
         } else {
-            LOGGER.debugCr(reconciliation, "Pod {} in namespace {} already exists => nothing to do right now", pod.getMetadata().getName(), reconciliation.namespace());
-
-            if (!ModelUtils.hasOwnerReference(currentPod, owner))  {
+            if (ModelUtils.hasOwnerReference(currentPod, owner))    {
+                LOGGER.debugCr(reconciliation, "Pod {} in namespace {} already exists => nothing to do right now", pod.getMetadata().getName(), reconciliation.namespace());
+            } else  {
                 LOGGER.debugCr(reconciliation, "Pod {} in namespace {} is missing owner reference => patching it", currentPod.getMetadata().getName(), reconciliation.namespace());
                 Pod podWithOwnerReference = new PodBuilder(currentPod).build();
 
@@ -328,7 +329,7 @@ public class StrimziPodSetController implements Runnable {
                 podCounter.currentPods++;
             }
 
-            // TODO: Add patching of exiting pods => to be done int he future to handle selected changes to the Pods
+            // TODO: Add patching of exiting pods => to be done in the future to handle selected changes to the Pods
             //  which might not require rolling updates
         }
     }
@@ -395,20 +396,24 @@ public class StrimziPodSetController implements Runnable {
                 Reconciliation reconciliation = workQueue.take().toReconciliation();
                 reconcile(reconciliation);
             } catch (InterruptedException e)    {
-                LOGGER.warnOp("StrimziPodSet Controller was interrupted", e);
+                LOGGER.debugOp("StrimziPodSet Controller was interrupted", e);
             } catch (Exception e)   {
                 LOGGER.warnOp("StrimziPodSet reconciliation failed", e);
             }
         }
 
+        LOGGER.infoOp("Stopping StrimziPodSet controller");
+
         podInformer.stop();
         strimziPodSetInformer.stop();
+        kafkaInformer.stop();
     }
 
     /**
      * Stops the controller: this method sets the stop flag and the run loop will exit when the flag is set.
      */
     public void stop()  {
+        LOGGER.infoOp("Requesting StrimziPodSet controller to stop");
         this.stop = true;
     }
 

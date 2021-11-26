@@ -1218,7 +1218,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("---> STATEFUL SETS <---");
 
         // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/STSREMOVAL
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
         StatefulSet kafkaSts = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
         if (kafkaSts != null) {
             LOGGER.info("Getting labels from stateful set of kafka resource");
@@ -1226,7 +1226,7 @@ class KafkaST extends AbstractST {
         }
 
         // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/STSREMOVAL
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
         StatefulSet zooSts = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName));
         if (zooSts != null) {
             LOGGER.info("Getting labels from stateful set of zookeeper resource");

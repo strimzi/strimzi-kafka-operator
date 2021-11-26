@@ -703,12 +703,14 @@ public class ZookeeperCluster extends AbstractModel {
      */
     private List<Volume> getPodVolumes(String podName, boolean isOpenShift) {
         if (storage instanceof PersistentClaimStorage) {
+            // Persistent Storage needs to be added
             List<Volume> volumeList = new ArrayList<>(6);
             volumeList.add(VolumeUtils.createPvcVolume(VOLUME_NAME, "data-" + podName));
             volumeList.addAll(getVolumes(isOpenShift));
 
             return volumeList;
         } else {
+            // For Ephemeral storage, we do not need to add any additional volumes
             return getVolumes(isOpenShift);
         }
     }

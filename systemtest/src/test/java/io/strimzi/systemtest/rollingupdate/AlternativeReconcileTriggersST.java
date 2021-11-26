@@ -144,7 +144,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         internalKafkaClient.produceTlsMessagesUntilOperationIsSuccessful(MESSAGE_COUNT);
 
         // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/STSREMOVAL
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
         StatefulSet kafkaSts = kubeClient(namespaceName).getStatefulSet(namespaceName, kafkaName);
         if (kafkaSts != null) {
             // rolling update for kafka
@@ -174,7 +174,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         assertThat(received, is(MESSAGE_COUNT));
 
         // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/STSREMOVAL
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
         StatefulSet zooSts = kubeClient(namespaceName).getStatefulSet(namespaceName, zkName);
         if (zooSts != null) {
             // rolling update for zookeeper

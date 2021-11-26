@@ -65,6 +65,7 @@ public class ClusterOperator extends AbstractVerticle {
     private final ResourceOperatorSupplier resourceOperatorSupplier;
 
     private StrimziPodSetController strimziPodSetController;
+    private Thread strimziPodSetControllerThread;
 
     public ClusterOperator(String namespace,
                            ClusterOperatorConfig config,
@@ -97,7 +98,7 @@ public class ClusterOperator extends AbstractVerticle {
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", config.getOperationsThreadPoolSize(), TimeUnit.SECONDS.toNanos(120));
 
         strimziPodSetController = new StrimziPodSetController(namespace, config.getCustomResourceSelector(), resourceOperatorSupplier.kafkaOperator, resourceOperatorSupplier.strimziPodSetOperator, resourceOperatorSupplier.podOperations);
-        Thread strimziPodSetControllerThread = new Thread(strimziPodSetController, "StrimziPodSetController");
+        strimziPodSetControllerThread = new Thread(strimziPodSetController, "StrimziPodSetController");
         strimziPodSetControllerThread.start();
 
         List<Future> watchFutures = new ArrayList<>(8);
@@ -139,6 +140,7 @@ public class ClusterOperator extends AbstractVerticle {
             // TODO remove the watch from the watchByKind
         }
         strimziPodSetController.stop();
+        strimziPodSetControllerThread.interrupt();
         client.close();
         stop.complete();
     }

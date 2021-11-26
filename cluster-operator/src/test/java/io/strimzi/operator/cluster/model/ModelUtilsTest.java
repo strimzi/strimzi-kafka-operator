@@ -7,10 +7,14 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -59,6 +63,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 @ParallelSuite
 public class ModelUtilsTest {
 
@@ -566,5 +571,58 @@ public class ModelUtilsTest {
         assertThat(ref.getUid(), is(owner.getMetadata().getUid()));
         assertThat(ref.getBlockOwnerDeletion(), is(false));
         assertThat(ref.getController(), is(false));
+    }
+
+    @ParallelTest
+    public void testHasOwnerReference()    {
+        OwnerReference owner = new OwnerReferenceBuilder()
+                .withApiVersion("my-api")
+                .withKind("my-kind")
+                .withName("my-owner")
+                .withUid("a02c09d8-a04f-469d-97ba-920720abe9b3")
+                .withBlockOwnerDeletion(false)
+                .withController(false)
+                .build();
+
+        OwnerReference otherOwner = new OwnerReferenceBuilder()
+                .withApiVersion("my-other-api")
+                .withKind("my-other-kind")
+                .withName("my-other-owner")
+                .withUid("3dfcd6b9-ad05-4277-8d13-147346fe1f70")
+                .withBlockOwnerDeletion(false)
+                .withController(false)
+                .build();
+
+        Pod pod = new PodBuilder()
+                    .withNewMetadata()
+                        .withName("my-pod")
+                        .withNamespace("my-namespace")
+                    .endMetadata()
+                    .withNewSpec()
+                        .withContainers(new ContainerBuilder()
+                                .withName("busybox")
+                                .withImage("busybox")
+                                .withCommand("sleep", "3600")
+                                .withImagePullPolicy("IfNotPresent")
+                                .build())
+                        .withRestartPolicy("Always")
+                        .withTerminationGracePeriodSeconds(0L)
+                    .endSpec()
+                    .build();
+
+        // No owner reference
+        assertThat(ModelUtils.hasOwnerReference(pod, owner), is(false));
+
+        // Only our owner reference
+        pod.getMetadata().setOwnerReferences(List.of(owner));
+        assertThat(ModelUtils.hasOwnerReference(pod, owner), is(true));
+
+        // Other owner reference
+        pod.getMetadata().setOwnerReferences(List.of(otherOwner));
+        assertThat(ModelUtils.hasOwnerReference(pod, owner), is(false));
+
+        // Multiple owner references
+        pod.getMetadata().setOwnerReferences(List.of(otherOwner, owner));
+        assertThat(ModelUtils.hasOwnerReference(pod, owner), is(true));
     }
 }
