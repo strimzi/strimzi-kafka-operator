@@ -15,15 +15,15 @@ The following resources are created by the Cluster Operator in the Kubernetes cl
 `_cluster-name_-clients-ca-cert`:: Secret with the Clients CA public key. This key can be used to verify the identity of the Kafka users.
 `_cluster-name_-cluster-operator-certs`:: Secret with Cluster operators keys for communication with Kafka and ZooKeeper.
 
-.Zookeeper nodes
+.ZooKeeper nodes
 
 `_cluster-name_-zookeeper`:: StatefulSet which is in charge of managing the ZooKeeper node pods.
-`_cluster-name_-zookeeper-_idx_`:: Pods created by the Zookeeper StatefulSet.
+`_cluster-name_-zookeeper-_idx_`:: Pods created by the ZooKeeper StatefulSet.
 `_cluster-name_-zookeeper-nodes`:: Headless Service needed to have DNS resolve the ZooKeeper pods IP addresses directly.
 `_cluster-name_-zookeeper-client`:: Service used by Kafka brokers to connect to ZooKeeper nodes as clients.
 `_cluster-name_-zookeeper-config`:: ConfigMap that contains the ZooKeeper ancillary configuration, and is mounted as a volume by the ZooKeeper node pods.
 `_cluster-name_-zookeeper-nodes`:: Secret with ZooKeeper node keys.
-`_cluster-name_-zookeeper`:: Service account used by the Zookeeper nodes.
+`_cluster-name_-zookeeper`:: Service account used by the ZooKeeper nodes.
 `_cluster-name_-zookeeper`:: Pod Disruption Budget configured for the ZooKeeper nodes.
 `_cluster-name_-network-policy-zookeeper`:: Network policy managing access to the ZooKeeper services.
 `data-_cluster-name_-zookeeper-_idx_`:: Persistent Volume Claim for the volume used for storing data for the ZooKeeper node pod `_idx_`. This resource will be created only if persistent storage is selected for provisioning persistent volumes to store data.
