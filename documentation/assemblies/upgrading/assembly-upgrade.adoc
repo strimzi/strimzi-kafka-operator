@@ -5,6 +5,7 @@
 [id='assembly-upgrade-{context}']
 = Upgrading Strimzi
 
+[role="_abstract"]
 Strimzi can be upgraded to version {ProductVersion} to take advantage of new features and enhancements, performance improvements, and security options.
 
 As part of the upgrade, you upgrade Kafka to the latest supported version.
@@ -61,7 +62,7 @@ Upgrading Strimzi triggers rolling updates, where all brokers are restarted in t
 During rolling updates, not all brokers are online, so overall _cluster availability_ is temporarily reduced.
 A reduction in cluster availability increases the chance that a broker failure will result in lost messages.
 
-include::assembly-upgrade-kafka.adoc[leveloffset=+1]
+include::modules/con-upgrade-sequence.adoc[leveloffset=+1]
 
 include::modules/con-upgrade-cluster.adoc[leveloffset=+1]
 

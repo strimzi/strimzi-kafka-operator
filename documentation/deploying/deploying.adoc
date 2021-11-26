@@ -8,12 +8,18 @@ include::shared/attributes.adoc[]
 
 //Introduction to the install process
 include::assemblies/deploying/assembly-deploy-intro.adoc[leveloffset=+1]
+//Install options
+include::modules/deploying/con-strimzi-installation-methods.adoc[leveloffset=+2]
 //Checklist to show deployment order and the options available
 include::assemblies/deploying/assembly-deploy-options.adoc[leveloffset=+1]
 //Prep for the deployment
 include::assemblies/deploying/assembly-deploy-tasks-prep.adoc[leveloffset=+1]
-//Deployment steps
+//Deployment steps using installation artifacts
 include::assemblies/deploying/assembly-deploy-tasks.adoc[leveloffset=+1]
+//Deployment using operatorhub.io
+include::modules/deploying/con-deploy-cluster-operator-from-operator-hub.adoc[leveloffset=+1]
+//Deployment using Helm
+include::modules/deploying/proc-deploy-cluster-operator-helm-chart.adoc[leveloffset=+1]
 //Verifying the deployment and providing access to an external client
 include::assemblies/deploying/assembly-deploy-verify.adoc[leveloffset=+1]
 //Introduce metrics and monitoring to your deployment
