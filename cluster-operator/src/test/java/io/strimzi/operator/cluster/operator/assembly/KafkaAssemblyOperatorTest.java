@@ -202,9 +202,9 @@ public class KafkaAssemblyOperatorTest {
     }
 
     public static Iterable<Params> data() {
-        boolean[] shiftiness = {true, false};
-        boolean[] metrics = {true, false};
-        Storage[] kafkaStorageConfigs = {
+        boolean[] metricsOpenShiftAndEntityOperatorOptions = {true, false};
+
+        SingleVolumeStorage[] storageConfig = {
             new EphemeralStorage(),
             new PersistentClaimStorageBuilder()
                     .withSize("123")
@@ -212,84 +212,70 @@ public class KafkaAssemblyOperatorTest {
                     .withDeleteClaim(true)
                 .build()
         };
-        SingleVolumeStorage[] zkStorageConfigs = {
-            new EphemeralStorage(),
-            new PersistentClaimStorageBuilder()
-                    .withSize("123")
-                    .withStorageClass("foo")
-                    .withDeleteClaim(true)
-                    .build()
-        };
-        List<Map<String, Object>> kafkaConfigs = asList(
+
+        List<Map<String, Object>> configs = asList(
             null,
             emptyMap(),
             singletonMap("foo", "bar")
         );
-        List<Map<String, Object>> zooConfigs = asList(
-            null,
-            emptyMap(),
-            singletonMap("foo", "bar")
-        );
-        EntityOperatorSpec[] eoConfigs = {
-            null,
-            new EntityOperatorSpecBuilder()
-                    .withUserOperator(new EntityUserOperatorSpecBuilder().build())
-                    .withTopicOperator(new EntityTopicOperatorSpecBuilder().build())
-                    .build()
-        };
+
         List<Params> result = new ArrayList<>();
-        for (boolean shift: shiftiness) {
-            for (boolean metric: metrics) {
-                for (Map<String, Object> kafkaConfig : kafkaConfigs) {
-                    for (Map<String, Object> zooConfig : zooConfigs) {
-                        for (Storage kafkaStorage : kafkaStorageConfigs) {
-                            for (SingleVolumeStorage zkStorage : zkStorageConfigs) {
-                                for (EntityOperatorSpec eoConfig : eoConfigs) {
-                                    List<GenericKafkaListener> listeners = new ArrayList<>(3);
-
-                                    listeners.add(new GenericKafkaListenerBuilder()
-                                            .withName("plain")
-                                            .withPort(9092)
-                                            .withType(KafkaListenerType.INTERNAL)
-                                            .withTls(false)
-                                            .withNewKafkaListenerAuthenticationScramSha512Auth()
-                                            .endKafkaListenerAuthenticationScramSha512Auth()
-                                            .build());
-
-                                    listeners.add(new GenericKafkaListenerBuilder()
-                                            .withName("tls")
-                                            .withPort(9093)
-                                            .withType(KafkaListenerType.INTERNAL)
-                                            .withTls(true)
-                                            .withNewKafkaListenerAuthenticationTlsAuth()
-                                            .endKafkaListenerAuthenticationTlsAuth()
-                                            .build());
-
-                                    if (shift) {
-                                        listeners.add(new GenericKafkaListenerBuilder()
-                                                .withName("external")
-                                                .withPort(9094)
-                                                .withType(KafkaListenerType.ROUTE)
-                                                .withTls(true)
-                                                .withNewKafkaListenerAuthenticationTlsAuth()
-                                                .endKafkaListenerAuthenticationTlsAuth()
-                                                .build());
-                                    } else {
-                                        listeners.add(new GenericKafkaListenerBuilder()
-                                                .withName("external")
-                                                .withPort(9094)
-                                                .withType(KafkaListenerType.NODEPORT)
-                                                .withTls(true)
-                                                .withNewKafkaListenerAuthenticationTlsAuth()
-                                                .endKafkaListenerAuthenticationTlsAuth()
-                                                .build());
-                                    }
-
-                                    result.add(new Params(shift, metric, listeners, kafkaConfig, zooConfig, kafkaStorage, zkStorage, eoConfig));
-                                }
-                            }
-                        }
+        for (boolean metricsOpenShiftAndEntityOperator: metricsOpenShiftAndEntityOperatorOptions) {
+            for (Map<String, Object> config : configs) {
+                for (SingleVolumeStorage storage : storageConfig) {
+                    EntityOperatorSpec eoConfig;
+                    if (metricsOpenShiftAndEntityOperator) {
+                        eoConfig = new EntityOperatorSpecBuilder()
+                                .withUserOperator(new EntityUserOperatorSpecBuilder().build())
+                                .withTopicOperator(new EntityTopicOperatorSpecBuilder().build())
+                                .build();
+                    } else {
+                        eoConfig = null;
                     }
+
+                    List<GenericKafkaListener> listeners = new ArrayList<>(3);
+
+                    listeners.add(new GenericKafkaListenerBuilder()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .withNewKafkaListenerAuthenticationScramSha512Auth()
+                            .endKafkaListenerAuthenticationScramSha512Auth()
+                            .build());
+
+                    listeners.add(new GenericKafkaListenerBuilder()
+                            .withName("tls")
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewKafkaListenerAuthenticationTlsAuth()
+                            .endKafkaListenerAuthenticationTlsAuth()
+                            .build());
+
+                    if (metricsOpenShiftAndEntityOperator) {
+                        // On OpenShift, use Routes
+                        listeners.add(new GenericKafkaListenerBuilder()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.ROUTE)
+                                .withTls(true)
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                                .build());
+                    } else {
+                        // On Kube, use nodeports
+                        listeners.add(new GenericKafkaListenerBuilder()
+                                .withName("external")
+                                .withPort(9094)
+                                .withType(KafkaListenerType.NODEPORT)
+                                .withTls(true)
+                                .withNewKafkaListenerAuthenticationTlsAuth()
+                                .endKafkaListenerAuthenticationTlsAuth()
+                                .build());
+                    }
+
+                    result.add(new Params(metricsOpenShiftAndEntityOperator, metricsOpenShiftAndEntityOperator, listeners, config, config, storage, storage, eoConfig));
                 }
             }
         }
