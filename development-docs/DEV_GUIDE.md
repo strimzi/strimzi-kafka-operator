@@ -140,7 +140,7 @@ The tests run during the build can be skipped by setting the `MVN_ARGS` environm
 make command:
 
         make clean
-        make MVN_ARGS='-DskipTests -DskipITs' all
+        make MVN_ARGS='-DskipTests' all
 
 4. To use the newly built images, update
    the `packaging/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml` to obtain the images from your
@@ -214,7 +214,7 @@ Commonly used Make targets:
 - `docker_tag` for [tagging existing images](#tagging-and-pushing-docker-images)
 - `docker_push` for [pushing images to a Docker registry](#tagging-and-pushing-docker-images)
 
-> *Note*: If you are having trouble running any of the Make commands it may help to run `mvn clean` and then `mvn install -DskipTests -DskipITs` before running the commands again.
+> *Note*: If you are having trouble running any of the Make commands it may help to run `mvn clean` and then `mvn install -DskipTests` before running the commands again.
 
 ### Java versions
 
@@ -295,7 +295,10 @@ Unwanted versions can be commented out to speed up the build process.
 
 Running `make` invokes Maven for packaging Java based applications (that is, Cluster Operator, Topic Operator, etc).
 The `mvn` command can be customized by setting the `MVN_ARGS` environment variable when launching `make all`. For
-example, `MVN_ARGS=-DskipTests make all` can be used to avoid running the unit tests and adding `-DskipITs` will skip
+example:
+* `MVN_ARGS=-DskipTests make all` will compile test code, but not run unit or integration tests
+* `MVN_ARGS=-DskipITs make all` will compile test code and run unit tests, but not integration tests
+* `MVN_ARGS=-Dmaven.test.skip=true make all` won't compile test code and won't run unit or integration tests
 the integration tests.
 
 ### Local build on Minikube
@@ -364,7 +367,7 @@ the commit if errors are detected:
 ## IDE build problems
 
 The build also uses a Java annotation processor. Some IDEs (such as IntelliJ's IDEA) by default don't run the annotation
-processor in their build process. You can run `mvn clean install -DskipTests -DskipITs` to run the annotation processor
+processor in their build process. You can run `mvn clean install -DskipTests` to run the annotation processor
 as part of the `maven` build, and the IDE should then be able to use the generated classes. It is also possible to
 configure the IDE to run the annotation processor directly.
 
