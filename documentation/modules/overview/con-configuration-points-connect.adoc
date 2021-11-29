@@ -225,7 +225,7 @@ curl -X POST \
   http://my-connect-cluster-connect-api:8083/connectors \
   -H 'Content-Type: application/json' \
   -d '{ "name": "my-source-connector",
-    "config": [
+    "config":
     {
       "class":"org.apache.kafka.connect.file.FileStreamSourceConnector",
       "file": "/opt/kafka/LICENSE",
@@ -233,7 +233,6 @@ curl -X POST \
       "tasksMax": "4",
       # ...
     }
-  ]
 }'
 ----
 
