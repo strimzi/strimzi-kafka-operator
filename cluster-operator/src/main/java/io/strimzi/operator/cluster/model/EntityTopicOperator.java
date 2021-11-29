@@ -56,6 +56,7 @@ public class EntityTopicOperator extends AbstractModel {
     public static final String ENV_VAR_ZOOKEEPER_SESSION_TIMEOUT_MS = "STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS";
     public static final String ENV_VAR_TOPIC_METADATA_MAX_ATTEMPTS = "STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS";
     public static final String ENV_VAR_SECURITY_PROTOCOL = "STRIMZI_SECURITY_PROTOCOL";
+    public static final String ENV_VAR_STRIMZI_KAFKA_VERSION = "STRIMZI_KAFKA_VERSION";
 
     public static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
 
@@ -78,6 +79,7 @@ public class EntityTopicOperator extends AbstractModel {
     private int topicMetadataMaxAttempts;
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
+    private String kafkaVersion = "";
 
     /**
      * @param reconciliation   The reconciliation
@@ -207,9 +209,10 @@ public class EntityTopicOperator extends AbstractModel {
      *
      * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Topic Operator one
+     * @param versions Version of Kafka brokers TO communicates with
      * @return Entity Topic Operator instance, null if not configured in the ConfigMap
      */
-    public static EntityTopicOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly) {
+    public static EntityTopicOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         EntityTopicOperator result = null;
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
         if (entityOperatorSpec != null) {
@@ -246,6 +249,7 @@ public class EntityTopicOperator extends AbstractModel {
                 if (topicOperatorSpec.getLivenessProbe() != null) {
                     result.setLivenessProbe(topicOperatorSpec.getLivenessProbe());
                 }
+                result.kafkaVersion = kafkaAssembly.getSpec().getKafka().getVersion() == null ? versions.defaultVersion().version() : kafkaAssembly.getSpec().getKafka().getVersion();
             }
         }
         return result;
@@ -283,6 +287,7 @@ public class EntityTopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
+        varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_VERSION, kafkaVersion));
         EntityOperator.javaOptions(varList, getJvmOptions(), javaSystemProperties);
 
         // Add shared environment variables used for all containers
@@ -357,5 +362,4 @@ public class EntityTopicOperator extends AbstractModel {
         }
         return super.createLog4jProperties(properties);
     }
-
 }

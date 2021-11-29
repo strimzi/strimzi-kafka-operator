@@ -5,21 +5,20 @@
 package io.strimzi.build.kafka.metadata;
 
 import io.strimzi.kafka.config.model.ConfigModel;
-import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.kafka.config.model.Type;
-import kafka.server.DynamicBrokerConfig$;
-import kafka.server.KafkaConfig$;
+import kafka.log.LogConfig$;
 import org.apache.kafka.common.config.ConfigDef;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 @SuppressWarnings("unchecked")
-public class KafkaConfigModelGenerator extends CommonConfigModelGenerator {
+public class KafkaTopicConfigModelGenerator extends CommonConfigModelGenerator {
 
     @Override
     protected Map<String, ConfigModel> configs() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
@@ -27,25 +26,20 @@ public class KafkaConfigModelGenerator extends CommonConfigModelGenerator {
         Method getConfigValueMethod = methodFromReflection(ConfigDef.class, "getConfigValue", ConfigDef.ConfigKey.class, String.class);
         Method sortedConfigs = methodFromReflection(ConfigDef.class, "sortedConfigs");
         List<ConfigDef.ConfigKey> keys = (List) sortedConfigs.invoke(def);
-        Map<String, String> dynamicUpdates = brokerDynamicUpdates();
         Map<String, ConfigModel> result = new TreeMap<>();
 
         for (ConfigDef.ConfigKey key : keys) {
-            addConfigModel(getConfigValueMethod, key, def, dynamicUpdates, result);
+            addConfigModel(getConfigValueMethod, key, def, Collections.emptyMap(), result);
         }
         return result;
-    }
-
-    static Map<String, String> brokerDynamicUpdates() {
-        return DynamicBrokerConfig$.MODULE$.dynamicConfigUpdateModes();
     }
 
     @Override
     protected ConfigDef configDefs() {
         try {
-            Field instance = getField(KafkaConfig$.class, "MODULE$");
-            KafkaConfig$ x = (KafkaConfig$) instance.get(null);
-            Field config = getOneOfFields(KafkaConfig$.class, "kafka$server$KafkaConfig$$configDef", "configDef");
+            Field instance = getField(LogConfig$.class, "MODULE$");
+            LogConfig$ x = (LogConfig$) instance.get(null);
+            Field config = getOneOfFields(LogConfig$.class, "kafka$log$LogConfig$$configDef", "configDef");
             return (ConfigDef) config.get(x);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -55,10 +49,9 @@ public class KafkaConfigModelGenerator extends CommonConfigModelGenerator {
     @Override
     protected ConfigModel createDescriptor(Method getConfigValueMethod, ConfigDef def, ConfigDef.ConfigKey key, Map<String, String> dynamicUpdates) throws InvocationTargetException, IllegalAccessException {
         Type type = parseType(String.valueOf(getConfigValueMethod.invoke(def, key, "Type")));
-        Scope scope = parseScope(dynamicUpdates.getOrDefault(key.name, "read-only"));
         ConfigModel descriptor = new ConfigModel();
         descriptor.setType(type);
-        descriptor.setScope(scope);
         return descriptor;
     }
+
 }

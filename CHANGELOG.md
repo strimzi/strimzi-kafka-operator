@@ -5,6 +5,7 @@
 * Added the option to configure the Cluster Operator's Zookeeper admin client session timeout via an new env var: `STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS`
 * The `ControlPlaneListener` and `ServiceAccountPatching` feature gates are now in the _beta_ phase and are enabled by default.
 * Allow setting any extra environment variables for the Cluster Operator container through Helm using a new `extraEnvs` value.
+* Validate `spec.config` in the KafkaTopic resources against available Kafka topic configuration options
 
 ### Changes, deprecations and removals
 
