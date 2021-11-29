@@ -57,14 +57,14 @@ The HTTP endpoint is scraped by the Prometheus server.
 
 == Viewing Cruise Control metrics
 
-Having exposed Cruise Control metrics, you can use a monitoring tool to view the information on the data.
+Having exposed Cruise Control metrics, you can use Prometheus or another suitable monitoring system to view information on the metrics data.
 Strimzi provides an xref:assembly-metrics-config-files-str[example Grafana dashboard] to provide visualizations of Cruise Control metrics.
 The dashboard is a JSON file called `strimzi-cruise-control.json`.
 The exposed metrics provide the monitoring data when you xref:proc-metrics-grafana-dashboard-str[enable the Grafana dashboard].
 
 === Monitoring Balancedness scores
 
-Cruise Control metrics include balancedness scores.
+Cruise Control metrics include a balancedness score.
 Balancedness is the measure of how evenly a workload is distributed in a Kafka cluster.
 
 The Cruise Control metric for balancedness score (`balancedness-score`) differs from the balancedness score in the `KafkaRebalance` resource.
@@ -72,14 +72,21 @@ Cruise Control calculates each score using different goals.
 The former uses `anomaly.detection.goals`, while the latter uses `default.goals`.
 The goals are specified in the `spec.cruiseControl.config` of the `Kafka` custom resource.
 
-NOTE: Refreshing a `KafkaRebalance` resource fetches the latest state of a Kafka cluster.
-The refresh also requests an optimization proposal from Cruise Control. Continual refreshes can impact performance monitoring in certain circumstances.
-For example, the `goals` configured in the `KafkaRebalance` resource might differ from the `default.goals` used by Cruise Control.
+[NOTE]
+====
+Refreshing the `KafkaRebalance` resource fetches an optimization proposal.
+The latest cached optimization proposal is fetched under one of the following conditions:
+
+* KafkaRebalance `goals` match the goals configured in the `default.goals`section of the `Kafka` resource
+* KafkaRebalance `goals` are not specified
+
+Otherwise, Cruise Control generates a new optimization proposal based on KafkaRebalance `goals`. If new proposals are generated with each refresh, this can impact performance monitoring.
+====
 
 === Alerts on anomaly detection
 
-Cruise Control’s anomaly detection is enabled for use with AMQ Streams.
+Cruise Control’s anomaly detection is enabled for use with Strimzi.
 You can use anomaly detection when monitoring Cruise Control metrics.
-Cruise Control’s anomaly notifier provides alerts on broker failures and other conditions that block the generation of optimization goals, as well as any actions taken.
 
-To route Cruise Control alerts to a notification service, use an alerting tool like Prometheus Alertmanager.
+Cruise Control’s anomaly notifier provides metrics data for conditions that block the generation of optimization goals, such as broker failures, and any actions taken.
+If you want more visibility, you can use these metrics to set up alerts that send out notifications.
