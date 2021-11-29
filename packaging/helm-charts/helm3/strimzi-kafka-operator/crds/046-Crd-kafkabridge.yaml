@@ -192,6 +192,7 @@ spec:
                       type: string
                       enum:
                         - tls
+                        - scram-sha-256
                         - scram-sha-512
                         - plain
                         - oauth
