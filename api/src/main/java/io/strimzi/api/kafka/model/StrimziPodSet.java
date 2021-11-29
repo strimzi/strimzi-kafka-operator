@@ -48,25 +48,25 @@ import static java.util.Collections.emptyMap;
                 additionalPrinterColumns = {
                     @Crd.Spec.AdditionalPrinterColumn(
                             name = "Pods",
-                            description = "Number of pods managed by the StrimziPodSetController",
+                            description = "Number of pods managed by the StrimziPodSet",
                             jsonPath = ".status.pods",
                             type = "integer"
                         ),
                     @Crd.Spec.AdditionalPrinterColumn(
                             name = "Ready Pods",
-                            description = "Number of ready pods managed by the StrimziPodSetController",
+                            description = "Number of ready pods managed by the StrimziPodSet",
                             jsonPath = ".status.readyPods",
                             type = "integer"
                         ),
                     @Crd.Spec.AdditionalPrinterColumn(
                             name = "Current Pods",
-                            description = "Number of up-to-date pods managed by the StrimziPodSetController",
+                            description = "Number of up-to-date pods managed by the StrimziPodSet",
                             jsonPath = ".status.currentPods",
                             type = "integer"
                         ),
                     @Crd.Spec.AdditionalPrinterColumn(
                             name = "Age",
-                            description = "Age of the StrimziPodSetController",
+                            description = "Age of the StrimziPodSet",
                             jsonPath = ".metadata.creationTimestamp",
                             type = "date"
                         )

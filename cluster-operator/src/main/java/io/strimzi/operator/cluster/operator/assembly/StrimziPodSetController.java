@@ -74,8 +74,9 @@ public class StrimziPodSetController implements Runnable {
      * @param crSelectorLabels      Selector labels for custom resource managed by this operator instance. This is used
      *                              to check that the pods belong to a Kafka cluster matching these labels.
      * @param kafkaOperator         Kafka Operator for getting the Kafka custom resources
-     * @param strimziPodSetOperator  StrimziPodSet Operator used to manage the StrimziPodSet resources - get them, update their status etc.
-     * @param podOperator           Pod oeprator for managing pods
+     * @param strimziPodSetOperator StrimziPodSet Operator used to manage the StrimziPodSet resources - get them, update
+     *                              their status etc.
+     * @param podOperator           Pod operator for managing pods
      */
     public StrimziPodSetController(String watchedNamespace, Labels crSelectorLabels, CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator, CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator, PodOperator podOperator) {
         this.podOperator = podOperator;

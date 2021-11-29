@@ -384,7 +384,7 @@ public abstract class AbstractModel {
      *
      * @return Labels object with the default labels merged with the provided additional labels and the new {@code strimzi.io/name} label
      */
-    protected Labels getLabelsWithStrimziName(String name, String podName, Map<String, String> additionalLabels) {
+    protected Labels getLabelsWithStrimziNameAndPodName(String name, String podName, Map<String, String> additionalLabels) {
         return labels.withStrimziName(name).withStrimziPodName(podName).withAdditionalLabels(additionalLabels);
     }
 
@@ -1122,7 +1122,7 @@ public abstract class AbstractModel {
         List<Map<String, Object>> pods = new ArrayList<>(replicas);
 
         for (int i = 0; i < replicas; i++)  {
-            String podName = ZookeeperCluster.zookeeperPodName(cluster, i);
+            String podName = getPodName(i);
             Pod pod = createStatefulPod(
                     name,
                     podName,
@@ -1193,10 +1193,9 @@ public abstract class AbstractModel {
         Pod pod = new PodBuilder()
                 .withNewMetadata()
                     .withName(podName)
-                    .withLabels(getLabelsWithStrimziName(name, podName, templatePodLabels).withStatefulSetPod(podName).withStrimziPodSetController(strimziPodSetName).toMap())
+                    .withLabels(getLabelsWithStrimziNameAndPodName(name, podName, templatePodLabels).withStatefulSetPod(podName).withStrimziPodSetController(strimziPodSetName).toMap())
                     .withNamespace(namespace)
                     .withAnnotations(Util.mergeLabelsOrAnnotations(podAnnotations, templatePodAnnotations))
-                    //.withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()
                     .withRestartPolicy("Always")
@@ -1557,8 +1556,11 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Creates a PodDisruptionBudget for use with Custom pod controller. Custom pod controllers can use only PDBs with
-     * minAvailable in absolute numbers (i.e. no percentages).
+     * Creates a PodDisruptionBudget for use with custom pod controller (such as StrimziPodSetController). Unlike
+     * built-in controllers (Deployments, StatefulSets, Jobs, DaemonSets, ...), custom pod controllers can use only PDBs
+     * with minAvailable in absolute numbers (i.e. no percentages).
+     * See https://kubernetes.io/docs/tasks/run-application/configure-pdb/#arbitrary-controllers-and-selectors for more
+     * details.
      *
      * @return The default PodDisruptionBudget
      */

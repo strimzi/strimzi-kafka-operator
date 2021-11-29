@@ -28,19 +28,19 @@ spec:
         status: {}
       additionalPrinterColumns:
         - name: Pods
-          description: Number of pods managed by the StrimziPodSetController
+          description: Number of pods managed by the StrimziPodSet
           jsonPath: .status.pods
           type: integer
         - name: Ready Pods
-          description: Number of ready pods managed by the StrimziPodSetController
+          description: Number of ready pods managed by the StrimziPodSet
           jsonPath: .status.readyPods
           type: integer
         - name: Current Pods
-          description: Number of up-to-date pods managed by the StrimziPodSetController
+          description: Number of up-to-date pods managed by the StrimziPodSet
           jsonPath: .status.currentPods
           type: integer
         - name: Age
-          description: Age of the StrimziPodSetController
+          description: Age of the StrimziPodSet
           jsonPath: .metadata.creationTimestamp
           type: date
       schema:
