@@ -146,6 +146,8 @@ public class KafkaAssemblyOperatorMockTest {
 
     public static Iterable<KafkaAssemblyOperatorMockTest.Params> data() {
         int[] replicas = {1, 3};
+
+        int[] storageOptions = {0, 1, 2};
         Storage[] kafkaStorageConfigs = {
             new EphemeralStorage(),
             new PersistentClaimStorageBuilder()
@@ -172,6 +174,7 @@ public class KafkaAssemblyOperatorMockTest {
                     .withDeleteClaim(false)
                     .build()
         };
+
         ResourceRequirements[] resources = {
             new ResourceRequirementsBuilder()
                 .addToLimits("cpu", new Quantity("5000m"))
@@ -180,18 +183,15 @@ public class KafkaAssemblyOperatorMockTest {
                 .addToRequests("memory", new Quantity("5000m"))
                 .build()
         };
+
         List<KafkaAssemblyOperatorMockTest.Params> result = new ArrayList();
 
-        for (int zkReplica : replicas) {
-            for (SingleVolumeStorage zkStorage : zkStorageConfigs) {
-                for (int kafkaReplica : replicas) {
-                    for (Storage kafkaStorage : kafkaStorageConfigs) {
-                        for (ResourceRequirements resource : resources) {
-                            result.add(new KafkaAssemblyOperatorMockTest.Params(
-                                    zkReplica, zkStorage,
-                                    kafkaReplica, kafkaStorage, resource));
-                        }
-                    }
+        for (int replicaCount : replicas) {
+            for (int storage : storageOptions) {
+                for (ResourceRequirements resource : resources) {
+                    result.add(new KafkaAssemblyOperatorMockTest.Params(
+                            replicaCount, zkStorageConfigs[storage],
+                            replicaCount, kafkaStorageConfigs[storage], resource));
                 }
             }
         }
