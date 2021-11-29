@@ -23,7 +23,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerCon
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
-import io.strimzi.operator.common.model.AbstractConfiguration;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

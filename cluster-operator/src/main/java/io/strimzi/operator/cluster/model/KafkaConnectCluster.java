@@ -58,7 +58,6 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.AbstractConfiguration;
 import io.strimzi.operator.common.model.Labels;
 
 import java.nio.charset.StandardCharsets;
