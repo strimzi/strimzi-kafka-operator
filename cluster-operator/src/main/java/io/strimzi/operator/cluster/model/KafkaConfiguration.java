@@ -12,7 +12,6 @@ import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.AbstractConfiguration;
 
 import java.io.IOException;
 import java.io.InputStream;

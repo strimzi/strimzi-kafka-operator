@@ -34,6 +34,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -74,7 +75,7 @@ public class KafkaExporterTest {
     private final InlineLogging kafkaLogJson = new InlineLogging();
     private final InlineLogging zooLogJson = new InlineLogging();
     private final String exporterOperatorLogging = "debug";
-    private final String version = KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION;
+    private final String version = KafkaVersionTestConstants.DEFAULT_KAFKA_VERSION;
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     {
@@ -150,7 +151,7 @@ public class KafkaExporterTest {
                 healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, new KafkaExporterSpec(), null);
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
-        assertThat(ke.getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
+        assertThat(ke.getImage(), is(KafkaVersionTestConstants.DEFAULT_KAFKA_IMAGE));
         assertThat(ke.logging, is("info"));
         assertThat(ke.groupRegex, is(".*"));
         assertThat(ke.topicRegex, is(".*"));

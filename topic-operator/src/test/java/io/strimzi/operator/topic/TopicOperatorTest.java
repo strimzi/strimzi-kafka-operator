@@ -12,7 +12,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
-import io.strimzi.operator.cluster.model.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.KafkaVersionTestConstants;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
@@ -84,7 +84,7 @@ public class TopicOperatorTest {
         MANDATORY_CONFIG.put(Config.CLIENT_ID.key, "default-client-id");
         // Not mandatory, but makes the time test quicker
         MANDATORY_CONFIG.put(Config.TOPIC_METADATA_MAX_ATTEMPTS.key, "3");
-        MANDATORY_CONFIG.put(Config.TC_KAFKA_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
+        MANDATORY_CONFIG.put(Config.TC_KAFKA_VERSION, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
     }
 
     @BeforeAll

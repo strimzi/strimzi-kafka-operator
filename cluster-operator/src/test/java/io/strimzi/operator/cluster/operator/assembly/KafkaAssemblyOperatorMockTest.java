@@ -37,13 +37,14 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.FeatureGates;
-import io.strimzi.operator.cluster.model.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.KafkaVersionTestConstants;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
@@ -843,9 +844,9 @@ public class KafkaAssemblyOperatorMockTest {
     public void testReconcileZookeeperUpgradeFromPreviousToLatest(Params params, VertxTestContext context) {
         init(params);
 
-        String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
-        String changedKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
-        String changedImage = KafkaVersionTestUtils.LATEST_KAFKA_IMAGE;
+        String initialKafkaVersion = KafkaVersionTestConstants.PREVIOUS_KAFKA_VERSION;
+        String changedKafkaVersion = KafkaVersionTestConstants.LATEST_KAFKA_VERSION;
+        String changedImage = KafkaVersionTestConstants.LATEST_KAFKA_IMAGE;
 
         reconcileZkVersionChange(context, initialKafkaVersion, changedKafkaVersion, changedImage);
     }
@@ -855,9 +856,9 @@ public class KafkaAssemblyOperatorMockTest {
     public void testReconcileZookeeperDowngradeFromLatestToPrevious(Params params, VertxTestContext context) {
         init(params);
 
-        String initialKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
-        String changedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
-        String changedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
+        String initialKafkaVersion = KafkaVersionTestConstants.LATEST_KAFKA_VERSION;
+        String changedKafkaVersion = KafkaVersionTestConstants.PREVIOUS_KAFKA_VERSION;
+        String changedImage = KafkaVersionTestConstants.PREVIOUS_KAFKA_IMAGE;
 
         reconcileZkVersionChange(context, initialKafkaVersion, changedKafkaVersion, changedImage);
     }

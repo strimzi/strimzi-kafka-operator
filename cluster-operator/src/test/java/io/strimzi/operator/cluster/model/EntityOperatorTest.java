@@ -38,6 +38,7 @@ import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -493,12 +494,12 @@ public class EntityOperatorTest {
                         .endTlsSidecar()
                     .endEntityOperator()
                     .editKafka()
-                        .withVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
+                        .withVersion(KafkaVersionTestConstants.PREVIOUS_KAFKA_VERSION)
                         .withImage(null)
                     .endKafka()
                 .endSpec()
             .build();
-        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
+        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestConstants.DEFAULT_KAFKA_IMAGE));
 
         kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -508,12 +509,12 @@ public class EntityOperatorTest {
                         .endTlsSidecar()
                     .endEntityOperator()
                     .editKafka()
-                        .withVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION)
+                        .withVersion(KafkaVersionTestConstants.LATEST_KAFKA_VERSION)
                         .withImage(null)
                     .endKafka()
                 .endSpec()
             .build();
-        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
+        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestConstants.DEFAULT_KAFKA_IMAGE));
     }
 
     @ParallelTest

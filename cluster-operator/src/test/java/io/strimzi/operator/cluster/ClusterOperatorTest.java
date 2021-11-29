@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.client.informers.cache.Indexer;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.model.KafkaVersionTestUtils;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.junit5.VertxExtension;

@@ -107,17 +107,17 @@ public class KafkaVersionTest {
 
     @ParallelTest
     public void compareEqualVersionTest() {
-        assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION, KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION), is(0));
+        assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestConstants.DEFAULT_KAFKA_VERSION, KafkaVersionTestConstants.DEFAULT_KAFKA_VERSION), is(0));
     }
 
     @ParallelTest
     public void compareVersionLowerTest() {
-        assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION, KafkaVersionTestUtils.LATEST_KAFKA_VERSION), lessThan(0));
+        assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestConstants.PREVIOUS_KAFKA_VERSION, KafkaVersionTestConstants.LATEST_KAFKA_VERSION), lessThan(0));
     }
 
     @ParallelTest
     public void compareVersionHigherTest() {
-        assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION, KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), greaterThan(0));
+        assertThat(KafkaVersion.compareDottedVersions(KafkaVersionTestConstants.LATEST_KAFKA_VERSION, KafkaVersionTestConstants.PREVIOUS_KAFKA_VERSION), greaterThan(0));
     }
 
 }

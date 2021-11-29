@@ -42,6 +42,7 @@ import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -69,18 +70,18 @@ public class ModelUtilsTest {
     @Test
     public void testParseImageMap() {
         Map<String, String> m = parseMap(
-                KafkaVersionTestUtils.LATEST_KAFKA_VERSION + "=" + KafkaVersionTestUtils.LATEST_KAFKA_IMAGE + "\n  " +
-                        KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION + "=" + KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE + "\n ");
+                KafkaVersionTestConstants.LATEST_KAFKA_VERSION + "=" + KafkaVersionTestConstants.LATEST_KAFKA_IMAGE + "\n  " +
+                        KafkaVersionTestConstants.PREVIOUS_KAFKA_VERSION + "=" + KafkaVersionTestConstants.PREVIOUS_KAFKA_IMAGE + "\n ");
         assertThat(m.size(), is(2));
-        assertThat(m.get(KafkaVersionTestUtils.LATEST_KAFKA_VERSION), is(KafkaVersionTestUtils.LATEST_KAFKA_IMAGE));
-        assertThat(m.get(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), is(KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE));
+        assertThat(m.get(KafkaVersionTestConstants.LATEST_KAFKA_VERSION), is(KafkaVersionTestConstants.LATEST_KAFKA_IMAGE));
+        assertThat(m.get(KafkaVersionTestConstants.PREVIOUS_KAFKA_VERSION), is(KafkaVersionTestConstants.PREVIOUS_KAFKA_IMAGE));
 
         m = parseMap(
-                KafkaVersionTestUtils.LATEST_KAFKA_VERSION + "=" + KafkaVersionTestUtils.LATEST_KAFKA_IMAGE + "," +
-                KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION + "=" + KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE);
+                KafkaVersionTestConstants.LATEST_KAFKA_VERSION + "=" + KafkaVersionTestConstants.LATEST_KAFKA_IMAGE + "," +
+                KafkaVersionTestConstants.PREVIOUS_KAFKA_VERSION + "=" + KafkaVersionTestConstants.PREVIOUS_KAFKA_IMAGE);
         assertThat(m.size(), is(2));
-        assertThat(m.get(KafkaVersionTestUtils.LATEST_KAFKA_VERSION), is(KafkaVersionTestUtils.LATEST_KAFKA_IMAGE));
-        assertThat(m.get(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), is(KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE));
+        assertThat(m.get(KafkaVersionTestConstants.LATEST_KAFKA_VERSION), is(KafkaVersionTestConstants.LATEST_KAFKA_IMAGE));
+        assertThat(m.get(KafkaVersionTestConstants.PREVIOUS_KAFKA_VERSION), is(KafkaVersionTestConstants.PREVIOUS_KAFKA_IMAGE));
     }
 
     @Test

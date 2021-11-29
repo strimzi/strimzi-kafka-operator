@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.operator.cluster.model.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.KafkaVersionTestConstants;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.mockkube.MockKube;
@@ -101,7 +101,7 @@ public class TopicOperatorMockTest {
             Config.NAMESPACE.key, "myproject",
             Config.CLIENT_ID.key, "myproject-client-id",
             Config.FULL_RECONCILIATION_INTERVAL_MS.key, "10000",
-            Config.KAFKA_VERSION.key, KafkaVersionTestUtils.LATEST_KAFKA_VERSION
+            Config.KAFKA_VERSION.key, KafkaVersionTestConstants.LATEST_KAFKA_VERSION
         ));
 
         session = new Session(kubeClient, topicConfig);

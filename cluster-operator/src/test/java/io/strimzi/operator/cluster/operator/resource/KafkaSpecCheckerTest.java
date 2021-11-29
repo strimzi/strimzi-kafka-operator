@@ -12,11 +12,12 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
-import io.strimzi.operator.cluster.model.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.KafkaVersionTestConstants;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
@@ -170,16 +171,15 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkLogMessageFormatVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
-        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION);
+        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestConstants.PREVIOUS_FORMAT_VERSION);
         kafkaOptions.put(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 3);
         kafkaOptions.put(KafkaConfiguration.MIN_INSYNC_REPLICAS, 2);
-
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
                 null, kafkaOptions, emptyMap(),
             new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
                 .editSpec()
                     .editKafka()
-                        .withVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION)
+                        .withVersion(KafkaVersionTestConstants.LATEST_KAFKA_VERSION)
                     .endKafka()
                 .endSpec()
             .build();
@@ -196,7 +196,7 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkLogMessageFormatWithoutVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
-        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION);
+        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestConstants.PREVIOUS_FORMAT_VERSION);
         kafkaOptions.put(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 3);
         kafkaOptions.put(KafkaConfiguration.MIN_INSYNC_REPLICAS, 2);
 
@@ -216,7 +216,7 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkLogMessageFormatWithRightVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
-        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.LATEST_FORMAT_VERSION);
+        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestConstants.LATEST_FORMAT_VERSION);
         kafkaOptions.put(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 3);
         kafkaOptions.put(KafkaConfiguration.MIN_INSYNC_REPLICAS, 2);
 
@@ -232,7 +232,7 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkLogMessageFormatWithRightLongVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
-        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.LATEST_FORMAT_VERSION + "-IV0");
+        kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestConstants.LATEST_FORMAT_VERSION + "-IV0");
         kafkaOptions.put(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 3);
         kafkaOptions.put(KafkaConfiguration.MIN_INSYNC_REPLICAS, 2);
 
@@ -248,16 +248,15 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkInterBrokerProtocolVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
-        kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
+        kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestConstants.PREVIOUS_PROTOCOL_VERSION);
         kafkaOptions.put(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 3);
         kafkaOptions.put(KafkaConfiguration.MIN_INSYNC_REPLICAS, 2);
-
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
                 null, kafkaOptions, emptyMap(),
             new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
                 .editSpec()
                     .editKafka()
-                        .withVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION)
+                        .withVersion(KafkaVersionTestConstants.LATEST_KAFKA_VERSION)
                         .withListeners(new GenericKafkaListenerBuilder().withName("plain").withPort(9092).withTls(false).withType(KafkaListenerType.INTERNAL).build())
                     .endKafka()
                 .endSpec()
@@ -275,7 +274,7 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkInterBrokerProtocolWithoutVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
-        kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
+        kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestConstants.PREVIOUS_PROTOCOL_VERSION);
         kafkaOptions.put(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 3);
         kafkaOptions.put(KafkaConfiguration.MIN_INSYNC_REPLICAS, 2);
 
@@ -295,7 +294,7 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkInterBrokerProtocolWithCorrectVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
-        kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION);
+        kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestConstants.LATEST_PROTOCOL_VERSION);
         kafkaOptions.put(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 3);
         kafkaOptions.put(KafkaConfiguration.MIN_INSYNC_REPLICAS, 2);
 
@@ -311,7 +310,7 @@ public class KafkaSpecCheckerTest {
     @Test
     public void checkInterBrokerProtocolWithCorrectLongVersion() {
         Map<String, Object> kafkaOptions = new HashMap<>();
-        kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.LATEST_PROTOCOL_VERSION + "-IV0");
+        kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestConstants.LATEST_PROTOCOL_VERSION + "-IV0");
         kafkaOptions.put(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 3);
         kafkaOptions.put(KafkaConfiguration.MIN_INSYNC_REPLICAS, 2);
 

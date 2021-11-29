@@ -3,10 +3,11 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 
-package io.strimzi.operator.common.model;
+package io.strimzi.operator.cluster.model;
 
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.model.OrderedProperties;
 
 import java.util.Collections;
 import java.util.List;
@@ -185,7 +186,7 @@ public abstract class AbstractConfiguration {
      * @param prefixes  String with comma-separated items
      * @return          List with the values as separate items
      */
-    public static List<String> splitPrefixesToList(String prefixes) {
+    protected static List<String> splitPrefixesToList(String prefixes) {
         return asList(prefixes.split("\\s*,+\\s*"));
     }
 }

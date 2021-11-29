@@ -41,6 +41,7 @@ import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
@@ -196,7 +197,7 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
         KafkaMirrorMakerCluster mm = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
-        assertThat(mm.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_MIRROR_MAKER_IMAGE));
+        assertThat(mm.image, is(KafkaVersionTestConstants.DEFAULT_KAFKA_MIRROR_MAKER_IMAGE));
         assertThat(new KafkaMirrorMakerConsumerConfiguration(Reconciliation.DUMMY_RECONCILIATION, mm.consumer.getConfig().entrySet()).getConfiguration(), is(defaultConsumerConfiguration));
         assertThat(new KafkaMirrorMakerProducerConfiguration(Reconciliation.DUMMY_RECONCILIATION, mm.producer.getConfig().entrySet()).getConfiguration(), is(defaultProducerConfiguration));
     }
