@@ -195,7 +195,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
          * @throws NoImageException If one of the versions lacks an image.
          * @throws UnsupportedVersionException If any version with configured image is not supported
          */
-        public void validateImages(Set<String> versions, Map<String, String> images) throws NoImageException, UnsupportedVersionException {
+        public void validateImages(Set<String> versions, Map<String, String> images) throws NoImageException, UnsupportedVersionException   {
             for (String version : versions) {
                 image(null, version, images);
             }

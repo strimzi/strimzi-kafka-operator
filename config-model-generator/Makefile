@@ -16,7 +16,6 @@ all: docker_build docker_push
 
 clean:
 	rm ../cluster-operator/src/main/resources/kafka-*-config-model.json || true
-	rm ../topic-operator/src/main/resources/kafka-*-topic-config-model.json || true
 	./build-config-models.sh clean
 
 #include ../Makefile.maven
