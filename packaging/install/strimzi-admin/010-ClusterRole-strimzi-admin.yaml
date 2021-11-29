@@ -33,3 +33,15 @@ rules:
   - delete
   - patch
   - update
+- apiGroups:
+  - "core.strimzi.io"
+  resources:
+  - strimzipodsets
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
+  - update

@@ -1,12 +1,12 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: strimzipodsets.kafka.strimzi.io
+  name: strimzipodsets.core.strimzi.io
   labels:
     app: strimzi
     strimzi.io/crd-install: "true"
 spec:
-  group: kafka.strimzi.io
+  group: core.strimzi.io
   names:
     kind: StrimziPodSet
     listKind: StrimziPodSetList

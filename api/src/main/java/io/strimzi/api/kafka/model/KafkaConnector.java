@@ -84,7 +84,7 @@ import static java.util.Collections.unmodifiableList;
 @EqualsAndHashCode
 @ToString
 @Version(Constants.V1BETA2)
-@Group(Constants.STRIMZI_GROUP)
+@Group(Constants.RESOURCE_GROUP_NAME)
 @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
 public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConnectorStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;

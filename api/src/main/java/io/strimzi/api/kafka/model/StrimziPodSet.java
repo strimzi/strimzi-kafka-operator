@@ -82,7 +82,7 @@ import static java.util.Collections.emptyMap;
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode(callSuper = true)
 @Version(Constants.V1BETA2)
-@Group(Constants.STRIMZI_GROUP)
+@Group(Constants.RESOURCE_CORE_GROUP_NAME)
 @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
 public class StrimziPodSet extends CustomResource<StrimziPodSetSpec, StrimziPodSetStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
@@ -92,7 +92,7 @@ public class StrimziPodSet extends CustomResource<StrimziPodSetSpec, StrimziPodS
     public static final List<String> VERSIONS = List.of(V1BETA2);
     public static final String RESOURCE_KIND = "StrimziPodSet";
     public static final String RESOURCE_LIST_KIND = RESOURCE_KIND + "List";
-    public static final String RESOURCE_GROUP = Constants.RESOURCE_GROUP_NAME;
+    public static final String RESOURCE_GROUP = Constants.RESOURCE_CORE_GROUP_NAME;
     public static final String RESOURCE_PLURAL = "strimzipodsets";
     public static final String RESOURCE_SINGULAR = "strimzipodset";
     public static final String CRD_NAME = RESOURCE_PLURAL + "." + RESOURCE_GROUP;

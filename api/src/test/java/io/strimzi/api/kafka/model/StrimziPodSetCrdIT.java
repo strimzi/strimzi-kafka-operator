@@ -39,7 +39,7 @@ public class StrimziPodSetCrdIT extends AbstractCrdIT {
     void setupEnvironment() throws InterruptedException {
         cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_STRIMZI_POD_SET);
-        cluster.waitForCustomResourceDefinition("strimzipodsets.kafka.strimzi.io");
+        cluster.waitForCustomResourceDefinition("strimzipodsets.core.strimzi.io");
     }
 
     @AfterAll
