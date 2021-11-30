@@ -129,7 +129,7 @@ public class CruiseControlTest {
     private final SingleVolumeStorage zkStorage = new EphemeralStorage();
     private final InlineLogging kafkaLogJson = new InlineLogging();
     private final InlineLogging zooLogJson = new InlineLogging();
-    private final String version = KafkaVersionTestConstants.DEFAULT_KAFKA_VERSION;
+    private final String version = KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION;
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
     private final String ccImage = "my-cruise-control-image";

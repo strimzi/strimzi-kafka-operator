@@ -494,12 +494,12 @@ public class EntityOperatorTest {
                         .endTlsSidecar()
                     .endEntityOperator()
                     .editKafka()
-                        .withVersion(KafkaVersionTestConstants.PREVIOUS_KAFKA_VERSION)
+                        .withVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
                         .withImage(null)
                     .endKafka()
                 .endSpec()
             .build();
-        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestConstants.DEFAULT_KAFKA_IMAGE));
+        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
 
         kafka = new KafkaBuilder(resource)
                 .editSpec()
@@ -509,12 +509,12 @@ public class EntityOperatorTest {
                         .endTlsSidecar()
                     .endEntityOperator()
                     .editKafka()
-                        .withVersion(KafkaVersionTestConstants.LATEST_KAFKA_VERSION)
+                        .withVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION)
                         .withImage(null)
                     .endKafka()
                 .endSpec()
             .build();
-        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestConstants.DEFAULT_KAFKA_IMAGE));
+        assertThat(EntityOperator.fromCrd(new Reconciliation("test", kafka.getKind(), kafka.getMetadata().getNamespace(), kafka.getMetadata().getName()), kafka, VERSIONS).getContainers(ImagePullPolicy.ALWAYS).get(2).getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
     }
 
     @ParallelTest

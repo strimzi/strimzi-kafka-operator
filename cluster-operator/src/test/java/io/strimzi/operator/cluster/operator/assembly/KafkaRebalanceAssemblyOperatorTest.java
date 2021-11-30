@@ -24,7 +24,6 @@ import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.model.KafkaVersionTestConstants;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.CruiseControl;
@@ -99,7 +98,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
 
-    private final String version = KafkaVersionTestConstants.DEFAULT_KAFKA_VERSION;
+    private final String version = KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION;
     private final String ccImage = "my-cruise-control-image";
 
     private final Kafka kafka =

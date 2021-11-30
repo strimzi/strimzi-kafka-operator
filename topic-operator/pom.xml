@@ -221,5 +221,16 @@
                 </executions>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>..</directory>
+                <includes>
+                    <include>kafka-versions.yaml</include>
+                </includes>
+            </resource>
+        </resources>
     </build>
 </project>

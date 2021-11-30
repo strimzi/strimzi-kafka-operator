@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
-import io.strimzi.operator.cluster.model.KafkaVersionTestConstants;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -89,7 +88,7 @@ public class TopicSerializationTest {
         assertThat(kafkaTopic.getSpec().getReplicas(), is(Integer.valueOf(1)));
         assertThat(kafkaTopic.getSpec().getConfig(), is(singletonMap("cleanup.policy", "compact")));
 
-        Topic readTopic = TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
+        Topic readTopic = TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTopicTestUtils.kafkaVersion());
         assertThat(readTopic, is(wroteTopic));
     }
 
@@ -125,7 +124,7 @@ public class TopicSerializationTest {
         assertThat(kafkaTopic.getSpec().getReplicas(), is(Integer.valueOf(1)));
         assertThat(kafkaTopic.getSpec().getConfig(), is(singletonMap("cleanup.policy", "delete")));
 
-        Topic readTopic = TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
+        Topic readTopic = TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTopicTestUtils.kafkaVersion());
         assertThat(readTopic, is(wroteTopic));
     }
 
@@ -218,7 +217,7 @@ public class TopicSerializationTest {
             .build();
 
         try {
-            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
+            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTopicTestUtils.kafkaVersion());
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), is("KafkaTopics's spec.topicName property is absent and KafkaTopics's metadata.name is invalid as a topic name: " +
@@ -238,7 +237,7 @@ public class TopicSerializationTest {
                 .endSpec()
             .build();
         try {
-            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
+            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTopicTestUtils.kafkaVersion());
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), is("KafkaTopics's spec.topicName property is invalid as a topic name: Topic name \"An invalid topic name!\" is illegal, it contains a character other than ASCII alphanumerics, '.', '_' and '-'"));
@@ -257,7 +256,7 @@ public class TopicSerializationTest {
             .build();
 
         try {
-            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
+            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTopicTestUtils.kafkaVersion());
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), is("KafkaTopic's spec.partitions should be strictly greater than 0"));
@@ -276,7 +275,7 @@ public class TopicSerializationTest {
             .build();
 
         try {
-            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
+            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTopicTestUtils.kafkaVersion());
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), is("KafkaTopic's spec.replicas should be between 1 and 32767 inclusive"));
@@ -295,7 +294,7 @@ public class TopicSerializationTest {
             .build();
 
         try {
-            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
+            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTopicTestUtils.kafkaVersion());
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), matchesPattern("KafkaTopic test/my-topic has invalid spec.config: foo with value 'java.lang.Object@.*' is not one of the known options"));
@@ -314,7 +313,7 @@ public class TopicSerializationTest {
             .build();
 
         try {
-            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
+            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTopicTestUtils.kafkaVersion());
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), is("KafkaTopic test/my-topic has invalid spec.config: foo with value 'null' is not one of the known options"));
@@ -330,7 +329,7 @@ public class TopicSerializationTest {
         kafkaTopic.setMetadata(new ObjectMetaBuilder().withName("my-topic").build());
         kafkaTopic.setSpec(spec);
 
-        TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
+        TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTopicTestUtils.kafkaVersion());
     }
 
     @Test
@@ -345,7 +344,7 @@ public class TopicSerializationTest {
                 .build();
 
         try {
-            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
+            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTopicTestUtils.kafkaVersion());
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), is("KafkaTopic test/my-topic has invalid spec.config: compression.type has value '42' which is not one of the allowed values: [uncompressed, zstd, lz4, snappy, gzip, producer]"));
@@ -364,7 +363,7 @@ public class TopicSerializationTest {
                 .build();
 
         try {
-            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
+            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTopicTestUtils.kafkaVersion());
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), is("KafkaTopic test/my-topic has invalid spec.config: delete.retention.ms has value 'week' which is not a long"));
@@ -383,7 +382,7 @@ public class TopicSerializationTest {
                 .build();
 
         try {
-            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
+            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTopicTestUtils.kafkaVersion());
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), is("KafkaTopic test/my-topic has invalid spec.config: preallocate has value 'yes' which is not a boolean"));
@@ -402,7 +401,7 @@ public class TopicSerializationTest {
                 .build();
 
         try {
-            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTestConstants.LATEST_KAFKA_VERSION);
+            TopicSerialization.fromTopicResource(kafkaTopic, KafkaVersionTopicTestUtils.kafkaVersion());
             fail("Should throw");
         } catch (InvalidTopicException e) {
             assertThat(e.getMessage(), anyOf(is("KafkaTopic test/my-topic has invalid spec.config: retention.bytes has value 'tisic' which is not a long, preallocate has value 'yes' which is not a boolean"),
