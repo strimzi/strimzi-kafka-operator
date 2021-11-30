@@ -13,12 +13,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class KafkaVersionTestUtils {
+    private static final String KAFKA_IMAGE_STR = "strimzi/kafka:latest-kafka-";
+    private static final String KAFKA_CONNECT_IMAGE_STR = "strimzi/kafka-connect:latest-kafka-";
+    private static final String KAFKA_MIRROR_MAKER_IMAGE_STR = "strimzi/kafka-mirror-maker:latest-kafka-";
+    private static final String KAFKA_MIRROR_MAKER_2_IMAGE_STR = "strimzi/kafka-connect:latest-kafka-";
 
-    public static final String KAFKA_IMAGE_STR = "strimzi/kafka:latest-kafka-";
-    public static final String KAFKA_CONNECT_IMAGE_STR = "strimzi/kafka-connect:latest-kafka-";
-    public static final String KAFKA_MIRROR_MAKER_IMAGE_STR = "strimzi/kafka-mirror-maker:latest-kafka-";
-    public static final String KAFKA_MIRROR_MAKER_2_IMAGE_STR = "strimzi/kafka-connect:latest-kafka-";
-
+    private static final Set<String> SUPPORTED_VERSIONS = new KafkaVersion.Lookup(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap()).supportedVersions();
 
     public static final String LATEST_KAFKA_VERSION = "3.0.0";
     public static final String LATEST_FORMAT_VERSION = "3.0";
@@ -46,8 +46,6 @@ public class KafkaVersionTestUtils {
     public static final String DEFAULT_KAFKA_IMAGE = LATEST_KAFKA_IMAGE;
     public static final String DEFAULT_KAFKA_CONNECT_IMAGE = LATEST_KAFKA_CONNECT_IMAGE;
     public static final String DEFAULT_KAFKA_MIRROR_MAKER_IMAGE = LATEST_KAFKA_MIRROR_MAKER_IMAGE;
-
-    private static final Set<String> SUPPORTED_VERSIONS = new KafkaVersion.Lookup(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap()).supportedVersions();
 
     private static Map<String, String> getKafkaImageMap() {
         return getImageMap(KAFKA_IMAGE_STR);
@@ -104,6 +102,6 @@ public class KafkaVersionTestUtils {
     }
 
     public static KafkaVersion getLatestVersion() {
-        return getKafkaVersionLookup().version(LATEST_KAFKA_VERSION);
+        return getKafkaVersionLookup().version(KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
     }
 }

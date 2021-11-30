@@ -12,11 +12,11 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
@@ -173,6 +173,7 @@ public class KafkaSpecCheckerTest {
         kafkaOptions.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION);
         kafkaOptions.put(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 3);
         kafkaOptions.put(KafkaConfiguration.MIN_INSYNC_REPLICAS, 2);
+
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
                 null, kafkaOptions, emptyMap(),
             new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
@@ -250,6 +251,7 @@ public class KafkaSpecCheckerTest {
         kafkaOptions.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
         kafkaOptions.put(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR, 3);
         kafkaOptions.put(KafkaConfiguration.MIN_INSYNC_REPLICAS, 2);
+
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT,
                 null, kafkaOptions, emptyMap(),
             new EphemeralStorage(), new EphemeralStorage(), null, null, null, null))
