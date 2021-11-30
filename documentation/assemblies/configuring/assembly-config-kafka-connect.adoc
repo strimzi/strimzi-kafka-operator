@@ -25,5 +25,7 @@ include::../../modules/configuring/proc-config-kafka-connect-user-authorization.
 include::../../modules/configuring/proc-manual-restart-connector.adoc[leveloffset=+1]
 //Procedure to restart a Kafka connector task
 include::../../modules/configuring/proc-manual-restart-connector-task.adoc[leveloffset=+1]
+//Tips to expose the Kafka Connect API
+include::../../modules/configuring/con-exposing-kafka-connect-api.adoc[leveloffset=+1]
 //Resources created for Kafka Connect
 include::../../modules/configuring/ref-config-list-of-kafka-connect-resources.adoc[leveloffset=+1]

@@ -214,7 +214,7 @@ NOTE: You can link:{BookURLUsing}#proc-loading-config-with-provider-str[load con
 == Kafka Connect API
 
 Use the Kafka Connect REST API as an alternative to using `KafkaConnector` resources to manage connectors.
-The Kafka Connect REST API is available as a service running on `_<connect-cluster-name>_-connect-api:8083`, where _<connect-cluster-name>_ is the name of your Kafka Connect cluster.
+The Kafka Connect REST API is available as a service running on `_<connect_cluster_name>_-connect-api:8083`, where _<connect_cluster_name>_ is the name of your Kafka Connect cluster.
 
 You add the connector configuration as a JSON object.
 
