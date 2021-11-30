@@ -15,6 +15,7 @@ The metrics are used to link:{BookURLUsing}#proc-generating-optimization-proposa
 Cruise Control metrics are available for real-time monitoring of Cruise Control operations.
 For example, you can use Cruise Control metrics to monitor the status of rebalancing operations that are running or provide alerts on any anomalies that are detected in its performance.
 
+You can expose Cruise Control metrics by enabling JMX for Cruise Control.
 For a full list of available Cruise Control metrics, which are known as _sensors_, see the {CruiseControlSensorsDocs}.
 
 == Exposing Cruise Control metrics
@@ -90,3 +91,4 @@ You can use anomaly detection when monitoring Cruise Control metrics.
 
 Cruise Control’s anomaly notifier provides metrics data for conditions that block the generation of optimization goals, such as broker failures, and any actions taken.
 If you want more visibility, you can use these metrics to set up alerts that send out notifications.
+If you are using Prometheus, you can use Prometheus Alertmanager to generate alerts.
