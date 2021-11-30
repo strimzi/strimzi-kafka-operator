@@ -71,7 +71,6 @@ public class StrimziPodSetControllerIT {
     private static Vertx vertx;
 
     private static StrimziPodSetController controller;
-    private static Thread controllerThread;
 
     private static CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
     private static CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> podSetOperator;
@@ -228,13 +227,11 @@ public class StrimziPodSetControllerIT {
 
     private static void startController()  {
         controller = new StrimziPodSetController(NAMESPACE, Labels.fromMap(MATCHING_LABELS), kafkaOperator, podSetOperator, podOperator);
-        controllerThread = new Thread(controller, "StrimziPodSetController");
-        controllerThread.start();
+        controller.start();
     }
 
     private static void stopController()   {
         controller.stop();
-        controllerThread.interrupt();
     }
 
     /*

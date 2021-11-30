@@ -51,6 +51,8 @@ public class StrimziPodSetController implements Runnable {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
+    private Thread controllerThread;
+
     private volatile boolean stop = false;
 
     private final PodOperator podOperator;
@@ -128,6 +130,8 @@ public class StrimziPodSetController implements Runnable {
                 enqueuePod(pod, "DELETED");
             }
         }, 10 * 60 * 1000);
+
+        controllerThread = new Thread(this, "StrimziPodSetController");
     }
 
     /**
@@ -269,7 +273,7 @@ public class StrimziPodSetController implements Runnable {
      * @param podSet            Original pod set with the current status
      * @param desiredStatus     The desired status which should be set if it differs
      */
-    public void maybeUpdateStatus(Reconciliation reconciliation, StrimziPodSet podSet, StrimziPodSetStatus desiredStatus) {
+    private void maybeUpdateStatus(Reconciliation reconciliation, StrimziPodSet podSet, StrimziPodSetStatus desiredStatus) {
         if (!new StatusDiff(podSet.getStatus(), desiredStatus).isEmpty())  {
             try {
                 LOGGER.debugCr(reconciliation, "Updating status of StrimziPodSet {} in namespace {}", reconciliation.name(), reconciliation.namespace());
@@ -384,9 +388,7 @@ public class StrimziPodSetController implements Runnable {
 
         LOGGER.infoOp("Waiting for informers to sync");
         while (!stop
-                && !podInformer.hasSynced()
-                && !strimziPodSetInformer.hasSynced()
-                && kafkaInformer.hasSynced())   {
+                && (!podInformer.hasSynced() || !strimziPodSetInformer.hasSynced() || !kafkaInformer.hasSynced()))   {
             // Nothing to do => just loop
         }
         LOGGER.infoOp("Informers are in-sync");
@@ -411,11 +413,20 @@ public class StrimziPodSetController implements Runnable {
     }
 
     /**
-     * Stops the controller: this method sets the stop flag and the run loop will exit when the flag is set.
+     * Starts the controller: this method creates a new thread in which the controller will run
+     */
+    public void start()  {
+        LOGGER.infoOp("Starting the StrimziPodSet controller");
+        controllerThread.start();
+    }
+
+    /**
+     * Stops the controller: this method sets the stop flag and interrupt the run loop
      */
     public void stop()  {
-        LOGGER.infoOp("Requesting StrimziPodSet controller to stop");
+        LOGGER.infoOp("Requesting the StrimziPodSet controller to stop");
         this.stop = true;
+        controllerThread.interrupt();
     }
 
     /**
