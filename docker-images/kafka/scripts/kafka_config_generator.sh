@@ -8,6 +8,7 @@ set -e
 function get_option_for_broker {
   for OPTION in $3 ; do
     if [[ $OPTION == "$1_$2"://* ]] ; then
+      # shellcheck disable=SC2295
       echo "${OPTION#$1_$2://}"
       break
     fi
