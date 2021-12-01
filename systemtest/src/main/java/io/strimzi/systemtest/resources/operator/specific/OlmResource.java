@@ -4,6 +4,9 @@
  */
 package io.strimzi.systemtest.resources.operator.specific;
 
+import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroup;
+import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroupBuilder;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
@@ -27,6 +30,7 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -226,24 +230,22 @@ public class OlmResource implements SpecificResourceType {
     }
 
     /**
-     * Creates OperatorGroup from `olm/operator-group.yaml` and modify "${OPERATOR_NAMESPACE}" attribute in YAML
+     * Creates OperatorGroup for namespace, with list of namespaces to watch
      * @param namespace namespace where you want to apply OperatorGroup  kind
      */
     private void createOperatorGroup(String namespace) {
-        try {
-            File operatorGroupFile = File.createTempFile("operatorgroup", ".yaml");
-            InputStream groupInputStream = OlmResource.class.getClassLoader().getResourceAsStream("olm/operator-group.yaml");
-            String operatorGroup = TestUtils.readResource(groupInputStream);
-            TestUtils.writeFile(operatorGroupFile.getAbsolutePath(),
-                operatorGroup
-                    .replace("${OPERATOR_NAMESPACE}", namespace)
-                    .replace("${NAMESPACES_TO_WATCH}",
-                        namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES) ? "" : namespaceToWatch)
-            );
-            ResourceManager.cmdKubeClient().apply(operatorGroupFile);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        OperatorGroup operatorGroup = new OperatorGroupBuilder()
+            .editOrNewMetadata()
+                .withName("strimzi-group")
+                .withNamespace(namespace)
+                .withLabels(Collections.singletonMap("app", "strimzi"))
+            .endMetadata()
+            .editOrNewSpec()
+                .withTargetNamespaces(namespaceToWatch.split(","))
+            .endSpec()
+            .build();
+
+        kubeClient(namespace).getClient().adapt(OpenShiftClient.class).operatorHub().operatorGroups().create(operatorGroup);
     }
 
     /**

@@ -12,6 +12,7 @@ import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
@@ -161,7 +162,9 @@ public class OlmUpgradeST extends AbstractUpgradeST {
     void setup() {
         cluster.setNamespace(namespace);
         cluster.createNamespace(namespace);
-
+        if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+            StUtils.copyImagePullSecret(namespace);
+        }
         olmResource = new OlmResource(namespace);
     }
 
