@@ -55,6 +55,12 @@ a|
 a|
 Strimzi image for running the Strimzi kafka Bridge
 
+|Strimzi Drain Cleaner
+a|
+* {DockerOrg}/drain-cleaner:{DrainCleanerDockerTag}
+a|
+Strimzi image for running the Strimzi Drain Cleaner
+
 |JmxTrans
 a|
 * {DockerOrg}/jmxtrans:{DockerTag}

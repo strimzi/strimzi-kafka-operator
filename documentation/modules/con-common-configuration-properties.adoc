@@ -288,7 +288,7 @@ If the `image` name is not defined in the Cluster Operator configuration, then t
 . Container image specified in the `STRIMZI_DEFAULT_JMXTRANS_IMAGE` environment variable from the Cluster Operator configuration.
 . `{DockerJmxtrans}` container image.
 
-.Example of container image configuration
+.Example container image configuration
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaApiVersion}
