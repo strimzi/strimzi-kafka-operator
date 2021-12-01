@@ -22,3 +22,5 @@ spec:
         value: "${STRIMZI_OPERATION_TIMEOUT_MS}"
       - name: STRIMZI_FEATURE_GATES
         value: "${STRIMZI_FEATURE_GATES}"
+      - name: STRIMZI_RBAC_SCOPE
+        value: "${STRIMZI_RBAC_SCOPE}"

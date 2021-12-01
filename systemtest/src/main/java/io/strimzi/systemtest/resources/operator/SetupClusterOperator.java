@@ -119,9 +119,13 @@ public class SetupClusterOperator {
                     cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                     extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
                 }
-                applyBindings();
                 olmResource = new OlmResource(namespaceInstallTo, namespaceToWatch);
                 olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
+            }
+
+            // copy image-pull secret
+            if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+                StUtils.copyImagePullSecret(namespaceInstallTo);
             }
         } else if (Environment.isHelmInstall()) {
             LOGGER.info("Going to install ClusterOperator via Helm");
