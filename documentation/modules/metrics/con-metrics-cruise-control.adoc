@@ -90,5 +90,6 @@ Cruise Control’s anomaly detection is enabled for use with Strimzi.
 You can use anomaly detection when monitoring Cruise Control metrics.
 
 Cruise Control’s anomaly notifier provides metrics data for conditions that block the generation of optimization goals, such as broker failures, and any actions taken.
-If you want more visibility, you can use these metrics to set up alerts that send out notifications.
-If you are using Prometheus, you can use Prometheus Alertmanager to generate alerts.
+If you want more visibility, you can use these metrics to set up alerts and send out notifications.
+You can use Prometheus to generate alerts.
+Prometheus Alertmanager can then route the alerts through a notification channel.
