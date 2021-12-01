@@ -93,7 +93,6 @@ public class KafkaBrokerConfigurationBuilderTest {
                 CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION + "=/tmp/kafka/cluster.truststore.p12\n" +
                 CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD + "=${CERTS_STORE_PASSWORD}\n" +
                 CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true\n" +
-                CruiseControlConfigurationParameters.METRICS_REPORTER_KUBERNETES_MODE + "=true\n" +
                 CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1\n" +
                 CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1\n" +
                 CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=1"));
