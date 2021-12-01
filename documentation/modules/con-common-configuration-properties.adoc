@@ -304,10 +304,6 @@ spec:
     # ...
 ----
 
-*Strimzi Drain Cleaner image*
-
-The image for the Strimzi Drain Cleaner is specified in the `Deployment` installation file.
-
 [id='con-common-configuration-healthchecks-{context}']
 === `livenessProbe` and `readinessProbe` healthchecks
 
