@@ -10,10 +10,10 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.Meter;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
@@ -30,14 +30,15 @@ import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.Lock;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -117,7 +118,7 @@ public abstract class AbstractOperator<
      * @param namespace The namespace containing the cluster
      * @param name The name of the cluster
      */
-    private String getLockName(String namespace, String name) {
+    /* test */ String getLockName(String namespace, String name) {
         return "lock::" + namespace + "::" + kind() + "::" + name;
     }
 
@@ -366,31 +367,42 @@ public abstract class AbstractOperator<
                     LOGGER.infoCr(reconciliation, "Reconciliation is in progress");
                 });
 
-                try {
-                    callable.call().onComplete(callableRes -> {
-                        if (callableRes.succeeded()) {
-                            handler.complete(callableRes.result());
-                        } else {
-                            handler.fail(callableRes.cause());
-                        }
-
-                        vertx.cancelTimer(timerId);
-                        lock.release();
-                        LOGGER.debugCr(reconciliation, "Lock {} released", lockName);
-                    });
-                } catch (Throwable ex) {
-                    vertx.cancelTimer(timerId);
-                    lock.release();
-                    LOGGER.debugCr(reconciliation, "Lock {} released", lockName);
-                    LOGGER.errorCr(reconciliation, "Reconciliation failed", ex);
-                    handler.fail(ex);
-                }
+                callSafely(reconciliation, callable)
+                    .onSuccess(handleSafely(reconciliation, handler::complete))
+                    .onFailure(handleSafely(reconciliation, handler::fail))
+                    .eventually(ignored -> releaseLockAndTimer(reconciliation, lock, lockName, timerId));
             } else {
                 LOGGER.debugCr(reconciliation, "Failed to acquire lock {} within {}ms.", lockName, lockTimeoutMs);
                 handler.fail(new UnableToAcquireLockException());
             }
         });
         return handler.future();
+    }
+
+    private <C> Future<C> callSafely(Reconciliation reconciliation, Callable<Future<C>> callable) {
+        try {
+            return callable.call();
+        } catch (Throwable ex) {
+            LOGGER.errorCr(reconciliation, "Reconciliation failed", ex);
+            return Future.failedFuture(ex);
+        }
+    }
+
+    private <H> Handler<H> handleSafely(Reconciliation reconciliation, Handler<H> handler) {
+        return result -> {
+            try {
+                handler.handle(result);
+            } catch (Throwable ex) {
+                LOGGER.errorCr(reconciliation, "Reconciliation completion handler failed", ex);
+            }
+        };
+    }
+
+    private Future<Void> releaseLockAndTimer(Reconciliation reconciliation, Lock lock, String lockName, long timerId) {
+        vertx.cancelTimer(timerId);
+        lock.release();
+        LOGGER.debugCr(reconciliation, "Lock {} released", lockName);
+        return Future.succeededFuture();
     }
 
     /**

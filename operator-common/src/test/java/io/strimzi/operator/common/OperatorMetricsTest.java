@@ -7,14 +7,12 @@ package io.strimzi.operator.common;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.search.MeterNotFoundException;
-import io.micrometer.core.instrument.search.RequiredSearch;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
@@ -37,7 +35,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -299,61 +296,6 @@ public class OperatorMetricsTest {
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").meter().getId().getTags().get(2), is(selectorTag));
                     assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.locked").tag("kind", "TestResource").counter().count(), is(1.0));
-                    async.flag();
-                })));
-    }
-
-
-    @Test
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public void testFailingReconcileWithClientExceptionNotBlocked(VertxTestContext context)  {
-        MetricsProvider metrics = createCleanMetricsProvider();
-
-        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithKubernetesClientException();
-
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
-            @Override
-            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
-                throw new IllegalStateException("Unexpected call to createOrUpdate");
-            }
-
-            @Override
-            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
-                throw new IllegalStateException("Unexpected call to validate");
-            }
-
-            @Override
-            protected Future<Boolean> delete(Reconciliation reconciliation) {
-                throw new IllegalStateException("Unexpected call to delete");
-            }
-
-            @Override
-            protected Status createStatus() {
-                throw new IllegalStateException("Unexpected call to createStatus");
-            }
-        };
-
-        Checkpoint async = context.checkpoint();
-        operator.reconcile(new Reconciliation("test", "TestResource", "my-namespace", "my-resource"))
-                .onComplete(context.failing(v -> context.verify(() -> {
-                    assertThat(v.getClass(), is(KubernetesClientException.class));
-
-                    MeterRegistry registry = metrics.meterRegistry();
-                    Tag selectorTag = Tag.of("selector", "");
-
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").meter().getId().getTags().get(2), is(selectorTag));
-                    // General counter incremented
-                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").counter().count(), is(1.0));
-
-                    // Final counters not incremented before exception occurs
-                    for (String type : List.of("successful", "failed", "locked")) {
-                        RequiredSearch search = registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations." + type);
-                        assertThrows(MeterNotFoundException.class, () -> search.meter());
-
-                        RequiredSearch tagSearch = search.tag("kind", "TestResource");
-                        assertThrows(MeterNotFoundException.class, () -> tagSearch.counter());
-                    }
-
                     async.flag();
                 })));
     }
@@ -718,26 +660,6 @@ public class OperatorMetricsTest {
                     }
                 }
                 return Future.succeededFuture(new Foo());
-            }
-        };
-    }
-
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private AbstractWatchableStatusedResourceOperator resourceOperatorWithKubernetesClientException() {
-        return new AbstractWatchableStatusedResourceOperator(vertx, null, "TestResource") {
-            @Override
-            public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
-                return null;
-            }
-
-            @Override
-            protected MixedOperation operation() {
-                return null;
-            }
-
-            @Override
-            public CustomResource get(String namespace, String name) {
-                throw new KubernetesClientException("Error");
             }
         };
     }
