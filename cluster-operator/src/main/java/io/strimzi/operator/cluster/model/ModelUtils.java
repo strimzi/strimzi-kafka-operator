@@ -569,4 +569,25 @@ public class ModelUtils {
                 .withController(false)
                 .build();
     }
+
+    /**
+     * Checks whether the resource has given Owner Reference among its list of owner references
+     *
+     * @param resource  Resource which should be checked for OwnerReference
+     * @param owner     OwnerReference which should be verified
+     *
+     * @return          True if the owner reference is found. False otherwise.
+     */
+    public static boolean hasOwnerReference(HasMetadata resource, OwnerReference owner)    {
+        if (resource.getMetadata().getOwnerReferences() != null) {
+            return resource.getMetadata().getOwnerReferences()
+                    .stream()
+                    .anyMatch(o -> owner.getApiVersion().equals(o.getApiVersion())
+                            && owner.getKind().equals(o.getKind())
+                            && owner.getName().equals(o.getName())
+                            && owner.getUid().equals(o.getUid()));
+        } else {
+            return false;
+        }
+    }
 }

@@ -202,6 +202,25 @@ public class VolumeUtils {
     }
 
     /**
+     * Creates a volume referencing a PVC
+     *
+     * @param name      Name of the Volume
+     * @param pvcName   Name of the PVC
+     *
+     * @return The created Volume with the PersistentVolumeClaimSource
+     */
+    public static Volume createPvcVolume(String name, String pvcName) {
+        String validName = getValidVolumeName(name);
+
+        return new VolumeBuilder()
+                .withName(validName)
+                .withNewPersistentVolumeClaim()
+                    .withClaimName(pvcName)
+                .endPersistentVolumeClaim()
+                .build();
+    }
+
+    /**
      * Creates a PVC template
      *
      * @param name    Name of the PVC template

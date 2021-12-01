@@ -91,6 +91,8 @@ public final class TestUtils {
 
     public static final String CRD_KAFKA_REBALANCE = USER_PATH + "/../packaging/install/cluster-operator/049-Crd-kafkarebalance.yaml";
 
+    public static final String CRD_STRIMZI_POD_SET = USER_PATH + "/../packaging/install/cluster-operator/042-Crd-strimzipodset.yaml";
+
     private TestUtils() {
         // All static methods
     }

@@ -1217,16 +1217,21 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> STATEFUL SETS <---");
 
-        LOGGER.info("Getting labels from stateful set of kafka resource");
-        labels = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName)).getMetadata().getLabels();
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
+        StatefulSet kafkaSts = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        if (kafkaSts != null) {
+            LOGGER.info("Getting labels from stateful set of kafka resource");
+            verifyAppLabels(kafkaSts.getMetadata().getLabels());
+        }
 
-        verifyAppLabels(labels);
-
-        LOGGER.info("Getting labels from stateful set of zookeeper resource");
-        labels = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName)).getMetadata().getLabels();
-
-        verifyAppLabels(labels);
-
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
+        StatefulSet zooSts = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        if (zooSts != null) {
+            LOGGER.info("Getting labels from stateful set of zookeeper resource");
+            verifyAppLabels(zooSts.getMetadata().getLabels());
+        }
 
         LOGGER.info("---> SERVICES <---");
 

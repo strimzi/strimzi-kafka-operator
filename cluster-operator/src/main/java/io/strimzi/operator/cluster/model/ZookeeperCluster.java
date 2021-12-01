@@ -32,6 +32,7 @@ import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
@@ -58,7 +59,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Base64;
-
 
 public class ZookeeperCluster extends AbstractModel {
     protected static final String APPLICATION_NAME = "zookeeper";
@@ -514,7 +514,6 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-
         return createStatefulSet(
                 Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
                 Collections.emptyMap(),
@@ -525,6 +524,36 @@ public class ZookeeperCluster extends AbstractModel {
                 getContainers(imagePullPolicy),
                 imagePullSecrets,
                 isOpenShift);
+    }
+
+    /**
+     * Generates the StrimziPodSet for the ZooKeeper cluster. This is used when the UseStrimziPodSets feature gate is
+     * enabled.
+     *
+     * @param replicas          Number of replicas the StrimziPodSet should have. During scale-ups or scale-downs, node
+     *                          sets with different numbers of pods are generated.
+     * @param isOpenShift       Flags whether we are on OpenShift or not
+     * @param imagePullPolicy   Image pull policy which will be used by the pods
+     * @param imagePullSecrets  List of image pull secrets
+     * @param podAnnotations    List of custom pod annotations
+     *
+     * @return                  Generated StrimziPodSet with ZooKeeper pods
+     */
+    public StrimziPodSet generatePodSet(int replicas,
+                                        boolean isOpenShift,
+                                        ImagePullPolicy imagePullPolicy,
+                                        List<LocalObjectReference> imagePullSecrets,
+                                        Map<String, String> podAnnotations) {
+        return createPodSet(
+            replicas,
+            Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
+            podAnnotations,
+            podName -> getPodVolumes(podName, isOpenShift),
+            getMergedAffinity(),
+            getInitContainers(imagePullPolicy),
+            getContainers(imagePullPolicy),
+            imagePullSecrets,
+            isOpenShift);
     }
 
     /**
@@ -661,6 +690,31 @@ public class ZookeeperCluster extends AbstractModel {
         return volumeList;
     }
 
+    // StatefulSet automatically adds the PVCs from PVC template to volumes. For pods we need to add them in the operator.
+
+    /**
+     * StatefulSets automatically add the PVCs they generate to the pod template as volumes. For StrimziPodSet, we need
+     * to generate these on our own using this method.
+     *
+     * @param podName       Name of the pod used to name the volumes
+     * @param isOpenShift   Flag whether we are on OpenShift or not
+     *
+     * @return              List of volumes to be included in the StrimziPodSet pod
+     */
+    private List<Volume> getPodVolumes(String podName, boolean isOpenShift) {
+        if (storage instanceof PersistentClaimStorage) {
+            // Persistent Storage needs to be added
+            List<Volume> volumeList = new ArrayList<>(6);
+            volumeList.add(VolumeUtils.createPvcVolume(VOLUME_NAME, "data-" + podName));
+            volumeList.addAll(getVolumes(isOpenShift));
+
+            return volumeList;
+        } else {
+            // For Ephemeral storage, we do not need to add any additional volumes
+            return getVolumes(isOpenShift);
+        }
+    }
+
     /* test */ List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> pvcList = new ArrayList<>(1);
         if (storage instanceof PersistentClaimStorage) {
@@ -698,6 +752,15 @@ public class ZookeeperCluster extends AbstractModel {
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
         return createPodDisruptionBudget();
+    }
+
+    /**
+     * Generates the PodDisruptionBudget for operator managed pods.
+     *
+     * @return The PodDisruptionBudget.
+     */
+    public PodDisruptionBudget generateCustomControllerPodDisruptionBudget() {
+        return createCustomControllerPodDisruptionBudget();
     }
 
     @Override

@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListMultiDeletable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
+import io.fabric8.kubernetes.client.informers.cache.Indexer;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -38,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -113,6 +116,7 @@ public class ClusterOperatorTest {
      */
     private void startStop(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException {
         AtomicInteger numWatchers = new AtomicInteger(0);
+        AtomicInteger numInformers = new AtomicInteger(0);
 
         KubernetesClient client;
         if (openShift) {
@@ -130,11 +134,19 @@ public class ClusterOperatorTest {
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
+
         MixedOperation mockCms = mock(MixedOperation.class);
         when(client.resources(any(), any())).thenReturn(mockCms);
 
+        MixedOperation mockPods = mock(MixedOperation.class);
+        when(client.pods()).thenReturn(mockPods);
+
         List<String> namespaceList = asList(namespaces.split(" *,+ *"));
         for (String namespace: namespaceList) {
+            // Mock CRs
+            Indexer mockCmIndexer = mock(Indexer.class);
+            SharedIndexInformer mockCmInformer = mock(SharedIndexInformer.class);
+            when(mockCmInformer.getIndexer()).thenReturn(mockCmIndexer);
 
             MixedOperation mockNamespacedCms = mock(MixedOperation.class);
             when(mockNamespacedCms.watch(any())).thenAnswer(invo -> {
@@ -146,9 +158,25 @@ public class ClusterOperatorTest {
                 }).when(mockWatch).close();
                 return mockWatch;
             });
+            when(mockNamespacedCms.inform()).thenAnswer(i -> {
+                numInformers.getAndIncrement();
+                return mockCmInformer;
+            });
 
             when(mockNamespacedCms.withLabels(any())).thenReturn(mockNamespacedCms);
             when(mockCms.inNamespace(namespace)).thenReturn(mockNamespacedCms);
+
+            // Mock Pods
+            Indexer mockPodIndexer = mock(Indexer.class);
+            SharedIndexInformer mockPodInformer = mock(SharedIndexInformer.class);
+            MixedOperation mockNamespacedPods = mock(MixedOperation.class);
+            when(mockPodInformer.getIndexer()).thenReturn(mockPodIndexer);
+            when(mockNamespacedPods.inform()).thenAnswer(i -> {
+                numInformers.getAndIncrement();
+                return mockPodInformer;
+            });
+            when(mockNamespacedPods.withLabels(any())).thenReturn(mockNamespacedPods);
+            when(mockPods.inNamespace(namespace)).thenReturn(mockNamespacedPods);
         }
 
         Map<String, String> env = buildEnv(namespaces);
@@ -172,6 +200,11 @@ public class ClusterOperatorTest {
                 int maximumExpectedNumberOfWatchers = 7 * namespaceList.size();
                 assertThat("Looks like there were more watchers than namespaces",
                         numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
+
+                int expectedNumberOfInformers = 3 * namespaceList.size();
+                assertThat("Looks like there were more informers than namespaces",
+                        numInformers.get(), is(expectedNumberOfInformers));
+
                 latch.countDown();
             })));
         latch.await(10, TimeUnit.SECONDS);
@@ -186,6 +219,8 @@ public class ClusterOperatorTest {
      */
     private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException {
         AtomicInteger numWatchers = new AtomicInteger(0);
+        AtomicInteger numInformers = new AtomicInteger(0);
+
         KubernetesClient client;
         if (openShift) {
             client = mock(OpenShiftClient.class);
@@ -203,8 +238,13 @@ public class ClusterOperatorTest {
             throw new RuntimeException(e);
         }
 
+        // Mock CRs
         MixedOperation mockCms = mock(MixedOperation.class);
         when(client.resources(any(), any())).thenReturn(mockCms);
+
+        Indexer mockCmIndexer = mock(Indexer.class);
+        SharedIndexInformer mockCmInformer = mock(SharedIndexInformer.class);
+        when(mockCmInformer.getIndexer()).thenReturn(mockCmIndexer);
 
         FilterWatchListMultiDeletable mockFilteredCms = mock(FilterWatchListMultiDeletable.class);
         when(mockFilteredCms.withLabels(any())).thenReturn(mockFilteredCms);
@@ -217,8 +257,27 @@ public class ClusterOperatorTest {
             }).when(mockWatch).close();
             return mockWatch;
         });
+        when(mockFilteredCms.inform()).thenAnswer(i -> {
+            numInformers.getAndIncrement();
+            return mockCmInformer;
+        });
         when(mockCms.inAnyNamespace()).thenReturn(mockFilteredCms);
 
+        // Mock Pods
+        MixedOperation mockPods = mock(MixedOperation.class);
+        FilterWatchListMultiDeletable mockFilteredPods = mock(FilterWatchListMultiDeletable.class);
+        Indexer mockPodIndexer = mock(Indexer.class);
+        SharedIndexInformer mockPodInformer = mock(SharedIndexInformer.class);
+        when(client.pods()).thenReturn(mockPods);
+        when(mockFilteredPods.withLabels(any())).thenReturn(mockFilteredPods);
+        when(mockPods.inAnyNamespace()).thenReturn(mockFilteredPods);
+        when(mockPodInformer.getIndexer()).thenReturn(mockPodIndexer);
+        when(mockFilteredPods.inform()).thenAnswer(i -> {
+            numInformers.getAndIncrement();
+            return mockPodInformer;
+        });
+
+        // Run the operator
         Map<String, String> env = buildEnv(namespaces);
 
         CountDownLatch latch = new CountDownLatch(2);
@@ -237,7 +296,10 @@ public class ClusterOperatorTest {
                 }
 
                 int maximumExpectedNumberOfWatchers = 7;
-                assertThat("Looks like there were more watchers than namespaces", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
+                assertThat("Looks like there were more watchers than custom resources", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
+
+                assertThat("Looks like there were more informers than we should", numInformers.get(), is(3));
+
                 latch.countDown();
             })));
         latch.await(10, TimeUnit.SECONDS);

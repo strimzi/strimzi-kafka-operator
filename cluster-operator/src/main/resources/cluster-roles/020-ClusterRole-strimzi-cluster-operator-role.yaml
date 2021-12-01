@@ -88,6 +88,20 @@ rules:
       - patch
       - update
   - apiGroups:
+      - "core.strimzi.io"
+    resources:
+      # The cluster operator uses StrimziPodSets to manage the Kafka and ZooKeeper pods
+      - strimzipodsets
+      - strimzipodsets/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
       # The cluster operator needs the extensions api as the operator supports Kubernetes version 1.11+
       # apps/v1 was introduced in Kubernetes 1.14
       - "extensions"

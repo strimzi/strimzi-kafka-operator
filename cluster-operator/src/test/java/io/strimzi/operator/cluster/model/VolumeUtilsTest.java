@@ -14,6 +14,7 @@ import io.fabric8.kubernetes.api.model.Volume;
 import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -102,5 +103,14 @@ public class VolumeUtilsTest {
         assertThat(volume.getConfigMap().getName(), is("my-cm"));
         assertThat(volume.getConfigMap().getItems().size(), is(1));
         assertThat(volume.getConfigMap().getItems().get(0), is(new KeyToPathBuilder().withKey("fileName.txt").withPath("/path/to/fileName.txt").build()));
+    }
+
+    @ParallelTest
+    public void testCreatePvcVolume()   {
+        Volume volumeFromPvc = VolumeUtils.createPvcVolume("my-volume", "my-pvc");
+
+        assertThat(volumeFromPvc.getName(), is("my-volume"));
+        assertThat(volumeFromPvc.getPersistentVolumeClaim(), is(notNullValue()));
+        assertThat(volumeFromPvc.getPersistentVolumeClaim().getClaimName(), is("my-pvc"));
     }
 }

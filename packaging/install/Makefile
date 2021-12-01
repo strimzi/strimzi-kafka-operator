@@ -10,6 +10,7 @@ crd_install_helm3:
 	$(CP) ./cluster-operator/044-Crd-kafkauser.yaml ./user-operator/04-Crd-kafkauser.yaml
 	$(CP) ./cluster-operator/040-Crd-kafka.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/040-Crd-kafka.yaml
 	$(CP) ./cluster-operator/041-Crd-kafkaconnect.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/041-Crd-kafkaconnect.yaml
+	$(CP) ./cluster-operator/042-Crd-strimzipodset.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/042-Crd-strimzipodset.yaml
 	$(CP) ./cluster-operator/043-Crd-kafkatopic.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/043-Crd-kafkatopic.yaml
 	$(CP) ./cluster-operator/044-Crd-kafkauser.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/044-Crd-kafkauser.yaml
 	$(CP) ./cluster-operator/045-Crd-kafkamirrormaker.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/045-Crd-kafkamirrormaker.yaml
@@ -18,7 +19,8 @@ crd_install_helm3:
 	$(CP) ./cluster-operator/048-Crd-kafkamirrormaker2.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/048-Crd-kafkamirrormaker2.yaml
 	$(CP) ./cluster-operator/049-Crd-kafkarebalance.yaml ../helm-charts/helm3/strimzi-kafka-operator/crds/049-Crd-kafkarebalance.yaml
 	yq eval -i '.metadata.labels.component="kafkas.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/040-Crd-kafka.yaml
-	yq eval -i '.metadata.labels.component="kafkaconnects.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/041-Crd-kafkaconnect.yaml 
+	yq eval -i '.metadata.labels.component="kafkaconnects.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/041-Crd-kafkaconnect.yaml
+	yq eval -i '.metadata.labels.component="stirmzipodsets.core.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/042-Crd-strimzipodset.yaml
 	yq eval -i '.metadata.labels.component="kafkatopics.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/043-Crd-kafkatopic.yaml
 	yq eval -i '.metadata.labels.component="kafkausers.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/044-Crd-kafkauser.yaml 
 	yq eval -i '.metadata.labels.component="kafkamirrormakers.kafka.strimzi.io-crd"' ../helm-charts/helm3/strimzi-kafka-operator/crds/045-Crd-kafkamirrormaker.yaml 

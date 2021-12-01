@@ -90,7 +90,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
 @Version(Constants.V1BETA2)
-@Group(Constants.STRIMZI_GROUP)
+@Group(Constants.RESOURCE_GROUP_NAME)
 @Deprecated
 @DeprecatedType(replacedWithType = io.strimzi.api.kafka.model.KafkaMirrorMaker2.class)
 public class KafkaMirrorMaker extends CustomResource<KafkaMirrorMakerSpec, KafkaMirrorMakerStatus> implements Namespaced, UnknownPropertyPreserving {

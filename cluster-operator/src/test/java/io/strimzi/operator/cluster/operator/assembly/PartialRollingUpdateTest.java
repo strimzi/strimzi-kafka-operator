@@ -12,9 +12,11 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.KubernetesVersion;
@@ -134,7 +136,9 @@ public class PartialRollingUpdateTest {
 
         KubernetesClient bootstrapClient = new MockKube()
                 .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaList.class)
-                .withInitialInstances(Collections.singleton(cluster))
+                    .withInitialInstances(Collections.singleton(cluster))
+                .end()
+                .withCustomResourceDefinition(Crds.strimziPodSet(), StrimziPodSet.class, StrimziPodSetList.class)
                 .end()
                 .build();
 
@@ -185,6 +189,8 @@ public class PartialRollingUpdateTest {
         this.mockClient = new MockKube()
                 .withCustomResourceDefinition(kafkaAssemblyCrd, Kafka.class, KafkaList.class)
                 .withInitialInstances(Collections.singleton(cluster))
+                .end()
+                .withCustomResourceDefinition(Crds.strimziPodSet(), StrimziPodSet.class, StrimziPodSetList.class)
                 .end()
                 .withInitialStatefulSets(set(zkSts, kafkaSts))
                 .withInitialPods(set(zkPod0, zkPod1, zkPod2, kafkaPod0, kafkaPod1, kafkaPod2, kafkaPod3, kafkaPod4))

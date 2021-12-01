@@ -138,4 +138,107 @@ public class FeatureGatesST extends AbstractST {
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
+
+    /**
+     * UseStrimziPodSets feature gate
+     * https://github.com/strimzi/proposals/blob/main/031-statefulset-removal.md
+     */
+    @IsolatedTest("Feature Gates test for enabled UseStrimziPodSets gate")
+    @Tag(INTERNAL_CLIENTS_USED)
+    public void testStrimziPodSetsFeatureGate(ExtensionContext extensionContext) {
+        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
+
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String producerName = "producer-test-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String consumerName = "consumer-test-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+
+        final LabelSelector zooSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+
+        int messageCount = 600;
+        List<EnvVar> testEnvVars = new ArrayList<>();
+        int zooReplicas = 3;
+        int kafkaReplicas = 3;
+
+        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseStrimziPodSets", null));
+
+        install.unInstall();
+        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+                .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+                .withNamespace(INFRA_NAMESPACE)
+                .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+                .withExtraEnvVars(testEnvVars)
+                .createInstallation()
+                .runInstallation();
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas).build());
+
+        LOGGER.info("Try to send some messages to Kafka over next few minutes.");
+        KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(clusterName, topicName)
+                .editSpec()
+                    .withReplicas(kafkaReplicas)
+                    .withPartitions(kafkaReplicas)
+                .endSpec()
+                .build();
+        resourceManager.createResource(extensionContext, kafkaTopic);
+
+        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
+                .withProducerName(producerName)
+                .withConsumerName(consumerName)
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
+                .withTopicName(topicName)
+                .withMessageCount(messageCount)
+                .withDelayMs(500)
+                .withNamespaceName(INFRA_NAMESPACE)
+                .build();
+
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+        JobUtils.waitForJobRunning(consumerName, INFRA_NAMESPACE);
+
+        // Delete one Zoo Pod
+        Pod zooPod = PodUtils.getPodsByPrefixInNameWithDynamicWait(INFRA_NAMESPACE, KafkaResources.zookeeperStatefulSetName(clusterName) + "-").get(0);
+        LOGGER.info("Delete first found ZooKeeper pod {}", zooPod.getMetadata().getName());
+        kubeClient(INFRA_NAMESPACE).deletePod(INFRA_NAMESPACE, zooPod);
+        RollingUpdateUtils.waitForComponentAndPodsReady(zooSelector, zooReplicas);
+
+        // Delete one Kafka Pod
+        Pod kafkaPod = PodUtils.getPodsByPrefixInNameWithDynamicWait(INFRA_NAMESPACE, KafkaResources.kafkaStatefulSetName(clusterName) + "-").get(0);
+        LOGGER.info("Delete first found Kafka broker pod {}", kafkaPod.getMetadata().getName());
+        kubeClient(INFRA_NAMESPACE).deletePod(INFRA_NAMESPACE, kafkaPod);
+        RollingUpdateUtils.waitForComponentAndPodsReady(kafkaSelector, kafkaReplicas);
+
+        // Roll Zoo
+        LOGGER.info("Force Rolling Update of ZooKeeper via annotation.");
+        Map<String, String> zooPods = PodUtils.podSnapshot(INFRA_NAMESPACE, zooSelector);
+        zooPods.keySet().forEach(podName -> {
+            kubeClient(INFRA_NAMESPACE).editPod(podName).edit(pod -> new PodBuilder(pod)
+                    .editMetadata()
+                        .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                    .endMetadata()
+                    .build());
+        });
+
+        LOGGER.info("Wait for next reconciliation to happen.");
+        RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, zooSelector, zooReplicas, zooPods);
+
+        // Roll Kafka
+        LOGGER.info("Force Rolling Update of Kafka via annotation.");
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);
+        kafkaPods.keySet().forEach(podName -> {
+            kubeClient(INFRA_NAMESPACE).editPod(podName).edit(pod -> new PodBuilder(pod)
+                    .editMetadata()
+                        .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
+                    .endMetadata()
+                    .build());
+        });
+
+        LOGGER.info("Wait for next reconciliation to happen.");
+        RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, kafkaReplicas, kafkaPods);
+
+        LOGGER.info("Waiting for clients to finish sending/receiving messages.");
+        ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+    }
 }

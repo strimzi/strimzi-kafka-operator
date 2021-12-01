@@ -698,6 +698,7 @@ public class ResourceUtils {
                 mock(CrdOperator.class),
                 mock(CrdOperator.class),
                 mock(CrdOperator.class),
+                mock(CrdOperator.class),
                 mock(StorageClassOperator.class),
                 mock(NodeOperator.class),
                 zookeeperScalerProvider(),
@@ -742,7 +743,7 @@ public class ResourceUtils {
         return supplier;
     }
 
-    public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs, String featureGates) {
         return new ClusterOperatorConfig(
                 singleton("dummy"),
                 60_000,
@@ -757,7 +758,7 @@ public class ResourceUtils {
                 null,
                 ClusterOperatorConfig.RbacScope.CLUSTER,
                 null,
-                "",
+                featureGates,
                 10,
                 10_000);
     }
@@ -782,16 +783,20 @@ public class ResourceUtils {
                 10_000);
     }
 
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {
+        return dummyClusterOperatorConfig(versions, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "");
+    }
+
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions) {
-        return dummyClusterOperatorConfig(versions, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS);
+        return dummyClusterOperatorConfig(versions, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "");
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(long operationTimeoutMs) {
-        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), operationTimeoutMs);
+        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), operationTimeoutMs, "");
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig() {
-        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()));
+        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "");
     }
 
     /**

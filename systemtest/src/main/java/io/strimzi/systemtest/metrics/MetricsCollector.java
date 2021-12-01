@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
@@ -155,9 +156,9 @@ public class MetricsCollector {
     private LabelSelector getLabelSelectorForResource() {
         switch (this.componentType) {
             case Kafka:
-                return kubeClient(namespaceName).getStatefulSetSelectors(KafkaResources.kafkaStatefulSetName(componentName));
+                return KafkaResource.getLabelSelector(componentName, KafkaResources.kafkaStatefulSetName(componentName));
             case Zookeeper:
-                return kubeClient(namespaceName).getStatefulSetSelectors(KafkaResources.zookeeperStatefulSetName(componentName));
+                return KafkaResource.getLabelSelector(componentName, KafkaResources.zookeeperStatefulSetName(componentName));
             case KafkaConnect:
                 return kubeClient(namespaceName).getDeploymentSelectors(KafkaConnectResources.deploymentName(componentName));
             case KafkaExporter:

@@ -221,8 +221,8 @@ class LogSettingST extends AbstractST {
         assertThat("User operator's log level is set properly", checkLoggersLevel(INFRA_NAMESPACE, OPERATORS_LOGGERS, userOperatorMap), is(true));
 
         LOGGER.info("Checking if Kafka, Zookeeper, TO and UO of cluster:{} has GC logging enabled in stateful sets/deployments", LOG_SETTING_CLUSTER_NAME);
-        assertThat("Kafka GC logging is not enabled", checkGcLoggingStatefulSets(INFRA_NAMESPACE, kafkaSsName), is(true));
-        assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(INFRA_NAMESPACE, zkSsName), is(true));
+        checkGcLoggingPods(INFRA_NAMESPACE, kafkaSelector, true);
+        checkGcLoggingPods(INFRA_NAMESPACE, zkSelector, true);
         assertThat("TO GC logging is enabled", checkGcLoggingDeployments(INFRA_NAMESPACE, eoDepName, "topic-operator"), is(true));
         assertThat("UO GC logging is enabled", checkGcLoggingDeployments(INFRA_NAMESPACE, eoDepName, "user-operator"), is(true));
 
@@ -238,15 +238,15 @@ class LogSettingST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(INFRA_NAMESPACE, kafkaSelector, 3, kafkaPods);
         DeploymentUtils.waitTillDepHasRolled(INFRA_NAMESPACE, eoDepName, 1, eoPods);
 
-        LOGGER.info("Checking if Kafka, Zookeeper, TO and UO of cluster:{} has GC logging disabled in stateful sets/deployments", LOG_SETTING_CLUSTER_NAME);
-        assertThat("Kafka GC logging is disabled", checkGcLoggingStatefulSets(INFRA_NAMESPACE, kafkaSsName), is(false));
-        assertThat("Zookeeper GC logging is disabled", checkGcLoggingStatefulSets(INFRA_NAMESPACE, zkSsName), is(false));
+        LOGGER.info("Checking if Kafka, Zookeeper, TO and UO of cluster: {} has GC logging disabled in stateful sets/deployments", LOG_SETTING_CLUSTER_NAME);
+        checkGcLoggingPods(INFRA_NAMESPACE, kafkaSelector, false);
+        checkGcLoggingPods(INFRA_NAMESPACE, zkSelector, false);
         assertThat("TO GC logging is disabled", checkGcLoggingDeployments(INFRA_NAMESPACE, eoDepName, "topic-operator"), is(false));
         assertThat("UO GC logging is disabled", checkGcLoggingDeployments(INFRA_NAMESPACE, eoDepName, "user-operator"), is(false));
 
-        LOGGER.info("Checking if Kafka, Zookeeper, TO and UO of cluster:{} has GC logging disabled in stateful sets/deployments", GC_LOGGING_SET_NAME);
-        assertThat("Kafka GC logging is enabled", checkGcLoggingStatefulSets(INFRA_NAMESPACE, kafkaSsName), is(false));
-        assertThat("Zookeeper GC logging is enabled", checkGcLoggingStatefulSets(INFRA_NAMESPACE, zkSsName), is(false));
+        LOGGER.info("Checking if Kafka, Zookeeper, TO and UO of cluster: {} has GC logging disabled in stateful sets/deployments", GC_LOGGING_SET_NAME);
+        checkGcLoggingPods(INFRA_NAMESPACE, kafkaSelector, false);
+        checkGcLoggingPods(INFRA_NAMESPACE, zkSelector, false);
         assertThat("TO GC logging is enabled", checkGcLoggingDeployments(INFRA_NAMESPACE, eoDepName, "topic-operator"), is(false));
         assertThat("UO GC logging is enabled", checkGcLoggingDeployments(INFRA_NAMESPACE, eoDepName, "user-operator"), is(false));
 
@@ -504,11 +504,14 @@ class LogSettingST extends AbstractST {
         return checkEnvVarValue(container);
     }
 
-    private synchronized Boolean checkGcLoggingStatefulSets(String namespaceName, String statefulSetName) {
-        LOGGER.info("Checking stateful set: {}", statefulSetName);
-        Container container = kubeClient(namespaceName).getStatefulSet(statefulSetName).getSpec().getTemplate().getSpec().getContainers().get(0);
-        LOGGER.info("Checking container with name: {}", container.getName());
-        return checkEnvVarValue(container);
+    private synchronized void checkGcLoggingPods(String namespaceName, LabelSelector selector, boolean expectedValue) {
+        LOGGER.info("Checking pods with selector: {}", selector);
+        List<Pod> pods = kubeClient(namespaceName).getClient().pods().inNamespace(namespaceName).withLabelSelector(selector).list().getItems();
+
+        for (Pod pod : pods)    {
+            LOGGER.info("Checking pod {}, container: {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getName());
+            assertThat("Kafka GC logging in pod "  + pod.getMetadata().getName() + " has wrong value", checkEnvVarValue(pod.getSpec().getContainers().get(0)), is(expectedValue));
+        }
     }
 
     private synchronized Container getContainerByName(String containerName, List<Container> containers) {

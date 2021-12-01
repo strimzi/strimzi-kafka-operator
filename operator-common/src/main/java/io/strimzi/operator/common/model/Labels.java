@@ -56,6 +56,19 @@ public class Labels {
     public static final String STRIMZI_NAME_LABEL = STRIMZI_DOMAIN + "name";
 
     /**
+     * The name of the K8S Pod.
+     * This is used to identify individual pods for example in per-node services.
+     */
+    public static final String STRIMZI_POD_NAME_LABEL = STRIMZI_DOMAIN + "pod-name";
+
+    /**
+     * Indicates whether the resource should be controlled by a Strimzi operator instance and which StrimziPodSet
+     * controls
+     */
+    public static final String STRIMZI_CONTROLLER_LABEL = STRIMZI_DOMAIN + "controller";
+    public static final String STRIMZI_CONTROLLER_NAME_LABEL = STRIMZI_DOMAIN + "controller-name";
+
+    /**
      * The name of the label used for Strimzi discovery.
      * This label should be set by Strimzi on services which are user interfaces when users are expected to connect.
      * Applications using Strimzi can use this label to find the services and connect to Strimzi created clusters.
@@ -324,6 +337,16 @@ public class Labels {
     }
 
     /**
+     * The same labels as this instance, but with the given {@code name} for the {@code strimzi.io/pod-name} key.
+     *
+     * @param name The name to add
+     * @return A new instance with the given name added.
+     */
+    public Labels withStrimziPodName(String name) {
+        return with(STRIMZI_POD_NAME_LABEL, name);
+    }
+
+    /**
      * The same labels as this instance, but with "true" for the {@code strimzi.io/discovery} key.
      *
      * @return A new instance with the given name added.
@@ -343,6 +366,17 @@ public class Labels {
     }
 
     /**
+     * Sets the Strimzi controller label to strimzipodset
+     *
+     * @param controllerName Name of the controlling StrimziPodSet
+     *
+     * @return A new instance with the given pod name added.
+     */
+    public Labels withStrimziPodSetController(String controllerName) {
+        return with(STRIMZI_CONTROLLER_LABEL, "strimzipodset").with(STRIMZI_CONTROLLER_NAME_LABEL, controllerName);
+    }
+
+    /**
      * @return an unmodifiable map of the labels.
      */
     public Map<String, String> toMap() {
@@ -350,7 +384,7 @@ public class Labels {
     }
 
     /**
-     * @return A string which can be used as the Kuberneter label selector (e.g. key1=value1,key2=value2).
+     * @return A string which can be used as the Kubernetes label selector (e.g. key1=value1,key2=value2).
      */
     public String toSelectorString() {
         return labels.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue()).collect(Collectors.joining(","));

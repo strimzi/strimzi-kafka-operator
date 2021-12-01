@@ -16,10 +16,12 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteIngressBuilder;
 import io.fabric8.openshift.api.model.RouteStatus;
 import io.fabric8.openshift.api.model.RouteStatusBuilder;
+import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpecBuilder;
@@ -34,6 +36,7 @@ import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptions;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
@@ -72,6 +75,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
@@ -429,6 +433,7 @@ public class KafkaAssemblyOperatorTest {
         RouteOperator mockRouteOps = supplier.routeOperations;
         IngressOperator mockIngressOps = supplier.ingressOperations;
         NodeOperator mockNodeOps = supplier.nodeOperator;
+        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
 
         // Create a CM
         String kafkaName = kafka.getMetadata().getName();
@@ -436,6 +441,8 @@ public class KafkaAssemblyOperatorTest {
         when(mockKafkaOps.get(kafkaNamespace, kafkaName)).thenReturn(null);
         when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq(kafkaName))).thenReturn(Future.succeededFuture(kafka));
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new StrimziPodSet())));
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         ArgumentCaptor<NetworkPolicy> policyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
@@ -904,6 +911,7 @@ public class KafkaAssemblyOperatorTest {
         NodeOperator mockNodeOps = supplier.nodeOperator;
         IngressOperator mockIngressOps = supplier.ingressOperations;
         RouteOperator mockRouteOps = supplier.routeOperations;
+        var mockPodSetOps = supplier.strimziPodSetOperator;
 
         String clusterName = updatedAssembly.getMetadata().getName();
         String clusterNamespace = updatedAssembly.getMetadata().getNamespace();
@@ -965,6 +973,8 @@ public class KafkaAssemblyOperatorTest {
         when(mockKafkaOps.get(clusterNamespace, clusterName)).thenReturn(updatedAssembly);
         when(mockKafkaOps.getAsync(eq(clusterNamespace), eq(clusterName))).thenReturn(Future.succeededFuture(updatedAssembly));
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new StrimziPodSet())));
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
         ConfigMap metricsCm = new ConfigMapBuilder()
                 .withNewMetadata()
                     .withName("metrics-cm")

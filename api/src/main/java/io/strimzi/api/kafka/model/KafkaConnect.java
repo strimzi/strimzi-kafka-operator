@@ -79,7 +79,7 @@ import static java.util.Collections.unmodifiableList;
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
 @Version(Constants.V1BETA2)
-@Group(Constants.STRIMZI_GROUP)
+@Group(Constants.RESOURCE_GROUP_NAME)
 @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
 public class KafkaConnect extends CustomResource<KafkaConnectSpec, KafkaConnectStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
