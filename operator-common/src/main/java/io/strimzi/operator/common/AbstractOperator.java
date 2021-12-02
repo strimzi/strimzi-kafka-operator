@@ -379,6 +379,21 @@ public abstract class AbstractOperator<
         return handler.future();
     }
 
+    /**
+     * Safely executes <code>callable</code>, always returning a
+     * <code>Future</code>. In the context of this method the term "safely"
+     * indicates that exceptions thrown by <code>callable</code> will result in the
+     * return of a failed <code>Future</code>.
+     *
+     * @param <C>            result type of the <code>Future</code> returned by the
+     *                       provided <code>callable</code>
+     * @param reconciliation the reconciliation being processed by
+     *                       <code>callable</code>
+     * @param callable       callable routine for processing the reconciliation
+     *
+     * @return the result of <code>callable</code> or a failed <code>Future</code>
+     *         when an exception is thrown
+     */
     private <C> Future<C> callSafely(Reconciliation reconciliation, Callable<Future<C>> callable) {
         try {
             return callable.call();
@@ -388,6 +403,21 @@ public abstract class AbstractOperator<
         }
     }
 
+    /**
+     * Provides a proxy <code>Handler</code> that will safely execute the given
+     * <code>handler</code>. In the context of this method the term "safely"
+     * indicates that exceptions thrown by <code>handler</code> will be caught and
+     * logged, not to be thrown to the caller.
+     *
+     * @param <H>            argument type of the <code>Handler</code>
+     * @param reconciliation the reconciliation being processed, the context of the
+     *                       operation
+     * @param handler        handler, for either success or failure
+     *
+     * @return a proxy <code>Handler</code> that, when executed, will execute the
+     *         provided handler, ensuring that unhandled exceptions are caught and
+     *         logged.
+     */
     private <H> Handler<H> handleSafely(Reconciliation reconciliation, Handler<H> handler) {
         return result -> {
             try {
