@@ -93,7 +93,6 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION + "=/tmp/kafka/cluster.truststore.p12");
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD + "=${CERTS_STORE_PASSWORD}");
             writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true");
-            writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_KUBERNETES_MODE + "=true");
             if (numPartitions != null) {
                 writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=" + numPartitions);
             }
