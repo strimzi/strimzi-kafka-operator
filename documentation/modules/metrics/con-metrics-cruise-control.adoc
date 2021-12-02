@@ -6,14 +6,15 @@
 = Monitoring Cruise Control operations
 
 [role="_abstract"]
-Kafka metrics are gathered by Cruise Control in order to track the utilization of brokers, topics and partitions.
+Kafka metrics are gathered by Cruise Control in order to track the utilization of brokers, topics, and partitions.
 Cruise Control also provides a set of metrics for monitoring its own performance.
 
-The Cruise Control metrics reporter collects raw metrics data from Kafka brokers, which is produced to topics that are automatically created by Cruise Control.
+The Cruise Control metrics reporter collects raw metrics data from Kafka brokers.
+The data is produced to topics that are automatically created by Cruise Control.
 The metrics are used to link:{BookURLUsing}#proc-generating-optimization-proposals-str[generate optimization proposals for Kafka clusters^].
 
 Cruise Control metrics are available for real-time monitoring of Cruise Control operations.
-For example, you can use Cruise Control metrics to monitor the status of rebalancing operations that are running or provide alerts on any anomalies that are detected in its performance.
+For example, you can use Cruise Control metrics to monitor the status of rebalancing operations that are running or provide alerts on any anomalies that are detected in an operation's performance.
 
 You can expose Cruise Control metrics by enabling JMX for Cruise Control.
 For a full list of available Cruise Control metrics, which are known as _sensors_, see the {CruiseControlSensorsDocs}.
@@ -21,7 +22,7 @@ For a full list of available Cruise Control metrics, which are known as _sensors
 == Exposing Cruise Control metrics
 
 If you want to expose metrics on Cruise Control operations, configure the `Kafka` resource xref:proc-metrics-kafka-deploy-options-{context}[to deploy Cruise Control metrics configuration].
-You can use your own configuration or an example file provided by Strimzi called `kafka-cruise-control-metrics.yaml`.
+You can use your own configuration or use the example `kafka-cruise-control-metrics.yaml` file provided by Strimzi.
 
 You add the configuration to the `metricsConfig` of the `CruiseControl` property in the `Kafka` resource.
 The configuration enables JMX for Cruise Control and uses the {JMXExporter} to expose Cruise Control metrics through an HTTP endpoint.
@@ -58,12 +59,12 @@ The HTTP endpoint is scraped by the Prometheus server.
 
 == Viewing Cruise Control metrics
 
-Having exposed Cruise Control metrics, you can use Prometheus or another suitable monitoring system to view information on the metrics data.
-Strimzi provides an xref:assembly-metrics-config-files-str[example Grafana dashboard] to provide visualizations of Cruise Control metrics.
+After you expose the Cruise Control metrics, you can use Prometheus or another suitable monitoring system to view information on the metrics data.
+Strimzi provides an xref:assembly-metrics-config-files-str[example Grafana dashboard] to display visualizations of Cruise Control metrics.
 The dashboard is a JSON file called `strimzi-cruise-control.json`.
 The exposed metrics provide the monitoring data when you xref:proc-metrics-grafana-dashboard-str[enable the Grafana dashboard].
 
-=== Monitoring Balancedness scores
+=== Monitoring balancedness scores
 
 Cruise Control metrics include a balancedness score.
 Balancedness is the measure of how evenly a workload is distributed in a Kafka cluster.
@@ -76,7 +77,7 @@ The goals are specified in the `spec.cruiseControl.config` of the `Kafka` custom
 [NOTE]
 ====
 Refreshing the `KafkaRebalance` resource fetches an optimization proposal.
-The latest cached optimization proposal is fetched under one of the following conditions:
+The latest cached optimization proposal is fetched if one of the following conditions applies:
 
 * KafkaRebalance `goals` match the goals configured in the `default.goals`section of the `Kafka` resource
 * KafkaRebalance `goals` are not specified
