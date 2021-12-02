@@ -55,10 +55,10 @@ spec:
             periodSeconds: 30
           resources:
             limits:
-              memory: 96Mi
-              cpu: 100m
+              memory: 512Mi
+              cpu: 500m
             requests:
-              memory: 96Mi
+              memory: 256Mi
               cpu: 100m
   strategy:
     type: Recreate
