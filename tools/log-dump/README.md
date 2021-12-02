@@ -13,7 +13,7 @@ Partition dumps can be useful to troubleshoot Kafka issues. For example, we can 
 - bash 5+ (GNU)
 - kubectl 1.16+ (K8s CLI)
 - yq 4.6+ (YAML processor)
-- [klog 1.0-SNAPSHOT](https://github.com/tombentley/klog)
+- jshell (JDK 9+)
 
 ## Additional logging
 
@@ -55,7 +55,7 @@ This example shows how to dump partitions related to a simple word count transac
 
 ```shell
 # Print partition segments across the cluster
-./log-dump.sh partition --namespace test --cluster my-cluster \
+./tools/log-dump/run.sh partition --namespace test --cluster my-cluster \
   --topic my-topic --partition 0 --dry-run
     
 brokers: 3, storage: jbod, disks: 2
@@ -73,7 +73,7 @@ wc-output-0 segments in kafka-2-disk-1
 No segment found
 
 # Dump partition segments across the cluster
-./log-dump.sh partition --namespace test --cluster my-cluster \
+./tools/log-dump/run.sh partition --namespace test --cluster my-cluster \
   --topic my-topic --partition 0 --out-path ~/Downloads/my-dump
 
 brokers: 3, storage: jbod, disks: 2
@@ -91,7 +91,7 @@ wc-output-0 segments in kafka-2-disk-1
 No segment found
 
 # Dump consumer group offsets segments
-./log-dump.sh cg_offsets --namespace test --cluster my-cluster \
+./tools/log-dump/run.sh cg_offsets --namespace test --cluster my-cluster \
   --group-id my-group --out-path ~/Downloads/my-dump
   
 brokers: 3, storage: jbod, disks: 2
@@ -110,7 +110,7 @@ __consumer_offsets-12 segments in kafka-2-disk-1
 No segment found
 
 # Dump application transaction state segments
-./log-dump.sh txn_state --namespace test --cluster my-cluster \
+./tools/log-dump/run.sh txn_state --namespace test --cluster my-cluster \
   --txn-id my-app-my-group-my-topic-0 --out-path ~/Downloads/my-dump
   
 brokers: 3, storage: jbod, disks: 2

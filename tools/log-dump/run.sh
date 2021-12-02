@@ -54,6 +54,17 @@ get_kafka_setup() {
   fi
 }
 
+coord-partition() {
+  local id="$1"
+  local part="${2-$TOT_PART}"
+  if [[ -n $id && -n $part ]]; then
+    echo 'public void run(String id, int part) { System.out.println(abs(id.hashCode()) % part); }    
+      private int abs(int n) { return (n == Integer.MIN_VALUE) ? 0 : Math.abs(n); } 
+      run("'$id'", '$part');' \
+      | jshell -
+  fi
+}
+
 find_segments() {
   local broker="$1"
   local log_dir="$2"
@@ -156,7 +167,7 @@ cg_offsets() {
     get_kafka_setup
           
     # dump CG offsets coordinating partition across the cluster (including replicas)
-    local partition=$(klog group-coordinating-partition "$GROUP_ID" num-partitions="$NUM_PART")
+    local partition=$(coord-partition "$GROUP_ID" "$TOT_PART")
     echo "$GROUP_ID coordinating partition: $partition"
     for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
       if [[ $STORAGE_TYPE == "jbod" ]]; then
@@ -179,7 +190,7 @@ txn_state() {
     get_kafka_setup
         
     # dump TX state coordinating partition across the cluster (including replicas)
-    local partition=$(klog txn-coordinating-partition "$TXN_ID" num-partitions="$NUM_PART")
+    local partition=$(coord-partition "$TXN_ID" "$TOT_PART")
     echo "$TXN_ID coordinating partition: $partition"
     for i in $(seq 0 $(($KAFKA_BROKERS-1))); do
       if [[ $STORAGE_TYPE == "jbod" ]]; then
