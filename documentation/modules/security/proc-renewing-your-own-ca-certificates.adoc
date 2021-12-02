@@ -53,7 +53,7 @@ where _DATE_ is the certificate expiry date in the format _YEAR-MONTH-DAYTHOUR-M
 For example `ca-2018-09-27T17-32-00Z.crt`.
 +
 [source,shell,subs="+quotes"]
-mv ca.crt ca-$(date -u -d$(openssl x509 -enddate -noout -in ca.crt | sed 's/.*=//') +'%Y-%m-%dT%H-%M-%SZ').crt
+mv ca.crt ca-$(date -u -d"$(openssl x509 -enddate -noout -in ca.crt | sed 's/.*=//')" +'%Y-%m-%dT%H-%M-%SZ').crt
 
 . Copy your new CA certificate into the directory, naming it `ca.crt`:
 +
