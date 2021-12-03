@@ -14,9 +14,9 @@ ${DOCKER_CMD} rm temp-container-name > /dev/null
 classes_root=`mktemp -d`
 trap "[ -e $classes_root ] && rm -rf $classes_root" EXIT
 
-$(dirname $0)/extract-jars.sh "$jars_dir" "$classes_root"
+$(dirname $0)/../artifacts/extract-jars.sh "$jars_dir" "$classes_root"
 
-collisions=$($(dirname "$0")/find-colliding-classes.sh "$classes_root" | awk '{printf("%s\t%s\n",$1,$2);}' | \
+collisions=$($(dirname "$0")/../artifacts/find-colliding-classes.sh "$classes_root" | awk '{printf("%s\t%s\n",$1,$2);}' | \
     grep -vFf "$whilelist_file")
 
 if [ "$collisions" != "" ] ; then

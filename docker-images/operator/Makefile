@@ -1,9 +1,9 @@
 PROJECT_NAME := operator
 jar_version := $(shell cat ../../release.version)
-topic_operator_dist := ../../topic-operator/target/topic-operator-$(jar_version)-dist.zip
-user_operator_dist := ../../user-operator/target/user-operator-$(jar_version)-dist.zip
-cluster_operator_dist := ../../cluster-operator/target/cluster-operator-$(jar_version)-dist.zip
-kafka_init_dist := ../../kafka-init/target/kafka-init-$(jar_version)-dist.zip
+topic_operator_dist := ../artifacts/binaries/topic-operator-$(jar_version)-dist.zip
+user_operator_dist := ../artifacts/binaries/user-operator-$(jar_version)-dist.zip
+cluster_operator_dist := ../artifacts/binaries/cluster-operator-$(jar_version)-dist.zip
+kafka_init_dist := ../artifacts/binaries/kafka-init-$(jar_version)-dist.zip
 
 clean: 
 	rm -rf .topic-operator.tmp .user-operator.tmp .kafka-init.tmp .cluster-operator.tmp ./tmp

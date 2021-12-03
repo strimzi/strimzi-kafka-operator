@@ -22,6 +22,7 @@ make release_files_check
 
 make crd_install
 make helm_install
+make java_install
 make docker_build
 make docu_html
 make docu_htmlnoheader

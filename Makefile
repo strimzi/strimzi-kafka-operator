@@ -13,12 +13,15 @@ ifneq ($(RELEASE_VERSION),latest)
   GITHUB_VERSION = $(RELEASE_VERSION)
 endif
 
-SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init docker-images packaging/helm-charts/helm3 packaging/install packaging/examples
+SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init docker-images/artifacts packaging/helm-charts/helm3 packaging/install packaging/examples
+DOCKERDIRS=docker-images/base docker-images/operator docker-images/kafka-based docker-images/jmxtrans docker-images/maven-builder docker-images/kaniko-executor
 DOCKER_TARGETS=docker_build docker_push docker_tag
+JAVA_TARGETS=java_build java_install java_clean
 
-all: prerequisites_check $(SUBDIRS) crd_install helm_install shellcheck docu_versions docu_check
-clean: prerequisites_check $(SUBDIRS) docu_clean
-$(DOCKER_TARGETS): prerequisites_check $(SUBDIRS)
+all: prerequisites_check $(SUBDIRS) $(DOCKERDIRS) crd_install helm_install shellcheck docu_versions docu_check
+clean: prerequisites_check $(SUBDIRS) $(DOCKERDIRS) docu_clean
+$(DOCKER_TARGETS): prerequisites_check $(DOCKERDIRS)
+$(JAVA_TARGETS): prerequisites_check $(SUBDIRS)
 release: release_prepare release_version release_helm_version release_maven $(SUBDIRS) release_docu release_single_file release_pkg release_helm_repo docu_clean
 
 next_version:
@@ -179,10 +182,13 @@ crd_install: packaging/install
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
 
+$(DOCKERDIRS):
+	$(MAKE) -C $@ $(MAKECMDGOALS)
+
 systemtest_make:
 	$(MAKE) -C systemtest $(MAKECMDGOALS)
 
 prerequisites_check:
 	SED=$(SED) ./tools/prerequisites-check.sh
 
-.PHONY: all $(SUBDIRS) $(DOCKER_TARGETS) systemtests docu_versions spotbugs docu_check prerequisites_check
+.PHONY: all $(SUBDIRS) $(DOCKERDIRS) $(DOCKER_TARGETS) systemtests docu_versions spotbugs docu_check prerequisites_check
