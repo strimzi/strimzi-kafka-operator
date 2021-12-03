@@ -69,9 +69,9 @@ COPY ./exporter-scripts $KAFKA_EXPORTER_HOME
 #####
 # Add Strimzi agents
 #####
-COPY ./tmp/io.strimzi.kafka-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
-COPY ./tmp/io.strimzi.mirror-maker-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
-COPY ./tmp/io.strimzi.tracing-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
+COPY ./tmp/kafka-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
+COPY ./tmp/mirror-maker-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
+COPY ./tmp/tracing-agent-${STRIMZI_VERSION}.jar ${KAFKA_HOME}/libs/
 
 #####
 # Add 3rd party libs
