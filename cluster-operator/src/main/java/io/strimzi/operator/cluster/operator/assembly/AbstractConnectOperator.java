@@ -766,8 +766,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
                 if (fetchedResource != null) {
                     if ((!(fetchedResource instanceof KafkaConnector))
-                            && (!(fetchedResource instanceof KafkaMirrorMaker2))
-                            && StatusUtils.isResourceV1alpha1(fetchedResource)) {
+                            && (!(fetchedResource instanceof KafkaMirrorMaker2))) {
                         LOGGER.warnCr(reconciliation, "{} {} needs to be upgraded from version {} to 'v1beta1' to use the status field",
                                 fetchedResource.getKind(), fetchedResource.getMetadata().getName(), fetchedResource.getApiVersion());
                         updateStatusPromise.complete();
