@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-VERSIONS_FILE="$(dirname $(realpath $0))/../kafka-versions.yaml"
+VERSIONS_FILE="$(dirname $(realpath $BASH_SOURCE))/../kafka-versions.yaml"
 
 # Gets the default Kafka version and sets "default_kafka_version" variable
 # to the corresponding version string.
@@ -59,6 +59,10 @@ function get_kafka_checksums {
 
 function get_kafka_third_party_libs {
     eval libs="($(yq eval '.[] | select(.supported == true) | .third-party-libs' $VERSIONS_FILE))"
+}
+
+function get_unique_kafka_third_party_libs {
+    eval libs="($(yq eval '.[] | select(.supported == true) | .third-party-libs' $VERSIONS_FILE | sort -u))"
 }
 
 function get_kafka_protocols {

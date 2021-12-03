@@ -16,4 +16,4 @@ release:
 	mkdir -p $(RELEASE_PATH)
 	$(CP) -r $$(ls | $(GREP) -Ev '^Makefile$$') $(RELEASE_PATH)/
 
-.PHONY: all build clean docker_build docker_push docker_tag spotbugs
+.PHONY: all build clean java_install java_build docker_build docker_push docker_tag spotbugs

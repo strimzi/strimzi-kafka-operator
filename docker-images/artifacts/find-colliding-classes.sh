@@ -2,7 +2,7 @@
 # $1: Directory containing (directories containing) .class files
 unzipped_dir=$1
 
-source $(dirname $(realpath $0))/../tools/multi-platform-support.sh
+source $(dirname $(realpath $0))/../../tools/multi-platform-support.sh
 
 # compute list of <md5> <classfile>
 find $unzipped_dir ! -empty -type f -name '*.class' -a ! -name 'module-info.class' -exec md5sum {} + | \
