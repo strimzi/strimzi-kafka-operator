@@ -27,6 +27,11 @@ The Cluster Operator can also deploy (through configuration of the `Kafka` resou
 
 The Topic Operator and User Operator function within the Entity Operator on deployment.
 
+You can use the Cluster Operator with a deployment of link:{BookURLUsing}#assembly-drain-cleaner-str[Strimzi Drain Cleaner] to help with pod evictions.
+By deploying the Strimzi Drain Cleaner, you can use the Cluster Operator to move Kafka pods instead of Kubernetes.
+Strimzi Drain Cleaner annotates pods being evicted with a rolling update annotation.
+The annotation informs the Cluster Operator to perform the rolling update.
+
 .Example architecture for the Cluster Operator
 
 image:cluster-operator.png[The Cluster Operator creates and deploys Kafka and ZooKeeper clusters]
