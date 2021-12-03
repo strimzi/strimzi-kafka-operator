@@ -666,13 +666,31 @@ public class Util {
     private static Future<String> getPasswordAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthentication auth) {
         if (auth instanceof KafkaClientAuthenticationPlain) {
             return secretOperator.getAsync(namespace, ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getSecretName())
-                    .compose(secret -> secret == null ? Future.failedFuture("Secret " + ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getSecretName() + " not found") :
-                            Future.succeededFuture(secret.getData().get(((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getPassword())));
+            .compose(secret -> {
+                if (secret == null) {
+                    return Future.failedFuture("Secret " + ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getSecretName() + " not found");
+                } else {
+                    String passwordKey = ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getPassword();
+                    if (!secret.getData().containsKey(passwordKey)) {
+                        return Future.failedFuture(String.format("Secret %s does not contain key %s", ((KafkaClientAuthenticationPlain) auth).getPasswordSecret().getSecretName(), passwordKey));
+                    }
+                    return Future.succeededFuture(secret.getData().get(passwordKey));
+                }   
+            });
         }
         if (auth instanceof KafkaClientAuthenticationScramSha512) {
             return secretOperator.getAsync(namespace, ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getSecretName())
-                    .compose(secret -> secret == null ? Future.failedFuture("Secret " + ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getSecretName() + " not found") :
-                            Future.succeededFuture(secret.getData().get(((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getPassword())));
+            .compose(secret -> {
+                if (secret == null) {
+                    return Future.failedFuture("Secret " + ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getSecretName() + " not found");
+                } else {
+                    String passwordKey = ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getPassword();
+                    if (!secret.getData().containsKey(passwordKey)) {
+                        return Future.failedFuture(String.format("Secret %s does not contain key %s", ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getSecretName(), passwordKey));
+                    }
+                    return Future.succeededFuture(secret.getData().get(passwordKey));
+                }
+            });                    
         } else {
             return Future.failedFuture("Auth type " + auth.getType() + " does not have a password property");
         }
