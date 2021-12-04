@@ -28,11 +28,11 @@ if [[ -z $(git status -s) ]]; then
     exit 0
 fi
 
-git config user.name "Azure Strimzi CI"
+git config user.name "Strimzi CI"
 git config user.email "ci@strimzi.io"
 
 git add -A
-git commit -s -m "Update documentation (Travis CI build ${TRAVIS_BUILD_NUMBER})" --allow-empty
+git commit -s -m "Update documentation (Strimzi CI build ${TRAVIS_BUILD_NUMBER})" --allow-empty
 git push origin main
 
 popd

@@ -53,6 +53,6 @@ docker_build: .kafka-agent.tmp .tracing-agent.tmp .mirror-maker-agent.tmp .third
 	# Pull dependencies first
 
 docker_build:
-	../find-classpath-collision.sh strimzi/$(PROJECT_NAME):$(BUILD_TAG) /opt/kafka/libs "tmp/$(KAFKA_VERSION).ignorelist"
+	../find-classpath-collision.sh strimzi/$(PROJECT_NAME):$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX) /opt/kafka/libs "tmp/$(KAFKA_VERSION).ignorelist"
 
 .PHONY: build clean release
