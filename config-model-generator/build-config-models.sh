@@ -16,10 +16,11 @@ then
     for version in "${versions[@]}"
     do
         mvn ${MVN_ARGS} verify exec:java \
+        "-Pgenerate-model" \
         "-Dkafka-metadata-version=$version" \
         "-Dconfig-model-file=../cluster-operator/src/main/resources/kafka-${version}-config-model.json"
     done
 else
     # Clean up the last version in the file?
-    mvn ${MVN_ARGS} clean "-Dkafka-metadata-version=${versions[-1]}"
+    mvn ${MVN_ARGS} "-Pgenerate-model" clean "-Dkafka-metadata-version=${versions[-1]}"
 fi

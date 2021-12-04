@@ -1,30 +1,15 @@
 PROJECT_NAME=cluster-operator-metadata
 
 docker_build: java_build
-
-docker_tag:
-
 docker_push:
-
-java_build:
-	./build-config-models.sh build
-
-java_install: java_build
-
-spotbugs:
-	mvn $(MVN_ARGS) spotbugs:check
+docker_tag:
 
 all: docker_build docker_push
 
-clean:
+clean: java_clean
 	rm ../cluster-operator/src/main/resources/kafka-*-config-model.json || true
 	./build-config-models.sh clean
 
-#include ../Makefile.maven
+include ../Makefile.maven
 
 .PHONY: build clean release
-
-
-
-
-
