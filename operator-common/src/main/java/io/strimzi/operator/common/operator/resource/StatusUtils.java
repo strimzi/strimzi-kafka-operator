@@ -6,7 +6,6 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.Status;
@@ -19,8 +18,6 @@ import java.util.Collections;
 import java.util.Date;
 
 public class StatusUtils {
-    private static final String V1ALPHA1 = Constants.RESOURCE_GROUP_NAME + "/" + Constants.V1ALPHA1;
-
     /**
      * Returns the current timestamp in ISO 8601 format, for example "2019-07-23T09:08:12.356Z".
      * 
@@ -87,14 +84,17 @@ public class StatusUtils {
                 .build();
     }
 
+    @SuppressWarnings({ "rawtypes" })
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, AsyncResult<Void> result) {
         setStatusConditionAndObservedGeneration(resource, status, result.cause());
     }
 
+    @SuppressWarnings({ "rawtypes" })
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, Throwable error) {
         setStatusConditionAndObservedGeneration(resource, status, error == null ? "Ready" : "NotReady", "True", error);
     }
 
+    @SuppressWarnings({ "rawtypes" })
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, String conditionStatus, Throwable error) {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
@@ -103,10 +103,12 @@ public class StatusUtils {
         status.setConditions(Collections.singletonList(readyCondition));
     }
 
+    @SuppressWarnings({ "rawtypes" })
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, Throwable error) {
         setStatusConditionAndObservedGeneration(resource, status, type, "True", error);
     }
 
+    @SuppressWarnings({ "rawtypes" })
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type, String conditionStatus) {
         if (resource.getMetadata().getGeneration() != null)    {
             status.setObservedGeneration(resource.getMetadata().getGeneration());
@@ -115,24 +117,16 @@ public class StatusUtils {
         status.setConditions(Collections.singletonList(condition));
     }
 
+    @SuppressWarnings({ "rawtypes" })
     public static <R extends CustomResource, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, String type) {
         setStatusConditionAndObservedGeneration(resource, status, type, "True");
     }
 
-    public static <R extends CustomResource> boolean isResourceV1alpha1(R resource) {
-        return resource.getApiVersion() != null && resource.getApiVersion().equals(V1ALPHA1);
-    }
-
     public static Condition getPausedCondition() {
-        Condition pausedCondition = new ConditionBuilder()
+        return new ConditionBuilder()
                 .withLastTransitionTime(StatusUtils.iso8601Now())
                 .withType("ReconciliationPaused")
                 .withStatus("True")
                 .build();
-        return pausedCondition;
-    }
-
-    public static <S extends Status> boolean hasPausedCondition(S status) {
-        return status.getConditions().stream().filter(cond -> "ReconciliationPaused".equals(cond.getType())).findAny().isPresent();
     }
 }
