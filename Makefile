@@ -2,6 +2,7 @@ TOPDIR=$(dir $(lastword $(MAKEFILE_LIST)))
 
 include ./Makefile.os
 
+SHELL = /usr/bin/env bash
 GITHUB_VERSION ?= main
 OAUTH_VERSION = $(shell source ./tools/strimzi-oauth-version.sh && get_strimzi_oauth_version)
 RELEASE_VERSION ?= latest
