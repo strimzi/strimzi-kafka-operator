@@ -23,6 +23,10 @@ spec:
       min.insync.replicas: 2
       log.message.format.version: "3.0"
       inter.broker.protocol.version: "3.0"
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 1Gi
     storage:
       type: ephemeral
   zookeeper:
