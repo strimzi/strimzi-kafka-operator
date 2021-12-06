@@ -5,7 +5,7 @@ source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
 # Generates documentation/book/snip-images.adoc
 # according to the values in kafka-versions
 
-. $(dirname $0)/../tools/multi-platform-support.sh
+source $(dirname $(realpath $0))/../tools/multi-platform-support.sh
 
 # Parse the Kafka versions file and get a list of version strings in an array
 # called "versions"
