@@ -57,6 +57,8 @@ helm_pkg: helm_lint helm_install
 	$(HELM_CLI) package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ $(CHART_PATH)
 	rm -rf strimzi-$(RELEASE_VERSION)
 
+java_build: helm_pkg
+java_install: java_build
 docker_build: helm_pkg
 docker_tag:
 docker_push:

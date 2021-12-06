@@ -39,4 +39,10 @@ release:
 	$(CP) -r ./strimzi-admin $(RELEASE_PATH)/
 	$(CP) -r ./drain-cleaner $(RELEASE_PATH)/
 
+java_build: crd_install
+java_install: java_build
+docker_build: crd_install
+docker_tag:
+docker_push:
+
 .PHONY: all build clean docker_build docker_push docker_tag spotbugs

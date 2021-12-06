@@ -1,18 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-source $(dirname $(realpath $0))/../tools/kafka-versions-tools.sh
-source $(dirname $(realpath $0))/../tools/multi-platform-support.sh
+source $(dirname $(realpath $0))/../../tools/kafka-versions-tools.sh
+source $(dirname $(realpath $0))/../../tools/multi-platform-support.sh
 
-# Image directories
-base_images="base"
-java_images="operator jmxtrans"
-kafka_image="kafka"
-kafka_images="kafka test-client"
-other_images="kaniko-executor maven-builder"
-
-function dependency_check { 
-
+function dependency_check {
     # Check for bash >= 4
     if [ -z ${BASH_VERSINFO+x} ]
     then
@@ -28,34 +20,51 @@ function dependency_check {
 
     # Check that yq is installed
     command -v yq >/dev/null 2>&1 || { >&2 echo "You need yq installed to build Strimzi. Refer to DEV_GUIDE.md for more information"; exit 1; }
-
 }
 
-# Support for alternate base images
-# if ALTERNATE_BASE is defined, and there is a Dockerfile in the directory, 
-# use that Dockerfile $1 the component directory
-function alternate_base {
-    if [ -n "$ALTERNATE_BASE" ] && [ -f "$1/$ALTERNATE_BASE/Dockerfile" ]; then
-      echo "-f $ALTERNATE_BASE/Dockerfile"
-    fi
+function third_party_libs {
+    # This function comes from the tools/kafka-versions-tools.sh script and provides a list of third-party-libs-directories.
+    get_unique_kafka_third_party_libs
+
+    # Copy JARs for the Kafka versions
+    echo "Downloading Third Party libraries JARs"
+
+    for version_lib in "${libs[@]}"
+    do
+        mvn dependency:copy-dependencies ${MVN_ARGS} -f kafka-thirdparty-libs/${version_lib}/pom.xml
+        mkdir -p ./binaries/kafka-thirdparty-libs
+        rm -f ./binaries/kafka-thirdparty-libs/${version_lib}.zip
+        zip -j ./binaries/kafka-thirdparty-libs/${version_lib}.zip kafka-thirdparty-libs/${version_lib}/target/dependency/*
+#        mkdir -p ./binaries/kafka-thirdparty-libs/${version_lib}
+#        cp -v kafka-thirdparty-libs/${version_lib}/target/dependency/* ./binaries/kafka-thirdparty-libs/${version_lib}/
+    done
 }
 
+function cruise_control {
+    # Copy the Cruise Control JARs
+    echo "Downloading Cruise Control JARs"
+
+    mvn dependency:copy-dependencies ${MVN_ARGS} -f kafka-thirdparty-libs/cc/pom.xml
+    mkdir -p ./binaries/kafka-thirdparty-libs
+    rm -f ./binaries/kafka-thirdparty-libs/cc.zip
+    zip -j ./binaries/kafka-thirdparty-libs/cc.zip kafka-thirdparty-libs/cc/target/dependency/*
+#    mkdir -p ./binaries/kafka-thirdparty-libs/cc
+#    cp -v kafka-thirdparty-libs/cc/target/dependency/* ./binaries/kafka-thirdparty-libs/cc/
+}
 
 function fetch_and_unpack_kafka_binaries {
-
-    local tag=$1
-    local java_version=$2
-
-    # Create map from version to checksumed and unpacked dist directory
-    declare -Ag version_dist_dirs
+    # This function comes from the tools/kafka-versions-tools.sh script and provides several associative arrays
+    # version_binary_urls, version_checksums and version_libs which map from version string
+    # to source tar url (or file if specified), sha512 checksum for those tar files and third party library
+    # version respectively.
+    get_version_maps
 
     # Set the cache folder to store the binary files
-    binary_file_dir="$kafka_image/tmp/archives"
+    binary_file_dir="binaries/kafka/archives"
     test -d "$binary_file_dir" || mkdir -p "$binary_file_dir"
 
     for kafka_version in "${!version_checksums[@]}"
     do
-
         echo "Fetching and unpacking binary for Kafka $kafka_version"
 
         expected_sha=${version_checksums[$kafka_version]}
@@ -88,7 +97,6 @@ function fetch_and_unpack_kafka_binaries {
                 get_file=1
             fi
             shopt -u nocasematch
-
         else
             get_file=1
         fi
@@ -111,15 +119,12 @@ function fetch_and_unpack_kafka_binaries {
         fi
 
         # We now have a verified tar archive for this version of Kafka. Unpack it into the temp dir
-        dist_dir="$kafka_image/tmp/$kafka_version"
+        dist_dir="binaries/kafka/$kafka_version"
         # If an unpacked directory with the same name exists then delete it
         test -d "$dist_dir" && rm -r "$dist_dir"
         mkdir -p "$dist_dir"
         echo "Unpacking binary archive"
         tar xvfz "$binary_file_path" -C "$dist_dir" --strip-components=1
-
-        # Store the folder address for use in the image build 
-        version_dist_dirs["$kafka_version"]="./tmp/$kafka_version"
 
         # create a file listing all the jars with colliding class files in the Kafka dist
         # (on the assumption that this is OK). This file will be used after building the images to detect any collisions
@@ -132,15 +137,16 @@ function fetch_and_unpack_kafka_binaries {
             ./find-colliding-classes.sh "$unzipped_dir" | awk '{print $1}' | $SORT | $UNIQ > "$ignorelist_file" || true
             rm -rf $unzipped_dir
         fi
-    done
 
+        # We extracted the files, so we just keep the archive and the ignorelist
+        rm -rf $dist_dir
+    done
 }
 
 function download_kafka_binaries_from_mirror {
     # This function tries to extract the Kafka file name from the URL and checks if it is present on the Kafka mirrors.
     # If not, it downloads from the original URL. If for any reason some completely custom URL is used, it will not
     # match and be found on the mirror and the download will happen directly from it.
-
     local url=$1
     local path=$2
 
@@ -160,61 +166,7 @@ function download_kafka_binaries_from_mirror {
     fi
 }
 
-function build {
-   
-    # This function comes from the tools/kafka-versions-tools.sh script and provides several associative arrays
-    # version_binary_urls, version_checksums and version_libs which map from version string 
-    # to source tar url (or file if specified), sha512 checksum for those tar files and third party library 
-    # version respectively.
-    get_version_maps
-    
-    local targets=$*
-    local tag="${DOCKER_TAG:-latest}"
-    local java_version="${JAVA_VERSION:-11}"
-
-    # Base images
-    for image in $base_images
-    do
-        DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg JAVA_VERSION=${java_version} $(alternate_base $image)" make -C "$image" "$targets"
-    done
-
-    # Images not depending on Kafka version
-    for image in $java_images
-    do
-        DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg JAVA_VERSION=${java_version} $(alternate_base $image)" make -C "$image" "$targets"
-    done
-
-    # Images not depending on Kafka version and not based on Java
-    for image in $other_images
-    do
-        make -C "$image" "$targets"
-    done
-
-    if [[ $targets == *"docker_build"* ]]
-    then
-        fetch_and_unpack_kafka_binaries "$tag" "$java_version"
-    fi
-
-    for kafka_version in "${!version_checksums[@]}"
-    do
-        lib_directory=${version_libs[$kafka_version]}
-
-        if [[ $targets == *"docker_build"* ]]
-        then
-            relative_dist_dir=${version_dist_dirs[$kafka_version]}
-        fi
-
-        for image in $kafka_images
-        do
-            make -C "$image" "$targets" \
-                DOCKER_BUILD_ARGS="$DOCKER_BUILD_ARGS --build-arg JAVA_VERSION=${java_version} --build-arg KAFKA_VERSION=${kafka_version} --build-arg KAFKA_DIST_DIR=${relative_dist_dir} --build-arg THIRD_PARTY_LIBS=${lib_directory} $(alternate_base "$image")" \
-                DOCKER_TAG="${tag}-kafka-${kafka_version}" \
-                BUILD_TAG="build-kafka-${kafka_version}" \
-                KAFKA_VERSION="${kafka_version}" \
-                THIRD_PARTY_LIBS="${lib_directory}"
-        done
-    done
-}
-
 dependency_check
-build "$@"
+third_party_libs
+cruise_control
+fetch_and_unpack_kafka_binaries

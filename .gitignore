@@ -36,8 +36,10 @@ packaging/helm-charts/helm3/strimzi-kafka-operator-*.*.*.tgz
 
 tools/olm-bundle/bundle
 
-docker-images/kafka/.*.tmp
-docker-images/kafka/tmp/**
+docker-images/artifacts/binaries
+docker-images/container-archives
+docker-images/kafka-based/kafka/.*.tmp
+docker-images/kafka-based/kafka/tmp/**
 docker-images/operator/.*.tmp
 docker-images/operator/tmp/**
 docker-images/test-client/.*.tmp

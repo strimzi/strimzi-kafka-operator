@@ -7,7 +7,7 @@ docker_build:
 	# it and have it stored there in our other images.
 	$(DOCKER_CMD) pull $(KANIKO_EXECUTOR)
 	$(DOCKER_CMD) tag $(KANIKO_EXECUTOR) strimzi/$(PROJECT_NAME):latest
-	$(DOCKER_CMD) tag $(KANIKO_EXECUTOR) strimzi/$(PROJECT_NAME):$(BUILD_TAG)
+	$(DOCKER_CMD) tag $(KANIKO_EXECUTOR) strimzi/$(PROJECT_NAME):$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX)
 
 include ../../Makefile.docker
 

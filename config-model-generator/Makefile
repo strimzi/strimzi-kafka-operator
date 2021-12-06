@@ -9,6 +9,8 @@ docker_push:
 java_build:
 	./build-config-models.sh build
 
+java_install: java_build
+
 spotbugs:
 	mvn $(MVN_ARGS) spotbugs:check
 

@@ -6,10 +6,10 @@ cluster-operator/scripts/*.sh
 user-operator/scripts/*.sh
 topic-operator/scripts/*.sh
 kafka-init/scripts/*.sh
-docker-images/kafka/scripts/*.sh
-docker-images/kafka/cruise-control-scripts/*.sh
-docker-images/kafka/stunnel-scripts/*.sh
-docker-images/kafka/exporter-scripts/*.sh
+docker-images/kafka-based/kafka/scripts/*.sh
+docker-images/kafka-based/kafka/cruise-control-scripts/*.sh
+docker-images/kafka-based/kafka/stunnel-scripts/*.sh
+docker-images/kafka-based/kafka/exporter-scripts/*.sh
 docker-images/jmxtrans/*.sh
 tools/olm-bundle/*.sh"
 

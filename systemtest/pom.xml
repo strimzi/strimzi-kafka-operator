@@ -230,13 +230,20 @@
     <profiles>
 
         <profile>
-            <id>all</id>
+            <id>none</id>
             <properties>
-                <skipTests>false</skipTests>
+                <skipITs>true</skipITs>
             </properties>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
+        </profile>
+
+        <profile>
+            <id>all</id>
+            <properties>
+                <skipTests>false</skipTests>
+            </properties>
         </profile>
 
         <profile>

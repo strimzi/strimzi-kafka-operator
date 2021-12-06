@@ -1,23 +1,12 @@
-TOPDIR = $(dir $(lastword $(MAKEFILE_LIST)))
-RELEASE_VERSION ?= $(shell cat $(TOPDIR)/release.version)
-DOCKER_TARGETS = docker_build docker_push docker_tag
-DOCKER_TAG ?= latest
+TOPDIR=$(dir $(lastword $(MAKEFILE_LIST)))
 
-.PHONY: build clean release all $(DOCKER_TARGETS)
+DOCKERDIRS=base operator kafka-based jmxtrans maven-builder kaniko-executor
+DOCKER_TARGETS=docker_build docker_push docker_tag docker_load docker_save docker_amend_manifest docker_push_manifest docker_delete_manifest
 
-clean:
-	./build.sh clean
+all: $(DOCKERDIRS)
+$(DOCKER_TARGETS): $(DOCKERDIRS)
 
-docker_build:
-	./build.sh docker_build
+$(DOCKERDIRS):
+	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-docker_tag:
-	./build.sh docker_tag
-
-docker_push:
-	./build.sh docker_push
-
-all: docker_build docker_push
-
-.PHONY: build clean release all $(SUBDIRS) $(DOCKER_TARGETS) spotbugs
-
+.PHONY: all $(DOCKERDIRS) $(DOCKER_TARGETS)
