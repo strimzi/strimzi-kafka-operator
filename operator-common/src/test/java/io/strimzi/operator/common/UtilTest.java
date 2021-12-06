@@ -14,8 +14,11 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.api.kafka.model.GenericSecretSourceBuilder;
+import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthBuilder;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -23,8 +26,11 @@ import io.vertx.core.Future;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import static io.strimzi.operator.common.Util.matchesSelector;
 import static io.strimzi.operator.common.Util.parseMap;
@@ -34,7 +40,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -293,4 +302,89 @@ public class UtilTest {
             assertThat(v.cause().getMessage(), is("Secret top-secret-cs not found"));
         });
     }
+
+    @Test
+    public void testAuthTlsHashScramSha512SecretFoundAndPasswordNotFound() {
+        SecretOperator secretOpertator = mock(SecretOperator.class);
+        Map<String, String> data = new HashMap<>();
+        data.put("passwordKey", "my-password");
+        Secret secret = new Secret();
+        secret.setData(data);
+        CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);         
+        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        KafkaClientAuthenticationScramSha512 auth = new KafkaClientAuthenticationScramSha512();
+        PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
+        passwordSecretSource.setSecretName("my-secret");
+        passwordSecretSource.setPassword("password1");
+        auth.setPasswordSecret(passwordSecretSource);
+        Future<Integer> result = Util.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
+        result.onComplete(handler -> {
+            assertTrue(handler.failed()); 
+            assertEquals("Secret my-secret does not contain key password1", handler.cause().getMessage());
+        });        
+    }
+
+    @Test
+    public void testAuthTlsHashScramSha512SecretAndPasswordFound() {
+        SecretOperator secretOpertator = mock(SecretOperator.class);
+        Map<String, String> data = new HashMap<>();
+        data.put("passwordKey", "my-password");
+        Secret secret = new Secret();
+        secret.setData(data);
+        CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);         
+        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        KafkaClientAuthenticationScramSha512 auth = new KafkaClientAuthenticationScramSha512();
+        PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
+        passwordSecretSource.setSecretName("my-secret");
+        passwordSecretSource.setPassword("passwordKey");
+        auth.setPasswordSecret(passwordSecretSource);
+        Future<Integer> result = Util.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
+        result.onComplete(handler -> {
+            assertTrue(handler.succeeded()); 
+            assertEquals("my-password".hashCode(), handler.result());
+        });        
+    }
+
+    @Test
+    public void testAuthTlsPlainSecretFoundAndPasswordNotFound() {
+        SecretOperator secretOpertator = mock(SecretOperator.class);
+        Map<String, String> data = new HashMap<>();
+        data.put("passwordKey", "my-password");
+        Secret secret = new Secret();
+        secret.setData(data);
+        CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);         
+        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        KafkaClientAuthenticationPlain auth = new KafkaClientAuthenticationPlain();
+        PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
+        passwordSecretSource.setSecretName("my-secret");
+        passwordSecretSource.setPassword("password1");
+        auth.setPasswordSecret(passwordSecretSource);
+        Future<Integer> result = Util.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
+        result.onComplete(handler -> {
+            assertTrue(handler.failed()); 
+            assertEquals("Secret my-secret does not contain key password1", handler.cause().getMessage());
+        });        
+    }
+
+    @Test
+    public void testAuthTlsPlainSecretAndPasswordFound() {
+        SecretOperator secretOpertator = mock(SecretOperator.class);
+        Map<String, String> data = new HashMap<>();
+        data.put("passwordKey", "my-password");
+        Secret secret = new Secret();
+        secret.setData(data);
+        CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);         
+        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        KafkaClientAuthenticationPlain auth = new KafkaClientAuthenticationPlain();
+        PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
+        passwordSecretSource.setSecretName("my-secret");
+        passwordSecretSource.setPassword("passwordKey");
+        auth.setPasswordSecret(passwordSecretSource);
+        Future<Integer> result = Util.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
+        result.onComplete(handler -> {
+            assertTrue(handler.succeeded()); 
+            assertEquals("my-password".hashCode(), handler.result());
+        });        
+    }
+
 }
