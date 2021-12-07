@@ -347,7 +347,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorUserOpRoleBindingForRole())
                 .compose(state -> state.entityOperatorTopicOpAncillaryCm())
                 .compose(state -> state.entityOperatorUserOpAncillaryCm())
-                .compose(state -> state.entityOperatorSecret(this::dateSupplier))
+                .compose(state -> state.entityTopicOperatorSecret(this::dateSupplier))
+                .compose(state -> state.entityUserOperatorSecret(this::dateSupplier))
                 .compose(state -> state.entityOperatorDeployment())
                 .compose(state -> state.entityOperatorReady())
 
@@ -443,7 +444,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean existingZookeeperCertsChanged = false;
         private boolean existingKafkaCertsChanged = false;
         private boolean existingKafkaExporterCertsChanged = false;
-        private boolean existingEntityOperatorCertsChanged = false;
+        private boolean existingEntityTopicOperatorCertsChanged = false;
+        private boolean existingEntityUserOperatorCertsChanged = false;
         private boolean existingCruiseControlCertsChanged = false;
 
         // Custom Listener certificates
@@ -3515,7 +3517,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }).compose(recon -> {
                     if (recon instanceof ReconcileResult.Noop)   {
                         // Lets check if we need to roll the deployment manually
-                        if (existingEntityOperatorCertsChanged) {
+                        if (existingEntityTopicOperatorCertsChanged || existingEntityUserOperatorCertsChanged) {
                             return entityOperatorRollingUpdate();
                         }
                     }
@@ -3544,10 +3546,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(Future.succeededFuture());
         }
 
-        Future<ReconciliationState> entityOperatorSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(EntityOperator.secretName(name), entityOperator == null ? null : entityOperator.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+        Future<ReconciliationState> entityTopicOperatorSecret(Supplier<Date> dateSupplier) {
+            return updateCertificateSecretWithDiff(EntityTopicOperator.secretName(name), entityOperator == null || entityOperator.getTopicOperator() == null ? null : entityOperator.getTopicOperator().generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
                     .map(changed -> {
-                        existingEntityOperatorCertsChanged = changed;
+                        existingEntityTopicOperatorCertsChanged = changed;
+                        return this;
+                    });
+        }
+
+        Future<ReconciliationState> entityUserOperatorSecret(Supplier<Date> dateSupplier) {
+            return updateCertificateSecretWithDiff(EntityUserOperator.secretName(name), entityOperator == null || entityOperator.getUserOperator() == null ? null : entityOperator.getUserOperator().generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+                    .map(changed -> {
+                        existingEntityUserOperatorCertsChanged = changed;
                         return this;
                     });
         }
