@@ -154,7 +154,7 @@ public class KafkaConnectorIT {
                         null, null, connectCrdOperator, null, null, null, null, null, null, metrics, null, null),
                 ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
-            connectCluster.getPort() + 2
+            connectCluster.getPort(2)
         ) { };
 
         Checkpoint async = context.checkpoint();
