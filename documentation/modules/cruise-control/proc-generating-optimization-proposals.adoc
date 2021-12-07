@@ -127,20 +127,23 @@ Status:
 The properties in the `Optimization Result` section describe the pending cluster rebalance operation. 
 For descriptions of each property, see xref:contents-optimization-proposals[Contents of optimization proposals].
 
-.Insufficient capacity for cpu
+.Insufficient CPU capacity
 
-If the Kafka cluster is overloaded in terms of CPU utilization and needs some additional brokers, you may see an error like the following in the `KafkaRebalance` status. This may happen because, while proposals exclude the `excludedTopics`, the CPU utilization still considers replicas of the `excludedTopics`.
+If a Kafka cluster is overloaded in terms of CPU utilization, you might see an insufficient CPU capacity error in the `KafkaRebalance` status. This might be because of excluded topics configuration (`excludedTopics`). Optimization proposals ignore excluded topics, but CPU utilization calculations consider their replicas.
 
+.Example CPU utilization error
 [source,shell,subs="+quotes"]
+----
 com.linkedin.kafka.cruisecontrol.exception.OptimizationFailureException:
         [CpuCapacityGoal] Insufficient capacity for cpu (Utilization 615.21,
         Allowed Capacity 420.00, Threshold: 0.70). Add at least 3 brokers with
         the same cpu capacity (100.00) as broker-0. Add at least 3 brokers with
         the same cpu capacity (100.00) as broker-0.
+----
 
 [NOTE]
 ====
-These numbers do not make sense if you look at `Kafka.spec.kafka.resources` because Strimzi generates a CPU percentage Cruise Control configuration, instead of a CPU core configuration. It is like having a single "virtual" CPU which has the cycles of 1 or more CPUs (the number configured in `Kafka.spec.kafka.resources.limits.cpu`). This is counterintuitive, but it has no effect on the rebalance behavior since the ratio between the utilization and capacity remains the same.
+The error shows CPU capacity as a percentage rather than CPU cores. For that reason, it does not directly map to the number of CPUs configured in `Kafka.spec.kafka.resources`. It is like having a single _virtual_ CPU per broker, which has the cycles of one or more CPUs. This has no effect on the rebalance behavior, since the ratio between CPU utilization and capacity remains the same.
 ====
 
 .What to do next
