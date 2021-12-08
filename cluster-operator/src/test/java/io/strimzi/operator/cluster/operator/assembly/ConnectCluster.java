@@ -19,8 +19,8 @@ public class ConnectCluster {
 
     private int numNodes;
     private String brokerList;
-    private List<Connect> connectInstances = new ArrayList<>();
-    private List<String> pluginPath = new ArrayList<>();
+    private final List<Connect> connectInstances = new ArrayList<>();
+    private final List<String> pluginPath = new ArrayList<>();
 
     ConnectCluster addConnectNodes(int numNodes) {
         this.numNodes = numNodes;
@@ -35,7 +35,7 @@ public class ConnectCluster {
     public void startup() throws InterruptedException {
         for (int i = 0; i < numNodes; i++) {
             Map<String, String> workerProps = new HashMap<>();
-            workerProps.put("listeners", "http://localhost:" + (STARTING_PORT + i));
+            workerProps.put("listeners", "http://localhost:" + getPort(i));
             workerProps.put("plugin.path", String.join(",", pluginPath));
             workerProps.put("group.id", toString());
             workerProps.put("key.converter", "org.apache.kafka.connect.json.JsonConverter");
@@ -75,7 +75,14 @@ public class ConnectCluster {
         }
     }
 
-    public int getPort() {
-        return STARTING_PORT;
+    /**
+     * Gets the port used for given Connect node. The nudes start from 0.
+     *
+     * @param node  ID of the node for which we want to get the port number (node numbers start with 0)
+     *
+     * @return      Port which can be used to connect to given Connect node
+     */
+    public int getPort(int node) {
+        return STARTING_PORT + node * 10_000;
     }
 }
