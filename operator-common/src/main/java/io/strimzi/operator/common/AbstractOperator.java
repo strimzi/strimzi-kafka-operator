@@ -381,7 +381,7 @@ public abstract class AbstractOperator<
 
     /**
      * Safely executes <code>callable</code>, always returning a
-     * <code>Future</code>. In the context of this method the term "safely"
+     * <code>Future</code>. In the context of this method, the term "safely"
      * indicates that exceptions thrown by <code>callable</code> will result in the
      * return of a failed <code>Future</code>.
      *
@@ -405,9 +405,9 @@ public abstract class AbstractOperator<
 
     /**
      * Provides a proxy <code>Handler</code> that will safely execute the given
-     * <code>handler</code>. In the context of this method the term "safely"
+     * <code>handler</code>. In the context of this method, the term "safely"
      * indicates that exceptions thrown by <code>handler</code> will be caught and
-     * logged, not to be thrown to the caller.
+     * logged, and not thrown to the caller.
      *
      * @param <H>            argument type of the <code>Handler</code>
      * @param reconciliation the reconciliation being processed, the context of the

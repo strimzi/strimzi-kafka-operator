@@ -59,8 +59,8 @@ class AbstractOperatorTest {
 
     @Test
     /**
-     * Verifies that lock is released by call to `releaseLockAndTimer` via chain of futures ending
-     * with `eventually` after a normal/successful execution of the `Callable`
+     * Verifies that the lock is released by a call to `releaseLockAndTimer`. 
+     * The call is made through a chain of futures ending with `eventually` after a normal/successful execution of the `Callable`
      */
     void testWithLockCallableSuccessfulReleasesLock(VertxTestContext context) throws Exception {
         var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
@@ -92,8 +92,8 @@ class AbstractOperatorTest {
 
     @Test
     /**
-     * Verifies that lock is released by call to `releaseLockAndTimer` via chain of futures ending
-     * with `eventually` after a failed execution via a handled exception in the `Callable`
+     * Verifies that the lock is released by a call to `releaseLockAndTimer`. 
+     * The call is made through a chain of futures ending with `eventually` after a failed execution via a handled exception in the `Callable`.
      */
     void testWithLockCallableHandledExceptionReleasesLock(VertxTestContext context) throws Exception {
         var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
@@ -127,8 +127,8 @@ class AbstractOperatorTest {
 
     @Test
     /**
-     * Verifies that lock is released by call to `releaseLockAndTimer` via chain of futures ending
-     * with `eventually` after a failed execution via an unhandled exception in the `Callable`
+     * Verifies that the lock is released by a call to `releaseLockAndTimer`.
+     * The call is made through a chain of futures ending with `eventually` after a failed execution via an unhandled exception in the `Callable`.
      */
     void testWithLockCallableUnhandledExceptionReleasesLock(VertxTestContext context) throws Exception {
         var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
@@ -164,9 +164,9 @@ class AbstractOperatorTest {
 
     @Test
     /**
-     * Verifies that lock is released by call to `releaseLockAndTimer` via chain of futures ending
-     * with `eventually` after a failed execution via an unhandled exception in the `Callable` followed
-     * by an unhandled exception occurring in the onFailure handler.
+     * Verifies that lock is released by call to `releaseLockAndTimer`. 
+     * The call is made through a chain of futures ending with `eventually` after a failed execution via an unhandled exception in the `Callable`, 
+     * followed by an unhandled exception occurring in the `onFailure` handler.
      */
     void testWithLockFailHandlerUnhandledExceptionReleasesLock(VertxTestContext context) throws Exception {
         var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
