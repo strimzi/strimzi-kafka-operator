@@ -973,13 +973,15 @@ public class KafkaBridgeClusterTest {
     }
 
     @ParallelTest
-    public void testGenerateDeploymentWithOAuthUsingOpaqueTokens() {
+    public void testGenerateDeploymentWithOAuthUsingOpaqueTokensAndTimeouts() {
         KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
                 .editSpec()
                 .withAuthentication(
                         new KafkaClientAuthenticationOAuthBuilder()
                                 .withClientId("my-client-id")
                                 .withTokenEndpointUri("http://my-oauth-server")
+                                .withConnectTimeoutSeconds(15)
+                                .withReadTimeoutSeconds(15)
                                 .withNewClientSecret()
                                 .withSecretName("my-secret-secret")
                                 .withKey("my-secret-key")
@@ -998,7 +1000,9 @@ public class KafkaBridgeClusterTest {
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CLIENT_SECRET.equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getKey(), is("my-secret-key"));
         assertThat(cont.getEnv().stream().filter(var -> KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_OAUTH_CONFIG.equals(var.getName())).findFirst().orElseThrow().getValue().trim(),
-                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server", ClientConfig.OAUTH_ACCESS_TOKEN_IS_JWT, "false", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, "600")));
+                is(String.format("%s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\" %s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, "my-client-id", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, "http://my-oauth-server",
+                        ClientConfig.OAUTH_ACCESS_TOKEN_IS_JWT, "false", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, "600",
+                        ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, "15", ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, "15")));
     }
 
     @ParallelTest

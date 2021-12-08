@@ -24,6 +24,10 @@
         <id>cruise-control</id>
           <url>https://linkedin.jfrog.io/artifactory/cruise-control/</url>
       </repository>
+      <repository>
+          <id>oauth-pre</id>
+          <url>https://raw.githubusercontent.com/mstruk/strimzi-kafka-oauth/m2repo/m2repo</url>
+      </repository>
     </repositories>
 
     <dependencies>

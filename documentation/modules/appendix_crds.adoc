@@ -195,6 +195,8 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |string
 |clientSecret                       1.2+<.<a|Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
+|connectTimeoutSeconds              1.2+<.<a|The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.
+|integer
 |customClaimCheck                   1.2+<.<a|JsonPath filter query to be applied to the JWT token or to the response of the introspection endpoint for additional token validation. Not set by default.
 |string
 |disableTlsHostnameVerification     1.2+<.<a|Enable or disable TLS hostname verification. Default value is `false`.
@@ -220,6 +222,8 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |jwksRefreshSeconds                 1.2+<.<a|Configures how often are the JWKS certificates refreshed. The refresh interval has to be at least 60 seconds shorter then the expiry interval specified in `jwksExpirySeconds`. Defaults to 300 seconds.
 |integer
 |maxSecondsWithoutReauthentication  1.2+<.<a|Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`).
+|integer
+|readTimeoutSeconds                 1.2+<.<a|The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.
 |integer
 |tlsTrustedCertificates             1.2+<.<a|Trusted certificates for TLS connection to the OAuth server.
 |xref:type-CertSecretSource-{context}[`CertSecretSource`] array
@@ -597,6 +601,10 @@ It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 |integer
 |superUsers                      1.2+<.<a|List of super users. Should contain list of user principals which should get unlimited access rights.
 |string array
+|connectTimeoutSeconds           1.2+<.<a|The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.
+|integer
+|readTimeoutSeconds              1.2+<.<a|The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.
+|integer
 |====
 
 [id='type-KafkaAuthorizationCustom-{context}']
@@ -1812,9 +1820,13 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |string
 |clientSecret                    1.2+<.<a|Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]
+|connectTimeoutSeconds           1.2+<.<a|The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.
+|integer
 |disableTlsHostnameVerification  1.2+<.<a|Enable or disable TLS hostname verification. Default value is `false`.
 |boolean
 |maxTokenExpirySeconds           1.2+<.<a|Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
+|integer
+|readTimeoutSeconds              1.2+<.<a|The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.
 |integer
 |refreshToken                    1.2+<.<a|Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`]

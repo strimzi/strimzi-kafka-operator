@@ -495,6 +495,14 @@ public class ListenersValidator {
                 errors.add("listener " + listenerName + ": Valid Issuer URI has to be specified or 'checkIssuer' set to 'false'");
             }
 
+            if (oAuth.getConnectTimeoutSeconds() != null && oAuth.getConnectTimeoutSeconds() <= 0) {
+                errors.add("listener " + listenerName + ": 'connectTimeoutSeconds' needs to be a positive integer (set to: " + oAuth.getConnectTimeoutSeconds() + ")");
+            }
+
+            if (oAuth.getReadTimeoutSeconds() != null && oAuth.getReadTimeoutSeconds() <= 0) {
+                errors.add("listener " + listenerName + ": 'readTimeoutSeconds' needs to be a positive integer (set to: " + oAuth.getReadTimeoutSeconds() + ")");
+            }
+
             if (oAuth.isCheckAudience() && oAuth.getClientId() == null) {
                 errors.add("listener " + listenerName + ": 'clientId' has to be configured when 'checkAudience' is 'true'");
             }
