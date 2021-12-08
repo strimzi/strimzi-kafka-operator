@@ -10,10 +10,10 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.Meter;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
@@ -30,14 +30,15 @@ import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.shareddata.Lock;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -55,7 +56,7 @@ import static io.strimzi.operator.common.Util.async;
  * <li>uses the Fabric8 kubernetes API and implements
  * {@link #reconcile(Reconciliation)} by delegating to abstract {@link #createOrUpdate(Reconciliation, CustomResource)}
  * and {@link #delete(Reconciliation)} methods for subclasses to implement.
- * 
+ *
  * <li>add support for operator-side {@linkplain #validate(Reconciliation, CustomResource) validation}.
  *     This can be used to automatically log warnings about source resources which used deprecated part of the CR API.
  *ą
@@ -117,7 +118,7 @@ public abstract class AbstractOperator<
      * @param namespace The namespace containing the cluster
      * @param name The name of the cluster
      */
-    private String getLockName(String namespace, String name) {
+    /* test */ String getLockName(String namespace, String name) {
         return "lock::" + namespace + "::" + kind() + "::" + name;
     }
 
@@ -268,8 +269,11 @@ public abstract class AbstractOperator<
 
         Promise<Void> result = Promise.promise();
         handler.onComplete(reconcileResult -> {
-            handleResult(reconciliation, reconcileResult, reconciliationTimerSample);
-            result.handle(reconcileResult);
+            try {
+                handleResult(reconciliation, reconcileResult, reconciliationTimerSample);
+            } finally {
+                result.handle(reconcileResult);
+            }
         });
 
         return result.future();
@@ -363,31 +367,72 @@ public abstract class AbstractOperator<
                     LOGGER.infoCr(reconciliation, "Reconciliation is in progress");
                 });
 
-                try {
-                    callable.call().onComplete(callableRes -> {
-                        if (callableRes.succeeded()) {
-                            handler.complete(callableRes.result());
-                        } else {
-                            handler.fail(callableRes.cause());
-                        }
-
-                        vertx.cancelTimer(timerId);
-                        lock.release();
-                        LOGGER.debugCr(reconciliation, "Lock {} released", lockName);
-                    });
-                } catch (Throwable ex) {
-                    vertx.cancelTimer(timerId);
-                    lock.release();
-                    LOGGER.debugCr(reconciliation, "Lock {} released", lockName);
-                    LOGGER.errorCr(reconciliation, "Reconciliation failed", ex);
-                    handler.fail(ex);
-                }
+                callSafely(reconciliation, callable)
+                    .onSuccess(handleSafely(reconciliation, handler::complete))
+                    .onFailure(handleSafely(reconciliation, handler::fail))
+                    .eventually(ignored -> releaseLockAndTimer(reconciliation, lock, lockName, timerId));
             } else {
                 LOGGER.debugCr(reconciliation, "Failed to acquire lock {} within {}ms.", lockName, lockTimeoutMs);
                 handler.fail(new UnableToAcquireLockException());
             }
         });
         return handler.future();
+    }
+
+    /**
+     * Safely executes <code>callable</code>, always returning a
+     * <code>Future</code>. In the context of this method, the term "safely"
+     * indicates that exceptions thrown by <code>callable</code> will result in the
+     * return of a failed <code>Future</code>.
+     *
+     * @param <C>            result type of the <code>Future</code> returned by the
+     *                       provided <code>callable</code>
+     * @param reconciliation the reconciliation being processed by
+     *                       <code>callable</code>
+     * @param callable       callable routine for processing the reconciliation
+     *
+     * @return the result of <code>callable</code> or a failed <code>Future</code>
+     *         when an exception is thrown
+     */
+    private <C> Future<C> callSafely(Reconciliation reconciliation, Callable<Future<C>> callable) {
+        try {
+            return callable.call();
+        } catch (Throwable ex) {
+            LOGGER.errorCr(reconciliation, "Reconciliation failed", ex);
+            return Future.failedFuture(ex);
+        }
+    }
+
+    /**
+     * Provides a proxy <code>Handler</code> that will safely execute the given
+     * <code>handler</code>. In the context of this method, the term "safely"
+     * indicates that exceptions thrown by <code>handler</code> will be caught and
+     * logged, and not thrown to the caller.
+     *
+     * @param <H>            argument type of the <code>Handler</code>
+     * @param reconciliation the reconciliation being processed, the context of the
+     *                       operation
+     * @param handler        handler, for either success or failure
+     *
+     * @return a proxy <code>Handler</code> that, when executed, will execute the
+     *         provided handler, ensuring that unhandled exceptions are caught and
+     *         logged.
+     */
+    private <H> Handler<H> handleSafely(Reconciliation reconciliation, Handler<H> handler) {
+        return result -> {
+            try {
+                handler.handle(result);
+            } catch (Throwable ex) {
+                LOGGER.errorCr(reconciliation, "Reconciliation completion handler failed", ex);
+            }
+        };
+    }
+
+    private Future<Void> releaseLockAndTimer(Reconciliation reconciliation, Lock lock, String lockName, long timerId) {
+        vertx.cancelTimer(timerId);
+        lock.release();
+        LOGGER.debugCr(reconciliation, "Lock {} released", lockName);
+        return Future.succeededFuture();
     }
 
     /**
