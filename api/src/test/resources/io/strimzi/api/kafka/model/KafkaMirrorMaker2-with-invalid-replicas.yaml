@@ -16,5 +16,3 @@ spec:
     targetCluster: target
     sourceConnector: {}
     topicsPattern: my-topic
-  config:
-    name: bar

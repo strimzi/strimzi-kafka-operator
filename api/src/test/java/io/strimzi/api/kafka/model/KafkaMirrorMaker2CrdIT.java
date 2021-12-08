@@ -9,9 +9,9 @@ import io.strimzi.test.k8s.exceptions.KubeClusterException;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -36,9 +36,8 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
         createDeleteCustomResource("KafkaMirrorMaker2-minimal.yaml");
     }
 
-    @Disabled("See https://github.com/strimzi/strimzi-kafka-operator/issues/4606")
     @Test
-    void testCreateKafkaMirrorMaker2WithExtraProperty() {
+    void testKafkaMirrorMaker2WithExtraProperty() {
         Throwable exception = assertThrows(
             KubeClusterException.class,
             () -> createDeleteCustomResource("KafkaMirrorMaker2-with-extra-property.yaml"));
@@ -62,7 +61,10 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
             () -> createDeleteCustomResource("KafkaMirrorMaker2-with-invalid-replicas.yaml"));
 
         assertThat(exception.getMessage(),
-                containsStringIgnoringCase("Invalid value: \"string\": spec.replicas in body must be of type integer: \"string\""));
+                anyOf(
+                        containsStringIgnoringCase("Invalid value: \"string\": spec.replicas in body must be of type integer: \"string\""),
+                        containsStringIgnoringCase("invalid type for io.strimzi.kafka.v1beta2.KafkaMirrorMaker2.spec.replicas: got \"string\", expected \"integer\"")
+                ));
     }
 
     @Test
@@ -110,9 +112,15 @@ public class KafkaMirrorMaker2CrdIT extends AbstractCrdIT {
 
     @BeforeAll
     void setupEnvironment() {
-        cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
         cluster.waitForCustomResourceDefinition("kafkamirrormaker2s.kafka.strimzi.io");
+        cluster.createNamespace(NAMESPACE);
+
+        try {
+            Thread.sleep(1_000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @AfterAll

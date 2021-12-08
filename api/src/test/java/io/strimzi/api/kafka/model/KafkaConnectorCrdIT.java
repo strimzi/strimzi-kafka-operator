@@ -30,9 +30,15 @@ public class KafkaConnectorCrdIT extends AbstractCrdIT {
 
     @BeforeAll
     void setupEnvironment() {
-        cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECTOR);
         cluster.waitForCustomResourceDefinition("kafkaconnectors.kafka.strimzi.io");
+        cluster.createNamespace(NAMESPACE);
+
+        try {
+            Thread.sleep(1_000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @AfterAll

@@ -8,7 +8,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.anyOf;
@@ -36,9 +35,8 @@ public class KafkaCrdIT extends AbstractCrdIT {
         createDeleteCustomResource("Kafka-minimal.yaml");
     }
 
-    @Disabled("See https://github.com/strimzi/strimzi-kafka-operator/issues/4606")
     @Test
-    void testCreateKafkaWithExtraProperty() {
+    void testKafkaWithExtraProperty() {
         Throwable exception = assertThrows(
             KubeClusterException.class,
             () -> createDeleteCustomResource("Kafka-with-extra-property.yaml"));
@@ -74,7 +72,10 @@ public class KafkaCrdIT extends AbstractCrdIT {
             });
 
         assertThat(exception.getMessage(),
-                containsStringIgnoringCase("invalid: spec.maintenanceTimeWindows: Invalid value: \"null\": spec.maintenanceTimeWindows in body must be of type string: \"null\""));
+                anyOf(
+                        containsStringIgnoringCase("invalid: spec.maintenanceTimeWindows: Invalid value: \"null\": spec.maintenanceTimeWindows in body must be of type string: \"null\""),
+                        containsStringIgnoringCase("unknown object type \"nil\" in Kafka.spec.maintenanceTimeWindows[0]")
+                ));
     }
 
     @Test

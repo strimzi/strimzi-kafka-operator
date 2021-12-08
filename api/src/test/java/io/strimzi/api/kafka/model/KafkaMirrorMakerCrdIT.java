@@ -8,7 +8,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -35,9 +34,8 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
         createDeleteCustomResource("KafkaMirrorMaker-minimal.yaml");
     }
 
-    @Disabled("See https://github.com/strimzi/strimzi-kafka-operator/issues/4606")
     @Test
-    void testCreateKafkaMirrorMakerWithExtraProperty() {
+    void testKafkaMirrorMakerWithExtraProperty() {
         Throwable exception = assertThrows(
             KubeClusterException.class,
             () -> createDeleteCustomResource("KafkaMirrorMaker-with-extra-property.yaml"));
@@ -96,9 +94,15 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
     @BeforeAll
     void setupEnvironment() {
-        cluster.createNamespace(NAMESPACE);
         cluster.createCustomResources(TestUtils.CRD_KAFKA_MIRROR_MAKER);
         cluster.waitForCustomResourceDefinition("kafkamirrormakers.kafka.strimzi.io");
+        cluster.createNamespace(NAMESPACE);
+
+        try {
+            Thread.sleep(1_000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @AfterAll
