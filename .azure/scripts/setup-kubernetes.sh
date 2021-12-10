@@ -23,15 +23,6 @@ function install_kubectl {
     sudo cp kubectl /usr/local/bin
 }
 
-function install_nsenter {
-    # Pre-req for helm
-    curl https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v${TEST_NSENTER_VERSION}/util-linux-${TEST_NSENTER_VERSION}.tar.gz -k | tar -zxf-
-    cd util-linux-${TEST_NSENTER_VERSION}
-    ./configure --without-ncurses
-    make nsenter
-    sudo cp nsenter /usr/bin
-}
-
 function label_node {
 	# It should work for all clusters
 	for nodeName in $(kubectl get nodes -o custom-columns=:.metadata.name --no-headers);
@@ -54,7 +45,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     fi
 
     curl -Lo minikube ${TEST_MINIKUBE_URL} && chmod +x minikube
-    sudo cp minikube /usr/bin
+    sudo cp minikube /usr/local/bin
 
     export MINIKUBE_WANTUPDATENOTIFICATION=false
     export MINIKUBE_WANTREPORTERRORPROMPT=false

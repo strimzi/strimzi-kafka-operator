@@ -2,8 +2,6 @@
 set -x
 
 function install_helm3 {
-    install_nsenter
-
     export HELM_INSTALL_DIR=/usr/bin
     curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
     # we need to modify the script with a different path because on the Azure pipelines the HELM_INSTALL_DIR env var is not honoured
