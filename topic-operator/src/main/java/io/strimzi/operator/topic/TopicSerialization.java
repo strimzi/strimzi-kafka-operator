@@ -20,6 +20,7 @@ import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.errors.InvalidRequestException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -101,7 +102,7 @@ class TopicSerialization {
         List<String> errorsInConfig = validate(configuration, desiredVersion);
 
         if (!errorsInConfig.isEmpty()) {
-            throw new InvalidTopicException(kafkaTopic, "KafkaTopic " +
+            throw new InvalidRequestException("KafkaTopic " +
                     kafkaTopic.getMetadata().getNamespace() + "/" + kafkaTopic.getMetadata().getName() +
                     " has invalid spec.config: " +
                     String.join(", ", errorsInConfig));
@@ -121,7 +122,7 @@ class TopicSerialization {
 
     /**
      * Create a Topic to reflect the given KafkaTopic resource.
-     * @throws InvalidTopicException
+     * @throws InvalidRequestException
      */
     public static Topic fromTopicResource(KafkaTopic kafkaTopic, String kafkaVersion) {
         if (kafkaTopic == null) {

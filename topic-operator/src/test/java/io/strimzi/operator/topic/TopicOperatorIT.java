@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.common.errors.InvalidRequestException;
 import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -149,13 +150,13 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         KafkaTopic changedTopic = new KafkaTopicBuilder(operation().inNamespace(NAMESPACE).withName(resourceName).get())
                 .editOrNewSpec().addToConfig("min.insync.replicas", "x").endSpec().build();
         KafkaTopic replaced = operation().inNamespace(NAMESPACE).withName(resourceName).replace(changedTopic);
-        assertStatusNotReady(topicName, InvalidTopicException.class,
+        assertStatusNotReady(topicName, InvalidRequestException.class,
                 expectedMessage);
         // Now modify Kafka-side to cause another reconciliation: We want the same status.
         alterTopicConfigInKafka(topicName, "compression.type", value -> "snappy".equals(value) ? "lz4" : "snappy");
         // Wait for a periodic reconciliation
         Thread.sleep(30_000);
-        assertStatusNotReady(topicName, InvalidTopicException.class,
+        assertStatusNotReady(topicName, InvalidRequestException.class,
                 expectedMessage);
     }
 

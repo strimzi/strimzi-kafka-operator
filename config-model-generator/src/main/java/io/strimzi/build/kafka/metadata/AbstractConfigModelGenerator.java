@@ -40,7 +40,7 @@ import static java.security.AccessController.doPrivileged;
 /**
  * Abstract class for loading a config model from Kafka classes.
  */
-public abstract class CommonConfigModelGenerator {
+public abstract class AbstractConfigModelGenerator {
     public void run(String fileName) throws Exception {
         String version = kafkaVersion();
         Map<String, ConfigModel> configs = configs();
@@ -101,7 +101,7 @@ public abstract class CommonConfigModelGenerator {
         return scope;
     }
 
-    protected List<String> validList(ConfigDef.ConfigKey key) {
+    private List<String> validList(ConfigDef.ConfigKey key) {
         try {
             Field f = ConfigDef.ValidList.class.getDeclaredField("validString");
             PrivilegedAction<Object> pa = () -> {
@@ -118,7 +118,7 @@ public abstract class CommonConfigModelGenerator {
     }
 
     @SuppressWarnings("unchecked")
-    protected List<String> enumer(ConfigDef.Validator validator) {
+    private List<String> enumer(ConfigDef.Validator validator) {
         try {
             Field f = getField(ConfigDef.ValidString.class, "validStrings");
             return (List<String>) f.get(validator);
@@ -128,7 +128,7 @@ public abstract class CommonConfigModelGenerator {
     }
 
     protected Field getOneOfFields(Class<?> cls, String... alternativeFields) {
-        Field ret = null;
+        Field ret;
         for (String field : alternativeFields) {
             ret = getField(cls, field);
             if (ret == null) {
@@ -152,7 +152,7 @@ public abstract class CommonConfigModelGenerator {
         });
     }
 
-    protected ConfigModel range(ConfigDef.ConfigKey key, ConfigModel descriptor) {
+    private ConfigModel range(ConfigDef.ConfigKey key, ConfigModel descriptor) {
         String str = key.validator.toString();
         try {
             Pattern rangePattern = Pattern.compile("\\[([0-9.e+-]+|\\.\\.\\.),?([0-9.e+-]+|\\.\\.\\.)?,?([0-9.e+-]+|\\.\\.\\.)?\\]", Pattern.CASE_INSENSITIVE);
@@ -211,7 +211,7 @@ public abstract class CommonConfigModelGenerator {
         }
     }
 
-    protected Method methodFromReflection(Class<ConfigDef> origin, String methodName, Class... paramClasses) throws NoSuchMethodException {
+    protected Method configDefs(Class<ConfigDef> origin, String methodName, Class... paramClasses) throws NoSuchMethodException {
         Method method = origin.getDeclaredMethod(methodName, paramClasses);
         doPrivileged((PrivilegedAction<ConfigDef>) () -> {
             method.setAccessible(true);

@@ -18,13 +18,13 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @SuppressWarnings("unchecked")
-public class KafkaTopicConfigModelGenerator extends CommonConfigModelGenerator {
+public class KafkaTopicConfigModelGenerator extends AbstractConfigModelGenerator {
 
     @Override
     protected Map<String, ConfigModel> configs() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         ConfigDef def = configDefs();
-        Method getConfigValueMethod = methodFromReflection(ConfigDef.class, "getConfigValue", ConfigDef.ConfigKey.class, String.class);
-        Method sortedConfigs = methodFromReflection(ConfigDef.class, "sortedConfigs");
+        Method getConfigValueMethod = configDefs(ConfigDef.class, "getConfigValue", ConfigDef.ConfigKey.class, String.class);
+        Method sortedConfigs = configDefs(ConfigDef.class, "sortedConfigs");
         List<ConfigDef.ConfigKey> keys = (List) sortedConfigs.invoke(def);
         Map<String, ConfigModel> result = new TreeMap<>();
 

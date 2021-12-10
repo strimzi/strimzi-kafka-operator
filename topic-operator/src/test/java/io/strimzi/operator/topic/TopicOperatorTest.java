@@ -26,6 +26,7 @@ import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.kafka.common.errors.ClusterAuthorizationException;
+import org.apache.kafka.common.errors.InvalidRequestException;
 import org.apache.kafka.common.errors.TopicDeletionDisabledException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
@@ -167,11 +168,11 @@ public class TopicOperatorTest {
         Checkpoint async = context.checkpoint();
         topicOperator.onResourceEvent(logContext, kafkaTopic, ADDED).onComplete(ar -> {
             assertFailed(context, ar);
-            context.verify(() -> assertThat(ar.cause(), instanceOf(InvalidTopicException.class)));
+            context.verify(() -> assertThat(ar.cause(), instanceOf(InvalidRequestException.class)));
             context.verify(() -> assertThat(ar.cause().getMessage(), is(errorMessage)));
             mockKafka.assertEmpty(context);
             mockTopicStore.assertEmpty(context);
-            assertNotReadyStatus(context, (InvalidTopicException) ar.cause());
+            assertNotReadyStatus(context, (InvalidRequestException) ar.cause());
             context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
 

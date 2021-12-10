@@ -19,13 +19,13 @@ import java.util.Map;
 import java.util.TreeMap;
 
 @SuppressWarnings("unchecked")
-public class KafkaConfigModelGenerator extends CommonConfigModelGenerator {
+public class KafkaConfigModelGenerator extends AbstractConfigModelGenerator {
 
     @Override
     protected Map<String, ConfigModel> configs() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         ConfigDef def = configDefs();
-        Method getConfigValueMethod = methodFromReflection(ConfigDef.class, "getConfigValue", ConfigDef.ConfigKey.class, String.class);
-        Method sortedConfigs = methodFromReflection(ConfigDef.class, "sortedConfigs");
+        Method getConfigValueMethod = configDefs(ConfigDef.class, "getConfigValue", ConfigDef.ConfigKey.class, String.class);
+        Method sortedConfigs = configDefs(ConfigDef.class, "sortedConfigs");
         List<ConfigDef.ConfigKey> keys = (List) sortedConfigs.invoke(def);
         Map<String, String> dynamicUpdates = brokerDynamicUpdates();
         Map<String, ConfigModel> result = new TreeMap<>();
