@@ -412,6 +412,9 @@ To optimize their performance on different platforms and architectures, you conf
 
 * `Kafka.spec.kafka`
 * `Kafka.spec.zookeeper`
+* `Kafka.spec.entityOperator.userOperator`
+* `Kafka.spec.entityOperator.topicOperator`
+* `Kafka.spec.cruiseControl`
 * `KafkaConnect.spec`
 * `KafkaMirrorMaker.spec`
 * `KafkaMirrorMaker2.spec`
