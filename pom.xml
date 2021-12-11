@@ -97,7 +97,7 @@
         <okio.version>1.15.0</okio.version>
         <vertx.version>4.1.5</vertx.version>
         <vertx-junit5.version>4.1.5</vertx-junit5.version>
-        <log4j.version>2.14.1</log4j.version>
+        <log4j.version>2.15.0</log4j.version>
         <hamcrest.version>2.2</hamcrest.version>
         <valid4j.version>1.1</valid4j.version>
         <fasterxml.jackson-core.version>2.11.3</fasterxml.jackson-core.version>
