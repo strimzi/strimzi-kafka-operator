@@ -24,6 +24,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
     public static final String NAMESPACE = "kafkamirrormaker-crd-it";
 
+    @SuppressWarnings("deprecation")
     @Test
     void testKafkaMirrorMakerScaling() {
         createScaleDelete(KafkaMirrorMaker.class, "KafkaMirrorMaker.yaml");
@@ -47,9 +48,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     void testKafkaMirrorMakerWithMissingRequired() {
         Throwable exception = assertThrows(
             KubeClusterException.class,
-            () -> {
-                createDeleteCustomResource("KafkaMirrorMaker-with-missing-required-property.yaml");
-            });
+            () -> createDeleteCustomResource("KafkaMirrorMaker-with-missing-required-property.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(),
                 "bootstrapServers",
@@ -69,7 +68,7 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaMirrorMakerWithTlsAuthWithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
+            KubeClusterException.class,
             () -> createDeleteCustomResource("KafkaMirrorMaker-with-tls-auth-with-missing-required.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(),
