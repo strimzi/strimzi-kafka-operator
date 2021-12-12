@@ -105,7 +105,7 @@ function fetch_and_unpack_kafka_binaries {
         if [ $get_file -gt 0 ]
         then
             echo "Fetching Kafka $kafka_version binaries from: $binary_file_url"
-            download_kafka_binaries_from_mirror "$binary_file_url" "$binary_file_path"
+            download_kafka_binaries_from_cdn "$binary_file_url" "$binary_file_path"
         fi
 
         # If we haven't already checksum'd the file do it now before the build.
@@ -143,26 +143,23 @@ function fetch_and_unpack_kafka_binaries {
     done
 }
 
-function download_kafka_binaries_from_mirror {
-    # This function tries to extract the Kafka file name from the URL and checks if it is present on the Kafka mirrors.
-    # If not, it downloads from the original URL. If for any reason some completely custom URL is used, it will not
-    # match and be found on the mirror and the download will happen directly from it.
-    local url=$1
-    local path=$2
+function download_kafka_binaries_from_cdn {
+    # This function extracts the remote path from the archive URL and tries to download from the CDN.
+    # If it fails for any reason (e.g. 404), then it reverts back to the archive URL.
+    local archive_url=$1
+    local local_path=$2
+    
+    local remote_path="${archive_url/https:\/\/archive.apache.org\/dist\//}"
+    local cdn_url="https://dlcdn.apache.org/${remote_path}"
+    
+    echo "Downloading from CDN: ${cdn_url}"
+    local cdn_code=$(curl -Ls -o "${local_path}" -w %{http_code} "${cdn_url}")
+    echo "CDN HTTP code: ${cdn_code}"
 
-    local filename="${url/https:\/\/archive.apache.org\/dist\//}"
-    local dynamic_url="https://www.apache.org/dyn/mirrors/mirrors.cgi?action=download&filename=${filename}"
-    local redirect=$(curl -Ls -o /dev/null -w %{url_effective} "${dynamic_url}")
-    echo "Trying to download Kafka ${filename} from one of the mirrors: ${redirect}"
-    local code=$(curl -Ls --output "${path}" -w %{http_code} "${redirect}${filename}")
-    echo "The download from the mirror returned HTTP code ${code}"
-
-    if [[ "$code" == "404" ]]
-    then
-        echo "Kafka ${filename} not found on mirrors. Using the original URL ${url}"
-        curl -L --output "${path}" "${url}"
-    else
-        echo "Kafka ${filename} downloaded from one of the Apache mirrors"
+    if [[ "${cdn_code}" != "200" ]]; then
+        echo "Download from CDN failed. Retrying with archive: ${archive_url}"
+        local archive_code=$(curl -Ls -o "${local_path}" -w %{http_code} "${archive_url}")
+        echo "Archive HTTP code: ${archive_code}"
     fi
 }
 
