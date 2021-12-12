@@ -44,6 +44,7 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE, "operator-namespace");
         envVars.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "-ControlPlaneListener");
+        envVars.put(ClusterOperatorConfig.STRIMZI_DNS_CACHE_TTL_MS, "10000");
     }
 
     @Test
@@ -83,13 +84,15 @@ public class ClusterOperatorConfigTest {
                 null,
                 "",
                 10,
-                20_000);
+                20_000,
+                10_000);
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
         assertThat(config.getReconciliationIntervalMs(), is(60_000L));
         assertThat(config.getOperationTimeoutMs(), is(30_000L));
         assertThat(config.getZkAdminSessionTimeoutMs(), is(20_000));
         assertThat(config.getConnectBuildTimeoutMs(), is(120_000L));
+        assertThat(config.getDnsCacheTtlMs(), is(10_000L));
     }
 
     @Test
@@ -102,6 +105,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getConnectBuildTimeoutMs(), is(40_000L));
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
         assertThat(config.featureGates().controlPlaneListenerEnabled(), is(false));
+        assertThat(config.getDnsCacheTtlMs(), is(10_000L));
     }
 
     @Test
@@ -116,6 +120,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getOperationTimeoutMs(), is(ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS));
         assertThat(config.getOperatorNamespace(), is(nullValue()));
         assertThat(config.getOperatorNamespaceLabels(), is(nullValue()));
+        assertThat(config.getDnsCacheTtlMs(), is(ClusterOperatorConfig.DEFAULT_STRIMZI_DNS_CACHE_TTL_MS));
     }
 
     private Map<String, String> envWithImages() {

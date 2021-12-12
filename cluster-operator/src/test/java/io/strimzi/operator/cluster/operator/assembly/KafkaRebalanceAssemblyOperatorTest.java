@@ -940,7 +940,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 Labels.fromMap(Map.of("selectorLabel", "value")),
                 "",
                 10,
-                10_000);
+                10_000,
+                30_000);
 
         kcrao = new KafkaRebalanceAssemblyOperator(Vertx.vertx(), pfa, supplier, config);
 

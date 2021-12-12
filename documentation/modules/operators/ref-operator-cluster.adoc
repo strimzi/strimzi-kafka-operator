@@ -200,6 +200,9 @@ Network policies allow connections between Kafka components.
 
 Set this environment variable to `false` to disable network policy generation. You might do this, for example, if you want to use custom network policies. Custom network policies allow more control over maintaining the connections between components.
 
+`STRIMZI_DNS_CACHE_TTL_MS` :: Optional, default `30000`.
+Number of milliseconds to cache a successful DNS name lookup.
+
 `STRIMZI_FEATURE_GATES`:: Optional.
 Enables or disables features and functionality controlled by feature gates.
 For more information about each feature gate, see xref:ref-operator-cluster-feature-gates-{context}[].
