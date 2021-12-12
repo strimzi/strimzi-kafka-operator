@@ -55,7 +55,7 @@ public abstract class AbstractCrdIT implements TestSeparator {
         RuntimeException deletionException = null;
         try {
             try {
-                cmdKubeClient().create(resourceFile, false);
+                cmdKubeClient().create(resourceFile, true);
             } catch (RuntimeException t) {
                 creationException = t;
             }
@@ -116,7 +116,8 @@ public abstract class AbstractCrdIT implements TestSeparator {
             assertThat("Could not find" + requiredProperty + " in message: " + message, message, anyOf(
                     containsStringIgnoringCase(requiredProperty + " in body is required"),
                     containsStringIgnoringCase(requiredProperty + ": Required value"),
-                    containsStringIgnoringCase("missing required field \"" + requiredProperty + "\"")
+                    containsStringIgnoringCase("missing required field \"" + requiredProperty + "\""),
+                    containsStringIgnoringCase("missing required field \"" + requiredProperty.substring(requiredProperty.lastIndexOf(".") + 1) + "\"")
             ));
         }
     }

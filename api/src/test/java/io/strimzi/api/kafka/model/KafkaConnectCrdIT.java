@@ -7,12 +7,11 @@ package io.strimzi.api.kafka.model;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -37,9 +36,8 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
         createDeleteCustomResource("KafkaConnect-minimal.yaml");
     }
 
-    @Disabled("See https://github.com/strimzi/strimzi-kafka-operator/issues/4606")
     @Test
-    void testCreateKafkaConnectWithExtraProperty() {
+    void testKafkaConnectWithExtraProperty() {
         Throwable exception = assertThrows(
             KubeClusterException.class,
             () -> createDeleteCustomResource("KafkaConnect-with-extra-property.yaml"));
@@ -63,7 +61,10 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
             () -> createDeleteCustomResource("KafkaConnect-with-invalid-replicas.yaml"));
 
         assertThat(exception.getMessage(),
-                containsStringIgnoringCase("spec.replicas: Invalid value: \"string\": spec.replicas in body must be of type integer: \"string\""));
+                anyOf(
+                        containsStringIgnoringCase("spec.replicas: Invalid value: \"string\": spec.replicas in body must be of type integer: \"string\""),
+                        containsStringIgnoringCase("invalid type for io.strimzi.kafka.v1beta2.KafkaConnect.spec.replicas: got \"string\", expected \"integer\"")
+                ));
     }
 
     @Test
@@ -119,24 +120,22 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "valueFrom");
     }
 
-    @BeforeEach
-    void setup() {
-        cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
-        cluster.waitForCustomResourceDefinition("kafkaconnects.kafka.strimzi.io");
-    }
-
-    @AfterEach
-    void teardown() {
-        cluster.deleteCustomResources();
-    }
-
     @BeforeAll
     void setupEnvironment() {
+        cluster.createCustomResources(TestUtils.CRD_KAFKA_CONNECT);
+        cluster.waitForCustomResourceDefinition("kafkaconnects.kafka.strimzi.io");
         cluster.createNamespace(NAMESPACE);
+
+        try {
+            Thread.sleep(1_000L);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @AfterAll
     void teardownEnvironment() {
         cluster.deleteNamespaces();
+        cluster.deleteCustomResources();
     }
 }
