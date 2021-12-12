@@ -30,7 +30,7 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
 
     public static final String TYPE_OPA = "opa";
 
-    public static final String AUTHORIZER_CLASS_NAME = "com.bisnode.kafka.authorization.OpaAuthorizer";
+    public static final String AUTHORIZER_CLASS_NAME = "org.openpolicyagent.kafka.OpaAuthorizer";
 
     private List<String> superUsers;
     private String url;

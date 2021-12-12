@@ -114,7 +114,7 @@
 :JaegerArch: link:https://www.jaegertracing.io/docs/1.18/architecture/[Jaeger architecure^]
 :JaegerArch: link:https://www.jaegertracing.io/docs/1.18/architecture/[Jaeger architecure^]
 :OpenTracingDocs: link:https://opentracing.io/docs/overview/[OpenTracing documentation^]
-:BisnodeOPAAuthorizer: link:https://github.com/Bisnode/opa-kafka-plugin[Open Policy Agent plugin for Kafka authorization^]
+:OPAAuthorizer: link:https://github.com/anderseknert/opa-kafka-plugin[Open Policy Agent plugin for Kafka authorization^]
 :LatestBridgeAPIDocs: link:https://strimzi.io/docs/bridge/latest/[Kafka Bridge API reference^]
 :external-cors-link: https://www.w3.org/TR/cors/
 :HelmCustomResourceDefinitions: link:https://helm.sh/docs/chart_best_practices/custom_resource_definitions/[Custom Resource Definitions for Helm^]
