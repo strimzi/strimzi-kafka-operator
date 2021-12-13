@@ -46,7 +46,7 @@ public class TestSuiteNamespaceManager {
      */
     private Map<String, List<String>> mapOfAdditionalNamespaces;
 
-    public static TestSuiteNamespaceManager getInstance() {
+    public synchronized static TestSuiteNamespaceManager getInstance() {
         if (instance == null) {
             instance = new TestSuiteNamespaceManager();
             instance.constructMapOfAdditionalNamespaces();

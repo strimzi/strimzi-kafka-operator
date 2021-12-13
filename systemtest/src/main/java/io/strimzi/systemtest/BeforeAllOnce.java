@@ -5,9 +5,7 @@
 package io.strimzi.systemtest;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.strimzi.systemtest.parallel.SuiteThreadController;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
-import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.BeforeAllCallback;

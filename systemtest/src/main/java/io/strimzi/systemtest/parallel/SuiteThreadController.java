@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.parallel;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.systemtest.Constants;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -86,12 +87,13 @@ public class SuiteThreadController {
         return false;
     }
 
+    @SuppressFBWarnings(value = "SWL_SLEEP_WITH_LOCK_HELD")
     public synchronized void waitUntilEntryIsOpen(ExtensionContext extensionContext) {
         // other threads must wait until is open
         while (this.isOpen.get()) {
             LOGGER.debug("{} is waiting to lock to be released.", extensionContext.getRequiredTestClass().getSimpleName());
             try {
-                Thread.sleep(STARTING_DELAY);
+                Thread.currentThread().sleep(STARTING_DELAY);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

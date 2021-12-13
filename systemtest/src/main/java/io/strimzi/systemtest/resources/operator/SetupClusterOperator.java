@@ -150,7 +150,7 @@ public class SetupClusterOperator {
      * It can install operator by classic way (apply bundle yamls) or use OLM. For OLM you need to set all other OLM env variables.
      * Don't use this method in tests, where specific configuration of CO is needed.
      */
-    public synchronized SetupClusterOperator runInstallation() {
+    public SetupClusterOperator runInstallation() {
         LOGGER.info("Cluster operator installation configuration:\n{}", this::toString);
         // if it's shared context (before suite) skip
         if (BeforeAllOnce.getSharedExtensionContext() != extensionContext) {
