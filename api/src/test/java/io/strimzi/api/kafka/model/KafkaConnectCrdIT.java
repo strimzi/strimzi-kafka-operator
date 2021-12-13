@@ -48,7 +48,7 @@ public class KafkaConnectCrdIT extends AbstractCrdIT {
     @Test
     void testKafkaConnectWithMissingRequired() {
         Throwable exception = assertThrows(
-            KubeClusterException.InvalidResource.class,
+            KubeClusterException.class,
             () -> createDeleteCustomResource("KafkaConnect-with-missing-required-property.yaml"));
 
         assertMissingRequiredPropertiesMessage(exception.getMessage(), "spec.bootstrapServers");
