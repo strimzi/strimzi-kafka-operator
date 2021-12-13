@@ -257,7 +257,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withAuthorization("my-cluster", auth)
                 .build();
 
-        assertThat(configuration, isEquivalent("authorizer.class.name=com.bisnode.kafka.authorization.OpaAuthorizer\n" +
+        assertThat(configuration, isEquivalent("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n" +
                 "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow\n" +
                 "opa.authorizer.allow.on.error=false\n" +
                 "opa.authorizer.cache.initial.capacity=5000\n" +
@@ -281,7 +281,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withAuthorization("my-cluster", auth)
                 .build();
 
-        assertThat(configuration, isEquivalent("authorizer.class.name=com.bisnode.kafka.authorization.OpaAuthorizer\n" +
+        assertThat(configuration, isEquivalent("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n" +
                 "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow\n" +
                 "opa.authorizer.allow.on.error=true\n" +
                 "opa.authorizer.cache.initial.capacity=1000\n" +
