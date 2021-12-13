@@ -21,7 +21,7 @@ public class UserOperatorConfig {
     public static final String STRIMZI_CA_CERT_SECRET_NAME = "STRIMZI_CA_CERT_NAME";
     public static final String STRIMZI_CA_KEY_SECRET_NAME = "STRIMZI_CA_KEY_NAME";
     public static final String STRIMZI_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
-    public static final String STRIMZI_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
+    public static final String STRIMZI_EUO_KEY_SECRET_NAME = "STRIMZI_EUO_KEY_SECRET_NAME";
     public static final String STRIMZI_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
     public static final String STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     public static final String STRIMZI_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
@@ -44,7 +44,7 @@ public class UserOperatorConfig {
     private final String caCertSecretName;
     private final String caKeySecretName;
     private final String clusterCaCertSecretName;
-    private final String eoKeySecretName;
+    private final String euoKeySecretName;
     private final String caNamespace;
     private final String secretPrefix;
     private final int clientsCaValidityDays;
@@ -62,7 +62,7 @@ public class UserOperatorConfig {
      * @param caCertSecretName Name of the secret containing the clients Certification Authority certificate.
      * @param caKeySecretName The name of the secret containing the clients Certification Authority key.
      * @param clusterCaCertSecretName Name of the secret containing the cluster Certification Authority certificate.
-     * @param eoKeySecretName The name of the secret containing the Entity Operator key and certificate
+     * @param euoKeySecretName The name of the secret containing the Entity User Operator key and certificate
      * @param caNamespace Namespace with the CA secret.
      * @param secretPrefix Prefix used for the Secret names
      * @param aclsAdminApiSupported Indicates whether Kafka Admin API can be used to manage ACL rights
@@ -78,7 +78,7 @@ public class UserOperatorConfig {
                               String caCertSecretName,
                               String caKeySecretName,
                               String clusterCaCertSecretName,
-                              String eoKeySecretName,
+                              String euoKeySecretName,
                               String caNamespace,
                               String secretPrefix,
                               boolean aclsAdminApiSupported,
@@ -92,7 +92,7 @@ public class UserOperatorConfig {
         this.caCertSecretName = caCertSecretName;
         this.caKeySecretName = caKeySecretName;
         this.clusterCaCertSecretName = clusterCaCertSecretName;
-        this.eoKeySecretName = eoKeySecretName;
+        this.euoKeySecretName = euoKeySecretName;
         this.caNamespace = caNamespace;
         this.secretPrefix = secretPrefix;
         this.aclsAdminApiSupported = aclsAdminApiSupported;
@@ -151,7 +151,7 @@ public class UserOperatorConfig {
 
         String clusterCaCertSecretName = map.get(UserOperatorConfig.STRIMZI_CLUSTER_CA_CERT_SECRET_NAME);
 
-        String eoKeySecretName = map.get(UserOperatorConfig.STRIMZI_EO_KEY_SECRET_NAME);
+        String euoKeySecretName = map.get(UserOperatorConfig.STRIMZI_EUO_KEY_SECRET_NAME);
 
         String caNamespace = map.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE);
         if (caNamespace == null || caNamespace.isEmpty()) {
@@ -170,7 +170,7 @@ public class UserOperatorConfig {
         int clientsCaRenewalDays = getIntProperty(map, UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS);
 
         return new UserOperatorConfig(namespace, reconciliationInterval, kafkaBootstrapServers, labels,
-                caCertSecretName, caKeySecretName, clusterCaCertSecretName, eoKeySecretName, caNamespace, secretPrefix,
+                caCertSecretName, caKeySecretName, clusterCaCertSecretName, euoKeySecretName, caNamespace, secretPrefix,
                 aclsAdminApiSupported, clientsCaValidityDays, clientsCaRenewalDays, scramPasswordLength);
     }
 
@@ -267,10 +267,10 @@ public class UserOperatorConfig {
     }
 
     /**
-     * @return  The name of the secret with Entity Operator key and certificate
+     * @return  The name of the secret with Entity User Operator key and certificate
      */
-    public String getEoKeySecretName() {
-        return eoKeySecretName;
+    public String getEuoKeySecretName() {
+        return euoKeySecretName;
     }
 
     /**
@@ -317,7 +317,7 @@ public class UserOperatorConfig {
                 ",labels=" + labels +
                 ",caName=" + caCertSecretName +
                 ",clusterCaCertSecretName=" + clusterCaCertSecretName +
-                ",eoKeySecretName=" + eoKeySecretName +
+                ",euoKeySecretName=" + euoKeySecretName +
                 ",caNamespace=" + caNamespace +
                 ",secretPrefix=" + secretPrefix +
                 ",aclsAdminApiSupported=" + aclsAdminApiSupported +
