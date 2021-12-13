@@ -49,6 +49,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private String userNameClaim;
     private String fallbackUserNameClaim;
     private String fallbackUserNamePrefix;
+    private String groupsClaim;
+    private String groupsClaimDelimiter;
     private String userInfoEndpointUri;
     private boolean checkAccessTokenType = true;
     private String validTokenType;
@@ -269,6 +271,24 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setFallbackUserNamePrefix(String fallbackUserNamePrefix) {
         this.fallbackUserNamePrefix = fallbackUserNamePrefix;
+    }
+
+    @Description("JsonPath query used to extract groups for the user during authentication. Extracted groups can be used by a custom authorizer. By default no groups are extracted.")
+    public String getGroupsClaim() {
+        return groupsClaim;
+    }
+
+    public void setGroupsClaim(String groupsClaim) {
+        this.groupsClaim = groupsClaim;
+    }
+
+    @Description("A delimiter used to parse groups when they are extracted as a single String value rather than a JSON array. Default value is ',' (comma).")
+    public String getGroupsClaimDelimiter() {
+        return groupsClaimDelimiter;
+    }
+
+    public void setGroupsClaimDelimiter(String groupsClaimDelimiter) {
+        this.groupsClaimDelimiter = groupsClaimDelimiter;
     }
 
     @Description("Configure whether the access token type check is performed or not. This should be set to `false` " +

@@ -1121,6 +1121,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                     .withJwksEndpointUri("http://jwks")
                     .withEnableECDSA(true)
                     .withUserNameClaim("preferred_username")
+                    .withGroupsClaim("$.groups")
+                    .withGroupsClaimDelimiter(";")
                     .withMaxSecondsWithoutReauthentication(3600)
                     .withJwksMinRefreshPauseSeconds(5)
                     .withEnablePlain(true)

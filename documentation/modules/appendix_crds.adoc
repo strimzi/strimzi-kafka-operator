@@ -211,6 +211,10 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |string
 |fallbackUserNamePrefix             1.2+<.<a|The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions.
 |string
+|groupsClaim                        1.2+<.<a|JsonPath query used to extract groups for the user during authentication. Extracted groups can be used by a custom authorizer. By default no groups are extracted.
+|string
+|groupsClaimDelimiter               1.2+<.<a|A delimiter used to parse groups when they are extracted as a single String value rather than a JSON array. Default value is ',' (comma).
+|string
 |introspectionEndpointUri           1.2+<.<a|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
 |string
 |jwksEndpointUri                    1.2+<.<a|URI of the JWKS certificate endpoint, which can be used for local JWT validation.

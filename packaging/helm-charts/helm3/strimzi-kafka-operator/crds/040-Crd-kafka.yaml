@@ -150,6 +150,12 @@ spec:
                               fallbackUserNamePrefix:
                                 type: string
                                 description: The prefix to use with the value of `fallbackUserNameClaim` to construct the user id. This only takes effect if `fallbackUserNameClaim` is true, and the value is present for the claim. Mapping usernames and client ids into the same user id space is useful in preventing name collisions.
+                              groupsClaim:
+                                type: string
+                                description: JsonPath query used to extract groups for the user during authentication. Extracted groups can be used by a custom authorizer. By default no groups are extracted.
+                              groupsClaimDelimiter:
+                                type: string
+                                description: A delimiter used to parse groups when they are extracted as a single String value rather than a JSON array. Default value is ',' (comma).
                               introspectionEndpointUri:
                                 type: string
                                 description: URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
