@@ -761,7 +761,7 @@ public class ResourceUtils {
                 featureGates,
                 10,
                 10_000,
-                30_000);
+                30);
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfigRolesOnly(KafkaVersion.Lookup versions, long operationTimeoutMs) {
@@ -782,7 +782,7 @@ public class ResourceUtils {
                 "",
                 10,
                 10_000,
-                30_000);
+                30);
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {

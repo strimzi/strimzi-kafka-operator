@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.vertx.core.VertxOptions;
@@ -61,10 +60,9 @@ public class Main {
         LOGGER.info("ClusterOperator {} is starting", Main.class.getPackage().getImplementationVersion());
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());
         LOGGER.info("Cluster Operator configuration is {}", config);
-        
-        // setting TTL to avoid caching the name forever
-        String networkaddressCacheTtl = String.valueOf(TimeUnit.MILLISECONDS.toSeconds(config.getDnsCacheTtlMs()));
-        Security.setProperty("networkaddress.cache.ttl", networkaddressCacheTtl);
+
+        // setting DNS cache TTL
+        Security.setProperty("networkaddress.cache.ttl", String.valueOf(config.getDnsCacheTtlSec()));
 
         //Setup Micrometer metrics options
         VertxOptions options = new VertxOptions().setMetricsOptions(
