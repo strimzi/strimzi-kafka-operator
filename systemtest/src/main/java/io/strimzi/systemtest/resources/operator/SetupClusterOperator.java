@@ -18,7 +18,6 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
-import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
@@ -136,19 +135,14 @@ public class SetupClusterOperator {
 
     public static SetupClusterOperatorBuilder defaultInstallation() {
         if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
-            LOGGER.debug("Building default installation for RBAC Cluster operator.");
             return new SetupClusterOperator.SetupClusterOperatorBuilder()
                 .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-                .withNamespace(Constants.INFRA_NAMESPACE)
-                .withWatchingNamespaces(ParallelNamespacesSuitesNames.getRbacNamespacesToWatch())
-                .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces());
+                .withNamespace(Constants.INFRA_NAMESPACE);
         }
-        LOGGER.debug("Building default installation for Cluster operator.");
         return new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(Constants.INFRA_NAMESPACE)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-            .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces());
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES);
     }
 
     /**
@@ -156,7 +150,7 @@ public class SetupClusterOperator {
      * It can install operator by classic way (apply bundle yamls) or use OLM. For OLM you need to set all other OLM env variables.
      * Don't use this method in tests, where specific configuration of CO is needed.
      */
-    public SetupClusterOperator runInstallation() {
+    public synchronized SetupClusterOperator runInstallation() {
         LOGGER.info("Cluster operator installation configuration:\n{}", this::toString);
         // if it's shared context (before suite) skip
         if (BeforeAllOnce.getSharedExtensionContext() != extensionContext) {
@@ -540,7 +534,7 @@ public class SetupClusterOperator {
         ClusterRoleBindingResource.clusterRoleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
     }
 
-    public void unInstall() {
+    public synchronized void unInstall() {
         LOGGER.info(String.join("", Collections.nCopies(76, "=")));
         LOGGER.info("Un-installing cluster operator from {} namespace", namespaceInstallTo);
         LOGGER.info(String.join("", Collections.nCopies(76, "=")));
@@ -566,7 +560,7 @@ public class SetupClusterOperator {
         }
     }
 
-    public SetupClusterOperator rollbackToDefaultConfiguration() {
+    public synchronized SetupClusterOperator rollbackToDefaultConfiguration() {
         // un-install old cluster operator
         unInstall();
 
@@ -589,8 +583,6 @@ public class SetupClusterOperator {
         return operationTimeout == otherInstallation.operationTimeout &&
             reconciliationInterval == otherInstallation.reconciliationInterval &&
             Objects.equals(cluster, otherInstallation.cluster) &&
-            Objects.equals(helmResource, otherInstallation.helmResource) &&
-            Objects.equals(olmResource, otherInstallation.olmResource) &&
             Objects.equals(clusterOperatorName, otherInstallation.clusterOperatorName) &&
             Objects.equals(namespaceInstallTo, otherInstallation.namespaceInstallTo) &&
             Objects.equals(namespaceToWatch, otherInstallation.namespaceToWatch) &&
@@ -610,8 +602,6 @@ public class SetupClusterOperator {
     public String toString() {
         return "SetupClusterOperator{" +
             "cluster=" + cluster +
-            ", helmResource=" + helmResource +
-            ", olmResource=" + olmResource +
             ", extensionContext=" + extensionContext +
             ", clusterOperatorName='" + clusterOperatorName + '\'' +
             ", namespaceInstallTo='" + namespaceInstallTo + '\'' +

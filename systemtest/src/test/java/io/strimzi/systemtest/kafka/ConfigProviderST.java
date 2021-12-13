@@ -18,6 +18,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -34,20 +35,22 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(REGRESSION)
+@ParallelSuite
 public class ConfigProviderST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConfigProviderST.class);
+
+    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(ConfigProviderST.class.getSimpleName()).stream().findFirst().get();
 
     @ParallelNamespaceTest
     void testConnectWithConnectorUsingConfigProvider(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String producerName = "producer-" + ClientUtils.generateRandomConsumerGroup();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -145,7 +148,7 @@ public class ConfigProviderST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
 
-        String kafkaConnectPodName = kubeClient().listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient().listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world - 99");
     }
 }

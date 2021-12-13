@@ -116,8 +116,8 @@ public class JmxST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         final String namespaceToWatch = Environment.isNamespaceRbacScope() ? INFRA_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
 
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(namespaceToWatch)

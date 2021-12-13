@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NETWORKPOLICIES_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -64,15 +63,17 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 public class NetworkPoliciesST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(NetworkPoliciesST.class);
 
+    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(NetworkPoliciesST.class.getSimpleName()).stream().findFirst().get();
+
     @IsolatedTest("Specific cluster operator for test case")
     @Tag(INTERNAL_CLIENTS_USED)
     void testNetworkPoliciesWithPlainListener(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(namespace)
             .createInstallation()
             .runInstallation();
 
@@ -124,7 +125,7 @@ public class NetworkPoliciesST extends AbstractST {
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(allowedKafkaClientsPodName)
             .withTopicName(topic0)
-            .withNamespaceName(INFRA_NAMESPACE)
+            .withNamespaceName(namespace)
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
@@ -177,10 +178,10 @@ public class NetworkPoliciesST extends AbstractST {
     void testNetworkPoliciesWithTlsListener(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(namespace)
             .createInstallation()
             .runInstallation();
 
@@ -229,7 +230,7 @@ public class NetworkPoliciesST extends AbstractST {
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withUsingPodName(allowedKafkaClientsPodName)
             .withTopicName(topic0)
-            .withNamespaceName(INFRA_NAMESPACE)
+            .withNamespaceName(namespace)
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
@@ -267,16 +268,16 @@ public class NetworkPoliciesST extends AbstractST {
 
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(namespace)
             .createInstallation()
             .runInstallation();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
-        checkNetworkPoliciesInNamespace(clusterName, INFRA_NAMESPACE);
-        changeKafkaConfigurationAndCheckObservedGeneration(clusterName, INFRA_NAMESPACE);
+        checkNetworkPoliciesInNamespace(clusterName, namespace);
+        changeKafkaConfigurationAndCheckObservedGeneration(clusterName, namespace);
     }
 
     @IsolatedTest("Specific cluster operator for test case")
@@ -284,7 +285,7 @@ public class NetworkPoliciesST extends AbstractST {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String secondNamespace = "second-" + INFRA_NAMESPACE;
+        String secondNamespace = "second-" + namespace;
 
         Map<String, String> labels = new HashMap<>();
         labels.put("my-label", "my-value");
@@ -294,18 +295,18 @@ public class NetworkPoliciesST extends AbstractST {
                 .withValue(labels.toString().replaceAll("\\{|}", ""))
                 .build();
 
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(namespace)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-            .withBindingsNamespaces(Arrays.asList(INFRA_NAMESPACE, secondNamespace))
+            .withBindingsNamespaces(Arrays.asList(namespace, secondNamespace))
             .withExtraEnvVars(Collections.singletonList(operatorLabelsEnv))
             .createInstallation()
             .runInstallation();
 
-        Namespace actualNamespace = kubeClient().getClient().namespaces().withName(INFRA_NAMESPACE).get();
-        kubeClient().getClient().namespaces().withName(INFRA_NAMESPACE).edit(ns -> new NamespaceBuilder(actualNamespace)
+        Namespace actualNamespace = kubeClient().getClient().namespaces().withName(namespace).get();
+        kubeClient().getClient().namespaces().withName(namespace).edit(ns -> new NamespaceBuilder(actualNamespace)
             .editOrNewMetadata()
                 .addToLabels(labels)
             .endMetadata()
@@ -336,10 +337,10 @@ public class NetworkPoliciesST extends AbstractST {
             .withValue("false")
             .build();
 
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(namespace)
             .withExtraEnvVars(Collections.singletonList(networkPolicyGenerationEnv))
             .createInstallation()
             .runInstallation();
@@ -369,7 +370,7 @@ public class NetworkPoliciesST extends AbstractST {
 
     void changeKafkaConfigurationAndCheckObservedGeneration(String clusterName, String namespace) {
         long observedGen = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getObservedGeneration();
-        KafkaUtils.updateConfigurationWithStabilityWait(clusterName, "log.message.timestamp.type", "LogAppendTime");
+        KafkaUtils.updateConfigurationWithStabilityWait(namespace, clusterName, "log.message.timestamp.type", "LogAppendTime");
 
         assertThat(KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getObservedGeneration(), is(not(observedGen)));
     }

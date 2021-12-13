@@ -326,8 +326,8 @@ public class KafkaRollerST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)

@@ -165,10 +165,6 @@ public class KafkaUtils {
         return secretCerts;
     }
 
-    public static String getKafkaSecretCertificates(String secretName, String certType) {
-        return getKafkaSecretCertificates(kubeClient().getNamespace(), secretName, certType);
-    }
-
     @SuppressWarnings("unchecked")
     public static void waitForClusterStability(String namespaceName, String clusterName) {
         LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaStatefulSetName(clusterName));
@@ -225,49 +221,53 @@ public class KafkaUtils {
 
     /**
      * Method which, update/replace Kafka configuration
+     * @param namespaceName name of the namespace
      * @param clusterName name of the cluster where Kafka resource can be found
      * @param brokerConfigName key of specific property
      * @param value value of specific property
      */
-    public static void updateSpecificConfiguration(String clusterName, String brokerConfigName, Object value) {
-        KafkaResource.replaceKafkaResource(clusterName, kafka -> {
+    public static void updateSpecificConfiguration(final String namespaceName, String clusterName, String brokerConfigName, Object value) {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
             Map<String, Object> config = kafka.getSpec().getKafka().getConfig();
             config.put(brokerConfigName, value);
             kafka.getSpec().getKafka().setConfig(config);
             LOGGER.info("Kafka config after updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
-        });
+        }, namespaceName);
     }
 
     /**
      * Method which, extends the @link updateConfiguration(String clusterName, KafkaConfiguration kafkaConfiguration, Object value) method
      * with stability and ensures after update of Kafka resource there will be not rolling update
+     * @param namespaceName namespace name
      * @param clusterName name of the cluster where Kafka resource can be found
      * @param brokerConfigName key of specific property
      * @param value value of specific property
      */
-    public static void  updateConfigurationWithStabilityWait(String clusterName, String brokerConfigName, Object value) {
-        updateSpecificConfiguration(clusterName, brokerConfigName, value);
-        waitForClusterStability(clusterName);
+    public static void  updateConfigurationWithStabilityWait(final String namespaceName, String clusterName, String brokerConfigName, Object value) {
+        updateSpecificConfiguration(namespaceName, clusterName, brokerConfigName, value);
+        waitForClusterStability(namespaceName, clusterName);
     }
 
     /**
      * Verifies that updated configuration was successfully changed inside Kafka CR
+     * @param namespaceName name of the namespace
      * @param brokerConfigName key of specific property
      * @param value value of specific property
      */
-    public static boolean verifyCrDynamicConfiguration(String clusterName, String brokerConfigName, Object value) {
+    public synchronized static boolean verifyCrDynamicConfiguration(final String namespaceName, String clusterName, String brokerConfigName, Object value) {
         LOGGER.info("Dynamic Configuration in Kafka CR is {}={} and expected is {}={}",
             brokerConfigName,
-            KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName),
+            KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName),
             brokerConfigName,
             value);
 
-        return KafkaResource.kafkaClient().inNamespace(kubeClient().getNamespace()).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName).equals(value);
+        return KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getConfig().get(brokerConfigName).equals(value);
     }
 
     /**
      * Verifies that updated configuration was successfully changed inside Kafka pods
+     * @param namespaceName name of the namespace
      * @param kafkaPodNamePrefix prefix of Kafka pods
      * @param brokerConfigName key of specific property
      * @param value value of specific property
@@ -275,15 +275,15 @@ public class KafkaUtils {
      * true = if specific property match the excepted property
      * false = if specific property doesn't match the excepted property
      */
-    public static boolean verifyPodDynamicConfiguration(String kafkaPodNamePrefix, String brokerConfigName, Object value) {
+    public synchronized static boolean verifyPodDynamicConfiguration(final String namespaceName, String kafkaPodNamePrefix, String brokerConfigName, Object value) {
 
-        List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(kafkaPodNamePrefix);
+        List<Pod> kafkaPods = kubeClient().listPodsByPrefixInName(namespaceName, kafkaPodNamePrefix);
 
         for (Pod pod : kafkaPods) {
 
             TestUtils.waitFor("Wait until dyn.configuration is changed", Constants.GLOBAL_POLL_INTERVAL, Constants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
                 () -> {
-                    String result = cmdKubeClient().execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+                    String result = cmdKubeClient(namespaceName).execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
 
                     LOGGER.debug("This dyn.configuration {} inside the Kafka pod {}", result, pod.getMetadata().getName());
 

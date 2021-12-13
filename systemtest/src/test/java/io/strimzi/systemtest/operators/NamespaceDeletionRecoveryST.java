@@ -213,8 +213,8 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private void prepareEnvironmentForRecovery(ExtensionContext extensionContext, String topicName) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
@@ -279,8 +279,8 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
     private void recreateClusterOperator(ExtensionContext extensionContext) {
         // Recreate CO
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .createInstallation()

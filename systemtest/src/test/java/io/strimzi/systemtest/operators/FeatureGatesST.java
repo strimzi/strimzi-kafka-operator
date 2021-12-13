@@ -77,8 +77,8 @@ public class FeatureGatesST extends AbstractST {
 
         testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-ControlPlaneListener", null));
 
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
@@ -163,8 +163,8 @@ public class FeatureGatesST extends AbstractST {
 
         testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseStrimziPodSets", null));
 
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
                 .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
                 .withNamespace(INFRA_NAMESPACE)
                 .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)

@@ -125,7 +125,7 @@ public class PodUtils {
     }
 
     public static String getPodNameByPrefix(String namespaceName, String prefix) {
-        return kubeClient(namespaceName).listPods().stream().filter(pod -> pod.getMetadata().getName().startsWith(prefix))
+        return kubeClient(namespaceName).listPods(namespaceName).stream().filter(pod -> pod.getMetadata().getName().startsWith(prefix))
             .findFirst().orElseThrow().getMetadata().getName();
     }
 
@@ -182,15 +182,19 @@ public class PodUtils {
         LOGGER.info("Pods with count {} are present", numberOfPods);
     }
 
-    public static void waitUntilMessageIsInPodLogs(String podName, String message) {
-        waitUntilMessageIsInPodLogs(podName, message, Constants.TIMEOUT_FOR_LOG);
-    }
-
-    public static void waitUntilMessageIsInPodLogs(String podName, String message, long duration) {
+    public static void waitUntilMessageIsInPodLogs(final String namespaceName, String podName, String message, long duration) {
         LOGGER.info("Waiting for message will be in the log");
         TestUtils.waitFor("Waiting for message will be in the log", Constants.GLOBAL_POLL_INTERVAL, duration,
-            () -> kubeClient().logs(podName).contains(message));
+            () -> kubeClient(namespaceName).logsInSpecificNamespace(namespaceName, podName).contains(message));
         LOGGER.info("Message {} found in {} log", message, podName);
+    }
+
+    public static void waitUntilMessageIsInPodLogs(String podName, String message) {
+        waitUntilMessageIsInPodLogs(kubeClient().getNamespace(), podName, message, Constants.TIMEOUT_FOR_LOG);
+    }
+
+    public static void waitUntilMessageIsInPodLogs(final String namespaceName, String podName, String message) {
+        waitUntilMessageIsInPodLogs(namespaceName, podName, message, Constants.TIMEOUT_FOR_LOG);
     }
 
     public static void waitUntilPodContainersCount(String namespaceName, String podNamePrefix, int numberOfContainers) {

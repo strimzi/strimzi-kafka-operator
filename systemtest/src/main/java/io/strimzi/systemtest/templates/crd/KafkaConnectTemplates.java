@@ -33,22 +33,26 @@ public class KafkaConnectTemplates {
         return Crds.kafkaConnectOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static KafkaConnectBuilder kafkaConnect(ExtensionContext extensionContext, String name, String clusterName, int kafkaConnectReplicas, boolean allowNP) {
+    public static KafkaConnectBuilder kafkaConnect(ExtensionContext extensionContext, final String namespaceName, String name, String clusterName, int kafkaConnectReplicas, boolean allowNP) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(Constants.PATH_TO_KAFKA_CONNECT_CONFIG);
-        kafkaConnect = defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas).build();
+        kafkaConnect = defaultKafkaConnect(kafkaConnect, name, namespaceName, clusterName, kafkaConnectReplicas).build();
         return allowNP ? deployKafkaConnectWithNetworkPolicy(extensionContext, kafkaConnect) : new KafkaConnectBuilder(kafkaConnect);
     }
 
     public static KafkaConnectBuilder kafkaConnect(ExtensionContext extensionContext, String name, int kafkaConnectReplicas) {
-        return kafkaConnect(extensionContext, name, name, kafkaConnectReplicas, true);
+        return kafkaConnect(extensionContext, name, ResourceManager.kubeClient().getNamespace(), name, kafkaConnectReplicas, true);
     }
 
     public static KafkaConnectBuilder kafkaConnect(ExtensionContext extensionContext, String name, String clusterName, int kafkaConnectReplicas) {
-        return kafkaConnect(extensionContext, name, clusterName, kafkaConnectReplicas, true);
+        return kafkaConnect(extensionContext, name, ResourceManager.kubeClient().getNamespace(), clusterName, kafkaConnectReplicas, true);
+    }
+
+    public static KafkaConnectBuilder kafkaConnect(ExtensionContext extensionContext, String name, final String namespaceName, String clusterName, int kafkaConnectReplicas) {
+        return kafkaConnect(extensionContext, name, namespaceName, clusterName, kafkaConnectReplicas, true);
     }
 
     public static KafkaConnectBuilder kafkaConnect(ExtensionContext extensionContext, String name, int kafkaConnectReplicas, boolean allowNP) {
-        return kafkaConnect(extensionContext, name, name, kafkaConnectReplicas, allowNP);
+        return kafkaConnect(extensionContext, name, ResourceManager.kubeClient().getNamespace(), name, kafkaConnectReplicas, allowNP);
     }
 
     public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, int kafkaConnectReplicas) {
@@ -59,19 +63,19 @@ public class KafkaConnectTemplates {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
         ConfigMap metricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(kubeClient().getNamespace()).createOrReplace(metricsCm);
-        return defaultKafkaConnect(kafkaConnect, name, clusterName, kafkaConnectReplicas);
+        return defaultKafkaConnect(kafkaConnect, ResourceManager.kubeClient().getNamespace(), name, clusterName, kafkaConnectReplicas);
     }
 
     public static KafkaConnectBuilder defaultKafkaConnect(String name, String kafkaClusterName, int kafkaConnectReplicas) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(Constants.PATH_TO_KAFKA_CONNECT_CONFIG);
-        return defaultKafkaConnect(kafkaConnect, name, kafkaClusterName, kafkaConnectReplicas);
+        return defaultKafkaConnect(kafkaConnect, ResourceManager.kubeClient().getNamespace(), name, kafkaClusterName, kafkaConnectReplicas);
     }
 
-    private static KafkaConnectBuilder defaultKafkaConnect(KafkaConnect kafkaConnect, String name, String kafkaClusterName, int kafkaConnectReplicas) {
+    private static KafkaConnectBuilder defaultKafkaConnect(KafkaConnect kafkaConnect, final String namespaceName, String name, String kafkaClusterName, int kafkaConnectReplicas) {
         return new KafkaConnectBuilder(kafkaConnect)
             .withNewMetadata()
                 .withName(name)
-                .withNamespace(ResourceManager.kubeClient().getNamespace())
+                .withNamespace(namespaceName)
                 .withClusterName(kafkaClusterName)
             .endMetadata()
             .editOrNewSpec()

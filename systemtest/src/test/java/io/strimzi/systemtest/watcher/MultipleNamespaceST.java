@@ -76,8 +76,8 @@ class MultipleNamespaceST extends AbstractNamespaceST {
     }
 
     private void deployTestSpecificResources(ExtensionContext extensionContext) {
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(String.join(",", INFRA_NAMESPACE, SECOND_NAMESPACE))

@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.logs;
 
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.parallel.SuiteThreadController;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.logs.CollectorElement;
 import io.strimzi.test.timemeasuring.Operation;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
@@ -62,6 +64,15 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     public void handleAfterAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
         final String testClass = extensionContext.getRequiredTestClass().getName();
 
+        SuiteThreadController suiteThreadController = SuiteThreadController.getInstance();
+        if (StUtils.isParallelSuite(extensionContext)) {
+            suiteThreadController.removeParallelSuite(extensionContext);
+        }
+
+        if (StUtils.isIsolatedSuite(extensionContext)) {
+            suiteThreadController.unLockIsolatedSuite();
+        }
+
         collectLogs(new CollectorElement(testClass));
         throw throwable;
     }
@@ -69,6 +80,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     public synchronized static void collectLogs(CollectorElement collectorElement) throws IOException {
         // Stop test execution time counter in case of failures
         TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION, collectorElement.getTestClassName(), collectorElement.getTestMethodName());
+
 
         collectorElement.setTestMethodName(collectorElement.getTestMethodName().isEmpty() ? "class-context-" + new Random().nextInt(Integer.MAX_VALUE) : collectorElement.getTestMethodName());
         final LogCollector logCollector = new LogCollector(collectorElement, kubeClient(), Environment.TEST_LOG_DIR);

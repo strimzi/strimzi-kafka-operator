@@ -1369,10 +1369,10 @@ public class ListenersST extends AbstractST {
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
 
         externalCerts = getKafkaStatusCertificates(Constants.EXTERNAL_LISTENER_DEFAULT_NAME, namespaceName, clusterName);
-        externalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer1, "ca.crt");
+        externalSecretCerts = getKafkaSecretCertificates(namespaceName, clusterCustomCertServer1, "ca.crt");
 
         internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, namespaceName, clusterName);
-        internalSecretCerts = getKafkaSecretCertificates(clusterCustomCertServer2, "ca.crt");
+        internalSecretCerts = getKafkaSecretCertificates(namespaceName, clusterCustomCertServer2, "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
@@ -2160,7 +2160,7 @@ public class ListenersST extends AbstractST {
         SecretUtils.waitForUserPasswordChange(namespaceName, userName, secondEncodedPassword);
 
         LOGGER.info("We need to recreate Kafka Clients deployment, so the correct password from secret will be taken");
-        resourceManager.deleteResource(kubeClient().getDeployment(kafkaClientsName));
+        resourceManager.deleteResource(kubeClient().getDeployment(namespaceName, kafkaClientsName));
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, kafkaClientsName, kafkaUser).build());
 
         LOGGER.info("Receiving messages with new password");
@@ -2290,8 +2290,8 @@ public class ListenersST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         final String namespaceToWatch = Environment.isNamespaceRbacScope() ? INFRA_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
 
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(namespaceToWatch)

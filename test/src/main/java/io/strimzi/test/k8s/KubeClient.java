@@ -619,6 +619,10 @@ public class KubeClient {
         return client.batch().v1().jobs().inNamespace(getNamespace()).withName(jobName).delete();
     }
 
+    public Boolean deleteJob(final String namespaceName, String jobName) {
+        return client.batch().v1().jobs().inNamespace(namespaceName).withName(jobName).delete();
+    }
+
     public Job getJob(String jobName) {
         return client.batch().v1().jobs().inNamespace(getNamespace()).withName(jobName).get();
     }
@@ -726,7 +730,7 @@ public class KubeClient {
     }
 
     public Service createService(Service service) {
-        return client.services().inNamespace(getNamespace()).createOrReplace(service);
+        return client.services().inNamespace(service.getMetadata().getNamespace()).createOrReplace(service);
     }
 
     /**

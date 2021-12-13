@@ -39,8 +39,8 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
 
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withExtraEnvVars(Collections.singletonList(new EnvVar(Environment.STRIMZI_RBAC_SCOPE_ENV, Environment.STRIMZI_RBAC_SCOPE_NAMESPACE, null)))

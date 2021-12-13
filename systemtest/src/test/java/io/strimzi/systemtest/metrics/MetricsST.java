@@ -646,14 +646,10 @@ public class MetricsST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
-        install.unInstall();
-        install = SetupClusterOperator.defaultInstallation()
-            .createInstallation()
-            .editInstallation()
-                // add to the watching namespaces (this is needed for rbac installation)
-                .addToTheWatchingNamespaces(SECOND_NAMESPACE)
-                // add to the list of bindings
-                .addToTheBindingsNamespaces(SECOND_NAMESPACE)
+        clusterOperator.unInstall();
+        clusterOperator = SetupClusterOperator.defaultInstallation()
+            .withWatchingNamespaces(INFRA_NAMESPACE + "," + SECOND_NAMESPACE)
+            .withBindingsNamespaces(Arrays.asList(INFRA_NAMESPACE, SECOND_NAMESPACE))
             .createInstallation()
             .runInstallation();
 

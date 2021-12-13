@@ -50,8 +50,8 @@ public class ClusterOperatorRbacST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // 060-Deployment
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
@@ -85,8 +85,8 @@ public class ClusterOperatorRbacST extends AbstractST {
         String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
         // 060-Deployment
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)

@@ -12,7 +12,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.systemtest.Constants.DYNAMIC_CONFIGURATION;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
@@ -55,11 +54,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 @Tag(REGRESSION)
 @Tag(DYNAMIC_CONFIGURATION)
-@IsolatedSuite
+@ParallelSuite
 public class DynamicConfigurationIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfigurationIsolatedST.class);
     private static final int KAFKA_REPLICAS = 3;
+
+    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(DynamicConfigurationIsolatedST.class.getSimpleName()).stream().findFirst().get();
 
     private Map<String, Object> kafkaConfig;
 
@@ -70,6 +71,9 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
+            .editMetadata()
+                .withNamespace(namespace)
+            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withConfig(deepCopyOfShardKafkaConfig)
@@ -77,23 +81,23 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        String kafkaConfiguration = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config");
+        String kafkaConfiguration = kubeClient().getConfigMap(namespace, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config");
         assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
         assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
         assertThat(kafkaConfiguration, containsString("log.message.format.version=" + TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).messageVersion()));
 
-        String kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+        String kafkaConfigurationFromPod = cmdKubeClient().namespace(namespace).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
 
         deepCopyOfShardKafkaConfig.put("unclean.leader.election.enable", true);
 
-        updateAndVerifyDynConf(clusterName, deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(namespace, clusterName, deepCopyOfShardKafkaConfig);
 
-        kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
+        kafkaConfigurationFromPod = cmdKubeClient().namespace(namespace).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + true));
 
         LOGGER.info("Verify values after update");
-        kafkaConfiguration = kubeClient().getConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config");
+        kafkaConfiguration = kubeClient().getConfigMap(namespace, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config");
         assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
         assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
         assertThat(kafkaConfiguration, containsString("log.message.format.version=" + TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).messageVersion()));
@@ -140,7 +144,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
         deepCopyOfShardKafkaConfig.put("unclean.leader.election.enable", true);
 
-        updateAndVerifyDynConf(clusterName, deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(namespace, clusterName, deepCopyOfShardKafkaConfig);
 
         kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + true));
@@ -180,7 +184,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
         deepCopyOfShardKafkaConfig.put("compression.type", "snappy");
 
-        updateAndVerifyDynConf(clusterName, deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(namespace, clusterName, deepCopyOfShardKafkaConfig);
 
         kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("compression.type=snappy"));
@@ -190,7 +194,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
         deepCopyOfShardKafkaConfig.put("unclean.leader.election.enable", true);
 
-        updateAndVerifyDynConf(clusterName, deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(namespace, clusterName, deepCopyOfShardKafkaConfig);
 
         kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + true));
@@ -225,7 +229,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
         deepCopyOfShardKafkaConfig.put("unclean.leader.election.enable", false);
 
-        updateAndVerifyDynConf(clusterName, deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(namespace, clusterName, deepCopyOfShardKafkaConfig);
 
         kafkaConfigurationFromPod = cmdKubeClient().execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + false));
@@ -264,7 +268,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
         ExternalKafkaClient externalKafkaClientTls = new ExternalKafkaClient.Builder()
             .withTopicName(topicName)
-            .withNamespaceName(INFRA_NAMESPACE)
+            .withNamespaceName(namespace)
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
@@ -274,7 +278,7 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
         ExternalKafkaClient externalKafkaClientPlain = new ExternalKafkaClient.Builder()
             .withTopicName(topicName)
-            .withNamespaceName(INFRA_NAMESPACE)
+            .withNamespaceName(namespace)
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
@@ -354,20 +358,21 @@ public class DynamicConfigurationIsolatedST extends AbstractST {
 
     /**
      * UpdateAndVerifyDynConf, change the kafka configuration and verify that no rolling update were triggered
+     * @param namespaceName name of the namespace
      * @param kafkaConfig specific kafka configuration, which will be changed
      */
-    private void updateAndVerifyDynConf(String clusterName, Map<String, Object> kafkaConfig) {
+    private void updateAndVerifyDynConf(final String namespaceName, String clusterName, Map<String, Object> kafkaConfig) {
         LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         Map<String, String> kafkaPods = PodUtils.podSnapshot(kafkaSelector);
 
         LOGGER.info("Updating configuration of Kafka cluster");
-        KafkaResource.replaceKafkaResource(clusterName, k -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
             KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
             kafkaClusterSpec.setConfig(kafkaConfig);
-        });
+        }, namespaceName);
 
-        PodUtils.verifyThatRunningPodsAreStable(KafkaResources.kafkaStatefulSetName(clusterName));
-        assertThat(RollingUpdateUtils.componentHasRolled(kafkaSelector, kafkaPods), is(false));
+        PodUtils.verifyThatRunningPodsAreStable(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        assertThat(RollingUpdateUtils.componentHasRolled(namespaceName, kafkaSelector, kafkaPods), is(false));
     }
 
     @BeforeEach

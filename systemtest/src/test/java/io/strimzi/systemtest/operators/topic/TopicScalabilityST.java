@@ -36,25 +36,29 @@ public class TopicScalabilityST extends AbstractST {
         for (int i = 0; i < NUMBER_OF_TOPICS; i++) {
             String currentTopic = topicName + i;
             LOGGER.debug("Creating {} topic", currentTopic);
-            resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(sharedClusterName, currentTopic, 3, 1, 1).build());
+            resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(sharedClusterName, currentTopic, 3, 1, 1, INFRA_NAMESPACE).build());
         }
 
         for (int i = 0; i < NUMBER_OF_TOPICS; i = i + SAMPLE_OFFSET) {
             String currentTopic = topicName + i;
             LOGGER.debug("Verifying that {} topic CR has Ready status", currentTopic);
 
-            KafkaTopicUtils.waitForKafkaTopicReady(currentTopic);
+            KafkaTopicUtils.waitForKafkaTopicReady(INFRA_NAMESPACE, currentTopic);
         }
 
         LOGGER.info("Verifying that we created {} topics", NUMBER_OF_TOPICS);
 
-        KafkaTopicUtils.waitForKafkaTopicsCount(NUMBER_OF_TOPICS, sharedClusterName);
+        KafkaTopicUtils.waitForKafkaTopicsCount(INFRA_NAMESPACE, NUMBER_OF_TOPICS, sharedClusterName);
     }
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         LOGGER.info("Deploying shared kafka across all test cases in {} namespace", INFRA_NAMESPACE);
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
+            .build());
     }
 
 }

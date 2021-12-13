@@ -15,6 +15,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -301,7 +302,7 @@ class RecoveryST extends AbstractST {
 
         KafkaResource.replaceKafkaResource(clusterName, k -> k.getSpec().getKafka().setResources(resourceReq));
 
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaSsName, 3);
+        StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaSsName, 3, ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET));
         KafkaUtils.waitForKafkaReady(clusterName);
 
         timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
@@ -310,10 +311,11 @@ class RecoveryST extends AbstractST {
 
     @BeforeEach
     void setup(ExtensionContext extensionContext) {
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
+            .withReconciliationInterval(Constants.CO_OPERATION_TIMEOUT_MEDIUM)
             .createInstallation()
             .runInstallation();
 

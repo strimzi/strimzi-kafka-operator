@@ -43,12 +43,11 @@ import static org.hamcrest.Matchers.containsString;
 public class HttpBridgeCorsST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeCorsST.class);
-    private static final String NAMESPACE = Constants.BRIDGE_KAFKA_CORS_NAMESPACE;
-    private final String httpBridgeCorsClusterName = "http-bridge-cors-cluster-name";
-
     private static final String ALLOWED_ORIGIN = "https://strimzi.io";
     private static final String NOT_ALLOWED_ORIGIN = "https://evil.io";
 
+    private final String httpBridgeCorsClusterName = "http-bridge-cors-cluster-name";
+    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(HttpBridgeCorsST.class.getSimpleName()).stream().findFirst().get();
     private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
     private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -71,7 +70,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         String url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         String headers = BridgeUtils.addHeadersToString(additionalHeaders, Constants.KAFKA_BRIDGE_JSON_JSON);
-        String response = cmdKubeClient().namespace(NAMESPACE).execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
+        String response = cmdKubeClient().namespace(namespace).execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
         LOGGER.info("Response from Bridge: {}", response);
 
         String responseAllowHeaders = BridgeUtils.getHeaderValue("access-control-allow-headers", response);
@@ -89,7 +88,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         headers = BridgeUtils.addHeadersToString(Collections.singletonMap("Origin", ALLOWED_ORIGIN));
-        response = cmdKubeClient().namespace(NAMESPACE).execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.GET, url, headers, "")).out().trim();
+        response = cmdKubeClient().namespace(namespace).execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.GET, url, headers, "")).out().trim();
         LOGGER.info("Response from Bridge: {}", response);
 
         assertThat(response, containsString("404"));
@@ -106,7 +105,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         String url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         String headers = BridgeUtils.addHeadersToString(additionalHeaders);
-        String response = cmdKubeClient().namespace(NAMESPACE).execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
+        String response = cmdKubeClient().namespace(namespace).execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
         LOGGER.info("Response from Bridge: {}", response);
 
         LOGGER.info("Checking if response from Bridge is correct");
@@ -115,7 +114,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         additionalHeaders.remove("Access-Control-Request-Method", HttpMethod.POST.toString());
         headers = BridgeUtils.addHeadersToString(additionalHeaders);
-        response = cmdKubeClient().namespace(NAMESPACE).execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.POST, url, headers, "")).out().trim();
+        response = cmdKubeClient().namespace(namespace).execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.POST, url, headers, "")).out().trim();
         LOGGER.info("Response from Bridge: {}", response);
 
         LOGGER.info("Checking if response from Bridge is correct");
@@ -127,25 +126,25 @@ public class HttpBridgeCorsST extends AbstractST {
     void beforeAll(ExtensionContext extensionContext) {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeCorsClusterName, 1, 1)
             .editMetadata()
-                .withNamespace(NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .build());
 
-        String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
+        String kafkaClientsName = namespace + "-shared-" + Constants.KAFKA_CLIENTS;
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(NAMESPACE, false, kafkaClientsName).build());
-        kafkaClientsPodName = kubeClient(NAMESPACE).listPodsByPrefixInName(NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespace, false, kafkaClientsName).build());
+        kafkaClientsPodName = kubeClient(namespace).listPodsByPrefixInName(namespace, kafkaClientsName).get(0).getMetadata().getName();
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridgeWithCors(httpBridgeCorsClusterName, KafkaResources.plainBootstrapAddress(httpBridgeCorsClusterName),
             1, ALLOWED_ORIGIN, null)
             .editMetadata()
-                .withNamespace(NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .build());
 
-        KafkaBridgeHttpCors kafkaBridgeHttpCors = KafkaBridgeResource.kafkaBridgeClient().inNamespace(NAMESPACE).withName(httpBridgeCorsClusterName).get().getSpec().getHttp().getCors();
+        KafkaBridgeHttpCors kafkaBridgeHttpCors = KafkaBridgeResource.kafkaBridgeClient().inNamespace(namespace).withName(httpBridgeCorsClusterName).get().getSpec().getHttp().getCors();
         LOGGER.info("Bridge with the following CORS settings {}", kafkaBridgeHttpCors.toString());
 
-        bridgeUrl = KafkaBridgeResources.url(httpBridgeCorsClusterName, NAMESPACE, Constants.HTTP_BRIDGE_DEFAULT_PORT);
+        bridgeUrl = KafkaBridgeResources.url(httpBridgeCorsClusterName, namespace, Constants.HTTP_BRIDGE_DEFAULT_PORT);
     }
 }

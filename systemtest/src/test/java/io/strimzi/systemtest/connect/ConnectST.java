@@ -32,7 +32,6 @@ import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
@@ -948,7 +947,7 @@ class ConnectST extends AbstractST {
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kafkaConnect -> kafkaConnect.getSpec().setReplicas(0), namespaceName);
 
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
-        PodUtils.waitForPodsReady(kubeClient(namespaceName).getDeploymentSelectors(connectDeploymentName), 0, true);
+        PodUtils.waitForPodsReady(kubeClient(namespaceName).getDeploymentSelectors(namespaceName, connectDeploymentName), 0, true);
 
         connectPods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaConnectResources.deploymentName(clusterName));
         KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
@@ -1386,10 +1385,8 @@ class ConnectST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+        clusterOperator.unInstall();
+        clusterOperator = SetupClusterOperator.defaultInstallation()
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();

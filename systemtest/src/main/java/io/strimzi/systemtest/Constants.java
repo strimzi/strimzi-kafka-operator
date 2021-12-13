@@ -336,6 +336,33 @@ public interface Constants {
     String BRIDGE_SCRAM_SHA_NAMESPACE = "bridge-scram-sha-namespace";
     String BRIDGE_HTTP_TLS_NAMESPACE = "http-bridge-tls-namespace";
     String METRICS_SECOND_NAMESPACE = "second-metrics-cluster-test";
+    // cruise control package
+    String CRUISE_CONTROL_NAMESPACE = "cruise-control-namespace";
+    String CRUISE_CONTROL_CONFIGURATION_NAMESPACE = "cruise-control-configuration-namespace";
+    String CRUISE_CONTROL_API_NAMESPACE = "cruise-control-api-namespace";
+    // kafka package
+    String DYNAMIC_CONFIGURATION_ISOLATED_NAMESPACE = "dyn-conf-isolated-namespace";
+    String DYNAMIC_CONFIGURATION_SHARED_NAMESPACE = "dyn-conf-shared-namespace";
+    String MULTIPLE_LISTENER_NAMESPACE = "mul-list-namespace";
+    String CONFIG_PROVIDER_NAMESPACE = "config-provider-namespace";
+    String KAFKA_NAMESPACE = "kafka-namespace";
+    // log package
+    String LOGGING_CHANGE_NAMESPACE = "logging-change-namespace";
+    String LOG_SETTING_NAMESPACE = "log-setting-namespace";
+    // operators package
+    String THROTTLING_QUOTA_NAMESPACE = "throttling-quota-namespace";
+    String TOPIC_NAMESPACE = "topic-namespace";
+    String USER_NAMESPACE = "user-namespace";
+    // rolling update package
+    String ALTERNATIVE_RECONCILE_TRIGGERS_NAMESPACE = "ar-triggers-namespace";
+    String ROLLING_UPDATE_NAMESPACE = "rolling-update-namespace";
+    // security package
+    String CUSTOM_AUTHORIZER_NAMESPACE = "custom-authz-namespace";
+    String NETWORK_POLICIES_NAMESPACE = "np-namespace";
+    String OPA_INTEGRATION_NAMESPACE = "opa-int-namespace";
+    String SECURITY_NAMESPACE = "security-namespace";
+    // tracing package
+    String TRACING_NAMESPACE = "tracing-namespace";
 
     /**
      * Auxiliary variables for storing data across our tests

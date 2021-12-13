@@ -259,8 +259,8 @@ public class DrainCleanerST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)

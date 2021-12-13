@@ -192,8 +192,8 @@ class AllNamespaceST extends AbstractNamespaceST {
     private void deployTestSpecificResources(ExtensionContext extensionContext) {
         LOGGER.info("Creating resources before the test class");
 
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
@@ -226,7 +226,6 @@ class AllNamespaceST extends AbstractNamespaceST {
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) {
         // Strimzi is deployed with cluster-wide access in this class STRIMZI_RBAC_SCOPE=NAMESPACE won't work
-        super.beforeAllMayOverride(extensionContext);
         assumeFalse(Environment.isNamespaceRbacScope());
 
         deployTestSpecificResources(extensionContext);

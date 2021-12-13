@@ -64,6 +64,10 @@ public class KafkaBridgeUtils {
         return waitForKafkaBridgeStatus(kubeClient().getNamespace(), clusterName, Ready);
     }
 
+    public static boolean waitForKafkaBridgeNotReady(final String namespaceName, String clusterName) {
+        return waitForKafkaBridgeStatus(namespaceName, clusterName, NotReady);
+    }
+
     public static boolean waitForKafkaBridgeNotReady(String clusterName) {
         return waitForKafkaBridgeStatus(kubeClient().getNamespace(), clusterName, NotReady);
     }

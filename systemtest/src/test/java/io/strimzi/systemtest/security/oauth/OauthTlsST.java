@@ -486,7 +486,6 @@ public class OauthTlsST extends OauthAbstractST {
 
     @BeforeAll
     void setUp(ExtensionContext extensionContext) {
-        super.beforeAllMayOverride(extensionContext);
         // for namespace
         super.setupCoAndKeycloak(extensionContext, INFRA_NAMESPACE);
 

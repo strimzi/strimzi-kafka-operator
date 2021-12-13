@@ -24,7 +24,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
@@ -234,7 +233,7 @@ class ConnectBuilderST extends AbstractST {
         final String imageName = getImageNameForTestCase();
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(INFRA_NAMESPACE, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, INFRA_NAMESPACE, 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, INFRA_NAMESPACE, connectClusterName, 1, false)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -285,9 +284,9 @@ class ConnectBuilderST extends AbstractST {
 
         internalKafkaClient.sendMessagesPlain();
 
-        String connectPodName = kubeClient().listPodNames(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).stream()
+        String connectPodName = kubeClient(INFRA_NAMESPACE).listPodNamesInSpecificNamespace(INFRA_NAMESPACE, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).stream()
                 .filter(it -> it.contains(connectClusterName)).collect(Collectors.toList()).get(0);
-        PodUtils.waitUntilMessageIsInPodLogs(connectPodName, "Received message with key 'null' and value '99'");
+        PodUtils.waitUntilMessageIsInPodLogs(INFRA_NAMESPACE, connectPodName, "Received message with key 'null' and value '99'");
     }
 
     @OpenShiftOnly
@@ -305,7 +304,7 @@ class ConnectBuilderST extends AbstractST {
 
         kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().inNamespace(INFRA_NAMESPACE).create(imageStream);
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterTest, INFRA_NAMESPACE, 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterTest, INFRA_NAMESPACE, connectClusterTest, 1, false)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -354,7 +353,7 @@ class ConnectBuilderST extends AbstractST {
 
         String kafkaClientsPodName = kubeClient().listPodsByPrefixInName(kafkaClientsName).get(0).getMetadata().getName();
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, INFRA_NAMESPACE, 1, true)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, INFRA_NAMESPACE, connectClusterName, 1, true)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -435,7 +434,7 @@ class ConnectBuilderST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(INFRA_NAMESPACE, topicName).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, INFRA_NAMESPACE, 1, false)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, INFRA_NAMESPACE, connectClusterName, 1, false)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -494,7 +493,7 @@ class ConnectBuilderST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(INFRA_NAMESPACE, topicName).build(),
-            KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, INFRA_NAMESPACE, 1, false)
+            KafkaConnectTemplates.kafkaConnect(extensionContext, connectClusterName, INFRA_NAMESPACE, connectClusterName, 1, false)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -547,10 +546,8 @@ class ConnectBuilderST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        install.unInstall();
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+        clusterOperator.unInstall();
+        clusterOperator = SetupClusterOperator.defaultInstallation()
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();

@@ -53,12 +53,12 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
 @ParallelSuite
-class HttpBridgeKafkaExternalListenersST extends AbstractST {
+public class HttpBridgeKafkaExternalListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeKafkaExternalListenersST.class);
     private static final String BRIDGE_EXTERNAL_SERVICE =  "shared-http-bridge-external-service";
-    private static final String NAMESPACE = Constants.BRIDGE_KAFKA_EXTERNAL_LISTENER_NAMESPACE;
 
+    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(HttpBridgeKafkaExternalListenersST.class.getSimpleName()).stream().findFirst().get();
     private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
     private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -127,7 +127,7 @@ class HttpBridgeKafkaExternalListenersST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editMetadata()
-                .withNamespace(NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -156,15 +156,13 @@ class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
             .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
-            .withDelayMs(1000)
-            .withPollInterval(1000)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(namespace)
             .build();
 
         // Create topic
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName)
             .editMetadata()
-                .withNamespace(NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .build());
 
@@ -172,25 +170,25 @@ class HttpBridgeKafkaExternalListenersST extends AbstractST {
         if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
             resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, weirdUserName)
                 .editMetadata()
-                    .withNamespace(NAMESPACE)
+                    .withNamespace(namespace)
                 .endMetadata()
                 .build());
         } else {
             resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(clusterName, weirdUserName)
                 .editMetadata()
-                    .withNamespace(NAMESPACE)
+                    .withNamespace(namespace)
                 .endMetadata()
                 .build());
         }
 
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(NAMESPACE, true, kafkaClientsName).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespace, true, kafkaClientsName).build());
 
         // Deploy http bridge
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(clusterName, KafkaResources.tlsBootstrapAddress(clusterName), 1)
                 .editMetadata()
-                    .withNamespace(NAMESPACE)
+                    .withNamespace(namespace)
                 .endMetadata()
                 .withNewSpecLike(spec)
                     .withBootstrapServers(KafkaResources.tlsBootstrapAddress(clusterName))
@@ -201,18 +199,18 @@ class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .endSpec()
             .build());
 
-        final Service service = KafkaBridgeUtils.createBridgeNodePortService(clusterName, NAMESPACE, BRIDGE_EXTERNAL_SERVICE);
-        ServiceResource.createServiceResource(extensionContext, service, NAMESPACE);
+        final Service service = KafkaBridgeUtils.createBridgeNodePortService(clusterName, namespace, BRIDGE_EXTERNAL_SERVICE);
+        ServiceResource.createServiceResource(extensionContext, service, namespace);
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge()
             .editMetadata()
-                .withNamespace(NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .build());
 
         final String kafkaProducerExternalName = "kafka-producer-external" + new Random().nextInt(Integer.MAX_VALUE);
 
-        final List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(NAMESPACE).withName(clusterName).get().getStatus().getListeners();
+        final List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getListeners();
         final String externalBootstrapServers = listenerStatusList.stream().filter(listener -> listener.getType().equals(Constants.EXTERNAL_LISTENER_DEFAULT_NAME))
             .findFirst()
             .orElseThrow(RuntimeException::new)
@@ -221,7 +219,7 @@ class HttpBridgeKafkaExternalListenersST extends AbstractST {
         final KafkaBasicExampleClients externalKafkaProducer = new KafkaBasicExampleClients.Builder()
             .withProducerName(kafkaProducerExternalName)
             .withBootstrapAddress(externalBootstrapServers)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(namespace)
             .withTopicName(topicName)
             .withMessageCount(100)
             .build();
@@ -234,11 +232,11 @@ class HttpBridgeKafkaExternalListenersST extends AbstractST {
             resourceManager.createResource(extensionContext, externalKafkaProducer.producerScramShaStrimzi(clusterName, weirdUserName).build());
         }
 
-        ClientUtils.waitForClientSuccess(kafkaProducerExternalName, NAMESPACE, 100);
+        ClientUtils.waitForClientSuccess(kafkaProducerExternalName, namespace, MESSAGE_COUNT);
 
         // delete kafka producer job
-        JobUtils.deleteJobWithWait(NAMESPACE, kafkaProducerExternalName);
+        JobUtils.deleteJobWithWait(namespace, kafkaProducerExternalName);
 
-        ClientUtils.waitForClientSuccess(clusterName + "-" + consumerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(clusterName + "-" + consumerName, namespace, MESSAGE_COUNT);
     }
 }

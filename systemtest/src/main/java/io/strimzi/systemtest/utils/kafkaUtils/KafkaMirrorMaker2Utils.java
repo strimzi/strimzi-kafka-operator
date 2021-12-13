@@ -49,6 +49,10 @@ public class KafkaMirrorMaker2Utils {
         return waitForKafkaMirrorMaker2Status(clusterName, Ready);
     }
 
+    public static boolean waitForKafkaMirrorMaker2NotReady(final String namespaceName, String clusterName) {
+        return waitForKafkaMirrorMaker2Status(namespaceName, clusterName, NotReady);
+    }
+
     public static boolean waitForKafkaMirrorMaker2NotReady(String clusterName) {
         return waitForKafkaMirrorMaker2Status(clusterName, NotReady);
     }

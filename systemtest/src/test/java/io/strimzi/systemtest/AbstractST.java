@@ -15,7 +15,8 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
-import io.strimzi.systemtest.parallel.ParallelSuiteController;
+import io.strimzi.systemtest.parallel.TestSuiteNamespaceManager;
+import io.strimzi.systemtest.parallel.SuiteThreadController;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
@@ -78,7 +79,9 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
-    protected SetupClusterOperator install;
+    protected final TestSuiteNamespaceManager testSuiteNamespaceManager = TestSuiteNamespaceManager.getInstance();
+    private final SuiteThreadController parallelSuiteController = SuiteThreadController.getInstance();
+    protected SetupClusterOperator clusterOperator;
     protected OlmResource olmResource;
     protected KubeClusterResource cluster;
     protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
@@ -86,6 +89,8 @@ public abstract class AbstractST implements TestSeparator {
 
     // {thread-safe} this lock ensures that no race-condition happen in @BeforeAll part
     private static final Object BEFORE_ALL_LOCK = new Object();
+    // {thread-safe} this lock ensures that no race-condition happen in @AfterALl part in deletion of namespaces
+    private static final Object AFTER_ALL_LOCK = new Object();
     // {thread-safe} this needs to be static because when more threads spawns diff. TestSuites it might produce race conditions
     private static final Object LOCK = new Object();
 
@@ -543,25 +548,37 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    protected synchronized void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
-        if (!Environment.SKIP_TEARDOWN) {
-            ResourceManager.getInstance().deleteResources(extensionContext);
-        }
+    // TODO doc...
+    private final void afterAllMustExecute(ExtensionContext extensionContext) {
         if (StUtils.isParallelSuite(extensionContext)) {
-            ParallelSuiteController.removeParallelSuite(extensionContext);
+            parallelSuiteController.removeParallelSuite(extensionContext);
         }
 
+        if (StUtils.isIsolatedSuite(extensionContext)) {
+            parallelSuiteController.unLockIsolatedSuite();
+        }
         // 1st case = contract that we always change configuration of CO when we annotate suite to 'isolated' and therefore
         // we need to rollback to default configuration, which most of the suites use.
         // ----
         // 2nd case = transition from if previous suite is @IsolatedSuite and now @ParallelSuite is running we must do
         // additional check that configuration is in default
-        if (install != null && !SetupClusterOperator.defaultInstallation().createInstallation().equals(install)) {
+        LOGGER.error(String.join("", Collections.nCopies(76, "=")));
+        LOGGER.error(!SetupClusterOperator.defaultInstallation().createInstallation().equals(clusterOperator));
+        if (clusterOperator != null && !SetupClusterOperator.defaultInstallation().createInstallation().equals(clusterOperator)) {
             // install configuration differs from default one we are gonna roll-back
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
-            LOGGER.info("Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.");
+            LOGGER.info("{} - Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.", extensionContext.getRequiredTestClass().getSimpleName());
+            LOGGER.info("Current Cluster Operator configuration:\n" + clusterOperator.toString());
+            LOGGER.info("Default Cluster Operator configuration:\n" + SetupClusterOperator.defaultInstallation().createInstallation().toString());
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
-            install = install.rollbackToDefaultConfiguration();
+            clusterOperator = clusterOperator.rollbackToDefaultConfiguration();
+        }
+    }
+
+    protected synchronized void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
+        if (!Environment.SKIP_TEARDOWN) {
+            ResourceManager.getInstance().deleteResources(extensionContext);
+            testSuiteNamespaceManager.deleteAdditionalNamespaces(extensionContext);
         }
     }
 
@@ -614,6 +631,28 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
+    private final void beforeAllMustExecute(ExtensionContext extensionContext) {
+        try {
+        } finally {
+            // ensures that only one thread will modify @ParallelSuiteController and race-condition could not happen
+            synchronized (BEFORE_ALL_LOCK) {
+                // (optional) create additional namespace/namespaces for test suites if needed
+                testSuiteNamespaceManager.createAdditionalNamespaces(extensionContext);
+
+                if (StUtils.isParallelSuite(extensionContext)) {
+                    parallelSuiteController.addParallelSuite(extensionContext);
+                }
+            }
+            if (StUtils.isIsolatedSuite(extensionContext)) {
+                cluster.setNamespace(Constants.INFRA_NAMESPACE);
+                // wait for parallel suites are done
+                parallelSuiteController.waitUntilZeroParallelSuites(extensionContext);
+                // wait for isolated suites
+                parallelSuiteController.waitUntilEntryIsOpen(extensionContext);
+            }
+        }
+    }
+
     /**
      * BeforeAllMayOverride, is a method, which gives you option to override @BeforeAll in sub-classes and
      * ensure that this is also executed if you call it with super.beforeAllMayOverride(). You can also skip it and
@@ -622,18 +661,7 @@ public abstract class AbstractST implements TestSeparator {
      */
     protected void beforeAllMayOverride(ExtensionContext extensionContext) {
         cluster = KubeClusterResource.getInstance();
-        install = BeforeAllOnce.getInstall();
-
-        // ensures that only one thread will modify @ParallelSuiteController and race-condition could not happen
-        synchronized (BEFORE_ALL_LOCK) {
-            if (StUtils.isParallelSuite(extensionContext)) {
-                ParallelSuiteController.addParallelSuite(extensionContext);
-            }
-            if (StUtils.isIsolatedSuite(extensionContext)) {
-                cluster.setNamespace(Constants.INFRA_NAMESPACE);
-                ParallelSuiteController.waitUntilZeroParallelSuites();
-            }
-        }
+        clusterOperator = BeforeAllOnce.getClusterOperator();
     }
 
     @BeforeEach
@@ -648,6 +676,7 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
         beforeAllMayOverride(extensionContext);
+        beforeAllMustExecute(extensionContext);
     }
 
     @AfterEach
@@ -662,5 +691,6 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [AFTER ALL] has been called", this.getClass().getName());
         afterAllMayOverride(extensionContext);
+        afterAllMustExecute(extensionContext);
     }
 }

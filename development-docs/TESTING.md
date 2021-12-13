@@ -82,7 +82,7 @@ void setupOnce(ExtensionContext extensionContext) {
     sharedExtensionContext = extensionContext.getRoot();
     
     // setup cluster operator before all suites only once
-    install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+    clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
         .withExtensionContext(sharedExtensionContext)
         .withNamespace(Constants.INFRA_NAMESPACE)
         .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
@@ -104,8 +104,8 @@ Here is an example how to make change of Cluster Operator configuration:
 ```java
 @BeforeAll
 void setup(ExtensionContext extensionContext){
-    install.unInstall(); // un-install current Cluster Operator
-    install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+    clusterOperator.unInstall(); // un-install current Cluster Operator
+    clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
         // build your new configuration using chain (fluent) methods
         .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
         .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)

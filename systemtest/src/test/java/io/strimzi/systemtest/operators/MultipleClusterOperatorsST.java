@@ -231,7 +231,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         List<EnvVar> envVarList = new ArrayList<>();
         envVarList.add(selectorEnv);
 
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(coNamespace)
             .withClusterOperatorName(coName)
@@ -246,6 +246,6 @@ public class MultipleClusterOperatorsST extends AbstractST {
     void setup() {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        install.unInstall();
+        clusterOperator.unInstall();
     }
 }

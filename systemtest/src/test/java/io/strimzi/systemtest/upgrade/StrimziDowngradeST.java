@@ -10,6 +10,7 @@ import io.strimzi.test.annotations.IsolatedSuite;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -39,7 +40,6 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
     @MethodSource("loadJsonDowngradeData")
     @Tag(INTERNAL_CLIENTS_USED)
     void testDowngradeStrimziVersion(String from, String to, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
-
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
 
@@ -84,8 +84,8 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         cluster.deleteNamespaces();
     }
 
-    // There is no value of having teardown logic for class resources due to the fact that
-    // CO was deployed by method StrimziUpgradeST.copyModifyApply() and removed by method StrimziUpgradeST.deleteInstalledYamls()
-    @Override
-    protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception { }
+    @AfterAll
+    void tearDown() {
+        clusterOperator.unInstall();
+    }
 }

@@ -410,9 +410,9 @@ class HttpBridgeST extends AbstractST {
     void createClassResources(ExtensionContext extensionContext) throws InterruptedException {
         final String namespaceToWatch = Environment.isNamespaceRbacScope() ? INFRA_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
         // un-install old cluster operator
-        install.unInstall();
+        clusterOperator.unInstall();
         // install new one with branch new configuration
-        install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(namespaceToWatch)

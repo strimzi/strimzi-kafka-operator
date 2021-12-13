@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -29,7 +29,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.IOException;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -39,13 +38,15 @@ import static org.hamcrest.CoreMatchers.is;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-@IsolatedSuite
+@ParallelSuite
 public class OpaIntegrationST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(OpaIntegrationST.class);
     private static final String OPA_SUPERUSER = "arnost";
     private static final String OPA_GOOD_USER = "good-user";
     private static final String OPA_BAD_USER = "bad-user";
     private static final String CLUSTER_NAME = "opa-cluster";
+
+    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(OpaIntegrationST.class.getSimpleName()).stream().findFirst().get();
 
     @ParallelTest
     void testOpaAuthorization(ExtensionContext extensionContext) {
@@ -55,25 +56,25 @@ public class OpaIntegrationST extends AbstractST {
         final String kafkaClientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
 
-        KafkaUser goodUser = KafkaUserTemplates.tlsUser(INFRA_NAMESPACE, CLUSTER_NAME, OPA_GOOD_USER).build();
-        KafkaUser badUser = KafkaUserTemplates.tlsUser(INFRA_NAMESPACE, CLUSTER_NAME, OPA_BAD_USER).build();
+        KafkaUser goodUser = KafkaUserTemplates.tlsUser(namespace, CLUSTER_NAME, OPA_GOOD_USER).build();
+        KafkaUser badUser = KafkaUserTemplates.tlsUser(namespace, CLUSTER_NAME, OPA_BAD_USER).build();
 
         resourceManager.createResource(extensionContext, goodUser);
         resourceManager.createResource(extensionContext, badUser);
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsDeploymentName, false, goodUser, badUser)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .build());
 
-        final String clientsPodName = kubeClient(INFRA_NAMESPACE).listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsDeploymentName).get(0).getMetadata().getName();
+        final String clientsPodName = kubeClient(namespace).listPodsByPrefixInName(namespace, kafkaClientsDeploymentName).get(0).getMetadata().getName();
 
         LOGGER.info("Checking KafkaUser {} that is able to send and receive messages to/from topic '{}'", OPA_GOOD_USER, topicName);
 
         // Setup kafka client
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(topicName)
-            .withNamespaceName(INFRA_NAMESPACE)
+            .withNamespaceName(namespace)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(OPA_GOOD_USER)
             .withMessageCount(MESSAGE_COUNT)
@@ -102,18 +103,18 @@ public class OpaIntegrationST extends AbstractST {
         final String consumerGroupName = "consumer-group-name-2";
         final String kafkaClientsDeploymentName = clusterName + "-" + Constants.KAFKA_CLIENTS;
 
-        KafkaUser superuser = KafkaUserTemplates.tlsUser(INFRA_NAMESPACE, CLUSTER_NAME, OPA_SUPERUSER).build();
+        KafkaUser superuser = KafkaUserTemplates.tlsUser(namespace, CLUSTER_NAME, OPA_SUPERUSER).build();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, topicName, INFRA_NAMESPACE).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, topicName, namespace).build());
         resourceManager.createResource(extensionContext, superuser);
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsDeploymentName, false, superuser)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .build());
 
         // Deploy client pod with custom certificates and collect messages from internal TLS listener
-        String clientsPodName = kubeClient(INFRA_NAMESPACE).listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsDeploymentName).get(0).getMetadata().getName();
+        String clientsPodName = kubeClient(namespace).listPodsByPrefixInName(namespace, kafkaClientsDeploymentName).get(0).getMetadata().getName();
 
 
         LOGGER.info("Checking KafkaUser {} that is able to send and receive messages to/from topic '{}'", OPA_GOOD_USER, topicName);
@@ -121,7 +122,7 @@ public class OpaIntegrationST extends AbstractST {
         // Setup kafka client
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(topicName)
-            .withNamespaceName(INFRA_NAMESPACE)
+            .withNamespaceName(namespace)
             .withClusterName(CLUSTER_NAME)
             .withKafkaUsername(OPA_SUPERUSER)
             .withMessageCount(MESSAGE_COUNT)
@@ -140,11 +141,11 @@ public class OpaIntegrationST extends AbstractST {
     @BeforeAll
     void setup(ExtensionContext extensionContext) throws Exception {
         // Install OPA
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", INFRA_NAMESPACE));
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", namespace));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -167,6 +168,6 @@ public class OpaIntegrationST extends AbstractST {
     @AfterAll
     void teardown() throws IOException {
         // Delete OPA
-        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", INFRA_NAMESPACE));
+        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", namespace));
     }
 }
