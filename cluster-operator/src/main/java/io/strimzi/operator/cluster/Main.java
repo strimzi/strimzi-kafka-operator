@@ -61,8 +61,8 @@ public class Main {
         ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());
         LOGGER.info("Cluster Operator configuration is {}", config);
 
-        String dnsCacheTtl = System.getenv("STRIMZI_DNS_CACHE_TTL") == null ? "30" : System.getenv("STRIMZI_DNS_CACHE_TTL");
-        Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
+        // setting DNS cache TTL
+        Security.setProperty("networkaddress.cache.ttl", String.valueOf(config.getDnsCacheTtlSec()));
 
         //Setup Micrometer metrics options
         VertxOptions options = new VertxOptions().setMetricsOptions(

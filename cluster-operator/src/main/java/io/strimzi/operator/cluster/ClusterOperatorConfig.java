@@ -73,12 +73,14 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE";
     public static final String STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE = "STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE";
     public static final String STRIMZI_DEFAULT_MAVEN_BUILDER = "STRIMZI_DEFAULT_MAVEN_BUILDER";
+    public static final String STRIMZI_DNS_CACHE_TTL = "STRIMZI_DNS_CACHE_TTL";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
     public static final int DEFAULT_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = 10_000;
     public static final long DEFAULT_CONNECT_BUILD_TIMEOUT_MS = 300_000;
     public static final int DEFAULT_STRIMZI_OPERATIONS_THREAD_POOL_SIZE = 10;
+    public static final int DEFAULT_STRIMZI_DNS_CACHE_TTL = 30;
 
     private final Set<String> namespaces;
     private final long reconciliationIntervalMs;
@@ -96,6 +98,7 @@ public class ClusterOperatorConfig {
     private final Labels customResourceSelector;
     private final FeatureGates featureGates;
     private final int operationsThreadPoolSize;
+    private final int dnsCacheTtlSec;
 
     /**
      * Constructor
@@ -116,6 +119,7 @@ public class ClusterOperatorConfig {
      * @param featureGates Configuration string with feature gates settings
      * @param operationsThreadPoolSize The size of the thread pool used for various operations
      * @param zkAdminSessionTimeoutMs Session timeout for the Zookeeper Admin client used in ZK scaling operations
+     * @param dnsCacheTtlSec Number of seconds to cache a successful DNS name lookup
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     public ClusterOperatorConfig(
@@ -134,7 +138,8 @@ public class ClusterOperatorConfig {
             Labels customResourceSelector,
             String featureGates,
             int operationsThreadPoolSize,
-            int zkAdminSessionTimeoutMs) {
+            int zkAdminSessionTimeoutMs,
+            int dnsCacheTtlSec) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
@@ -151,6 +156,7 @@ public class ClusterOperatorConfig {
         this.featureGates = new FeatureGates(featureGates);
         this.operationsThreadPoolSize = operationsThreadPoolSize;
         this.zkAdminSessionTimeoutMs = zkAdminSessionTimeoutMs;
+        this.dnsCacheTtlSec = dnsCacheTtlSec;
     }
 
     /**
@@ -201,6 +207,7 @@ public class ClusterOperatorConfig {
         String featureGates = map.getOrDefault(STRIMZI_FEATURE_GATES, "");
         int operationsThreadPoolSize = parseInt(map.get(STRIMZI_OPERATIONS_THREAD_POOL_SIZE), DEFAULT_STRIMZI_OPERATIONS_THREAD_POOL_SIZE);
         int zkAdminSessionTimeout = parseInt(map.get(STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS), DEFAULT_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS);
+        int dnsCacheTtlSec = parseInt(map.get(STRIMZI_DNS_CACHE_TTL), DEFAULT_STRIMZI_DNS_CACHE_TTL);
 
         return new ClusterOperatorConfig(
                 namespaces,
@@ -218,7 +225,8 @@ public class ClusterOperatorConfig {
                 customResourceSelector,
                 featureGates,
                 operationsThreadPoolSize,
-                zkAdminSessionTimeout);
+                zkAdminSessionTimeout,
+                dnsCacheTtlSec);
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {
@@ -520,6 +528,13 @@ public class ClusterOperatorConfig {
         return operationsThreadPoolSize;
     }
 
+    /**
+     * @return Number of seconds to cache a successful DNS name lookup
+     */
+    public int getDnsCacheTtlSec() {
+        return dnsCacheTtlSec;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -537,7 +552,8 @@ public class ClusterOperatorConfig {
                 ",rbacScope=" + rbacScope +
                 ",customResourceSelector=" + customResourceSelector +
                 ",featureGates=" + featureGates +
-                ",zkAdminSessionTimeoutMS=" + zkAdminSessionTimeoutMs +
+                ",zkAdminSessionTimeoutMs=" + zkAdminSessionTimeoutMs +
+                ",dnsCacheTtlSec=" + dnsCacheTtlSec +
                 ")";
     }
 }
