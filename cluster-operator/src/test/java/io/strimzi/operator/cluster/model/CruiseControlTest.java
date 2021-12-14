@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
@@ -377,6 +378,45 @@ public class CruiseControlTest {
         containers = dep.getSpec().getTemplate().getSpec().getContainers();
         ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
         assertThat(ccContainer.getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
+    }
+
+    @ParallelTest
+    public void testCpuUtilization() {
+        Kafka k = createKafka(cruiseControlSpec);
+        ResourceRequirements resources = new ResourceRequirementsBuilder()
+                .withRequests(singletonMap("cpu", new Quantity("800m"))) //800m = 80%
+                .build();
+        k.getSpec().getKafka().setResources(resources);
+
+        Capacity generatedCapacity = new Capacity(k.getSpec());
+        assertThat(getCapacityConfigurationFromEnvVar(k, ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY), is(Integer.toString(generatedCapacity.getCpuUtilization())));
+        assertThat(getCapacityConfigurationFromEnvVar(k, ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY), is(Integer.toString(80)));
+
+        // default value
+        k.getSpec().getKafka().setResources(null);
+        generatedCapacity = new Capacity(k.getSpec());
+        assertThat(getCapacityConfigurationFromEnvVar(k, ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY), is(Integer.toString(generatedCapacity.getCpuUtilization())));
+        assertThat(getCapacityConfigurationFromEnvVar(k, ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY), is(Integer.toString(DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY)));
+
+        // value without m
+        k = createKafka(cruiseControlSpec);
+        resources = new ResourceRequirementsBuilder()
+                .withRequests(singletonMap("cpu", new Quantity("2")))
+                .build();
+        k.getSpec().getKafka().setResources(resources);
+        generatedCapacity = new Capacity(k.getSpec());
+        assertThat(getCapacityConfigurationFromEnvVar(k, ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY), is(Integer.toString(generatedCapacity.getCpuUtilization())));
+        assertThat(getCapacityConfigurationFromEnvVar(k, ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY), is(Integer.toString(200)));
+
+        // weird value
+        resources = new ResourceRequirementsBuilder()
+                .withRequests(singletonMap("cpu", new Quantity("321m")))
+                .build();
+        k.getSpec().getKafka().setResources(resources);
+        generatedCapacity = new Capacity(k.getSpec());
+        assertThat(getCapacityConfigurationFromEnvVar(k, ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY), is(Integer.toString(generatedCapacity.getCpuUtilization())));
+        assertThat(getCapacityConfigurationFromEnvVar(k, ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY), is(Integer.toString(32)));
+        System.out.println();
     }
 
     @ParallelTest

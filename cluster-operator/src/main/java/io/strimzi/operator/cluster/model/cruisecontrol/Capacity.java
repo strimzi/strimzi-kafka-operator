@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.operator.cluster.operator.resource.Quantities;
 
 import java.util.List;
 
@@ -31,7 +32,9 @@ public class Capacity {
         BrokerCapacity bc = spec.getCruiseControl().getBrokerCapacity();
 
         this.diskMiB = bc != null && bc.getDisk() != null ? getSizeInMiB(bc.getDisk()) : generateDiskCapacity(spec.getKafka().getStorage());
-        this.cpuUtilization = bc != null && bc.getCpuUtilization() != null ? bc.getCpuUtilization() : DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY;
+        this.cpuUtilization = bc != null && bc.getCpuUtilization() != null ? bc.getCpuUtilization() :
+                (spec.getKafka().getResources() == null || spec.getKafka().getResources().getRequests() == null ||
+                        spec.getKafka().getResources().getRequests().get("cpu") == null) ? DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY : Quantities.parseCpuAsMilliCpus(spec.getKafka().getResources().getRequests().get("cpu").toString()) / 10;
         this.inboundNetworkKiBPerSecond = bc != null && bc.getInboundNetwork() != null ? getThroughputInKiB(bc.getInboundNetwork()) : DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
         this.outboundNetworkKiBPerSecond = bc != null && bc.getOutboundNetwork() != null ? getThroughputInKiB(bc.getOutboundNetwork()) : DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
     }
