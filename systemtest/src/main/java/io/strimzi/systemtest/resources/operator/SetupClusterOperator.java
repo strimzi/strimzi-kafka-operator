@@ -136,7 +136,15 @@ public class SetupClusterOperator {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null;
     }
 
-    // TODO: javadoc...
+    /**
+     * Auxiliary method, which provides default Cluster Operator instance. By default we mean using in all cases
+     * @code{BeforeAllOnce.getSharedExtensionContext())} and other attributes are dependent base on the installation type
+     * (i.e., Olm, Helm, Bundle) and RBAC setup (i.e., Cluster, Namespace). This method used across whole systemtest
+     * module, with combination of {@link #rollbackToDefaultConfiguration()} or in @IsolatedSuites where we are forced
+     * to build more comprehensive deployment of CLuster Operator.
+     *
+     * @return default Cluster Operator builder
+     */
     public SetupClusterOperatorBuilder defaultInstallation() {
         // default initialization
         SetupClusterOperatorBuilder clusterOperatorBuilder = new SetupClusterOperator.SetupClusterOperatorBuilder()
@@ -637,8 +645,8 @@ public class SetupClusterOperator {
      * Auxiliary method for retrieve namespace where Cluster Operator installed.
      *
      * @return return value may vary on following:
-     *    1. Olm installation       :   return KubeClusterResource.getInstance().getDefaultOlmNamespace() (based on platform)
-     *    2. Helm & installation    :   return @code{namespaceInstallTo}
+     *    1. Olm installation           :   return KubeClusterResource.getInstance().getDefaultOlmNamespace() (based on platform)
+     *    2. Helm &amp; installation    :   return @code{namespaceInstallTo}
      */
     public String getDeploymentNamespace() {
         return namespaceInstallTo;
