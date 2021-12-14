@@ -536,7 +536,6 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    // TODO doc...
     private final void afterAllMustExecute(ExtensionContext extensionContext) {
         if (StUtils.isParallelSuite(extensionContext)) {
             parallelSuiteController.removeParallelSuite(extensionContext);
@@ -550,8 +549,6 @@ public abstract class AbstractST implements TestSeparator {
         // ----
         // 2nd case = transition from if previous suite is @IsolatedSuite and now @ParallelSuite is running we must do
         // additional check that configuration is in default
-        LOGGER.error(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.error(!clusterOperator.defaultInstallation().createInstallation().equals(clusterOperator));
         if (clusterOperator != null && !clusterOperator.defaultInstallation().createInstallation().equals(clusterOperator)) {
             // install configuration differs from default one we are gonna roll-back
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));

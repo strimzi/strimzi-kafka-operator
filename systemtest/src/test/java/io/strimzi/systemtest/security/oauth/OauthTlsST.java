@@ -139,10 +139,7 @@ public class OauthTlsST extends OauthAbstractST {
         String defaultKafkaClientsPodName =
                 ResourceManager.kubeClient().listPodsByPrefixInName(INFRA_NAMESPACE, oauthClusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, oauthClusterName, 1)
-            .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
-            .endMetadata()
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, clusterName, INFRA_NAMESPACE, oauthClusterName, 1)
             .editSpec()
                 .withConfig(connectorConfig)
                 .addToConfig("key.converter.schemas.enable", false)

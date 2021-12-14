@@ -152,12 +152,11 @@ public class SetupClusterOperator {
 
         // RBAC set to `NAMESPACE`
         if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
-            clusterOperatorBuilder = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                .withNamespace(Constants.INFRA_NAMESPACE);
+            clusterOperatorBuilder = clusterOperatorBuilder.withNamespace(Constants.INFRA_NAMESPACE);
             return clusterOperatorBuilder;
         // OLM cluster wide must use KubeClusterResource.getInstance().getDefaultOlmNamespace() namespace
         } else if (Environment.isOlmInstall() && IS_OLM_CLUSTER_WIDE.test(this.namespaceInstallTo)) {
-            clusterOperatorBuilder = new SetupClusterOperator.SetupClusterOperatorBuilder()
+            clusterOperatorBuilder = clusterOperatorBuilder
                 .withNamespace(cluster.getDefaultOlmNamespace())
                 .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES);
             return clusterOperatorBuilder;

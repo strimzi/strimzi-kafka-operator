@@ -11,11 +11,9 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -192,10 +190,9 @@ class AllNamespaceST extends AbstractNamespaceST {
         LOGGER.info("Creating resources before the test class");
 
         clusterOperator.unInstall();
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+        clusterOperator = clusterOperator.defaultInstallation()
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-            .withBindingsNamespaces(Arrays.asList(SECOND_NAMESPACE, THIRD_NAMESPACE))
+            .withBindingsNamespaces(Arrays.asList(Constants.INFRA_NAMESPACE, SECOND_NAMESPACE, THIRD_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
