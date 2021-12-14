@@ -232,10 +232,13 @@ public class MultipleListenersST extends AbstractST {
                     // using internal clients
                     if (isTlsEnabled) {
                         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName + "-tls",
-                            listener.getName(), kafkaUserInstance).build());
+                            listener.getName(), kafkaUserInstance)
+                            .editMetadata()
+                                .withNamespace(namespace)
+                            .endMetadata().build());
 
                         final String kafkaClientsTlsPodName =
-                            ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName + "-tls").get(0).getMetadata().getName();
+                            ResourceManager.kubeClient().listPodsByPrefixInName(namespace, kafkaClientsName + "-tls").get(0).getMetadata().getName();
 
                         InternalKafkaClient internalTlsKafkaClient = new InternalKafkaClient.Builder()
                             .withUsingPodName(kafkaClientsTlsPodName)
@@ -252,9 +255,13 @@ public class MultipleListenersST extends AbstractST {
                         // verify phase
                         ClientUtils.waitUntilProducerAndConsumerSuccessfullySendAndReceiveMessages(extensionContext, internalTlsKafkaClient);
                     } else {
-                        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName + "-plain").build());
+                        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName + "-plain")
+                            .editMetadata()
+                                .withNamespace(namespace)
+                            .endMetadata()
+                            .build());
                         final String kafkaClientsPlainPodName =
-                            ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName + "-plain").get(0).getMetadata().getName();
+                            ResourceManager.kubeClient().listPodsByPrefixInName(namespace, kafkaClientsName + "-plain").get(0).getMetadata().getName();
 
                         InternalKafkaClient internalPlainKafkaClient = new InternalKafkaClient.Builder()
                             .withUsingPodName(kafkaClientsPlainPodName)

@@ -283,7 +283,7 @@ class RollingUpdateST extends AbstractST {
         KafkaUser user = KafkaUserTemplates.tlsUser(namespaceName, clusterName, userName).build();
         resourceManager.createResource(extensionContext, user);
 
-        testDockerImagesForKafkaCluster(clusterName, INFRA_NAMESPACE, namespaceName, 3, 1, false);
+        testDockerImagesForKafkaCluster(clusterName, clusterOperator.getDeploymentNamespace(), namespaceName, 3, 1, false);
         // kafka cluster already deployed
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", clusterName);

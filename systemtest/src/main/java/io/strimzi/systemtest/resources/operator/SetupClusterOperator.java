@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -79,6 +80,8 @@ public class SetupClusterOperator {
 
     private String testClassName;
     private String testMethodName;
+
+    private static final Predicate<String> IS_OLM_CLUSTER_WIDE = namespaceToWatch -> namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES) || namespaceToWatch.split(",").length > 1;
 
     public SetupClusterOperator() {}
     public SetupClusterOperator(SetupClusterOperatorBuilder builder) {
@@ -133,14 +136,26 @@ public class SetupClusterOperator {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null;
     }
 
-    public static SetupClusterOperatorBuilder defaultInstallation() {
+    // TODO: javadoc...
+    public SetupClusterOperatorBuilder defaultInstallation() {
+        // default initialization
+        SetupClusterOperatorBuilder clusterOperatorBuilder = new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext());
+
+        // RBAC set to `NAMESPACE`
         if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
-            return new SetupClusterOperator.SetupClusterOperatorBuilder()
-                .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            clusterOperatorBuilder = new SetupClusterOperator.SetupClusterOperatorBuilder()
                 .withNamespace(Constants.INFRA_NAMESPACE);
+            return clusterOperatorBuilder;
+        // OLM cluster wide must use KubeClusterResource.getInstance().getDefaultOlmNamespace() namespace
+        } else if (Environment.isOlmInstall() && IS_OLM_CLUSTER_WIDE.test(this.namespaceInstallTo)) {
+            clusterOperatorBuilder = new SetupClusterOperator.SetupClusterOperatorBuilder()
+                .withNamespace(cluster.getDefaultOlmNamespace())
+                .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES);
+            return clusterOperatorBuilder;
         }
-        return new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+        // otherwise
+        return clusterOperatorBuilder
             .withNamespace(Constants.INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES);
     }
@@ -160,8 +175,8 @@ public class SetupClusterOperator {
 
         if (Environment.isOlmInstall()) {
             LOGGER.info("Going to install ClusterOperator via OLM");
-            // cluster-wide olm co-operator
-            if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
+            // cluster-wide olm co-operator or multi-namespaces in once we also deploy cluster-wide
+            if (IS_OLM_CLUSTER_WIDE.test(namespaceToWatch)) {
                 // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
                 if (!Environment.isNamespaceRbacScope()) {
                     if (isClusterOperatorNamespaceNotCreated()) {
@@ -171,10 +186,11 @@ public class SetupClusterOperator {
                         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
                     }
                     createClusterRoleBindings();
-                    olmResource = new OlmResource(cluster.getDefaultOlmNamespace());
+                    namespaceInstallTo = cluster.getDefaultOlmNamespace();
+                    olmResource = new OlmResource(namespaceInstallTo);
                     olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
                 }
-                // single-namespace olm co-operator
+            // single-namespace olm co-operator
             } else {
                 if (isClusterOperatorNamespaceNotCreated()) {
                     cluster.setNamespace(namespaceInstallTo);
@@ -617,4 +633,14 @@ public class SetupClusterOperator {
             '}';
     }
 
+    /**
+     * Auxiliary method for retrieve namespace where Cluster Operator installed.
+     *
+     * @return return value may vary on following:
+     *    1. Olm installation       :   return KubeClusterResource.getInstance().getDefaultOlmNamespace() (based on platform)
+     *    2. Helm & installation    :   return @code{namespaceInstallTo}
+     */
+    public String getDeploymentNamespace() {
+        return namespaceInstallTo;
+    }
 }

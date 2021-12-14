@@ -36,7 +36,6 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -1386,7 +1385,7 @@ class ConnectST extends AbstractST {
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         clusterOperator.unInstall();
-        clusterOperator = SetupClusterOperator.defaultInstallation()
+        clusterOperator = clusterOperator.defaultInstallation()
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();

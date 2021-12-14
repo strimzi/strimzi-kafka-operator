@@ -18,7 +18,6 @@ import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.parallel.TestSuiteNamespaceManager;
 import io.strimzi.systemtest.parallel.SuiteThreadController;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -28,7 +27,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.interfaces.TestSeparator;
-import io.strimzi.test.logs.CollectorElement;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
@@ -534,17 +532,7 @@ public abstract class AbstractST implements TestSeparator {
     protected void afterEachMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(extensionContext);
-
-            // if 'parallel namespace test' we are gonna delete namespace
-            if (StUtils.isParallelNamespaceTest(extensionContext)) {
-                // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
-                if (!Environment.isNamespaceRbacScope()) {
-                    final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-
-                    LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, extensionContext.getDisplayName());
-                    cluster.deleteNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName()), namespaceToDelete);
-                }
-            }
+            testSuiteNamespaceManager.deleteParallelNamespace(extensionContext);
         }
     }
 
@@ -563,13 +551,13 @@ public abstract class AbstractST implements TestSeparator {
         // 2nd case = transition from if previous suite is @IsolatedSuite and now @ParallelSuite is running we must do
         // additional check that configuration is in default
         LOGGER.error(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.error(!SetupClusterOperator.defaultInstallation().createInstallation().equals(clusterOperator));
-        if (clusterOperator != null && !SetupClusterOperator.defaultInstallation().createInstallation().equals(clusterOperator)) {
+        LOGGER.error(!clusterOperator.defaultInstallation().createInstallation().equals(clusterOperator));
+        if (clusterOperator != null && !clusterOperator.defaultInstallation().createInstallation().equals(clusterOperator)) {
             // install configuration differs from default one we are gonna roll-back
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
             LOGGER.info("{} - Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.", extensionContext.getRequiredTestClass().getSimpleName());
             LOGGER.info("Current Cluster Operator configuration:\n" + clusterOperator.toString());
-            LOGGER.info("Default Cluster Operator configuration:\n" + SetupClusterOperator.defaultInstallation().createInstallation().toString());
+            LOGGER.info("Default Cluster Operator configuration:\n" + clusterOperator.defaultInstallation().createInstallation().toString());
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
             clusterOperator = clusterOperator.rollbackToDefaultConfiguration();
         }
@@ -610,24 +598,7 @@ public abstract class AbstractST implements TestSeparator {
             LOGGER.debug("USERS_NAME_MAP: \n{}", mapWithTestUsers);
             LOGGER.debug("TOPIC_NAMES_MAP: \n{}", mapWithTestTopics);
             LOGGER.debug("============THIS IS CLIENTS MAP:\n{}", mapWithKafkaClientNames);
-
-            // if 'parallel namespace test' we are gonna create namespace
-            if (StUtils.isParallelNamespaceTest(extensionContext)) {
-                // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
-                if (!Environment.isNamespaceRbacScope()) {
-                    final String namespaceTestCase = "namespace-" + counterOfNamespaces.getAndIncrement();
-
-                    extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, namespaceTestCase);
-                    // create namespace by
-                    LOGGER.info("Creating namespace:{} for test case:{}", namespaceTestCase, testName);
-
-                    cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName()), namespaceTestCase);
-                    NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
-                    if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
-                        StUtils.copyImagePullSecret(namespaceTestCase);
-                    }
-                }
-            }
+            testSuiteNamespaceManager.createParallelNamespace(extensionContext);
         }
     }
 

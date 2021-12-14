@@ -148,10 +148,7 @@ class HttpBridgeTlsST extends AbstractST {
             .build());
 
         // Create Kafka user
-        KafkaUser tlsUser = KafkaUserTemplates.tlsUser(httpBridgeTlsClusterName, sharedKafkaUserName)
-            .editMetadata()
-                .withNamespace(namespace)
-            .endMetadata().build();
+        KafkaUser tlsUser = KafkaUserTemplates.tlsUser(namespace, httpBridgeTlsClusterName, sharedKafkaUserName).build();
         resourceManager.createResource(extensionContext, tlsUser);
 
         String kafkaClientsName = namespace + "-" + Constants.KAFKA_CLIENTS;

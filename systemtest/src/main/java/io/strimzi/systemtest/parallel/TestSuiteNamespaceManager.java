@@ -7,6 +7,7 @@ package io.strimzi.systemtest.parallel;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 /**
@@ -37,6 +39,7 @@ public class TestSuiteNamespaceManager {
         }
     };
 
+    private static AtomicInteger counterOfNamespaces;
     private static TestSuiteNamespaceManager instance;
 
     /**
@@ -50,6 +53,7 @@ public class TestSuiteNamespaceManager {
         if (instance == null) {
             instance = new TestSuiteNamespaceManager();
             instance.constructMapOfAdditionalNamespaces();
+            counterOfNamespaces = new AtomicInteger(0);
         }
         return instance;
     }
@@ -110,6 +114,36 @@ public class TestSuiteNamespaceManager {
         }
     }
 
+    /**
+     * In test cases, where Kafka cluster is deployed we always create another namespace. Such test case is then
+     * annotated as @ParallelNamespaceTest. This method creates from @code{extensionContext} this type of namespace
+     * and store it to the @code{KubeClusterResource} instance, which then it will be needed in the @AfterEach phase.
+     * The inverse operation to this one is implement in {@link #deleteParallelNamespace(ExtensionContext)}.
+     *
+     * @param extensionContext unifier (id), which distinguished all other test cases
+     */
+    public void createParallelNamespace(ExtensionContext extensionContext) {
+        final String testCase = extensionContext.getDisplayName();
+
+        // if 'parallel namespace test' we are gonna create namespace
+        if (StUtils.isParallelNamespaceTest(extensionContext)) {
+            // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
+            if (!Environment.isNamespaceRbacScope()) {
+                final String namespaceTestCase = "namespace-" + counterOfNamespaces.getAndIncrement();
+
+                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, namespaceTestCase);
+                // create namespace by
+                LOGGER.info("Creating namespace:{} for test case:{}", namespaceTestCase, testCase);
+
+                KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName()), namespaceTestCase);
+                NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
+                if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+                    StUtils.copyImagePullSecret(namespaceTestCase);
+                }
+            }
+        }
+    }
+
     public void deleteAdditionalNamespaces(ExtensionContext extensionContext) {
         CollectorElement collectorElement = CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
         Set<String> namespacesToDelete = KubeClusterResource.getMapWithSuiteNamespaces().get(collectorElement);
@@ -121,6 +155,24 @@ public class TestSuiteNamespaceManager {
                     KubeClusterResource.getInstance().deleteNamespace(collectorElement, ns);
                 }
             });
+        }
+    }
+
+    /**
+     * Analogically to the {@link #createParallelNamespace(ExtensionContext)}.
+     *
+     * @param extensionContext unifier (id), which distinguished all other test cases
+     */
+    public void deleteParallelNamespace(ExtensionContext extensionContext) {
+        // if 'parallel namespace test' we are gonna delete namespace
+        if (StUtils.isParallelNamespaceTest(extensionContext)) {
+            // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
+            if (!Environment.isNamespaceRbacScope()) {
+                final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+
+                LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, extensionContext.getDisplayName());
+                KubeClusterResource.getInstance().deleteNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName()), namespaceToDelete);
+            }
         }
     }
 

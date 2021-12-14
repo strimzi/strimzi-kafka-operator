@@ -91,10 +91,8 @@ public class HelmResource implements SpecificResourceType {
         // As FG is CSV, we need to escape commas for interpretation of helm installation string
         values.put("featureGates", Environment.STRIMZI_FEATURE_GATES.replaceAll(",", "\\\\,"));
         values.put("watchAnyNamespace", this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES));
-        // We need to remove CO namespace to avoid creation of roles and rolebindings multiple times in one namespace
-        // Roles will be created in installTo namespace even if it's not specified in watchNamespaces
         if (!this.namespaceToWatch.equals("*") && !this.namespaceToWatch.equals(this.namespaceInstallTo)) {
-            values.put("watchNamespaces", namespaceToWatch);
+            values.put("watchNamespaces", buildWatchNamespaces());
         }
 
         Path pathToChart = new File(HELM_CHART).toPath();
@@ -105,6 +103,23 @@ public class HelmResource implements SpecificResourceType {
         KubeClusterResource.getInstance().setNamespace(oldNamespace);
         ResourceManager.helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
         DeploymentUtils.waitForDeploymentReady(ResourceManager.getCoDeploymentName());
+    }
+
+    /**
+     * Setting watch namespace is little bit tricky in case of Helm installation. We have following options:
+     *  1. Watch only specific namespace        -   @code{namespaceToWatch}="infra-namespace"
+     *  2. Watch all namespaces at once         -   @code{namespaceToWatch}="*"
+     *  3. Watch multiple namespaces at once    -   @code{namespaceToWatch}="{infra-namespace, namespace-1, namespace2}"
+     *
+     *  In a third option we must not include namespace (reason: avoid creation of roles and role-bindings in @code{namespaceInstallTo}
+     *  namespace where Cluster Operator is installed) where the Cluster Operator is already installed. So, we are forced
+     *  to extract such namespace from @code{namespaceToWatch}, because in other installation types such as Bundle or OLM
+     *  we need to specify also the namespace where Cluster Operator is installed.
+     *
+     * @return namespaces, which watches Cluster Operator (without explicit Cluster Operator namespace @code{namespaceInstallTo}.
+     */
+    private String buildWatchNamespaces() {
+        return "{" + this.namespaceToWatch.replaceAll(",*" + namespaceInstallTo + ",*", "") + "}";
     }
 
     /**

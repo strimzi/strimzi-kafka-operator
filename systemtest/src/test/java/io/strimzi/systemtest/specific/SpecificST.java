@@ -270,10 +270,10 @@ public class SpecificST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // We need to update CO configuration to set OPERATION_TIMEOUT to shorter value, because we expect timeout in that test
-        Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(INFRA_NAMESPACE, ResourceManager.getCoDeploymentName());
+        Map<String, String> coSnapshot = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName());
         // We have to install CO in class stack, otherwise it will be deleted at the end of test case and all following tests will fail
         clusterOperator.unInstall();
-        clusterOperator = SetupClusterOperator.defaultInstallation()
+        clusterOperator = clusterOperator.defaultInstallation()
             .withOperationTimeout(CO_OPERATION_TIMEOUT_SHORT)
             .withReconciliationInterval(Constants.RECONCILIATION_INTERVAL)
             .createInstallation()
@@ -330,10 +330,10 @@ public class SpecificST extends AbstractST {
         assertThat(connectPodNodeSelectorRequirement.getKey(), is(rackKey));
         assertThat(connectPodNodeSelectorRequirement.getOperator(), is("Exists"));
 
-        KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, INFRA_NAMESPACE, clusterName);
+        KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, clusterOperator.getDeploymentNamespace(), clusterName);
         // Revert changes for CO deployment
         clusterOperator.unInstall();
-        clusterOperator = SetupClusterOperator.defaultInstallation()
+        clusterOperator = clusterOperator.defaultInstallation()
             .createInstallation()
             .runInstallation();
 

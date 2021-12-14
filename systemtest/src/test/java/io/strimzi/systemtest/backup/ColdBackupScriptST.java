@@ -13,7 +13,6 @@ import static org.hamcrest.CoreMatchers.is;
 
 import java.util.Map;
 
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.test.annotations.IsolatedSuite;
@@ -71,7 +70,7 @@ public class ColdBackupScriptST extends AbstractST {
         Exec.exec(true, backupCommand);
 
         clusterOperator.unInstall();
-        clusterOperator = SetupClusterOperator.defaultInstallation().createInstallation().runInstallation();
+        clusterOperator = clusterOperator.defaultInstallation().createInstallation().runInstallation();
 
         // restore command
         LOGGER.info("Running restore procedure for {}/{}", INFRA_NAMESPACE, clusterName);

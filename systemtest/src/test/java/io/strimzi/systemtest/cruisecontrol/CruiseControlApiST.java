@@ -29,6 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
+@Tag(ACCEPTANCE)
 @ParallelSuite
 public class CruiseControlApiST extends AbstractST {
 
@@ -38,7 +39,6 @@ public class CruiseControlApiST extends AbstractST {
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(CruiseControlApiST.class.getSimpleName()).stream().findFirst().get();
     private final String cruiseControlApiClusterName = "cruise-control-api-cluster-name";
 
-    @Tag(ACCEPTANCE)
     @ParallelNamespaceTest
     void testCruiseControlBasicAPIRequests(ExtensionContext extensionContext)  {
         final TestStorage testStorage = new TestStorage(extensionContext);
@@ -135,7 +135,6 @@ public class CruiseControlApiST extends AbstractST {
         assertThat(response, containsString("401 Unauthorized"));
     }
 
-    @Tag(ACCEPTANCE)
     @ParallelNamespaceTest
     void testCruiseControlBasicAPIRequestsWithSecurityDisabled(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);

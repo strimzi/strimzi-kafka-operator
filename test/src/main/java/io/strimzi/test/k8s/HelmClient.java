@@ -48,6 +48,7 @@ public class HelmClient {
                 releaseName,
                 "--set", values,
                 "--timeout", INSTALL_TIMEOUT_SECONDS,
+                "--debug",
                 chart.toString()))), 0, true, true);
         return this;
     }
