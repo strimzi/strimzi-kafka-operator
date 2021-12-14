@@ -9,6 +9,7 @@ Examples are a useful way of demonstrating a process.
 
 If you want to add example code and configuration to your contribution, use the following format in an asciidoc code block.
 
+.Configuration example
 [source,subs="+quotes"]
 ------
 [source,yaml,subs="+quotes,attributes"] <1>
