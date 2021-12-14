@@ -33,8 +33,8 @@ public class Capacity {
 
         this.diskMiB = bc != null && bc.getDisk() != null ? getSizeInMiB(bc.getDisk()) : generateDiskCapacity(spec.getKafka().getStorage());
         this.cpuUtilization = bc != null && bc.getCpuUtilization() != null ? bc.getCpuUtilization() :
-                (spec.getKafka().getResources() == null || spec.getKafka().getResources().getRequests() == null ||
-                        spec.getKafka().getResources().getRequests().get("cpu") == null) ? DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY : Quantities.parseCpuAsMilliCpus(spec.getKafka().getResources().getRequests().get("cpu").toString()) / 10;
+                (spec.getKafka().getResources() == null || spec.getKafka().getResources().getLimits() == null ||
+                        spec.getKafka().getResources().getLimits().get("cpu") == null) ? DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY : Quantities.parseCpuAsMilliCpus(spec.getKafka().getResources().getLimits().get("cpu").toString()) / 10;
         this.inboundNetworkKiBPerSecond = bc != null && bc.getInboundNetwork() != null ? getThroughputInKiB(bc.getInboundNetwork()) : DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
         this.outboundNetworkKiBPerSecond = bc != null && bc.getOutboundNetwork() != null ? getThroughputInKiB(bc.getOutboundNetwork()) : DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
     }

@@ -384,7 +384,7 @@ public class CruiseControlTest {
     public void testCpuUtilization() {
         Kafka k = createKafka(cruiseControlSpec);
         ResourceRequirements resources = new ResourceRequirementsBuilder()
-                .withRequests(singletonMap("cpu", new Quantity("800m"))) //800m = 80%
+                .withLimits(singletonMap("cpu", new Quantity("800m"))) //800m = 80%
                 .build();
         k.getSpec().getKafka().setResources(resources);
 
@@ -401,7 +401,7 @@ public class CruiseControlTest {
         // value without m
         k = createKafka(cruiseControlSpec);
         resources = new ResourceRequirementsBuilder()
-                .withRequests(singletonMap("cpu", new Quantity("2")))
+                .withLimits(singletonMap("cpu", new Quantity("2")))
                 .build();
         k.getSpec().getKafka().setResources(resources);
         generatedCapacity = new Capacity(k.getSpec());
@@ -410,7 +410,7 @@ public class CruiseControlTest {
 
         // weird value
         resources = new ResourceRequirementsBuilder()
-                .withRequests(singletonMap("cpu", new Quantity("321m")))
+                .withLimits(singletonMap("cpu", new Quantity("321m")))
                 .build();
         k.getSpec().getKafka().setResources(resources);
         generatedCapacity = new Capacity(k.getSpec());

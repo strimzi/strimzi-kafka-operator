@@ -1,0 +1,98 @@
+{
+  "configs" : {
+    "cleanup.policy" : {
+      "items" : [ "compact", "delete" ],
+      "type" : "LIST"
+    },
+    "compression.type" : {
+      "enum" : [ "uncompressed", "zstd", "lz4", "snappy", "gzip", "producer" ],
+      "type" : "STRING"
+    },
+    "delete.retention.ms" : {
+      "minimum" : 0,
+      "type" : "LONG"
+    },
+    "file.delete.delay.ms" : {
+      "minimum" : 0,
+      "type" : "LONG"
+    },
+    "flush.messages" : {
+      "minimum" : 0,
+      "type" : "LONG"
+    },
+    "flush.ms" : {
+      "minimum" : 0,
+      "type" : "LONG"
+    },
+    "index.interval.bytes" : {
+      "minimum" : 0,
+      "type" : "INT"
+    },
+    "max.compaction.lag.ms" : {
+      "minimum" : 1,
+      "type" : "LONG"
+    },
+    "max.message.bytes" : {
+      "minimum" : 0,
+      "type" : "INT"
+    },
+    "message.downconversion.enable" : {
+      "type" : "BOOLEAN"
+    },
+    "message.format.version" : {
+      "pattern" : "\\Q0.8.0\\E(\\.[0-9]+)*|\\Q0.8.0\\E|\\Q0.8.1\\E(\\.[0-9]+)*|\\Q0.8.1\\E|\\Q0.8.2\\E(\\.[0-9]+)*|\\Q0.8.2\\E|\\Q0.9.0\\E(\\.[0-9]+)*|\\Q0.9.0\\E|\\Q0.10.0\\E(\\.[0-9]+)*|\\Q0.10.0-IV0\\E|\\Q0.10.0-IV1\\E|\\Q0.10.1\\E(\\.[0-9]+)*|\\Q0.10.1-IV0\\E|\\Q0.10.1-IV1\\E|\\Q0.10.1-IV2\\E|\\Q0.10.2\\E(\\.[0-9]+)*|\\Q0.10.2-IV0\\E|\\Q0.11.0\\E(\\.[0-9]+)*|\\Q0.11.0-IV0\\E|\\Q0.11.0-IV1\\E|\\Q0.11.0-IV2\\E|\\Q1.0\\E(\\.[0-9]+)*|\\Q1.0-IV0\\E|\\Q1.1\\E(\\.[0-9]+)*|\\Q1.1-IV0\\E|\\Q2.0\\E(\\.[0-9]+)*|\\Q2.0-IV0\\E|\\Q2.0-IV1\\E|\\Q2.1\\E(\\.[0-9]+)*|\\Q2.1-IV0\\E|\\Q2.1-IV1\\E|\\Q2.1-IV2\\E|\\Q2.2\\E(\\.[0-9]+)*|\\Q2.2-IV0\\E|\\Q2.2-IV1\\E|\\Q2.3\\E(\\.[0-9]+)*|\\Q2.3-IV0\\E|\\Q2.3-IV1\\E|\\Q2.4\\E(\\.[0-9]+)*|\\Q2.4-IV0\\E|\\Q2.4-IV1\\E|\\Q2.5\\E(\\.[0-9]+)*|\\Q2.5-IV0\\E|\\Q2.6\\E(\\.[0-9]+)*|\\Q2.6-IV0\\E|\\Q2.7\\E(\\.[0-9]+)*|\\Q2.7-IV0\\E|\\Q2.7-IV1\\E|\\Q2.7-IV2\\E|\\Q2.8\\E(\\.[0-9]+)*|\\Q2.8-IV0\\E|\\Q2.8-IV1\\E",
+      "type" : "STRING"
+    },
+    "message.timestamp.difference.max.ms" : {
+      "minimum" : 0,
+      "type" : "LONG"
+    },
+    "message.timestamp.type" : {
+      "enum" : [ "CreateTime", "LogAppendTime" ],
+      "type" : "STRING"
+    },
+    "min.cleanable.dirty.ratio" : {
+      "maximum" : 1,
+      "minimum" : 0,
+      "type" : "DOUBLE"
+    },
+    "min.compaction.lag.ms" : {
+      "minimum" : 0,
+      "type" : "LONG"
+    },
+    "min.insync.replicas" : {
+      "minimum" : 1,
+      "type" : "INT"
+    },
+    "preallocate" : {
+      "type" : "BOOLEAN"
+    },
+    "retention.bytes" : {
+      "type" : "LONG"
+    },
+    "retention.ms" : {
+      "minimum" : -1,
+      "type" : "LONG"
+    },
+    "segment.bytes" : {
+      "minimum" : 14,
+      "type" : "INT"
+    },
+    "segment.index.bytes" : {
+      "minimum" : 0,
+      "type" : "INT"
+    },
+    "segment.jitter.ms" : {
+      "minimum" : 0,
+      "type" : "LONG"
+    },
+    "segment.ms" : {
+      "minimum" : 1,
+      "type" : "LONG"
+    },
+    "unclean.leader.election.enable" : {
+      "type" : "BOOLEAN"
+    }
+  },
+  "version" : "2.8.0"
+}
