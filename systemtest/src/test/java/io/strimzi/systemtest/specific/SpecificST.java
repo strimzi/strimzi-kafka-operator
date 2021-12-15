@@ -79,6 +79,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(SPECIFIC)
 @IsolatedSuite
@@ -265,6 +266,7 @@ public class SpecificST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     void testRackAwareConnectCorrectDeployment(ExtensionContext extensionContext) {
         assumeFalse(Environment.isNamespaceRbacScope());
+        assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
         String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
