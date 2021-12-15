@@ -3547,7 +3547,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityTopicOperatorSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(EntityTopicOperator.secretName(name), entityOperator == null || entityOperator.getTopicOperator() == null ? null : entityOperator.getTopicOperator().generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
+            // Since the TLS Sidecar uses the same certificate as the topic operator, we need to create the Topic Operator Certificate even if Only the User Operator is configured.
+            return updateCertificateSecretWithDiff(EntityTopicOperator.secretName(name), entityOperator == null ? null : entityOperator.generateSecret(clusterCa, isMaintenanceTimeWindowsSatisfied(dateSupplier)))
                     .map(changed -> {
                         existingEntityTopicOperatorCertsChanged = changed;
                         return this;
