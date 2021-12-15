@@ -112,8 +112,8 @@ public class AuthenticationUtils {
                 KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
                 addNewVolume(volumeList, volumeNamePrefix, passwordAuth.getPasswordSecret().getSecretName(), isOpenShift);
             } else if (authentication instanceof KafkaClientAuthenticationScram) {
-                KafkaClientAuthenticationScram passwordAuth = (KafkaClientAuthenticationScram) authentication;
-                addNewVolume(volumeList, volumeNamePrefix, passwordAuth.getPasswordSecret().getSecretName(), isOpenShift);
+                KafkaClientAuthenticationScram scramAuth = (KafkaClientAuthenticationScram) authentication;
+                addNewVolume(volumeList, volumeNamePrefix, scramAuth.getPasswordSecret().getSecretName(), isOpenShift);
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
                 volumeList.addAll(configureOauthCertificateVolumes(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), isOpenShift));
@@ -183,8 +183,8 @@ public class AuthenticationUtils {
                 KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
                 volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationScram) {
-                KafkaClientAuthenticationScram passwordAuth = (KafkaClientAuthenticationScram) authentication;
-                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + passwordAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + passwordAuth.getPasswordSecret().getSecretName()));
+                KafkaClientAuthenticationScram scramAuth = (KafkaClientAuthenticationScram) authentication;
+                volumeMountList.add(VolumeUtils.createVolumeMount(volumeNamePrefix + scramAuth.getPasswordSecret().getSecretName(), passwordVolumeMount + scramAuth.getPasswordSecret().getSecretName()));
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
                 volumeMountList.addAll(configureOauthCertificateVolumeMounts(oauthVolumeNamePrefix, oauth.getTlsTrustedCertificates(), oauthCertsVolumeMount));
@@ -256,10 +256,10 @@ public class AuthenticationUtils {
                 properties.put(SASL_PASSWORD_FILE, String.format("%s/%s", passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword()));
                 properties.put(SASL_MECHANISM, KafkaClientAuthenticationPlain.TYPE_PLAIN);
             } else if (authentication instanceof KafkaClientAuthenticationScram) {
-                KafkaClientAuthenticationScram passwordAuth = (KafkaClientAuthenticationScram) authentication;
-                properties.put(SASL_USERNAME, passwordAuth.getUsername());
-                properties.put(SASL_PASSWORD_FILE, String.format("%s/%s", passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword()));
-                properties.put(SASL_MECHANISM, passwordAuth.getType());
+                KafkaClientAuthenticationScram scramAuth = (KafkaClientAuthenticationScram) authentication;
+                properties.put(SASL_USERNAME, scramAuth.getUsername());
+                properties.put(SASL_PASSWORD_FILE, String.format("%s/%s", scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword()));
+                properties.put(SASL_MECHANISM, scramAuth.getType());
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                 KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
                 properties.put(SASL_MECHANISM, KafkaClientAuthenticationOAuth.TYPE_OAUTH);
