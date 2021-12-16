@@ -126,30 +126,27 @@ public class LogCollector {
         Set<String> namespaces = KubeClusterResource.getMapWithSuiteNamespaces().get(this.collectorElement);
         // ensure that namespaces is never null
         namespaces = namespaces == null ? new HashSet<>() : namespaces;
+        namespaces.add(clusterOperatorNamespace);
+        // collect logs for all namespace related to test suite
+        namespaces.forEach(namespace -> {
+            if (this.collectorElement.getTestMethodName().isEmpty()) {
+                namespaceFile = new File(this.testSuite +  "/" + namespace);
+            } else {
+                namespaceFile = new File(this.testCase + "/" + namespace);
+            }
 
-        if (namespaces != null) {
-            namespaces.add(clusterOperatorNamespace);
-            // collect logs for all namespace related to test suite
-            namespaces.forEach(namespace -> {
-                if (this.collectorElement.getTestMethodName().isEmpty()) {
-                    namespaceFile = new File(this.testSuite +  "/" + namespace);
-                } else {
-                    namespaceFile = new File(this.testCase + "/" + namespace);
-                }
+            boolean namespaceLogDirExist = this.namespaceFile.exists() || this.namespaceFile.mkdirs();
+            if (!namespaceLogDirExist) throw new RuntimeException("Unable to create path");
 
-                boolean namespaceLogDirExist = this.namespaceFile.exists() || this.namespaceFile.mkdirs();
-                if (!namespaceLogDirExist) throw new RuntimeException("Unable to create path");
-
-                this.collectEvents(namespace);
-                this.collectConfigMaps(namespace);
-                this.collectLogsFromPods(namespace);
-                this.collectDeployments(namespace);
-                this.collectStatefulSets(namespace);
-                this.collectReplicaSets(namespace);
-                this.collectStrimzi(namespace);
-                this.collectClusterInfo(namespace);
-            });
-        }
+            this.collectEvents(namespace);
+            this.collectConfigMaps(namespace);
+            this.collectLogsFromPods(namespace);
+            this.collectDeployments(namespace);
+            this.collectStatefulSets(namespace);
+            this.collectReplicaSets(namespace);
+            this.collectStrimzi(namespace);
+            this.collectClusterInfo(namespace);
+        });
     }
 
     private void collectLogsFromPods(String namespace) {
