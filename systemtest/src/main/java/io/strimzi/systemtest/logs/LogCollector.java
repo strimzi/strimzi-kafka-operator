@@ -18,8 +18,8 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static io.strimzi.test.TestUtils.writeFile;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -32,10 +32,17 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
  *      /time/
  *          /test-suite_time/
  *              /test-case/
- *                  deployment.log
- *                  configmap.log
- *                  ...
- *
+ *                  namespace1/
+ *                      deployment.log
+ *                      configmap.log
+ *                      ...
+ *                  namespace2/
+ *                      deployment.log
+ *                      configmap.log
+ *                      describe-pod-kafka-cluster-entity-operator-56t123sd-31221-container...log
+ *                      logs-pod-kafka-cluster-entity-operator-56t123sd-31221.log
+ *                      ...
+*                 ...
  *              cluster-operator.log    // shared cluster operator logs for all tests inside one test suite
  *          /another-test-suite_time/
  *      ...
@@ -98,26 +105,36 @@ public class LogCollector {
     }
 
     /**
-     * Core method which collects all logs from events, configs-maps, pods, deployment, statefulset, replicaset...in case test fails.
+     * Core method, which collects logs from {@link #collectEvents(String)}, {@link #collectConfigMaps(String)},
+     * {@link #collectLogsFromPods(String)}, {@link #collectDeployments(String)}, {@link #collectStatefulSets(String)},
+     * {@link #collectReplicaSets(String)}, {@link #collectStrimzi(String)} and lastly {@link #collectClusterInfo(String)}.
+     *
+     * If anything fails in @BeforeAll or @AfterAll suite we gather these logs from @cde{this.testSuite}/@code{namespace}.
+     * Otherwise we collect it in code@{this.testCase}/code{namespace}.
+     *
+     * There are a few scenarios, which has to be take into account. Un-excepted exception was throw in:
+     *      1.@BeforeAll scope
+     *      2.@BeforeEach scope
+     *      3.@Test scope
+     *          b) @IsolatedTest
+     *          a) @ParallelTest
+     *          c) @ParallelNamespaceTest, which is basically in namespace with following pattern namespace-[n], where n is greater than 0.
+     *      4.@AfterEach scope
+     *      5.@AfterAll scope
      */
     public synchronized void collect() {
         Set<String> namespaces = KubeClusterResource.getMapWithSuiteNamespaces().get(this.collectorElement);
-        AtomicReference<CollectorElement> collectorElement = new AtomicReference<>();
-        collectorElement.set(CollectorElement.emptyElement());
-
-        if (namespaces == null) {
-            collectorElement.set(CollectorElement.createCollectorElement(this.collectorElement.getTestClassName()));
-            namespaces = KubeClusterResource.getMapWithSuiteNamespaces().get(collectorElement.get());
-        }
+        // ensure that namespaces is never null
+        namespaces = namespaces == null ? new HashSet<>() : namespaces;
 
         if (namespaces != null) {
             namespaces.add(clusterOperatorNamespace);
             // collect logs for all namespace related to test suite
             namespaces.forEach(namespace -> {
-                if (collectorElement.get().isEmpty()) {
-                    namespaceFile = new File(this.testCase + "/" + namespace);
-                } else {
+                if (this.collectorElement.getTestMethodName().isEmpty()) {
                     namespaceFile = new File(this.testSuite +  "/" + namespace);
+                } else {
+                    namespaceFile = new File(this.testCase + "/" + namespace);
                 }
 
                 boolean namespaceLogDirExist = this.namespaceFile.exists() || this.namespaceFile.mkdirs();
@@ -142,10 +159,16 @@ public class LogCollector {
             // in case we are in the cluster operator namespace we wants shared logs for whole test suite
             if (namespace.equals(this.clusterOperatorNamespace)) {
                 kubeClient.listPods(namespace).forEach(pod -> {
-                    String podName = pod.getMetadata().getName();
-                    pod.getStatus().getContainerStatuses().forEach(
-                        containerStatus -> scrapeAndCreateLogs(testSuite, podName, containerStatus, namespace));
+                    final String podName = pod.getMetadata().getName();
+                    if (pod.getMetadata().getLabels().get("strimzi.io/kind").equals("cluster-operator")) {
+                        pod.getStatus().getContainerStatuses().forEach(
+                            containerStatus -> scrapeAndCreateLogs(testSuite, podName, containerStatus, namespace));
+                    } else {
+                        pod.getStatus().getContainerStatuses().forEach(
+                            containerStatus -> scrapeAndCreateLogs(namespaceFile, podName, containerStatus, namespace));
+                    }
                 });
+            // scrape for Pods, which are not in `cluster-operator` namespace
             } else {
                 kubeClient.listPods(namespace).forEach(pod -> {
                     String podName = pod.getMetadata().getName();

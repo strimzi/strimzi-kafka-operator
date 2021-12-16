@@ -98,7 +98,6 @@ public class TestSuiteNamespaceManager {
         final String requiredClassName = extensionContext.getRequiredTestClass().getSimpleName();
         final List<String> namespaces = mapOfAdditionalNamespaces.get(requiredClassName);
         final String testSuite = extensionContext.getRequiredTestClass().getName();
-        final String testCase = extensionContext.getDisplayName();
 
         if (namespaces != null) {
             LOGGER.info("Content of the test suite namespaces map:\n" + mapOfAdditionalNamespaces.toString());
@@ -108,7 +107,7 @@ public class TestSuiteNamespaceManager {
                 if (namespaceName.equals(Constants.INFRA_NAMESPACE)) {
                     continue;
                 }
-                KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(testSuite, testCase), namespaceName);
+                KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(testSuite), namespaceName);
                 NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceName));
             }
         }
@@ -123,7 +122,7 @@ public class TestSuiteNamespaceManager {
      * @param extensionContext unifier (id), which distinguished all other test cases
      */
     public void createParallelNamespace(ExtensionContext extensionContext) {
-        final String testCase = extensionContext.getDisplayName();
+        final String testCase = extensionContext.getRequiredTestMethod().getName();
 
         // if 'parallel namespace test' we are gonna create namespace
         if (StUtils.isParallelNamespaceTest(extensionContext)) {
@@ -135,7 +134,7 @@ public class TestSuiteNamespaceManager {
                 // create namespace by
                 LOGGER.info("Creating namespace:{} for test case:{}", namespaceTestCase, testCase);
 
-                KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName()), namespaceTestCase);
+                KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestMethod().getName()), namespaceTestCase);
                 NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
                 if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
                     StUtils.copyImagePullSecret(namespaceTestCase);
@@ -145,7 +144,7 @@ public class TestSuiteNamespaceManager {
     }
 
     public void deleteAdditionalNamespaces(ExtensionContext extensionContext) {
-        CollectorElement collectorElement = CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
+        CollectorElement collectorElement = CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName());
         Set<String> namespacesToDelete = KubeClusterResource.getMapWithSuiteNamespaces().get(collectorElement);
 
         if (namespacesToDelete != null) {
@@ -171,7 +170,7 @@ public class TestSuiteNamespaceManager {
                 final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
 
                 LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, extensionContext.getDisplayName());
-                KubeClusterResource.getInstance().deleteNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName()), namespaceToDelete);
+                KubeClusterResource.getInstance().deleteNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestMethod().getName()), namespaceToDelete);
             }
         }
     }

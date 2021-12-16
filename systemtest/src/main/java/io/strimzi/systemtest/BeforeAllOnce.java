@@ -54,10 +54,6 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
                     .createInstallation()
                     .runInstallation();
             }
-            // correction, because when @BeforeAllCallback is invoked firstly by @IsolatedSuite class it decrement counter which is not correct
-//            if (StUtils.isParallelSuite(extensionContext)) {
-//                SuiteThreadController.getInstance().decrementCounter();
-//            }
             sharedExtensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(SYSTEM_RESOURCES, new BeforeAllOnce());
         }
     }
