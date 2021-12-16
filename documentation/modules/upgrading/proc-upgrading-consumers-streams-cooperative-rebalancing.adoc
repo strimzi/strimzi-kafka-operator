@@ -41,7 +41,3 @@ NOTE: Upgrading to the incremental cooperative rebalance protocol is optional. T
 . Remove the `upgrade.from` configuration parameter from the Kafka Streams configuration.
 
 . Restart each consumer in the group in turn.
-
-.Additional resources
-
-* link:https://kafka.apache.org/documentation/#upgrade_240_notable[Notable changes in 2.4.0^] in the Apache Kafka documentation.

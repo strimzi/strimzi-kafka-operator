@@ -218,8 +218,7 @@ spec:
         secret:
           secretName: mysecret
 ----
-<1> The `DirectoryConfigProvider` provides values from files in a directory.
-The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
+<1> The `DirectoryConfigProvider` provides values from files in a directory. The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
 
 Placeholders for the credentials are referenced in the connector configuration.
 The placeholder structure is `directory:__PATH__:__FILE-NAME__`.
