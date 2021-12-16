@@ -43,15 +43,8 @@ kubectl replace -f install/cluster-operator
 +
 Wait for the rolling updates to complete.
 
-. If the new Operator version no longer supports the Kafka version you are upgrading from, the Cluster Operator returns a "Version not found" error message.
+. If the new Operator version no longer supports the Kafka version you are upgrading from, the Cluster Operator returns an error message to say the version is not supported.
 Otherwise, no error message is returned.
-+
-For example:
-+
-[source,shell,subs="+quotes,attributes"]
-----
-"Version 2.4.0 is not supported. Supported versions are: 2.6.0, 2.6.1, 2.7.0."
-----
 
 * If the error message is returned, upgrade to a Kafka version that is supported by the new Cluster Operator version:
 

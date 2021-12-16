@@ -36,9 +36,7 @@ From Kafka 3.0.0, the message format version values are assumed to match the `in
 The values reflect the Kafka version used.
 
 When upgrading to Kafka 3.0.0 or higher, you can remove these settings when you update the `inter.broker.protocol.version`.
-Otherwise, set the message format version version based on the Kafka version you are upgrading to.
+Otherwise, set the message format version based on the Kafka version you are upgrading to.
 
 The default value of `message.format.version` for a topic is defined by the `log.message.format.version` that is set on the Kafka broker.
 You can manually set the `message.format.version` of a topic by modifying its topic configuration.
-
-The properties can be used for down-conversion to an earlier format depending on your chosen xref:con-strategies-for-upgrading-clients-str[strategy for upgrading clients].
