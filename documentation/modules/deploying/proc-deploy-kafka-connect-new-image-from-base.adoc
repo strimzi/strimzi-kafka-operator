@@ -102,7 +102,5 @@ or
 
 .Additional resources
 
-See the _Using Strimzi_ guide for more information on:
-
 * link:{BookURLUsing}#con-common-configuration-images-reference[Container image configuration and the `KafkaConnect.spec.image property`^]
 * link:{BookURLUsing}#ref-operator-cluster-str[Cluster Operator configuration and the `STRIMZI_KAFKA_CONNECT_IMAGES` variable^]

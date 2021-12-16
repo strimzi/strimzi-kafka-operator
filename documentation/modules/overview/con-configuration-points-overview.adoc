@@ -1,0 +1,31 @@
+// This module is included in:
+//
+// assembly-overview.adoc
+
+[id="configuration-points-overview-{context}"]
+= Configuring custom resources
+
+[role="_abstract"]
+Use custom resources to configure your Strimzi deployment.
+
+You can use custom resources to configure and create instances of the following components:
+
+* Kafka clusters
+* Kafka Connect clusters
+* Kafka MirrorMaker
+* Kafka Bridge
+* Cruise Control
+
+You can also use custom resource configuration to manage your instances or modify your deployment to introduce additional features.
+This might include configuration that supports the following:
+
+* Securing client access to Kafka brokers
+* Accessing Kafka brokers from outside the cluster
+* Creating topics
+* Creating users (clients)
+* Controlling feature gates
+* Changing logging frequency
+* Allocating resource limits and requests
+* Introducing features, such as Strimzi Drain Cleaner, Cruise Control, or distributed tracing.
+
+The xref:api_reference-str[Custom resource API reference] describes the properties you can use in your configuration.

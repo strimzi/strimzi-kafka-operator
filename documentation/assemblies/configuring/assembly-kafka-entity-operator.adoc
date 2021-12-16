@@ -10,8 +10,8 @@ The Entity Operator is responsible for managing Kafka-related entities in a runn
 
 The Entity Operator comprises the:
 
-* xref:overview-concepts-topic-operator-str[Topic Operator] to manage Kafka topics
-* xref:overview-concepts-user-operator-str[User Operator] to manage Kafka users
+* Topic Operator to manage Kafka topics
+* User Operator to manage Kafka users
 
 Through `Kafka` resource configuration, the Cluster Operator can deploy the Entity Operator, including one or both operators, when deploying a Kafka cluster.
 

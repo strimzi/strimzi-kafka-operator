@@ -45,7 +45,7 @@ Annotations are used to manually restart connector instances and connector tasks
 You remove a connector by deleting its corresponding KafkaConnector.
 
 To ensure compatibility with earlier versions of Strimzi, KafkaConnectors are disabled by default. To enable them for a Kafka Connect cluster, you must use annotations on the `KafkaConnect` resource.
-For instructions, see link:{BookURLUsing}#proc-kafka-connect-config-str[Configuring Kafka Connect^] in the _Using Strimzi_ guide.
+For instructions, see link:{BookURLUsing}#proc-kafka-connect-config-str[Configuring Kafka Connect^].
 
 When KafkaConnectors are enabled, the Cluster Operator begins to watch for them. It updates the configurations of running connector instances to match the configurations defined in their KafkaConnectors.
 
