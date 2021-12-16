@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -264,31 +263,33 @@ public class EntityOperator extends AbstractModel {
             containers.addAll(userOperator.getContainers(imagePullPolicy));
         }
 
-        String tlsSidecarImage = this.tlsSidecarImage;
-        if (tlsSidecar != null && tlsSidecar.getImage() != null) {
-            tlsSidecarImage = tlsSidecar.getImage();
-        }
+        // The TLS Sidecar is only used by the Topic Operator. Therefore, when the Topic Operator is disabled, the TLS side should also be disabled.
+        if (topicOperator != null) {
+            String tlsSidecarImage = this.tlsSidecarImage;
+            if (tlsSidecar != null && tlsSidecar.getImage() != null) {
+                tlsSidecarImage = tlsSidecar.getImage();
+            }
 
-        Container tlsSidecarContainer = new ContainerBuilder()
-                .withName(TLS_SIDECAR_NAME)
-                .withImage(tlsSidecarImage)
-                .withCommand("/opt/stunnel/entity_operator_stunnel_run.sh")
-                .withLivenessProbe(ProbeGenerator.tlsSidecarLivenessProbe(tlsSidecar))
-                .withReadinessProbe(ProbeGenerator.tlsSidecarReadinessProbe(tlsSidecar))
-                .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
-                .withEnv(getTlsSidecarEnvVars())
-                .withVolumeMounts(createTempDirVolumeMount(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
-                        VolumeUtils.createVolumeMount(ETO_CERTS_VOLUME_NAME, ETO_CERTS_VOLUME_MOUNT),
-                        VolumeUtils.createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
-                .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec()
+            Container tlsSidecarContainer = new ContainerBuilder()
+                    .withName(TLS_SIDECAR_NAME)
+                    .withImage(tlsSidecarImage)
+                    .withCommand("/opt/stunnel/entity_operator_stunnel_run.sh")
+                    .withLivenessProbe(ProbeGenerator.tlsSidecarLivenessProbe(tlsSidecar))
+                    .withReadinessProbe(ProbeGenerator.tlsSidecarReadinessProbe(tlsSidecar))
+                    .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
+                    .withEnv(getTlsSidecarEnvVars())
+                    .withVolumeMounts(createTempDirVolumeMount(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
+                            VolumeUtils.createVolumeMount(ETO_CERTS_VOLUME_NAME, ETO_CERTS_VOLUME_MOUNT),
+                            VolumeUtils.createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
+                    .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec()
                             .withCommand("/opt/stunnel/entity_operator_stunnel_pre_stop.sh")
-                        .endExec().endPreStop().build())
-                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
-                .withSecurityContext(templateTlsSidecarContainerSecurityContext)
-                .build();
+                            .endExec().endPreStop().build())
+                    .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
+                    .withSecurityContext(templateTlsSidecarContainerSecurityContext)
+                    .build();
 
-        containers.add(tlsSidecarContainer);
-
+            containers.add(tlsSidecarContainer);
+        }
         return containers;
     }
 
@@ -311,6 +312,7 @@ public class EntityOperator extends AbstractModel {
         if (topicOperator != null) {
             volumeList.addAll(topicOperator.getVolumes());
             volumeList.add(createTempDirVolume(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            volumeList.add(VolumeUtils.createSecretVolume(ETO_CERTS_VOLUME_NAME, EntityTopicOperator.secretName(cluster), isOpenShift));
         }
 
         if (userOperator != null) {
@@ -320,7 +322,6 @@ public class EntityOperator extends AbstractModel {
         }
 
         volumeList.add(createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-        volumeList.add(VolumeUtils.createSecretVolume(ETO_CERTS_VOLUME_NAME, EntityTopicOperator.secretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         return volumeList;
     }

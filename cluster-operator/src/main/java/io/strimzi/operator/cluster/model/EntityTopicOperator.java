@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
@@ -361,5 +362,23 @@ public class EntityTopicOperator extends AbstractModel {
             properties.addPair("monitorInterval", "30");
         }
         return super.createLog4jProperties(properties);
+    }
+
+    /**
+     * Generate the Secret containing the Entity Topic Operator certificate signed by the cluster CA certificate used for TLS based
+     * internal communication with Kafka and Zookeeper.
+     * It also contains the related Entity Topic Operator private key.
+     *
+     * Note: This certificate will be used by both Topic Operator Container and the TLS sidecar container. The User Operator Container use a separate certificate.
+     *
+     * @param clusterCa The cluster CA.
+     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
+     *                                          This is used for certificate renewals
+     * @return The generated Secret.
+     */
+    public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
+        Secret secret = clusterCa.entityTopicOperatorSecret();
+        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, EntityTopicOperator.secretName(cluster), name,
+                APPLICATION_NAME, labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 }
