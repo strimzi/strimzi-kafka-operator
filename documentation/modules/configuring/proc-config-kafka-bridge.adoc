@@ -110,7 +110,7 @@ spec:
 <1> xref:con-common-configuration-replicas-reference[The number of replica nodes].
 <2> xref:con-common-configuration-bootstrap-reference[Bootstrap server] for connection to the target Kafka cluster.
 <3> xref:con-common-configuration-trusted-certificates-reference[TLS encryption] with key names under which TLS certificates are stored in X.509 format for the source Kafka cluster. If certificates are stored in the same secret, it can be listed multiple times.
-<4> Authentication for the Kafka Bridge cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
+<4> Authentication for the Kafka Bridge cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha256-reference[SCRAM-SHA-256]/xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
 By default, the Kafka Bridge connects to Kafka brokers without authentication.
 <5> xref:type-KafkaBridgeHttpConfig-reference[HTTP access] to Kafka brokers.
 <6> xref:type-KafkaBridgeHttpConfig-reference[CORS access] specifying selected resources and access methods. Additional HTTP headers in requests xref:con-requests-kafka-bridge-cors-kafka-bridge-overview[describe the origins that are permitted access to the Kafka cluster].

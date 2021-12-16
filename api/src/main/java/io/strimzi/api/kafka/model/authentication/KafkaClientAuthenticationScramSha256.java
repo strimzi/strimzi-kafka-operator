@@ -13,7 +13,7 @@ import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
 
 /**
- * Configures the Kafka client authentication using SASL SCRAM_SHA_512 in client based components
+ * Configures the Kafka client authentication using SASL SCRAM_SHA_256 in client based components
  */
 @DescriptionFile
 @Buildable(
@@ -22,19 +22,19 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode(callSuper = true)
-public class KafkaClientAuthenticationScramSha512 extends KafkaClientAuthenticationScram {
+public class KafkaClientAuthenticationScramSha256 extends KafkaClientAuthenticationScram {
     private static final long serialVersionUID = 1L;
 
-    public static final String TYPE_SCRAM_SHA_512 = "scram-sha-512";
+    public static final String TYPE_SCRAM_SHA_256 = "scram-sha-256";
 
     private String username;
     private PasswordSecretSource passwordSecret;
 
-    @Description("Must be `" + TYPE_SCRAM_SHA_512 + "`")
+    @Description("Must be `" + TYPE_SCRAM_SHA_256 + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Override
     public String getType() {
-        return TYPE_SCRAM_SHA_512;
+        return TYPE_SCRAM_SHA_256;
     }
 
     @Description("Reference to the `Secret` which holds the password.")

@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha256;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.Annotations;
@@ -380,6 +381,9 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             if (KafkaClientAuthenticationPlain.TYPE_PLAIN.equals(clientAuthType)) {
                 saslMechanism = "PLAIN";
                 jaasConfig = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + authProperties.get(AuthenticationUtils.SASL_USERNAME) + "\" password=\"${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}\";";        
+            } else if (KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256.equals(clientAuthType)) {
+                saslMechanism = "SCRAM-SHA-256";
+                jaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + authProperties.get(AuthenticationUtils.SASL_USERNAME) + "\" password=\"${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}\";";
             } else if (KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512.equals(clientAuthType)) {
                 saslMechanism = "SCRAM-SHA-512";
                 jaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + authProperties.get(AuthenticationUtils.SASL_USERNAME) + "\" password=\"${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}\";";

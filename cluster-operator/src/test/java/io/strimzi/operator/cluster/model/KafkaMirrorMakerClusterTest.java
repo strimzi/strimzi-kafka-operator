@@ -463,6 +463,53 @@ public class KafkaMirrorMakerClusterTest {
     }
 
     @ParallelTest
+    public void testGenerateDeploymentWithScramSha256Auth() {
+        KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                .editOrNewProducer()
+                .withNewKafkaClientAuthenticationScramSha256()
+                .withUsername("producer")
+                .withNewPasswordSecret()
+                .withSecretName("producer-secret")
+                .withPassword("password")
+                .endPasswordSecret()
+                .endKafkaClientAuthenticationScramSha256()
+                .endProducer()
+                .editOrNewConsumer()
+                .withNewKafkaClientAuthenticationScramSha256()
+                .withUsername("consumer")
+                .withNewPasswordSecret()
+                .withSecretName("consumer-secret")
+                .withPassword("password")
+                .endPasswordSecret()
+                .endKafkaClientAuthenticationScramSha256()
+                .endConsumer()
+                .endSpec()
+                .build();
+        KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        Deployment dep = mmc.generateDeployment(emptyMap(), true, null, null);
+
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("producer-secret"));
+
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        assertThat(containers.get(0).getVolumeMounts().get(2).getMountPath(), is(KafkaMirrorMakerCluster.PASSWORD_VOLUME_MOUNT_PRODUCER + "producer-secret"));
+
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER), is("scram-sha-256"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_PRODUCER), is("producer-secret/password"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_USERNAME_PRODUCER), is("producer"));
+
+        assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(3).getName(), is("consumer-secret"));
+
+
+        assertThat(containers.get(0).getVolumeMounts().get(3).getMountPath(), is(KafkaMirrorMakerCluster.PASSWORD_VOLUME_MOUNT_CONSUMER + "consumer-secret"));
+
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_MECHANISM_CONSUMER), is("scram-sha-256"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_CONSUMER), is("consumer-secret/password"));
+        assertThat(AbstractModel.containerEnvVars(containers.get(0)).get(KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_SASL_USERNAME_CONSUMER), is("consumer"));
+    }
+
+    @ParallelTest
     public void testGenerateDeploymentWithPlain() {
         KafkaMirrorMaker resource = new KafkaMirrorMakerBuilder(this.resource)
                 .editSpec()

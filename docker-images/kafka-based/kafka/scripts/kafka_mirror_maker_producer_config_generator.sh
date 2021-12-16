@@ -41,6 +41,10 @@ if [ -n "$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" ]; then
         PASSWORD=$(cat "/opt/kafka/producer-password/$KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_PRODUCER")
         SASL_MECHANISM="SCRAM-SHA-512"
         JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"${KAFKA_MIRRORMAKER_SASL_USERNAME_PRODUCER}\" password=\"${PASSWORD}\";"
+    elif [ "$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" = "scram-sha-256" ]; then
+        PASSWORD=$(cat "/opt/kafka/producer-password/$KAFKA_MIRRORMAKER_SASL_PASSWORD_FILE_PRODUCER")
+        SASL_MECHANISM="SCRAM-SHA-256"
+        JAAS_CONFIG="org.apache.kafka.common.security.scram.ScramLoginModule required username=\"${KAFKA_MIRRORMAKER_SASL_USERNAME_PRODUCER}\" password=\"${PASSWORD}\";"
     elif [ "$KAFKA_MIRRORMAKER_SASL_MECHANISM_PRODUCER" = "oauth" ]; then
         if [ -n "$KAFKA_MIRRORMAKER_OAUTH_ACCESS_TOKEN_PRODUCER" ]; then
             OAUTH_ACCESS_TOKEN="oauth.access.token=\"$KAFKA_MIRRORMAKER_OAUTH_ACCESS_TOKEN_PRODUCER\""
