@@ -315,7 +315,7 @@ class RecoveryST extends AbstractST {
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
-            .withReconciliationInterval(Constants.CO_OPERATION_TIMEOUT_MEDIUM)
+            .withReconciliationInterval(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();
 

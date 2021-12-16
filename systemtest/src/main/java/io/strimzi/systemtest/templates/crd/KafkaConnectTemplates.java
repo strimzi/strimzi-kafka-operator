@@ -33,9 +33,9 @@ public class KafkaConnectTemplates {
         return Crds.kafkaConnectOperation(ResourceManager.kubeClient().getClient());
     }
 
-    public static KafkaConnectBuilder kafkaConnect(ExtensionContext extensionContext, final String namespaceName, String name, String clusterName, int kafkaConnectReplicas, boolean allowNP) {
+    public static KafkaConnectBuilder kafkaConnect(ExtensionContext extensionContext, String name, final String namespaceName, String clusterName, int kafkaConnectReplicas, boolean allowNP) {
         KafkaConnect kafkaConnect = getKafkaConnectFromYaml(Constants.PATH_TO_KAFKA_CONNECT_CONFIG);
-        kafkaConnect = defaultKafkaConnect(kafkaConnect, name, namespaceName, clusterName, kafkaConnectReplicas).build();
+        kafkaConnect = defaultKafkaConnect(kafkaConnect, namespaceName, name, clusterName, kafkaConnectReplicas).build();
         return allowNP ? deployKafkaConnectWithNetworkPolicy(extensionContext, kafkaConnect) : new KafkaConnectBuilder(kafkaConnect);
     }
 

@@ -229,7 +229,7 @@ public class TopicST extends AbstractST {
                     .withReplicas(3)
                 .endSpec()
                 .build());
-            KafkaTopicUtils.waitForKafkaTopicReady(topicName);
+            KafkaTopicUtils.waitForKafkaTopicReady(namespace, topicName);
 
             adminClient.describeTopics(singletonList(topicName)).values().get(topicName);
 
@@ -391,7 +391,7 @@ public class TopicST extends AbstractST {
 
         int sent = internalKafkaClient.sendMessagesPlain();
 
-        String topicUid = KafkaTopicUtils.topicSnapshot(topicName);
+        String topicUid = KafkaTopicUtils.topicSnapshot(namespace, topicName);
         LOGGER.info("Going to delete topic {}", topicName);
         KafkaTopicResource.kafkaTopicClient().inNamespace(namespace).withName(topicName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         LOGGER.info("Topic {} deleted", topicName);

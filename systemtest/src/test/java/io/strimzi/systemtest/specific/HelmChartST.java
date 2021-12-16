@@ -76,5 +76,9 @@ class HelmChartST extends AbstractST {
         helmResource.delete();
 
         super.afterAllMayOverride(extensionContext);
+        // back to the old CO because we performed verification by Helm Chart Cluster Operator and now we continue with default.
+        clusterOperator.defaultInstallation()
+            .createInstallation()
+            .runInstallation();
     }
 }
