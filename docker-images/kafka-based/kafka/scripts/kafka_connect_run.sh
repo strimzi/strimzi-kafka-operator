@@ -70,5 +70,7 @@ fi
 
 . ./set_kafka_gc_options.sh
 
+set -x
+
 # starting Kafka server with final configuration
 exec /usr/bin/tini -w -e 143 -- "${KAFKA_HOME}/bin/connect-distributed.sh" /tmp/strimzi-connect.properties

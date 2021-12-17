@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-set -x
+set +x
 
 # expand gc options based upon java version
 function get_gc_opts {
@@ -22,6 +22,8 @@ JAVA_OPTS="${JAVA_OPTS} $(get_gc_opts)"
 
 # Deny illegal access option is supported only on Java 9 and higher
 JAVA_OPTS="${JAVA_OPTS} --illegal-access=deny"
+
+set -x
 
 # shellcheck disable=SC2086
 exec /usr/bin/tini -w -e 143 -- java $JAVA_OPTS -classpath "$JAVA_CLASSPATH" "$JAVA_MAIN" "$@"
