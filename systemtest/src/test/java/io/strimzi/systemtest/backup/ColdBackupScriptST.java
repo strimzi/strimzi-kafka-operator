@@ -14,6 +14,7 @@ import static org.hamcrest.CoreMatchers.is;
 import java.util.Map;
 
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.test.annotations.IsolatedSuite;
 import io.strimzi.test.annotations.IsolatedTest;
@@ -100,7 +101,11 @@ public class ColdBackupScriptST extends AbstractST {
 
     private String deployAndGetInternalClientsPodName(ExtensionContext context) {
         final String kafkaClientsName = mapWithKafkaClientNames.get(context.getDisplayName());
-        resourceManager.createResource(context, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, kafkaClientsName).build());
+        resourceManager.createResource(context, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName)
+            .editMetadata()
+                .withNamespace(INFRA_NAMESPACE)
+            .endMetadata()
+            .build());
         return ResourceManager.kubeClient().listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
     }
 

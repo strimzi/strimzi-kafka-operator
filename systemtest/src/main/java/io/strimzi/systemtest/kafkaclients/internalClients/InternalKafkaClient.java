@@ -305,6 +305,7 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
             .withClientType(ClientType.CLI_KAFKA_CONSUMER_GROUPS)
             .withUsingPodName(podName)
             .withPodNamespace(namespaceName)
+            .withTopicName(topicName)
             .withBootstrapServer(getBootstrapServerFromStatus())
             .withConsumerGroupName(consumerGroup)
             .build();

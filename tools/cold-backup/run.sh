@@ -253,7 +253,7 @@ uncompress() {
   local source_file="$1"
   local target_dir="$2"
   if [[ -z $source_file || -z $target_dir ]]; then
-    error "Missing parameters" 
+    error "Missing parameters"
   fi
   echo "Uncompressing $source_file to $target_dir"
   mkdir -p $target_dir
@@ -269,7 +269,7 @@ backup() {
   if [[ ! -d "$(dirname $TARGET_FILE)" ]]; then
     error "$(dirname $TARGET_FILE) not found"
   fi
-  
+
   # init context
   local tmp="$BACKUP_PATH/$NAMESPACE/$CLUSTER_NAME"
   if [[ ! -z "$(ls -A $tmp 2>/dev/null ||true)" ]]; then
@@ -331,7 +331,7 @@ restore() {
   if [[ ! -f $SOURCE_FILE ]]; then
     error "$SOURCE_FILE file not found"
   fi
-  
+
   # init context
   local tmp="$BACKUP_PATH/$NAMESPACE/$CLUSTER_NAME"
   check_kube_conn
