@@ -41,6 +41,7 @@ import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.MetricsConfig;
+import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.balancing.BrokerCapacity;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -83,6 +84,7 @@ import static io.strimzi.operator.cluster.model.cruisecontrol.Capacity.DEFAULT_B
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -734,6 +736,37 @@ public class CruiseControlTest {
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(Long.valueOf(123)));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(Long.valueOf(456)));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(Long.valueOf(789)));
+    }
+
+    @ParallelTest
+    public void testJvmOptions() {
+        CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
+                .withNewJvmOptions()
+                .withXms("128m")
+                .withXmx("256m")
+                .withXx(Map.of("InitiatingHeapOccupancyPercent", "36"))
+                .withJavaSystemProperties(new SystemPropertyBuilder().withName("myProperty").withValue("myValue").build(),
+                        new SystemPropertyBuilder().withName("myProperty2").withValue("myValue2").build())
+                .endJvmOptions()
+                .build();
+
+        Kafka resource = createKafka(cruiseControlSpec);
+
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+
+        EnvVar systemProps = cc.getEnvVars().stream().filter(var -> AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES.equals(var.getName())).findFirst().orElse(null);
+        assertThat(systemProps, is(notNullValue()));
+        assertThat(systemProps.getValue(), containsString("-DmyProperty=myValue"));
+        assertThat(systemProps.getValue(), containsString("-DmyProperty2=myValue2"));
+
+        EnvVar heapOpts = cc.getEnvVars().stream().filter(var -> AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS.equals(var.getName())).findFirst().orElse(null);
+        assertThat(heapOpts, is(notNullValue()));
+        assertThat(heapOpts.getValue(), containsString("-Xms128m"));
+        assertThat(heapOpts.getValue(), containsString("-Xmx256m"));
+
+        EnvVar perfOptions = cc.getEnvVars().stream().filter(var -> AbstractModel.ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS.equals(var.getName())).findFirst().orElse(null);
+        assertThat(perfOptions, is(notNullValue()));
+        assertThat(perfOptions.getValue(), containsString("-XX:InitiatingHeapOccupancyPercent=36"));
     }
 
     @ParallelTest
