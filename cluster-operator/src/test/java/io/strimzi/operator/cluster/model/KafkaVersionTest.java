@@ -32,6 +32,20 @@ public class KafkaVersionTest {
     }
 
     @ParallelTest
+    public void parsingInvalidVersionTest() {
+        // 2.8-IV1 is not a valid kafka version. However it can be used in CO as it is looking for the MM/MMP versions
+        KafkaVersion kv = new KafkaVersion("2.8-IV1", "2.8-IV1", "2.8-IV1", "3.6.9", false, true, "");
+        assertThat(KafkaVersion.compareDottedVersions("2.8.0", kv.version()), is(0));
+        assertThat(KafkaVersion.compareDottedVersions("3.0.0", kv.version()), greaterThan(0));
+        assertThat(KafkaVersion.compareDottedVersions("2.7.0", kv.version()), lessThan(0));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            KafkaVersion kvFail = new KafkaVersion("why", "you", "little", "3.6.9", false, true, "");
+            assertThat(KafkaVersion.compareDottedVersions("2.8.0", kvFail.version()), is(0));
+        });
+    }
+
+    @ParallelTest
     public void parsingTest() throws Exception {
         Map<String, KafkaVersion> map = new HashMap<>();
         KafkaVersion defaultVersion = KafkaVersion.parseKafkaVersions(getKafkaVersionsReader(KAFKA_VERSIONS_VALID_RESOURCE), map);

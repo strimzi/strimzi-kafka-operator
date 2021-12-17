@@ -423,6 +423,9 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
      * 1 if version1 &gt; version2.
      */
     public static int compareDottedVersions(String version1, String version2) {
+        // Version like X.Y-IVZ can get through validation
+        version1 = version1.split("-")[0];
+        version2 = version2.split("-")[0];
         String[] components = version1.split("\\.");
         String[] otherComponents = version2.split("\\.");
         for (int i = 0; i < Math.min(components.length, otherComponents.length); i++) {
