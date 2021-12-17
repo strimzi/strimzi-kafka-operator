@@ -21,7 +21,6 @@ spec:
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
-      log.message.format.version: "3.0"
       inter.broker.protocol.version: "3.0"
     storage:
       type: ephemeral
