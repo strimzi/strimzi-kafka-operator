@@ -330,9 +330,16 @@ public class VerifiableClient {
         Matcher current = pattern.matcher(clientVersion);
         Matcher minimal = pattern.matcher(minimalVersion);
         if (current.find() && minimal.find()) {
-            return Integer.parseInt(current.group("major")) >= Integer.parseInt(minimal.group("major"))
-                    && Integer.parseInt(current.group("minor")) >= Integer.parseInt(minimal.group("minor"))
-                    && Integer.parseInt(current.group("micro")) >= Integer.parseInt(minimal.group("micro"));
+            int major = Integer.parseInt(current.group("major")), 
+                minor = Integer.parseInt(current.group("minor")),
+                micro = Integer.parseInt(current.group("micro"));
+            int minMajor = Integer.parseInt(minimal.group("major")), 
+                minMinor = Integer.parseInt(minimal.group("minor")),
+                minMicro = Integer.parseInt(minimal.group("micro")); 
+            return 
+                    (major > minMajor)
+                    || (major == minMajor && minor > minMinor)
+                    || (major == minMajor && minor == minMinor && micro >= minMicro);
         }
         return false;
     }
