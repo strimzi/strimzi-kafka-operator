@@ -27,7 +27,6 @@ spec:
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
-      log.message.format.version: "3.0"
       inter.broker.protocol.version: "3.0"
     storage:
       type: jbod
