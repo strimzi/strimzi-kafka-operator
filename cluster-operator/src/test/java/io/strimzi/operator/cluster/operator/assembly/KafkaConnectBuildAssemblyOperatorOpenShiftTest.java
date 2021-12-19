@@ -80,6 +80,9 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
     private static final String NAME = "my-connect";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
+    private static final String OUTPUT_IMAGE = "my-connect-build:latest";
+    private static final String OUTPUT_IMAGE_HASH_STUB = Util.sha1Prefix(OUTPUT_IMAGE);
+
     protected static Vertx vertx;
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_16;
 
@@ -110,7 +113,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                     .withBootstrapServers("my-cluster-kafka-bootstrap:9092")
                     .withNewBuild()
                         .withNewDockerOutput()
-                            .withImage("my-connect-build:latest")
+                            .withImage(OUTPUT_IMAGE)
                             .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(plugin1)
@@ -175,7 +178,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .endSpec()
                 .withNewStatus()
                     .withPhase("Complete")
-                    .withNewOutputDockerImageReference("my-connect-build:latest")
+                    .withNewOutputDockerImageReference(OUTPUT_IMAGE)
                     .withNewOutput()
                         .withNewTo()
                             .withImageDigest("sha256:blablabla")
@@ -219,7 +222,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 Deployment dep = capturedDeps.get(0);
                 assertThat(dep.getMetadata().getName(), is(connect.getName()));
                 assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is("my-connect-build@sha256:blablabla"));
-                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + Util.sha1Prefix(build.getBuild().getOutput().getImage())));
+                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB));
 
                 // Verify BuildConfig
                 List<BuildConfig> capturedBcs = buildConfigCaptor.getAllValues();
@@ -255,7 +258,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                     .withBootstrapServers("my-cluster-kafka-bootstrap:9092")
                     .withNewBuild()
                         .withNewDockerOutput()
-                            .withImage("my-connect-build:latest")
+                            .withImage(OUTPUT_IMAGE)
                             .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(plugin1)
@@ -378,7 +381,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                     .withBootstrapServers("my-cluster-kafka-bootstrap:9092")
                     .withNewBuild()
                         .withNewDockerOutput()
-                            .withImage("my-connect-build:latest")
+                            .withImage(OUTPUT_IMAGE)
                             .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(plugin1)
@@ -459,7 +462,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .endSpec()
                 .withNewStatus()
                     .withPhase("Complete")
-                    .withNewOutputDockerImageReference("my-connect-build:latest")
+                    .withNewOutputDockerImageReference(OUTPUT_IMAGE)
                     .withNewOutput()
                         .withNewTo()
                             .withImageDigest("sha256:blablabla")
@@ -503,7 +506,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 Deployment dep = capturedDeps.get(0);
                 assertThat(dep.getMetadata().getName(), is(connect.getName()));
                 assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is("my-connect-build@sha256:blablabla"));
-                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + Util.sha1Prefix(build.getBuild().getOutput().getImage())));
+                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB));
 
                 // Verify BuildConfig
                 List<BuildConfig> capturedBcs = buildConfigCaptor.getAllValues();
@@ -540,7 +543,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .withBootstrapServers("my-cluster-kafka-bootstrap:9092")
                 .withNewBuild()
                 .withNewDockerOutput()
-                .withImage("my-connect-build:latest")
+                .withImage(OUTPUT_IMAGE)
                 .withPushSecret("my-docker-credentials")
                 .endDockerOutput()
                 .withPlugins(plugin1)
@@ -704,7 +707,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                     .withBootstrapServers("my-cluster-kafka-bootstrap:9092")
                     .withNewBuild()
                         .withNewDockerOutput()
-                            .withImage("my-connect-build:latest")
+                            .withImage(OUTPUT_IMAGE)
                             .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(plugin1)
@@ -745,7 +748,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
             Deployment dep = connect.generateDeployment(emptyMap(), false, null, null);
-            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub());
+            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB);
             dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:blablabla");
             return Future.succeededFuture(dep);
         });
@@ -791,7 +794,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 Deployment dep = capturedDeps.get(0);
                 assertThat(dep.getMetadata().getName(), is(connect.getName()));
                 assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is("my-connect-build@sha256:blablabla"));
-                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub()));
+                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB));
 
                 // Verify BuildConfig
                 List<BuildConfig> capturedBcs = buildConfigCaptor.getAllValues();
@@ -825,7 +828,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                     .withBootstrapServers("my-cluster-kafka-bootstrap:9092")
                     .withNewBuild()
                         .withNewDockerOutput()
-                            .withImage("my-connect-build:latest")
+                            .withImage(OUTPUT_IMAGE)
                             .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(plugin1)
@@ -866,7 +869,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
             Deployment dep = connect.generateDeployment(emptyMap(), false, null, null);
-            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub() + Util.sha1Prefix(build.getBuild().getOutput().getImage()));
+            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB);
             dep.getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD, "true");
             dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build@sha256:blablabla");
             return Future.succeededFuture(dep);
@@ -895,7 +898,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .endSpec()
                 .withNewStatus()
                     .withPhase("Complete")
-                    .withNewOutputDockerImageReference("my-connect-build:latest")
+                    .withNewOutputDockerImageReference(OUTPUT_IMAGE)
                     .withNewOutput()
                         .withNewTo()
                             .withImageDigest("sha256:rebuiltblablabla")
@@ -937,7 +940,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 Deployment dep = capturedDeps.get(0);
                 assertThat(dep.getMetadata().getName(), is(connect.getName()));
                 assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is("my-connect-build@sha256:rebuiltblablabla"));
-                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + Util.sha1Prefix(build.getBuild().getOutput().getImage())));
+                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB));
 
                 // Verify BuildConfig
                 List<BuildConfig> capturedBcs = buildConfigCaptor.getAllValues();
@@ -979,7 +982,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                     .withBootstrapServers("my-cluster-kafka-bootstrap:9092")
                     .withNewBuild()
                         .withNewDockerOutput()
-                            .withImage("my-connect-build:latest")
+                            .withImage(OUTPUT_IMAGE)
                             .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(plugin1)
@@ -1070,7 +1073,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .endSpec()
                 .withNewStatus()
                     .withPhase("Complete")
-                    .withNewOutputDockerImageReference("my-connect-build:latest")
+                    .withNewOutputDockerImageReference(OUTPUT_IMAGE)
                     .withNewOutput()
                         .withNewTo()
                             .withImageDigest("sha256:blablabla")
@@ -1127,7 +1130,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 Deployment dep = capturedDeps.get(0);
                 assertThat(dep.getMetadata().getName(), is(connect.getName()));
                 assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is("my-connect-build@sha256:blablabla"));
-                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + Util.sha1Prefix(build.getBuild().getOutput().getImage())));
+                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB));
 
                 // Verify BuildConfig
                 List<BuildConfig> capturedBcs = buildConfigCaptor.getAllValues();
@@ -1167,7 +1170,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                     .withBootstrapServers("my-cluster-kafka-bootstrap:9092")
                     .withNewBuild()
                         .withNewDockerOutput()
-                            .withImage("my-connect-build:latest")
+                            .withImage(OUTPUT_IMAGE)
                             .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(plugin1)
@@ -1258,7 +1261,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .endSpec()
                 .withNewStatus()
                     .withPhase("Complete")
-                    .withNewOutputDockerImageReference("my-connect-build:latest")
+                    .withNewOutputDockerImageReference(OUTPUT_IMAGE)
                     .withNewOutput()
                         .withNewTo()
                             .withImageDigest("sha256:blablabla")
@@ -1315,7 +1318,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 Deployment dep = capturedDeps.get(0);
                 assertThat(dep.getMetadata().getName(), is(connect.getName()));
                 assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is("my-connect-build@sha256:blablabla"));
-                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + Util.sha1Prefix(build.getBuild().getOutput().getImage())));
+                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB));
 
                 // Verify BuildConfig
                 List<BuildConfig> capturedBcs = buildConfigCaptor.getAllValues();
@@ -1357,7 +1360,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                     .withBootstrapServers("my-cluster-kafka-bootstrap:9092")
                     .withNewBuild()
                         .withNewDockerOutput()
-                            .withImage("my-connect-build:latest")
+                            .withImage(OUTPUT_IMAGE)
                             .withPushSecret("my-docker-credentials")
                         .endDockerOutput()
                         .withPlugins(plugin1)
@@ -1448,7 +1451,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 .endSpec()
                 .withNewStatus()
                     .withPhase("Complete")
-                    .withNewOutputDockerImageReference("my-connect-build:latest")
+                    .withNewOutputDockerImageReference(OUTPUT_IMAGE)
                     .withNewOutput()
                         .withNewTo()
                             .withImageDigest("sha256:blablabla")
@@ -1505,7 +1508,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                 Deployment dep = capturedDeps.get(0);
                 assertThat(dep.getMetadata().getName(), is(connect.getName()));
                 assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is("my-connect-build@sha256:blablabla"));
-                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + Util.sha1Prefix(build.getBuild().getOutput().getImage())));
+                assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + OUTPUT_IMAGE_HASH_STUB));
 
                 // Verify BuildConfig
                 List<BuildConfig> capturedBcs = buildConfigCaptor.getAllValues();
