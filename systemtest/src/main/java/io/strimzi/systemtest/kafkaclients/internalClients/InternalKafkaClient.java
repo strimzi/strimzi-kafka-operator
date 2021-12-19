@@ -312,6 +312,9 @@ public class InternalKafkaClient extends AbstractKafkaClient<InternalKafkaClient
 
         boolean hasPassed = consumerGroups.run(timeoutMs);
         LOGGER.info("ConsumerGroups finished correctly: {}", hasPassed);
+        if (!hasPassed) {
+            throw new RuntimeException("VerifiableClient has failed. Check stderr for more details.");
+        }
 
         // output parsing
         Map<String, String> currentOffsets = new HashMap<>();
