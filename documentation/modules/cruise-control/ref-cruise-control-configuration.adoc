@@ -96,7 +96,7 @@ Because Strimzi Kafka brokers are homogeneous, Cruise Control applies the same c
 
 [NOTE]
 ====
-We recommend that `Kafka.spec.kafka.resources.requests` and `Kafka.spec.kafka.resources.limits` are set to equal values. With these settings, broker pods will have the same capacity and quality of service is guaranteed. The settings can improve stability. This is especially important when using nodes with heterogeneous resources, such as CPU cores.
+We recommend that the Java memory of the Kafka brokers fits into the `Kafka.spec.kafka.resources.requests.memory`, so that brokers will have roughly the same capacity.
 ====
 
 .An example Cruise Control brokerCapacity configuration using bibyte units
