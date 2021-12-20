@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients;
 
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 import java.io.IOException;
@@ -121,19 +120,11 @@ public class VerifiableClient {
         this.clientArgumentMap.put(ClientArgument.MAX_MESSAGES, Integer.toString(maxMessages));
         if (kafkaUsername != null) this.clientArgumentMap.put(ClientArgument.USER, kafkaUsername.replace("-", "_"));
 
-        String image = kubeClient().namespace(podNamespace).getPod(podNamespace, this.podName).getSpec().getContainers().get(0).getImage();
-        String clientVersion = image.substring(image.length() - 5);
-
-        this.clientArgumentMap.put(allowParameter("2.5.0", clientVersion) ? ClientArgument.BOOTSTRAP_SERVER : ClientArgument.BROKER_LIST, bootstrapServer);
+        this.clientArgumentMap.put(ClientArgument.BOOTSTRAP_SERVER, bootstrapServer);
 
         if (clientType == ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER) {
             this.consumerGroupName = verifiableClientBuilder.consumerGroupName;
             this.clientArgumentMap.put(ClientArgument.GROUP_ID, consumerGroupName);
-
-            if (allowParameter("2.3.0", clientVersion)) {
-                this.consumerInstanceId = verifiableClientBuilder.consumerInstanceId;
-                this.clientArgumentMap.put(ClientArgument.GROUP_INSTANCE_ID, this.consumerInstanceId);
-            }
         }
 
         if (clientType == ClientType.CLI_KAFKA_CONSUMER_GROUPS) {
