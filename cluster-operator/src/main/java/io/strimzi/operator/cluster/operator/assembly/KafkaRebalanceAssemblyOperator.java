@@ -154,6 +154,7 @@ public class KafkaRebalanceAssemblyOperator
     private final SecretOperator secretOperations;
     private final PlatformFeaturesAvailability pfa;
     private final Optional<LabelSelector> kafkaSelector;
+    private static boolean disabled;
 
     private final ConfigMapOperator configMapOperator;
     /**
@@ -171,6 +172,7 @@ public class KafkaRebalanceAssemblyOperator
         this.kafkaOperator = supplier.kafkaOperator;
         this.configMapOperator = supplier.configMapOperations;
         this.secretOperations = supplier.secretOperations;
+        disabled = false;
     }
 
     /**
@@ -711,8 +713,10 @@ public class KafkaRebalanceAssemblyOperator
                                                     KafkaRebalance kafkaRebalance,
                                                     KafkaRebalanceAnnotation rebalanceAnnotation,
                                                     RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder) {
-        if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh) {
-            // The user has fixed the error on the resource and want to 'refresh'
+
+        if (rebalanceAnnotation == KafkaRebalanceAnnotation.refresh || disabled) {
+            // The user has fixed the error on the resource and want to 'refresh'.
+            // CC was disabled or cluster label was wrong
             // This actually requests a new rebalance proposal
             return onNew(reconciliation, host, apiClient, kafkaRebalance, rebalanceOptionsBuilder);
         } else {
@@ -1036,6 +1040,7 @@ public class KafkaRebalanceAssemblyOperator
         String clusterNamespace = kafkaRebalance.getMetadata().getNamespace();
         if (clusterName == null) {
             LOGGER.warnCr(reconciliation, "Resource lacks label '{}': No cluster related to a possible rebalance.", Labels.STRIMZI_CLUSTER_LABEL);
+            disabled = true;
             return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(),
                     new InvalidResourceException("Resource lacks label '"
                             + Labels.STRIMZI_CLUSTER_LABEL
@@ -1048,6 +1053,7 @@ public class KafkaRebalanceAssemblyOperator
                     if (kafka == null) {
                         LOGGER.warnCr(reconciliation, "Kafka resource '{}' identified by label '{}' does not exist in namespace {}.",
                                 clusterName, Labels.STRIMZI_CLUSTER_LABEL, clusterNamespace);
+                        disabled = true;
                         return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(),
                                 new NoSuchResourceException("Kafka resource '" + clusterName
                                         + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL
@@ -1057,6 +1063,7 @@ public class KafkaRebalanceAssemblyOperator
                         return Future.succeededFuture();
                     } else if (kafka.getSpec().getCruiseControl() == null) {
                         LOGGER.warnCr(reconciliation, "Kafka resource lacks 'cruiseControl' declaration : No deployed Cruise Control for doing a rebalance.");
+                        disabled = true;
                         return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(),
                                 new InvalidResourceException("Kafka resource lacks 'cruiseControl' declaration "
                                         + ": No deployed Cruise Control for doing a rebalance.")).mapEmpty();
@@ -1128,6 +1135,8 @@ public class KafkaRebalanceAssemblyOperator
         }
         return apiClient.rebalance(host, CruiseControl.REST_API_PORT, rebalanceOptionsBuilder.build(), userTaskID)
                 .map(response -> {
+                    // CC is enabled or Cluster label issue is now fixed
+                    disabled = false;
                     if (dryrun) {
                         if (response.isNotEnoughDataForProposal()) {
                             // If there is not enough data for a rebalance, it's an error at the Cruise Control level
