@@ -12,8 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -314,25 +312,6 @@ public class VerifiableClient {
 
     public String getBootstrapServer() {
         return bootstrapServer;
-    }
-
-    private boolean allowParameter(String minimalVersion, String clientVersion) {
-        Pattern pattern = Pattern.compile("(?<major>[0-9]).(?<minor>[0-9]).(?<micro>[0-9])");
-        Matcher current = pattern.matcher(clientVersion);
-        Matcher minimal = pattern.matcher(minimalVersion);
-        if (current.find() && minimal.find()) {
-            int major = Integer.parseInt(current.group("major")), 
-                minor = Integer.parseInt(current.group("minor")),
-                micro = Integer.parseInt(current.group("micro"));
-            int minMajor = Integer.parseInt(minimal.group("major")), 
-                minMinor = Integer.parseInt(minimal.group("minor")),
-                minMicro = Integer.parseInt(minimal.group("micro")); 
-            return 
-                    (major > minMajor)
-                    || (major == minMajor && minor > minMinor)
-                    || (major == minMajor && minor == minMinor && micro >= minMicro);
-        }
-        return false;
     }
 
     @Override
