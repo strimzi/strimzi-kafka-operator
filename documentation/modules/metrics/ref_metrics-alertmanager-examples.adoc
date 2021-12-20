@@ -27,56 +27,16 @@ General points about the alerting rule definitions:
 Alertmanager can be configured to use email, chat messages or other notification methods.
 Adapt the default configuration of the example rules according to your specific needs.
 
-.Kafka alerting rules
+== Example altering rules
 
-`UnderReplicatedPartitions`:: Gives the number of partitions for which the current broker is the lead replica but which have fewer replicas than the `min.insync.replicas` configured for their topic.
-This metric provides insights about brokers that host the follower replicas. Those followers are not keeping up with the leader.
-Reasons for this could include being (or having been) offline, and over-throttled interbroker replication.
-An alert is raised when this value is greater than zero, providing information on the under-replicated partitions for each broker.
+The `prometheus-rules.yaml` file contains example rules for the following components:
 
-`AbnormalControllerState`:: Indicates whether the current broker is the controller for the cluster.
-The metric can be 0 or 1.
-During the life of a cluster, only one broker should be the controller and the cluster always needs to have an active controller.
-Having two or more brokers saying that they are controllers indicates a problem.
-If the condition persists, an alert is raised when the sum of all the values for this metric on all brokers is not equal to 1, meaning that there is no active controller (the sum is 0) or more than one controller (the sum is greater than 1).
+* Kafka
+* ZooKeeper
+* Entity Operator
+* Kafka Connect
+* Kafka Bridge
+* MirrorMaker
+* Kafka Exporter
 
-`UnderMinIsrPartitionCount`:: Indicates that the minimum number of in-sync replicas (ISRs) for a lead Kafka broker, specified using `min.insync.replicas`, that must acknowledge a write operation has not been reached.
-The metric defines the number of partitions that the broker leads for which the in-sync replicas count is less than the minimum in-sync.
-An alert is raised when this value is greater than zero, providing information on the partition count for each broker that did not achieve the minimum number of acknowledgments.
-
-`OfflineLogDirectoryCount`:: Indicates the number of log directories which are offline (for example, due to a hardware failure) so that the broker cannot store incoming messages anymore.
-An alert is raised when this value is greater than zero, providing information on the number of offline log directories for each broker.
-
-`KafkaRunningOutOfSpace`:: Indicates the remaining amount of disk space that can be used for writing data.
-An alert is raised when this value is lower than 5GiB, providing information on the disk that is running out of space for each persistent volume claim.
-The threshold value may be changed in `prometheus-rules.yaml`.
-
-.ZooKeeper alerting rules
-
-`AvgRequestLatency`:: Indicates the amount of time it takes for the server to respond to a client request.
-An alert is raised when this value is greater than 10 (ticks), providing the actual value of the average request latency for each server.
-
-`OutstandingRequests`:: Indicates the number of queued requests in the server.
-This value goes up when the server receives more requests than it can process.
-An alert is raised when this value is greater than 10, providing the actual number of outstanding requests for each server.
-
-`ZookeeperRunningOutOfSpace`:: Indicates the remaining amount of disk space that can be used for writing data to ZooKeeper.
-An alert is raised when this value is lower than 5GiB., providing information on the disk that is running out of space for each persistent volume claim.
-
-.Kafka Exporter alerting rules
-
-If you perform the steps to introduce metrics to your deployment,
-you will already have your Kafka cluster configured to use the alert notification rules that support Kafka Exporter.
-
-`UnderReplicatedPartition`:: An alert to warn that a topic is under-replicated and the broker is not replicating to enough partitions.
-The default configuration is for an alert if there are one or more under-replicated partitions for a topic.
-The alert might signify that a Kafka instance is down or the Kafka cluster is overloaded.
-A planned restart of the Kafka broker may be required to restart the replication process.
-
-`TooLargeConsumerGroupLag`:: An alert to warn that the lag on a consumer group is too large for a specific topic partition.
-The default configuration is 1000 records.
-A large lag might indicate that consumers are too slow and are falling behind the producers.
-
-`NoMessageForTooLong`:: An alert to warn that a topic has not received messages for a period of time.
-The default configuration for the time period is 10 minutes.
-The delay might be a result of a configuration issue preventing a producer from publishing messages to the topic.
+A description of each of the example rules is provided in the file.
