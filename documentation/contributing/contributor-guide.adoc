@@ -59,11 +59,9 @@ follow these steps to contribute to the documentation.
 
 You add content to the documentation hosted on GitHub using pull requests (PRs).
 
-The PR must be reviewed before it can be merged.
-Request a Subject Matter Expert (SME) review from someone who is familiar with the technical aspects of the content.
-You might not require an SME review if you're only fixing a typo or broken link.
-
-Request additional peer reviewers for general checks on the content.
+Reviewers might be assigned to the PR depending on the changes.
+A review from a Subject Matter Expert (SME) will check the technical aspects of the content.
+The PR might not require an SME review if you're only fixing a typo or broken link.
 
 .Procedure
 . Open your terminal
@@ -122,12 +120,3 @@ $ git push -f origin HEAD
 ----
 . Visit your fork on GitHub
 . Click *Compare & pull request*
-. If an SME review is needed:
-.. Add the *SME Review Needed* label.
-.. When the SME review is complete, add the *SME Review Done* label and go to step 16.
-. Add the *Peer Review Needed* label to assign a reviewer.
-.. When a peer review is complete, the reviewer removes the *Peer Review Needed* label and adds the *Peer Review Done* label.
-. When the *Peer Review Done* label has been added:
-.. If no changes are needed, remove the *Peer Review Done* label and add the *Ready for Merge* label.
-.. If changes are needed and the changes are minor, make changes to the files, commit, and push, and then remove the *Peer Review Done* label and add the *Ready for Merge* label.
-.. If you want an additional review on the updated content, add the *Peer Review Needed* label again, and ask for another review in a comment.
