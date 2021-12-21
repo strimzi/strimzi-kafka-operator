@@ -30,10 +30,12 @@ import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.JvmOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
@@ -61,6 +63,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -1095,5 +1098,36 @@ public class KafkaBridgeClusterTest {
         assertThat(AbstractModel.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED), is("true"));
         assertThat(AbstractModel.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_ORIGINS), is("https://strimzi.io,https://cncf.io"));
         assertThat(AbstractModel.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CORS_ALLOWED_METHODS), is("GET,POST,PUT,DELETE,PATCH"));
+    }
+
+    @ParallelTest
+    public void testJvmOptions() {
+        KafkaBridge resource = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                    .withJvmOptions(
+                            new JvmOptionsBuilder()
+                                    .withXms("128m")
+                                    .withXmx("256m")
+                                    .withXx(Collections.singletonMap("InitiatingHeapOccupancyPercent", "36"))
+                                    .withJavaSystemProperties(
+                                            new SystemPropertyBuilder().withName("myProperty1").withValue("myValue1").build(),
+                                            new SystemPropertyBuilder().withName("myProperty2").withValue("myValue2").build()
+                                    )
+                            .build())
+                .endSpec()
+                .build();
+
+        KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+
+        EnvVar systemProps = kb.getEnvVars().stream().filter(envVar -> AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES.equals(envVar.getName())).findFirst().orElse(null);
+        assertThat(systemProps, is(notNullValue()));
+        assertThat(systemProps.getValue(), containsString("-DmyProperty1=myValue1"));
+        assertThat(systemProps.getValue(), containsString("-DmyProperty2=myValue2"));
+
+        EnvVar javaOpts = kb.getEnvVars().stream().filter(envVar -> AbstractModel.ENV_VAR_STRIMZI_JAVA_OPTS.equals(envVar.getName())).findFirst().orElse(null);
+        assertThat(javaOpts, is(notNullValue()));
+        assertThat(javaOpts.getValue(), containsString("-Xms128m"));
+        assertThat(javaOpts.getValue(), containsString("-Xmx256m"));
+        assertThat(javaOpts.getValue(), containsString("-XX:InitiatingHeapOccupancyPercent=36"));
     }
 }
