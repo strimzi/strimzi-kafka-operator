@@ -102,29 +102,28 @@ For information on configuring TLS client authentication, see xref:type-KafkaCli
 === `resources`
 
 Configure resource _requests_ and _limits_ to control resources for Strimzi containers.
-By reserving enough `memory` and `cpu` resources you can ensure a stable performance of Kafka.
+By requesting enough `memory` and `cpu` resources you can ensure a stable performance of Kafka.
 
 How you configure resources in a production environment depends on a number of factors.
 For example, applications are likely to be sharing resources in your Kubernetes cluster.
 
-For Kafka, the following aspects of a deployment can impact the use of resources:
+For Kafka, the following aspects of a deployment can impact the resources you need:
 
 * Throughput and size of messages
 * The number of network threads handling messages
 * The number of producers and consumers
 * The number of topics and partitions
-* Storage volumes
+* Infrastructure, such as network or storage
 
 The values specified for resource requests are reserved and always available to a container.
 Resource limits specify the maximum resources that can be consumed by a given container.
-The limit is not reserved and might not always be available.
+The amount between the request and limit is not reserved and might not be always available.
 A container can use the resources up to the limit only when they are available.
 Resource limits are temporary and can be reallocated.
 
 .Resource request and limit
 image:common-config-resources.png[Boundaries of a resource request and limit]
 
-If you don't set a limit, the container is given a default limit.
 If you set limits without requests or vice versa, Kubernetes uses the same value for both.
 Setting equal requests and limits for resources guarantees quality of service, as
 Kubernetes will not kill containers unless they exceed their limits.
@@ -169,11 +168,15 @@ NOTE: Strimzi uses the Kubernetes syntax for specifying `memory` and `cpu` resou
 For more information about managing computing resources on Kubernetes, see {K8sManagingComputingResources}.
 
 Memory resources:: When configuring memory resources, consider the total requirements of the components.
++
+--
 Kafka runs inside a JVM and uses an operating system page cache to store message data before writing to disk.
 The memory request for Kafka should fit the JVM heap and page cache.
 You can xref:con-common-configuration-jvm-{context}[configure the `jvmOptions` property] to control the minimum and maximum heap size.
-+
---
+
+Other components don't rely on the page cache.
+You can configure memory resources without configuring the `jvmOptions` to control the heap size.
+
 Memory requests and limits are specified in megabytes, gigabytes, mebibytes, and gibibytes.
 Use the following suffixes in the specification:
 
