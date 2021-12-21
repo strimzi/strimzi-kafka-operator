@@ -68,7 +68,7 @@ release_maven:
 	mvn versions:set -DnewVersion=$(shell echo $(RELEASE_VERSION) | tr a-z A-Z)
 	mvn versions:commit
 
-release_pkg: helm_pkg	
+release_pkg: helm_pkg
 	tar -z -cf ./strimzi-$(RELEASE_VERSION).tar.gz strimzi-$(RELEASE_VERSION)/
 	zip -r ./strimzi-$(RELEASE_VERSION).zip strimzi-$(RELEASE_VERSION)/
 	rm -rf ./strimzi-$(RELEASE_VERSION)
@@ -110,7 +110,7 @@ docu_html: docu_htmlclean docu_versions docu_check
 	mkdir -p documentation/html
 	$(CP) -vrL documentation/shared/images documentation/html/images
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/deploying/deploying.adoc -o documentation/html/deploying.html
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/using/using.adoc -o documentation/html/using.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/configuring/configuring.adoc -o documentation/html/configuring.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/overview/overview.adoc -o documentation/html/overview.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/quickstart/quickstart.adoc -o documentation/html/quickstart.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/contributing/contributing.adoc -o documentation/html/contributing.html
@@ -119,7 +119,7 @@ docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
 	mkdir -p documentation/htmlnoheader
 	$(CP) -vrL documentation/shared/images documentation/htmlnoheader/images
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) -s documentation/deploying/deploying.adoc -o documentation/htmlnoheader/deploying-book.html
-	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) -s documentation/using/using.adoc -o documentation/htmlnoheader/using-book.html
+	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) -s documentation/configuring/configuring.adoc -o documentation/htmlnoheader/configuring-book.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) -s documentation/overview/overview.adoc -o documentation/htmlnoheader/overview-book.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) -s documentation/quickstart/quickstart.adoc -o documentation/htmlnoheader/quickstart-book.html
 	asciidoctor -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) -s documentation/contributing/contributing.adoc -o documentation/htmlnoheader/contributing-book.html
@@ -127,7 +127,7 @@ docu_htmlnoheader: docu_htmlnoheaderclean docu_versions docu_check
 docu_pdf: docu_pdfclean docu_versions docu_check
 	mkdir -p documentation/pdf
 	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/deploying/deploying.adoc -o documentation/pdf/deploying.pdf
-	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/using/using.adoc -o documentation/pdf/using.pdf
+	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/configuring/configuring.adoc -o documentation/pdf/configuring.pdf
 	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/overview/overview.adoc -o documentation/pdf/overview.pdf
 	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/quickstart/quickstart.adoc -o documentation/pdf/quickstart.pdf
 	asciidoctor-pdf -v --failure-level WARN -t -dbook -a ProductVersion=$(RELEASE_VERSION) -a BridgeVersion=$(BRIDGE_VERSION) -a GithubVersion=$(GITHUB_VERSION) -a OAuthVersion=$(OAUTH_VERSION) documentation/contributing/contributing.adoc -o documentation/pdf/contributing.pdf
