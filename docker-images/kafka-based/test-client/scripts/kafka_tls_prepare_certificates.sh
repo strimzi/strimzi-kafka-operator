@@ -7,8 +7,6 @@ KEYSTORE_LOCATION=$(eval "echo \$$(echo KEYSTORE_LOCATION_${USER})")
 USER_LOCATION=$(eval "echo \$$(echo USER_LOCATION_${USER})")
 KAFKA_USER=$(eval "echo \$$(echo KAFKA_USER_${USER})")
 
-set -x
-
 # Parameters:
 # $1: Path to the new truststore
 # $2: Truststore password

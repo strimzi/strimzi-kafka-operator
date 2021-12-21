@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-set -x
+set +x
 
 STRIMZI_BROKER_ID=$(hostname | awk -F'-' '{print $NF}')
 export STRIMZI_BROKER_ID
@@ -59,6 +59,8 @@ if [ -z "$KAFKA_HEAP_OPTS" ] && [ -n "${DYNAMIC_HEAP_FRACTION}" ]; then
 fi
 
 . ./set_kafka_gc_options.sh
+
+set -x
 
 # starting Kafka server with final configuration
 exec /usr/bin/tini -w -e 143 -- "${KAFKA_HOME}/bin/kafka-server-start.sh" /tmp/strimzi.properties

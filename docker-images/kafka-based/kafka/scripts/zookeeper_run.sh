@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+set +x
 
 # volume for saving Zookeeper server logs
 export ZOOKEEPER_VOLUME="/var/lib/zookeeper/"
@@ -76,6 +77,8 @@ fi
 # We need to disable the native ZK authorisation (we secure ZK through the TLS-Sidecars) to allow use of the reconfiguration options.
 KAFKA_OPTS="$KAFKA_OPTS -Dzookeeper.skipACL=yes"
 export KAFKA_OPTS
+
+set -x
 
 # starting Zookeeper with final configuration
 exec /usr/bin/tini -w -e 143 -- "${KAFKA_HOME}/bin/zookeeper-server-start.sh" /tmp/zookeeper.properties

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -x
+set +x
 
 # Defaults
 CONFIG_REGEX="USER=([A-Za-z0-9\_]*)"
