@@ -67,14 +67,18 @@ public interface Operator {
         });
     }
 
+    void resetCounters();
+
     default void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, String namespace, Handler<AsyncResult<Void>> handler) {
+        if (namespace.equals("*")) {
+            resetCounters();
+        } else {
+            resourceCounter(namespace).set(0);
+            pausedResourceCounter(namespace).set(0);
+        }
+
         if (desiredNames.size() > 0) {
             List<Future> futures = new ArrayList<>();
-            desiredNames.stream().map(res -> res.getNamespace()).collect(Collectors.toSet()).forEach(ns -> {
-                resourceCounter(ns).set(0);
-                pausedResourceCounter(ns).set(0);
-            });
-
             for (NamespaceAndName resourceRef : desiredNames) {
                 resourceCounter(resourceRef.getNamespace()).getAndIncrement();
                 Reconciliation reconciliation = new Reconciliation(trigger, kind(), resourceRef.getNamespace(), resourceRef.getName());

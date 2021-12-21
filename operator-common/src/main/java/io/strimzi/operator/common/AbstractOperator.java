@@ -107,6 +107,12 @@ public abstract class AbstractOperator<
     }
 
     @Override
+    public void resetCounters() {
+        resourceCounterMap.entrySet().forEach(entry -> entry.getValue().set(0));
+        pausedResourceCounterMap.entrySet().forEach(entry -> entry.getValue().set(0));
+    }
+
+    @Override
     public String kind() {
         return kind;
     }
@@ -252,12 +258,6 @@ public abstract class AbstractOperator<
 
                 return createOrUpdate.future();
             } else {
-                if (resourceCounter(namespace).get() > 0) {
-                    resourceCounter(namespace).getAndDecrement();
-                }
-                if (pausedResourceCounter(namespace).get() > 0) {
-                    pausedResourceCounter(namespace).getAndDecrement();
-                }
                 LOGGER.infoCr(reconciliation, "{} {} should be deleted", kind, name);
                 return delete(reconciliation).map(deleteResult -> {
                     if (deleteResult) {
