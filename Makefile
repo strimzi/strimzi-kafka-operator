@@ -155,11 +155,11 @@ release_docu: docu_html docu_htmlnoheader docu_pdf
 	$(CP) -rv documentation/pdf/overview.pdf strimzi-$(RELEASE_VERSION)/docs/pdf/
 	$(CP) -rv documentation/pdf/quickstart.pdf strimzi-$(RELEASE_VERSION)/docs/pdf/
 	$(CP) -rv documentation/pdf/deploying.pdf strimzi-$(RELEASE_VERSION)/docs/pdf/
-	$(CP) -rv documentation/pdf/using.pdf strimzi-$(RELEASE_VERSION)/docs/pdf/
+	$(CP) -rv documentation/pdf/configuring.pdf strimzi-$(RELEASE_VERSION)/docs/pdf/
 	$(CP) -rv documentation/html/overview.html strimzi-$(RELEASE_VERSION)/docs/html/
 	$(CP) -rv documentation/html/quickstart.html strimzi-$(RELEASE_VERSION)/docs/html/
 	$(CP) -rv documentation/html/deploying.html strimzi-$(RELEASE_VERSION)/docs/html/
-	$(CP) -rv documentation/html/using.html strimzi-$(RELEASE_VERSION)/docs/html/
+	$(CP) -rv documentation/html/configuring.html strimzi-$(RELEASE_VERSION)/docs/html/
 	$(CP) -rv documentation/html/images/ strimzi-$(RELEASE_VERSION)/docs/html/images/
 
 docu_clean: docu_htmlclean docu_htmlnoheaderclean docu_pdfclean
