@@ -246,20 +246,23 @@ Usage: $0 [command] [params]
     --namespace     Kubernetes namespace
     --cluster       Kafka cluster name
     --group-id      Consumer group id
-    --tot-part      Consumer offsets partitions (default: $TOT_PART)
+    --tot-part      Number of __consumer_offsets partitions (default: $TOT_PART)
     --out-path      Output path (default: $OUT_PATH)
+    --dry-run       Run without dumping (default: $DRY_RUN)
   
   txn_state       Dump transactions state by transactional.id
     --namespace     Kubernetes namespace
     --cluster       Kafka cluster name
     --txn-id        Transactional id
-    --tot-part      Transaction state partitions (default: $TOT_PART)
+    --tot-part      Number of __transaction_state partitions (default: $TOT_PART)
     --out-path      Output path (default: $OUT_PATH)
+    --dry-run       Run without dumping (default: $DRY_RUN)
     
   cluster_meta    Dump cluster metadata (KRaft)
     --namespace     Kubernetes namespace
     --cluster       Kafka cluster name
     --out-path      Output path (default: $OUT_PATH)
+    --dry-run       Run without dumping (default: $DRY_RUN)
 "
 readonly PARAMS="${@}"
 readonly PARRAY=($PARAMS)
