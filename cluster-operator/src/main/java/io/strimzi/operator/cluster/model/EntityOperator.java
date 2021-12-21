@@ -419,45 +419,4 @@ public class EntityOperator extends AbstractModel {
 
         return role;
     }
-
-    protected static void javaOptions(List<EnvVar> envVars, JvmOptions jvmOptions, List<SystemProperty> javaSystemProperties) {
-        StringBuilder strimziJavaOpts = new StringBuilder();
-        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
-        if (xms != null) {
-            strimziJavaOpts.append("-Xms").append(xms);
-        }
-
-        String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
-        if (xmx != null) {
-            strimziJavaOpts.append(" -Xmx").append(xmx);
-        }
-
-        Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
-        if (xx != null) {
-            xx.forEach((k, v) -> {
-                strimziJavaOpts.append(' ').append("-XX:");
-
-                if ("true".equalsIgnoreCase(v))   {
-                    strimziJavaOpts.append("+").append(k);
-                } else if ("false".equalsIgnoreCase(v)) {
-                    strimziJavaOpts.append("-").append(k);
-                } else  {
-                    strimziJavaOpts.append(k).append("=").append(v);
-                }
-            });
-        }
-
-        String optsTrim = strimziJavaOpts.toString().trim();
-        if (!optsTrim.isEmpty()) {
-            envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_OPTS, optsTrim));
-        }
-
-        if (javaSystemProperties != null) {
-            String propsTrim = ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties).trim();
-            if (!propsTrim.isEmpty()) {
-                envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, propsTrim));
-            }
-        }
-    }
-
 }

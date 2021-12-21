@@ -283,7 +283,7 @@ public class EntityTopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        EntityOperator.javaOptions(varList, getJvmOptions(), javaSystemProperties);
+        ModelUtils.javaOptions(varList, getJvmOptions(), javaSystemProperties);
 
         // Add shared environment variables used for all containers
         varList.addAll(getRequiredEnvVars());
