@@ -252,6 +252,12 @@ public abstract class AbstractOperator<
 
                 return createOrUpdate.future();
             } else {
+                if (resourceCounter(namespace).get() > 0) {
+                    resourceCounter(namespace).getAndDecrement();
+                }
+                if (pausedResourceCounter(namespace).get() > 0) {
+                    pausedResourceCounter(namespace).getAndDecrement();
+                }
                 LOGGER.infoCr(reconciliation, "{} {} should be deleted", kind, name);
                 return delete(reconciliation).map(deleteResult -> {
                     if (deleteResult) {

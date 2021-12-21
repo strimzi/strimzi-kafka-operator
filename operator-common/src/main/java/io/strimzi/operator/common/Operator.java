@@ -58,7 +58,6 @@ public interface Operator {
      */
     default void reconcileAll(String trigger, String namespace, Handler<AsyncResult<Void>> handler) {
         allResourceNames(namespace).onComplete(ar -> {
-            pausedResourceCounter(namespace).set(0);
             if (ar.succeeded()) {
                 reconcileThese(trigger, ar.result(), namespace, handler);
                 periodicReconciliationsCounter(namespace).increment();
@@ -71,7 +70,10 @@ public interface Operator {
     default void reconcileThese(String trigger, Set<NamespaceAndName> desiredNames, String namespace, Handler<AsyncResult<Void>> handler) {
         if (desiredNames.size() > 0) {
             List<Future> futures = new ArrayList<>();
-            desiredNames.stream().map(res -> res.getNamespace()).collect(Collectors.toSet()).forEach(ns -> resourceCounter(ns).set(0));
+            desiredNames.stream().map(res -> res.getNamespace()).collect(Collectors.toSet()).forEach(ns -> {
+                resourceCounter(ns).set(0);
+                pausedResourceCounter(ns).set(0);
+            });
 
             for (NamespaceAndName resourceRef : desiredNames) {
                 resourceCounter(resourceRef.getNamespace()).getAndIncrement();
@@ -81,6 +83,7 @@ public interface Operator {
             CompositeFuture.join(futures).map((Void) null).onComplete(handler);
         } else {
             resourceCounter(namespace).set(0);
+            pausedResourceCounter(namespace).set(0);
             handler.handle(Future.succeededFuture());
         }
     }
