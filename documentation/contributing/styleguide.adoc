@@ -1,7 +1,7 @@
 [[style-guide]]
 = Style guidelines
 
-[[general-styles]]
+[[config-styles]]
 == Adding code and configuration examples
 
 The Strimzi documentation contains many code and configuration examples.
