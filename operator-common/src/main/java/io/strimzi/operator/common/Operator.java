@@ -85,8 +85,6 @@ public interface Operator {
             }
             CompositeFuture.join(futures).map((Void) null).onComplete(handler);
         } else {
-            resourceCounter(namespace).set(0);
-            pausedResourceCounter(namespace).set(0);
             handler.handle(Future.succeededFuture());
         }
     }
