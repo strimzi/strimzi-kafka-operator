@@ -102,7 +102,8 @@ For information on configuring TLS client authentication, see xref:type-KafkaCli
 === `resources`
 
 Configure resource _requests_ and _limits_ to control resources for Strimzi containers.
-By requesting enough `memory` and `cpu` resources you can ensure a stable performance of Kafka.
+You can specify requests and limits for `memory` and `cpu` resources.
+The requests should be enough to ensure a stable performance of Kafka.  
 
 How you configure resources in a production environment depends on a number of factors.
 For example, applications are likely to be sharing resources in your Kubernetes cluster.
