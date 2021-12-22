@@ -61,6 +61,17 @@ public class KafkaResources {
     }
 
     /**
+     * Returns the name of the Entity Operator {@code Secret} for a {@code Kafka} cluster of the given name.
+     * This {@code Secret} will only exist if {@code Kafka.spec.entityOperator} is configured in the
+     * {@code Kafka} resource with the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding Entity Operator {@code Secret}.
+     */
+    public static String entityOperatorSecretName(String clusterName) {
+        return entityOperatorDeploymentName(clusterName) + "-certs";
+    }
+
+    /**
      * Returns the name of the Entity Topic Operator {@code Secret} for a {@code Kafka} cluster of the given name.
      * This {@code Secret} will only exist if {@code Kafka.spec.entityOperator.topicOperator} is configured in the
      * {@code Kafka} resource with the given name.

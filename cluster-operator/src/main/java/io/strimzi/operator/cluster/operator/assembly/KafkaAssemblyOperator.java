@@ -347,6 +347,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorUserOpRoleBindingForRole())
                 .compose(state -> state.entityOperatorTopicOpAncillaryCm())
                 .compose(state -> state.entityOperatorUserOpAncillaryCm())
+                .compose(state -> state.entityOperatorSecret())
                 .compose(state -> state.entityTopicOperatorSecret(this::dateSupplier))
                 .compose(state -> state.entityUserOperatorSecret(this::dateSupplier))
                 .compose(state -> state.entityOperatorDeployment())
@@ -3544,6 +3545,13 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }).map(i -> this);
             }
             return withVoid(Future.succeededFuture());
+        }
+
+        // Clean up the old entity-operator-certificate which is generated in the old releases.
+        // Starting from this release, the Topic Operator and User Operator will use new dedicated certificate.
+        // Therefore, we need to remove the unused entity-operator-certificate
+        Future<ReconciliationState> entityOperatorSecret() {
+            return withVoid(secretOperations.reconcile(reconciliation, namespace, EntityOperator.secretName(name), null));
         }
 
         Future<ReconciliationState> entityTopicOperatorSecret(Supplier<Date> dateSupplier) {

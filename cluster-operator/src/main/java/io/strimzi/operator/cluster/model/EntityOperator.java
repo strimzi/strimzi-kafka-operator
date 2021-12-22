@@ -139,6 +139,10 @@ public class EntityOperator extends AbstractModel {
         return zookeeperConnect;
     }
 
+    public static String secretName(String cluster) {
+        return KafkaResources.entityOperatorSecretName(cluster);
+    }
+
     public void setDeployed(boolean isDeployed) {
         this.isDeployed = isDeployed;
     }
