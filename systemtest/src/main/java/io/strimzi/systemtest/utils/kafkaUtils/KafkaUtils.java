@@ -213,6 +213,7 @@ public class KafkaUtils {
             }
             zkPods[0] = zkSnapshot;
             kafkaPods[0] = kafkaSnaptop;
+            eoPods[0] = eoSnapshot;
             count[0] = 0;
             return false;
         });
