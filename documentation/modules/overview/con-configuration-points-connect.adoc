@@ -227,12 +227,11 @@ curl -X POST \
   -d '{ "name": "my-source-connector",
     "config":
     {
-      "class":"org.apache.kafka.connect.file.FileStreamSourceConnector",
+      "connector.class":"org.apache.kafka.connect.file.FileStreamSourceConnector",
       "file": "/opt/kafka/LICENSE",
       "topic":"my-topic",
       "tasksMax": "4",
-      # ...
-    }
+      "type": "source"}
 }'
 ----
 
