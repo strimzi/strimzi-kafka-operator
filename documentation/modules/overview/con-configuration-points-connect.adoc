@@ -231,7 +231,8 @@ curl -X POST \
       "file": "/opt/kafka/LICENSE",
       "topic":"my-topic",
       "tasksMax": "4",
-      "type": "source"}
+      "type": "source"
+    }
 }'
 ----
 
