@@ -113,7 +113,6 @@ For Kafka, the following aspects of a deployment can impact the resources you ne
 * The number of network threads handling messages
 * The number of producers and consumers
 * The number of topics and partitions
-* Infrastructure, such as network or storage
 
 The values specified for resource requests are reserved and always available to a container.
 Resource limits specify the maximum resources that can be consumed by a given container.
