@@ -1,14 +1,14 @@
 # Strimzi: Apache Kafka on Kubernetes
 
-Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) cluster on 
+Strimzi provides a way to run an [Apache Kafka®](https://kafka.apache.org) cluster on
 [Kubernetes](https://kubernetes.io/) or [OpenShift](https://www.openshift.com/) in various deployment configurations.
 See our [website](https://strimzi.io) for more details about the project.
 
 ## CRD Upgrades
 
-**!!! IMPORTANT !!!** 
-Strimzi 0.23 and newer supports only the API version `v1beta2` of all Strimzi custom resources. 
-This is a required as part of the migration to `apiextensionsk8s.io/v1` which is needed because Kubernetes 1.22 will remove support for `apiextensions.k8s.io/v1beta1`. 
+**!!! IMPORTANT !!!**
+Strimzi 0.23 and newer supports only the API version `v1beta2` of all Strimzi custom resources.
+This is a required as part of the migration to `apiextensionsk8s.io/v1` which is needed because Kubernetes 1.22 will remove support for `apiextensions.k8s.io/v1beta1`.
 Migration to `v1beta2` needs to be completed for all Strimzi CRDs and CRs before the upgrade to 0.23 or newer.
 For more details about the CRD upgrades, see the [documentation](https://strimzi.io/docs/operators/0.24.0/deploying.html#assembly-upgrade-resources-str).
 
@@ -98,7 +98,7 @@ the documentation for more details.
 | `watchAnyNamespace`                  | Watch the whole Kubernetes cluster (all namespaces) | `false`                                    |
 | `defaultImageRegistry`               | Default image registry for all the images | `quay.io`                                            |
 | `defaultImageRepository`             | Default image registry for all the images | `strimzi`                                            |
-| `defaultImageTag`                    | Default image tag for all the images except Kafka Bridge | `0.26.1`                              |
+| `defaultImageTag`                    | Default image tag for all the images except Kafka Bridge | `0.27.0`                              |
 | `image.registry`                     | Override default Cluster Operator image registry  | `nil`                                        |
 | `image.repository`                   | Override default Cluster Operator image repository  | `nil`                                      |
 | `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
@@ -109,7 +109,9 @@ the documentation for more details.
 | `operationTimeoutMs`                 | Operation timeout in milliseconds         | 300000                                               |
 | `operatorNamespaceLabels`            | Labels of the namespace where the operator runs | `nil`                                          |
 | `podSecurityContext`                 | Cluster Operator pod's security context    | `nil`                                               |
+| `priorityClassName`                  | Cluster Operator pod's priority class name | `nil`                                               |
 | `securityContext`                    | Cluster Operator container's security context |  `nil`                                           |
+| `extraEnvs`                          | Extra environment variables for the Cluster operator container | `[]`                            |
 | `zookeeper.image.registry  `         | Override default ZooKeeper image registry | `nil`                                                |
 | `zookeeper.image.repository`         | Override default ZooKeeper image repository | `nil`                                              |
 | `zookeeper.image.name`               | ZooKeeper image name                      | `kafka`                                              |
@@ -157,7 +159,7 @@ the documentation for more details.
 | `kafkaBridge.image.registry`         | Override default Kafka Bridge image registry               | `quay.io`                           |
 | `kafkaBridge.image.repository`       | Override default Kafka Bridge image repository             | `strimzi`                           |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge`                                       |
-| `kafkaBridge.image.tag`              | Override default Kafka Bridge image tag                    | `0.21.0`                            |
+| `kafkaBridge.image.tag`              | Override default Kafka Bridge image tag                    | `0.21.2`                            |
 | `kanikoExecutor.image.registry`      | Override default Kaniko Executor image registry            | `nil`                               |
 | `kanikoExecutor.image.repository`    | Override default Kaniko Executor image repository          | `nil`                               |
 | `kanikoExecutor.image.name`          | Kaniko Executor image name                | `kaniko-executor`                                    |
@@ -177,6 +179,7 @@ the documentation for more details.
 | `labels`                             | Add labels to Operator Pod                | `{}`                                                 |
 | `nodeSelector`                       | Add a node selector to Operator Pod       | `{}`                                                 |
 | `featureGates`                       | Feature Gates configuration               | `nil`                                                |
+| `tmpDirSizeLimit`                    | Set the `sizeLimit` for the tmp dir volume used by the operator  | `1Mi`                         |
 | `labelsExclusionPattern`             | Override the exclude pattern for exclude some labels             | `""`                          |
 | `generateNetworkPolicy`              | Controls whether Strimzi generates network policy resources      | `true`                        |
 | `connectBuildTimeoutMs`              | Overrides the default timeout value for building new Kafka Connect    | `300000`                 |
