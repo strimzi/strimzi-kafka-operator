@@ -61,7 +61,7 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
     public static final String ENV_VAR_CLIENTS_CA_RENEWAL = "STRIMZI_CA_RENEWAL";
     public static final String ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
-    public static final String ENV_VAR_EUO_KEY_SECRET_NAME = "STRIMZI_EUO_KEY_SECRET_NAME";
+    public static final String ENV_VAR_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
     public static final String ENV_VAR_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
     public static final String ENV_VAR_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
@@ -283,7 +283,7 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_VALIDITY, Integer.toString(clientsCaValidityDays)));
         varList.add(buildEnvVar(ENV_VAR_CLIENTS_CA_RENEWAL, Integer.toString(clientsCaRenewalDays)));
         varList.add(buildEnvVar(ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME, KafkaCluster.clusterCaCertSecretName(cluster)));
-        varList.add(buildEnvVar(ENV_VAR_EUO_KEY_SECRET_NAME, EntityUserOperator.secretName(cluster)));
+        varList.add(buildEnvVar(ENV_VAR_EO_KEY_SECRET_NAME, EntityUserOperator.secretName(cluster)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(buildEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
         varList.add(buildEnvVar(ENV_VAR_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported)));

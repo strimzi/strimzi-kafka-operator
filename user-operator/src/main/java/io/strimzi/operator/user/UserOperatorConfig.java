@@ -21,7 +21,7 @@ public class UserOperatorConfig {
     public static final String STRIMZI_CA_CERT_SECRET_NAME = "STRIMZI_CA_CERT_NAME";
     public static final String STRIMZI_CA_KEY_SECRET_NAME = "STRIMZI_CA_KEY_NAME";
     public static final String STRIMZI_CLUSTER_CA_CERT_SECRET_NAME = "STRIMZI_CLUSTER_CA_CERT_SECRET_NAME";
-    public static final String STRIMZI_EUO_KEY_SECRET_NAME = "STRIMZI_EUO_KEY_SECRET_NAME";
+    public static final String STRIMZI_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
     public static final String STRIMZI_CA_NAMESPACE = "STRIMZI_CA_NAMESPACE";
     public static final String STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     public static final String STRIMZI_CLIENTS_CA_VALIDITY = "STRIMZI_CA_VALIDITY";
@@ -151,7 +151,7 @@ public class UserOperatorConfig {
 
         String clusterCaCertSecretName = map.get(UserOperatorConfig.STRIMZI_CLUSTER_CA_CERT_SECRET_NAME);
 
-        String euoKeySecretName = map.get(UserOperatorConfig.STRIMZI_EUO_KEY_SECRET_NAME);
+        String euoKeySecretName = map.get(UserOperatorConfig.STRIMZI_EO_KEY_SECRET_NAME);
 
         String caNamespace = map.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE);
         if (caNamespace == null || caNamespace.isEmpty()) {
