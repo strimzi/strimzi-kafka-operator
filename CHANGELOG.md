@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## 0.28.0
+
 ## 0.27.0
 
 * Multi-arch container images with support for x86_64 / AMD64 and AArch64 / ARM64 platforms
