@@ -59,6 +59,8 @@ import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.EntityOperator;
+import io.strimzi.operator.cluster.model.EntityTopicOperator;
+import io.strimzi.operator.cluster.model.EntityUserOperator;
 import io.strimzi.operator.cluster.model.JmxTrans;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaExporter;
@@ -592,7 +594,8 @@ public class KafkaAssemblyOperatorTest {
         expectedSecrets.addAll(secrets.stream().map(s -> s.getMetadata().getName()).collect(Collectors.toSet()));
         if (eoConfig != null) {
             // it's expected only when the Entity Operator is deployed by the Cluster Operator
-            expectedSecrets.add(EntityOperator.secretName(kafkaName));
+            expectedSecrets.add(EntityTopicOperator.secretName(kafkaName));
+            expectedSecrets.add(EntityUserOperator.secretName(kafkaName));
         }
 
         when(mockDepOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(invocation -> {
@@ -1110,7 +1113,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.getAsync(clusterNamespace, KafkaCluster.brokersSecretName(clusterName))).thenReturn(
                 Future.succeededFuture()
         );
-        when(mockSecretOps.getAsync(clusterNamespace, EntityOperator.secretName(clusterName))).thenReturn(
+        when(mockSecretOps.getAsync(clusterNamespace, EntityTopicOperator.secretName(clusterName))).thenReturn(
                 Future.succeededFuture()
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaExporter.secretName(clusterName))).thenReturn(

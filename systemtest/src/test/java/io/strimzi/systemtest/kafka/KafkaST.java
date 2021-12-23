@@ -626,7 +626,7 @@ class KafkaST extends AbstractST {
         //Waiting when EO pod will be recreated without TO
         PodUtils.deletePodWithWait(namespaceName, eoPodName);
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
-        PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 2);
+        PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
 
         //Checking that TO was removed
         kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {

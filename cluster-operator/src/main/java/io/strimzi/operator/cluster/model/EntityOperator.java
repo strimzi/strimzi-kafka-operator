@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -54,10 +53,14 @@ import static io.strimzi.operator.cluster.model.EntityUserOperator.USER_OPERATOR
 @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
 public class EntityOperator extends AbstractModel {
     protected static final String APPLICATION_NAME = "entity-operator";
+    // Certificates for the Entity Topic Operator
+    protected static final String ETO_CERTS_VOLUME_NAME = "eto-certs";
+    protected static final String ETO_CERTS_VOLUME_MOUNT = "/etc/eto-certs/";
+    // Certificates for the Entity User Operator
+    protected static final String EUO_CERTS_VOLUME_NAME = "euo-certs";
+    protected static final String EUO_CERTS_VOLUME_MOUNT = "/etc/euo-certs/";
 
     protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
-    protected static final String TLS_SIDECAR_EO_CERTS_VOLUME_NAME = "eo-certs";
-    protected static final String TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/eo-certs/";
     protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
     protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
 
@@ -264,31 +267,33 @@ public class EntityOperator extends AbstractModel {
             containers.addAll(userOperator.getContainers(imagePullPolicy));
         }
 
-        String tlsSidecarImage = this.tlsSidecarImage;
-        if (tlsSidecar != null && tlsSidecar.getImage() != null) {
-            tlsSidecarImage = tlsSidecar.getImage();
-        }
+        // The TLS Sidecar is only used by the Topic Operator. Therefore, when the Topic Operator is disabled, the TLS side should also be disabled.
+        if (topicOperator != null) {
+            String tlsSidecarImage = this.tlsSidecarImage;
+            if (tlsSidecar != null && tlsSidecar.getImage() != null) {
+                tlsSidecarImage = tlsSidecar.getImage();
+            }
 
-        Container tlsSidecarContainer = new ContainerBuilder()
-                .withName(TLS_SIDECAR_NAME)
-                .withImage(tlsSidecarImage)
-                .withCommand("/opt/stunnel/entity_operator_stunnel_run.sh")
-                .withLivenessProbe(ProbeGenerator.tlsSidecarLivenessProbe(tlsSidecar))
-                .withReadinessProbe(ProbeGenerator.tlsSidecarReadinessProbe(tlsSidecar))
-                .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
-                .withEnv(getTlsSidecarEnvVars())
-                .withVolumeMounts(createTempDirVolumeMount(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
-                        VolumeUtils.createVolumeMount(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT),
-                        VolumeUtils.createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
-                .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec()
+            Container tlsSidecarContainer = new ContainerBuilder()
+                    .withName(TLS_SIDECAR_NAME)
+                    .withImage(tlsSidecarImage)
+                    .withCommand("/opt/stunnel/entity_operator_stunnel_run.sh")
+                    .withLivenessProbe(ProbeGenerator.tlsSidecarLivenessProbe(tlsSidecar))
+                    .withReadinessProbe(ProbeGenerator.tlsSidecarReadinessProbe(tlsSidecar))
+                    .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
+                    .withEnv(getTlsSidecarEnvVars())
+                    .withVolumeMounts(createTempDirVolumeMount(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
+                            VolumeUtils.createVolumeMount(ETO_CERTS_VOLUME_NAME, ETO_CERTS_VOLUME_MOUNT),
+                            VolumeUtils.createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
+                    .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec()
                             .withCommand("/opt/stunnel/entity_operator_stunnel_pre_stop.sh")
-                        .endExec().endPreStop().build())
-                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
-                .withSecurityContext(templateTlsSidecarContainerSecurityContext)
-                .build();
+                            .endExec().endPreStop().build())
+                    .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
+                    .withSecurityContext(templateTlsSidecarContainerSecurityContext)
+                    .build();
 
-        containers.add(tlsSidecarContainer);
-
+            containers.add(tlsSidecarContainer);
+        }
         return containers;
     }
 
@@ -306,41 +311,23 @@ public class EntityOperator extends AbstractModel {
     }
 
     private List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>(7);
+        List<Volume> volumeList = new ArrayList<>(8);
 
         if (topicOperator != null) {
             volumeList.addAll(topicOperator.getVolumes());
             volumeList.add(createTempDirVolume(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            volumeList.add(VolumeUtils.createSecretVolume(ETO_CERTS_VOLUME_NAME, EntityTopicOperator.secretName(cluster), isOpenShift));
         }
 
         if (userOperator != null) {
             volumeList.addAll(userOperator.getVolumes());
             volumeList.add(createTempDirVolume(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            volumeList.add(VolumeUtils.createSecretVolume(EUO_CERTS_VOLUME_NAME, EntityUserOperator.secretName(cluster), isOpenShift));
         }
 
         volumeList.add(createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-        volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.secretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         return volumeList;
-    }
-
-    /**
-     * Generate the Secret containing the Entity Operator certificate signed by the cluster CA certificate used for TLS based
-     * internal communication with Kafka and Zookeeper.
-     * It also contains the related Entity Operator private key.
-     *
-     * @param clusterCa The cluster CA.
-     * @param isMaintenanceTimeWindowsSatisfied Indicates whether we are in the maintenance window or not.
-     *                                          This is used for certificate renewals
-     * @return The generated Secret.
-     */
-    public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
-        if (!isDeployed()) {
-            return null;
-        }
-        Secret secret = clusterCa.entityOperatorSecret();
-        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, EntityOperator.secretName(cluster), name,
-                "entity-operator", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 
     /**

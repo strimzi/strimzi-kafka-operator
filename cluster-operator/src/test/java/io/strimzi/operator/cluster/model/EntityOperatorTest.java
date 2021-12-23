@@ -140,7 +140,7 @@ public class EntityOperatorTest {
         assertThat(EntityOperatorTest.volumeMounts(tlsSidecarContainer.getVolumeMounts()), is(map(
                         EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
                         EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,
-                        EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_EO_CERTS_VOLUME_MOUNT)));
+                        EntityOperator.ETO_CERTS_VOLUME_NAME, EntityOperator.ETO_CERTS_VOLUME_MOUNT)));
         assertThat(tlsSidecarContainer.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(tlsHealthDelay)));
         assertThat(tlsSidecarContainer.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(tlsHealthTimeout)));
         assertThat(tlsSidecarContainer.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(tlsHealthDelay)));
