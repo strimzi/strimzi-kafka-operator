@@ -96,7 +96,7 @@ Because Strimzi Kafka brokers are homogeneous, Cruise Control applies the same c
 
 [NOTE]
 ====
-We recommend that the Java memory of the Kafka brokers fits into the `Kafka.spec.kafka.resources.requests.memory`, so that brokers will have roughly the same capacity.
+In order to guarantee accurate RebalanceProposals when using CPU goals, you can set requests equal to limits in Kafka CR. That way, all CPU resources are reserved upfront and the broker's full capacity is always available, even when the Kubernetes node is under pressure. This is a tradeoff, as it comes at the cost of some unused CPU cycles.
 ====
 
 .An example Cruise Control brokerCapacity configuration using bibyte units

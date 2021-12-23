@@ -143,7 +143,7 @@ com.linkedin.kafka.cruisecontrol.exception.OptimizationFailureException:
 
 [NOTE]
 ====
-The error shows CPU capacity as a percentage rather than CPU cores. For that reason, it does not directly map to the number of CPUs configured in `Kafka.spec.kafka.resources`. It is like having a single _virtual_ CPU per broker, which has the cycles of one or more CPUs. This has no effect on the rebalance behavior, since the ratio between CPU utilization and capacity remains the same.
+The error shows CPU capacity as a percentage rather than CPU cores. For that reason, it does not directly map to the number of CPUs configured in Kafka CR. It is like having a single _virtual_ CPU per broker, which has the cycles of `Kafka.spec.kafka.resources.limits.cpu` CPUs. This has no effect on the rebalance behavior, since the ratio between CPU utilization and capacity remains the same.
 ====
 
 .What to do next
