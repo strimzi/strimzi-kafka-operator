@@ -96,7 +96,9 @@ Because Strimzi Kafka brokers are homogeneous, Cruise Control applies the same c
 
 [NOTE]
 ====
-In order to guarantee accurate RebalanceProposals when using CPU goals, you can set requests equal to limits in Kafka CR. That way, all CPU resources are reserved upfront and the broker's full capacity is always available, even when the Kubernetes node is under pressure. This is a tradeoff, as it comes at the cost of some unused CPU cycles.
+In order to guarantee accurate rebalance proposal when using CPU goals, you can set CPU requests equal to CPU limits in `Kafka.spec.kafka.resources`.
+That way, all CPU resources are reserved upfront and are always available.
+This configuration allows Cruise Control to properly evaluate the CPU utilization when preparing the rebalance proposals based on CPU goals.
 ====
 
 .An example Cruise Control brokerCapacity configuration using bibyte units
