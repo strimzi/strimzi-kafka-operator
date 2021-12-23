@@ -144,7 +144,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generatePodDisruptionBudget()))
                 .compose(i -> generateAuthHash(namespace, kafkaConnect.getSpec()))
                 .compose(hash -> {
-                    Deployment deployment = generateDeployment(connect, buildState, desiredLogging, hash);
+                    Map<String, String> annotations = createAnnotations(buildState, desiredLogging, hash);
+                    Deployment deployment = generateDeployment(connect, buildState, annotations);
                     return deploymentOperations.reconcile(reconciliation, namespace, connect.getName(), deployment);
                 })
                 .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, connect.getName(), connect.getReplicas()))
@@ -287,12 +288,14 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     }
 
     /**
-     * Builds a new container image with connectors on Kubernetes using Kaniko or on OpenShift using BuildConfig
+     * Creates the annotations for the KafkaConnect deployment
      *
-     * @param connect           KafkaConnectCluster object
-     * @return                  Future for tracking the asynchronous result of getting the metrics and logging config map
+     * @param buildState           State of the Connect build
+     * @param desiredLogging       Atomic reference to the desired logging string
+     * @param hash                 Tls certificate hash
+     * @return                     Map of keys and values for Connect deployment annotations
      */
-    Deployment generateDeployment(KafkaConnectCluster connect, BuildState buildState, AtomicReference<String> desiredLogging, int hash) {
+    Map<String, String> createAnnotations(BuildState buildState, AtomicReference<String> desiredLogging, Integer hash) {
         Map<String, String> annotations = new HashMap<>();
         if (buildState.desiredBuildRevision != null) {
             annotations.put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildState.desiredBuildRevision);
@@ -300,13 +303,22 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
                 Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(desiredLogging.get())));
         annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
+        return annotations;
+    }
 
+    /**
+     * Generates the Connect deployment
+     *
+     * @param connect           KafkaConnectCluster object
+     * @param buildState        State of the Connect build
+     * @param annotations       Annotations for the deployment
+     * @return                  Future for tracking the asynchronous result of getting the metrics and logging config map
+     */
+    Deployment generateDeployment(KafkaConnectCluster connect, BuildState buildState, Map<String, String> annotations) {
         Deployment dep = connect.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
-
         if (buildState.desiredImage != null) {
             dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(buildState.desiredImage);
         }
-
         return dep;
     }
 
