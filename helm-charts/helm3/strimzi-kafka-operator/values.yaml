@@ -7,7 +7,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.26.1
+defaultImageTag: 0.27.0
 
 image:
   registry: ""
@@ -21,12 +21,15 @@ fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
 kubernetesServiceDnsDomain: cluster.local
 featureGates: ""
+tmpDirSizeLimit: 1Mi
+extraEnvs: []
 
 tolerations: []
 affinity: {}
 annotations: {}
 labels: {}
 nodeSelector: {}
+priorityClassName: ""
 
 podSecurityContext: {}
 securityContext: {}
@@ -87,7 +90,7 @@ kafkaBridge:
     registry: ""
     repository:
     name: kafka-bridge
-    tag: 0.21.0
+    tag: 0.21.2
 kafkaExporter:
   image:
     registry: ""

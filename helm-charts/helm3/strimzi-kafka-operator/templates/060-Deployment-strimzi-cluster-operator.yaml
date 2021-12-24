@@ -35,11 +35,14 @@ spec:
       {{- with .Values.podSecurityContext }}
       securityContext: {{ toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.priorityClassName }}
+      priorityClassName: {{ .Values.priorityClassName }}
+      {{- end }}
       volumes:
         - name: strimzi-tmp
           emptyDir:
             medium: Memory
-            sizeLimit: 1Mi
+            sizeLimit: {{ .Values.tmpDirSizeLimit }}
         - name: {{ .Values.logVolume }}
           configMap:
             name: {{ .Values.logConfigMap }}
@@ -124,6 +127,9 @@ spec:
             {{- if ne (int .Values.connectBuildTimeoutMs) 300000 }}
             - name: STRIMZI_CONNECT_BUILD_TIMEOUT_MS
               value: {{ .Values.connectBuildTimeoutMs | quote }}
+            {{- end }}
+            {{- if .Values.extraEnvs }}
+            {{ toYaml .Values.extraEnvs | indent 12 }}
             {{- end }}
           livenessProbe:
             httpGet:
