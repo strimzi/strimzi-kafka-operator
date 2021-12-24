@@ -49,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ExtendWith(VertxExtension.class)
 @Group("strimzi")
 @Version("v1")
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class OperatorMetricsTest {
     private static Vertx vertx;
 
@@ -381,40 +382,10 @@ public class OperatorMetricsTest {
         resources.add(new NamespaceAndName("my-namespace", "utv"));
 
         AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
-
-        AbstractOperator operator = new AbstractOperator(vertx, "TestResource", resourceOperator, metrics, null) {
-            @Override
-            protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
-                return Future.succeededFuture();
-            }
-
-            public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
-                return Future.succeededFuture(resources);
-            }
-
-            @Override
-            public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
-                // Do nothing
-                return emptySet();
-            }
-
-            @Override
-            Future<Void> updateStatus(Reconciliation reconciliation, Status desiredStatus) {
-                return Future.succeededFuture();
-            }
-
-            @Override
-            protected Future<Boolean> delete(Reconciliation reconciliation) {
-                return null;
-            }
-
-            @Override
-            protected Status createStatus() {
-                return new Status() { };
-            }
-        };
+        AbstractOperator operator = new ReconcileAllMockOperator(vertx, "TestResource", resourceOperator, metrics, null);
 
         Promise<Void> reconcileAllPromise = Promise.promise();
+        ((ReconcileAllMockOperator) operator).setResources(resources);
         operator.reconcileAll("test", "my-namespace", reconcileAllPromise);
 
         Checkpoint async = context.checkpoint();
@@ -433,6 +404,9 @@ public class OperatorMetricsTest {
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().count(), is(3L));
             assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
 
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").meter().getId().getTags().get(2), is(selectorTag));
+            assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "TestResource").tag("namespace", "my-namespace").gauge().value(), is(3.0));
+
             for (NamespaceAndName resource : resources) {
                 assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
                         .tag("kind", "TestResource")
@@ -445,6 +419,91 @@ public class OperatorMetricsTest {
         })));
     }
 
+    @Test
+    public void testReconcileAllOverMultipleNamespaces(VertxTestContext context)  {
+        MetricsProvider metrics = createCleanMetricsProvider();
+
+        Set<NamespaceAndName> resources = new HashSet<>(3);
+        resources.add(new NamespaceAndName("my-namespace", "avfc"));
+        resources.add(new NamespaceAndName("my-namespace", "vtid"));
+        resources.add(new NamespaceAndName("my-namespace2", "utv"));
+
+        Set<NamespaceAndName> updatedResources = new HashSet<>(2);
+        updatedResources.add(new NamespaceAndName("my-namespace", "avfc"));
+        updatedResources.add(new NamespaceAndName("my-namespace", "vtid"));
+
+        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
+
+        AbstractOperator operator = new ReconcileAllMockOperator(vertx, "TestResource", resourceOperator, metrics, null);
+
+        Promise<Void> reconcileAllPromise = Promise.promise();
+        ((ReconcileAllMockOperator) operator).setResources(resources);
+        operator.reconcileAll("test", "*", reconcileAllPromise);
+
+        Checkpoint async = context.checkpoint();
+        reconcileAllPromise.future()
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    MeterRegistry registry = metrics.meterRegistry();
+
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.periodical").tag("kind", "TestResource").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").tag("namespace", "my-namespace").counter().count(), is(2.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").tag("namespace", "my-namespace2").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").tag("namespace", "my-namespace").counter().count(), is(2.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").tag("namespace", "my-namespace2").counter().count(), is(1.0));
+
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace").timer().count(), is(2L));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace2").timer().count(), is(1L));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace2").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "TestResource").tag("namespace", "my-namespace").gauge().value(), is(2.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "TestResource").tag("namespace", "my-namespace2").gauge().value(), is(1.0));
+
+                    for (NamespaceAndName resource : resources) {
+                        assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                                .tag("kind", "TestResource")
+                                .tag("name", resource.getName())
+                                .tag("resource-namespace", resource.getNamespace())
+                                .gauge().value(), is(1.0));
+                    }
+                })))
+                .compose(ignore -> {
+                    // Reconcile again with resource in my-namespace2 deleted
+                    Promise<Void> secondReconcileAllPromise = Promise.promise();
+                    ((ReconcileAllMockOperator) operator).setResources(updatedResources);
+                    operator.reconcileAll("test", "*", secondReconcileAllPromise);
+
+                    return secondReconcileAllPromise.future();
+                })
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    MeterRegistry registry = metrics.meterRegistry();
+
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.periodical").tag("kind", "TestResource").counter().count(), is(2.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").tag("namespace", "my-namespace").counter().count(), is(4.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations").tag("kind", "TestResource").tag("namespace", "my-namespace2").counter().count(), is(1.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").tag("namespace", "my-namespace").counter().count(), is(4.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.successful").tag("kind", "TestResource").tag("namespace", "my-namespace2").counter().count(), is(1.0));
+
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace").timer().count(), is(4L));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace2").timer().count(), is(1L));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "reconciliations.duration").tag("kind", "TestResource").tag("namespace", "my-namespace2").timer().totalTime(TimeUnit.MILLISECONDS), greaterThan(0.0));
+
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "TestResource").tag("namespace", "my-namespace").gauge().value(), is(2.0));
+                    assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resources").tag("kind", "TestResource").tag("namespace", "my-namespace2").gauge().value(), is(0.0));
+
+                    for (NamespaceAndName resource : updatedResources) {
+                        assertThat(registry.get(AbstractOperator.METRICS_PREFIX + "resource.state")
+                                .tag("kind", "TestResource")
+                                .tag("name", resource.getName())
+                                .tag("resource-namespace", resource.getNamespace())
+                                .gauge().value(), is(1.0));
+                    }
+
+                    async.flag();
+                })));
+    }
+
     /**
      * Created new MetricsProvider and makes sure it doesn't contain any metrics from previous tests.
      *
@@ -454,9 +513,7 @@ public class OperatorMetricsTest {
         MetricsProvider metrics = new MicrometerMetricsProvider();
         MeterRegistry registry = metrics.meterRegistry();
 
-        registry.forEachMeter(meter -> {
-            registry.remove(meter);
-        });
+        registry.forEachMeter(registry::remove);
 
         return metrics;
     }
@@ -662,5 +719,49 @@ public class OperatorMetricsTest {
                 return Future.succeededFuture(new Foo());
             }
         };
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    static class ReconcileAllMockOperator extends  AbstractOperator  {
+        private Set<NamespaceAndName> resources;
+
+        public ReconcileAllMockOperator(Vertx vertx, String kind, AbstractWatchableStatusedResourceOperator resourceOperator, MetricsProvider metrics, Labels selectorLabels) {
+            super(vertx, kind, resourceOperator, metrics, selectorLabels);
+        }
+
+        @Override
+        protected Future createOrUpdate(Reconciliation reconciliation, CustomResource resource) {
+            return Future.succeededFuture();
+        }
+
+        public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
+            return Future.succeededFuture(resources);
+        }
+
+        @Override
+        public Set<Condition> validate(Reconciliation reconciliation, CustomResource resource) {
+            // Do nothing
+            return emptySet();
+        }
+
+        @Override
+        Future<Void> updateStatus(Reconciliation reconciliation, Status desiredStatus) {
+            return Future.succeededFuture();
+        }
+
+        @Override
+        protected Future<Boolean> delete(Reconciliation reconciliation) {
+            return null;
+        }
+
+        @Override
+        protected Status createStatus() {
+            return new Status() { };
+        }
+
+        // Helper method used to set resources for each reconciliation
+        public void setResources(Set<NamespaceAndName> resources) {
+            this.resources = resources;
+        }
     }
 }
