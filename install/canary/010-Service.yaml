@@ -1,0 +1,14 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: strimzi-canary
+  labels:
+    app: strimzi-canary
+spec:
+  ports:
+    - port: 8080
+      name: http
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: strimzi-canary
