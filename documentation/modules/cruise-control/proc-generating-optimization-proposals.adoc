@@ -125,7 +125,30 @@ Status:
 ----
 +
 The properties in the `Optimization Result` section describe the pending cluster rebalance operation. 
-For descriptions of each property, see xref:contents-optimization-proposals[Contents of optimization proposals]. 
+For descriptions of each property, see xref:contents-optimization-proposals[Contents of optimization proposals].
+
+.Insufficient CPU capacity
+
+If a Kafka cluster is overloaded in terms of CPU utilization, you might see an insufficient CPU capacity error in the `KafkaRebalance` status.
+It's worth noting that this utilization value is unaffected by the `excludedTopics` configuration. 
+Although optimization proposals will not reassign replicas of excluded topics, their load is still considered in the utilization calculation.
+
+.Example CPU utilization error
+[source,shell,subs="+quotes"]
+----
+com.linkedin.kafka.cruisecontrol.exception.OptimizationFailureException:
+        [CpuCapacityGoal] Insufficient capacity for cpu (Utilization 615.21,
+        Allowed Capacity 420.00, Threshold: 0.70). Add at least 3 brokers with
+        the same cpu capacity (100.00) as broker-0. Add at least 3 brokers with
+        the same cpu capacity (100.00) as broker-0.
+----
+
+[NOTE]
+====
+The error shows CPU capacity as a percentage rather than CPU cores. For that reason, it does not directly map to the number of CPUs configured in Kafka CR.
+It is like having a single _virtual_ CPU per broker, which has the cycles of `Kafka.spec.kafka.resources.limits.cpu` CPUs.
+This has no effect on the rebalance behavior, since the ratio between CPU utilization and capacity remains the same.
+====
 
 .What to do next
 
