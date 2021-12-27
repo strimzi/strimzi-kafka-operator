@@ -4,6 +4,12 @@
  */
 package io.strimzi.operator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.api.model.APIGroup;
+import io.fabric8.kubernetes.api.model.APIGroupBuilder;
+import io.fabric8.kubernetes.api.model.GroupVersionForDiscovery;
+import io.fabric8.kubernetes.api.model.GroupVersionForDiscoveryBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
@@ -22,7 +28,9 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,6 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ExtendWith(VertxExtension.class)
 public class PlatformFeaturesAvailabilityTest {
+    private final static ObjectMapper OBJECTMAPPER = new ObjectMapper();
 
     private HttpServer server;
 
@@ -87,9 +96,9 @@ public class PlatformFeaturesAvailabilityTest {
 
     @Test
     public void testApiDetectionOce(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
-        List<String> apis = new ArrayList<>();
-        apis.add("/apis/route.openshift.io/v1");
-        apis.add("/apis/build.openshift.io/v1");
+        List<APIGroup> apis = new ArrayList<>();
+        apis.add(buildAPIGroup("route.openshift.io", "v1"));
+        apis.add(buildAPIGroup("build.openshift.io", "v1"));
 
         startMockApi(vertx, apis);
 
@@ -101,18 +110,16 @@ public class PlatformFeaturesAvailabilityTest {
             assertThat(pfa.hasRoutes(), is(true));
             assertThat(pfa.hasBuilds(), is(true));
             assertThat(pfa.hasImages(), is(false));
-            assertThat(pfa.hasApps(), is(false));
             async.flag();
         })));
     }
 
     @Test
     public void testApiDetectionOpenshift(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
-        List<String> apis = new ArrayList<>();
-        apis.add("/apis/route.openshift.io/v1");
-        apis.add("/apis/build.openshift.io/v1");
-        apis.add("/apis/apps.openshift.io/v1");
-        apis.add("/apis/image.openshift.io/v1");
+        List<APIGroup> apis = new ArrayList<>();
+        apis.add(buildAPIGroup("route.openshift.io", "v1"));
+        apis.add(buildAPIGroup("build.openshift.io", "v1"));
+        apis.add(buildAPIGroup("image.openshift.io", "v1"));
 
         startMockApi(vertx, apis);
 
@@ -124,7 +131,27 @@ public class PlatformFeaturesAvailabilityTest {
             assertThat(pfa.hasRoutes(), is(true));
             assertThat(pfa.hasBuilds(), is(true));
             assertThat(pfa.hasImages(), is(true));
-            assertThat(pfa.hasApps(), is(true));
+            async.flag();
+        })));
+    }
+
+    @Test
+    public void testApiDetectionWrongAPIVersion(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
+        List<APIGroup> apis = new ArrayList<>();
+        apis.add(buildAPIGroup("route.openshift.io", "v2"));
+        apis.add(buildAPIGroup("build.openshift.io", "v1"));
+        apis.add(buildAPIGroup("image.openshift.io", "v1"));
+
+        startMockApi(vertx, apis);
+
+        KubernetesClient client = new DefaultKubernetesClient("127.0.0.1:" + server.actualPort());
+
+        Checkpoint async = context.checkpoint();
+
+        PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
+            assertThat(pfa.hasRoutes(), is(false));
+            assertThat(pfa.hasBuilds(), is(true));
+            assertThat(pfa.hasImages(), is(true));
             async.flag();
         })));
     }
@@ -141,7 +168,6 @@ public class PlatformFeaturesAvailabilityTest {
             assertThat(pfa.hasRoutes(), is(false));
             assertThat(pfa.hasBuilds(), is(false));
             assertThat(pfa.hasImages(), is(false));
-            assertThat(pfa.hasApps(), is(false));
             async.flag();
         })));
     }
@@ -167,11 +193,19 @@ public class PlatformFeaturesAvailabilityTest {
         context.completeNow();
     }
 
-    void startMockApi(Vertx vertx, String version, List<String> apis) throws InterruptedException, ExecutionException {
+    void startMockApi(Vertx vertx, String version, List<APIGroup> apis) throws InterruptedException, ExecutionException {
+        Set<String> groupsPaths = apis.stream().map(api -> "/apis/" + api.getName()).collect(Collectors.toSet());
 
         HttpServer httpServer = vertx.createHttpServer().requestHandler(request -> {
-            if (HttpMethod.GET.equals(request.method()) && apis.contains(request.uri())) {
-                request.response().setStatusCode(200).end();
+            if (HttpMethod.GET.equals(request.method()) && groupsPaths.contains(request.uri())) {
+                String groupName = request.uri().substring(request.uri().lastIndexOf("/") + 1);
+                APIGroup group = apis.stream().filter(g -> groupName.equals(g.getName())).findFirst().orElse(null);
+
+                try {
+                    request.response().setStatusCode(200).end(OBJECTMAPPER.writeValueAsString(group));
+                } catch (JsonProcessingException e) {
+                    e.printStackTrace();
+                }
             } else if (HttpMethod.GET.equals(request.method()) && "/version".equals(request.uri())) {
                 request.response().setStatusCode(200).end(version);
             } else {
@@ -181,7 +215,7 @@ public class PlatformFeaturesAvailabilityTest {
         server = httpServer.listen(0).toCompletionStage().toCompletableFuture().get();
     }
 
-    void startMockApi(Vertx vertx, List<String> apis) throws InterruptedException, ExecutionException {
+    void startMockApi(Vertx vertx, List<APIGroup> apis) throws InterruptedException, ExecutionException {
         String version = "{\n" +
                 "  \"major\": \"1\",\n" +
                 "  \"minor\": \"16\",\n" +
@@ -195,6 +229,27 @@ public class PlatformFeaturesAvailabilityTest {
                 "}";
 
         startMockApi(vertx, version, apis);
+    }
+
+    private APIGroup buildAPIGroup(String group, String... versions)    {
+        APIGroup apiGroup = new APIGroupBuilder()
+                .withName(group)
+                .build();
+
+        List<GroupVersionForDiscovery> groupVersions = new ArrayList<>();
+
+        for (String version : versions) {
+            groupVersions.add(
+                    new GroupVersionForDiscoveryBuilder()
+                            .withGroupVersion(group + "/" + version)
+                            .withVersion(version)
+                            .build()
+            );
+        }
+
+        apiGroup.setVersions(groupVersions);
+
+        return apiGroup;
     }
 
     @AfterEach()

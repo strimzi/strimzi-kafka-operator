@@ -4,15 +4,13 @@
  */
 package io.strimzi.operator;
 
+import io.fabric8.kubernetes.api.model.APIGroup;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.VersionInfo;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,12 +26,10 @@ public class PlatformFeaturesAvailability {
     private boolean routes = false;
     private boolean builds = false;
     private boolean images = false;
-    private boolean apps = false;
     private KubernetesVersion kubernetesVersion;
 
     public static Future<PlatformFeaturesAvailability> create(Vertx vertx, KubernetesClient client) {
         Promise<PlatformFeaturesAvailability> pfaPromise = Promise.promise();
-        OkHttpClient httpClient = getOkHttpClient(client);
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability();
 
@@ -44,32 +40,19 @@ public class PlatformFeaturesAvailability {
             String minor = versionInfo.getMinor().equals("") ? Integer.toString(KubernetesVersion.MINIMAL_SUPPORTED_MINOR) : versionInfo.getMinor();
             pfa.setKubernetesVersion(new KubernetesVersion(Integer.parseInt(major.split("\\D")[0]), Integer.parseInt(minor.split("\\D")[0])));
 
-            return checkApiAvailability(vertx, httpClient, client.getMasterUrl().toString(), "route.openshift.io", "v1");
+            return checkApiAvailability(vertx, client, "route.openshift.io", "v1");
         }).compose(supported -> {
             pfa.setRoutes(supported);
-            return checkApiAvailability(vertx, httpClient, client.getMasterUrl().toString(), "build.openshift.io", "v1");
+            return checkApiAvailability(vertx, client, "build.openshift.io", "v1");
         }).compose(supported -> {
             pfa.setBuilds(supported);
-            return checkApiAvailability(vertx, httpClient, client.getMasterUrl().toString(), "apps.openshift.io", "v1");
-        }).compose(supported -> {
-            pfa.setApps(supported);
-            return checkApiAvailability(vertx, httpClient, client.getMasterUrl().toString(), "image.openshift.io", "v1");
+            return checkApiAvailability(vertx, client, "image.openshift.io", "v1");
         }).compose(supported -> {
             pfa.setImages(supported);
             return Future.succeededFuture(pfa);
-        })
-        .onComplete(pfaPromise);
+        }).onComplete(pfaPromise);
 
         return pfaPromise.future();
-    }
-
-    private static OkHttpClient getOkHttpClient(KubernetesClient client)   {
-        if (client.isAdaptable(OkHttpClient.class)) {
-            return client.adapt(OkHttpClient.class);
-        } else {
-            LOGGER.error("Cannot adapt KubernetesClient to OkHttpClient");
-            throw new RuntimeException("Cannot adapt KubernetesClient to OkHttpClient");
-        }
     }
 
     /**
@@ -157,27 +140,25 @@ public class PlatformFeaturesAvailability {
         return promise.future();
     }
 
-    private static Future<Boolean> checkApiAvailability(Vertx vertx, OkHttpClient httpClient, String masterUrl, String api, String version)   {
+    private static Future<Boolean> checkApiAvailability(Vertx vertx, KubernetesClient client, String group, String version)   {
         Promise<Boolean> promise = Promise.promise();
 
         vertx.executeBlocking(request -> {
             try {
-                Boolean isSupported;
+                APIGroup apiGroup = client.getApiGroup(group);
+                boolean supported;
 
-                Response resp = httpClient.newCall(new Request.Builder().get().url(masterUrl + "apis/" + api + "/" + version).build()).execute();
-                if (resp.code() >= 200 && resp.code() < 300) {
-                    LOGGER.debug("{} returned {}. This API is supported.", resp.request().url(), resp.code());
-                    isSupported = true;
+                if (apiGroup != null)   {
+                    supported = apiGroup.getVersions().stream().anyMatch(v -> version.equals(v.getVersion()));
                 } else {
-                    LOGGER.debug("{} returned {}. This API is not supported.", resp.request().url(), resp.code());
-                    isSupported = false;
+                    supported = false;
                 }
 
-                resp.close();
-                request.complete(isSupported);
+                LOGGER.warn("API Group {} is {}supported", group, supported ? "" : "not ");
+                request.complete(supported);
             } catch (Exception e) {
-                LOGGER.error("Detection of {}/{} API failed. This API will be disabled.", api, version, e);
-                request.complete(false);
+                LOGGER.error("Detection of API availability failed.", e);
+                request.fail(e);
             }
         }, promise);
 
@@ -197,7 +178,6 @@ public class PlatformFeaturesAvailability {
         this.routes = isOpenShift;
         this.images = isOpenShift;
         this.builds = isOpenShift;
-        this.apps = isOpenShift;
     }
 
     public boolean isOpenshift() {
@@ -236,16 +216,8 @@ public class PlatformFeaturesAvailability {
         this.images = images;
     }
 
-    public boolean hasApps() {
-        return apps;
-    }
-
-    private void setApps(boolean apps) {
-        this.apps = apps;
-    }
-
     public boolean supportsS2I() {
-        return hasBuilds() && hasApps() && hasImages();
+        return hasBuilds() && hasImages();
     }
 
     /**
@@ -264,7 +236,6 @@ public class PlatformFeaturesAvailability {
                 ",OpenShiftRoutes=" + routes +
                 ",OpenShiftBuilds=" + builds +
                 ",OpenShiftImageStreams=" + images +
-                ",OpenShiftDeploymentConfigs=" + apps +
                 ")";
     }
 }
