@@ -129,9 +129,9 @@ For descriptions of each property, see xref:contents-optimization-proposals[Cont
 
 .Insufficient CPU capacity
 
-If a Kafka cluster is overloaded in terms of CPU utilization, you might see an insufficient CPU capacity error in the `KafkaRebalance` status. 
-This might be because of excluded topics configuration (`excludedTopics`). 
-Optimization proposals ignore excluded topics, but CPU utilization calculations consider their replicas.
+If a Kafka cluster is overloaded in terms of CPU utilization, you might see an insufficient CPU capacity error in the `KafkaRebalance` status.
+It's worth noting that this utilization value is unaffected by the `excludedTopics` configuration. 
+Although optimization proposals will not reassign replicas of excluded topics, their load is still considered in the utilization calculation.
 
 .Example CPU utilization error
 [source,shell,subs="+quotes"]
