@@ -48,7 +48,6 @@
 :kafka-exporter-project: link:https://github.com/danielqsj/kafka_exporter[Kafka Exporter^]
 
 //OAuth attributes and links
-:oauth2-site: link:https://oauth.net/2/[OAuth 2.0 site^]
 :keycloak-server-doc: link:https://www.keycloak.org/documentation.html[Keycloak documentation^]
 :keycloak-server-install-doc: link:https://www.keycloak.org/docs/latest/server_installation/index.html#_operator[Installing the Keycloak Operator^]
 :keycloak-authorization-services: link:https://www.keycloak.org/docs/latest/authorization_services/index.html[Keycloak Authorization Services^]
@@ -60,9 +59,7 @@
 // External links
 :aws-ebs: link:https://aws.amazon.com/ebs/[Amazon Elastic Block Store (EBS)^]
 :kubernetes-docs: link:https://kubernetes.io/docs/home/
-:docs-okd: link:https://docs.okd.io/3.11/dev_guide/builds/index.html[builds^]
 :kafkaDoc: link:https://kafka.apache.org/documentation/[Apache Kafka documentation^]
-:KafkaRacks: link:https://kafka.apache.org/documentation/#basic_ops_racks[Kafka racks documentation^]
 :K8sAffinity: link:https://kubernetes.io/docs/concepts/configuration/assign-pod-node/[Kubernetes node and pod affinity documentation^]
 :K8sTolerations: link:https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/[Kubernetes taints and tolerations^]
 :K8sTopologySpreadConstraints: link:https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/[Kubernetes Topology Spread Constraints^]
@@ -75,11 +72,7 @@
 :K8sMeaningOfMemory: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/#meaning-of-memory[Meaning of memory^]
 :K8sManagingComputingResources: link:https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/[Managing Compute Resources for Containers^]
 :K8sLivenessReadinessProbes: link:https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/[Configure Liveness and Readiness Probes^]
-:K8sPullingImagesFromPrivateRegistries: link:https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/[Pull an Image from a Private Registry^]
-:K8sConfigureSecurityContext: link:https://kubernetes.io/docs/tasks/configure-pod-container/security-context/[Configure a Security Context for a Pod or Container^]
 :K8sNetworkPolicyPeerAPI: link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#networkpolicypeer-v1-networking-k8s-io[NetworkPolicyPeer API reference^]
-:K8sResourceRequirementsAPI: link:https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#resourcerequirements-v1-core[ResourceRequirements API reference^]
-:K8sPodDisruptionBudgets: link:https://kubernetes.io/docs/concepts/workloads/pods/disruptions/[Disruptions^]
 :K8sImagePullPolicies: link:https://kubernetes.io/docs/concepts/containers/images/#updating-images[Disruptions^]
 :K8sCRDs: link:https://kubernetes.io/docs/tasks/access-kubernetes-api/custom-resources/custom-resource-definitions/[Extend the Kubernetes API with CustomResourceDefinitions^]
 :K8sResizingPersistentVolumesUsingKubernetes: link:https://kubernetes.io/blog/2018/07/12/resizing-persistent-volumes-using-kubernetes/[Resizing Persistent Volumes using Kubernetes^]
@@ -109,9 +102,7 @@
 :OperatorLifecycleManager: link:https://github.com/operator-framework/operator-lifecycle-manager[Operator Lifecycle Manager^]
 :OLMOperatorDocs: link:https://olm.operatorframework.io/docs/[Operator Lifecycle Manager documentation^]
 :OpenTracingHome: link:https://opentracing.io/[OpenTracing^]
-:OpenTelemetryHome: link:https://opentelemetry.io/[OpenTelemetry^]
 :JaegerHome: link:https://www.jaegertracing.io/[Jaeger^]
-:JaegerArch: link:https://www.jaegertracing.io/docs/1.18/architecture/[Jaeger architecure^]
 :JaegerArch: link:https://www.jaegertracing.io/docs/1.18/architecture/[Jaeger architecure^]
 :OpenTracingDocs: link:https://opentracing.io/docs/overview/[OpenTracing documentation^]
 :OPAAuthorizer: link:https://github.com/anderseknert/opa-kafka-plugin[Open Policy Agent plugin for Kafka authorization^]
@@ -137,7 +128,6 @@
 :DockerUserOperator: quay.io/strimzi/operator:{DockerTag}
 :DockerEntityOperatorStunnel: quay.io/strimzi/kafka:{DockerTag}-kafka-{DefaultKafkaVersion}
 :DockerKafkaBridge: quay.io/strimzi/kafka-bridge:{BridgeDockerTag}
-:DockerDrainCleaner: quay.io/strimzi/drain-cleaner:{DrainCleanerDockerTag}
 
 :DockerImageUser: 1001
 
@@ -153,25 +143,11 @@
 :KafkaRebalanceApiVersion: kafka.strimzi.io/v1beta2
 :KafkaBridgeApiVersion: kafka.strimzi.io/v1beta2
 
-// API Versions previous
-:KafkaApiVersionPrev: kafka.strimzi.io/v1beta1
-:KafkaConnectApiVersionPrev: kafka.strimzi.io/v1beta1
-:KafkaTopicApiVersionPrev: kafka.strimzi.io/v1beta1
-:KafkaUserApiVersionPrev: kafka.strimzi.io/v1beta1
-:KafkaMirrorMakerApiVersionPrev: kafka.strimzi.io/v1beta1
-:KafkaConnectorApiVersionPrev: kafka.strimzi.io/v1alpha1
-:KafkaMirrorMaker2ApiVersionPrev: kafka.strimzi.io/v1alpha1
-:KafkaRebalanceApiVersionPrev: kafka.strimzi.io/v1alpha1
-:KafkaBridgeApiVersionPrev: kafka.strimzi.io/v1alpha1
-
 // Tracing versions
 :JaegerClientVersion: 1.3.2
 :OpenTracingKafkaClient: 0.1.15
 
 // Section enablers
-:Helm:
-:OperatorHubio:
-:StrimziUpgrades:
 :InstallationAppendix:
 :Metrics:
 :Downloading:
@@ -180,14 +156,12 @@
 :sectlinks:
 
 // Helm Chart - deploy cluster operator
-:ChartName: strimzi-kafka-operator
 :ChartReleaseCoordinate: strimzi/strimzi-kafka-operator
 :ChartRepositoryUrl: https://strimzi.io/charts/
 
 // Links to other Strimzi documentation books
 :BookURLDeploying: ./deploying.html
 :BookURLUsing: ./using.html
-:BookURLUsingPrevious: https://strimzi.io/docs/operators/0.19.0/using.html
 
 // Link to resource on https://github.com/strimzi/strimzi-kafka-operator
 // Default `main`, specific version overriden when building the docs by `make`
