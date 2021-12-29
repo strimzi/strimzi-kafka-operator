@@ -4,7 +4,7 @@ metadata:
   name: my-source-cluster
 spec:
   kafka:
-    version: 3.0.0
+    version: 3.1.0
     replicas: 1
     listeners:
       - name: plain
@@ -21,7 +21,7 @@ spec:
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
-      inter.broker.protocol.version: "3.0"
+      inter.broker.protocol.version: "3.1"
     storage:
       type: jbod
       volumes:

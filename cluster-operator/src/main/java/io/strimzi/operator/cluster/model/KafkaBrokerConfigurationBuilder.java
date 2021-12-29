@@ -64,6 +64,9 @@ public class KafkaBrokerConfigurationBuilder {
     public KafkaBrokerConfigurationBuilder withBrokerId()   {
         printSectionHeader("Broker ID");
         writer.println("broker.id=${STRIMZI_BROKER_ID}");
+        // Node ID is ignored when not using Kraft mode => but it defaults to broker ID when not set
+        // We set it here in the configuration explicitly to avoid never ending rolling updates
+        writer.println("node.id=${STRIMZI_BROKER_ID}");
 
         writer.println();
 

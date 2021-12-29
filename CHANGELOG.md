@@ -2,7 +2,8 @@
 
 ## 0.28.0
 
-* Update Open Policy Agent authorizer to 1.4.0 and add support for enabling metrics 
+* Add support for Kafka 3.1.0; remove Kafka 2.8.0 and 2.8.1
+* Update Open Policy Agent authorizer to 1.4.0 and add support for enabling metrics
 
 ## 0.27.0
 
