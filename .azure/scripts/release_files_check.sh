@@ -8,8 +8,7 @@ SHA1SUM=sha1sum
 RETURN_CODE=0
 
 # Helm Charts
-CHECKSUM="$(find ./helm-charts/ -type f -print0 | sort -z | xargs -0 ${SHA1SUM} | ${SHA1SUM})"
-echo "checksum of ./helm-charts/ is CHECKSUM=${CHECKSUM}"
+CHECKSUM="$(make checksum_helm)"
 
 if [ "$CHECKSUM" != "$HELM_CHART_CHECKSUM" ]; then
   echo "ERROR checksum of ./helm-charts does not match expected"
@@ -24,12 +23,13 @@ if [ "$CHECKSUM" != "$HELM_CHART_CHECKSUM" ]; then
   echo "->"
   echo "HELM_CHART_CHECKSUM=\"${CHECKSUM}\""
   RETURN_CODE=$((RETURN_CODE+1))
+else
+  echo "checksum of ./helm-charts/ matches expected checksum => OK"
 fi
 
 
 # install
-CHECKSUM="$(find ./install/ -type f -print0 | sort -z | xargs -0 ${SHA1SUM} | ${SHA1SUM})"
-echo "checksum of ./install/ is CHECKSUM=${CHECKSUM}"
+CHECKSUM="$(make checksum_install)"
 
 if [ "$CHECKSUM" != "$INSTALL_CHECKSUM" ]; then
   echo "ERROR checksum of ./install does not match expected"
@@ -44,11 +44,12 @@ if [ "$CHECKSUM" != "$INSTALL_CHECKSUM" ]; then
   echo "->"
   echo "INSTALL_CHECKSUM=\"${CHECKSUM}\""
   RETURN_CODE=$((RETURN_CODE+1))
+else
+  echo "checksum of ./install/ matches expected checksum => OK"
 fi
 
 # examples
-CHECKSUM="$(find ./examples/ -type f -print0 | sort -z | xargs -0 ${SHA1SUM} | ${SHA1SUM})"
-echo "checksum of ./examples/ is CHECKSUM=${CHECKSUM}"
+CHECKSUM="$(make checksum_examples)"
 
 if [ "$CHECKSUM" != "$EXAMPLES_CHECKSUM" ]; then
   echo "ERROR checksum of ./install does not match expected"
@@ -63,6 +64,8 @@ if [ "$CHECKSUM" != "$EXAMPLES_CHECKSUM" ]; then
   echo "->"
   echo "EXAMPLES_CHECKSUM=\"${CHECKSUM}\""
   RETURN_CODE=$((RETURN_CODE+1))
+else
+  echo "checksum of ./examples/ matches expected checksum => OK"
 fi
 
 exit $RETURN_CODE
