@@ -8,7 +8,7 @@ SHA1SUM=sha1sum
 RETURN_CODE=0
 
 # Helm Charts
-CHECKSUM="$(make checksum_helm)"
+CHECKSUM="$(make --no-print-directory checksum_helm)"
 
 if [ "$CHECKSUM" != "$HELM_CHART_CHECKSUM" ]; then
   echo "ERROR checksum of ./helm-charts does not match expected"
@@ -29,7 +29,7 @@ fi
 
 
 # install
-CHECKSUM="$(make checksum_install)"
+CHECKSUM="$(make --no-print-directory checksum_install)"
 
 if [ "$CHECKSUM" != "$INSTALL_CHECKSUM" ]; then
   echo "ERROR checksum of ./install does not match expected"
@@ -49,7 +49,7 @@ else
 fi
 
 # examples
-CHECKSUM="$(make checksum_examples)"
+CHECKSUM="$(make --no-print-directory checksum_examples)"
 
 if [ "$CHECKSUM" != "$EXAMPLES_CHECKSUM" ]; then
   echo "ERROR checksum of ./install does not match expected"
