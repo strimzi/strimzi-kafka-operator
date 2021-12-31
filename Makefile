@@ -72,6 +72,12 @@ release_pkg: helm_pkg
 	tar -z -cf ./strimzi-$(RELEASE_VERSION).tar.gz strimzi-$(RELEASE_VERSION)/
 	zip -r ./strimzi-$(RELEASE_VERSION).zip strimzi-$(RELEASE_VERSION)/
 	rm -rf ./strimzi-$(RELEASE_VERSION)
+	$(FIND) ./examples/ -mindepth 1 -maxdepth 1 ! -name DO_NOT_EDIT.md -type f,d -exec rm -rvf {} +
+	$(FIND) ./install/ -mindepth 1 -maxdepth 1 ! -name DO_NOT_EDIT.md -type f,d -exec rm -rvf {} +
+	rm -rfv ./helm-charts/helm3/strimzi-kafka-operator
+	$(FIND) ./packaging/examples/ -mindepth 1 -maxdepth 1 ! -name Makefile -type f,d -exec $(CP) -rv {} ./examples/ \;
+	$(FIND) ./packaging/install/ -mindepth 1 -maxdepth 1 ! -name Makefile -type f,d -exec $(CP) -rv {} ./install/ \;
+	$(CP) -rv ./packaging/helm-charts/helm3/strimzi-kafka-operator ./helm-charts/helm3/strimzi-kafka-operator
 
 release_helm_version:
 	echo "Updating default image tags in Helm Chart to $(RELEASE_VERSION)"
