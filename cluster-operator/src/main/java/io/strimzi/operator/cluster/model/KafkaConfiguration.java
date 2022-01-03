@@ -112,11 +112,16 @@ public class KafkaConfiguration extends AbstractConfiguration {
         String name = "/kafka-" + kafkaVersion.version() + "-config-model.json";
         try {
             try (InputStream in = KafkaConfiguration.class.getResourceAsStream(name)) {
-                ConfigModels configModels = new ObjectMapper().readValue(in, ConfigModels.class);
-                if (!kafkaVersion.version().equals(configModels.getVersion())) {
-                    throw new RuntimeException("Incorrect version");
+                if (in != null) {
+                    ConfigModels configModels = new ObjectMapper().readValue(in, ConfigModels.class);
+                    if (!kafkaVersion.version().equals(configModels.getVersion())) {
+                        throw new RuntimeException("Incorrect version");
+                    }
+                    return configModels.getConfigs();
+                } else {
+                    // The configuration model does not exist
+                    throw new RuntimeException("Configuration model " + name + " was not found");
                 }
-                return configModels.getConfigs();
             }
         } catch (IOException e) {
             throw new RuntimeException("Error reading from classpath resource " + name, e);

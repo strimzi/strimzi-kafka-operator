@@ -370,12 +370,19 @@ public class KafkaCluster extends AbstractModel {
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
     public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
+        KafkaSpec kafkaSpec = kafkaAssembly.getSpec();
+        KafkaClusterSpec kafkaClusterSpec = kafkaSpec.getKafka();
+
+        // Validate the Kafka version first
+        KafkaVersion desiredVersion = versions.version(kafkaClusterSpec.getVersion());
+        if (!desiredVersion.isSupported())  {
+            throw new InvalidResourceException("Kafka version " + desiredVersion.version() + " is not supported. " +
+                    "Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
+        }
+
         KafkaCluster result = new KafkaCluster(reconciliation, kafkaAssembly);
 
         result.setOwnerReference(kafkaAssembly);
-
-        KafkaSpec kafkaSpec = kafkaAssembly.getSpec();
-        KafkaClusterSpec kafkaClusterSpec = kafkaSpec.getKafka();
 
         result.setReplicas(kafkaClusterSpec.getReplicas());
 
@@ -418,7 +425,6 @@ public class KafkaCluster extends AbstractModel {
         }
 
         // Handle Kafka broker configuration
-        KafkaVersion desiredVersion = versions.version(kafkaClusterSpec.getVersion());
         KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
         configureCruiseControlMetrics(kafkaAssembly, result, configuration);
         validateConfiguration(reconciliation, kafkaAssembly, desiredVersion, configuration);

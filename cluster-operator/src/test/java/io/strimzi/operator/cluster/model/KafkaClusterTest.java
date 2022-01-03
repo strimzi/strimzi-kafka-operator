@@ -117,6 +117,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -3791,5 +3792,40 @@ public class KafkaClusterTest {
         ResourceRequirements initContainersResources = kc.getInitContainers(ImagePullPolicy.IFNOTPRESENT).get(0).getResources();
         assertThat(initContainersResources.getRequests(), is(requirements));
         assertThat(initContainersResources.getLimits(), is(limits));
+    }
+
+    @ParallelTest
+    public void testInvalidVersion() {
+        Kafka kafka = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editKafka()
+                        .withVersion("2.6.0")
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        InvalidResourceException exc = assertThrows(InvalidResourceException.class, () -> {
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        });
+
+        assertThat(exc.getMessage(), containsString("Kafka version 2.6.0 is not supported. Supported versions are:"));
+    }
+
+    @ParallelTest
+    public void testInvalidVersionWithCustomImage() {
+        Kafka kafka = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editKafka()
+                        .withVersion("2.6.0")
+                        .withImage("my-custom/image:latest")
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        InvalidResourceException exc = assertThrows(InvalidResourceException.class, () -> {
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        });
+
+        assertThat(exc.getMessage(), containsString("Kafka version 2.6.0 is not supported. Supported versions are:"));
     }
 }

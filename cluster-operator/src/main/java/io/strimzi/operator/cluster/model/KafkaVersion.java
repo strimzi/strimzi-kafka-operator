@@ -264,7 +264,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         }
 
         InvalidResourceException asInvalidResourceException(String version, NoImageException e) {
-            return new InvalidResourceException("Version " + version + " is not supported. " +
+            return new InvalidResourceException("Kafka version " + version + " is not supported. " +
                     "Supported versions are: " + String.join(", ", supportedVersions()) + ".",
                     e);
         }
