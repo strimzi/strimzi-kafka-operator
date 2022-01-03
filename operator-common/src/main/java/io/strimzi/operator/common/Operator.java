@@ -61,6 +61,8 @@ public interface Operator {
                 reconcileThese(trigger, ar.result(), namespace, handler);
                 periodicReconciliationsCounter(namespace).increment();
             } else {
+                resourceCounter(namespace).set(0);
+                pausedResourceCounter(namespace).set(0);
                 handler.handle(ar.map((Void) null));
             }
         });

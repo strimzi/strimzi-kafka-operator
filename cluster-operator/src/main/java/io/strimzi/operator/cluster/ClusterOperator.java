@@ -105,7 +105,7 @@ public class ClusterOperator extends AbstractVerticle {
                 kafkaConnectAssemblyOperator, kafkaBridgeAssemblyOperator, kafkaMirrorMaker2AssemblyOperator));
         for (AbstractOperator<?, ?, ?, ?> operator : operators) {
             watchFutures.add(operator.createWatch(namespace, operator.recreateWatch(namespace)).compose(w -> {
-                LOGGER.info("Opened watch for {} operator", operator.kind());
+                LOGGER.info("Opened watch for {} operator in namespace {}", operator.kind(), namespace);
                 watchByKind.put(operator.kind(), w);
                 return Future.succeededFuture();
             }));
