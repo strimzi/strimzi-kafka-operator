@@ -6,6 +6,7 @@
 package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
@@ -108,6 +109,7 @@ public class KafkaConfiguration extends AbstractConfiguration {
      * @param kafkaVersion The broker version.
      * @return The config model for that broker version.
      */
+    @SuppressFBWarnings({"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"})
     public static Map<String, ConfigModel> readConfigModel(KafkaVersion kafkaVersion) {
         String name = "/kafka-" + kafkaVersion.version() + "-config-model.json";
         try {
