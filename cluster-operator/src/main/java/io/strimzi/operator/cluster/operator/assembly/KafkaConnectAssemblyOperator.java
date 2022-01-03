@@ -267,7 +267,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
             if (newBuildRevision.equals(buildState.currentBuildRevision)
                     && !buildState.forceRebuild) {
                 // The revision is the same and rebuild was not forced => nothing to do
-                LOGGER.infoCr(reconciliation, "Build configuration did not change. Nothing new to build. Container image {} will be used.", buildState.currentImage);
+                LOGGER.debugCr(reconciliation, "Build configuration did not change. Nothing new to build. Container image {} will be used.", buildState.currentImage);
                 buildState.desiredImage = buildState.currentImage;
                 buildState.desiredBuildRevision = newBuildRevision;
                 return Future.succeededFuture();
