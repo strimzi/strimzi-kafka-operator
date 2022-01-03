@@ -420,7 +420,7 @@ public class OperatorMetricsTest {
     }
 
     @Test
-    public void testReconcileAllOverMultipleNamespaces(VertxTestContext context)  {
+    public void testReconcileAllOverAllNamespaces(VertxTestContext context)  {
         MetricsProvider metrics = createCleanMetricsProvider();
 
         Set<NamespaceAndName> resources = new HashSet<>(3);
@@ -503,6 +503,48 @@ public class OperatorMetricsTest {
                     async.flag();
                 })));
     }
+
+    @Test
+    public void testReconcileAllOverMultipleNamespaces(VertxTestContext context)  {
+        MetricsProvider metrics = createCleanMetricsProvider();
+
+        Set<NamespaceAndName> resourcesNs1 = new HashSet<>(2);
+        resourcesNs1.add(new NamespaceAndName("my-namespace", "avfc"));
+        resourcesNs1.add(new NamespaceAndName("my-namespace", "vtid"));
+
+        Set<NamespaceAndName> resourcesNs2 = new HashSet<>(1);
+        resourcesNs2.add(new NamespaceAndName("my-namespace2", "banik"));
+
+        AbstractWatchableStatusedResourceOperator resourceOperator = resourceOperatorWithExistingResourceWithoutSelectorLabel();
+
+        AbstractOperator operatorForNs1 = new ReconcileAllMockOperator(vertx, "TestResource", resourceOperator, metrics, null);
+        AbstractOperator operatorForNs2 = new ReconcileAllMockOperator(vertx, "TestResource", resourceOperator, metrics, null);
+
+        Promise<Void> reconcileAllPromise = Promise.promise();
+        Promise<Void> reconcileAllPromise2 = Promise.promise();
+        ((ReconcileAllMockOperator) operatorForNs1).setResources(resourcesNs1);
+        ((ReconcileAllMockOperator) operatorForNs2).setResources(resourcesNs2);
+        operatorForNs1.reconcileAll("test", "my-namespace", reconcileAllPromise);
+        operatorForNs2.reconcileAll("test", "my-namespace2", reconcileAllPromise2);
+
+        Checkpoint async = context.checkpoint();
+        reconcileAllPromise2.future()
+                .compose(i -> reconcileAllPromise.future())
+                .compose(ignore -> {
+                    assertThat(operatorForNs2.resourceCounter("my-namespace2").get(), is(1));
+                    // Reconcile again with my-namespace2 deleted
+                    Promise<Void> secondReconcileAllPromise = Promise.promise();
+                    ((ReconcileAllMockOperator) operatorForNs2).deleteNs();
+                    operatorForNs2.reconcileAll("test", "my-namespace2", secondReconcileAllPromise);
+
+                    return secondReconcileAllPromise.future();
+                })
+                .onComplete(context.failing(v -> context.verify(() -> {
+                    assertThat(operatorForNs2.resourceCounter("my-namespace2").get(), is(0));
+                    async.flag();
+                })));
+    }
+
 
     /**
      * Created new MetricsProvider and makes sure it doesn't contain any metrics from previous tests.
@@ -724,6 +766,7 @@ public class OperatorMetricsTest {
     @SuppressWarnings({"unchecked", "rawtypes"})
     static class ReconcileAllMockOperator extends  AbstractOperator  {
         private Set<NamespaceAndName> resources;
+        private boolean relatedNsExists = true;
 
         public ReconcileAllMockOperator(Vertx vertx, String kind, AbstractWatchableStatusedResourceOperator resourceOperator, MetricsProvider metrics, Labels selectorLabels) {
             super(vertx, kind, resourceOperator, metrics, selectorLabels);
@@ -735,7 +778,11 @@ public class OperatorMetricsTest {
         }
 
         public Future<Set<NamespaceAndName>> allResourceNames(String namespace) {
-            return Future.succeededFuture(resources);
+            if (!relatedNsExists) {
+                return Future.failedFuture("namespace " + namespace + " does not exist");
+            } else {
+                return Future.succeededFuture(resources);
+            }
         }
 
         @Override
@@ -762,6 +809,10 @@ public class OperatorMetricsTest {
         // Helper method used to set resources for each reconciliation
         public void setResources(Set<NamespaceAndName> resources) {
             this.resources = resources;
+        }
+
+        public void deleteNs() {
+            this.relatedNsExists = false;
         }
     }
 }
