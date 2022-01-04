@@ -356,7 +356,7 @@ public class ResourceManager {
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, Enum<?> status, long resourceTimeoutMs) {
         LOGGER.info("Wait for {}: {} will have desired state: {}", kind, name, status);
 
-        TestUtils.waitFor(String.format("Wait for %s: %s will have desired state: %s", kind, name, status),
+        TestUtils.waitFor(String.format("%s: %s will have desired state: %s", kind, name, status),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
             () -> operation.inNamespace(namespace)
                 .withName(name)
@@ -404,7 +404,7 @@ public class ResourceManager {
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatusMessage(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, String message, long resourceTimeoutMs) {
         LOGGER.info("Wait for {}: {} will contain desired status message: {}", kind, name, message);
 
-        TestUtils.waitFor(String.format("Wait for %s: %s will contain desired status message: %s", kind, name, message),
+        TestUtils.waitFor(String.format("%s: %s will contain desired status message: %s", kind, name, message),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
             () -> operation.inNamespace(namespace)
                 .withName(name)
