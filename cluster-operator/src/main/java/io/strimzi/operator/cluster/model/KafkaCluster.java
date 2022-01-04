@@ -373,14 +373,10 @@ public class KafkaCluster extends AbstractModel {
         KafkaSpec kafkaSpec = kafkaAssembly.getSpec();
         KafkaClusterSpec kafkaClusterSpec = kafkaSpec.getKafka();
 
-        // Validate the Kafka version first
-        KafkaVersion desiredVersion = versions.version(kafkaClusterSpec.getVersion());
-        if (!desiredVersion.isSupported())  {
-            throw new InvalidResourceException("Kafka version " + desiredVersion.version() + " is not supported. " +
-                    "Supported versions are: " + String.join(", ", versions.supportedVersions()) + ".");
-        }
-
         KafkaCluster result = new KafkaCluster(reconciliation, kafkaAssembly);
+
+        // This also validates that the Kafka version is supported
+        result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
 
         result.setOwnerReference(kafkaAssembly);
 
@@ -427,7 +423,7 @@ public class KafkaCluster extends AbstractModel {
         // Handle Kafka broker configuration
         KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
         configureCruiseControlMetrics(kafkaAssembly, result, configuration);
-        validateConfiguration(reconciliation, kafkaAssembly, desiredVersion, configuration);
+        validateConfiguration(reconciliation, kafkaAssembly, result.kafkaVersion, configuration);
         result.setConfiguration(configuration);
 
         // Parse different types of metrics configurations
@@ -585,7 +581,6 @@ public class KafkaCluster extends AbstractModel {
 
         result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
 
-        result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
         return result;
     }
 

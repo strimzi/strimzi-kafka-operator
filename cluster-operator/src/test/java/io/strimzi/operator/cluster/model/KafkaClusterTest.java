@@ -3799,16 +3799,33 @@ public class KafkaClusterTest {
         Kafka kafka = new KafkaBuilder(kafkaAssembly)
                 .editSpec()
                     .editKafka()
+                        .withVersion("6.6.6")
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        InvalidResourceException exc = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> {
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
+        });
+
+        assertThat(exc.getMessage(), containsString("Unsupported Kafka.spec.kafka.version: 6.6.6. Supported versions are:"));
+    }
+
+    @ParallelTest
+    public void testUnsupportedVersion() {
+        Kafka kafka = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .editKafka()
                         .withVersion("2.6.0")
                     .endKafka()
                 .endSpec()
                 .build();
 
-        InvalidResourceException exc = assertThrows(InvalidResourceException.class, () -> {
+        InvalidResourceException exc = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> {
             KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         });
 
-        assertThat(exc.getMessage(), containsString("Kafka version 2.6.0 is not supported. Supported versions are:"));
+        assertThat(exc.getMessage(), containsString("Unsupported Kafka.spec.kafka.version: 2.6.0. Supported versions are:"));
     }
 
     @ParallelTest
@@ -3822,10 +3839,10 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException exc = assertThrows(InvalidResourceException.class, () -> {
+        InvalidResourceException exc = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> {
             KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         });
 
-        assertThat(exc.getMessage(), containsString("Kafka version 2.6.0 is not supported. Supported versions are:"));
+        assertThat(exc.getMessage(), containsString("Unsupported Kafka.spec.kafka.version: 2.6.0. Supported versions are:"));
     }
 }

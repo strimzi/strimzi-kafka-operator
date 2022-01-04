@@ -156,7 +156,7 @@ public class KafkaExporter extends AbstractModel {
                 ModelUtils.parsePodTemplate(kafkaExporter, template.getPod());
             }
 
-            kafkaExporter.setVersion(versions.version(kafkaAssembly.getSpec().getKafka().getVersion()).version());
+            kafkaExporter.setVersion(versions.supportedVersion(kafkaAssembly.getSpec().getKafka().getVersion()).version());
             kafkaExporter.setOwnerReference(kafkaAssembly);
         } else {
             kafkaExporter.isDeployed = false;

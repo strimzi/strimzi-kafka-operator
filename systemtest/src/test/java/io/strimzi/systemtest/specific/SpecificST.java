@@ -392,7 +392,7 @@ public class SpecificST extends AbstractST {
     @Tag(REGRESSION)
     void testDeployUnsupportedKafka(ExtensionContext extensionContext) {
         String nonExistingVersion = "6.6.6";
-        String nonExistingVersionMessage = "Kafka version " + nonExistingVersion + " is not supported. Supported versions are.*";
+        String nonExistingVersionMessage = "Unsupported Kafka.spec.kafka.version: " + nonExistingVersion + ". Supported versions are:.*";
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)

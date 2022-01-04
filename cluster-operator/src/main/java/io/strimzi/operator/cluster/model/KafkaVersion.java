@@ -113,23 +113,60 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             return defaultVersion;
         }
 
-        /** Find the version from the given version string.
+        /**
+         * Find the version from the given version string. This method looks through all known versions and is used
+         * during upgrades to check any Kafka versions not supported anymore but known to the operator (and supported in
+         * the previous versions).
+         *
+         * KafkaUpgradeException is thrown if the version passed as argument is not found among the known versions.
+         *
          * @param version The version.
+         *
          * @return The KafkaVersion.
          */
         public KafkaVersion version(String version) {
             KafkaVersion result;
+
             if (version == null) {
                 result = defaultVersion;
             } else {
                 result = map.get(version);
             }
+
             if (result == null) {
                 throw new KafkaUpgradeException(String.format(
                         "Unsupported Kafka.spec.kafka.version: %s. " +
                                 "Supported versions are: %s",
                         version, map.keySet()));
             }
+
+            return result;
+        }
+
+        /**
+         * Find the version from the given version string. This method looks only through suported versions and is used
+         * to validate the versions used in custom resources.
+         *
+         * UnsupportedKafkaVersionException is thrown if the version passed as argument is not found or is not supported.
+         *
+         * @param version The version.
+         *
+         * @return The KafkaVersion.
+         */
+        public KafkaVersion supportedVersion(String version) {
+            KafkaVersion result;
+
+            if (version == null) {
+                result = defaultVersion;
+            } else {
+                result = map.get(version);
+            }
+
+            if (result == null || !result.isSupported()) {
+                throw new UnsupportedKafkaVersionException(String.format(
+                        "Unsupported Kafka.spec.kafka.version: %s. Supported versions are: %s", version, supportedVersions()));
+            }
+
             return result;
         }
 
@@ -329,6 +366,20 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
             }
             sb.append("}");
             return sb.toString();
+        }
+    }
+
+    /**
+     * Thrown to indicate that given Kafka version is not valid or not supported.
+     */
+    public static class UnsupportedKafkaVersionException extends InvalidResourceException {
+
+        public UnsupportedKafkaVersionException() {
+            super();
+        }
+
+        public UnsupportedKafkaVersionException(String s) {
+            super(s);
         }
     }
 
