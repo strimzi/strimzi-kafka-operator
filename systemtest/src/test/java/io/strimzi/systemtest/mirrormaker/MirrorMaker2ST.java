@@ -1069,6 +1069,36 @@ class MirrorMaker2ST extends AbstractST {
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(sourceConsumerName, namespaceName, 1));
     }
 
+    @ParallelNamespaceTest
+    void testKafkaMirrorMaker2ReflectsConnectorsState(ExtensionContext extensionContext) {
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClusterSourceName = clusterName + "-source";
+        String kafkaClusterTargetName = clusterName + "-target";
+
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build(),
+            KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
+
+        resourceManager.createResource(extensionContext, false,
+            KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+                .editSpec()
+                    .editMatchingCluster(spec -> spec.getAlias().equals(kafkaClusterSourceName))
+                        // typo in bootstrap name, connectors should not connect and MM2 should be in NotReady state with error
+                        .withBootstrapServers(KafkaResources.bootstrapServiceName(kafkaClusterSourceName) + ".:9092")
+                    .endCluster()
+                .endSpec()
+                .build());
+
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2StatusMessage(namespaceName, clusterName, "One or more connectors are in FAILED state");
+
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(clusterName, mm2 ->
+            mm2.getSpec().getClusters().stream().filter(mm2ClusterSpec -> mm2ClusterSpec.getAlias().equals(kafkaClusterSourceName))
+                .findFirst().get().setBootstrapServers(KafkaUtils.namespacedPlainBootstrapAddress(kafkaClusterSourceName, namespaceName)), namespaceName);
+
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(namespaceName, clusterName);
+    }
+
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         install.unInstall();

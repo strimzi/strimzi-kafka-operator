@@ -201,6 +201,7 @@ public class ResourceManager {
                 String.format("Timed out deleting %s %s in namespace %s", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace()));
         }
     }
+
     public final <T extends HasMetadata> boolean waitResourceCondition(T resource, ResourceCondition<T> condition) {
         assertNotNull(resource);
         assertNotNull(resource.getMetadata());
@@ -388,6 +389,32 @@ public class ResourceManager {
                 Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CMD_CLIENT_TIMEOUT,
             () -> ResourceManager.cmdKubeClient().getResourceReadiness(resourceType, resourceName));
         LOGGER.info("Resource " + resourceType + "/" + resourceName + " is ready");
+    }
+
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatusMessage(MixedOperation<T, ?, ?> operation, T resource, String message) {
+        long resourceTimeout = ResourceOperation.getTimeoutForResourceReadiness(resource.getKind());
+        return waitForResourceStatusMessage(operation, resource, message, resourceTimeout);
+    }
+
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatusMessage(MixedOperation<T, ?, ?> operation, T resource, String message, long resourceTimeout) {
+        waitForResourceStatusMessage(operation, resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), message, resourceTimeout);
+        return true;
+    }
+
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatusMessage(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, String message, long resourceTimeoutMs) {
+        LOGGER.info("Wait for {}: {} will contain desired status message: {}", kind, name, message);
+
+        TestUtils.waitFor(String.format("Wait for %s: %s will contain desired status message: %s", kind, name, message),
+            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
+            () -> operation.inNamespace(namespace)
+                .withName(name)
+                .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getMessage().contains(message) && condition.getStatus().equals("True")),
+            () -> logCurrentResourceStatus(operation.inNamespace(namespace)
+                .withName(name)
+                .get()));
+
+        LOGGER.info("{}: {} contains desired message in status: {}", kind, name, message);
+        return true;
     }
 
     @SuppressWarnings(value = "unchecked")
