@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
@@ -267,6 +268,19 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private static RuntimeException zeroReplicas(String connectNamespace, String connectName) {
         return new RuntimeException(
                 "Kafka Connect cluster '" + connectName + "' in namespace " + connectNamespace + " has 0 replicas.");
+    }
+
+    /**
+     * Generates a config map for metrics and logging information.
+     *
+     * @param reconciliation       The reconciliation
+     * @param namespace            Namespace of the Connect cluster
+     * @param kafkaConnectCluster  KafkaConnectCluster object
+     * @return                     Future for tracking the asynchronous result of getting the metrics and logging config map
+     */
+    public Future<ConfigMap> generateMetricsAndLoggingConfigMap(Reconciliation reconciliation, String namespace, KafkaConnectCluster kafkaConnectCluster) {
+        return Util.metricsAndLogging(reconciliation, configMapOperations, namespace, kafkaConnectCluster.getLogging(), kafkaConnectCluster.getMetricsConfigInCm())
+                .compose(metricsAndLoggingCm -> Future.succeededFuture(kafkaConnectCluster.generateMetricsAndLogConfigMap(metricsAndLoggingCm)));
     }
 
     /**

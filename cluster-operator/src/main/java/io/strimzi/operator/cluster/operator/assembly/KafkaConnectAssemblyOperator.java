@@ -262,19 +262,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     }
 
     /**
-     * Generates a config map for metrics and logging information.
-     *
-     * @param reconciliation    The reconciliation
-     * @param namespace         Namespace of the Connect cluster
-     * @param connect           KafkaConnectCluster object
-     * @return                  Future for tracking the asynchronous result of getting the metrics and logging config map
-     */
-    Future<ConfigMap> generateMetricsAndLoggingConfigMap(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
-        return Util.metricsAndLogging(reconciliation, configMapOperations, namespace, connect.getLogging(), connect.getMetricsConfigInCm())
-                .compose(metricsAndLoggingCm -> Future.succeededFuture(connect.generateMetricsAndLogConfigMap(metricsAndLoggingCm)));
-    }
-
-    /**
      * Generates a hash from the trusted TLS certificates that can be used to spot if it has changed.
      *
      * @param namespace          Namespace of the Connect cluster
