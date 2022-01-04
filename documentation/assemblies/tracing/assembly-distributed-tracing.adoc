@@ -51,7 +51,7 @@ To set up tracing for Strimzi, follow these procedures in order:
 
 .Prerequisites
 
-* The Jaeger backend components are deployed to your Kubernetes cluster. For deployment instructions, see the https://www.jaegertracing.io/docs/1.18/deployment/[Jaeger deployment documentation^].
+* The Jaeger backend components are deployed to your Kubernetes cluster. For deployment instructions, see the {JaegerDocs}.
 
 include::../../modules/tracing/con-overview-opentracing-jaeger.adoc[leveloffset=+1]
 

@@ -71,7 +71,7 @@ a¦The sampling strategy to use for client traces:
 
 To sample all traces, use the Constant sampling strategy with a parameter of 1.
 
-For more information, see the https://www.jaegertracing.io/docs/1.14/sampling/#client-sampling-configuration[Jaeger documentation^].
+For an overview of the Jaeger architecture and client sampling configuration parameters, see the {JaegerDocs}.
 
 m¦JAEGER_SAMPLER_PARAM
 ¦No
