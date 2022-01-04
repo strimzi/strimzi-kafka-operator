@@ -102,9 +102,9 @@
 :OperatorLifecycleManager: link:https://github.com/operator-framework/operator-lifecycle-manager[Operator Lifecycle Manager^]
 :OLMOperatorDocs: link:https://olm.operatorframework.io/docs/[Operator Lifecycle Manager documentation^]
 :OpenTracingHome: link:https://opentracing.io/[OpenTracing^]
-:JaegerHome: link:https://www.jaegertracing.io/[Jaeger^]
-:JaegerArch: link:https://www.jaegertracing.io/docs/1.18/architecture/[Jaeger architecure^]
 :OpenTracingDocs: link:https://opentracing.io/docs/overview/[OpenTracing documentation^]
+:JaegerHome: link:https://www.jaegertracing.io/[Jaeger^]
+:JaegerDocs: link:https://www.jaegertracing.io/docs/[Jaeger documentation^]
 :OPAAuthorizer: link:https://github.com/anderseknert/opa-kafka-plugin[Open Policy Agent plugin for Kafka authorization^]
 :LatestBridgeAPIDocs: link:https://strimzi.io/docs/bridge/latest/[Kafka Bridge API reference^]
 :external-cors-link: https://www.w3.org/TR/cors/
