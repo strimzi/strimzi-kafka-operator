@@ -448,7 +448,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
      * -1 if version1 &lt; version2;
      * 1 if version1 &gt; version2.
      */
-    public static int compareDottedIVVersion(String version1, String version2) {
+    public static int compareDottedIVVersions(String version1, String version2) {
         String trimmedVersion1 = version1.split("-")[0];
         String trimmedVersion2 = version2.split("-")[0];
         return compareDottedVersions(trimmedVersion1, trimmedVersion2);

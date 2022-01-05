@@ -145,7 +145,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.operator.cluster.model.AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG;
 import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_IO_STORAGE;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
-import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedIVVersion;
+import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedIVVersions;
 import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersions;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -1701,7 +1701,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             if (currentMessageFormat != null) {
                                 if (highestLogMessageFormatVersion == null)  {
                                     highestLogMessageFormatVersion = currentMessageFormat;
-                                } else if (compareDottedIVVersion(highestLogMessageFormatVersion, currentMessageFormat) < 0) {
+                                } else if (compareDottedIVVersions(highestLogMessageFormatVersion, currentMessageFormat) < 0) {
                                     highestLogMessageFormatVersion = currentMessageFormat;
                                 }
                             }
@@ -1711,7 +1711,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             if (currentIbp != null)  {
                                 if (highestInterBrokerProtocolVersion == null)  {
                                     highestInterBrokerProtocolVersion = currentIbp;
-                                } else if (compareDottedIVVersion(highestInterBrokerProtocolVersion, currentIbp) < 0) {
+                                } else if (compareDottedIVVersions(highestInterBrokerProtocolVersion, currentIbp) < 0) {
                                     highestInterBrokerProtocolVersion = currentIbp;
                                 }
                             }

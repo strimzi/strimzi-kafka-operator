@@ -33,16 +33,20 @@ public class KafkaVersionTest {
 
     @ParallelTest
     public void parsingInvalidVersionTest() {
-        // 2.8-IV1 is not a valid kafka version. However it can be used in CO as it is looking for the MM/MMP versions
-        KafkaVersion kv = new KafkaVersion("2.8-IV1", "2.8-IV1", "2.8-IV1", "3.6.9", false, true, "");
-        assertThat(KafkaVersion.compareDottedVersions("2.8.0", kv.version()), is(0));
-        assertThat(KafkaVersion.compareDottedVersions("3.0.0", kv.version()), greaterThan(0));
-        assertThat(KafkaVersion.compareDottedVersions("2.7.0", kv.version()), lessThan(0));
+        KafkaVersion kv = new KafkaVersion("2.8", "2.8-IV1", "2.8-IV1", "3.6.9", false, true, "");
+        assertThat(KafkaVersion.compareDottedIVVersions("2.7-IV1", kv.protocolVersion()), lessThan(0));
+        assertThat(KafkaVersion.compareDottedIVVersions("2.9-IV1", kv.protocolVersion()), greaterThan(0));
 
-        assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(NumberFormatException.class, () -> {
             KafkaVersion kvFail = new KafkaVersion("why", "you", "little", "3.6.9", false, true, "");
-            assertThat(KafkaVersion.compareDottedVersions("2.8.0", kvFail.version()), is(0));
+            KafkaVersion.compareDottedIVVersions("2.8.0", kvFail.protocolVersion());
         });
+
+        assertThrows(NumberFormatException.class, () -> {
+            KafkaVersion kvFail = new KafkaVersion("2.8.1-IV1", "you", "little", "3.6.9", false, true, "");
+            KafkaVersion.compareDottedVersions("2.8.0", kvFail.protocolVersion());
+        });
+
     }
 
     @ParallelTest
