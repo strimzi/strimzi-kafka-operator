@@ -60,9 +60,7 @@ import java.util.function.Function;
  */
 public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaConnectAssemblyOperator.class.getName());
-    private final boolean isNetworkPolicyGeneration;
     private final DeploymentOperator deploymentOperations;
-    private final NetworkPolicyOperator networkPolicyOperator;
     private final PodOperator podOperator;
     private final BuildConfigOperator buildConfigOperator;
     private final BuildOperator buildOperator;
@@ -92,9 +90,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider, int port) {
         super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.connectOperator, supplier, config, connectClientProvider, port);
-        this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.deploymentOperations = supplier.deploymentOperations;
-        this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.podOperator = supplier.podOperations;
         this.buildConfigOperator = supplier.buildConfigOperations;
         this.buildOperator = supplier.buildOperations;
@@ -128,10 +124,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
         connectServiceAccount(reconciliation, namespace, connect)
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
-                .compose(i -> isNetworkPolicyGeneration ?
-                        networkPolicyOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generateNetworkPolicy(isUseResources(kafkaConnect), operatorNamespace, operatorNamespaceLabels)) :
-                        Future.succeededFuture()
-                )
+                .compose(i -> connectNetworkPolicy(reconciliation, namespace, connect, isUseResources(kafkaConnect)))
                 .compose(i -> connectBuild(reconciliation, namespace, connect.getName(), build, buildState))
                 .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, connect.getName(), connect.getReplicas()))
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService()))
@@ -175,12 +168,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     @Override
     protected KafkaConnectStatus createStatus() {
         return new KafkaConnectStatus();
-    }
-
-    private Future<ReconcileResult<ServiceAccount>> connectServiceAccount(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
-        return serviceAccountOperations.reconcile(reconciliation, namespace,
-                KafkaConnectResources.serviceAccountName(connect.getCluster()),
-                connect.generateServiceAccount());
     }
 
     /**

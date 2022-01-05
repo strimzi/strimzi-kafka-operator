@@ -4,12 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
-import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.CustomResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -22,14 +18,7 @@ import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectorList;
-import io.strimzi.api.kafka.model.AbstractKafkaConnectSpec;
-import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
-import io.strimzi.api.kafka.model.KafkaConnectSpec;
-import io.strimzi.api.kafka.model.KafkaConnector;
-import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
-import io.strimzi.api.kafka.model.KafkaConnectorSpec;
-import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.*;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
@@ -37,11 +26,7 @@ import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.model.ImagePullPolicy;
-import io.strimzi.operator.cluster.model.InvalidResourceException;
-import io.strimzi.operator.cluster.model.KafkaConnectCluster;
-import io.strimzi.operator.cluster.model.NoSuchResourceException;
-import io.strimzi.operator.cluster.model.StatusDiff;
+import io.strimzi.operator.cluster.model.*;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Annotations;
@@ -54,15 +39,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.operator.common.model.ValidationVisitor;
-import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
-import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
-import io.strimzi.operator.common.operator.resource.ServiceOperator;
-import io.strimzi.operator.common.operator.resource.StatusUtils;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.*;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -97,6 +74,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractConnectOperator.class.getName());
 
+    private final boolean isNetworkPolicyGeneration;
     private final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     private final Function<Vertx, KafkaConnectApi> connectClientProvider;
     protected final ImagePullPolicy imagePullPolicy;
@@ -105,6 +83,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected final ServiceOperator serviceOperations;
     protected final SecretOperator secretOperations;
     protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
+    protected final NetworkPolicyOperator networkPolicyOperator;
     protected final List<LocalObjectReference> imagePullSecrets;
     protected final long operationTimeoutMs;
     protected final String operatorNamespace;
@@ -125,6 +104,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                    Function<Vertx, KafkaConnectApi> connectClientProvider,
                                    int port) {
         super(vertx, kind, resourceOperator, supplier.metricsProvider, config.getCustomResourceSelector());
+        this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.connectorOperator = supplier.kafkaConnectorOperator;
         this.connectClientProvider = connectClientProvider;
         this.configMapOperations = supplier.configMapOperations;
@@ -133,6 +113,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.secretOperations = supplier.secretOperations;
         this.serviceAccountOperations = supplier.serviceAccountOperations;
         this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
+        this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
         this.operationTimeoutMs = config.getOperationTimeoutMs();
@@ -271,6 +252,36 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
+     * Reconciles the ServiceAccount for the Connect cluster.
+     *
+     * @param reconciliation       The reconciliation
+     * @param namespace            Namespace of the Connect cluster
+     * @param connect              KafkaConnectCluster object
+     * @return                     Future for tracking the asynchronous result of getting the metrics and logging config map
+     */
+    protected Future<ReconcileResult<ServiceAccount>> connectServiceAccount(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
+        return serviceAccountOperations.reconcile(reconciliation, namespace,
+                KafkaConnectResources.serviceAccountName(connect.getCluster()),
+                connect.generateServiceAccount());
+    }
+
+    /**
+     * Reconciles the NetworkPolicy for the Connect cluster.
+     *
+     * @param reconciliation       The reconciliation
+     * @param namespace            Namespace of the Connect cluster
+     * @param connect              KafkaConnectCluster object
+     * @return                     Future for tracking the asynchronous result of getting the metrics and logging config map
+     */
+    protected Future<ReconcileResult<NetworkPolicy>> connectNetworkPolicy(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect, boolean connectorOperatorEnabled) {
+        if (isNetworkPolicyGeneration) {
+            return networkPolicyOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generateNetworkPolicy(connectorOperatorEnabled, operatorNamespace, operatorNamespaceLabels));
+        } else {
+            return Future.succeededFuture();
+        }
+    }
+
+    /**
      * Generates a config map for metrics and logging information.
      *
      * @param reconciliation       The reconciliation
@@ -278,7 +289,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param kafkaConnectCluster  KafkaConnectCluster object
      * @return                     Future for tracking the asynchronous result of getting the metrics and logging config map
      */
-    public Future<ConfigMap> generateMetricsAndLoggingConfigMap(Reconciliation reconciliation, String namespace, KafkaConnectCluster kafkaConnectCluster) {
+    protected Future<ConfigMap> generateMetricsAndLoggingConfigMap(Reconciliation reconciliation, String namespace, KafkaConnectCluster kafkaConnectCluster) {
         return Util.metricsAndLogging(reconciliation, configMapOperations, namespace, kafkaConnectCluster.getLogging(), kafkaConnectCluster.getMetricsConfigInCm())
                 .compose(metricsAndLoggingCm -> Future.succeededFuture(kafkaConnectCluster.generateMetricsAndLogConfigMap(metricsAndLoggingCm)));
     }
