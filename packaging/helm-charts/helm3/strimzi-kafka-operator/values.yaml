@@ -24,10 +24,10 @@ featureGates: ""
 tmpDirSizeLimit: 1Mi
 
 # Example on how to configure extraEnvs
-#  - name: ABC
-#    value: "value1"
-#  - name: XYZ
-#    value: "value2"
+# extraEnvs:
+#   - name: JAVA_OPTS
+#     value: "-Xms=256m -Xmx=256m"
+
 extraEnvs: []
 
 tolerations: []
