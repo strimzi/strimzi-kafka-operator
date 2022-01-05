@@ -370,12 +370,15 @@ public class KafkaCluster extends AbstractModel {
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
     public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
-        KafkaCluster result = new KafkaCluster(reconciliation, kafkaAssembly);
-
-        result.setOwnerReference(kafkaAssembly);
-
         KafkaSpec kafkaSpec = kafkaAssembly.getSpec();
         KafkaClusterSpec kafkaClusterSpec = kafkaSpec.getKafka();
+
+        KafkaCluster result = new KafkaCluster(reconciliation, kafkaAssembly);
+
+        // This also validates that the Kafka version is supported
+        result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
+
+        result.setOwnerReference(kafkaAssembly);
 
         result.setReplicas(kafkaClusterSpec.getReplicas());
 
@@ -418,10 +421,9 @@ public class KafkaCluster extends AbstractModel {
         }
 
         // Handle Kafka broker configuration
-        KafkaVersion desiredVersion = versions.version(kafkaClusterSpec.getVersion());
         KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
         configureCruiseControlMetrics(kafkaAssembly, result, configuration);
-        validateConfiguration(reconciliation, kafkaAssembly, desiredVersion, configuration);
+        validateConfiguration(reconciliation, kafkaAssembly, result.kafkaVersion, configuration);
         result.setConfiguration(configuration);
 
         // Parse different types of metrics configurations
@@ -579,7 +581,6 @@ public class KafkaCluster extends AbstractModel {
 
         result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
 
-        result.kafkaVersion = versions.version(kafkaClusterSpec.getVersion());
         return result;
     }
 
