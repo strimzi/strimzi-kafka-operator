@@ -129,7 +129,10 @@ spec:
               value: {{ .Values.connectBuildTimeoutMs | quote }}
             {{- end }}
             {{- if .Values.extraEnvs }}
-            {{ toYaml .Values.extraEnvs | indent 12 }}
+            {{- range $key, $val := .Values.extraEnvs }}
+            - name: {{ $val.name }}
+              value: {{ $val.value | quote }}
+            {{- end }}
             {{- end }}
           livenessProbe:
             httpGet:
