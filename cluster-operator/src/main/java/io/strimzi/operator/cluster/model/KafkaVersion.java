@@ -423,9 +423,6 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
      * 1 if version1 &gt; version2.
      */
     public static int compareDottedVersions(String version1, String version2) {
-        // Version like X.Y-IVZ can get through validation
-        version1 = version1.split("-")[0];
-        version2 = version2.split("-")[0];
         String[] components = version1.split("\\.");
         String[] otherComponents = version2.split("\\.");
         for (int i = 0; i < Math.min(components.length, otherComponents.length); i++) {
@@ -441,6 +438,20 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         }
         // mismatch was not found, but the versions are of different length, e.g. 2.8 and 2.8.0
         return 0;
+    }
+
+    /**
+     * Compare two decimal version strings, e.g. 3.0 &gt; 2.7-IV1. Ignores the IV part
+     * @param version1 The first version.
+     * @param version2 The second version.
+     * @return Zero if version1 == version2;
+     * -1 if version1 &lt; version2;
+     * 1 if version1 &gt; version2.
+     */
+    public static int compareDottedIVVersion(String version1, String version2) {
+        String trimmedVersion1 = version1.split("-")[0];
+        String trimmedVersion2 = version2.split("-")[0];
+        return compareDottedVersions(trimmedVersion1, trimmedVersion2);
     }
 
     @Override
