@@ -38,8 +38,7 @@ public class KafkaVersionTest {
         assertThat(KafkaVersion.compareDottedIVVersions("2.9-IV1", kv.protocolVersion()), greaterThan(0));
 
         assertThrows(NumberFormatException.class, () -> {
-            KafkaVersion kvFail = new KafkaVersion("2.8.0", "2.8", "2.8", "3.6.9", false, true, "");
-            KafkaVersion.compareDottedIVVersions("wrong", kvFail.protocolVersion());
+            KafkaVersion.compareDottedIVVersions("wrong", kv.protocolVersion());
         });
     }
 
