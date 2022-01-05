@@ -117,6 +117,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         Promise<KafkaConnectStatus> createOrUpdatePromise = Promise.promise();
         String namespace = reconciliation.namespace();
 
+        Map<String, String> annotations = new HashMap<>(2);
+
         LOGGER.debugCr(reconciliation, "Updating Kafka Connect cluster");
 
         boolean connectHasZeroReplicas = connect.getReplicas() == 0;
@@ -130,14 +132,20 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService()))
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, namespace, connect))
                 .compose(logAndMetricsConfigMap -> {
-                    desiredLogging.set(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG));
+                    String logging = logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
+                    annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
+                            Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
+                    desiredLogging.set(logging);
                     return configMapOperations.reconcile(reconciliation, namespace, connect.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generatePodDisruptionBudget()))
                 .compose(i -> generateAuthHash(namespace, kafkaConnect.getSpec()))
                 .compose(hash -> {
-                    Map<String, String> annotations = createAnnotations(buildState, desiredLogging, hash);
+                    if (buildState.desiredBuildRevision != null) {
+                        annotations.put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildState.desiredBuildRevision);
+                    }
+                    annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     Deployment deployment = generateDeployment(connect, buildState, annotations);
                     return deploymentOperations.reconcile(reconciliation, namespace, connect.getName(), deployment);
                 })
@@ -259,25 +267,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         KafkaClientAuthentication auth = kafkaConnectSpec.getAuthentication();
         List<CertSecretSource> trustedCertificates = kafkaConnectSpec.getTls() == null ? Collections.emptyList() : kafkaConnectSpec.getTls().getTrustedCertificates();
         return Util.authTlsHash(secretOperations, namespace, auth, trustedCertificates);
-    }
-
-    /**
-     * Creates the annotations for the KafkaConnect deployment
-     *
-     * @param buildState           State of the Connect build
-     * @param desiredLogging       Atomic reference to the desired logging string
-     * @param hash                 Tls certificate hash
-     * @return                     Map of keys and values for Connect deployment annotations
-     */
-    Map<String, String> createAnnotations(BuildState buildState, AtomicReference<String> desiredLogging, Integer hash) {
-        Map<String, String> annotations = new HashMap<>();
-        if (buildState.desiredBuildRevision != null) {
-            annotations.put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildState.desiredBuildRevision);
-        }
-        annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
-                Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(desiredLogging.get())));
-        annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
-        return annotations;
     }
 
     /**

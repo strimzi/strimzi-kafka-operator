@@ -143,6 +143,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         Promise<KafkaMirrorMaker2Status> createOrUpdatePromise = Promise.promise();
         String namespace = reconciliation.namespace();
 
+        Map<String, String> annotations = new HashMap<>(1);
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
 
         boolean mirrorMaker2HasZeroReplicas = mirrorMaker2Cluster.getReplicas() == 0;
@@ -154,16 +155,16 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, namespace, mirrorMaker2Cluster))
                 .compose(logAndMetricsConfigMap -> {
-                    desiredLogging.set(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG));
+                    String logging = logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
+                    annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
+                        Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
+                    desiredLogging.set(logging);
                     return configMapOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generatePodDisruptionBudget()))
                 .compose(i -> generateAuthHash(namespace, kafkaMirrorMaker2.getSpec()))
                 .compose(hash -> {
-                    Map<String, String> annotations = new HashMap<>();
-                    annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
-                            Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(desiredLogging.get())));
                     if (hash != null) {
                         annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     }
