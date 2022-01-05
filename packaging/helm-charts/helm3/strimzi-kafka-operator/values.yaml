@@ -22,6 +22,12 @@ operationTimeoutMs: 300000
 kubernetesServiceDnsDomain: cluster.local
 featureGates: ""
 tmpDirSizeLimit: 1Mi
+
+# Example on how to configure extraEnvs
+#  - name: ABC
+#    value: "value1"
+#  - name: XYZ
+#    value: "value2"
 extraEnvs: []
 
 tolerations: []
