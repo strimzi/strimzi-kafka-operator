@@ -1,0 +1,38 @@
+// This assembly is included in the following assemblies:
+//
+// configuring/configuring.adoc
+
+[id='assembly-loading-config-with-providers-{context}']
+= Loading configuration values from external sources
+
+[role="_abstract"]
+Use configuration provider plugins to load configuration data from external sources.
+The providers operate independently of Strimzi.
+You can use them to load configuration data for all Kafka components, including producers and consumers.
+Use them, for example, to provide the credentials for Kafka Connect connector configuration.
+
+
+Kubernetes Configuration Provider:: The Kubernetes Configuration Provider plugin loads configuration data from Kubernetes secrets or config maps.
++
+Suppose you have a `Secret` object that's managed outside the Kafka namespace, or outside the Kafka cluster.
+The Kubernetes Configuration Provider allows you to reference the values of the secret in your configuration without extracting the files.
+You just need to tell the provider what secret to use and provide access rights.
+The provider loads the data without needing to restart the Kafka component, even when using a new `Secret` or `ConfigMap` object.
+This capability avoids disruption when a Kafka Connect instance hosts multiple connectors.
+
+Environment Variables Configuration Provider:: The Environment Variables Configuration Provider plugin loads configuration data from environment variables.
++
+The values for the environment variables can be mapped from secrets or config maps.
+You can use the Environment Variables Configuration Provider, for example, to load certificates or JAAS configuration from environment variables mapped from Kubernetes secrets.
+
+NOTE: Kubernetes Configuration Provider can't use mounted files.
+For example, it can't load values that need the location of a truststore or keystore.
+Instead, you can mount config maps or secrets into a Kafka Connect pod as environment variables or volumes.
+You can use the Environment Variables Configuration Provider to load values for environment variables.
+You add configuration using the xref:type-ExternalConfiguration-reference[`externalConfiguration` property] in `KafkaConnect.spec`.
+You don't need to set up access rights with this approach.
+However, Kafka Connect will need a restart when using a new `Secret` or `ConfigMap` for a connector.
+This will cause disruption to all the Kafka Connect instance's connectors.
+
+include::../../modules/configuring/proc-loading-config-from-config-map.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-loading-config-from-env-vars.adoc[leveloffset=+1]

@@ -39,6 +39,3 @@ include::assembly-customizing-kubernetes-resources.adoc[leveloffset=+1]
 include::assembly-scheduling.adoc[leveloffset=+1]
 
 include::assembly-logging-configuration.adoc[leveloffset=+1]
-
-//Procedure to load configuration from external sources for all Kafka components
-include::../../modules/configuring/proc-loading-config-with-provider.adoc[leveloffset=+1]

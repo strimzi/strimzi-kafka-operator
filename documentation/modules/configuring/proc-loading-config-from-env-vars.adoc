@@ -1,0 +1,81 @@
+// Module included in the following assemblies:
+//
+// configuring/assembly-external-config.adoc
+
+[id='proc-loading-config-from-env-vars-{context}']
+= Loading configuration values from environment variables
+
+[role="_abstract"]
+This procedure shows how to use the Environment Variables Configuration Provider plugin.
+
+In the procedure, environment variables provide configuration properties for a connector.
+A database password is specified as an environment variable.
+
+.Prerequisites
+
+* A Kubernetes cluster is available.
+* A Kafka cluster is running.
+* The Cluster Operator is running.
+
+.Procedure
+
+. Specify the Environment Variables Configuration Provider in the Kafka Connect configuration.
++
+Define environment variables using the xref:type-ExternalConfiguration-reference[`externalConfiguration` property].
++
+.Example Kafka Connect configuration to enable the Environment Variables Configuration Provider
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  name: my-connect
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+
+spec:
+  # ...
+  config:
+    # ...
+    config.providers: env # <1>
+    config.providers.env.class: io.strimzi.kafka.EnvVarConfigProvider # <2>
+  # ...
+  externalConfiguration:
+    env:
+      - name: DB_PASSWORD # <3>
+        valueFrom:
+          secretKeyRef:
+            name: db-creds # <4>
+            key: dbPassword # <5>
+  # ...
+----
+<1> The alias for the configuration provider is used to define other configuration parameters.
+The provider parameters use the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
+<2> `EnvVarConfigProvider` provides values from environment variables.
+<3> The `DB_PASSWORD` environment variable takes a  password value from a secret.
+<4> The name of the secret containing the predefined password.
+<5> The key for the password stored inside the secret.
+
+. Create or update the resource to enable the provider.
++
+[source,shell,subs=+quotes]
+kubectl apply -f _<kafka_connect_configuration_file>_
+
+. Reference the environment variable in the connector configuration.
++
+.Example connector configuration referencing the environment variable
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnector
+metadata:
+  name: my-connector
+  labels:
+    strimzi.io/cluster: my-connect
+spec:
+  # ...
+  config:
+    option: ${env:DB_PASSWORD}
+    # ...
+# ...
+----

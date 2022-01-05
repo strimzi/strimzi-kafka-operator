@@ -9,6 +9,9 @@ include::assemblies/assembly-overview.adoc[leveloffset=+1]
 
 include::assemblies/configuring/assembly-deployment-configuration.adoc[leveloffset=+1]
 
+//Load configuration from external sources for all Kafka components
+include::assemblies/configuring/assembly-external-config.adoc[leveloffset=+1]
+
 include::assemblies/assembly-securing-external-listeners.adoc[leveloffset=+1]
 
 include::assemblies/assembly-securing-access.adoc[leveloffset=+1]
