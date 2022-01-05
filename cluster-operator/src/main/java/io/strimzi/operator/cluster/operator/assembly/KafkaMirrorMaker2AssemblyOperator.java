@@ -26,13 +26,11 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 
-import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaMirrorMaker2List;
@@ -61,7 +59,6 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
