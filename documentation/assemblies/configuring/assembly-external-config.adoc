@@ -11,7 +11,6 @@ The providers operate independently of Strimzi.
 You can use them to load configuration data for all Kafka components, including producers and consumers.
 Use them, for example, to provide the credentials for Kafka Connect connector configuration.
 
-
 Kubernetes Configuration Provider:: The Kubernetes Configuration Provider plugin loads configuration data from Kubernetes secrets or config maps.
 +
 Suppose you have a `Secret` object that's managed outside the Kafka namespace, or outside the Kafka cluster.

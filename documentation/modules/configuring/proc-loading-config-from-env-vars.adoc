@@ -32,7 +32,6 @@ metadata:
   name: my-connect
   annotations:
     strimzi.io/use-connector-resources: "true"
-
 spec:
   # ...
   config:
