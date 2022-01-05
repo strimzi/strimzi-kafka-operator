@@ -551,11 +551,12 @@ public abstract class AbstractST implements TestSeparator {
         // additional check that configuration is in default
         if (clusterOperator != null && !clusterOperator.defaultInstallation().createInstallation().equals(clusterOperator)) {
             // install configuration differs from default one we are gonna roll-back
-            LOGGER.info(String.join("", Collections.nCopies(76, "=")));
-            LOGGER.info("{} - Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.", extensionContext.getRequiredTestClass().getSimpleName());
-            LOGGER.info("Current Cluster Operator configuration:\n" + clusterOperator.toString());
-            LOGGER.info("Default Cluster Operator configuration:\n" + clusterOperator.defaultInstallation().createInstallation().toString());
-            LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+            LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
+            LOGGER.debug("{} - Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.", extensionContext.getRequiredTestClass().getSimpleName());
+            LOGGER.debug("Current Cluster Operator configuration:\n" + clusterOperator.toString());
+            LOGGER.debug("Default Cluster Operator configuration:\n" + clusterOperator.defaultInstallation().createInstallation().toString());
+            LOGGER.info("Current Cluster Operator configuration differs from default Cluster Operator in these attributes:{}", clusterOperator.diff(clusterOperator.defaultInstallation().createInstallation()));
+            LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
             clusterOperator = clusterOperator.rollbackToDefaultConfiguration();
         }
     }

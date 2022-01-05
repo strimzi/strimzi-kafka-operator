@@ -100,8 +100,8 @@ public class TestSuiteNamespaceManager {
         final String testSuite = extensionContext.getRequiredTestClass().getName();
 
         if (namespaces != null) {
-            LOGGER.info("Content of the test suite namespaces map:\n" + mapOfAdditionalNamespaces.toString());
-            LOGGER.info("Test suite `" + requiredClassName + "` creates these additional namespaces:" + namespaces.toString());
+            LOGGER.debug("Content of the test suite namespaces map:\n" + mapOfAdditionalNamespaces.toString());
+            LOGGER.debug("Test suite `" + requiredClassName + "` creates these additional namespaces:" + namespaces.toString());
 
             for (String namespaceName : namespaces) {
                 if (namespaceName.equals(Constants.INFRA_NAMESPACE)) {

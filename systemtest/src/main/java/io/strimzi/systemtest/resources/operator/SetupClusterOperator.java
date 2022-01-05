@@ -621,6 +621,49 @@ public class SetupClusterOperator {
             extraEnvVars, extraLabels, clusterOperatorRBACType);
     }
 
+    /**
+     * Auxiliary method, which compares @{this} CO configuration with @code{otherClusterOperator} and return string of
+     * differences.
+     * @param otherClusterOperator cluster operator configuration, which is compared
+     * @return string of attributes which differs from @code{otherClusterOperator} configuration each of separate row
+     */
+    public String diff(final SetupClusterOperator otherClusterOperator) {
+        final StringBuilder diffString = new StringBuilder();
+
+        if (this.operationTimeout != otherClusterOperator.operationTimeout) {
+            diffString.append("operationTimeout=").append(this.operationTimeout).append(", ");
+        }
+        if (this.reconciliationInterval != otherClusterOperator.reconciliationInterval) {
+            diffString.append("reconciliationInterval=").append(this.reconciliationInterval).append(", ");
+        }
+        if (this.cluster != otherClusterOperator.cluster) {
+            diffString.append("cluster=").append(this.cluster).append(", ");
+        }
+        if (!this.clusterOperatorName.equals(otherClusterOperator.clusterOperatorName)) {
+            diffString.append("clusterOperatorName=").append(this.clusterOperatorName).append(", ");
+        }
+        if (!this.namespaceInstallTo.equals(otherClusterOperator.namespaceInstallTo)) {
+            diffString.append("namespaceInstallTo=").append(this.namespaceInstallTo).append(", ");
+        }
+        if (!this.namespaceToWatch.equals(otherClusterOperator.namespaceToWatch)) {
+            diffString.append("namespaceToWatch=").append(this.namespaceToWatch).append(", ");
+        }
+        if (this.bindingsNamespaces != otherClusterOperator.bindingsNamespaces) {
+            diffString.append("bindingsNamespaces=").append(this.bindingsNamespaces).append(", ");
+        }
+        if (!this.extraEnvVars.equals(otherClusterOperator.extraEnvVars)) {
+            diffString.append("extraEnvVars=").append(this.extraEnvVars).append(", ");
+        }
+        if (!this.extraLabels.equals(otherClusterOperator.extraLabels)) {
+            diffString.append("extraLabels=").append(this.extraLabels).append(", ");
+        }
+        if (this.clusterOperatorRBACType != otherClusterOperator.clusterOperatorRBACType) {
+            diffString.append("clusterOperatorRBACType=").append(this.clusterOperatorRBACType).append(", ");
+        }
+
+        return diffString.toString();
+    }
+
     @Override
     public String toString() {
         return "SetupClusterOperator{" +

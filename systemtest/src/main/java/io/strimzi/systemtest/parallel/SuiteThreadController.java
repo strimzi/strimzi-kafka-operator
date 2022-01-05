@@ -100,7 +100,7 @@ public class SuiteThreadController {
         }
         // lock flag
         this.isOpen.set(true);
-        LOGGER.info("{} has locked the @IsolatedSuite and other @IsolatedSuites must wait until lock is released.", extensionContext.getRequiredTestClass().getSimpleName());
+        LOGGER.debug("{} has locked the @IsolatedSuite and other @IsolatedSuites must wait until lock is released.", extensionContext.getRequiredTestClass().getSimpleName());
     }
 
     public void decrementCounter() {

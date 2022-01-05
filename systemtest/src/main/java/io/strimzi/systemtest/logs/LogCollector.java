@@ -6,6 +6,7 @@ package io.strimzi.systemtest.logs;
 
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.test.logs.CollectorElement;
 import io.strimzi.test.k8s.KubeClient;
@@ -136,7 +137,9 @@ public class LogCollector {
             }
 
             boolean namespaceLogDirExist = this.namespaceFile.exists() || this.namespaceFile.mkdirs();
-            if (!namespaceLogDirExist) throw new RuntimeException("Unable to create path");
+            if (!namespaceLogDirExist) {
+                throw new RuntimeException("Unable to create path");
+            }
 
             this.collectEvents(namespace);
             this.collectConfigMaps(namespace);
@@ -157,7 +160,7 @@ public class LogCollector {
             if (namespace.equals(this.clusterOperatorNamespace)) {
                 kubeClient.listPods(namespace).forEach(pod -> {
                     final String podName = pod.getMetadata().getName();
-                    if (pod.getMetadata().getLabels().get("strimzi.io/kind").equals("cluster-operator")) {
+                    if (pod.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL).equals("cluster-operator")) {
                         pod.getStatus().getContainerStatuses().forEach(
                             containerStatus -> scrapeAndCreateLogs(testSuite, podName, containerStatus, namespace));
                     } else {

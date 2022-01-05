@@ -64,6 +64,8 @@ Notable classes:
 * **BeforeAllOnce** - custom extension which executes code only once before all tests are started and after all tests finished.
 * **storage/TestStorage** - generate and stores values in the specific `ExtensionContext`. This ensures that if one want to retrieve data from
   `TestStorage` it can be done via `ExtensionContext` (with help of ConcurrentHashMap) inside `AbstractST`.
+* **parallel/TestSuiteNamespaceManager** - This class contains additional namespaces will are needed for test suite before the execution of `@BeforeAll`. 
+  By this we can easily prepare the namespace in the `AbstractST` class and not in the children.
 
 ## Test Phases
 
@@ -205,6 +207,25 @@ two JUnit properties which are located `systemtests/src/test/resources/junit-pla
 On the other hand you can also override it in mvn command using additional parameters:
 - -Djunit.jupiter.execution.parallel.enabled=true
 - -Djunit.jupiter.execution.parallel.config.fixed.parallelism=5
+
+## Adding new test suite to our system tests
+
+If you want to add new test suite to our system tests make sure that you update `io.strimzi.systemtest.parallel.TestSuiteNamespaceManager` class
+where you have to modify method `constructMapOfAdditionalNamespaces()`. Here is example of adding `ExampleST`, which needs
+two additional namespaces `first-example_namespace` and `second-example-namespace`.
+
+```java
+this.mapOfAdditionalNamespaces = new HashMap<>();
+// our defined test suites, which needs auxiliary namespaces 
+// (omitted for brevity)
+...
+// your new test suite
+this.mapOfAdditionalNamespaces.put("ExampleST", 
+    SUITE_NAMESPACES.apply(Arrays.asList(
+        "first-example_namespace",
+        "second-example-namespace"));
+...
+```
 
 ## Cluster Operator log check
 
