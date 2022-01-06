@@ -449,6 +449,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
      * 1 if version1 &gt; version2.
      */
     public static int compareDottedIVVersions(String version1, String version2) {
+        // Due to validation in KafkaConfiguration.validate only values like 2.8 or 2.8-IV0 can get there
         String trimmedVersion1 = version1.split("-")[0];
         String trimmedVersion2 = version2.split("-")[0];
         return compareDottedVersions(trimmedVersion1, trimmedVersion2);
