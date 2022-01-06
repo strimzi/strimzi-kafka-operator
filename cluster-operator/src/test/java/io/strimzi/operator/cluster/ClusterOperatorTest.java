@@ -20,7 +20,6 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
-import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -127,7 +126,6 @@ public class ClusterOperatorTest {
             client = mock(KubernetesClient.class);
             when(client.isAdaptable(eq(OpenShiftClient.class))).thenReturn(false);
         }
-        when(client.isAdaptable(eq(OkHttpClient.class))).thenReturn(true);
 
         try {
             when(client.getMasterUrl()).thenReturn(new URL("http://localhost"));
@@ -230,7 +228,6 @@ public class ClusterOperatorTest {
             client = mock(KubernetesClient.class);
             when(client.isAdaptable(eq(OpenShiftClient.class))).thenReturn(false);
         }
-        when(client.isAdaptable(eq(OkHttpClient.class))).thenReturn(true);
 
         try {
             when(client.getMasterUrl()).thenReturn(new URL("http://localhost"));
