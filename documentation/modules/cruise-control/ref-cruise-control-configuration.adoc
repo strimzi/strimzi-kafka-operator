@@ -94,6 +94,13 @@ Capacity limits can be set for the following broker resources, using the standar
 
 Because Strimzi Kafka brokers are homogeneous, Cruise Control applies the same capacity limits to every broker it is monitoring.
 
+[NOTE]
+====
+In order to guarantee accurate rebalance proposal when using CPU goals, you can set CPU requests equal to CPU limits in `Kafka.spec.kafka.resources`.
+That way, all CPU resources are reserved upfront and are always available.
+This configuration allows Cruise Control to properly evaluate the CPU utilization when preparing the rebalance proposals based on CPU goals.
+====
+
 .An example Cruise Control brokerCapacity configuration using bibyte units
 [source,yaml,subs="attributes+"]
 ----

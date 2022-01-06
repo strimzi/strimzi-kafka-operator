@@ -256,7 +256,7 @@ public class ZookeeperCluster extends AbstractModel {
 
         // Get the ZK version information from either the CRD or from the default setting
         KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
-        String version = versions.version(kafkaClusterSpec != null ? kafkaClusterSpec.getVersion() : null).zookeeperVersion();
+        String version = versions.supportedVersion(kafkaClusterSpec != null ? kafkaClusterSpec.getVersion() : null).zookeeperVersion();
         zk.setVersion(version);
 
         String image = zookeeperClusterSpec.getImage();

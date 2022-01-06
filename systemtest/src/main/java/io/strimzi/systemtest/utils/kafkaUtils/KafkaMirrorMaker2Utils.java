@@ -27,7 +27,7 @@ public class KafkaMirrorMaker2Utils {
      * @param clusterName name of KafkaMirrorMaker2 cluster
      * @param state desired state
      */
-    public static boolean waitForKafkaMirrorMaker2Status(String namespaceName, String clusterName, Enum<?>  state) {
+    public static boolean waitForKafkaMirrorMaker2Status(String namespaceName, String clusterName, Enum<?> state) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get();
         return ResourceManager.waitForResourceStatus(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client(), kafkaMirrorMaker2, state);
     }
@@ -37,7 +37,7 @@ public class KafkaMirrorMaker2Utils {
      * @param clusterName name of KafkaMirrorMaker2 cluster
      * @param state desired state
      */
-    public static boolean waitForKafkaMirrorMaker2Status(String clusterName, Enum<?>  state) {
+    public static boolean waitForKafkaMirrorMaker2Status(String clusterName, Enum<?> state) {
         return waitForKafkaMirrorMaker2Status(kubeClient().getNamespace(), clusterName, state);
     }
 
@@ -69,5 +69,10 @@ public class KafkaMirrorMaker2Utils {
             }
             return true;
         });
+    }
+
+    public static boolean waitForKafkaMirrorMaker2StatusMessage(String namespaceName, String clusterName, String message) {
+        KafkaMirrorMaker2 kafkaMirrorMaker2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get();
+        return ResourceManager.waitForResourceStatusMessage(KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client(), kafkaMirrorMaker2, message);
     }
 }

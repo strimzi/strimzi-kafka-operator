@@ -15,8 +15,10 @@ public class KafkaConnectBuildUtils {
      *
      * @return      True if the Pod is already complete, false otherwise
      */
+    @SuppressWarnings("BooleanExpressionComplexity")
     public static boolean buildPodComplete(Pod pod)   {
-        return pod.getStatus() != null
+        return pod != null
+                && pod.getStatus() != null
                 && pod.getStatus().getContainerStatuses() != null
                 && pod.getStatus().getContainerStatuses().size() > 0
                 && pod.getStatus().getContainerStatuses().get(0) != null

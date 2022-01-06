@@ -1,6 +1,35 @@
 [[style-guide]]
 = Style guidelines
 
+[[config-styles]]
+== Adding code and configuration examples
+
+The Strimzi documentation contains many code and configuration examples.
+Examples are a useful way of demonstrating a process.
+
+If you want to add example code and configuration to your contribution, use the following format in an asciidoc code block.
+
+.Configuration example
+[source,subs="+quotes"]
+------
+[source,yaml,subs="+quotes,attributes"] <1>
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    replicas: *3* # \<1> <2>
+    # ... <3>
+----
+------
+<1> Syntax for the example. Here the source language is `yaml`. Use _subs_ to apply attributes and formatting.
+In this example, `{KafkaApiVersion}` is substituted with an attribute value specified in the `/shared/attributes.adoc` file.
+If _quotes_ is specified in _subs_, asciidoc formatting is applied to the code block. Here, bold is applied to the *3* value of `replicas`. If _quotes_ isn't used, ascidoc formatting is ignored in the code block.
+<2> Add callouts to describe a line of code or configuration. Use a hash (`#`) before the callout number so that the example is copy-friendly.
+<3> Use a hash and ellipsis (`# ...`) to show that part of the code or configuration has been omitted.
+
 [[general-styles]]
 == General styles
 
@@ -124,23 +153,22 @@ Learn more about reusing content in the link:https://redhat-documentation.github
 |===
 
 [[replaceables]]
-== Styling replaceables
+== User-replaced values
 
-Replaceable values in the text and code should be styled in `monospace`, with italics, uppercase, and hyphens.
+Style user-replaced values (replaceables) with angle brackets (< >) and italics.
+Use underscores ( _ ) for multi-word values.
+If you are referencing code or commands, also use `monospace`.
 
-.Replaceables quick reference
+.User-replaced values quick reference
 [cols="50%,50%a",options="header"]
 |===
-|Item |Use
-|Replaceable value |\_`SOME-VALUE`_
-|Location of broker instance |\_`BROKER-INSTANCE-DIR>`_
-|Component install directory |\_`INSTALL-DIR`_
+|Value |Shows as
+|\_<my_replaceable>_|_<my_replaceable>_
+|`+`_<my_code_replaceable>_+``|`_<my_code_replaceable>_`
 |===
 
-TIP: If using a replaceable within a source block, you will need to add
-`subs="+quotes"`` to the source tag for it to render. (For example : `++[source,subs="+quotes"]++`).
-
-IMPORTANT: If you enter the source language, for example, 'shell', the italics will not render.
+TIP: If adding a user-replaced value within a source code block, add
+`subs="+quotes"` to the source tag for it to render. (For example : `++[source,shell,subs="+quotes"]++`).
 
 == Styling Links
 

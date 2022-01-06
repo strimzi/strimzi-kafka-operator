@@ -131,7 +131,7 @@ spec:
 <4> xref:property-consumer-streams-reference[The number of consumer streams].
 <5> xref:property-consumer-offset-autocommit-reference[The offset auto-commit interval in milliseconds].
 <6> xref:con-common-configuration-trusted-certificates-reference[TLS encryption] with key names under which TLS certificates are stored in X.509 format for consumer or producer. If certificates are stored in the same secret, it can be listed multiple times.
-<7> Authentication for consumer or producer, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
+<7> Authentication for consumer or producer, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha256-reference[SCRAM-SHA-256]/xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
 <8> Kafka configuration options for xref:property-consumer-config-reference[consumer] and xref:property-producer-config-reference[producer].
 <9> xref:con-common-configuration-ssl-reference[SSL properties] for external listeners to run with a specific _cipher suite_ for a TLS version.
 <10> xref:type-KafkaMirrorMakerConsumerSpec-reference[Hostname verification is enabled] by setting to `HTTPS`. An empty string disables the verification.

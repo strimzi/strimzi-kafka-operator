@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -e
+set +x
 
 # Generate temporary keystore password
 CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)
@@ -110,6 +111,8 @@ if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
 fi
 
 . ./set_kafka_gc_options.sh
+
+set -x
 
 # starting Kafka Mirror Maker with final configuration
 # shellcheck disable=SC2086,SC2090

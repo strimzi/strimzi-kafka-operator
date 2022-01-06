@@ -26,11 +26,11 @@ curl -X POST \
   -d '{ "name": "my-source-connector",
     "config":
     {
-      "class":"org.apache.kafka.connect.file.FileStreamSourceConnector",
+      "connector.class":"org.apache.kafka.connect.file.FileStreamSourceConnector",
       "file": "/opt/kafka/LICENSE",
       "topic":"my-topic",
       "tasksMax": "4",
-      # ...
+      "type": "source"
     }
 }'
 ----
@@ -63,7 +63,7 @@ selector:
 
 You must also create a `NetworkPolicy` that allows HTTP requests from external clients.
 
-.NetworkPolicy to allow requests to the Kafka Connect API
+.Example NetworkPolicy to allow requests to the Kafka Connect API
 [source,yaml,subs=attributes+]
 ----
 apiVersion: networking.k8s.io/v1

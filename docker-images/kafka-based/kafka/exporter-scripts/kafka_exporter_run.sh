@@ -58,4 +58,6 @@ EOT
 
 chmod +x /tmp/run.sh
 
+set -x
+
 exec /usr/bin/tini -w -e 143 -- /tmp/run.sh

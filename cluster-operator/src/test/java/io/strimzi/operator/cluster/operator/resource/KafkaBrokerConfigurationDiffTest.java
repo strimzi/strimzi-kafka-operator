@@ -34,7 +34,7 @@ public class KafkaBrokerConfigurationDiffTest {
 
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final String KAFKA_VERSION = "3.0.0";
-    KafkaVersion kafkaVersion = VERSIONS.version(KAFKA_VERSION);
+    KafkaVersion kafkaVersion = VERSIONS.supportedVersion(KAFKA_VERSION);
     private int brokerId = 0;
 
     private ConfigEntry instantiateConfigEntry(String name, String val) {

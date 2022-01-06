@@ -24,6 +24,11 @@ if [ -z "$KAFKA_LOG4J_OPTS" ]; then
   export KAFKA_LOG4J_OPTS="-Dlog4j2.configurationFile=file:$CRUISE_CONTROL_HOME/custom-config/log4j2.properties"
 fi
 
+# System properties passed through the Kafka custom resource
+if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
+    export KAFKA_OPTS="${KAFKA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
+fi
+
 # enabling Prometheus JMX exporter as Java agent
 if [ "$CRUISE_CONTROL_METRICS_ENABLED" = "true" ]; then
   KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/jmx_prometheus_javaagent*.jar)=9404:$CRUISE_CONTROL_HOME/custom-config/metrics-config.json"
@@ -50,6 +55,8 @@ echo ""
 if [ -z "$KAFKA_JVM_PERFORMANCE_OPTS" ]; then
   KAFKA_JVM_PERFORMANCE_OPTS="-server -XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35 -XX:+DisableExplicitGC -Djava.awt.headless=true"
 fi
+
+set -x
 
 # starting Cruise Control server with final configuration
 # shellcheck disable=SC2086

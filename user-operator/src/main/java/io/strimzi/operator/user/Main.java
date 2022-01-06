@@ -114,18 +114,18 @@ public class Main {
         } else {
             clusterCaCertSecretFuture = Future.succeededFuture(null);
         }
-        Future<Secret> eoKeySecretFuture;
-        if (config.getEoKeySecretName() != null && !config.getEoKeySecretName().isEmpty()) {
-            eoKeySecretFuture = secretOperations.getAsync(config.getCaNamespace(), config.getEoKeySecretName());
+        Future<Secret> euoKeySecretFuture;
+        if (config.getEuoKeySecretName() != null && !config.getEuoKeySecretName().isEmpty()) {
+            euoKeySecretFuture = secretOperations.getAsync(config.getCaNamespace(), config.getEuoKeySecretName());
         } else {
-            eoKeySecretFuture = Future.succeededFuture(null);
+            euoKeySecretFuture = Future.succeededFuture(null);
         }
 
-        CompositeFuture.join(clusterCaCertSecretFuture, eoKeySecretFuture)
+        CompositeFuture.join(clusterCaCertSecretFuture, euoKeySecretFuture)
                 .onComplete(ar -> {
                     if (ar.succeeded()) {
                         Admin adminClient = adminClientProvider.createAdminClient(config.getKafkaBootstrapServers(),
-                                clusterCaCertSecretFuture.result(), eoKeySecretFuture.result(), eoKeySecretFuture.result() != null ? "entity-operator" : null);
+                                clusterCaCertSecretFuture.result(), euoKeySecretFuture.result(), euoKeySecretFuture.result() != null ? "entity-user-operator" : null);
                         promise.complete(adminClient);
                     } else {
                         promise.fail(ar.cause());

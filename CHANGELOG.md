@@ -1,5 +1,7 @@
 # CHANGELOG
 
+## 0.28.0
+
 ## 0.27.0
 
 * Multi-arch container images with support for x86_64 / AMD64 and AArch64 / ARM64 platforms
@@ -7,14 +9,16 @@
 * Added the option to configure the Cluster Operator's Zookeeper admin client session timeout via an new env var: `STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS`
 * The `ControlPlaneListener` and `ServiceAccountPatching` feature gates are now in the _beta_ phase and are enabled by default.
 * Allow setting any extra environment variables for the Cluster Operator container through Helm using a new `extraEnvs` value.
+* Added SCRAM-SHA-256 authentication for Kafka clients
 * Update OPA Authorizer to 1.3.0
+* Update to Cruise Control version 2.5.79
+* Update Log4j2 to 2.17.0
 
 ### Changes, deprecations and removals
 
 * The `ControlPlaneListener` feature gate is now enabled by default.
   When upgrading from Strimzi 0.22 or earlier, you have to disable the `ControlPlaneListener` feature gate when upgrading the cluster operator to make sure the Kafka cluster stays available during the upgrade.
   When downgrading to Strimzi 0.22 or earlier, you have to disable the `ControlPlaneListener` feature gate before downgrading the cluster operator to make sure the Kafka cluster stays available during the downgrade.
-* Update to Cruise Control version 2.5.74
 
 ## 0.26.0
 

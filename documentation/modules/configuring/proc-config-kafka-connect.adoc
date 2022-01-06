@@ -158,7 +158,7 @@ spec:
 <1> Use `KafkaConnect`.
 <2> Enables KafkaConnectors for the Kafka Connect cluster.
 <3> xref:con-common-configuration-replicas-reference[The number of replica nodes].
-<4> Authentication for the Kafka Connect cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
+<4> Authentication for the Kafka Connect cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha256-reference[SCRAM-SHA-256]/xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
 By default, Kafka Connect connects to Kafka brokers using a plain text connection.
 <5> xref:con-common-configuration-bootstrap-reference[Bootstrap server] for connection to the Kafka Connect cluster.
 <6> xref:con-common-configuration-trusted-certificates-reference[TLS encryption] with key names under which TLS certificates are stored in X.509 format for the cluster. If certificates are stored in the same secret, it can be listed multiple times.
@@ -168,7 +168,7 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <9> (Required) Configuration of the container registry where new images are pushed.
 <10> (Required) List of connector plugins and their artifacts to add to the new container image. Each plugin must be configured with at least one `artifact`.
 <11> xref:type-ExternalConfiguration-reference[External configuration for Kafka connectors] using environment variables, as shown here, or volumes.
-You can also use the _Kubernetes Configuration Provider_ to xref:proc-loading-config-with-provider-str[load configuration values from external sources].
+You can also use _configuration provider plugins_ to xref:assembly-loading-config-with-providers-str[load configuration values from external sources].
 <12> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 <13> Specified xref:property-kafka-connect-logging-reference[Kafka Connect loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <14> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).

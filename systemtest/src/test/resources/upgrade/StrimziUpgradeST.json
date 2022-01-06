@@ -70,9 +70,9 @@
     "strimziFeatureGatesFlags": ""
   },
   {
-    "fromVersion":"0.26.0",
-    "fromExamples":"strimzi-0.26.0",
-    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.26.0/strimzi-0.26.0.zip",
+    "fromVersion":"0.27.0",
+    "fromExamples":"strimzi-0.27.0",
+    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.27.0/strimzi-0.27.0.zip",
     "convertCRDs": false,
     "conversionTool": {
       "urlToConversionTool": "",

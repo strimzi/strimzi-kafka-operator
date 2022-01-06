@@ -72,6 +72,12 @@ release_pkg: helm_pkg
 	tar -z -cf ./strimzi-$(RELEASE_VERSION).tar.gz strimzi-$(RELEASE_VERSION)/
 	zip -r ./strimzi-$(RELEASE_VERSION).zip strimzi-$(RELEASE_VERSION)/
 	rm -rf ./strimzi-$(RELEASE_VERSION)
+	$(FIND) ./examples/ -mindepth 1 -maxdepth 1 ! -name DO_NOT_EDIT.md -type f,d -exec rm -rvf {} +
+	$(FIND) ./install/ -mindepth 1 -maxdepth 1 ! -name DO_NOT_EDIT.md -type f,d -exec rm -rvf {} +
+	rm -rfv ./helm-charts/helm3/strimzi-kafka-operator
+	$(FIND) ./packaging/examples/ -mindepth 1 -maxdepth 1 ! -name Makefile -type f,d -exec $(CP) -rv {} ./examples/ \;
+	$(FIND) ./packaging/install/ -mindepth 1 -maxdepth 1 ! -name Makefile -type f,d -exec $(CP) -rv {} ./install/ \;
+	$(CP) -rv ./packaging/helm-charts/helm3/strimzi-kafka-operator ./helm-charts/helm3/strimzi-kafka-operator
 
 release_helm_version:
 	echo "Updating default image tags in Helm Chart to $(RELEASE_VERSION)"
@@ -191,5 +197,14 @@ systemtest_make:
 
 prerequisites_check:
 	SED=$(SED) ./tools/prerequisites-check.sh
+
+checksum_examples:
+	@$(FIND) ./examples/ -type f -print0 | $(SORT) -z | $(XARGS) -0 $(SHA1SUM) | $(SHA1SUM)
+
+checksum_install:
+	@$(FIND) ./install/ -type f -print0 | $(SORT) -z | $(XARGS) -0 $(SHA1SUM) | $(SHA1SUM)
+
+checksum_helm:
+	@$(FIND) ./helm-charts/ -type f -print0 | $(SORT) -z | $(XARGS) -0 $(SHA1SUM) | $(SHA1SUM)
 
 .PHONY: all $(SUBDIRS) $(DOCKERDIRS) $(DOCKER_TARGETS) systemtests docu_versions spotbugs docu_check prerequisites_check

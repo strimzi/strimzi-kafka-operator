@@ -240,17 +240,18 @@ public class AbstractUpgradeST extends AbstractST {
 
             if (!logMessageVersion.isEmpty() || !interBrokerProtocolVersion.isEmpty()) {
                 if (!logMessageVersion.isEmpty()) {
-                    LOGGER.info("Going to set log message format version to " + logMessageVersion);
+                    LOGGER.info("Going to set log message format version to {} (current version is {})", logMessageVersion, currentLogMessageFormat);
                     cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/config/log.message.format.version", logMessageVersion);
                 }
 
                 if (!interBrokerProtocolVersion.isEmpty()) {
+                    LOGGER.info("Going to set inter-broker protocol version to {} (current version is {})", interBrokerProtocolVersion, currentInterBrokerProtocol);
                     LOGGER.info("Going to set inter-broker protocol version to " + interBrokerProtocolVersion);
                     cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/config/inter.broker.protocol.version", interBrokerProtocolVersion);
                 }
 
                 if ((currentInterBrokerProtocol != null && !currentInterBrokerProtocol.equals(interBrokerProtocolVersion)) ||
-                        (currentLogMessageFormat != null) && !currentLogMessageFormat.equals(logMessageVersion)) {
+                        (currentLogMessageFormat != null && !currentLogMessageFormat.isEmpty() && !currentLogMessageFormat.equals(logMessageVersion))) {
                     LOGGER.info("Wait until kafka rolling update is finished");
                     kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, 3, kafkaPods);
                 }

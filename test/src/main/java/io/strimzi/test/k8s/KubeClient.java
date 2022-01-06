@@ -43,11 +43,11 @@ import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.openshift.api.model.DeploymentConfig;
 import io.fabric8.openshift.client.OpenShiftClient;
-import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -918,14 +918,19 @@ public class KubeClient {
         }
 
         @Override
-        public void onOpen(Response response) {
+        public void onOpen() {
             LOGGER.info("The shell will remain open for 10 seconds.");
             execLatch.countDown();
         }
 
         @Override
         public void onFailure(Throwable t, Response response) {
-            LOGGER.info("shell barfed with code {} and message {}", response.code(), response.message());
+            try {
+                LOGGER.info("shell barfed with code {} and body {}", response.code(), response.body());
+            } catch (IOException e) {
+                LOGGER.info("shell barfed with code {} and body() throws exception", response.code(), e);
+            }
+
             execLatch.countDown();
         }
 

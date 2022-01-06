@@ -101,95 +101,89 @@ For information on configuring TLS client authentication, see xref:type-KafkaCli
 [id='con-common-configuration-resources-{context}']
 === `resources`
 
-You request CPU and memory resources for components.
-Limits specify the maximum resources that can be consumed by a given container.
+Configure resource _requests_ and _limits_ to control resources for Strimzi containers.
+You can specify requests and limits for `memory` and `cpu` resources.
+The requests should be enough to ensure a stable performance of Kafka.  
+
+How you configure resources in a production environment depends on a number of factors.
+For example, applications are likely to be sharing resources in your Kubernetes cluster.
+
+For Kafka, the following aspects of a deployment can impact the resources you need:
+
+* Throughput and size of messages
+* The number of network threads handling messages
+* The number of producers and consumers
+* The number of topics and partitions
+
+The values specified for resource requests are reserved and always available to a container.
+Resource limits specify the maximum resources that can be consumed by a given container.
+The amount between the request and limit is not reserved and might not be always available.
+A container can use the resources up to the limit only when they are available.
+Resource limits are temporary and can be reallocated.
+
+.Resource request and limit
+image:common-config-resources.png[Boundaries of a resource request and limit]
+
+If you set limits without requests or vice versa, Kubernetes uses the same value for both.
+Setting equal requests and limits for resources guarantees quality of service, as
+Kubernetes will not kill containers unless they exceed their limits.
+
+You can configure resource requests and limits for one or more supported resources.
+
+.Example resource configuration
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    #...
+    resources:
+      requests:
+        memory: 64Gi
+        cpu: "8"
+      limits:
+        memory: 64Gi
+        cpu: "12"
+  entityOperator:
+    #...
+    topicOperator:
+      #...
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: "1"
+        limits:
+          memory: 512Mi
+          cpu: "1"
+----
 
 Resource requests and limits for the Topic Operator and User Operator are set in the `Kafka` resource.
 
-Use the `reources.requests` and `resources.limits` properties to configure resource requests and limits.
+If the resource request is for more than the available free resources in the Kubernetes cluster, the pod is not scheduled.
 
-For every deployed container, Strimzi allows you to request specific resources and define the maximum consumption of those resources.
-
-Strimzi supports requests and limits for the following types of resources:
-
-* `cpu`
-* `memory`
-
-Strimzi uses the Kubernetes syntax for specifying these resources.
-
+NOTE: Strimzi uses the Kubernetes syntax for specifying `memory` and `cpu` resources.
 For more information about managing computing resources on Kubernetes, see {K8sManagingComputingResources}.
 
-*Resource requests*
+Memory resources:: When configuring memory resources, consider the total requirements of the components.
++
+--
+Kafka runs inside a JVM and uses an operating system page cache to store message data before writing to disk.
+The memory request for Kafka should fit the JVM heap and page cache.
+You can xref:con-common-configuration-jvm-{context}[configure the `jvmOptions` property] to control the minimum and maximum heap size.
 
-Requests specify the resources to reserve for a given container.
-Reserving the resources ensures that they are always available.
-
-IMPORTANT: If the resource request is for more than the available free resources in the Kubernetes cluster, the pod is not scheduled.
-
-A request may be configured for one or more supported resources.
-
-.Example resource requests configuration
-[source,yaml,subs="attributes+"]
-----
-# ...
-resources:
-  requests:
-    cpu: 12
-    memory: 64Gi
-# ...
-----
-
-*Resource limits*
-
-Limits specify the maximum resources that can be consumed by a given container.
-The limit is not reserved and might not always be available.
-A container can use the resources up to the limit only when they are available.
-Resource limits should be always higher than the resource requests.
-
-A resource may be configured for one or more supported limits.
-
-.Example resource limits configuration
-[source,yaml,subs="attributes+"]
-----
-# ...
-resources:
-  limits:
-    cpu: 12
-    memory: 64Gi
-# ...
-----
-
-*Supported CPU formats*
-
-CPU requests and limits are supported in the following formats:
-
-* Number of CPU cores as integer (`5` CPU core) or decimal (`2.5` CPU core).
-* Number or _millicpus_ / _millicores_ (`100m`) where 1000 _millicores_ is the same `1` CPU core.
-
-.Example CPU units
-[source,yaml,subs="attributes+"]
-----
-# ...
-resources:
-  requests:
-    cpu: 500m
-  limits:
-    cpu: 2.5
-# ...
-----
-
-NOTE: The computing power of 1 CPU core may differ depending on the platform where Kubernetes is deployed.
-
-For more information on CPU specification, see the {K8sMeaningOfCpu}.
-
-*Supported memory formats*
+Other components don't rely on the page cache.
+You can configure memory resources without configuring the `jvmOptions` to control the heap size.
 
 Memory requests and limits are specified in megabytes, gigabytes, mebibytes, and gibibytes.
+Use the following suffixes in the specification:
 
-* To specify memory in megabytes, use the `M` suffix. For example `1000M`.
-* To specify memory in gigabytes, use the `G` suffix. For example `1G`.
-* To specify memory in mebibytes, use the `Mi` suffix. For example `1000Mi`.
-* To specify memory in gibibytes, use the `Gi` suffix. For example `1Gi`.
+* `M` for megabytes
+* `G` for gigabytes
+* `Mi` for mebibytes
+* `Gi` for gibibytes
 
 .Example resources using different memory units
 [source,yaml,subs="attributes+"]
@@ -204,6 +198,31 @@ resources:
 ----
 
 For more details about memory specification and additional supported units, see {K8sMeaningOfMemory}.
+--
+
+CPU resources:: A CPU request should be enough to give a reliable performance at any time.
+CPU requests and limits are specified as _cores_ or _millicpus_/_millicores_.
++
+--
+CPU cores are specified as integers (`5` CPU core) or decimals (`2.5` CPU core).
+1000 _millicores_ is the same as `1` CPU core.
+
+.Example CPU units
+[source,yaml,subs="attributes+"]
+----
+# ...
+resources:
+  requests:
+    cpu: 500m
+  limits:
+    cpu: 2.5
+# ...
+----
+
+The computing power of 1 CPU core may differ depending on the platform where Kubernetes is deployed.
+
+For more information on CPU specification, see {K8sMeaningOfCpu}.
+--
 
 [id='con-common-configuration-images-{context}']
 === `image`

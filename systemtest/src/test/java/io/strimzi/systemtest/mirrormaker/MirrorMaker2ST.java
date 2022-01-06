@@ -77,6 +77,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
@@ -1067,6 +1068,40 @@ class MirrorMaker2ST extends AbstractST {
         resourceManager.createResource(extensionContext,
             initialInternalClientSourceJob.consumerStrimzi().build());
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(sourceConsumerName, namespaceName, 1));
+    }
+
+    @ParallelNamespaceTest
+    void testKafkaMirrorMaker2ReflectsConnectorsState(ExtensionContext extensionContext) {
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClusterSourceName = clusterName + "-source";
+        String kafkaClusterTargetName = clusterName + "-target";
+        String errorMessage = "One or more connectors are in FAILED state";
+
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build(),
+            KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
+
+        resourceManager.createResource(extensionContext, false,
+            KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+                .editSpec()
+                    .editMatchingCluster(spec -> spec.getAlias().equals(kafkaClusterSourceName))
+                        // typo in bootstrap name, connectors should not connect and MM2 should be in NotReady state with error
+                        .withBootstrapServers(KafkaResources.bootstrapServiceName(kafkaClusterSourceName) + ".:9092")
+                    .endCluster()
+                .endSpec()
+                .build());
+
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2StatusMessage(namespaceName, clusterName, errorMessage);
+
+        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(clusterName, mm2 ->
+            mm2.getSpec().getClusters().stream().filter(mm2ClusterSpec -> mm2ClusterSpec.getAlias().equals(kafkaClusterSourceName))
+                .findFirst().get().setBootstrapServers(KafkaUtils.namespacedPlainBootstrapAddress(kafkaClusterSourceName, namespaceName)), namespaceName);
+
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(namespaceName, clusterName);
+
+        KafkaMirrorMaker2Status kmm2Status = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus();
+        assertFalse(kmm2Status.getConditions().stream().anyMatch(condition -> condition.getMessage() != null && condition.getMessage().contains(errorMessage)));
     }
 
     @BeforeAll

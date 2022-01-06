@@ -5,13 +5,15 @@
 [id='document-conventions-{context}']
 = Document Conventions
 
-.Replaceables
+.User-replaced values
 
-In this document, replaceable text is styled in `monospace`, with italics, uppercase, and hyphens.
+User-replaced values, also known as _replaceables_, are shown in _italics_ with angle brackets (< >).
+Underscores ( _ ) are used for multi-word values.
+If the value refers to code or commands, `monospace` is also used.
 
-For example, in the following code, you will want to replace `_MY-NAMESPACE_` with the name of your namespace:
+For example, in the following code, you will want to replace `_<my_namespace>_` with the name of your namespace:
 
 [source, subs="+quotes"]
 ----
-sed -i 's/namespace: .\*/namespace: _MY-NAMESPACE_/' install/cluster-operator/*RoleBinding*.yaml
+sed -i 's/namespace: .\*/namespace: _<my_namespace>_/' install/cluster-operator/*RoleBinding*.yaml
 ----

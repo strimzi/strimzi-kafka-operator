@@ -72,6 +72,29 @@ public class KafkaResources {
     }
 
     /**
+     * Returns the name of the Entity Topic Operator {@code Secret} for a {@code Kafka} cluster of the given name.
+     * This {@code Secret} will only exist if {@code Kafka.spec.entityOperator.topicOperator} is configured in the
+     * {@code Kafka} resource with the given name.
+     * Note: This secret is used by both EntityTopicOperator and the TLS sidecar in the same EntityOperator.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding Entity Topic Operator {@code Secret}.
+     */
+    public static String entityTopicOperatorSecretName(String clusterName) {
+        return clusterName + "-entity-topic-operator-certs";
+    }
+
+    /**
+     * Returns the name of the Entity User Operator {@code Secret} for a {@code Kafka} cluster of the given name.
+     * This {@code Secret} will only exist if {@code Kafka.spec.entityOperator.userOperator} is configured in the
+     * {@code Kafka} resource with the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding Entity Operator {@code Secret}.
+     */
+    public static String entityUserOperatorSecretName(String clusterName) {
+        return clusterName + "-entity-user-operator-certs";
+    }
+
+    /**
      * Returns the name of the Cluster CA certificate {@code Secret} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding Cluster CA certificate {@code Secret}.

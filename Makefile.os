@@ -5,6 +5,7 @@ CP = cp
 UNIQ = uniq
 SORT = sort
 SHA1SUM = sha1sum
+XARGS = xargs
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
@@ -15,4 +16,5 @@ ifeq ($(UNAME_S),Darwin)
 	UNIQ = guniq
 	SORT = gsort
 	SHA1SUM = gsha1sum
+	XARGS = gxargs
 endif

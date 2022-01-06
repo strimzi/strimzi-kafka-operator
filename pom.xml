@@ -5,7 +5,7 @@
     <groupId>io.strimzi</groupId>
     <artifactId>strimzi</artifactId>
     <packaging>pom</packaging>
-    <version>0.27.0-SNAPSHOT</version>
+    <version>0.28.0-SNAPSHOT</version>
 
     <licenses>
         <license>
@@ -90,16 +90,14 @@
         <license.maven.version>2.11</license.maven.version>
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
         <sundrio.version>0.40.1</sundrio.version>
-        <fabric8.kubernetes-client.version>5.10.1</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>5.10.1</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>5.10.1</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>5.11.2</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>5.11.2</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>5.11.2</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
-        <okhttp.version>3.12.6</okhttp.version>
-        <okio.version>1.15.0</okio.version>
-        <vertx.version>4.2.1</vertx.version>
-        <vertx-junit5.version>4.2.1</vertx-junit5.version>
-        <vertx.kafka.client>4.2.1</vertx.kafka.client>
-        <log4j.version>2.16.0</log4j.version>
+        <vertx.version>4.2.3</vertx.version>
+        <vertx-junit5.version>4.2.3</vertx-junit5.version>
+        <vertx.kafka.client>4.2.3</vertx.kafka.client>
+        <log4j.version>2.17.1</log4j.version>
         <hamcrest.version>2.2</hamcrest.version>
         <valid4j.version>1.1</valid4j.version>
         <fasterxml.jackson-core.version>2.11.3</fasterxml.jackson-core.version>
@@ -319,11 +317,6 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>zjsonpatch</artifactId>
                 <version>${fabric8.zjsonpatch.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp</artifactId>
-                <version>${okhttp.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>

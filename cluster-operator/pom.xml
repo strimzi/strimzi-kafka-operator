@@ -4,7 +4,7 @@
     <parent>
         <groupId>io.strimzi</groupId>
         <artifactId>strimzi</artifactId>
-        <version>0.27.0-SNAPSHOT</version>
+        <version>0.28.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>cluster-operator</artifactId>
@@ -76,10 +76,6 @@
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>zjsonpatch</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

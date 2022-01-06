@@ -261,13 +261,13 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         if (connectBuild.getBuild() != null) {
             // Build exists => let's build
             KafkaConnectDockerfile dockerfile = connectBuild.generateDockerfile();
-            String newBuildRevision = dockerfile.hashStub();
+            String newBuildRevision = dockerfile.hashStub() + Util.sha1Prefix(connectBuild.getBuild().getOutput().getImage());
             ConfigMap dockerFileConfigMap = connectBuild.generateDockerfileConfigMap(dockerfile);
 
             if (newBuildRevision.equals(buildState.currentBuildRevision)
                     && !buildState.forceRebuild) {
                 // The revision is the same and rebuild was not forced => nothing to do
-                LOGGER.infoCr(reconciliation, "Build configuration did not changed. Nothing new to build. Container image {} will be used.", buildState.currentImage);
+                LOGGER.debugCr(reconciliation, "Build configuration did not change. Nothing new to build. Container image {} will be used.", buildState.currentImage);
                 buildState.desiredImage = buildState.currentImage;
                 buildState.desiredBuildRevision = newBuildRevision;
                 return Future.succeededFuture();

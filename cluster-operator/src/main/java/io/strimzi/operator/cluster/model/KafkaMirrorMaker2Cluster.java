@@ -22,7 +22,7 @@ import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -239,8 +239,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 } else if (authentication instanceof KafkaClientAuthenticationPlain) {
                     KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
                     appendClusterPasswordSecretSource(clustersSaslPasswordFiles, clusterAlias, passwordAuth.getPasswordSecret());
-                } else if (authentication instanceof KafkaClientAuthenticationScramSha512) {
-                    KafkaClientAuthenticationScramSha512 passwordAuth = (KafkaClientAuthenticationScramSha512) authentication;
+                } else if (authentication instanceof KafkaClientAuthenticationScram) {
+                    KafkaClientAuthenticationScram passwordAuth = (KafkaClientAuthenticationScram) authentication;
                     appendClusterPasswordSecretSource(clustersSaslPasswordFiles, clusterAlias, passwordAuth.getPasswordSecret());
                 } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
                     KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;

@@ -8,11 +8,13 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
+import org.junit.jupiter.api.Assertions;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 
 @ParallelSuite
 public class KafkaConfigurationTests {
@@ -93,5 +95,14 @@ public class KafkaConfigurationTests {
     @ParallelTest
     public void validVersion() {
         assertNoError("inter.broker.protocol.version", "2.5-IV0");
+    }
+
+    @ParallelTest
+    public void unsupportedVersion() {
+        RuntimeException exc = Assertions.assertThrows(RuntimeException.class, () -> {
+            KafkaConfiguration.readConfigModel(KafkaVersionTestUtils.getKafkaVersionLookup().version("2.6.0"));
+        });
+
+        assertThat(exc.getMessage(), containsString("Configuration model /kafka-2.6.0-config-model.json was not found"));
     }
 }

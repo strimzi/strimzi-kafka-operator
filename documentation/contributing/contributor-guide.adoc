@@ -54,7 +54,14 @@ image:operators.png[Operators within the Strimzi architecture]
 [[contributing]]
 == Contributing to the documentation
 
-Once you have your local repository set up and have up to date copies of upstream content you need to follow these steps to contribute to the documentation.
+Once you have your local repository set up and have up-to-date copies of upstream content,
+follow these steps to contribute to the documentation.
+
+You add content to the documentation hosted on GitHub using pull requests (PRs).
+
+Reviewers might be assigned to the PR depending on the changes.
+A review from a Subject Matter Expert (SME) will check the technical aspects of the content.
+The PR might not require an SME review if you're only fixing a typo or broken link.
 
 .Procedure
 . Open your terminal
@@ -113,12 +120,3 @@ $ git push -f origin HEAD
 ----
 . Visit your fork on GitHub
 . Click *Compare & pull request*
-. If a SME review is needed:
-.. Add *SME Review Needed* label.
-.. When SME review is complete, remove *SME Review Completed* label and go to step 16.
-. Add *Peer Review Needed* label and assign a Reviewer.
-.. When peer review has been completed, the reviewer deletes the *Peer Review Needed* label and adds the *Peer Review Done* label.
-. When *Peer Review Done* label has been added:
-.. If no changes are needed, remove *Peer Review Done* label and add *Ready for Merge* label.
-.. If changes are needed and the changes are minor, make changes to the files, commit, and push, and then remove *Peer Review Done* label and add *Ready for Merge* label.
-.. If you want an additional review on the updated content, add the *Peer Review Needed* label and ask for another review in a comment.

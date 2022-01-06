@@ -17,7 +17,7 @@ import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
@@ -552,7 +552,7 @@ public class Util {
             return tlsFuture;
         } else {
             // compute hash from Auth
-            if (auth instanceof KafkaClientAuthenticationScramSha512) {
+            if (auth instanceof KafkaClientAuthenticationScram) {
                 // only passwordSecret can be changed
                 return tlsFuture.compose(tlsHash -> getPasswordAsync(secretOperations, namespace, auth)
                         .compose(password -> Future.succeededFuture(password.hashCode() + tlsHash)));
@@ -678,15 +678,15 @@ public class Util {
                 }   
             });
         }
-        if (auth instanceof KafkaClientAuthenticationScramSha512) {
-            return secretOperator.getAsync(namespace, ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getSecretName())
+        if (auth instanceof KafkaClientAuthenticationScram) {
+            return secretOperator.getAsync(namespace, ((KafkaClientAuthenticationScram) auth).getPasswordSecret().getSecretName())
             .compose(secret -> {
                 if (secret == null) {
-                    return Future.failedFuture("Secret " + ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getSecretName() + " not found");
+                    return Future.failedFuture("Secret " + ((KafkaClientAuthenticationScram) auth).getPasswordSecret().getSecretName() + " not found");
                 } else {
-                    String passwordKey = ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getPassword();
+                    String passwordKey = ((KafkaClientAuthenticationScram) auth).getPasswordSecret().getPassword();
                     if (!secret.getData().containsKey(passwordKey)) {
-                        return Future.failedFuture(String.format("Secret %s does not contain key %s", ((KafkaClientAuthenticationScramSha512) auth).getPasswordSecret().getSecretName(), passwordKey));
+                        return Future.failedFuture(String.format("Secret %s does not contain key %s", ((KafkaClientAuthenticationScram) auth).getPasswordSecret().getSecretName(), passwordKey));
                     }
                     return Future.succeededFuture(secret.getData().get(passwordKey));
                 }

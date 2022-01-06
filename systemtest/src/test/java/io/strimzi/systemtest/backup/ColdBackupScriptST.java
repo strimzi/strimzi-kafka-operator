@@ -58,6 +58,7 @@ public class ColdBackupScriptST extends AbstractST {
 
         // save consumer group offsets
         Map<String, String> offsetsBeforeBackup = clients.getCurrentOffsets();
+        assertThat("No offsets map before backup", offsetsBeforeBackup != null && offsetsBeforeBackup.size() > 0);
 
         // send additional messages
         clients.setMessageCount(secondBatchSize);

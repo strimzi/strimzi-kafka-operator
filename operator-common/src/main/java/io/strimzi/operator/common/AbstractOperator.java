@@ -107,6 +107,12 @@ public abstract class AbstractOperator<
     }
 
     @Override
+    public void resetCounters() {
+        resourceCounterMap.entrySet().forEach(entry -> entry.getValue().set(0));
+        pausedResourceCounterMap.entrySet().forEach(entry -> entry.getValue().set(0));
+    }
+
+    @Override
     public String kind() {
         return kind;
     }

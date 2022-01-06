@@ -84,7 +84,6 @@ Use a comma-separated list to specify two or three broker addresses in case a se
 <5> The label selector used to identify the `KafkaUser` resources managed by the User Operator.
 <6> The interval between periodic reconciliations, in milliseconds.
 The default is `120000` (2 minutes).
-The default is `18000` (18 seconds).
 <7> The level for printing logging messages.
 You can set the level to `ERROR`, `WARNING`, `INFO`, `DEBUG`, or `TRACE`.
 <8> Enables garbage collection (GC) logging.

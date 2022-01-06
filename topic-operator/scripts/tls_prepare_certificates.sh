@@ -39,9 +39,9 @@ if [ "$STRIMZI_TLS_AUTH_ENABLED" != "false" ]; then
   STORE=/tmp/topic-operator/replication.keystore.p12
   rm -f "$STORE"
   create_keystore "$STORE" "$CERTS_STORE_PASSWORD" \
-      /etc/tls-sidecar/eo-certs/entity-operator.crt \
-      /etc/tls-sidecar/eo-certs/entity-operator.key \
+      /etc/eto-certs/entity-topic-operator.crt \
+      /etc/eto-certs/entity-topic-operator.key \
       /etc/tls-sidecar/cluster-ca-certs/ca.crt \
-      entity-operator
+      entity-topic-operator
   echo "Preparing key store certificates for internal communication is completed"
 fi

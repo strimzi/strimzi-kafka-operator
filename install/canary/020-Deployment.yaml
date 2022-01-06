@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-canary
+  labels:
+    app: strimzi-canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: strimzi-canary
+  template:
+    metadata:
+      labels:
+        app: strimzi-canary
+    spec:
+      serviceAccountName: strimzi-canary
+      containers:
+      - name: strimzi-canary
+        image: quay.io/strimzi/canary:0.2.0
+        env:
+          - name: KAFKA_BOOTSTRAP_SERVERS
+            value: my-cluster-kafka-bootstrap:9092
+          - name: RECONCILE_INTERVAL_MS
+            value: "10000"
+          - name: TLS_ENABLED
+            value: "false"
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30    
+        resources:
+          limits:
+            memory: "64Mi"
+            cpu: "100m"
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+  strategy:
+    type: Recreate
