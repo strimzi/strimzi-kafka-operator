@@ -27,9 +27,7 @@ def installYq(String workspace) {
 def buildStrimziImages() {
     sh(script: """
         eval \$(minikube docker-env)
-        MVN_ARGS='-Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=2' make docker_build
-        make docker_tag
-        make docker_push
+        MVN_ARGS='-Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=2' make all
     """)
 }
 
@@ -83,12 +81,6 @@ def postGithubPrComment(def file) {
         def output=readFile("out.log").trim()
         def output_err=readFile("out.err").trim()
         echo "curl output=$output output_err=$output_err"
-    }
-}
-
-def buildKafkaConfigModels() {
-    dir("${workspace}/config-model-generator") {
-        sh(script: "./build-config-models.sh build -Dstyle.color=always")
     }
 }
 

@@ -163,13 +163,6 @@ pipeline {
                 }
             }
         }
-        stage("Build Kafka config models") {
-            steps {
-                script {
-                    lib.buildKafkaConfigModels()
-                }
-            }
-        }
         stage('Build images') {
             when {
                 environment name: 'TEST_ONLY', value: 'false'
