@@ -8,16 +8,16 @@
 Use Kafka Connect to set up external data connections to your Kafka cluster.
 Use the properties of the `KafkaConnect` resource to configure your Kafka Connect deployment.
 
-.Kafka connector configuration
-KafkaConnector resources allow you to create and manage connector instances for Kafka Connect in a Kubernetes-native way.
+.KafkaConnector configuration
+`KafkaConnector` resources allow you to create and manage connector instances for Kafka Connect in a Kubernetes-native way.
 
 In your Kafka Connect configuration, you enable KafkaConnectors for a Kafka Connect cluster by adding the `strimzi.io/use-connector-resources` annotation.
 You can also add a `build` configuration so that Strimzi automatically builds a container image with the connector plugins you require for your data connections.
 External configuration for Kafka Connect connectors is specified through the `externalConfiguration` property.
 
-To manage connectors, you can use the Kafka Connect REST API, or use KafkaConnector custom resources.
-KafkaConnector resources must be deployed to the same namespace as the Kafka Connect cluster they link to.
-For more information on using these methods to create, reconfigure, or delete connectors, see link:{BookURLDeploying}#con-creating-managing-connectors-str[Creating and managing connectors^] in the _Deploying and Upgrading Strimzi_ guide.
+To manage connectors, you can use the Kafka Connect REST API, or use `KafkaConnector` custom resources.
+`KafkaConnector` resources must be deployed to the same namespace as the Kafka Connect cluster they link to.
+For more information on using these methods to create, reconfigure, or delete connectors, see link:{BookURLDeploying}#assembly-creating-managing-connectors-str[Creating and managing connectors^].
 
 Connector configuration is passed to Kafka Connect as part of an HTTP request and stored within Kafka itself.
 ConfigMaps and Secrets are standard Kubernetes resources used for storing configurations and confidential data.
