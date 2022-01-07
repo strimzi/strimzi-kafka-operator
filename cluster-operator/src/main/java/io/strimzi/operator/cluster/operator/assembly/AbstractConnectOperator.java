@@ -283,12 +283,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param reconciliation       The reconciliation
      * @param namespace            Namespace of the Connect cluster
      * @param connect              KafkaConnectCluster object
-     * @return                     Future for tracking the asynchronous result of getting the metrics and logging config map
+     * @param name                 ServiceAccount name
+     * @return                     Future for tracking the asynchronous result of reconciling the ServiceAccount
      */
-    protected Future<ReconcileResult<ServiceAccount>> connectServiceAccount(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect) {
-        return serviceAccountOperations.reconcile(reconciliation, namespace,
-                KafkaConnectResources.serviceAccountName(connect.getCluster()),
-                connect.generateServiceAccount());
+    protected Future<ReconcileResult<ServiceAccount>> connectServiceAccount(Reconciliation reconciliation, String namespace, String name, KafkaConnectCluster connect) {
+        return serviceAccountOperations.reconcile(reconciliation, namespace, name, connect.generateServiceAccount());
     }
 
     /**
@@ -297,7 +296,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @param reconciliation       The reconciliation
      * @param namespace            Namespace of the Connect cluster
      * @param connect              KafkaConnectCluster object
-     * @return                     Future for tracking the asynchronous result of getting the metrics and logging config map
+     * @return                     Future for tracking the asynchronous result of reconciling the NetworkPolicy
      */
     protected Future<ReconcileResult<NetworkPolicy>> connectNetworkPolicy(Reconciliation reconciliation, String namespace, KafkaConnectCluster connect, boolean connectorOperatorEnabled) {
         if (isNetworkPolicyGeneration) {

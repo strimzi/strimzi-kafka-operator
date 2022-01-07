@@ -117,7 +117,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         final AtomicReference<String> image = new AtomicReference<>();
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
-        connectServiceAccount(reconciliation, namespace, connect)
+        connectServiceAccount(reconciliation, namespace, KafkaConnectResources.serviceAccountName(connect.getCluster()), connect)
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, connect, isUseResources(kafkaConnect)))
                 .compose(i -> connectBuild(reconciliation, namespace, connect.getName(), build))
