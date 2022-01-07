@@ -45,6 +45,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
@@ -123,8 +124,16 @@ public final class TestUtils {
     public static long waitFor(String description, long pollIntervalMs, long timeoutMs, BooleanSupplier ready, Runnable onTimeout) {
         LOGGER.debug("Waiting for {}", description);
         long deadline = System.currentTimeMillis() + timeoutMs;
+
         String exceptionMessage = null;
+        String previousExceptionMessage = null;
+
+        // in case we are polling every 1s, we want to print exception after x tries, not on the first try
+        // for minutes poll interval will 2 be enough
+        int exceptionAppearanceCount = Duration.ofMillis(pollIntervalMs).toMinutes() > 0 ? 2 : Math.max((int) (timeoutMs / pollIntervalMs) / 4, 2);
         int exceptionCount = 0;
+        int newExceptionAppearance = 0;
+
         StringWriter stackTraceError = new StringWriter();
 
         while (true) {
@@ -133,12 +142,17 @@ public final class TestUtils {
                 result = ready.getAsBoolean();
             } catch (Exception e) {
                 exceptionMessage = e.getMessage();
-                if (++exceptionCount == 1 && exceptionMessage != null) {
-                    // Log the first exception as soon as it occurs
-                    LOGGER.error("Exception waiting for {}, {}", description, exceptionMessage);
+
+                if (++exceptionCount == exceptionAppearanceCount && exceptionMessage != null && exceptionMessage.equals(previousExceptionMessage)) {
+                    LOGGER.error("While waiting for {} exception occurred: {}", description, exceptionMessage);
                     // log the stacktrace
                     e.printStackTrace(new PrintWriter(stackTraceError));
+                } else if (exceptionMessage != null && !exceptionMessage.equals(previousExceptionMessage)) {
+                    if (++newExceptionAppearance == 2) {
+                        previousExceptionMessage = exceptionMessage;
+                    }
                 }
+
                 result = false;
             }
             long timeLeft = deadline - System.currentTimeMillis();
