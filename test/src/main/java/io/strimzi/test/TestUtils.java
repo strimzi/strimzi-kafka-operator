@@ -147,10 +147,8 @@ public final class TestUtils {
                     LOGGER.error("While waiting for {} exception occurred: {}", description, exceptionMessage);
                     // log the stacktrace
                     e.printStackTrace(new PrintWriter(stackTraceError));
-                } else if (exceptionMessage != null && !exceptionMessage.equals(previousExceptionMessage)) {
-                    if (++newExceptionAppearance == 2) {
-                        previousExceptionMessage = exceptionMessage;
-                    }
+                } else if (exceptionMessage != null && !exceptionMessage.equals(previousExceptionMessage) && ++newExceptionAppearance == 2) {
+                    previousExceptionMessage = exceptionMessage;
                 }
 
                 result = false;
