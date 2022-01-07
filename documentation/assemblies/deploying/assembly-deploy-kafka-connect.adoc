@@ -22,8 +22,6 @@ The procedures in this section show how to:
 * xref:using-kafka-connect-with-plug-ins-{context}[Create a Kafka Connect image containing the connectors you need to make your connection]
 * xref:con-creating-managing-connectors-{context}[Create and manage connectors using a KafkaConnector resource or the Kafka Connect REST API]
 * xref:proc-deploying-kafkaconnector-{context}[Deploy a KafkaConnector resource to Kafka Connect]
-* xref:proc-manual-restart-connector-{context}[Restart a Kafka connector by annotating a KafkaConnector resource]
-* xref:proc-manual-restart-connector-task-{context}[Restart a Kafka connector task by annotating a KafkaConnector resource]
 
 NOTE: The term _connector_ is used interchangeably to mean a connector instance running within a Kafka Connect cluster, or a connector class.
 In this guide, the term _connector_ is used when the meaning is clear from the context.
@@ -38,7 +36,3 @@ include::assembly-deploy-kafka-connect-with-plugins.adoc[leveloffset=+1]
 include::modules/con-deploy-kafka-connect-managing-connectors.adoc[leveloffset=+1]
 //Procedure to deploy a KafkaConnector resource
 include::modules/proc-deploying-kafkaconnector.adoc[leveloffset=+1]
-//Procedure to restart a Kafka connector
-include::../../modules/configuring/proc-manual-restart-connector.adoc[leveloffset=+1]
-//Procedure to restart a Kafka connector task
-include::../../modules/configuring/proc-manual-restart-connector-task.adoc[leveloffset=+1]
