@@ -19,8 +19,8 @@ cat <<-EOF
 [zookeeper-2181]
 client = yes
 CAfile = ${CA_CERTS}
-cert = ${ETO_CERTS_KEYS}/entity-topic-operator.crt
-key = ${ETO_CERTS_KEYS}/entity-topic-operator.key
+cert = ${ETO_CERTS_KEYS}/entity-operator.crt
+key = ${ETO_CERTS_KEYS}/entity-operator.key
 accept = 127.0.0.1:2181
 connect = ${STRIMZI_ZOOKEEPER_CONNECT:-zookeeper-client:2181}
 delay = yes
