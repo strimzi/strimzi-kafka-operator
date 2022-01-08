@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
-// configuring/assembly-config-kafka-connect.adoc
-// deploying/assembly-deploy-kafka-connect.adoc
+//
+// deploying/assembly-deploy-kafka-connect-managing-connectors.adoc
 
 [id='proc-manual-restart-connector-task-{context}']
 = Performing a restart of a Kafka connector task

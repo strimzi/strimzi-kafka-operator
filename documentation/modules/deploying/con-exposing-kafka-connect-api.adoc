@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-//assembly-config-kafka-connect.adoc
+//deploying/assembly-deploy-kafka-connect-managing-connectors.adoc
 
 [id='con-exposing-kafka-connect-api-{context}']
 

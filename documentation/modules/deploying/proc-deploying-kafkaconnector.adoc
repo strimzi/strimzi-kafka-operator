@@ -52,7 +52,7 @@ spec:
     # ...
 ----
 +
-<1> Name of the KafkaConnector resource, which is used as the name of the connector. Use any name that is valid for a Kubernetes resource.
+<1> Name of the `KafkaConnector` resource, which is used as the name of the connector. Use any name that is valid for a Kubernetes resource.
 <2> Name of the Kafka Connect cluster to create the connector instance in. Connectors must be deployed to the same namespace as the Kafka Connect cluster they link to.
 <3> Full name or alias of the connector class. This should be present in the image being used by the Kafka Connect cluster.
 <4> Maximum number of Kafka Connect `Tasks` that the connector can create.
@@ -127,7 +127,7 @@ kubectl exec _MY-CLUSTER_-kafka-0 -i -t -- bin/kafka-console-consumer.sh --boots
 [discrete]
 == Source and sink connector configuration options
 
-The connector configuration is defined in the `spec.config` property of the KafkaConnector resource.
+The connector configuration is defined in the `spec.config` property of the `KafkaConnector` resource.
 
 The `FileStreamSourceConnector` and `FileStreamSinkConnector` classes support the same configuration options as the Kafka Connect REST API.
 Other connectors support different configuration options.
@@ -178,8 +178,3 @@ m¦topics.regex
 ¦A regular expression matching one or more Kafka topics to read data from.
 
 |===
-
-[role="_additional-resources"]
-.Additional resources
-
-* xref:con-creating-managing-connectors-{context}[]
