@@ -221,8 +221,8 @@ public class KafkaUpgradeDowngradeMockTest {
                 KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION + iv);
 
         Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
-                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
-                KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
+                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION + iv,
+                KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION + iv);
 
         Checkpoint reconciliation = context.checkpoint();
         initialize(context, initialKafka)
@@ -237,8 +237,8 @@ public class KafkaUpgradeDowngradeMockTest {
                 .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertVersionsInStatefulSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
-                            KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
-                            KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION + iv,
+                            KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION + iv,
                             KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
 
                     reconciliation.flag();
