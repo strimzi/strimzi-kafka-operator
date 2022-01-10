@@ -54,43 +54,43 @@ EOF
 This example shows how to dump partitions related to a simple word count transactional application running on Kubernetes. In this case we have 2 disks per broker and an output topic with 1 partition and RF=1.
 
 ```shell
-# Print partition segments across the cluster
+# Print topic partition segments
 ./tools/log-dump/run.sh partition --namespace test --cluster my-cluster \
   --topic my-topic --partition 0 --dry-run
     
 brokers: 3, storage: jbod, disks: 2
-wc-output-0 segments in kafka-0-disk-0
+my-topic-0 segments in kafka-0-disk-0
 No segment found
-wc-output-0 segments in kafka-0-disk-1
+my-topic-0 segments in kafka-0-disk-1
 No segment found
-wc-output-0 segments in kafka-1-disk-0
+my-topic-0 segments in kafka-1-disk-0
 00000000000000000000.log
-wc-output-0 segments in kafka-1-disk-1
+my-topic-0 segments in kafka-1-disk-1
 No segment found
-wc-output-0 segments in kafka-2-disk-0
+my-topic-0 segments in kafka-2-disk-0
 No segment found
-wc-output-0 segments in kafka-2-disk-1
+my-topic-0 segments in kafka-2-disk-1
 No segment found
 
-# Dump partition segments across the cluster
+# Dump topic partition
 ./tools/log-dump/run.sh partition --namespace test --cluster my-cluster \
   --topic my-topic --partition 0 --out-path ~/Downloads/my-dump
 
 brokers: 3, storage: jbod, disks: 2
-wc-output-0 segments in kafka-0-disk-0
+my-topic-0 segments in kafka-0-disk-0
 No segment found
-wc-output-0 segments in kafka-0-disk-1
+my-topic-0 segments in kafka-0-disk-1
 No segment found
-wc-output-0 segments in kafka-1-disk-0
+my-topic-0 segments in kafka-1-disk-0
 00000000000000000000.log
-wc-output-0 segments in kafka-1-disk-1
+my-topic-0 segments in kafka-1-disk-1
 No segment found
-wc-output-0 segments in kafka-2-disk-0
+my-topic-0 segments in kafka-2-disk-0
 No segment found
-wc-output-0 segments in kafka-2-disk-1
+my-topic-0 segments in kafka-2-disk-1
 No segment found
 
-# Dump consumer group offsets segments
+# Dump consumer group offsets partition by group.id
 ./tools/log-dump/run.sh cg_offsets --namespace test --cluster my-cluster \
   --group-id my-group --out-path ~/Downloads/my-dump
   
@@ -109,7 +109,7 @@ __consumer_offsets-12 segments in kafka-2-disk-0
 __consumer_offsets-12 segments in kafka-2-disk-1
 No segment found
 
-# Dump application transaction state segments
+# Dump transaction state partition by transaction.id
 ./tools/log-dump/run.sh txn_state --namespace test --cluster my-cluster \
   --txn-id my-app-my-group-my-topic-0 --out-path ~/Downloads/my-dump
   

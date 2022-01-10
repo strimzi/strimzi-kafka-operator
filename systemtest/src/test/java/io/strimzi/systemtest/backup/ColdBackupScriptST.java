@@ -34,23 +34,22 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 @Tag(INTERNAL_CLIENTS_USED)
 @IsolatedSuite
 public class ColdBackupScriptST extends AbstractST {
-
     private static final Logger LOGGER = LogManager.getLogger(ColdBackupScriptST.class);
 
     @IsolatedTest
     void backupAndRestore(ExtensionContext context) {
         String clusterName = mapWithClusterNames.get(context.getDisplayName());
-        String groupName = "my-group", newGroupName = "new-group";
+        String groupId = "my-group", newGroupId = "new-group";
         int firstBatchSize = 100, secondBatchSize = 10;
         String backupFilePath = USER_PATH + "/target/" + clusterName + ".zip";
 
         resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(clusterName, 1, 1)
-            .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
-            .endMetadata()
-            .build());
+                .editMetadata()
+                    .withNamespace(INFRA_NAMESPACE)
+                .endMetadata()
+                .build());
         String clientsPodName = deployAndGetInternalClientsPodName(context);
-        InternalKafkaClient clients = buildInternalClients(context, clientsPodName, groupName, firstBatchSize);
+        InternalKafkaClient clients = buildInternalClients(context, clientsPodName, groupId, firstBatchSize);
 
         // send messages and consume them
         clients.sendMessagesPlain();
@@ -64,7 +63,7 @@ public class ColdBackupScriptST extends AbstractST {
         clients.setMessageCount(secondBatchSize);
         clients.sendMessagesPlain();
 
-        // run backup procedure
+        // backup command
         LOGGER.info("Running backup procedure for {}/{}", INFRA_NAMESPACE, clusterName);
         String[] backupCommand = new String[] {
             USER_PATH + "/../tools/cold-backup/run.sh", "backup", "-n", INFRA_NAMESPACE, "-c", clusterName, "-t", backupFilePath, "-y"
@@ -74,7 +73,7 @@ public class ColdBackupScriptST extends AbstractST {
         install.unInstall();
         install = SetupClusterOperator.defaultInstallation().createInstallation().runInstallation();
 
-        // run restore procedure and wait for provisioning
+        // restore command
         LOGGER.info("Running restore procedure for {}/{}", INFRA_NAMESPACE, clusterName);
         String[] restoreCommand = new String[] {
             USER_PATH + "/../tools/cold-backup/run.sh", "restore", "-n", INFRA_NAMESPACE, "-c", clusterName, "-s", backupFilePath, "-y"
@@ -84,7 +83,7 @@ public class ColdBackupScriptST extends AbstractST {
         // check consumer group offsets
         KafkaUtils.waitForKafkaReady(clusterName);
         clientsPodName = deployAndGetInternalClientsPodName(context);
-        clients = buildInternalClients(context, clientsPodName, groupName, secondBatchSize);
+        clients = buildInternalClients(context, clientsPodName, groupId, secondBatchSize);
         Map<String, String> offsetsAfterRestore = clients.getCurrentOffsets();
         assertThat("Current consumer group offsets are not the same as before the backup", offsetsAfterRestore, is(offsetsBeforeBackup));
 
@@ -94,9 +93,9 @@ public class ColdBackupScriptST extends AbstractST {
         // check total number of messages
         int batchSize = firstBatchSize + secondBatchSize;
         clients = clients.toBuilder()
-            .withConsumerGroupName(newGroupName)
-            .withMessageCount(batchSize)
-            .build();
+                .withConsumerGroupName(newGroupId)
+                .withMessageCount(batchSize)
+                .build();
         assertThat("A new consumer group is not able to get all messages", clients.receiveMessagesPlain(), is(batchSize));
     }
 
@@ -106,19 +105,18 @@ public class ColdBackupScriptST extends AbstractST {
         return ResourceManager.kubeClient().listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
     }
 
-    private InternalKafkaClient buildInternalClients(ExtensionContext context, String podName, String groupName, int batchSize) {
+    private InternalKafkaClient buildInternalClients(ExtensionContext context, String podName, String groupId, int batchSize) {
         String clusterName = mapWithClusterNames.get(context.getDisplayName());
         String topicName = mapWithTestTopics.get(context.getDisplayName());
         InternalKafkaClient clients = new InternalKafkaClient.Builder()
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-            .withNamespaceName(INFRA_NAMESPACE)
-            .withUsingPodName(podName)
-            .withClusterName(clusterName)
-            .withTopicName(topicName)
-            .withConsumerGroupName(groupName)
-            .withMessageCount(batchSize)
-            .build();
+                .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                .withNamespaceName(INFRA_NAMESPACE)
+                .withUsingPodName(podName)
+                .withClusterName(clusterName)
+                .withTopicName(topicName)
+                .withConsumerGroupName(groupId)
+                .withMessageCount(batchSize)
+                .build();
         return clients;
     }
-
 }
