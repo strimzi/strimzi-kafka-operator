@@ -211,6 +211,40 @@ public class KafkaUpgradeDowngradeMockTest {
                 })));
     }
 
+    // Tests regular upgrade with the message format and protocol versions configured to the same Kafka
+    // version as we are upgrading from. IBPV and LMFV are configured to contain a "-IVx" suffix.
+    @Test
+    public void testUpgradeWithIVMessageAndProtocolVersions(VertxTestContext context)  {
+        String iv = "-IV0";
+        Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
+                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION + iv,
+                KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION + iv);
+
+        Kafka updatedKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
+                KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION);
+
+        Checkpoint reconciliation = context.checkpoint();
+        initialize(context, initialKafka)
+                .onComplete(context.succeeding(v -> {
+                    context.verify(() -> {
+                        assertVersionsInStatefulSet(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION,
+                                KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION + iv,
+                                KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION + iv,
+                                KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE);
+                    });
+                }))
+                .compose(v -> operator.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME), updatedKafka))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    assertVersionsInStatefulSet(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION,
+                            KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION,
+                            KafkaVersionTestUtils.LATEST_KAFKA_IMAGE);
+
+                    reconciliation.flag();
+                })));
+    }
+
     // Tests recovery from failed upgrade with the message format and protocol versions configured to the same Kafka
     // version as we are upgrading from.
     @Test
