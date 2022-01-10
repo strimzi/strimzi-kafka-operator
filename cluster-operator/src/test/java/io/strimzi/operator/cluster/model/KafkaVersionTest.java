@@ -32,6 +32,17 @@ public class KafkaVersionTest {
     }
 
     @ParallelTest
+    public void parsingInvalidVersionTest() {
+        KafkaVersion kv = new KafkaVersion("2.8.0", "2.8", "2.8", "3.6.9", false, true, "");
+        assertThat(KafkaVersion.compareDottedIVVersions("2.7-IV1", kv.protocolVersion()), lessThan(0));
+        assertThat(KafkaVersion.compareDottedIVVersions("2.9-IV1", kv.protocolVersion()), greaterThan(0));
+
+        assertThrows(NumberFormatException.class, () -> {
+            KafkaVersion.compareDottedIVVersions("wrong", kv.protocolVersion());
+        });
+    }
+
+    @ParallelTest
     public void parsingTest() throws Exception {
         Map<String, KafkaVersion> map = new HashMap<>();
         KafkaVersion defaultVersion = KafkaVersion.parseKafkaVersions(getKafkaVersionsReader(KAFKA_VERSIONS_VALID_RESOURCE), map);

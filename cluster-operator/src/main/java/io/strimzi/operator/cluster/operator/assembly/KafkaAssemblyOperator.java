@@ -145,6 +145,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.operator.cluster.model.AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG;
 import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_IO_STORAGE;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
+import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedIVVersions;
 import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersions;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -1004,7 +1005,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             && !kafkaCluster.getKafkaVersion().protocolVersion().equals(highestInterBrokerProtocolVersion)) {
                         LOGGER.infoCr(reconciliation, "Upgrading Kafka inter.broker.protocol.version from {} to {}", highestInterBrokerProtocolVersion, kafkaCluster.getKafkaVersion().protocolVersion());
 
-                        if (compareDottedVersions(kafkaCluster.getKafkaVersion().protocolVersion(), "3.0") >= 0) {
+                        if (compareDottedIVVersions(kafkaCluster.getKafkaVersion().protocolVersion(), "3.0") >= 0) {
                             // From Kafka 3.0.0, the LMFV is ignored when IBPV is set to 3.0 or higher
                             // We set the LMFV immediately to the same version as IPBV to avoid unnecessary rolling update
                             kafkaCluster.setLogMessageFormatVersion(kafkaCluster.getKafkaVersion().messageVersion());
@@ -1034,8 +1035,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     // We make sure that the highest log.message.format.version or inter.broker.protocol.version
                     // used by any of the brokers is not higher than the broker version we upgrade from.
-                    if ((highestLogMessageFormatVersion != null && compareDottedVersions(versionChange.from().messageVersion(), highestLogMessageFormatVersion) < 0)
-                            || (highestInterBrokerProtocolVersion != null && compareDottedVersions(versionChange.from().protocolVersion(), highestInterBrokerProtocolVersion) < 0)) {
+                    if ((highestLogMessageFormatVersion != null && compareDottedIVVersions(versionChange.from().messageVersion(), highestLogMessageFormatVersion) < 0)
+                            || (highestInterBrokerProtocolVersion != null && compareDottedIVVersions(versionChange.from().protocolVersion(), highestInterBrokerProtocolVersion) < 0)) {
                         LOGGER.warnCr(reconciliation, "log.message.format.version ({}) and inter.broker.protocol.version ({}) used by the brokers have to be lower or equal to the Kafka broker version we upgrade from ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.from().version());
                         throw new KafkaUpgradeException("log.message.format.version (" + highestLogMessageFormatVersion + ") and inter.broker.protocol.version (" + highestInterBrokerProtocolVersion + ") used by the brokers have to be lower or equal to the Kafka broker version we upgrade from (" + versionChange.from().version() + ")");
                     }
@@ -1047,7 +1048,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     // cannot be higher that the Kafka version we are upgrading from. If it is, we override it with the
                     // version we are upgrading from. If it is not set, we set it to the version we are upgrading from.
                     if (desiredLogMessageFormat == null
-                            || compareDottedVersions(versionChange.from().messageVersion(), desiredLogMessageFormat) < 0) {
+                            || compareDottedIVVersions(versionChange.from().messageVersion(), desiredLogMessageFormat) < 0) {
                         kafkaCluster.setLogMessageFormatVersion(versionChange.from().messageVersion());
                     }
 
@@ -1055,7 +1056,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     // cannot be higher that the Kafka version we are upgrading from. If it is, we override it with the
                     // version we are upgrading from. If it is not set, we set it to the version we are upgrading from.
                     if (desiredInterBrokerProtocol == null
-                            || compareDottedVersions(versionChange.from().protocolVersion(), desiredInterBrokerProtocol) < 0) {
+                            || compareDottedIVVersions(versionChange.from().protocolVersion(), desiredInterBrokerProtocol) < 0) {
                         kafkaCluster.setInterBrokerProtocolVersion(versionChange.from().protocolVersion());
                     }
                 } else {
@@ -1067,9 +1068,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     // we assume that it will use the default value which is the from version. In such case we fail the
                     // reconciliation as well.
                     if (highestLogMessageFormatVersion == null
-                            || compareDottedVersions(versionChange.to().messageVersion(), highestLogMessageFormatVersion) < 0
+                            || compareDottedIVVersions(versionChange.to().messageVersion(), highestLogMessageFormatVersion) < 0
                             || highestInterBrokerProtocolVersion == null
-                            || compareDottedVersions(versionChange.to().protocolVersion(), highestInterBrokerProtocolVersion) < 0) {
+                            || compareDottedIVVersions(versionChange.to().protocolVersion(), highestInterBrokerProtocolVersion) < 0) {
                         LOGGER.warnCr(reconciliation, "log.message.format.version ({}) and inter.broker.protocol.version ({}) used by the brokers have to be set and be lower or equal to the Kafka broker version we downgrade to ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.to().version());
                         throw new KafkaUpgradeException("log.message.format.version (" + highestLogMessageFormatVersion + ") and inter.broker.protocol.version (" + highestInterBrokerProtocolVersion + ") used by the brokers have to be set and be lower or equal to the Kafka broker version we downgrade to (" + versionChange.to().version() + ")");
                     }
@@ -1092,8 +1093,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     // Either log.message.format.version or inter.broker.protocol.version are higher than the Kafka
                     // version we are downgrading to. This should normally not happen since that should not pass the CR
                     // validation. But we still double check it as safety.
-                    if (compareDottedVersions(versionChange.to().messageVersion(), desiredLogMessageFormat) < 0
-                            || compareDottedVersions(versionChange.to().protocolVersion(), desiredInterBrokerProtocol) < 0) {
+                    if (compareDottedIVVersions(versionChange.to().messageVersion(), desiredLogMessageFormat) < 0
+                            || compareDottedIVVersions(versionChange.to().protocolVersion(), desiredInterBrokerProtocol) < 0) {
                         LOGGER.warnCr(reconciliation, "log.message.format.version ({}) and inter.broker.protocol.version ({}) used in the Kafka CR have to be set and be lower or equal to the Kafka broker version we downgrade to ({})", highestLogMessageFormatVersion, highestInterBrokerProtocolVersion, versionChange.to().version());
                         throw new KafkaUpgradeException("log.message.format.version and inter.broker.protocol.version used in the Kafka CR have to be set and be lower or equal to the Kafka broker version we downgrade to");
                     }
@@ -1700,7 +1701,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             if (currentMessageFormat != null) {
                                 if (highestLogMessageFormatVersion == null)  {
                                     highestLogMessageFormatVersion = currentMessageFormat;
-                                } else if (compareDottedVersions(highestLogMessageFormatVersion, currentMessageFormat) < 0) {
+                                } else if (compareDottedIVVersions(highestLogMessageFormatVersion, currentMessageFormat) < 0) {
                                     highestLogMessageFormatVersion = currentMessageFormat;
                                 }
                             }
@@ -1710,7 +1711,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             if (currentIbp != null)  {
                                 if (highestInterBrokerProtocolVersion == null)  {
                                     highestInterBrokerProtocolVersion = currentIbp;
-                                } else if (compareDottedVersions(highestInterBrokerProtocolVersion, currentIbp) < 0) {
+                                } else if (compareDottedIVVersions(highestInterBrokerProtocolVersion, currentIbp) < 0) {
                                     highestInterBrokerProtocolVersion = currentIbp;
                                 }
                             }

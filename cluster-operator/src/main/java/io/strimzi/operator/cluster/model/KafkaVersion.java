@@ -491,6 +491,21 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         return 0;
     }
 
+    /**
+     * Compare two decimal version strings, e.g. 3.0 &gt; 2.7-IV1. Ignores the IV part
+     * @param version1 The first version.
+     * @param version2 The second version.
+     * @return Zero if version1 == version2;
+     * -1 if version1 &lt; version2;
+     * 1 if version1 &gt; version2.
+     */
+    public static int compareDottedIVVersions(String version1, String version2) {
+        // Due to validation in KafkaConfiguration.validate only values like 2.8 or 2.8-IV0 can get there
+        String trimmedVersion1 = version1.split("-")[0];
+        String trimmedVersion2 = version2.split("-")[0];
+        return compareDottedVersions(trimmedVersion1, trimmedVersion2);
+    }
+
     @Override
     public int hashCode() {
         return version.hashCode();
