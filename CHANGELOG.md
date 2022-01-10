@@ -3,6 +3,7 @@
 ## 0.28.0
 
 * Update Open Policy Agent authorizer to 1.4.0 and add support for enabling metrics 
+* Validate `spec.config` in the KafkaTopic resources against available Kafka topic configuration options
 
 ## 0.27.0
 
@@ -15,7 +16,6 @@
 * Update OPA Authorizer to 1.3.0
 * Update to Cruise Control version 2.5.79
 * Update Log4j2 to 2.17.0
-* Validate `spec.config` in the KafkaTopic resources against available Kafka topic configuration options
 
 ### Changes, deprecations and removals
 

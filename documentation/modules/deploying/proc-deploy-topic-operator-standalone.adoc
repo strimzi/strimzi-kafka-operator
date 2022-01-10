@@ -83,6 +83,8 @@ spec:
               value: "scram-sha-512"
             - name: STRIMZI_SECURITY_PROTOCOL <18>
               value: "SSL"
+            - name: STRIMZI_KAFKA_VERSION <19>
+              value: "3.0.0"
 ----
 <1> The Kubernetes namespace for the Topic Operator to watch for `KafkaTopic` resources. Specify the namespace of the Kafka cluster.
 <2> The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
@@ -119,6 +121,7 @@ You can set the value to `plain`, `scram-sha-256`, or `scram-sha-512`.
 <18> (Optional) The security protocol used for communication with Kafka brokers.
 The default value is "PLAINTEXT".
 You can set the value to `PLAINTEXT`, `SSL`, `SASL_PLAINTEXT`, or `SASL_SSL`.
+<19> Version of the Kafka brokers the Topic Operator communicates with.
 
 . If you want to connect to Kafka brokers that are using certificates from a public certificate authority, set `STRIMZI_PUBLIC_CA` to `true`. Set this property to `true`, for example, if you are using Amazon AWS MSK service.
 . If you enabled TLS with the `STRIMZI_TLS_ENABLED` environment variable, specify the keystore and truststore used to authenticate connection to the Kafka cluster.
