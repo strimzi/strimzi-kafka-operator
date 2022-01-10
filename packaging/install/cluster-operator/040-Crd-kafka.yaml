@@ -301,7 +301,7 @@ spec:
                                 - certificate
                                 - secretName
                               description: Trusted certificates for TLS connection
-                                to custom authentication server.
+                                to the OAuth server.
                             tokenEndpointUri:
                               type: string
                               description: URI of the Token Endpoint to use with SASL_PLAIN

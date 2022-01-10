@@ -255,7 +255,7 @@ Used in: xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenti
 [id='type-CertSecretSource-{context}']
 ### `CertSecretSource` schema reference
 
-Used in: xref:type-ClientTls-{context}[`ClientTls`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationCustom-{context}[`KafkaListenerAuthenticationCustom`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
+Used in: xref:type-ClientTls-{context}[`ClientTls`], xref:type-KafkaAuthorizationKeycloak-{context}[`KafkaAuthorizationKeycloak`], xref:type-KafkaClientAuthenticationOAuth-{context}[`KafkaClientAuthenticationOAuth`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`]
 
 
 [options="header"]
@@ -277,16 +277,14 @@ The `type` property is a discriminator that distinguishes use of the `KafkaListe
 It must have the value `custom` for the type `KafkaListenerAuthenticationCustom`.
 [options="header"]
 |====
-|Property                       |Description
-|listenerConfig          1.2+<.<a|Configuration to be used for a specific listener. All values are prefixed with lister.name.<lister-name>.
+|Property               |Description
+|listenerConfig  1.2+<.<a|Configuration to be used for a specific listener. All values are prefixed with lister.name.<lister-name>.
 |map
-|sasl                    1.2+<.<a|Enable or disable SASL on this listener. Default value is true.
+|sasl            1.2+<.<a|Enable or disable SASL on this listener. Default value is true.
 |boolean
-|secrets                 1.2+<.<a|Secrets to be mounted to /mnt/strimzi/custom-auth-secrets/<listener-name>/<secret-key>.
+|secrets         1.2+<.<a|Secrets to be mounted to /mnt/strimzi/custom-auth-secrets/<listener-name>/<secret-key>.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`] array
-|tlsTrustedCertificates  1.2+<.<a|Trusted certificates for TLS connection to custom authentication server.
-|xref:type-CertSecretSource-{context}[`CertSecretSource`] array
-|type                    1.2+<.<a|Must be `custom`.
+|type            1.2+<.<a|Must be `custom`.
 |string
 |====
 
