@@ -288,7 +288,7 @@ public class Crds {
 
     public static <T extends CustomResource> String kind(Class<T> cls) {
         try {
-            return cls.newInstance().getKind();
+            return cls.getDeclaredConstructor().newInstance().getKind();
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

@@ -4,6 +4,25 @@
     <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
   </Match>
   <Match>
+    <!-- This allows us to use singleton pattern -->
+    <Bug pattern="EI_EXPOSE_REP"/>
+  </Match>
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+  <Match>
+    <Bug pattern="MS_EXPOSE_REP"/>
+  </Match>
+  <Match>
+    <Bug pattern="MS_EXPOSE_REP2"/>
+  </Match>
+  <Match>
+    <Bug pattern="EI_EXPOSE_STATIC_REP2"/>
+  </Match>
+  <Match>
+    <Bug pattern="MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR"/>
+  </Match>
+  <Match>
     <!-- Java11 build throws false positives: https://github.com/spotbugs/spotbugs/issues/811 -->
     <Bug pattern="UPM_UNCALLED_PRIVATE_METHOD"/>
   </Match>

@@ -35,6 +35,7 @@ import java.util.concurrent.TimeoutException;
 public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient.Builder> {
 
     private static final Logger LOGGER = LogManager.getLogger(ExternalKafkaClient.class);
+    private final Random random = new Random();
 
     protected ExternalKafkaClient(AbstractKafkaClient.Builder<ExternalKafkaClient.Builder> builder) {
         super(builder);
@@ -64,7 +65,7 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
             .withBootstrapServerConfig(getBootstrapServerFromStatus())
             .withKeySerializerConfig(StringSerializer.class)
             .withValueSerializerConfig(StringSerializer.class)
-            .withClientIdConfig("producer-" + new Random().nextInt(Integer.MAX_VALUE));
+            .withClientIdConfig("producer-" + random.nextInt(Integer.MAX_VALUE));
     }
 
     private ConsumerProperties.ConsumerPropertiesBuilder getConsumerProperties() {
@@ -74,7 +75,7 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
             .withBootstrapServerConfig(getBootstrapServerFromStatus())
             .withKeyDeserializerConfig(StringDeserializer.class)
             .withValueDeserializerConfig(StringDeserializer.class)
-            .withClientIdConfig("consumer-" + new Random().nextInt(Integer.MAX_VALUE))
+            .withClientIdConfig("consumer-" + random.nextInt(Integer.MAX_VALUE))
             .withAutoOffsetResetConfig(OffsetResetStrategy.EARLIEST)
             .withGroupIdConfig(consumerGroup);
     }

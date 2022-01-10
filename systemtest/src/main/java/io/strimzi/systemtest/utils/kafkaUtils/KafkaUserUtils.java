@@ -31,6 +31,7 @@ public class KafkaUserUtils {
     private static final Logger LOGGER = LogManager.getLogger(KafkaUserUtils.class);
     private static final String KAFKA_USER_NAME_PREFIX = "my-user-";
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
+    private static final Random RANDOM = new Random();
 
     private KafkaUserUtils() {}
 
@@ -39,7 +40,7 @@ public class KafkaUserUtils {
      * @return random name with additional salt
      */
     public static String generateRandomNameOfKafkaUser() {
-        String salt = new Random().nextInt(Integer.MAX_VALUE) + "-" + new Random().nextInt(Integer.MAX_VALUE);
+        String salt = RANDOM.nextInt(Integer.MAX_VALUE) + "-" + RANDOM.nextInt(Integer.MAX_VALUE);
 
         return  KAFKA_USER_NAME_PREFIX + salt;
     }

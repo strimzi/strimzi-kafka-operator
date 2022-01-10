@@ -59,6 +59,7 @@ public class KafkaUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaUtils.class);
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
+    private static final Random RANDOM = new Random();
 
     private KafkaUtils() {}
 
@@ -378,7 +379,7 @@ public class KafkaUtils {
      * @return name with prefix and random salt
      */
     public static String generateRandomNameOfKafka(String clusterName) {
-        return clusterName + "-" + new Random().nextInt(Integer.MAX_VALUE);
+        return clusterName + "-" + RANDOM.nextInt(Integer.MAX_VALUE);
     }
 
     public static String getVersionFromKafkaPodLibs(String kafkaPodName) {
