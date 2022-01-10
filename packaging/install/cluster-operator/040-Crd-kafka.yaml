@@ -245,6 +245,11 @@ spec:
                                 refreshed. The refresh interval has to be at least
                                 60 seconds shorter then the expiry interval specified
                                 in `jwksExpirySeconds`. Defaults to 300 seconds.
+                            listenerConfig:
+                              x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                              description: Configuration to be used for a specific
+                                listener. All values are prefixed with lister.name.<lister-name>.
                             maxSecondsWithoutReauthentication:
                               type: integer
                               description: Maximum number of seconds the authenticated
@@ -258,6 +263,27 @@ spec:
                                 expire when the access token expires. This option
                                 only applies to SASL_OAUTHBEARER authentication mechanism
                                 (when `enableOauthBearer` is `true`).
+                            sasl:
+                              type: boolean
+                              description: Enable or disable SASL on this listener.
+                                Default value is true.
+                            secrets:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  key:
+                                    type: string
+                                    description: The key under which the secret value
+                                      is stored in the Kubernetes Secret.
+                                  secretName:
+                                    type: string
+                                    description: The name of the Kubernetes Secret
+                                      containing the secret value.
+                                required:
+                                - key
+                                - secretName
+                              description: Secrets to be mounted to /mnt/strimzi/custom-auth-secrets/<listener-name>/<secret-key>.
                             tlsTrustedCertificates:
                               type: array
                               items:
@@ -275,7 +301,7 @@ spec:
                                 - certificate
                                 - secretName
                               description: Trusted certificates for TLS connection
-                                to the OAuth server.
+                                to custom authentication server.
                             tokenEndpointUri:
                               type: string
                               description: URI of the Token Endpoint to use with SASL_PLAIN
@@ -295,11 +321,13 @@ spec:
                               - tls
                               - scram-sha-512
                               - oauth
+                              - custom
                               description: Authentication type. `oauth` type uses
                                 SASL OAUTHBEARER Authentication. `scram-sha-512` type
                                 uses SASL SCRAM-SHA-512 Authentication. `tls` type
                                 uses TLS Client Authentication. `tls` type is supported
-                                only on TLS listeners.
+                                only on TLS listeners.`custom` type allows for any
+                                authentication type to be used.
                             userInfoEndpointUri:
                               type: string
                               description: 'URI of the User Info Endpoint to use as
@@ -643,10 +671,10 @@ spec:
                     description: 'Kafka broker config properties with the following
                       prefixes cannot be set: listeners, advertised., broker., listener.,
                       host.name, port, inter.broker.listener.name, sasl., ssl., security.,
-                      password., principal.builder.class, log.dir, zookeeper.connect,
-                      zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket,
-                      authorizer., super.user, cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers
-                      (with the exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites,
+                      password., log.dir, zookeeper.connect, zookeeper.set.acl, zookeeper.ssl,
+                      zookeeper.clientCnxnSocket, authorizer., super.user, cruise.control.metrics.topic,
+                      cruise.control.metrics.reporter.bootstrap.servers (with the
+                      exception of: zookeeper.connection.timeout.ms, ssl.cipher.suites,
                       ssl.protocol, ssl.enabled.protocols,cruise.control.metrics.topic.num.partitions,
                       cruise.control.metrics.topic.replication.factor, cruise.control.metrics.topic.retention.ms,cruise.control.metrics.topic.auto.create.retries,
                       cruise.control.metrics.topic.auto.create.timeout.ms,cruise.control.metrics.topic.min.insync.replicas).'

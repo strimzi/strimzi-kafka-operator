@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.api.kafka.model.KafkaJmxAuthentication;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
@@ -311,6 +312,35 @@ public class AuthenticationUtils {
     }
 
     /**
+     * Generates volumes needed for generic secrets needed for custom authentication.
+     *
+     * @param volumeNamePrefix    Prefix for naming the secret volumes
+     * @param genericSecretSources   List of generic secrets which should be mounted
+     * @param isOpenShift   Flag whether we are on OpenShift or not
+     *
+     * @return List of new Volumes
+     */
+    public static List<Volume> configureGenericSecretVolumes(String volumeNamePrefix, List<GenericSecretSource> genericSecretSources, boolean isOpenShift)   {
+        List<Volume> newVolumes = new ArrayList<>();
+
+        if (genericSecretSources != null && genericSecretSources.size() > 0) {
+            int i = 0;
+
+            for (GenericSecretSource genericSecretSource : genericSecretSources) {
+                Map<String, String> items = Collections.singletonMap(genericSecretSource.getKey(), genericSecretSource.getKey());
+                String volumeName = String.format("%s-%d", volumeNamePrefix, i);
+
+                Volume vol = VolumeUtils.createSecretVolume(volumeName, genericSecretSource.getSecretName(), items, isOpenShift);
+
+                newVolumes.add(vol);
+                i++;
+            }
+        }
+
+        return newVolumes;
+    }
+
+    /**
      * Generates volume mounts needed for certificates needed to connect to OAuth server.
      * This is used in both OAuth servers and clients.
      *
@@ -335,6 +365,33 @@ public class AuthenticationUtils {
 
         return newVolumeMounts;
     }
+
+    /**
+     * Generates volume mounts needed for certificates needed to connect to OAuth server.
+     * This is used in both OAuth servers and clients.
+     *
+     * @param volumeNamePrefix   Prefix which was used to name the secret volumes
+     * @param genericSecretSources   List of generic secrets that should be mounted
+     * @param baseVolumeMount   The Base volume into which the certificates should be mounted
+     *
+     * @return List of new VolumeMounts
+     */
+    public static List<VolumeMount> configureGenericSecretVolumeMounts(String volumeNamePrefix, List<GenericSecretSource> genericSecretSources, String baseVolumeMount)   {
+        List<VolumeMount> newVolumeMounts = new ArrayList<>();
+
+        if (genericSecretSources != null && genericSecretSources.size() > 0) {
+            int i = 0;
+
+            for (GenericSecretSource genericSecretSource : genericSecretSources) {
+                String volumeName = String.format("%s-%d", volumeNamePrefix, i);
+                newVolumeMounts.add(VolumeUtils.createVolumeMount(volumeName, String.format("%s/%s", baseVolumeMount, genericSecretSource.getSecretName())));
+                i++;
+            }
+        }
+
+        return newVolumeMounts;
+    }
+
 
     /**
      * Generates the necessary resources that the Kafka Cluster needs to secure the Jmx Port
