@@ -60,7 +60,8 @@ These resources are only created if the Entity Operator is deployed using the Cl
 `_cluster-name_-entity-operator-_random-string_`:: Pod created by the Entity Operator deployment.
 `_cluster-name_-entity-topic-operator-config`:: ConfigMap with ancillary configuration for Topic Operators.
 `_cluster-name_-entity-user-operator-config`:: ConfigMap with ancillary configuration for User Operators.
-`_cluster-name_-entity-operator-certs`:: Secret with Entity Operator keys for communication with Kafka and ZooKeeper.
+`_cluster-name_-entity-topic-operator-certs`:: Secret with Topic Operator keys for communication with Kafka and ZooKeeper.
+`_cluster-name_-entity-user-operator-certs`:: Secret with User Operator keys for communication with Kafka and ZooKeeper.
 `_cluster-name_-entity-operator`:: Service account used by the Entity Operator.
 `strimzi-_cluster-name_-entity-topic-operator`:: Role binding used by the Entity Topic Operator.
 `strimzi-_cluster-name_-entity-user-operator`:: Role binding used by the Entity User Operator.
