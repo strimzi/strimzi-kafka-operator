@@ -32,7 +32,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class ConnectBuildOperator {
 
-    private final ReconciliationLogger logger;
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ConnectBuildOperator.class.getName());
+
     private final PodOperator podOperator;
     private final ConfigMapOperator configMapOperations;
     private final ServiceAccountOperator serviceAccountOperations;
@@ -44,7 +45,7 @@ public class ConnectBuildOperator {
     private final long connectBuildTimeoutMs;
     private final PlatformFeaturesAvailability pfa;
 
-    public ConnectBuildOperator(PlatformFeaturesAvailability pfa, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, ReconciliationLogger logger) {
+    public ConnectBuildOperator(PlatformFeaturesAvailability pfa, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
         this.podOperator = supplier.podOperations;
         this.configMapOperations = supplier.configMapOperations;
         this.serviceAccountOperations = supplier.serviceAccountOperations;
@@ -55,7 +56,6 @@ public class ConnectBuildOperator {
         this.imagePullSecrets = config.getImagePullSecrets();
         this.connectBuildTimeoutMs = config.getConnectBuildTimeoutMs();
         this.pfa = pfa;
-        this.logger = logger;
     }
 
     /**
@@ -82,11 +82,11 @@ public class ConnectBuildOperator {
                                 && !forceRebuild) {
                             // Builder pod exists, is not failed, and is building the same Dockerfile and we are not
                             // asked to force re-build by the annotation => we re-use the existing build
-                            logger.infoCr(reconciliation, "Previous build exists with the same Dockerfile and will be reused.");
+                            LOGGER.infoCr(reconciliation, "Previous build exists with the same Dockerfile and will be reused.");
                             return Future.succeededFuture();
                         } else {
                             // Pod exists, but it either failed or is for different Dockerfile => start new build
-                            logger.infoCr(reconciliation, "Previous build exists, but uses different Dockerfile or failed. New build will be started.");
+                            LOGGER.infoCr(reconciliation, "Previous build exists, but uses different Dockerfile or failed. New build will be started.");
                             return podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null)
                                     .compose(ignore -> kubernetesBuildStart(reconciliation, namespace, connectBuild, dockerFileConfigMap, newBuildRevision));
                         }
@@ -152,11 +152,11 @@ public class ConnectBuildOperator {
                     if (KafkaConnectBuildUtils.buildPodSucceeded(pod)) {
                         ContainerStateTerminated state = pod.getStatus().getContainerStatuses().get(0).getState().getTerminated();
                         String image = state.getMessage().trim();
-                        logger.infoCr(reconciliation, "Build completed successfully. New image is {}.", image);
+                        LOGGER.infoCr(reconciliation, "Build completed successfully. New image is {}.", image);
                         return Future.succeededFuture(image);
                     } else {
                         ContainerStateTerminated state = pod.getStatus().getContainerStatuses().get(0).getState().getTerminated();
-                        logger.warnCr(reconciliation, "Build failed with code {}: {}", state.getExitCode(), state.getMessage());
+                        LOGGER.warnCr(reconciliation, "Build failed with code {}: {}", state.getExitCode(), state.getMessage());
                         return Future.failedFuture("The Kafka Connect build failed");
                     }
                 });
@@ -196,7 +196,7 @@ public class ConnectBuildOperator {
                                 && !forceRebuild) {
                             // Build exists, is not failed, and is building the same Dockerfile and we are not
                             // asked to force re-build by the annotation => we re-use the existing build
-                            logger.infoCr(reconciliation, "Previous build exists with the same Dockerfile and will be reused.");
+                            LOGGER.infoCr(reconciliation, "Previous build exists with the same Dockerfile and will be reused.");
                             return Future.succeededFuture(build.getMetadata().getName());
                         } else {
                             // Build exists, but it either failed or is for different Dockerfile => start new build
@@ -268,18 +268,18 @@ public class ConnectBuildOperator {
 
                             String imageWithDigest = image.replace(tag, digest);
 
-                            logger.infoCr(reconciliation, "Build {} completed successfully. New image is {}.", buildName, imageWithDigest);
+                            LOGGER.infoCr(reconciliation, "Build {} completed successfully. New image is {}.", buildName, imageWithDigest);
                             return Future.succeededFuture(imageWithDigest);
                         } else {
-                            logger.warnCr(reconciliation, "Build {} completed successfully. But the new container image was not found.", buildName);
+                            LOGGER.warnCr(reconciliation, "Build {} completed successfully. But the new container image was not found.", buildName);
                             return Future.failedFuture("The Kafka Connect build completed, but the new container image was not found.");
                         }
                     } else {
                         // Build failed. If the Status exists, we try to provide more detailed information
                         if (build.getStatus() != null) {
-                            logger.infoCr(reconciliation, "Build {} failed with code {}: {}", buildName, build.getStatus().getPhase(), build.getStatus().getLogSnippet());
+                            LOGGER.infoCr(reconciliation, "Build {} failed with code {}: {}", buildName, build.getStatus().getPhase(), build.getStatus().getLogSnippet());
                         } else {
-                            logger.warnCr(reconciliation, "Build {} failed for unknown reason", buildName);
+                            LOGGER.warnCr(reconciliation, "Build {} failed for unknown reason", buildName);
                         }
 
                         return Future.failedFuture("The Kafka Connect build failed.");

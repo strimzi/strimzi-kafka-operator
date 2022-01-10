@@ -86,7 +86,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         this.deploymentOperations = supplier.deploymentOperations;
         this.podOperator = supplier.podOperations;
         this.buildConfigOperator = supplier.buildConfigOperations;
-        this.connectBuildOperator = new ConnectBuildOperator(pfa, supplier, config, LOGGER);
+        this.connectBuildOperator = new ConnectBuildOperator(pfa, supplier, config);
 
         this.versions = config.versions();
         this.connectBuildTimeoutMs = config.getConnectBuildTimeoutMs();
