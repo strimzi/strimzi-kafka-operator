@@ -208,25 +208,6 @@ On the other hand you can also override it in mvn command using additional param
 - -Djunit.jupiter.execution.parallel.enabled=true
 - -Djunit.jupiter.execution.parallel.config.fixed.parallelism=5
 
-## Adding new test suite to our system tests
-
-If you want to add new test suite to our system tests make sure that you update `io.strimzi.systemtest.parallel.TestSuiteNamespaceManager` class
-where you have to modify method `constructMapOfAdditionalNamespaces()`. Here is example of adding `ExampleST`, which needs
-two additional namespaces `first-example_namespace` and `second-example-namespace`.
-
-```java
-this.mapOfAdditionalNamespaces = new HashMap<>();
-// our defined test suites, which needs auxiliary namespaces 
-// (omitted for brevity)
-...
-// your new test suite
-this.mapOfAdditionalNamespaces.put("ExampleST", 
-    SUITE_NAMESPACES.apply(Arrays.asList(
-        "first-example_namespace",
-        "second-example-namespace"));
-...
-```
-
 ## Cluster Operator log check
 
 After each test, there is a check for cluster operator logs, which searches for unexpected errors or exceptions.
