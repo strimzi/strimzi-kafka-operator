@@ -20,9 +20,11 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
+import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.vertx.core.Future;
@@ -34,6 +36,7 @@ public class ConnectBuildOperator {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ConnectBuildOperator.class.getName());
 
+    private final DeploymentOperator deploymentOperations;
     private final PodOperator podOperator;
     private final ConfigMapOperator configMapOperations;
     private final ServiceAccountOperator serviceAccountOperations;
@@ -46,6 +49,7 @@ public class ConnectBuildOperator {
     private final PlatformFeaturesAvailability pfa;
 
     public ConnectBuildOperator(PlatformFeaturesAvailability pfa, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+        this.deploymentOperations = supplier.deploymentOperations;
         this.podOperator = supplier.podOperations;
         this.configMapOperations = supplier.configMapOperations;
         this.serviceAccountOperations = supplier.serviceAccountOperations;
@@ -56,6 +60,70 @@ public class ConnectBuildOperator {
         this.imagePullSecrets = config.getImagePullSecrets();
         this.connectBuildTimeoutMs = config.getConnectBuildTimeoutMs();
         this.pfa = pfa;
+    }
+
+    /**
+     * Builds a new container image with connectors on Kubernetes using Kaniko or on OpenShift using BuildConfig
+     *
+     * @param reconciliation    The reconciliation
+     * @param namespace         Namespace of the Connect cluster
+     * @param connectName       Name of the Connect cluster
+     * @param connectBuild      KafkaConnectBuild object
+     * @return                  Future for tracking the asynchronous result of the Kubernetes image build
+     */
+    public Future<BuildInfo> build(Reconciliation reconciliation, String namespace, String connectName, KafkaConnectBuild connectBuild) {
+        return deploymentOperations.getAsync(namespace, connectName)
+                .compose(deployment -> {
+                    String currentBuildRevision = "";
+                    String currentImage = "";
+                    boolean forceRebuild = false;
+                    if (deployment != null) {
+                        // Extract information from the current deployment. This is used to figure out if new build needs to be run or not.
+                        currentBuildRevision = Annotations.stringAnnotation(deployment.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null);
+                        currentImage = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
+                        forceRebuild = Annotations.hasAnnotation(deployment, Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD);
+                    }
+                    BuildInfo buildInfo = new BuildInfo();
+
+                    if (connectBuild.getBuild() != null) {
+                        // Build exists => let's build
+                        KafkaConnectDockerfile dockerfile = connectBuild.generateDockerfile();
+                        String newBuildRevision = dockerfile.hashStub() + Util.sha1Prefix(connectBuild.getBuild().getOutput().getImage());
+                        ConfigMap dockerFileConfigMap = connectBuild.generateDockerfileConfigMap(dockerfile);
+
+                        if (newBuildRevision.equals(currentBuildRevision)
+                                && !forceRebuild) {
+                            // The revision is the same and rebuild was not forced => nothing to do
+                            LOGGER.debugCr(reconciliation, "Build configuration did not change. Nothing new to build. Container image {} will be used.", currentImage);
+                            buildInfo.image = currentImage;
+                            buildInfo.buildRevision = newBuildRevision;
+                            return Future.succeededFuture(buildInfo);
+                        } else if (pfa.supportsS2I()) {
+                            // Revisions differ and we have S2I support => we are on OpenShift and should do a build
+                            return openShiftBuild(reconciliation, namespace, connectBuild, forceRebuild, dockerfile, newBuildRevision)
+                                    .compose(image -> {
+                                        buildInfo.image = image;
+                                        buildInfo.buildRevision = newBuildRevision;
+                                        return Future.succeededFuture(buildInfo);
+                                    });
+                        } else {
+                            // Revisions differ and no S2I support => we are on Kubernetes and should do a build
+                            return kubernetesBuild(reconciliation, namespace, connectBuild, forceRebuild, dockerFileConfigMap, newBuildRevision)
+                                    .compose(image -> {
+                                        buildInfo.image = image;
+                                        buildInfo.buildRevision = newBuildRevision;
+                                        return Future.succeededFuture(buildInfo);
+                                    });
+                        }
+                    } else {
+                        // Build is not configured => we should delete resources
+                        return configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null)
+                                .compose(ignore -> podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null))
+                                .compose(ignore -> serviceAccountOperations.reconcile(reconciliation, namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), null))
+                                .compose(ignore -> pfa.supportsS2I() ? buildConfigOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), null) : Future.succeededFuture())
+                                .map(i -> buildInfo);
+                    }
+                });
     }
 
     /**
@@ -71,7 +139,7 @@ public class ConnectBuildOperator {
      *
      * @return                      Future which completes with the built image when the build is finished (or fails if it fails)
      */
-    public Future<String> kubernetesBuild(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, boolean forceRebuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
+    private Future<String> kubernetesBuild(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, boolean forceRebuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
         final AtomicReference<String> buildImage = new AtomicReference<>();
         return podOperator.getAsync(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()))
                 .compose(pod -> {
@@ -175,7 +243,7 @@ public class ConnectBuildOperator {
      *
      * @return                      Future which completes with the built image when the build is finished (or fails if it fails)
      */
-    public Future<String> openShiftBuild(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, boolean forceRebuild, KafkaConnectDockerfile dockerfile, String newBuildRevision)   {
+    private Future<String> openShiftBuild(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, boolean forceRebuild, KafkaConnectDockerfile dockerfile, String newBuildRevision)   {
         final AtomicReference<String> buildImage = new AtomicReference<>();
         return buildConfigOperator.getAsync(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()))
                 .compose(buildConfig -> {
@@ -285,5 +353,21 @@ public class ConnectBuildOperator {
                         return Future.failedFuture("The Kafka Connect build failed.");
                     }
                 });
+    }
+
+    /**
+     * Utility class to return the information about the Kafka Connect Build.
+     */
+    static class BuildInfo {
+        private String image;
+        private String buildRevision;
+
+        public String getImage() {
+            return image;
+        }
+
+        public String getBuildRevision() {
+            return buildRevision;
+        }
     }
 }
