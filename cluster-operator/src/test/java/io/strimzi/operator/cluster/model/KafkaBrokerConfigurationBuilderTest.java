@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import com.google.common.collect.ImmutableMap;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
