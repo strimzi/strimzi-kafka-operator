@@ -145,7 +145,7 @@ public class CruiseControlTest {
     private final CruiseControl cc = createCruiseControl(createKafka(cruiseControlSpec));
 
     private CruiseControl createCruiseControl(Kafka kafkaAssembly) {
-        return CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, kafkaStorage);
+        return CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, kafkaAssembly.getSpec().getKafka().getStorage());
     }
 
     private Kafka createKafka(CruiseControlSpec cruiseControlSpec) {
@@ -254,7 +254,7 @@ public class CruiseControlTest {
             .endSpec()
             .build();
         generatedCapacity = new Capacity(resource.getSpec(), jbodStorage);
-
+        System.out.println(generatedCapacity.generateCapacityConfig());
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(generatedCapacity.generateCapacityConfig()));
     }
 
