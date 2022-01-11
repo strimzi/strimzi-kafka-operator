@@ -3740,17 +3740,17 @@ public class KafkaClusterTest {
         Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         // Volume mounts
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-plain-9092-0".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTH_SECRETS_VOLUME_MOUNT + "/custom-plain-9092/test"));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-plain-9092-1".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTH_SECRETS_VOLUME_MOUNT + "/custom-plain-9092/test2"));
+        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-0".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTH_SECRETS_VOLUME_MOUNT + "/custom-plain-9092/test"));
+        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-1".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTH_SECRETS_VOLUME_MOUNT + "/custom-plain-9092/test2"));
 
         // Volumes
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("foo"));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("foo"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("foo"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("foo"));
 
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("bar"));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("bar"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("bar"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("bar"));
     }
 
     @ParallelTest
