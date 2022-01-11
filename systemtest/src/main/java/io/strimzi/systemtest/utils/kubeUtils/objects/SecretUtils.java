@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.test.TestUtils;
@@ -167,5 +168,13 @@ public class SecretUtils {
         TestUtils.waitFor(String.format("user password will be changed to: %s in secret: %s", expectedEncodedPassword, secretName),
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> kubeClient().namespace(namespaceName).getSecret(secretName).getData().get("password").equals(expectedEncodedPassword));
+    }
+
+    public static String annotateSecret(String namespaceName, String resourceName, String annotationKey, String annotationValue) {
+        LOGGER.info("Annotating Secret:{} with annotation {}={}", resourceName, annotationKey, annotationValue);
+        return ResourceManager.cmdKubeClient().namespace(namespaceName)
+                .execInCurrentNamespace("annotate", "secret", resourceName, annotationKey + "=" + annotationValue)
+                .out()
+                .trim();
     }
 }

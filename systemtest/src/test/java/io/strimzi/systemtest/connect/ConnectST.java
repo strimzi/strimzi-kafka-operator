@@ -1306,7 +1306,7 @@ class ConnectST extends AbstractST {
 
         Secret passwordSecret = new SecretBuilder()
                 .withNewMetadata()
-                .withName("custom-pwd-secret")
+                    .withName("custom-pwd-secret")
                 .endMetadata()
                 .addToData("pwd", "MTIzNDU2Nzg5")
                 .build();
@@ -1364,7 +1364,7 @@ class ConnectST extends AbstractST {
 
         kubeClient(namespaceName).createSecret(newPasswordSecret);
 
-        kafkaUser =  KafkaUserTemplates.scramShaUser(clusterName, userName)
+        kafkaUser = KafkaUserTemplates.scramShaUser(clusterName, userName)
                 .editSpec()
                     .withNewKafkaUserScramSha512ClientAuthentication()
                         .withNewPassword()
