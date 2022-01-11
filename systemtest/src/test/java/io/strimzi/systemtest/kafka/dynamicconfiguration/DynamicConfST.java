@@ -48,19 +48,19 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * DynamicConfigurationIsolatedST is responsible for verify that if we change dynamic Kafka configuration it will not
+ * DynamicConfST is responsible for verify that if we change dynamic Kafka configuration it will not
  * trigger rolling update.
  * Isolated -> for each test case we have different configuration of Kafka resource
  */
 @Tag(REGRESSION)
 @Tag(DYNAMIC_CONFIGURATION)
 @ParallelSuite
-public class DynamicConfIsolatedST extends AbstractST {
+public class DynamicConfST extends AbstractST {
 
-    private static final Logger LOGGER = LogManager.getLogger(DynamicConfIsolatedST.class);
+    private static final Logger LOGGER = LogManager.getLogger(DynamicConfST.class);
     private static final int KAFKA_REPLICAS = 3;
 
-    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(DynamicConfIsolatedST.class.getSimpleName()).stream().findFirst().get();
+    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(DynamicConfST.class.getSimpleName()).stream().findFirst().get();
 
     private Map<String, Object> kafkaConfig;
 
