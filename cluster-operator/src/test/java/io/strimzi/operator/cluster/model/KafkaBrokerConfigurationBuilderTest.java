@@ -1422,7 +1422,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .withNewKafkaListenerAuthenticationCustomAuth()
                 .withSasl(true)
-                .withListenerConfig(ImmutableMap.of())
+                .withListenerConfig(Map.of())
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
@@ -1442,7 +1442,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .withNewKafkaListenerAuthenticationCustomAuth()
                 .withSasl(true)
-                .withListenerConfig(ImmutableMap.of())
+                .withListenerConfig(Map.of())
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
@@ -1462,7 +1462,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .withNewKafkaListenerAuthenticationCustomAuth()
                 .withSasl(false)
-                .withListenerConfig(ImmutableMap.of())
+                .withListenerConfig(Map.of())
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 

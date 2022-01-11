@@ -1498,7 +1498,7 @@ public class KafkaCluster extends AbstractModel {
 
             if (isListenerWithCustomAuth(listener)) {
                 KafkaListenerAuthenticationCustom custom = (KafkaListenerAuthenticationCustom) listener.getAuth();
-                volumeList.addAll(AuthenticationUtils.configureGenericSecretVolumes("custom-" + ListenersUtils.identifier(listener), custom.getSecrets(), isOpenShift));
+                volumeList.addAll(AuthenticationUtils.configureGenericSecretVolumes("custom-listener-" + ListenersUtils.identifier(listener), custom.getSecrets(), isOpenShift));
             }
         }
 

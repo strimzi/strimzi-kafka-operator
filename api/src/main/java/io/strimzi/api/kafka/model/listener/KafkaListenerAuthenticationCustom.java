@@ -33,8 +33,7 @@ public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthenticati
     public static final String TYPE_CUSTOM = "custom";
 
     private Map<String, Object> listenerConfig;
-    private boolean sasl = true;
-    private List<CertSecretSource> tlsTrustedCertificates;
+    private boolean sasl;
     private List<GenericSecretSource> secrets;
 
     @Description("Must be `" + TYPE_CUSTOM + "`")
@@ -44,7 +43,7 @@ public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthenticati
         return TYPE_CUSTOM;
     }
 
-    @Description("Enable or disable SASL on this listener. Default value is true.")
+    @Description("Enable or disable SASL on this listener.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public boolean isSasl() {
         return sasl;
