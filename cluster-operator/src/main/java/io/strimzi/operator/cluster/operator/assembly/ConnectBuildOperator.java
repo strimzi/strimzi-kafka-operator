@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ContainerStateTerminated;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.openshift.api.model.Build;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -76,61 +77,71 @@ public class ConnectBuildOperator {
      * @return                  Future for tracking the asynchronous result of the Kubernetes image build
      */
     public Future<BuildInfo> build(Reconciliation reconciliation, String namespace, String connectName, KafkaConnectBuild connectBuild) {
-        this.reconciliation = reconciliation;
-        this.namespace = namespace;
-        this.connectBuild = connectBuild;
-        return deploymentOperations.getAsync(namespace, connectName)
-                .compose(deployment -> {
-                    String currentBuildRevision = "";
-                    String currentImage = "";
-                    boolean forceRebuild = false;
-                    if (deployment != null) {
-                        // Extract information from the current deployment. This is used to figure out if new build needs to be run or not.
-                        currentBuildRevision = Annotations.stringAnnotation(deployment.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null);
-                        currentImage = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
-                        forceRebuild = Annotations.hasAnnotation(deployment, Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD);
-                    }
-                    BuildInfo buildInfo = new BuildInfo();
+        if (connectBuild.getBuild() == null) {
+            // Build is not configured => we should delete resources
+            return configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null)
+                    .compose(ignore -> podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null))
+                    .compose(ignore -> serviceAccountOperations.reconcile(reconciliation, namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), null))
+                    .compose(ignore -> pfa.supportsS2I() ? buildConfigOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), null) : Future.succeededFuture())
+                    .map(i -> new BuildInfo());
+        } else {
+            // Build exists => let's build
+            this.reconciliation = reconciliation;
+            this.namespace = namespace;
+            this.connectBuild = connectBuild;
+            return deploymentOperations.getAsync(namespace, connectName)
+                    .compose(this::build);
 
-                    if (connectBuild.getBuild() != null) {
-                        // Build exists => let's build
-                        KafkaConnectDockerfile dockerfile = connectBuild.generateDockerfile();
-                        String newBuildRevision = dockerfile.hashStub() + Util.sha1Prefix(connectBuild.getBuild().getOutput().getImage());
-                        ConfigMap dockerFileConfigMap = connectBuild.generateDockerfileConfigMap(dockerfile);
+        }
+    }
 
-                        if (newBuildRevision.equals(currentBuildRevision)
-                                && !forceRebuild) {
-                            // The revision is the same and rebuild was not forced => nothing to do
-                            LOGGER.debugCr(reconciliation, "Build configuration did not change. Nothing new to build. Container image {} will be used.", currentImage);
-                            buildInfo.image = currentImage;
-                            buildInfo.buildRevision = newBuildRevision;
-                            return Future.succeededFuture(buildInfo);
-                        } else if (pfa.supportsS2I()) {
-                            // Revisions differ and we have S2I support => we are on OpenShift and should do a build
-                            return openShiftBuild(forceRebuild, dockerfile, newBuildRevision)
-                                    .compose(image -> {
-                                        buildInfo.image = image;
-                                        buildInfo.buildRevision = newBuildRevision;
-                                        return Future.succeededFuture(buildInfo);
-                                    });
-                        } else {
-                            // Revisions differ and no S2I support => we are on Kubernetes and should do a build
-                            return kubernetesBuild(forceRebuild, dockerFileConfigMap, newBuildRevision)
-                                    .compose(image -> {
-                                        buildInfo.image = image;
-                                        buildInfo.buildRevision = newBuildRevision;
-                                        return Future.succeededFuture(buildInfo);
-                                    });
-                        }
-                    } else {
-                        // Build is not configured => we should delete resources
-                        return configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null)
-                                .compose(ignore -> podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null))
-                                .compose(ignore -> serviceAccountOperations.reconcile(reconciliation, namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), null))
-                                .compose(ignore -> pfa.supportsS2I() ? buildConfigOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), null) : Future.succeededFuture())
-                                .map(i -> buildInfo);
-                    }
-                });
+    /**
+     * Builds a new container image with connectors on Kubernetes using Kaniko or on OpenShift using BuildConfig
+     *
+     * @param deployment    The existing Connect deployment
+     *
+     * @return              Future for tracking the asynchronous result of the Kubernetes image build
+     */
+    private Future<BuildInfo> build(Deployment deployment) {
+        String currentBuildRevision = "";
+        String currentImage = "";
+        boolean forceRebuild = false;
+        if (deployment != null) {
+            // Extract information from the current deployment. This is used to figure out if new build needs to be run or not.
+            currentBuildRevision = Annotations.stringAnnotation(deployment.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null);
+            currentImage = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
+            forceRebuild = Annotations.hasAnnotation(deployment, Annotations.STRIMZI_IO_CONNECT_FORCE_REBUILD);
+        }
+
+        KafkaConnectDockerfile dockerfile = connectBuild.generateDockerfile();
+        String newBuildRevision = dockerfile.hashStub() + Util.sha1Prefix(connectBuild.getBuild().getOutput().getImage());
+        ConfigMap dockerFileConfigMap = connectBuild.generateDockerfileConfigMap(dockerfile);
+
+        BuildInfo buildInfo = new BuildInfo();
+        if (newBuildRevision.equals(currentBuildRevision)
+                && !forceRebuild) {
+            // The revision is the same and rebuild was not forced => nothing to do
+            LOGGER.debugCr(reconciliation, "Build configuration did not change. Nothing new to build. Container image {} will be used.", currentImage);
+            buildInfo.image = currentImage;
+            buildInfo.buildRevision = newBuildRevision;
+            return Future.succeededFuture(buildInfo);
+        } else if (pfa.supportsS2I()) {
+            // Revisions differ and we have S2I support => we are on OpenShift and should do a build
+            return openShiftBuild(forceRebuild, dockerfile, newBuildRevision)
+                    .compose(image -> {
+                        buildInfo.image = image;
+                        buildInfo.buildRevision = newBuildRevision;
+                        return Future.succeededFuture(buildInfo);
+                    });
+        } else {
+            // Revisions differ and no S2I support => we are on Kubernetes and should do a build
+            return kubernetesBuild(forceRebuild, dockerFileConfigMap, newBuildRevision)
+                    .compose(image -> {
+                        buildInfo.image = image;
+                        buildInfo.buildRevision = newBuildRevision;
+                        return Future.succeededFuture(buildInfo);
+                    });
+        }
     }
 
     /**
