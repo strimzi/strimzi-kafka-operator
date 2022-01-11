@@ -260,6 +260,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n" +
                 "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow\n" +
                 "opa.authorizer.allow.on.error=false\n" +
+                "opa.authorizer.metrics.enabled=false\n" +
                 "opa.authorizer.cache.initial.capacity=5000\n" +
                 "opa.authorizer.cache.maximum.size=50000\n" +
                 "opa.authorizer.cache.expire.after.seconds=3600\n" +
@@ -284,6 +285,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n" +
                 "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow\n" +
                 "opa.authorizer.allow.on.error=true\n" +
+                "opa.authorizer.metrics.enabled=false\n" +
                 "opa.authorizer.cache.initial.capacity=1000\n" +
                 "opa.authorizer.cache.maximum.size=10000\n" +
                 "opa.authorizer.cache.expire.after.seconds=60\n" +
