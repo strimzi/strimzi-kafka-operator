@@ -197,6 +197,12 @@ related to `myNewTestName` test.
     ResourceManager.getInstance().deleteResources(extensionContext);
 ```
 
+## Adding brand-new test suite 
+
+When you need to create a new test suite, firstly, make sure that it has the suffix `ST` (i.e., KafkaST, ConnectBuilderST).
+Secondly, if that certain test suite must run in isolation (it needs its own Cluster Operator configuration, which differs from the default one
+or other possible case), you must also add `Isolated` before `ST` (i.e., `ListenersIsolatedST`, `JmxIsolatedST`).
+
 ## Parallel execution of tests
 
 If you want to run system tests locally in parallel, you need to take a few additional steps. You have to modify

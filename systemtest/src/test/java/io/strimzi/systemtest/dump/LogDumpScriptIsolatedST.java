@@ -31,8 +31,8 @@ import java.nio.file.Paths;
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
 @IsolatedSuite
-public class LogDumpScriptST extends AbstractST {
-    private static final Logger LOGGER = LogManager.getLogger(LogDumpScriptST.class);
+public class LogDumpScriptIsolatedST extends AbstractST {
+    private static final Logger LOGGER = LogManager.getLogger(LogDumpScriptIsolatedST.class);
 
     @IsolatedTest
     void dumpPartitions(ExtensionContext context) {

@@ -33,11 +33,11 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
  *      /time/
  *          /test-suite_time/
  *              /test-case/
- *                  namespace1/
+ *                  namespace-1/
  *                      deployment.log
  *                      configmap.log
  *                      ...
- *                  namespace2/
+ *                  namespace-2/
  *                      deployment.log
  *                      configmap.log
  *                      describe-pod-kafka-cluster-entity-operator-56t123sd-31221-container...log
