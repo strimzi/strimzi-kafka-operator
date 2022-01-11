@@ -266,7 +266,6 @@ spec:
                             sasl:
                               type: boolean
                               description: Enable or disable SASL on this listener.
-                                Default value is true.
                             secrets:
                               type: array
                               items:

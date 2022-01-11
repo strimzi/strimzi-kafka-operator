@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.google.common.collect.ImmutableMap;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
@@ -1482,13 +1481,12 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .withNewKafkaListenerAuthenticationCustomAuth()
                 .withSasl(true)
-                .withListenerConfig(ImmutableMap.<String, Object>builder().put("oauthbearer.sasl.client.callback.handler.class", "client.class")
-                        .put("oauthbearer.sasl.server.callback.handler.class", "server.class")
-                        .put("oauthbearer.sasl.login.callback.handler.class", "login.class")
-                        .put("oauthbearer.connections.max.reauth.ms", 999999999)
-                        .put("sasl.enabled.mechanisms", "oauthbearer")
-                        .put("oauthbearer.sasl.jaas.config", "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ;")
-                        .build())
+                .withListenerConfig(Map.of("oauthbearer.sasl.client.callback.handler.class", "client.class",
+                        "oauthbearer.sasl.server.callback.handler.class", "server.class",
+                        "oauthbearer.sasl.login.callback.handler.class", "login.class",
+                        "oauthbearer.connections.max.reauth.ms", 999999999,
+                        "sasl.enabled.mechanisms", "oauthbearer",
+                        "oauthbearer.sasl.jaas.config", "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ;"))
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 

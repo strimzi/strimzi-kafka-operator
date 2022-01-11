@@ -389,6 +389,90 @@ public class ListenersIsolatedST extends AbstractST {
         assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9096, "kafka", "scram-sha-512", true)));
     }
 
+    /**
+     * Test custom listener configured with scram sha auth and tls.
+     */
+    @ParallelNamespaceTest
+    @Tag(ACCEPTANCE)
+    @Tag(INTERNAL_CLIENTS_USED)
+    void testSendMessagesCustomListenerTlsScramSha(ExtensionContext extensionContext) {
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String kafkaUsername = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final int passwordLength = 25;
+
+        // Use a Kafka with plain listener disabled
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                        .withPort(9122)
+                        .withTls(true)
+                        .withNewKafkaListenerAuthenticationCustomAuth()
+                        .withSasl(true)
+                        .withListenerConfig(Map.of("scram-sha-512.sasl.jaas.config",
+                                "org.apache.kafka.common.security.scram.ScramLoginModule required;",
+                                "sasl.enabled.mechanisms", "SCRAM-SHA-512"))
+                        .endKafkaListenerAuthenticationCustomAuth()
+                        .build())
+                .endKafka()
+                .editEntityOperator()
+                .editOrNewTemplate()
+                .editOrNewUserOperatorContainer()
+                .addToEnv(
+                        new ContainerEnvVarBuilder()
+                                .withName("STRIMZI_SCRAM_SHA_PASSWORD_LENGTH")
+                                .withValue(String.valueOf(passwordLength))
+                                .build())
+                .endUserOperatorContainer()
+                .endTemplate()
+                .endEntityOperator()
+                .endSpec()
+                .build());
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+
+        KafkaUser kafkaUser = KafkaUserTemplates.scramShaUser(clusterName, kafkaUsername).build();
+
+        resourceManager.createResource(extensionContext, kafkaUser);
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespaceName, true, clusterName + "-" + Constants.KAFKA_CLIENTS, kafkaUser).build());
+
+        final String kafkaClientsPodName =
+                kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
+
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+                .withUsingPodName(kafkaClientsPodName)
+                .withTopicName(topicName)
+                .withNamespaceName(namespaceName)
+                .withClusterName(clusterName)
+                .withKafkaUsername(kafkaUsername)
+                .withMessageCount(MESSAGE_COUNT)
+                .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                .build();
+
+        // Check brokers availability
+        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
+
+        internalKafkaClient.checkProducedAndConsumedMessages(
+                internalKafkaClient.sendMessagesTls(),
+                internalKafkaClient.receiveMessagesTls()
+        );
+
+        LOGGER.info("Checking if generated password has {} characters", passwordLength);
+        String password = kubeClient().namespace(namespaceName).getSecret(kafkaUsername).getData().get("password");
+        String decodedPassword = new String(Base64.getDecoder().decode(password));
+
+        assertEquals(decodedPassword.length(), passwordLength);
+
+        Service kafkaService = kubeClient(namespaceName).getService(namespaceName, KafkaResources.bootstrapServiceName(clusterName));
+        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
+        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
+        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9096, "kafka", "scram-sha-512", true)));
+    }
+
     @ParallelNamespaceTest
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
