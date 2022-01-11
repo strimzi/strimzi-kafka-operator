@@ -174,7 +174,7 @@ spec:
                                 description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`).
                               sasl:
                                 type: boolean
-                                description: Enable or disable SASL on this listener. Default value is true.
+                                description: Enable or disable SASL on this listener.
                               secrets:
                                 type: array
                                 items:
