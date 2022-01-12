@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
@@ -27,7 +27,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -39,7 +38,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -47,11 +45,13 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
-@IsolatedSuite
+@ParallelSuite
 public class MultipleListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleListenersST.class);
     private Object lock = new Object();
+
+    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(MultipleListenersST.class.getSimpleName()).stream().findFirst().get();
 
     // only 4 type of listeners
     private Map<KafkaListenerType, List<GenericKafkaListener>> testCases = new HashMap<>(4);
@@ -165,6 +165,9 @@ public class MultipleListenersST extends AbstractST {
 
         // exercise phase
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+            .editMetadata()
+                .withNamespace(namespace)
+            .endMetadata()
             .editSpec()
                 .editKafka()
                     .withListeners(listeners)
@@ -175,14 +178,14 @@ public class MultipleListenersST extends AbstractST {
         // only on thread can access to verification phase (here is a lot of variables which can be modified in run-time (data-race))
         synchronized (lock) {
             String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-            KafkaUser kafkaUserInstance = KafkaUserTemplates.tlsUser(clusterName, kafkaUsername).build();
+            KafkaUser kafkaUserInstance = KafkaUserTemplates.tlsUser(namespace, clusterName, kafkaUsername).build();
 
             resourceManager.createResource(extensionContext, kafkaUserInstance);
 
             for (GenericKafkaListener listener : listeners) {
 
                 String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-                resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+                resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, namespace).build());
 
                 boolean isTlsEnabled = listener.isTls();
 
@@ -190,7 +193,7 @@ public class MultipleListenersST extends AbstractST {
                     if (isTlsEnabled) {
                         ExternalKafkaClient externalTlsKafkaClient = new ExternalKafkaClient.Builder()
                             .withTopicName(topicName)
-                            .withNamespaceName(INFRA_NAMESPACE)
+                            .withNamespaceName(namespace)
                             .withClusterName(clusterName)
                             .withMessageCount(MESSAGE_COUNT)
                             .withKafkaUsername(kafkaUsername)
@@ -209,7 +212,7 @@ public class MultipleListenersST extends AbstractST {
                     } else {
                         ExternalKafkaClient externalPlainKafkaClient = new ExternalKafkaClient.Builder()
                             .withTopicName(topicName)
-                            .withNamespaceName(INFRA_NAMESPACE)
+                            .withNamespaceName(namespace)
                             .withClusterName(clusterName)
                             .withMessageCount(MESSAGE_COUNT)
                             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
@@ -229,16 +232,19 @@ public class MultipleListenersST extends AbstractST {
                     // using internal clients
                     if (isTlsEnabled) {
                         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, kafkaClientsName + "-tls",
-                            listener.getName(), kafkaUserInstance).build());
+                            listener.getName(), kafkaUserInstance)
+                            .editMetadata()
+                                .withNamespace(namespace)
+                            .endMetadata().build());
 
                         final String kafkaClientsTlsPodName =
-                            ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName + "-tls").get(0).getMetadata().getName();
+                            ResourceManager.kubeClient().listPodsByPrefixInName(namespace, kafkaClientsName + "-tls").get(0).getMetadata().getName();
 
                         InternalKafkaClient internalTlsKafkaClient = new InternalKafkaClient.Builder()
                             .withUsingPodName(kafkaClientsTlsPodName)
                             .withListenerName(listener.getName())
                             .withTopicName(topicName)
-                            .withNamespaceName(INFRA_NAMESPACE)
+                            .withNamespaceName(namespace)
                             .withClusterName(clusterName)
                             .withKafkaUsername(kafkaUsername)
                             .withMessageCount(MESSAGE_COUNT)
@@ -249,15 +255,19 @@ public class MultipleListenersST extends AbstractST {
                         // verify phase
                         ClientUtils.waitUntilProducerAndConsumerSuccessfullySendAndReceiveMessages(extensionContext, internalTlsKafkaClient);
                     } else {
-                        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName + "-plain").build());
+                        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName + "-plain")
+                            .editMetadata()
+                                .withNamespace(namespace)
+                            .endMetadata()
+                            .build());
                         final String kafkaClientsPlainPodName =
-                            ResourceManager.kubeClient().listPodsByPrefixInName(kafkaClientsName + "-plain").get(0).getMetadata().getName();
+                            ResourceManager.kubeClient().listPodsByPrefixInName(namespace, kafkaClientsName + "-plain").get(0).getMetadata().getName();
 
                         InternalKafkaClient internalPlainKafkaClient = new InternalKafkaClient.Builder()
                             .withUsingPodName(kafkaClientsPlainPodName)
                             .withListenerName(listener.getName())
                             .withTopicName(topicName)
-                            .withNamespaceName(INFRA_NAMESPACE)
+                            .withNamespaceName(namespace)
                             .withClusterName(clusterName)
                             .withMessageCount(MESSAGE_COUNT)
                             .build();
@@ -360,8 +370,11 @@ public class MultipleListenersST extends AbstractST {
         return testCases;
     }
 
-    @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    @Override
+    protected void beforeAllMayOverride(ExtensionContext extensionContext) {
+        // first invoke classic @BeforeAll
+        super.beforeAllMayOverride(extensionContext);
+        // secondly generate test cases
         generateTestCases();
     }
 }

@@ -534,6 +534,8 @@ It must have the value `opa` for the type `KafkaAuthorizationOpa`.
 |integer
 |superUsers            1.2+<.<a|List of super users, which is specifically a list of user principals that have unlimited access rights.
 |string array
+|enableMetrics         1.2+<.<a|Defines whether the Open Policy Agent authorizer plugin should provide metrics. Defaults to `false`.
+|boolean
 |====
 
 [id='type-KafkaAuthorizationKeycloak-{context}']

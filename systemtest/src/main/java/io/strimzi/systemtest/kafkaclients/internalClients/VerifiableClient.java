@@ -111,6 +111,7 @@ public class VerifiableClient {
         this.topicName = verifiableClientBuilder.topicName;
         this.maxMessages = verifiableClientBuilder.maxMessages;
         this.kafkaUsername = verifiableClientBuilder.kafkaUsername;
+        this.consumerInstanceId = verifiableClientBuilder.consumerInstanceId;
 
         this.setAllowedArguments(this.clientType);
         this.clientArgumentMap = new ClientArgumentMap();
@@ -123,6 +124,7 @@ public class VerifiableClient {
         if (clientType == ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER) {
             this.consumerGroupName = verifiableClientBuilder.consumerGroupName;
             this.clientArgumentMap.put(ClientArgument.GROUP_ID, consumerGroupName);
+            this.consumerInstanceId = verifiableClientBuilder.consumerInstanceId;
         }
 
         if (clientType == ClientType.CLI_KAFKA_CONSUMER_GROUPS) {

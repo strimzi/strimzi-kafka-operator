@@ -1,0 +1,96 @@
+// This assembly is included in the following assemblies:
+//
+//deploying/assembly-deploy-kafka-connect-managing-connectors.adoc
+
+[id='con-exposing-kafka-connect-api-{context}']
+
+= Exposing the Kafka Connect API
+
+[role="_abstract"]
+Use the Kafka Connect REST API as an alternative to using `KafkaConnector` resources to manage connectors.
+The Kafka Connect REST API is available as a service running on `_<connect_cluster_name>_-connect-api:8083`, where _<connect_cluster_name>_ is the name of your Kafka Connect cluster.
+The service is created when you create a Kafka Connect instance.
+
+NOTE: The `strimzi.io/use-connector-resources` annotation enables KafkaConnectors.
+If you applied the annotation to your `KafkaConnect` resource configuration, you need to remove it to use the Kafka Connect API.
+Otherwise, manual changes made directly using the Kafka Connect REST API are reverted by the Cluster Operator.
+
+You can add the connector configuration as a JSON object.
+
+.Example curl request to add connector configuration
+[source,curl,subs=attributes+]
+----
+curl -X POST \
+  http://my-connect-cluster-connect-api:8083/connectors \
+  -H 'Content-Type: application/json' \
+  -d '{ "name": "my-source-connector",
+    "config":
+    {
+      "connector.class":"org.apache.kafka.connect.file.FileStreamSourceConnector",
+      "file": "/opt/kafka/LICENSE",
+      "topic":"my-topic",
+      "tasksMax": "4",
+      "type": "source"
+    }
+}'
+----
+
+The API is only accessible within the Kubernetes cluster.
+If you want to make the Kafka Connect API accessible to applications running outside of the Kubernetes cluster, you can expose it manually by creating one of the following features:
+
+* `LoadBalancer` or `NodePort` type services
+
+* `Ingress` resources
+
+* OpenShift routes
+
+NOTE: The connection is insecure, so allow external access advisedly.
+
+If you decide to create services, use the labels from the `selector` of the `_<connect_cluster_name>_-connect-api` service to configure the pods to which the service will route the traffic:
+
+.Selector configuration for the service
+[source,yaml,subs=attributes+]
+----
+# ...
+selector:
+  strimzi.io/cluster: my-connect-cluster <1>
+  strimzi.io/kind: KafkaConnect
+  strimzi.io/name: my-connect-cluster-connect <2>
+#...
+----
+<1> Name of the Kafka Connect custom resource in your Kubernetes cluster.
+<2> Name of the Kafka Connect deployment created by the Cluster Operator.
+
+You must also create a `NetworkPolicy` that allows HTTP requests from external clients.
+
+.Example NetworkPolicy to allow requests to the Kafka Connect API
+[source,yaml,subs=attributes+]
+----
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: my-custom-connect-network-policy
+spec:
+  ingress:
+  - from:
+    - podSelector: <1>
+        matchLabels:
+          app: my-connector-manager
+    ports:
+    - port: 8083
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      strimzi.io/cluster: my-connect-cluster
+      strimzi.io/kind: KafkaConnect
+      strimzi.io/name: my-connect-cluster-connect
+  policyTypes:
+  - Ingress
+----
+<1> The label of the pod that is allowed to connect to the API.
+
+To add the connector configuration outside the cluster, use the URL of the resource that exposes the API in the curl command.
+
+.Additional resources
+
+* The operations supported by the REST API are described in the http://kafka.apache.org[Apache Kafka documentation^].

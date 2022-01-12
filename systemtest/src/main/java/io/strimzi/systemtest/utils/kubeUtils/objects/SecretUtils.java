@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.test.TestUtils;
@@ -49,16 +50,20 @@ public class SecretUtils {
         LOGGER.info("Secret {} created", secretName);
     }
 
-    public static void waitForSecretDeletion(String secretName) {
-        waitForSecretDeletion(secretName, () -> { });
-    }
-
-    public static void waitForSecretDeletion(String secretName, Runnable onTimeout) {
+    public static void waitForSecretDeletion(final String namespaceName, String secretName, Runnable onTimeout) {
         LOGGER.info("Waiting for Secret deletion {}", secretName);
         TestUtils.waitFor("Expected secret " + secretName + " deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
-            () -> kubeClient().getSecret(secretName) == null,
+            () -> kubeClient(namespaceName).getSecret(namespaceName, secretName) == null,
             onTimeout);
         LOGGER.info("Secret {} deleted", secretName);
+    }
+
+    public static void waitForSecretDeletion(String secretName) {
+        waitForSecretDeletion(kubeClient().getNamespace(), secretName, () -> { });
+    }
+
+    public static void waitForSecretDeletion(final String namespaceName, String secretName) {
+        waitForSecretDeletion(namespaceName, secretName, () -> { });
     }
 
     public static void createSecret(String namespaceName, String secretName, String dataKey, String dataValue) {
@@ -167,5 +172,13 @@ public class SecretUtils {
         TestUtils.waitFor(String.format("user password will be changed to: %s in secret: %s", expectedEncodedPassword, secretName),
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> kubeClient().namespace(namespaceName).getSecret(secretName).getData().get("password").equals(expectedEncodedPassword));
+    }
+
+    public static String annotateSecret(String namespaceName, String resourceName, String annotationKey, String annotationValue) {
+        LOGGER.info("Annotating Secret:{} with annotation {}={}", resourceName, annotationKey, annotationValue);
+        return ResourceManager.cmdKubeClient().namespace(namespaceName)
+                .execInCurrentNamespace("annotate", "secret", resourceName, annotationKey + "=" + annotationValue)
+                .out()
+                .trim();
     }
 }

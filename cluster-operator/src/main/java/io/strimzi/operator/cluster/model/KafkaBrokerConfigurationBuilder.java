@@ -507,6 +507,7 @@ public class KafkaBrokerConfigurationBuilder {
 
             writer.println(String.format("%s=%s", "opa.authorizer.url", opaAuthz.getUrl()));
             writer.println(String.format("%s=%b", "opa.authorizer.allow.on.error", opaAuthz.isAllowOnError()));
+            writer.println(String.format("%s=%b", "opa.authorizer.metrics.enabled", opaAuthz.isEnableMetrics()));
             writer.println(String.format("%s=%d", "opa.authorizer.cache.initial.capacity", opaAuthz.getInitialCacheCapacity()));
             writer.println(String.format("%s=%d", "opa.authorizer.cache.maximum.size", opaAuthz.getMaximumCacheSize()));
             writer.println(String.format("%s=%d", "opa.authorizer.cache.expire.after.seconds", Duration.ofMillis(opaAuthz.getExpireAfterMs()).getSeconds()));

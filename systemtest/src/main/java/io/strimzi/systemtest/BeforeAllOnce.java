@@ -5,10 +5,7 @@
 package io.strimzi.systemtest;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.strimzi.systemtest.parallel.ParallelNamespacesSuitesNames;
-import io.strimzi.systemtest.parallel.ParallelSuiteController;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
-import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -22,7 +19,7 @@ import java.util.Collections;
  */
 public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
 
-    private static SetupClusterOperator install;
+    private static SetupClusterOperator clusterOperator;
     private static final Logger LOGGER = LogManager.getLogger(BeforeAllOnce.class);
     private static boolean systemReady = false;
     private static final String SYSTEM_RESOURCES = "SYSTEM_RESOURCES";
@@ -39,33 +36,23 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
             sharedExtensionContext = extensionContext.getRoot();
             BeforeAllOnce.systemReady = true;
             LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-            LOGGER.debug("[BEFORE SUITE] - Going to setup testing system");
+            LOGGER.debug("{} - [BEFORE SUITE] - Going to setup testing system", extensionContext.getRequiredTestClass().getSimpleName());
 
             // When we set RBAC policy to NAMESPACE, we must copy all Roles to other (parallel) namespaces.
             if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
-                LOGGER.debug("Watched namespaces: :\n{}", ParallelNamespacesSuitesNames.getRbacNamespacesToWatch());
-
                 // setup cluster operator before all suites only once
-                install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+                clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
                     .withExtensionContext(sharedExtensionContext)
-                    .withNamespace(Constants.INFRA_NAMESPACE)
-                    .withWatchingNamespaces(ParallelNamespacesSuitesNames.getRbacNamespacesToWatch())
-                    .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
                     .createInstallation()
                     .runInstallation();
             } else {
                 // setup cluster operator before all suites only once
-                install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+                clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
                     .withExtensionContext(sharedExtensionContext)
                     .withNamespace(Constants.INFRA_NAMESPACE)
                     .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-                    .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
                     .createInstallation()
                     .runInstallation();
-            }
-            // correction, because when @BeforeAllCallback is invoked firstly by @IsolatedSuite class it decrement counter which is not correct
-            if (StUtils.isParallelSuite(extensionContext)) {
-                ParallelSuiteController.decrementCounter();
             }
             sharedExtensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(SYSTEM_RESOURCES, new BeforeAllOnce());
         }
@@ -96,14 +83,14 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [AFTER SUITE] has been called", this.getClass().getName());
         BeforeAllOnce.systemReady = false;
-        install.unInstall();
+        clusterOperator.unInstall();
     }
 
     public static ExtensionContext getSharedExtensionContext() {
         return sharedExtensionContext;
     }
 
-    public static SetupClusterOperator getInstall() {
-        return install;
+    public static SetupClusterOperator getClusterOperator() {
+        return clusterOperator;
     }
 }

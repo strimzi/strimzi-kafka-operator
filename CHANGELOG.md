@@ -2,6 +2,8 @@
 
 ## 0.28.0
 
+* Update Open Policy Agent authorizer to 1.4.0 and add support for enabling metrics 
+
 ## 0.27.0
 
 * Multi-arch container images with support for x86_64 / AMD64 and AArch64 / ARM64 platforms

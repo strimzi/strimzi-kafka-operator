@@ -3,7 +3,7 @@
 // deploying/assembly-deploy-kafka-connect.adoc
 
 [id='using-kafka-connect-with-plug-ins-{context}']
-= Extending Kafka Connect with connector plug-ins
+= Extending Kafka Connect with connector plugins
 
 The Strimzi container images for Kafka Connect include two built-in file connectors for moving file-based data into and out of your Kafka cluster.
 
@@ -28,7 +28,7 @@ The procedures in this section show how to add your own connector classes to con
 
 * xref:creating-new-image-from-base-{context}[Creating a container image from the Kafka Connect base image (manually or using continuous integration)]
 
-IMPORTANT: You create the configuration for connectors directly xref:con-creating-managing-connectors-{context}[using the Kafka Connect REST API or KafkaConnector custom resources].
+IMPORTANT: You create the configuration for connectors directly xref:assembly-creating-managing-connectors-{context}[using the Kafka Connect REST API or `KafkaConnector` custom resources].
 
 //Procedure to create a container images using Strimzi and Kafka Connect build
 include::modules/proc-deploy-kafka-connect-using-kafka-connect-build.adoc[leveloffset=+1]

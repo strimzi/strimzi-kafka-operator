@@ -33,20 +33,21 @@ public class JobUtils {
      * Wait until the given Job has been deleted.
      * @param name The name of the Job
      */
-    public static void waitForJobDeletion(String name) {
+    public static void waitForJobDeletion(final String namespaceName, String name) {
         LOGGER.debug("Waiting for ReplicaSet of Deployment {} deletion", name);
         TestUtils.waitFor("ReplicaSet " + name + " to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT,
-            () -> kubeClient().listPods("job-name", name).isEmpty());
+            () -> kubeClient(namespaceName).listPodNamesInSpecificNamespace(namespaceName, "job-name", name).isEmpty());
         LOGGER.debug("Job {} was deleted", name);
     }
 
     /**
      * Delete Job and wait for it's deletion
      * @param name name of the job
+     * @param namespace name of the namespace
      */
     public static void deleteJobWithWait(String namespace, String name) {
-        kubeClient(namespace).deleteJob(name);
-        waitForJobDeletion(name);
+        kubeClient(namespace).deleteJob(namespace, name);
+        waitForJobDeletion(namespace, name);
     }
 
     /**

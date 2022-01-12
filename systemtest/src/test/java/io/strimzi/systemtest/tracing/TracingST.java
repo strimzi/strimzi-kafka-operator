@@ -12,8 +12,8 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
@@ -49,7 +49,6 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.KAFKA_TRACING_CLIENT_KEY;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
@@ -63,7 +62,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag(REGRESSION)
 @Tag(TRACING)
 @Tag(INTERNAL_CLIENTS_USED)
-@IsolatedSuite
+@ParallelSuite
 public class TracingST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TracingST.class);
@@ -92,6 +91,8 @@ public class TracingST extends AbstractST {
 
     private final String jaegerInstancePath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/" + TracingUtils.getValidTracingVersion() + "/jaeger-instance.yaml";
     private final String jaegerOperatorFilesPath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/" + TracingUtils.getValidTracingVersion() + "/operator-files/";
+
+    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(TracingST.class.getSimpleName()).stream().findFirst().get();
 
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
@@ -478,11 +479,11 @@ public class TracingST extends AbstractST {
 
         if (files != null && files.length > 0) {
             for (File file : files) {
-                String yamlContent = TestUtils.setMetadataNamespace(file, INFRA_NAMESPACE)
-                    .replace("namespace: \"observability\"", "namespace: \"" + INFRA_NAMESPACE + "\"");
+                String yamlContent = TestUtils.setMetadataNamespace(file, namespace)
+                    .replace("namespace: \"observability\"", "namespace: \"" + namespace + "\"");
                 jaegerConfigs.push(yamlContent);
                 LOGGER.info("Creating {} from {}", file.getName(), file.getAbsolutePath());
-                cmdKubeClient(INFRA_NAMESPACE).applyContent(yamlContent);
+                cmdKubeClient(namespace).applyContent(yamlContent);
             }
         } else {
             throw new FileNotFoundException("Folder with Jaeger files is empty or doesn't exist");
@@ -496,14 +497,14 @@ public class TracingST extends AbstractST {
 
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(() -> this.deleteJaeger()));
-        DeploymentUtils.waitForDeploymentAndPodsReady(INFRA_NAMESPACE, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(namespace, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withApiVersion("networking.k8s.io/v1")
             .withKind(Constants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName("jaeger-allow")
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .withNewSpec()
                 .addNewIngress()
@@ -568,7 +569,6 @@ public class TracingST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) throws IOException {
-        super.beforeAllMayOverride(extensionContext);
         // deployment of the jaeger
         deployJaegerOperator(extensionContext);
     }
