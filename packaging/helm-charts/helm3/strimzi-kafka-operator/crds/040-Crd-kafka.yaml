@@ -524,6 +524,9 @@ spec:
                         disableTlsHostnameVerification:
                           type: boolean
                           description: Enable or disable TLS hostname verification. Default value is `false`.
+                        enableMetrics:
+                          type: boolean
+                          description: Defines whether the Open Policy Agent authorizer plugin should provide metrics. Defaults to `false`.
                         expireAfterMs:
                           type: integer
                           description: The expiration of the records kept in the local cache to avoid querying the Open Policy Agent for every request. Defines how often the cached authorization decisions are reloaded from the Open Policy Agent server. In milliseconds. Defaults to `3600000`.

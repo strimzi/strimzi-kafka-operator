@@ -38,6 +38,7 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
     private int initialCacheCapacity = 5000;
     private int maximumCacheSize = 50000;
     private long expireAfterMs = 3600000;
+    private boolean enableMetrics = false;
 
     @Description("Must be `" + TYPE_OPA + "`")
     @Override
@@ -125,5 +126,16 @@ public class KafkaAuthorizationOpa extends KafkaAuthorization {
 
     public void setExpireAfterMs(long expireAfterMs) {
         this.expireAfterMs = expireAfterMs;
+    }
+
+    @Description("Defines whether the Open Policy Agent authorizer plugin should provide metrics. " +
+            "Defaults to `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isEnableMetrics() {
+        return enableMetrics;
+    }
+
+    public void setEnableMetrics(boolean enableMetrics) {
+        this.enableMetrics = enableMetrics;
     }
 }

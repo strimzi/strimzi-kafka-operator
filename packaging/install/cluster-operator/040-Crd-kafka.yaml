@@ -798,6 +798,10 @@ spec:
                         type: boolean
                         description: Enable or disable TLS hostname verification.
                           Default value is `false`.
+                      enableMetrics:
+                        type: boolean
+                        description: Defines whether the Open Policy Agent authorizer
+                          plugin should provide metrics. Defaults to `false`.
                       expireAfterMs:
                         type: integer
                         description: The expiration of the records kept in the local
