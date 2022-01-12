@@ -97,6 +97,7 @@ import java.util.stream.Collectors;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithCustomAuth;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 import static java.util.Collections.addAll;
+import static java.util.Collections.list;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static io.strimzi.operator.cluster.model.CruiseControl.CRUISE_CONTROL_METRIC_REPORTER;
@@ -785,6 +786,10 @@ public class KafkaCluster extends AbstractModel {
         List<Service> services = new ArrayList<>(externalListeners.size());
 
         for (GenericKafkaListener listener : externalListeners)   {
+            if (KafkaListenerType.LOADBALANCER == listener.getType() && listener.getConfiguration() != null && !listener.getConfiguration().getCreateBootstrapService()) {
+                continue;
+            }
+
             String serviceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(cluster, listener);
 
             List<ServicePort> ports = Collections.singletonList(

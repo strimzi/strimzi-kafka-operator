@@ -881,7 +881,7 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
-    public void testExternalLoadBalancersWithoutBootStrapservice() {
+    public void testExternalLoadBalancersWithoutBootstrapService() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
