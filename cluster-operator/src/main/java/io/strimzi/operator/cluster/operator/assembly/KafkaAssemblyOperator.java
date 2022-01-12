@@ -38,7 +38,6 @@ import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
-import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
@@ -2150,8 +2149,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                 // When the listener is load balancer and useCreateBootStrapService is false,
                 // we will skip the creation of the external load balancer to save the cost.
-                if (KafkaListenerType.LOADBALANCER == listener.getType() && listener.getConfiguration() != null
-                        && !listener.getConfiguration().getCreateBootstrapService()) {
+                if (ListenersUtils.skipCreateBootstrapService(listener)) {
                     continue;
                 }
 

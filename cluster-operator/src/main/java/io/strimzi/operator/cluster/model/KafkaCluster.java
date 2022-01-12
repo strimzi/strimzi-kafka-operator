@@ -785,7 +785,7 @@ public class KafkaCluster extends AbstractModel {
         List<Service> services = new ArrayList<>(externalListeners.size());
 
         for (GenericKafkaListener listener : externalListeners)   {
-            if (KafkaListenerType.LOADBALANCER == listener.getType() && listener.getConfiguration() != null && !listener.getConfiguration().getCreateBootstrapService()) {
+            if (ListenersUtils.skipCreateBootstrapService(listener)) {
                 continue;
             }
 

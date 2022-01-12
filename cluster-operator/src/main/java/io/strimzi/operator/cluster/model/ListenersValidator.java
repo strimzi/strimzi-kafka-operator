@@ -80,6 +80,8 @@ public class ListenersValidator {
                 validateLoadBalancerSourceRanges(errors, listener);
                 validateFinalizers(errors, listener);
                 validatePreferredAddressType(errors, listener);
+                validateCreateBootstrapService(errors, listener);
+
 
                 if (listener.getConfiguration().getBootstrap() != null) {
                     validateBootstrapHost(errors, listener);
@@ -193,6 +195,19 @@ public class ListenersValidator {
         if (KafkaListenerType.INTERNAL != listener.getType()
                 && listener.getConfiguration().getUseServiceDnsDomain() != null)    {
             errors.add("listener " + listener.getName() + " cannot configure useServiceDnsDomain because it is not internal listener");
+        }
+    }
+
+    /**
+     * Validates that createBootstrapService is used only with Load Balancer type listener
+     *
+     * @param errors    List where any found errors will be added
+     * @param listener  Listener which needs to be validated
+     */
+    private static void validateCreateBootstrapService(Set<String> errors, GenericKafkaListener listener) {
+        if (KafkaListenerType.LOADBALANCER != listener.getType()
+                && listener.getConfiguration() != null && !listener.getConfiguration().getCreateBootstrapService())    {
+            errors.add("listener " + listener.getName() + " cannot configure createBootstrapService because it is not load balancer listener");
         }
     }
 
