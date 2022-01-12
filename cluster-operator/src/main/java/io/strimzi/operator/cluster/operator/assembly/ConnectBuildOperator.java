@@ -49,10 +49,6 @@ public class ConnectBuildOperator {
     private final long connectBuildTimeoutMs;
     private final PlatformFeaturesAvailability pfa;
 
-    private Reconciliation reconciliation;
-    private String namespace;
-    private KafkaConnectBuild connectBuild;
-
     public ConnectBuildOperator(PlatformFeaturesAvailability pfa, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
         this.deploymentOperations = supplier.deploymentOperations;
         this.podOperator = supplier.podOperations;
@@ -86,11 +82,8 @@ public class ConnectBuildOperator {
                     .map(i -> new BuildInfo());
         } else {
             // Build exists => let's build
-            this.reconciliation = reconciliation;
-            this.namespace = namespace;
-            this.connectBuild = connectBuild;
             return deploymentOperations.getAsync(namespace, connectName)
-                    .compose(this::build);
+                    .compose(deployment -> build(reconciliation, namespace, connectBuild, deployment));
 
         }
     }
@@ -98,11 +91,14 @@ public class ConnectBuildOperator {
     /**
      * Builds a new container image with connectors on Kubernetes using Kaniko or on OpenShift using BuildConfig
      *
+     * @param reconciliation    The reconciliation
+     * @param namespace         Namespace of the Connect cluster
+     * @param connectBuild      KafkaConnectBuild object
      * @param deployment    The existing Connect deployment
      *
      * @return              Future for tracking the asynchronous result of the Kubernetes image build
      */
-    private Future<BuildInfo> build(Deployment deployment) {
+    private Future<BuildInfo> build(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, Deployment deployment) {
         String currentBuildRevision = "";
         String currentImage = "";
         boolean forceRebuild = false;
@@ -127,7 +123,7 @@ public class ConnectBuildOperator {
             return Future.succeededFuture(buildInfo);
         } else if (pfa.supportsS2I()) {
             // Revisions differ and we have S2I support => we are on OpenShift and should do a build
-            return openShiftBuild(forceRebuild, dockerfile, newBuildRevision)
+            return openShiftBuild(reconciliation, namespace, connectBuild, forceRebuild, dockerfile, newBuildRevision)
                     .compose(image -> {
                         buildInfo.image = image;
                         buildInfo.buildRevision = newBuildRevision;
@@ -135,7 +131,7 @@ public class ConnectBuildOperator {
                     });
         } else {
             // Revisions differ and no S2I support => we are on Kubernetes and should do a build
-            return kubernetesBuild(forceRebuild, dockerFileConfigMap, newBuildRevision)
+            return kubernetesBuild(reconciliation, namespace, connectBuild, forceRebuild, dockerFileConfigMap, newBuildRevision)
                     .compose(image -> {
                         buildInfo.image = image;
                         buildInfo.buildRevision = newBuildRevision;
@@ -148,13 +144,16 @@ public class ConnectBuildOperator {
      * Executes the Kafka Connect Build on Kubernetes. Run only if needed because of changes to the Dockerfile or when
      * triggered by annotation.
      *
+     * @param reconciliation        The reconciliation
+     * @param namespace             Namespace of the Connect cluster
+     * @param connectBuild          KafkaConnectBuild object
      * @param forceRebuild          If true, force a new build even if one is already in progress
      * @param dockerFileConfigMap   ConfigMap with the generated Dockerfile
      * @param newBuildRevision      New build revision (hash of the Dockerfile)
      *
      * @return                      Future which completes with the built image when the build is finished (or fails if it fails)
      */
-    private Future<String> kubernetesBuild(boolean forceRebuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
+    private Future<String> kubernetesBuild(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, boolean forceRebuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
         final AtomicReference<String> buildImage = new AtomicReference<>();
         return podOperator.getAsync(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()))
                 .compose(pod -> {
@@ -171,14 +170,14 @@ public class ConnectBuildOperator {
                             // Pod exists, but it either failed or is for different Dockerfile => start new build
                             LOGGER.infoCr(reconciliation, "Previous build exists, but uses different Dockerfile or failed. New build will be started.");
                             return podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null)
-                                    .compose(ignore -> kubernetesBuildStart(dockerFileConfigMap, newBuildRevision));
+                                    .compose(ignore -> kubernetesBuildStart(reconciliation, namespace, connectBuild, dockerFileConfigMap, newBuildRevision));
                         }
                     } else {
                         // Pod does not exist => Start new build
-                        return kubernetesBuildStart(dockerFileConfigMap, newBuildRevision);
+                        return kubernetesBuildStart(reconciliation, namespace, connectBuild, dockerFileConfigMap, newBuildRevision);
                     }
                 })
-                .compose(ignore -> kubernetesBuildWaitForFinish())
+                .compose(ignore -> kubernetesBuildWaitForFinish(reconciliation, namespace, connectBuild))
                 .compose(image -> {
                     buildImage.set(image);
                     return podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null);
@@ -191,12 +190,15 @@ public class ConnectBuildOperator {
      * Starts the Kafka Connect Build on Kubernetes by creating the ConfigMap with the Dockerfile and starting the
      * builder Pod.
      *
+     * @param reconciliation        The reconciliation
+     * @param namespace             Namespace of the Connect cluster
+     * @param connectBuild          KafkaConnectBuild object
      * @param dockerFileConfigMap   ConfigMap with the generated Dockerfile
      * @param newBuildRevision      New build revision (hash of the Dockerfile)
      *
      * @return                      Future which completes when the build is finished (or fails if it fails)
      */
-    private Future<Void> kubernetesBuildStart(ConfigMap dockerFileConfigMap, String newBuildRevision)  {
+    private Future<Void> kubernetesBuildStart(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, ConfigMap dockerFileConfigMap, String newBuildRevision)  {
         return configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), dockerFileConfigMap)
                 .compose(ignore -> serviceAccountOperations.reconcile(reconciliation, namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), connectBuild.generateServiceAccount()))
                 .compose(ignore -> podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), connectBuild.generateBuilderPod(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, newBuildRevision)))
@@ -206,11 +208,12 @@ public class ConnectBuildOperator {
     /**
      * Checks if the builder Pod finished the build
      *
+     @param namespace               Namespace of the Connect cluster
      * @param podName               The name of the Pod which should be checked whether it finished
      *
      * @return                      True if the build already finished, false if it is still building
      */
-    private boolean kubernetesBuildPodFinished(String podName)   {
+    private boolean kubernetesBuildPodFinished(String namespace, String podName)   {
         Pod buildPod = podOperator.get(namespace, podName);
         return KafkaConnectBuildUtils.buildPodComplete(buildPod);
     }
@@ -218,10 +221,14 @@ public class ConnectBuildOperator {
     /**
      * Waits for the Kafka Connect build to finish and collects the results from it
      *
+     * @param reconciliation        The reconciliation
+     * @param namespace             Namespace of the Connect cluster
+     * @param connectBuild          KafkaConnectBuild object
+     *
      * @return                      Future which completes with the built image when the build is finished (or fails if it fails)
      */
-    private Future<String> kubernetesBuildWaitForFinish()  {
-        return podOperator.waitFor(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> kubernetesBuildPodFinished(KafkaConnectResources.buildPodName(connectBuild.getCluster())))
+    private Future<String> kubernetesBuildWaitForFinish(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild)  {
+        return podOperator.waitFor(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> kubernetesBuildPodFinished(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster())))
                 .compose(ignore -> podOperator.getAsync(namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster())))
                 .compose(pod -> {
                     if (KafkaConnectBuildUtils.buildPodSucceeded(pod)) {
@@ -241,13 +248,16 @@ public class ConnectBuildOperator {
      * Executes the Kafka Connect Build on OpenShift. Run only if needed because of changes to the Dockerfile or when
      * triggered by annotation.
      *
+     * @param reconciliation        The reconciliation
+     * @param namespace             Namespace of the Connect cluster
+     * @param connectBuild          KafkaConnectBuild object
      * @param forceRebuild          If true, force a new build even if one is already in progress
      * @param dockerfile            The generated Dockerfile
      * @param newBuildRevision      New build revision (hash of the Dockerfile)
      *
      * @return                      Future which completes with the built image when the build is finished (or fails if it fails)
      */
-    private Future<String> openShiftBuild(boolean forceRebuild, KafkaConnectDockerfile dockerfile, String newBuildRevision)   {
+    private Future<String> openShiftBuild(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, boolean forceRebuild, KafkaConnectDockerfile dockerfile, String newBuildRevision)   {
         final AtomicReference<String> buildImage = new AtomicReference<>();
         return buildConfigOperator.getAsync(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()))
                 .compose(buildConfig -> {
@@ -272,13 +282,13 @@ public class ConnectBuildOperator {
                             return Future.succeededFuture(build.getMetadata().getName());
                         } else {
                             // Build exists, but it either failed or is for different Dockerfile => start new build
-                            return openShiftBuildStart(dockerfile, newBuildRevision);
+                            return openShiftBuildStart(reconciliation, namespace, connectBuild, dockerfile, newBuildRevision);
                         }
                     } else {
-                        return openShiftBuildStart(dockerfile, newBuildRevision);
+                        return openShiftBuildStart(reconciliation, namespace, connectBuild, dockerfile, newBuildRevision);
                     }
                 })
-                .compose(this::openShiftBuildWaitForFinish)
+                .compose(buildName -> openShiftBuildWaitForFinish(reconciliation, namespace, buildName))
                 .compose(image -> {
                     buildImage.set(image);
                     return podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null);
@@ -288,12 +298,15 @@ public class ConnectBuildOperator {
     /**
      * Starts the Kafka Connect Build on OpenShift.
      *
+     * @param reconciliation        The reconciliation
+     * @param namespace             Namespace of the Connect cluster
+     * @param connectBuild          KafkaConnectBuild object
      * @param dockerfile            The generated Dockerfile
      * @param newBuildRevision      New build revision (hash of the Dockerfile)
      *
      * @return                      Future which completes with the build name when the build is finished (or fails if it fails)
      */
-    private Future<String> openShiftBuildStart(KafkaConnectDockerfile dockerfile, String newBuildRevision)   {
+    private Future<String> openShiftBuildStart(Reconciliation reconciliation, String namespace, KafkaConnectBuild connectBuild, KafkaConnectDockerfile dockerfile, String newBuildRevision)   {
         return configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null)
                 .compose(ignore -> buildConfigOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), connectBuild.generateBuildConfig(dockerfile)))
                 .compose(ignore -> buildConfigOperator.startBuild(namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), connectBuild.generateBuildRequest(newBuildRevision)))
@@ -303,11 +316,12 @@ public class ConnectBuildOperator {
     /**
      * Checks if the Build finished
      *
+     * @param namespace             Namespace of the Connect cluster
      * @param buildName             Name of the Build which should be checked
      *
      * @return                      True if the Build already finished, false if it is still building
      */
-    private boolean openShiftBuildFinished(String buildName) {
+    private boolean openShiftBuildFinished(String namespace, String buildName) {
         Build runningBuild = buildOperator.get(namespace, buildName);
         return KafkaConnectBuildUtils.buildComplete(runningBuild);
     }
@@ -315,12 +329,14 @@ public class ConnectBuildOperator {
     /**
      * Waits for the Kafka Connect build to finish and collects the results from it
      *
+     * @param reconciliation        The reconciliation
+     * @param namespace             Namespace of the Connect cluster
      * @param buildName             Name of the KafkaConnectBuild
      *
      * @return                      Future which completes with the built image when the build is finished (or fails if it fails)
      */
-    private Future<String> openShiftBuildWaitForFinish(String buildName)   {
-        return buildOperator.waitFor(reconciliation, namespace, buildName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> openShiftBuildFinished(buildName))
+    private Future<String> openShiftBuildWaitForFinish(Reconciliation reconciliation, String namespace, String buildName)   {
+        return buildOperator.waitFor(reconciliation, namespace, buildName, "complete", 1_000, connectBuildTimeoutMs, (ignore1, ignore2) -> openShiftBuildFinished(namespace, buildName))
                 .compose(ignore -> buildOperator.getAsync(namespace, buildName))
                 .compose(build -> {
                     if (KafkaConnectBuildUtils.buildSucceeded(build))   {
