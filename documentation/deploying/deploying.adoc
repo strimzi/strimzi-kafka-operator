@@ -9,7 +9,7 @@ include::shared/attributes.adoc[]
 //Introduction to the install process
 include::assemblies/deploying/assembly-deploy-intro.adoc[leveloffset=+1]
 //Install options
-include::modules/deploying/con-strimzi-installation-methods.adoc[leveloffset=+2]
+include::modules/deploying/con-strimzi-installation-methods.adoc[leveloffset=+1]
 //Checklist to show deployment order and the options available
 include::assemblies/deploying/assembly-deploy-options.adoc[leveloffset=+1]
 //Prep for the deployment

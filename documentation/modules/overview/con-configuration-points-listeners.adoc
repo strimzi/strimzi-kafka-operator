@@ -3,10 +3,10 @@
 // assembly-overview.adoc
 
 [id="configuration-points-listeners-{context}"]
-= Listener configuration
+= Configuring listeners to connect to Kafka brokers
 
+[role="_abstract"]
 Listeners are used to connect to Kafka brokers.
-
 Strimzi provides a generic `GenericKafkaListener` schema with properties to configure listeners through the `Kafka` resource.
 
 The `GenericKafkaListener` provides a flexible approach to listener configuration.

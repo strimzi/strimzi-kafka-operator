@@ -44,7 +44,7 @@ For example, the _Deploying and Upgrading Strimzi_ guide has a chapter called _V
 .Documentation folder descriptions
 [source,options="nowrap",subs="+quotes"]
 ----
-api/                          # Property descriptions for the Custom Resource API Reference section of the Using Strimzi guide
+api/                          # Property descriptions for the Custom Resource API Reference section of the Configuring Strimzi guide
 contributing/                 # Documentation contributor guide (this book)
 deploying/                    # Deploying Strimzi
 quickstart/                   # Strimzi Quick Start guide
@@ -83,14 +83,14 @@ The steps describe how to get a Strimzi deployment up-and-running as quickly as 
 
 In contrast to the _Deploying and Upgrading Strimzi_ guide, this guide provides a reduced set of instructions for a specific type of deployment, with minimal configuration.
 
-=== Using Strimzi
+=== Configuring Strimzi
 
-The _Using Strimzi_ guide provides configuration instructions for Kafka components, and instructions for using Strimzi Operators.
+The _Configuring Strimzi_ guide provides configuration instructions for Kafka components, and instructions for using Strimzi Operators.
 The majority of the content relates to how you might want to modify your deployment and introduce additional features, such as Cruise Control or distributed tracing.
 
 === Custom Resource API Reference
 
-The _Using Strimzi_ guide (documentation/using/using.adoc) also contains a _Custom Resource API Reference_ that describes the configuration properties for custom resources.
+The _Configuring Strimzi_ guide (documentation/using/configuring.adoc) also contains a _Custom Resource API Reference_ that describes the configuration properties for custom resources.
 
 The _Custom Resource API Reference_ is built from two files.
 

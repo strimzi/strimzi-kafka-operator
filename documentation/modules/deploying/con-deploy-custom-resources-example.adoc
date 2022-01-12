@@ -114,4 +114,4 @@ After a `KafkaTopic` custom resource is created, the Topic Operator is notified 
 .Additional resources
 
 * {K8sCRDs}
-* link:{BookURLDeploying}#deploy-examples-{context}[Example configuration files provided with Strimzi^]
+* xref:deploy-examples-{context}[Example configuration files provided with Strimzi]

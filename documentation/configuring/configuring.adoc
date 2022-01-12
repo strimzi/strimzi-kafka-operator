@@ -3,9 +3,9 @@ include::shared/attributes.adoc[]
 
 :context: str
 
-= Using Strimzi
+= Configuring Strimzi
 
-include::assemblies/assembly-overview.adoc[leveloffset=+1]
+include::assemblies/configuring/assembly-overview.adoc[leveloffset=+1]
 
 include::assemblies/configuring/assembly-deployment-configuration.adoc[leveloffset=+1]
 

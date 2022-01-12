@@ -162,6 +162,7 @@
 // Links to other Strimzi documentation books
 :BookURLDeploying: ./deploying.html
 :BookURLUsing: ./using.html
+:BookURLOverview: ./overview.html
 
 // Link to resource on https://github.com/strimzi/strimzi-kafka-operator
 // Default `main`, specific version overriden when building the docs by `make`
