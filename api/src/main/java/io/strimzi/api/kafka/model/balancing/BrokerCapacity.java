@@ -44,7 +44,9 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @Pattern("^[0-9]+([.][0-9]*)?([KMGTPE]i?|e[0-9]+)?$")
-    @Description("Broker capacity for disk in bytes, for example, 100Gi.")
+    @Description("Broker capacity for disk in bytes. " +
+            "Use a number value with either standard Kubernetes byte units (K, M, G, or T), their bibyte (power of two) equivalents (Ki, Mi, Gi, or Ti), or a byte value with or without E notation. " +
+            "For example, 100000M, 100000Mi, 104857600000, or 1e+11.")
     public String getDisk() {
         return disk;
     }
@@ -67,7 +69,9 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Pattern("^[0-9]+([KMG]i?)?B/s$")
-    @Description("Broker capacity for inbound network throughput in bytes per second, for example, 10000KB/s")
+    @Description("Broker capacity for inbound network throughput in bytes per second. " +
+            "Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. " +
+            "For example, 10000KiB/s.")
     public String getInboundNetwork() {
         return inboundNetwork;
     }
@@ -78,7 +82,9 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     @Pattern("^[0-9]+([KMG]i?)?B/s$")
-    @Description("Broker capacity for outbound network throughput in bytes per second, for example 10000KB/s")
+    @Description("Broker capacity for outbound network throughput in bytes per second. " +
+            "Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. " +
+            "For example, 10000KiB/s.")
     public String getOutboundNetwork() {
         return outboundNetwork;
     }

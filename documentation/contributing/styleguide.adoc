@@ -26,7 +26,7 @@ spec:
 ------
 <1> Syntax for the example. Here the source language is `yaml`. Use _subs_ to apply attributes and formatting.
 In this example, `{KafkaApiVersion}` is substituted with an attribute value specified in the `/shared/attributes.adoc` file.
-If _quotes_ is specified in _subs_, asciidoc formatting is applied to the code block. Here, bold is applied to the *3* value of `replicas`. If _quotes_ isn't used, ascidoc formatting is ignored in the code block.
+If _quotes_ is specified in _subs_, asciidoc formatting is applied to the code block. Here, bold is applied to the *3* value of `replicas`. If _quotes_ isn't used, asciidoc formatting is ignored in the code block.
 <2> Add callouts to describe a line of code or configuration. Use a hash (`#`) before the callout number so that the example is copy-friendly.
 <3> Use a hash and ellipsis (`# ...`) to show that part of the code or configuration has been omitted.
 

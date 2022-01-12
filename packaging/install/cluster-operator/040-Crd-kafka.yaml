@@ -5407,8 +5407,11 @@ spec:
                       disk:
                         type: string
                         pattern: ^[0-9]+([.][0-9]*)?([KMGTPE]i?|e[0-9]+)?$
-                        description: Broker capacity for disk in bytes, for example,
-                          100Gi.
+                        description: Broker capacity for disk in bytes. Use a number
+                          value with either standard Kubernetes byte units (K, M,
+                          G, or T), their bibyte (power of two) equivalents (Ki, Mi,
+                          Gi, or Ti), or a byte value with or without E notation.
+                          For example, 100000M, 100000Mi, 104857600000, or 1e+11.
                       cpuUtilization:
                         type: integer
                         minimum: 0
@@ -5419,12 +5422,16 @@ spec:
                         type: string
                         pattern: ^[0-9]+([KMG]i?)?B/s$
                         description: Broker capacity for inbound network throughput
-                          in bytes per second, for example, 10000KB/s.
+                          in bytes per second. Use an integer value with standard
+                          Kubernetes byte units (K, M, G) or their bibyte (power of
+                          two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s.
                       outboundNetwork:
                         type: string
                         pattern: ^[0-9]+([KMG]i?)?B/s$
                         description: Broker capacity for outbound network throughput
-                          in bytes per second, for example 10000KB/s.
+                          in bytes per second. Use an integer value with standard
+                          Kubernetes byte units (K, M, G) or their bibyte (power of
+                          two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s.
                     description: The Cruise Control `brokerCapacity` configuration.
                   config:
                     x-kubernetes-preserve-unknown-fields: true
