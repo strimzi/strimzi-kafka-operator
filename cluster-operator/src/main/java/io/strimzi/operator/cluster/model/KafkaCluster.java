@@ -97,7 +97,6 @@ import java.util.stream.Collectors;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithCustomAuth;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 import static java.util.Collections.addAll;
-import static java.util.Collections.list;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static io.strimzi.operator.cluster.model.CruiseControl.CRUISE_CONTROL_METRIC_REPORTER;
