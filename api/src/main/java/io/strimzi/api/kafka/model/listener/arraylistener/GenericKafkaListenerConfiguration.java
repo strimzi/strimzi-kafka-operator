@@ -32,7 +32,7 @@ import static java.util.Collections.emptyMap;
  */
 @DescriptionFile
 @JsonPropertyOrder({"brokerCertChainAndKey", "ingressClass", "preferredAddressType", "externalTrafficPolicy",
-    "loadBalancerSourceRanges", "bootstrap", "brokers", "ipFamilyPolicy", "ipFamilies"})
+    "loadBalancerSourceRanges", "bootstrap", "brokers", "ipFamilyPolicy", "ipFamilies", "createBootstrapService"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(
     editableEnabled = false,
@@ -55,6 +55,7 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
     private Integer maxConnectionCreationRate;
     private IpFamilyPolicy ipFamilyPolicy;
     private List<IpFamily> ipFamilies;
+    private Boolean createBootstrapService = true;
 
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
@@ -227,6 +228,17 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
 
     public void setIpFamilies(List<IpFamily> ipFamilies) {
         this.ipFamilies = ipFamilies;
+    }
+
+    @Description("Whether to create the bootstrap service or not." +
+            "This field can be used with the `loadBalancer` type listener.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getCreateBootstrapService() {
+        return createBootstrapService;
+    }
+
+    public void setCreateBootstrapService(Boolean createBootstrapService) {
+        this.createBootstrapService = createBootstrapService;
     }
 
     @Override

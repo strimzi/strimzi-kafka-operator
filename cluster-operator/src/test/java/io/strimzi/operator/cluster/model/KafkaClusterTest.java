@@ -881,6 +881,32 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
+    public void testExternalLoadBalancersWithoutBootStrapservice() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName("external")
+                        .withPort(9094)
+                        .withType(KafkaListenerType.LOADBALANCER)
+                        .withTls(true)
+                        .withNewKafkaListenerAuthenticationTlsAuth()
+                        .endKafkaListenerAuthenticationTlsAuth()
+                        .withNewConfiguration()
+                            .withCreateBootstrapService(false)
+                        .endConfiguration()
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+
+        // Check external bootstrap service
+        assertThat(kc.generateExternalBootstrapServices().isEmpty(), is(true));
+    }
+
+    @ParallelTest
     public void testLoadBalancerExternalTrafficPolicyLocalFromListener() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
