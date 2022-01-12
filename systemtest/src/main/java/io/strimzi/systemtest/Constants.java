@@ -329,12 +329,8 @@ public interface Constants {
      */
     String LOAD_BALANCER_CLEANUP = "service.kubernetes.io/load-balancer-cleanup";
 
-    // parallel namespaces
+    // main namespace for Cluster Operator deployment
     String INFRA_NAMESPACE = "infra-namespace";
-    String BRIDGE_KAFKA_CORS_NAMESPACE = "bridge-kafka-cors-namespace";
-    String BRIDGE_KAFKA_EXTERNAL_LISTENER_NAMESPACE = "bridge-kafka-external-listener-namespace";
-    String BRIDGE_SCRAM_SHA_NAMESPACE = "bridge-scram-sha-namespace";
-    String BRIDGE_HTTP_TLS_NAMESPACE = "http-bridge-tls-namespace";
     String METRICS_SECOND_NAMESPACE = "second-metrics-cluster-test";
 
     /**

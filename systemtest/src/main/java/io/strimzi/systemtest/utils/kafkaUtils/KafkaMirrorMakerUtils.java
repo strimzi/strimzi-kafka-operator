@@ -37,6 +37,10 @@ public class KafkaMirrorMakerUtils {
         return waitForKafkaMirrorMakerStatus(kubeClient().getNamespace(), clusterName, Ready);
     }
 
+    public static boolean waitForKafkaMirrorMakerNotReady(final String namespaceName, String clusterName) {
+        return waitForKafkaMirrorMakerStatus(namespaceName, clusterName, NotReady);
+    }
+
     public static boolean waitForKafkaMirrorMakerNotReady(String clusterName) {
         return waitForKafkaMirrorMakerStatus(kubeClient().getNamespace(), clusterName, NotReady);
     }

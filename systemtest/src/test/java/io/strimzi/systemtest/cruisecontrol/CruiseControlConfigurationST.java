@@ -15,8 +15,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
@@ -43,7 +43,6 @@ import java.util.Objects;
 import java.util.Properties;
 
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -57,14 +56,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
-@IsolatedSuite
+@ParallelSuite
 public class CruiseControlConfigurationST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlConfigurationST.class);
 
+    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(CruiseControlConfigurationST.class.getSimpleName()).stream().findFirst().get();
+
     @ParallelNamespaceTest
     void testCapacityFile(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
@@ -98,7 +99,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testDeployAndUnDeployCruiseControl(ExtensionContext extensionContext) throws IOException {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
@@ -142,7 +143,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigurationDiskChangeDoNotTriggersRollingUpdateOfKafkaPods(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
@@ -180,7 +181,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigurationReflection(ExtensionContext extensionContext) throws IOException {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
@@ -234,7 +235,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigurationFileIsCreated(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
@@ -248,7 +249,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigurationPerformanceOptions(ExtensionContext extensionContext) throws IOException {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 

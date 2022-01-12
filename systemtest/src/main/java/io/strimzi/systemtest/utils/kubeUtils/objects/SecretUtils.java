@@ -50,16 +50,20 @@ public class SecretUtils {
         LOGGER.info("Secret {} created", secretName);
     }
 
-    public static void waitForSecretDeletion(String secretName) {
-        waitForSecretDeletion(secretName, () -> { });
-    }
-
-    public static void waitForSecretDeletion(String secretName, Runnable onTimeout) {
+    public static void waitForSecretDeletion(final String namespaceName, String secretName, Runnable onTimeout) {
         LOGGER.info("Waiting for Secret deletion {}", secretName);
         TestUtils.waitFor("Expected secret " + secretName + " deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
-            () -> kubeClient().getSecret(secretName) == null,
+            () -> kubeClient(namespaceName).getSecret(namespaceName, secretName) == null,
             onTimeout);
         LOGGER.info("Secret {} deleted", secretName);
+    }
+
+    public static void waitForSecretDeletion(String secretName) {
+        waitForSecretDeletion(kubeClient().getNamespace(), secretName, () -> { });
+    }
+
+    public static void waitForSecretDeletion(final String namespaceName, String secretName) {
+        waitForSecretDeletion(namespaceName, secretName, () -> { });
     }
 
     public static void createSecret(String namespaceName, String secretName, String dataKey, String dataValue) {

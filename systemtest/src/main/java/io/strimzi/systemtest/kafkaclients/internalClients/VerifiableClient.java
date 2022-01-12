@@ -111,6 +111,7 @@ public class VerifiableClient {
         this.topicName = verifiableClientBuilder.topicName;
         this.maxMessages = verifiableClientBuilder.maxMessages;
         this.kafkaUsername = verifiableClientBuilder.kafkaUsername;
+        this.consumerInstanceId = verifiableClientBuilder.consumerInstanceId;
 
         this.setAllowedArguments(this.clientType);
         this.clientArgumentMap = new ClientArgumentMap();

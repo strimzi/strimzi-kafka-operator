@@ -57,11 +57,11 @@ public class KafkaUserUtils {
         waitForKafkaUserCreation(kubeClient().getNamespace(), userName);
     }
 
-    public static void waitForKafkaUserDeletion(String userName) {
+    public static void waitForKafkaUserDeletion(final String namespaceName, String userName) {
         LOGGER.info("Waiting for KafkaUser deletion {}", userName);
         TestUtils.waitFor("KafkaUser deletion " + userName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
-                if (KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get() == null) {
+                if (KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(userName).get() == null) {
                     return true;
                 } else {
                     LOGGER.warn("KafkaUser {} is not deleted yet! Triggering force delete by cmd client!", userName);
@@ -69,9 +69,13 @@ public class KafkaUserUtils {
                     return false;
                 }
             },
-            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(kubeClient().getNamespace()).withName(userName).get())
+            () -> LOGGER.info(KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).withName(userName).get())
         );
         LOGGER.info("KafkaUser {} deleted", userName);
+    }
+
+    public static void waitForKafkaUserDeletion(String userName) {
+        waitForKafkaUserDeletion(kubeClient().getNamespace(), userName);
     }
 
     public static void waitForKafkaUserIncreaseObserverGeneration(String namespaceName, long observation, String userName) {

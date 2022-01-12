@@ -48,13 +48,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class HttpBridgeScramShaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
     private final String httpBridgeScramShaClusterName = "http-bridge-scram-sha-cluster-name";
-    private static final String NAMESPACE = Constants.BRIDGE_SCRAM_SHA_NAMESPACE;
+
+    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(HttpBridgeScramShaST.class.getSimpleName()).stream().findFirst().get();
+    private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
+    private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
     private String kafkaClientsPodName;
     private KafkaBridgeExampleClients kafkaBridgeClientJob;
-
-    private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
-    private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
     @ParallelTest
     void testSendSimpleMessageTlsScramSha(ExtensionContext extensionContext) {
@@ -64,20 +64,20 @@ class HttpBridgeScramShaST extends AbstractST {
         // Create topic
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, topicName)
             .editMetadata()
-                .withNamespace(NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .build());
         resourceManager.createResource(extensionContext, kafkaBridgeClientJb.producerStrimziBridge()
             .editMetadata()
-                .withNamespace(NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .build());
 
-        ClientUtils.waitForClientSuccess(producerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT);
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(namespace)
             .withClusterName(httpBridgeScramShaClusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
@@ -96,18 +96,18 @@ class HttpBridgeScramShaST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, TOPIC_NAME)
             .editMetadata()
-                .withNamespace(NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata().build());
         resourceManager.createResource(extensionContext, kafkaBridgeClientJb.consumerStrimziBridge()
             .editMetadata()
-                .withNamespace(NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .build());
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
             .withTopicName(topicName)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(namespace)
             .withClusterName(httpBridgeScramShaClusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(USER_NAME)
@@ -118,7 +118,7 @@ class HttpBridgeScramShaST extends AbstractST {
 
         assertThat(internalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
-        ClientUtils.waitForClientSuccess(consumerName, NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT);
     }
 
     @BeforeAll
@@ -128,7 +128,7 @@ class HttpBridgeScramShaST extends AbstractST {
         // Deploy kafka
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeScramShaClusterName, 1, 1)
             .editMetadata()
-                .withNamespace(NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -143,19 +143,19 @@ class HttpBridgeScramShaST extends AbstractST {
                 .endKafka()
             .endSpec().build());
 
-        String kafkaClientsName = NAMESPACE + "-shared-" + Constants.KAFKA_CLIENTS;
+        String kafkaClientsName = namespace + "-shared-" + Constants.KAFKA_CLIENTS;
 
         // Create Kafka user
         KafkaUser scramShaUser = KafkaUserTemplates.scramShaUser(httpBridgeScramShaClusterName, USER_NAME)
             .editMetadata()
-                .withNamespace(NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .build();
 
         resourceManager.createResource(extensionContext, scramShaUser);
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(NAMESPACE, true, kafkaClientsName, scramShaUser).build());
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespace, true, kafkaClientsName, scramShaUser).build());
 
-        kafkaClientsPodName = kubeClient(NAMESPACE).listPodsByPrefixInName(NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
+        kafkaClientsPodName = kubeClient(namespace).listPodsByPrefixInName(namespace, kafkaClientsName).get(0).getMetadata().getName();
 
         // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
         PasswordSecretSource passwordSecret = new PasswordSecretSource();
@@ -171,7 +171,7 @@ class HttpBridgeScramShaST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(httpBridgeScramShaClusterName,
             KafkaResources.tlsBootstrapAddress(httpBridgeScramShaClusterName), 1)
             .editMetadata()
-                .withNamespace(NAMESPACE)
+                .withNamespace(namespace)
             .endMetadata()
             .editSpec()
                     .withNewConsumer()
@@ -193,9 +193,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
-            .withDelayMs(1000)
-            .withPollInterval(1000)
-            .withNamespaceName(NAMESPACE)
+            .withNamespaceName(namespace)
             .build();
     }
 }

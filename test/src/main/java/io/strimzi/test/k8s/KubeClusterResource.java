@@ -213,11 +213,11 @@ public class KubeClusterResource {
         kubeClient().deleteNamespace(namespaceName);
         cmdKubeClient().waitForResourceDeletion("Namespace", namespaceName);
         if (collectorElement != null) {
-            deleteNamespaceFromSet(collectorElement, testNamespace);
+            deleteNamespaceFromSet(collectorElement, namespaceName);
         }
     }
 
-    public void deleteAllSetNamespaces() {
+    public synchronized void deleteAllSetNamespaces() {
         LOGGER.info(String.join("", Collections.nCopies(76, "=")));
         LOGGER.info("Deleting these namespaces:\n{}", MAP_WITH_SUITE_NAMESPACES::toString);
         LOGGER.info(String.join("", Collections.nCopies(76, "=")));
@@ -231,6 +231,8 @@ public class KubeClusterResource {
                         client.getClient().namespaces().withName(namespaceName).waitUntilCondition(
                             namespace -> client.getClient().namespaces().withName(namespaceName).get() == null, 4, TimeUnit.MINUTES);
                     }));
+
+        MAP_WITH_SUITE_NAMESPACES.clear();
     }
 
     /**

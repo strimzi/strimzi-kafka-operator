@@ -443,7 +443,7 @@
                 <skipTests>false</skipTests>
                 <groups>upgrade</groups>
                 <it.test>
-                    !KafkaUpgradeDowngradeST
+                    !KafkaUpgradeDowngradeIsolatedST
                 </it.test>
             </properties>
         </profile>
@@ -454,7 +454,7 @@
                 <skipTests>false</skipTests>
                 <groups>upgrade</groups>
                 <it.test>
-                    KafkaUpgradeDowngradeST
+                    KafkaUpgradeDowngradeIsolatedST
                 </it.test>
             </properties>
         </profile>

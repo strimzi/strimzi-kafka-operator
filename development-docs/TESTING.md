@@ -64,6 +64,8 @@ Notable classes:
 * **BeforeAllOnce** - custom extension which executes code only once before all tests are started and after all tests finished.
 * **storage/TestStorage** - generate and stores values in the specific `ExtensionContext`. This ensures that if one want to retrieve data from
   `TestStorage` it can be done via `ExtensionContext` (with help of ConcurrentHashMap) inside `AbstractST`.
+* **parallel/TestSuiteNamespaceManager** - This class contains additional namespaces will are needed for test suite before the execution of `@BeforeAll`. 
+  By this we can easily prepare the namespace in the `AbstractST` class and not in the children.
 
 ## Test Phases
 
@@ -82,7 +84,7 @@ void setupOnce(ExtensionContext extensionContext) {
     sharedExtensionContext = extensionContext.getRoot();
     
     // setup cluster operator before all suites only once
-    install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+    clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
         .withExtensionContext(sharedExtensionContext)
         .withNamespace(Constants.INFRA_NAMESPACE)
         .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
@@ -104,8 +106,8 @@ Here is an example how to make change of Cluster Operator configuration:
 ```java
 @BeforeAll
 void setup(ExtensionContext extensionContext){
-    install.unInstall(); // un-install current Cluster Operator
-    install = new SetupClusterOperator.SetupClusterOperatorBuilder()
+    clusterOperator.unInstall(); // un-install current Cluster Operator
+    clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
         // build your new configuration using chain (fluent) methods
         .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
         .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
@@ -194,6 +196,12 @@ related to `myNewTestName` test.
 ```
     ResourceManager.getInstance().deleteResources(extensionContext);
 ```
+
+## Adding brand-new test suite 
+
+When you need to create a new test suite, firstly, make sure that it has the suffix `ST` (i.e., KafkaST, ConnectBuilderST).
+Secondly, if that certain test suite must run in isolation (it needs its own Cluster Operator configuration, which differs from the default one
+or other possible case), you must also add `Isolated` before `ST` (i.e., `ListenersIsolatedST`, `JmxIsolatedST`).
 
 ## Parallel execution of tests
 
