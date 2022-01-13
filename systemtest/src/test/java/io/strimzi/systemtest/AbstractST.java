@@ -28,7 +28,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.interfaces.TestSeparator;
 import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -82,7 +81,6 @@ public abstract class AbstractST implements TestSeparator {
     protected SetupClusterOperator clusterOperator;
     protected OlmResource olmResource;
     protected KubeClusterResource cluster;
-    protected static TimeMeasuringSystem timeMeasuringSystem = TimeMeasuringSystem.getInstance();
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
 
     // {thread-safe} this lock ensures that no race-condition happen in @BeforeAll part

@@ -38,7 +38,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.timemeasuring.Operation;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -146,8 +145,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
         StatefulSet kafkaSts = kubeClient(namespaceName).getStatefulSet(namespaceName, kafkaName);
         if (kafkaSts != null) {
             // rolling update for kafka
-            String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
-
             // set annotation to trigger Kafka rolling update
             LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
             kubeClient(namespaceName).statefulSet(kafkaName).withPropagationPolicy(DeletionPropagation.ORPHAN).edit(sts -> new StatefulSetBuilder(sts)
@@ -176,8 +173,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
         StatefulSet zooSts = kubeClient(namespaceName).getStatefulSet(namespaceName, zkName);
         if (zooSts != null) {
             // rolling update for zookeeper
-            String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
-
             // set annotation to trigger Zookeeper rolling update
             LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
             kubeClient(namespaceName).statefulSet(zkName).withPropagationPolicy(DeletionPropagation.ORPHAN).edit(sts -> new StatefulSetBuilder(sts)
@@ -426,7 +421,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // Add Jbod volume to Kafka => triggers RU
         LOGGER.info("Add JBOD volume to the Kafka cluster {}", kafkaName);
 
-        timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
             storage.getVolumes().add(vol1);
@@ -438,7 +432,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // Remove Jbod volume to Kafka => triggers RU
         LOGGER.info("Remove JBOD volume to the Kafka cluster {}", kafkaName);
 
-        timeMeasuringSystem.startTimeMeasuring(Operation.ROLLING_UPDATE, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
             storage.getVolumes().remove(vol1);
