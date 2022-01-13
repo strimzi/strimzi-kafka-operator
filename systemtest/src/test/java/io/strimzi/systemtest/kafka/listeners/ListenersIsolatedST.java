@@ -448,7 +448,7 @@ public class ListenersIsolatedST extends AbstractST {
                 List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).collect(Collectors.toList());
                 Integer nodePort = kubeClient(namespaceName).getService(namespaceName, KafkaResources.externalBootstrapServiceName(clusterName)).getSpec().getPorts().get(0).getNodePort();
 
-                List<String> nodeIps = kubeClient(namespaceName).listPods(kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName)).getMetadata().getLabels())
+                List<String> nodeIps = kubeClient(namespaceName).listPods(KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName)))
                         .stream().map(pods -> pods.getStatus().getHostIP()).distinct().collect(Collectors.toList());
                 nodeIps.sort(Comparator.comparing(String::toString));
 

@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
@@ -65,6 +66,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
@@ -78,7 +80,6 @@ public class KafkaRollerIsolatedST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final String kafkaStsName = KafkaResources.kafkaStatefulSetName(clusterName);
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         Instant startTime = Instant.now();
@@ -94,10 +95,15 @@ public class KafkaRollerIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
+        StatefulSet kafkaSts = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(KafkaResources.kafkaStatefulSetName(clusterName)));
+        assumeTrue(kafkaSts != null);
+
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", clusterName);
-        final int initialReplicas = kubeClient(namespaceName).getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).getStatus().getReplicas();
+        final int initialReplicas = kubeClient(namespaceName).listPods(kafkaSelector).size();
         assertEquals(3, initialReplicas);
 
         // Now that KafkaStreamsTopicStore topic is set on the first 3 brokers, lets spin-up another one.
@@ -147,6 +153,11 @@ public class KafkaRollerIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 1, 1).build());
+
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
+        StatefulSet kafkaSts = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(kafkaName));
+        assumeTrue(kafkaSts != null);
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
@@ -200,11 +211,11 @@ public class KafkaRollerIsolatedST extends AbstractST {
     void testKafkaPodImagePullBackOff(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
 
-        String kafkaImage = kubeClient(namespaceName).getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName))
-            .getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
+        String kafkaImage = kubeClient(namespaceName).listPods(kafkaSelector).get(0).getSpec().getContainers().get(0).getImage();
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             kafka.getSpec().getKafka().setImage("quay.io/strimzi/kafka:not-existent-tag");
@@ -239,6 +250,11 @@ public class KafkaRollerIsolatedST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build());
+
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/6203
+        StatefulSet kafkaSts = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName));
+        assumeTrue(kafkaSts != null);
 
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("123456"));
@@ -303,6 +319,11 @@ public class KafkaRollerIsolatedST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build());
+
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/6203
+        StatefulSet kafkaSts = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName));
+        assumeTrue(kafkaSts != null);
 
         // pods are stable in the Pending state
         PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3);

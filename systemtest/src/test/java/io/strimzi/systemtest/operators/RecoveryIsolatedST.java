@@ -252,6 +252,11 @@ class RecoveryIsolatedST extends AbstractST {
         PodUtils.waitForPendingPod(kafkaSsName);
         PodUtils.verifyThatPendingPodsAreStable(kafkaSsName);
 
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/6203
+        StatefulSet kafkaSts = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(sharedClusterName));
+        assumeTrue(kafkaSts != null);
+
         requests.put("memory", new Quantity("512Mi"));
         resourceReq.setRequests(requests);
 

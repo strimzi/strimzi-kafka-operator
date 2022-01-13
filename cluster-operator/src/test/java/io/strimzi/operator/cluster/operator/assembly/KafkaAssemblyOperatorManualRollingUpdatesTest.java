@@ -127,14 +127,11 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         if (useStrimziPodSets) {
             CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
             when(mockPodSetOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, null)));
-
-            // This should be removed once StrimziPodSets support Kafka as well and replaced with mocked StrimziPodSet above
-            StatefulSetOperator mockStsOps = supplier.stsOperations;
-            when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
+            when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSet(kafka.getSpec().getKafka().getReplicas(), false, null, null, null)));
         } else {
             StatefulSetOperator mockStsOps = supplier.stsOperations;
             when(mockStsOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generateStatefulSet(false, null, null)));
-            when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
+            when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
         }
 
         PodOperator mockPodOps = supplier.podOperations;
@@ -220,13 +217,10 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 zkPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
                 return Future.succeededFuture(zkPodSet);
             });
-
-            // This should be removed once StrimziPodSets support Kafka as well and replaced with mocked StrimziPodSet above
-            StatefulSetOperator mockStsOps = supplier.stsOperations;
-            when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenAnswer(i -> {
-                StatefulSet sts = kafkaCluster.generateStatefulSet(false, null, null);
-                sts.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
-                return Future.succeededFuture(sts);
+            when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getName()))).thenAnswer(i -> {
+                StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(kafka.getSpec().getKafka().getReplicas(), false, null, null, null);
+                kafkaPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
+                return Future.succeededFuture(kafkaPodSet);
             });
         } else {
             StatefulSetOperator mockStsOps = supplier.stsOperations;
@@ -236,7 +230,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 return Future.succeededFuture(sts);
             });
             when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenAnswer(i -> {
-                StatefulSet sts = kafkaCluster.generateStatefulSet(false, null, null);
+                StatefulSet sts = kafkaCluster.generateStatefulSet(false, null, null, null);
                 sts.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
                 return Future.succeededFuture(sts);
             });
@@ -328,14 +322,11 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         if (useStrimziPodSets) {
             CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
             when(mockPodSetOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, null)));
-
-            // This should be removed once StrimziPodSets support Kafka as well and replaced with mocked StrimziPodSet above
-            StatefulSetOperator mockStsOps = supplier.stsOperations;
-            when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
+            when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSet(kafka.getSpec().getKafka().getReplicas(), false, null, null, null)));
         } else {
             StatefulSetOperator mockStsOps = supplier.stsOperations;
             when(mockStsOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generateStatefulSet(false, null, null)));
-            when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
+            when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
         }
 
         PodOperator mockPodOps = supplier.podOperations;
@@ -443,16 +434,13 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             when(mockPodSetOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, null)));
             when(mockPodSetOps.deleteAsync(any(), any(), eq(zkCluster.getName()), anyBoolean())).thenReturn(Future.succeededFuture());
             when(mockPodSetOps.reconcile(any(), any(), eq(zkCluster.getName()), any())).thenReturn(Future.succeededFuture());
-
-            // This should be removed once StrimziPodSets support Kafka as well and replaced with mocked StrimziPodSet above
-            StatefulSetOperator mockStsOps = supplier.stsOperations;
-            when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
-            when(mockStsOps.deleteAsync(any(), any(), eq(kafkaCluster.getName()), anyBoolean())).thenReturn(Future.succeededFuture());
-            when(mockStsOps.reconcile(any(), any(), eq(kafkaCluster.getName()), any())).thenReturn(Future.succeededFuture());
+            when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSet(kafka.getSpec().getKafka().getReplicas(), false, null, null, null)));
+            when(mockPodSetOps.deleteAsync(any(), any(), eq(kafkaCluster.getName()), anyBoolean())).thenReturn(Future.succeededFuture());
+            when(mockPodSetOps.reconcile(any(), any(), eq(kafkaCluster.getName()), any())).thenReturn(Future.succeededFuture());
         } else {
             StatefulSetOperator mockStsOps = supplier.stsOperations;
             when(mockStsOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generateStatefulSet(false, null, null)));
-            when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null)));
+            when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
             when(mockStsOps.deleteAsync(any(), any(), eq(zkCluster.getName()), anyBoolean())).thenReturn(Future.succeededFuture());
             when(mockStsOps.deleteAsync(any(), any(), eq(kafkaCluster.getName()), anyBoolean())).thenReturn(Future.succeededFuture());
             when(mockStsOps.reconcile(any(), any(), eq(zkCluster.getName()), any())).thenReturn(Future.succeededFuture());
@@ -565,18 +553,21 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 super(reconciliation, kafkaAssembly);
             }
 
+            @Override
             Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart) {
                 maybeRollZooKeeperInvocations++;
                 zooPodNeedsRestart = podNeedsRestart;
                 return Future.succeededFuture();
             }
 
-            Future<Void> maybeRollKafka(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
+            @Override
+            Future<Void> maybeRollKafka(int replicas, Function<Pod, List<String>> podNeedsRestart) {
                 maybeRollKafkaInvocations++;
                 kafkaPodNeedsRestart = podNeedsRestart;
                 return Future.succeededFuture();
             }
 
+            @Override
             Future<Void> cleanPodAndPvc(String podName, List<PersistentVolumeClaim> createPvcs, List<PersistentVolumeClaim> deletePvcs) {
                 cleanedPodsCount++;
                 cleanedPods.add(podName);

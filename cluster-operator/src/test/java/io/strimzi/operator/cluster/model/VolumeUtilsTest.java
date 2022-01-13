@@ -6,12 +6,17 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
+import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
 import io.fabric8.kubernetes.api.model.Volume;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -112,5 +117,71 @@ public class VolumeUtilsTest {
         assertThat(volumeFromPvc.getName(), is("my-volume"));
         assertThat(volumeFromPvc.getPersistentVolumeClaim(), is(notNullValue()));
         assertThat(volumeFromPvc.getPersistentVolumeClaim().getClaimName(), is("my-pvc"));
+    }
+
+    @ParallelTest
+    public void testPodVolumesWithJbod()    {
+        Storage storage = new JbodStorageBuilder().withVolumes(
+                        new PersistentClaimStorageBuilder()
+                                .withDeleteClaim(false)
+                                .withId(0)
+                                .withSize("20Gi")
+                                .build(),
+                        new PersistentClaimStorageBuilder()
+                                .withDeleteClaim(true)
+                                .withId(1)
+                                .withSize("10Gi")
+                                .build())
+                .build();
+
+        List<Volume> volumes = VolumeUtils.getPodDataVolumes("my-pod", storage, false);
+
+        assertThat(volumes.size(), is(2));
+        assertThat(volumes.get(0).getName(), is("data-0"));
+        assertThat(volumes.get(0).getPersistentVolumeClaim().getClaimName(), is("data-0-my-pod"));
+        assertThat(volumes.get(1).getName(), is("data-1"));
+        assertThat(volumes.get(1).getPersistentVolumeClaim().getClaimName(), is("data-1-my-pod"));
+    }
+
+    @ParallelTest
+    public void testPodVolumesPersistentClaimOnly()    {
+        Storage storage = new PersistentClaimStorageBuilder()
+                .withDeleteClaim(false)
+                .withSize("20Gi")
+                .build();
+
+        List<Volume> volumes = VolumeUtils.getPodDataVolumes("my-pod", storage, false);
+
+        assertThat(volumes.size(), is(1));
+        assertThat(volumes.get(0).getName(), is("data"));
+        assertThat(volumes.get(0).getPersistentVolumeClaim().getClaimName(), is("data-my-pod"));
+    }
+
+    @ParallelTest
+    public void testPodVolumesPersistentClaimOnlyWithId()    {
+        Storage storage = new PersistentClaimStorageBuilder()
+                                .withDeleteClaim(false)
+                                .withId(0)
+                                .withSize("20Gi")
+                                .build();
+
+        List<Volume> volumes = VolumeUtils.getPodDataVolumes("my-pod", storage, false);
+
+        assertThat(volumes.size(), is(1));
+        assertThat(volumes.get(0).getName(), is("data"));
+        assertThat(volumes.get(0).getPersistentVolumeClaim().getClaimName(), is("data-my-pod"));
+    }
+
+    @ParallelTest
+    public void testPodVolumesEphemeralOnly()    {
+        Storage storage = new EphemeralStorageBuilder()
+                .withId(0)
+                .build();
+
+        List<Volume> volumes = VolumeUtils.getPodDataVolumes("my-pod", storage, false);
+
+        assertThat(volumes.size(), is(1));
+        assertThat(volumes.get(0).getName(), is("data"));
+        assertThat(volumes.get(0).getEmptyDir(), is(notNullValue()));
     }
 }

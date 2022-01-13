@@ -39,7 +39,6 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
@@ -517,7 +516,7 @@ public class ZookeeperCluster extends AbstractModel {
         return createStatefulSet(
                 Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
                 Collections.emptyMap(),
-                getVolumes(isOpenShift),
+                getStsVolumes(isOpenShift),
                 getVolumeClaims(),
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
@@ -674,13 +673,16 @@ public class ZookeeperCluster extends AbstractModel {
         return portList;
     }
 
-    private List<Volume> getVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>(5);
-
-        if (storage instanceof EphemeralStorage) {
-            String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
-            volumeList.add(VolumeUtils.createEmptyDirVolume(VOLUME_NAME, sizeLimit, null));
-        }
+    /**
+     * Generates list of non-data volumes used by ZooKeeper Pods. This includes tmp volumes, mounted secrets and config
+     * maps.
+     *
+     * @param isOpenShift   Indicates whether we are on OpenShift or not
+     *
+     * @return              List of nondata volumes used by the ZooKeeper pods
+     */
+    private List<Volume> getNonDataVolumes(boolean isOpenShift) {
+        List<Volume> volumeList = new ArrayList<>(4);
 
         volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
@@ -690,11 +692,26 @@ public class ZookeeperCluster extends AbstractModel {
         return volumeList;
     }
 
-    // StatefulSet automatically adds the PVCs from PVC template to volumes. For pods we need to add them in the operator.
+    /**
+     * Generates a list of volumes used by StatefulSet. For StatefulSet, it needs to include only ephemeral data
+     * volumes. Persistent claim volumes are generated directly byStatfulSet.
+     *
+     * @param isOpenShift   Flag whether we are on OpenShift or not
+     *
+     * @return              List of volumes to be included in the StatfulSet pod template
+     */
+    private List<Volume> getStsVolumes(boolean isOpenShift) {
+        List<Volume> volumeList = new ArrayList<>(5);
+
+        volumeList.addAll(VolumeUtils.getDataVolumes(storage));
+        volumeList.addAll(getNonDataVolumes(isOpenShift));
+
+        return volumeList;
+    }
 
     /**
-     * StatefulSets automatically add the PVCs they generate to the pod template as volumes. For StrimziPodSet, we need
-     * to generate these on our own using this method.
+     * Generates a list of volumes used by PodSets. For StrimziPodSet, it needs to include also all persistent claim
+     * volumes which StatefulSet would generate on its own.
      *
      * @param podName       Name of the pod used to name the volumes
      * @param isOpenShift   Flag whether we are on OpenShift or not
@@ -702,17 +719,12 @@ public class ZookeeperCluster extends AbstractModel {
      * @return              List of volumes to be included in the StrimziPodSet pod
      */
     private List<Volume> getPodVolumes(String podName, boolean isOpenShift) {
-        if (storage instanceof PersistentClaimStorage) {
-            // Persistent Storage needs to be added
-            List<Volume> volumeList = new ArrayList<>(6);
-            volumeList.add(VolumeUtils.createPvcVolume(VOLUME_NAME, "data-" + podName));
-            volumeList.addAll(getVolumes(isOpenShift));
+        List<Volume> volumeList = new ArrayList<>(5);
 
-            return volumeList;
-        } else {
-            // For Ephemeral storage, we do not need to add any additional volumes
-            return getVolumes(isOpenShift);
-        }
+        volumeList.addAll(VolumeUtils.getPodDataVolumes(podName, storage, false));
+        volumeList.addAll(getNonDataVolumes(isOpenShift));
+
+        return volumeList;
     }
 
     /* test */ List<PersistentVolumeClaim> getVolumeClaims() {

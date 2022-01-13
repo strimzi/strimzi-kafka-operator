@@ -1036,6 +1036,7 @@ class KafkaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @SuppressWarnings({"checkstyle:MethodLength"})
     @Tag(INTERNAL_CLIENTS_USED)
     void testLabelModificationDoesNotBreakCluster(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
@@ -1070,19 +1071,29 @@ class KafkaST extends AbstractST {
             .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
+        // We detect is PodSets are used based on the STS presence and if they are, we use this flag later to skip parts of the test
+        boolean statefulSets = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName)) != null;
+
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
-        LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StatefulSetUtils.waitForStatefulSetLabelsChange(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), labels);
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
+        if (statefulSets) {
+            LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
+            StatefulSetUtils.waitForStatefulSetLabelsChange(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), labels);
 
-        LOGGER.info("Getting labels from stateful set resource");
-        StatefulSet statefulSet = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
-        LOGGER.info("Verifying default labels in the Kafka CR");
+            LOGGER.info("Getting labels from stateful set resource");
+            StatefulSet statefulSet = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
 
-        assertThat("Label exists in stateful set with concrete value",
-                labelValues[0].equals(statefulSet.getSpec().getTemplate().getMetadata().getLabels().get(labelKeys[0])));
-        assertThat("Label exists in stateful set with concrete value",
-                labelValues[1].equals(statefulSet.getSpec().getTemplate().getMetadata().getLabels().get(labelKeys[1])));
+            LOGGER.info("Verifying default labels in the Kafka CR");
+
+            assertThat("Label exists in stateful set with concrete value",
+                    labelValues[0].equals(statefulSet.getSpec().getTemplate().getMetadata().getLabels().get(labelKeys[0])));
+            assertThat("Label exists in stateful set with concrete value",
+                    labelValues[1].equals(statefulSet.getSpec().getTemplate().getMetadata().getLabels().get(labelKeys[1])));
+        }
 
         labelValues[0] = "new-name-of-the-label-1";
         labelValues[1] = "new-name-of-the-label-2";
@@ -1118,13 +1129,17 @@ class KafkaST extends AbstractST {
 
         verifyPresentLabels(labels, configMap);
 
-        LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StatefulSetUtils.waitForStatefulSetLabelsChange(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), labels);
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
+        if (statefulSets) {
+            LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
+            StatefulSetUtils.waitForStatefulSetLabelsChange(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), labels);
 
-        LOGGER.info("Verifying kafka labels via stateful set");
-        statefulSet = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+            LOGGER.info("Verifying kafka labels via stateful set");
+            StatefulSet statefulSet = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
 
-        verifyPresentLabels(labels, statefulSet);
+            verifyPresentLabels(labels, statefulSet);
+        }
 
         RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
@@ -1162,14 +1177,18 @@ class KafkaST extends AbstractST {
 
         verifyNullLabels(labelKeys, configMap);
 
-        LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        String statefulSetName = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName)).getMetadata().getName();
-        StatefulSetUtils.waitForStatefulSetLabelsDeletion(namespaceName, statefulSetName, labelKeys[0], labelKeys[1], labelKeys[2]);
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
+        if (statefulSets) {
+            LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
+            String statefulSetName = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName)).getMetadata().getName();
+            StatefulSetUtils.waitForStatefulSetLabelsDeletion(namespaceName, statefulSetName, labelKeys[0], labelKeys[1], labelKeys[2]);
 
-        statefulSet = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+            StatefulSet statefulSet = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
 
-        LOGGER.info("Verifying kafka labels via stateful set");
-        verifyNullLabels(labelKeys, statefulSet);
+            LOGGER.info("Verifying kafka labels via stateful set");
+            verifyNullLabels(labelKeys, statefulSet);
+        }
 
         RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
 
@@ -1497,18 +1516,22 @@ class KafkaST extends AbstractST {
                     .endTemplate()
                     .withNewPersistentClaimStorage()
                         .withDeleteClaim(false)
-                        .withId(0)
                         .withSize("3Gi")
                     .endPersistentClaimStorage()
                 .endZookeeper()
             .endSpec()
             .build());
 
-        LOGGER.info("Check if Kubernetes labels are applied");
-        Map<String, String> actualStatefulSetLabels = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName)).getMetadata().getLabels();
-        assertThat(actualStatefulSetLabels.get("app.kubernetes.io/part-of"), is("some-app"));
-        assertThat(actualStatefulSetLabels.get("app.kubernetes.io/managed-by"), is("some-app"));
-        LOGGER.info("Kubernetes labels are correctly set and present");
+        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
+        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
+        StatefulSet sts = kubeClient(namespaceName).getStatefulSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        if (sts != null) {
+            LOGGER.info("Check if Kubernetes labels are applied");
+            Map<String, String> actualStatefulSetLabels = sts.getMetadata().getLabels();
+            assertThat(actualStatefulSetLabels.get("app.kubernetes.io/part-of"), is("some-app"));
+            assertThat(actualStatefulSetLabels.get("app.kubernetes.io/managed-by"), is("some-app"));
+            LOGGER.info("Kubernetes labels are correctly set and present");
+        }
 
         List<PersistentVolumeClaim> pvcs = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream().filter(
             persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName)).collect(Collectors.toList());
