@@ -57,13 +57,14 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
-import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -661,9 +662,11 @@ class KafkaST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
+        Instant startTime = Instant.now();
+
+
         LOGGER.info("Deploying Kafka cluster {}", clusterName);
 
-        String operationId =  timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         String eoPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName))
                 .get(0).getMetadata().getName();
@@ -701,8 +704,9 @@ class KafkaST extends AbstractST {
             });
         });
 
-        timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName(), operationId));
+        Instant endTime = Instant.now();
+        long duration = Duration.between(startTime, endTime).toSeconds();
+        assertNoCoErrorsLogged(duration);
     }
 
     @ParallelNamespaceTest
@@ -710,7 +714,7 @@ class KafkaST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
+        Instant startTime = Instant.now();
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
         String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
@@ -739,8 +743,9 @@ class KafkaST extends AbstractST {
             });
         });
 
-        timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName(), operationId));
+        Instant endTime = Instant.now();
+        long duration = Duration.between(startTime, endTime).toSeconds();
+        assertNoCoErrorsLogged(duration);
     }
 
     @ParallelNamespaceTest
@@ -750,7 +755,7 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Deploying Kafka cluster without TO in EO");
 
-        String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
+        Instant startTime = Instant.now();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -761,8 +766,9 @@ class KafkaST extends AbstractST {
             .endSpec()
             .build());
 
-        timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName(), operationId));
+        Instant endTime = Instant.now();
+        long duration = Duration.between(startTime, endTime).toSeconds();
+        assertNoCoErrorsLogged(duration);
 
         //Checking that TO was not deployed
         kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
@@ -778,7 +784,7 @@ class KafkaST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         LOGGER.info("Deploying Kafka cluster without UO in EO");
-        String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
+        Instant startTime = Instant.now();
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .withNewEntityOperator()
@@ -788,8 +794,9 @@ class KafkaST extends AbstractST {
             .endSpec()
             .build());
 
-        timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName(), operationId));
+        Instant endTime = Instant.now();
+        long duration = Duration.between(startTime, endTime).toSeconds();
+        assertNoCoErrorsLogged(duration);
 
         //Checking that UO was not deployed
         kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
@@ -804,7 +811,7 @@ class KafkaST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         LOGGER.info("Deploying Kafka cluster without UO and TO in EO");
-        String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_DEPLOYMENT, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
+        Instant startTime = Instant.now();
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
                 .withNewEntityOperator()
@@ -812,8 +819,9 @@ class KafkaST extends AbstractST {
             .endSpec()
             .build());
 
-        timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
-        assertNoCoErrorsLogged(timeMeasuringSystem.getDurationInSeconds(extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName(), operationId));
+        Instant endTime = Instant.now();
+        long duration = Duration.between(startTime, endTime).toSeconds();
+        assertNoCoErrorsLogged(duration);
 
         //Checking that EO was not deployed
         assertThat("EO should not be deployed", kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(clusterName)).size(), is(0));

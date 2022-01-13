@@ -37,7 +37,6 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
@@ -85,8 +84,6 @@ public class MirrorMakerIsolatedST extends AbstractST {
 
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
-
-        String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.MM_DEPLOYMENT, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
         String topicSourceName = TOPIC_NAME + "-source" + "-" + rng.nextInt(Integer.MAX_VALUE);
 
@@ -153,8 +150,6 @@ public class MirrorMakerIsolatedST extends AbstractST {
                 "400M", "2", "300M", "1");
         assertExpectedJavaOpts(namespaceName, podName, KafkaMirrorMakerResources.deploymentName(clusterName),
                 "-Xmx200m", "-Xms200m", "-XX:+UseG1GC");
-
-        timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withTopicName(topicSourceName)

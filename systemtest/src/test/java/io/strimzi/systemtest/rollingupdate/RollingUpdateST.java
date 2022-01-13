@@ -41,7 +41,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
-import io.strimzi.test.timemeasuring.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -267,8 +266,6 @@ class RollingUpdateST extends AbstractST {
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
-        String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
-
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
@@ -329,9 +326,6 @@ class RollingUpdateST extends AbstractST {
 
         internalKafkaClient.consumesTlsMessagesUntilOperationIsSuccessful(MESSAGE_COUNT);
 
-        //Test that CO doesn't have any exceptions in log
-        timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
-
         assertThat((int) kubeClient(namespaceName).listPersistentVolumeClaims().stream().filter(
             pvc -> pvc.getMetadata().getName().contains(KafkaResources.kafkaStatefulSetName(clusterName))).count(), is(scaleTo));
 
@@ -349,14 +343,11 @@ class RollingUpdateST extends AbstractST {
 
         // scale down
         LOGGER.info("Scale down Kafka to {}", initialReplicas);
-        operationId = timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_DOWN, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(initialReplicas), namespaceName);
 
         RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, initialReplicas, kafkaPods);
 
         LOGGER.info("Kafka scale down to {} finished", initialReplicas);
-        //Test that CO doesn't have any exceptions in log
-        timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
@@ -389,8 +380,6 @@ class RollingUpdateST extends AbstractST {
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
-
-        String operationId = timeMeasuringSystem.startTimeMeasuring(Operation.CLUSTER_RECOVERY, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
@@ -437,9 +426,6 @@ class RollingUpdateST extends AbstractST {
         // check the new node is either in leader or follower state
         KafkaUtils.waitForZkMntr(namespaceName, clusterName, ZK_SERVER_STATE, 0, 1, 2, 3, 4, 5, 6);
 
-        //Test that CO doesn't have any exceptions in log
-        timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
-
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
             .build();
@@ -462,7 +448,6 @@ class RollingUpdateST extends AbstractST {
         // Get zk-3 uid before deletion
         String uid = kubeClient(namespaceName).getPodUid(newZkPodNames.get(3));
 
-        operationId = timeMeasuringSystem.startTimeMeasuring(Operation.SCALE_DOWN, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getZookeeper().setReplicas(initialZkReplicas), namespaceName);
 
         RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, zkSelector, initialZkReplicas);
@@ -489,8 +474,6 @@ class RollingUpdateST extends AbstractST {
 
         //Test that the second pod has event 'Killing'
         assertThat(kubeClient(namespaceName).listEventsByResourceUid(uid), hasAllOfReasons(Killing));
-        // Stop measuring
-        timeMeasuringSystem.stopOperation(operationId, extensionContext.getRequiredTestClass().getName(), extensionContext.getDisplayName());
     }
 
     @ParallelNamespaceTest

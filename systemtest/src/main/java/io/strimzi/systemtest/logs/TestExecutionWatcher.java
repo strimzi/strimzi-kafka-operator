@@ -8,8 +8,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.parallel.SuiteThreadController;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.logs.CollectorElement;
-import io.strimzi.test.timemeasuring.Operation;
-import io.strimzi.test.timemeasuring.TimeMeasuringSystem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -86,11 +84,6 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
     }
 
     public synchronized static void collectLogs(CollectorElement collectorElement) throws IOException {
-        // Stop test execution time counter in case of failures
-        if (collectorElement.getTestMethodName() != null) {
-            TimeMeasuringSystem.getInstance().stopOperation(Operation.TEST_EXECUTION, collectorElement.getTestClassName(), collectorElement.getTestMethodName());
-        }
-
         final LogCollector logCollector = new LogCollector(collectorElement, kubeClient(), Environment.TEST_LOG_DIR);
         // collecting logs for all resources inside Kubernetes cluster
         logCollector.collect();
