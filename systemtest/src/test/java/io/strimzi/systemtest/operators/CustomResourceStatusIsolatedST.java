@@ -646,6 +646,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
             .anyMatch(condition -> condition.getReason().equals("InvalidRequestException")), is(true));
         assertThat(kafkaTopicStatus.getConditions().stream()
             .anyMatch(condition -> condition.getMessage().contains(String.format("KafkaTopic %s/%s has invalid spec.config: " +
-                    "min.insync.replicas has value '%s' which is not an int", INFRA_NAMESPACE, topicName, invalidValue))), is(true));
+                    "min.insync.replicas has value '%s' which is not an int", Constants.INFRA_NAMESPACE, topicName, invalidValue))), is(true));
     }
 }
