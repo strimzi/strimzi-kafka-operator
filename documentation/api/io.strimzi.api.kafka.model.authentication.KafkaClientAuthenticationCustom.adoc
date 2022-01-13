@@ -1,8 +1,8 @@
 To configure custom authentication, set the `type` property to `custom`.
 
-Custom authentication allows for any type of kafka supported authentication to be used.
+Custom authentication allows for any type of kafka-supported authentication to be used.
 
-.Example Custom authentication for a bespoke OAuth setup
+.Example custom OAuth authentication configuration
 [source,yaml,subs="attributes+"]
 ----
 spec:
@@ -29,42 +29,45 @@ spec:
             - name: example
 ----
 
-.Protocol Map
-The protocol map that is generated for Strimzi uses the above `sasl` and `tls` fields to determine which protocol to map to the listener.
+.Protocol map
+A protocol map is generated that uses the above `sasl` and `tls` fields to determine which protocol to map to the listener.
 
 * SASL = True, TLS = True -> SASL_SSL
 * SASL = False, TLS = True -> SSL
 * SASL = True, TLS = False -> SASL_PLAINTEXT
 * SASL = False, TLS = False -> PLAINTEXT
 
-.Listener Config
-All configuration listed under `listener-config` will be prefixed with `listener.name.<listener-name>-<port>`.
-Therefore, the above `sasl.enabled.mechanisms` becomes `listener.name.<listener-name>-<port>.sasl.enabled.mechanisms`.
+.`listener-config`
+All configuration listed under `listener-config` is prefixed with `listener.name._<listener_name>-<port>_`.
+For example, `sasl.enabled.mechanisms` becomes `listener.name._<listener_name>-<port>_.sasl.enabled.mechanisms`.
 
 .Secrets
-`Secrets` will be mounted to `/opt/kafka/custom-auth-secrets/custom-<listener-name>-<port>/<secret-name>` in the Kafka broker nodes' containers.
+`Secrets` are mounted to `/opt/kafka/custom-auth-secrets/custom-_<listener_name>-<port>_/_<secret_name>_` in the Kafka broker nodes' containers.
 
-For example, the mounted secret `example` in the above setup would be located at `/opt/kafka/custom-auth-secrets/custom-oauth-bespoke-9093/example`.
+For example, the mounted secret (`example`) in the example configuration would be located at `/opt/kafka/custom-auth-secrets/custom-oauth-bespoke-9093/example`.
 
 .Principal
-A custom principal builder can be set in the general Kafka cluster config.
+You can set a custom principal builder in the Kafka cluster config.
 
-However, please note while it is possible to set your own principal builder, there are some requirements:
+However, the principal builder is subject to the following requirements:
 
-. The specified principal builder class exists on the image.
-If you're using the open source Strimzi images, you'll need to rebuild your own with your desired classes.
-*Note --* It's worth opening a Github issue on this particular problem _before_ building your own, as one may already exist.
+. The specified principal builder class must exist on the image.
+If you're using the open source Strimzi images, you'll need to rebuild one with the required classes.
+TIP: _Before_ building your own, check if one already exists.
 . No other listener is using `oauth` type authentication.
-This is because the Oauth listener forcefully appends its own principlar builder to the kafka config.
+This is because an OAuth listener appends its own principle builder to the Kafka configuration.
 . The specified principal builder is compatible with Strimzi.
 
-Custom principal builders need to support peer certificates for authentication, as Strimzi uses this to manage the Kafka cluster.
-This is expected to be identical, or very similar to https://github.com/strimzi/strimzi-kafka-oauth/blob/main/oauth-server/src/main/java/io/strimzi/kafka/oauth/server/OAuthKafkaPrincipalBuilder.java[Strimzi's OAuth library].
-In particular, it leverages https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/common/security/authenticator/DefaultKafkaPrincipalBuilder.java#L73-L79[Kafka's default principal builder class], which allows the building of a principal based upon the name of the of peer certificate.
-Thus, it is expected that the custom principal builder provides a principal of type "user" with the name being that of the ssl peer certificate.
+Custom principal builders must support peer certificates for authentication, as Strimzi uses these to manage the Kafka cluster.
+ifdef::Downloading[]
+A custom OAuth principal builder might be identical or very similar to the Strimzi https://github.com/strimzi/strimzi-kafka-oauth/blob/main/oauth-server/src/main/java/io/strimzi/kafka/oauth/server/OAuthKafkaPrincipalBuilder.java[OAuth principal builder].
+endif::Downloading[]
+NOTE: https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/common/security/authenticator/DefaultKafkaPrincipalBuilder.java#L73-L79[Kafka's default principal builder class] supports the building of principals based on the names of peer certificates.
+The custom principal builder should provide a principal of type "user" using the name of the SSL peer certificate.
 
-An example of such a principal builder which satisfies Strimzi’s auth requirements:
+The following example shows a custom principal builder that satisfies the OAuth requirements of Strimzi.
 
+.Example principal builder for custom OAuth configuration
 [source,java,subs="attributes+"]
 ----
 public final class CustomKafkaPrincipalBuilder implements KafkaPrincipalBuilder {
