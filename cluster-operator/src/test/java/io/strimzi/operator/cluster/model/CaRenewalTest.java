@@ -56,6 +56,16 @@ public class CaRenewalTest {
                         "new-password" + index
                 );
             }
+
+            @Override
+            protected boolean isCaCertThumbprintChanged() {
+                return false;
+            }
+
+            @Override
+            protected String caCertThumbprintAnnotation() {
+                return null;
+            }
         };
 
         int replicas = 3;
@@ -112,6 +122,16 @@ public class CaRenewalTest {
                         ("new-keystore" + index).getBytes(),
                         "new-password" + index
                 );
+            }
+
+            @Override
+            protected boolean isCaCertThumbprintChanged() {
+                return false;
+            }
+
+            @Override
+            protected String caCertThumbprintAnnotation() {
+                return null;
             }
         };
 
@@ -199,6 +219,16 @@ public class CaRenewalTest {
                         "new-password" + index
                 );
             }
+
+            @Override
+            protected boolean isCaCertThumbprintChanged() {
+                return false;
+            }
+
+            @Override
+            protected String caCertThumbprintAnnotation() {
+                return null;
+            }
         };
 
         Secret initialSecret = new SecretBuilder()
@@ -284,6 +314,16 @@ public class CaRenewalTest {
                         ("new-keystore" + index).getBytes(),
                         "new-password" + index
                 );
+            }
+
+            @Override
+            protected boolean isCaCertThumbprintChanged() {
+                return false;
+            }
+
+            @Override
+            protected String caCertThumbprintAnnotation() {
+                return null;
             }
         };
 

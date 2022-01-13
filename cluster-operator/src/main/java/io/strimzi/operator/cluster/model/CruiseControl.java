@@ -692,7 +692,8 @@ public class CruiseControl extends AbstractModel {
         data.put(keyCertName + ".p12", cert.keyStoreAsBase64String());
         data.put(keyCertName + ".password", cert.storePasswordAsBase64String());
 
-        return createSecret(CruiseControl.secretName(cluster), data);
+        return createSecret(CruiseControl.secretName(cluster), data,
+                Collections.singletonMap(clusterCa.caCertThumbprintAnnotation(), clusterCa.currentCaCertThumbprint()));
     }
 
     /**

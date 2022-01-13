@@ -461,7 +461,7 @@ public class ZookeeperClusterTest {
         clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
 
         zc.generateCertificates(ka, clusterCa, true);
-        return zc.generateNodesSecret();
+        return zc.generateNodesSecret(clusterCa);
     }
 
     @ParallelTest

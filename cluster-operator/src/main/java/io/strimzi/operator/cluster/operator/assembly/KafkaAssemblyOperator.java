@@ -611,6 +611,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         Secret clusterCaKeySecret = null;
                         Secret clientsCaCertSecret = null;
                         Secret clientsCaKeySecret = null;
+                        Secret brokersSecret = null;
                         List<Secret> clusterSecrets = secretOperations.list(reconciliation.namespace(), selectorLabels);
                         for (Secret secret : clusterSecrets) {
                             String secretName = secret.getMetadata().getName();
@@ -622,6 +623,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clientsCaCertSecret = secret;
                             } else if (secretName.equals(clientsCaKeyName)) {
                                 clientsCaKeySecret = secret;
+                            } else if (secretName.equals(KafkaCluster.brokersSecretName(name))) {
+                                brokersSecret = secret;
                             }
                         }
                         OwnerReference ownerRef = new OwnerReferenceBuilder()
@@ -654,13 +657,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 ModelUtils.getCertificateValidity(clusterCaConfig),
                                 ModelUtils.getRenewalDays(clusterCaConfig),
                                 clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority(), clusterCaConfig != null ? clusterCaConfig.getCertificateExpirationPolicy() : null);
+                        this.clusterCa.initCaSecrets(clusterSecrets);
                         clusterCa.createRenewOrReplace(
                                 reconciliation.namespace(), reconciliation.name(), caLabels.toMap(),
                                 clusterCaCertLabels, clusterCaCertAnnotations,
                                 clusterCaConfig != null && !clusterCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
                                 isMaintenanceTimeWindowsSatisfied(dateSupplier));
-
-                        this.clusterCa.initCaSecrets(clusterSecrets);
 
                         CertificateAuthority clientsCaConfig = kafkaAssembly.getSpec().getClientsCa();
 
@@ -674,6 +676,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 ModelUtils.getCertificateValidity(clientsCaConfig),
                                 ModelUtils.getRenewalDays(clientsCaConfig),
                                 clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority(), clientsCaConfig != null ? clientsCaConfig.getCertificateExpirationPolicy() : null);
+                        this.clientsCa.initCaSecrets(brokersSecret);
                         clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
                                 caLabels.toMap(), emptyMap(), emptyMap(),
                                 clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
@@ -1357,7 +1360,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkNodesSecret() {
-            return updateCertificateSecretWithDiff(ZookeeperCluster.nodesSecretName(name), zkCluster.generateNodesSecret())
+            return updateCertificateSecretWithDiff(ZookeeperCluster.nodesSecretName(name), zkCluster.generateNodesSecret(clusterCa))
                     .map(changed -> {
                         existingZookeeperCertsChanged = changed;
                         return this;
@@ -2771,7 +2774,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaBrokersSecret() {
-            return updateCertificateSecretWithDiff(KafkaCluster.brokersSecretName(name), kafkaCluster.generateBrokersSecret())
+            return updateCertificateSecretWithDiff(KafkaCluster.brokersSecretName(name), kafkaCluster.generateBrokersSecret(clusterCa, clientsCa))
                     .map(changed -> {
                         existingKafkaCertsChanged = changed;
                         return this;

@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.KeyStoreException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -43,6 +44,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -95,6 +97,8 @@ public abstract class Ca {
     public static final String ANNO_STRIMZI_IO_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "ca-cert-generation";
     public static final String ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "cluster-ca-cert-generation";
     public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "clients-ca-cert-generation";
+    public static final String ANNO_STRIMZI_IO_CLUSTER_CA_THUMBPRINT = Annotations.STRIMZI_DOMAIN + "cluster-ca-thumbprint";
+    public static final String ANNO_STRIMZI_IO_CLIENTS_CA_THUMBPRINT = Annotations.STRIMZI_DOMAIN + "clients-ca-thumbprint";
     public static final int INIT_GENERATION = 0;
 
     private final PasswordGenerator passwordGenerator;
@@ -412,7 +416,7 @@ public abstract class Ca {
         for (int i = replicasInSecret; i < replicas; i++) {
             String podName = podNameFn.apply(i);
 
-            LOGGER.debugCr(reconciliation, "Certificate for {} to generate", podName);
+            LOGGER.debugCr(reconciliation, "Certificate for pod {} to generate", podName);
             CertAndKey k = generateSignedCert(subjectFn.apply(i),
                     brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
             certs.put(podName, k);
@@ -513,6 +517,7 @@ public abstract class Ca {
         if (!generateCa) {
             certData = caCertSecret != null ? caCertSecret.getData() : emptyMap();
             keyData = caKeySecret != null ? singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY)) : emptyMap();
+            renewalType = isCaCertThumbprintChanged() ? RenewalType.REPLACE_KEY : RenewalType.NOOP;
             caCertsRemoved = false;
         } else {
             this.renewalType = shouldCreateOrRenew(currentCert, namespace, clusterName, maintenanceWindowSatisfied);
@@ -724,6 +729,21 @@ public abstract class Ca {
     public byte[] currentCaKey() {
         Base64.Decoder decoder = Base64.getDecoder();
         return decoder.decode(caKeySecret().getData().get(CA_KEY));
+    }
+
+    /**
+     * @return The base64 encoded thumbprint of the current CA certificate.
+     */
+    public String currentCaCertThumbprint() {
+        try {
+            X509Certificate cert = Ca.x509Certificate(currentCaCertBytes());
+            byte[] signature = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
+            return Base64.getEncoder().encodeToString(signature);
+        } catch (CertificateException e) {
+            throw new RuntimeException("Failed to decode Cluster CA certificate", e);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Failed to get certificate signature of Cluster CA", e);
+        }
     }
 
     /**
@@ -1003,5 +1023,38 @@ public abstract class Ca {
         } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * @return the name of the annotation bringing the thumbprint of the specific CA certificate type (cluster or clients)
+     *         on the Secrets containing certificates signed by that CA (i.e ZooKeeper nodes, Kafka brokers, ...)
+     */
+    protected abstract String caCertThumbprintAnnotation();
+
+    /**
+     * @return if the current (cluster or clients) CA certificate thumbprint is changed compared to the the one
+     *         brought on Secrets containing certificates signed by that CA (i.e ZooKeeper nodes, Kafka brokers, ...)
+     */
+    protected abstract boolean isCaCertThumbprintChanged();
+
+    /**
+     * It checks if the current (cluster or clients) CA certificate thumbprint is changed compared to the the one
+     * brought by the corresponding annotation on the provided Secret (i.e ZooKeeper nodes, Kafka brokers, ...)
+     *
+     * @param secret Secret containing certificates signed by the current (clients or cluster) CA
+     * @return if the current (cluster or clients) CA certificate thumbprint is changed compared to the the one
+     *         brought by the corresponding annotation on the provided Secret
+     */
+    protected boolean isCaCertThumbprintChanged(Secret secret) {
+        if (secret != null) {
+            String caCertThumbprintAnno = Optional.ofNullable(secret.getMetadata().getAnnotations())
+                    .map(annotations -> annotations.get(caCertThumbprintAnnotation()))
+                    .orElse(null);
+            String currentCaCertThumbprint = currentCaCertThumbprint();
+            LOGGER.debugOp("Secret {}/{} thumbprint anno = {}, current CA thumbprint = {}",
+                    secret.getMetadata().getNamespace(), secret.getMetadata().getName(), caCertThumbprintAnno, currentCaCertThumbprint);
+            return caCertThumbprintAnno != null && !caCertThumbprintAnno.equals(currentCaCertThumbprint);
+        }
+        return false;
     }
 }

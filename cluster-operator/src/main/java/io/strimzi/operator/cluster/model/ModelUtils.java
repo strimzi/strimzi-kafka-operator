@@ -144,7 +144,9 @@ public class ModelUtils {
             reasons.add("certificate doesn't exist yet");
             shouldBeRegenerated = true;
         } else {
-            if (clusterCa.keyCreated() || clusterCa.certRenewed() || (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, keyCertName + ".crt"))) {
+            if (clusterCa.keyCreated() || clusterCa.certRenewed() ||
+                    (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, keyCertName + ".crt")) ||
+                    clusterCa.isCaCertThumbprintChanged(secret)) {
                 reasons.add("certificate needs to be renewed");
                 shouldBeRegenerated = true;
             }
@@ -191,7 +193,8 @@ public class ModelUtils {
             data.put(keyCertName + ".password", certAndKey.storePasswordAsBase64String());
         }
 
-        return createSecret(secretName, namespace, labels, ownerReference, data, emptyMap(), emptyMap());
+        return createSecret(secretName, namespace, labels, ownerReference, data,
+                Collections.singletonMap(clusterCa.caCertThumbprintAnnotation(), clusterCa.currentCaCertThumbprint()), emptyMap());
     }
 
     public static Secret createSecret(String name, String namespace, Labels labels, OwnerReference ownerReference,

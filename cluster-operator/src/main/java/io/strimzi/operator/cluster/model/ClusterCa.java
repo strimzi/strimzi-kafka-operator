@@ -241,4 +241,19 @@ public class ClusterCa extends Ca {
             isMaintenanceTimeWindowsSatisfied);
     }
 
+    @Override
+    protected String caCertThumbprintAnnotation() {
+        return ANNO_STRIMZI_IO_CLUSTER_CA_THUMBPRINT;
+    }
+
+    @SuppressWarnings("BooleanExpressionComplexity")
+    @Override
+    protected boolean isCaCertThumbprintChanged() {
+        // at least one Secret has a different cluster CA certificate thumbprint.
+        // it is useful when a renewal cluster CA certificate process needs to be recovered after an operator crash
+        return isCaCertThumbprintChanged(zkNodesSecret) || isCaCertThumbprintChanged(brokersSecret) ||
+                isCaCertThumbprintChanged(entityTopicOperatorSecret) || isCaCertThumbprintChanged(entityUserOperatorSecret) ||
+                isCaCertThumbprintChanged(kafkaExporterSecret) || isCaCertThumbprintChanged(cruiseControlSecret) ||
+                isCaCertThumbprintChanged(clusterOperatorSecret);
+    }
 }

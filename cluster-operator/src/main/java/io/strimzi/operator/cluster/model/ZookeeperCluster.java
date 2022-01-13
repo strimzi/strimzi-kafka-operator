@@ -576,9 +576,10 @@ public class ZookeeperCluster extends AbstractModel {
      * internal communication with Kafka.
      * It also contains the related Zookeeper nodes private keys.
      *
+     * @param clusterCa The CA for cluster certificates
      * @return The generated Secret.
      */
-    public Secret generateNodesSecret() {
+    public Secret generateNodesSecret(ClusterCa clusterCa) {
 
         Map<String, String> data = new HashMap<>(replicas * 4);
         for (int i = 0; i < replicas; i++) {
@@ -588,7 +589,8 @@ public class ZookeeperCluster extends AbstractModel {
             data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
             data.put(ZookeeperCluster.zookeeperPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
-        return createSecret(ZookeeperCluster.nodesSecretName(cluster), data);
+        return createSecret(ZookeeperCluster.nodesSecretName(cluster), data,
+                Collections.singletonMap(clusterCa.caCertThumbprintAnnotation(), clusterCa.currentCaCertThumbprint()));
     }
 
     @Override

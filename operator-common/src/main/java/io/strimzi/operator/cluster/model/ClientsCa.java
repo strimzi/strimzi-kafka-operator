@@ -11,6 +11,9 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 
 public class ClientsCa extends Ca {
+
+    private Secret brokersSecret;
+
     public ClientsCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String caCertSecretName, Secret clientsCaCert,
                      String caSecretKeyName, Secret clientsCaKey,
                      int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
@@ -35,6 +38,20 @@ public class ClientsCa extends Ca {
             }
         }
         return clientsCaKey;
+    }
+
+    public void initCaSecrets(Secret secret) {
+        this.brokersSecret = secret;
+    }
+
+    @Override
+    protected String caCertThumbprintAnnotation() {
+        return ANNO_STRIMZI_IO_CLIENTS_CA_THUMBPRINT;
+    }
+
+    @Override
+    protected boolean isCaCertThumbprintChanged() {
+        return isCaCertThumbprintChanged(brokersSecret);
     }
 
     @Override
