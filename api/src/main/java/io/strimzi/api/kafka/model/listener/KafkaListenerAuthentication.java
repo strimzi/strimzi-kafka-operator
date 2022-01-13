@@ -45,7 +45,7 @@ public abstract class KafkaListenerAuthentication implements UnknownPropertyPres
             "`scram-sha-512` type uses SASL SCRAM-SHA-512 Authentication. " +
             "`tls` type uses TLS Client Authentication. " +
             "`tls` type is supported only on TLS listeners." +
-            "`custom` type allows for any authentication type to be used")
+            "`custom` type allows for any authentication type to be used.")
     public abstract String getType();
 
     @Override

@@ -400,7 +400,6 @@ public class ListenersIsolatedST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String kafkaUsername = mapWithTestUsers.get(extensionContext.getDisplayName());
-        final int passwordLength = 25;
 
         // Use a Kafka with plain listener disabled
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
@@ -419,17 +418,6 @@ public class ListenersIsolatedST extends AbstractST {
                         .endKafkaListenerAuthenticationCustomAuth()
                         .build())
                 .endKafka()
-                .editEntityOperator()
-                .editOrNewTemplate()
-                .editOrNewUserOperatorContainer()
-                .addToEnv(
-                        new ContainerEnvVarBuilder()
-                                .withName("STRIMZI_SCRAM_SHA_PASSWORD_LENGTH")
-                                .withValue(String.valueOf(passwordLength))
-                                .build())
-                .endUserOperatorContainer()
-                .endTemplate()
-                .endEntityOperator()
                 .endSpec()
                 .build());
 
@@ -460,17 +448,6 @@ public class ListenersIsolatedST extends AbstractST {
                 internalKafkaClient.sendMessagesTls(),
                 internalKafkaClient.receiveMessagesTls()
         );
-
-        LOGGER.info("Checking if generated password has {} characters", passwordLength);
-        String password = kubeClient().namespace(namespaceName).getSecret(kafkaUsername).getData().get("password");
-        String decodedPassword = new String(Base64.getDecoder().decode(password));
-
-        assertEquals(decodedPassword.length(), passwordLength);
-
-        Service kafkaService = kubeClient(namespaceName).getService(namespaceName, KafkaResources.bootstrapServiceName(clusterName));
-        String kafkaServiceDiscoveryAnnotation = kafkaService.getMetadata().getAnnotations().get("strimzi.io/discovery");
-        JsonArray serviceDiscoveryArray = new JsonArray(kafkaServiceDiscoveryAnnotation);
-        assertThat(serviceDiscoveryArray, is(StUtils.expectedServiceDiscoveryInfo(9096, "kafka", "scram-sha-512", true)));
     }
 
     @ParallelNamespaceTest
