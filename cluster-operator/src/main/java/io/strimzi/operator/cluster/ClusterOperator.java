@@ -96,8 +96,10 @@ public class ClusterOperator extends AbstractVerticle {
         // Configure the executor here, but it is used only in other places
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", config.getOperationsThreadPoolSize(), TimeUnit.SECONDS.toNanos(120));
 
-        strimziPodSetController = new StrimziPodSetController(namespace, config.getCustomResourceSelector(), resourceOperatorSupplier.kafkaOperator, resourceOperatorSupplier.strimziPodSetOperator, resourceOperatorSupplier.podOperations);
-        strimziPodSetController.start();
+        if (config.featureGates().useStrimziPodSetsEnabled()) {
+            strimziPodSetController = new StrimziPodSetController(namespace, config.getCustomResourceSelector(), resourceOperatorSupplier.kafkaOperator, resourceOperatorSupplier.strimziPodSetOperator, resourceOperatorSupplier.podOperations);
+            strimziPodSetController.start();
+        }
 
         List<Future> watchFutures = new ArrayList<>(8);
         List<AbstractOperator<?, ?, ?, ?>> operators = new ArrayList<>(asList(
@@ -137,7 +139,11 @@ public class ClusterOperator extends AbstractVerticle {
             }
             // TODO remove the watch from the watchByKind
         }
-        strimziPodSetController.stop();
+
+        if (config.featureGates().useStrimziPodSetsEnabled()) {
+            strimziPodSetController.stop();
+        }
+
         client.close();
         stop.complete();
     }

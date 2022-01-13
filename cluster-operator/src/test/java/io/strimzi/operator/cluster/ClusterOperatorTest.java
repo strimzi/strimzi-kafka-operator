@@ -52,7 +52,7 @@ public class ClusterOperatorTest {
     private static Vertx vertx;
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorTest.class);
 
-    private static Map<String, String> buildEnv(String namespaces) {
+    private static Map<String, String> buildEnv(String namespaces, boolean strimziPodSets) {
         Map<String, String> env = new HashMap<>();
         env.put(ClusterOperatorConfig.STRIMZI_NAMESPACE, namespaces);
         env.put(ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, "120000");
@@ -60,6 +60,11 @@ public class ClusterOperatorTest {
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
+
+        if (strimziPodSets) {
+            env.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "+UseStrimziPodSets");
+        }
+
         return env;
     }
 
@@ -79,32 +84,47 @@ public class ClusterOperatorTest {
 
     @Test
     public void testStartStopSingleNamespaceOnOpenShift(VertxTestContext context) throws InterruptedException {
-        startStop(context, "namespace", true);
+        startStop(context, "namespace", true, false);
     }
 
     @Test
     public void testStartStopMultiNamespaceOnOpenShift(VertxTestContext context) throws InterruptedException {
-        startStop(context, "namespace1,namespace2", true);
+        startStop(context, "namespace1,namespace2", true, false);
     }
 
     @Test
     public void testStartStopSingleNamespaceOnK8s(VertxTestContext context) throws InterruptedException {
-        startStop(context, "namespace", false);
+        startStop(context, "namespace", false, false);
     }
 
     @Test
     public void testStartStopMultiNamespaceOnK8s(VertxTestContext context) throws InterruptedException {
-        startStop(context, "namespace1,namespace2", false);
+        startStop(context, "namespace1,namespace2", false, false);
+    }
+
+    @Test
+    public void testStartStopSingleNamespaceWithPodSets(VertxTestContext context) throws InterruptedException {
+        startStop(context, "namespace", false, true);
+    }
+
+    @Test
+    public void testStartStopMultiNamespaceWithPodSets(VertxTestContext context) throws InterruptedException {
+        startStop(context, "namespace1,namespace2", false, true);
     }
 
     @Test
     public void testStartStopAllNamespacesOnOpenShift(VertxTestContext context) throws InterruptedException {
-        startStopAllNamespaces(context, "*", true);
+        startStopAllNamespaces(context, "*", true, false);
     }
 
     @Test
     public void testStartStopAllNamespacesOnK8s(VertxTestContext context) throws InterruptedException {
-        startStopAllNamespaces(context, "*", false);
+        startStopAllNamespaces(context, "*", false, false);
+    }
+
+    @Test
+    public void testStartStopAllNamespacesWithPodSets(VertxTestContext context) throws InterruptedException {
+        startStopAllNamespaces(context, "*", false, true);
     }
 
     /**
@@ -113,7 +133,7 @@ public class ClusterOperatorTest {
      * @param context test context passed in for assertions
      * @param namespaces namespaces the operator should be watching and operating on
      */
-    private void startStop(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException {
+    private void startStop(VertxTestContext context, String namespaces, boolean openShift, boolean strimziPodSets) throws InterruptedException {
         AtomicInteger numWatchers = new AtomicInteger(0);
         AtomicInteger numInformers = new AtomicInteger(0);
 
@@ -177,7 +197,7 @@ public class ClusterOperatorTest {
             when(mockPods.inNamespace(namespace)).thenReturn(mockNamespacedPods);
         }
 
-        Map<String, String> env = buildEnv(namespaces);
+        Map<String, String> env = buildEnv(namespaces, strimziPodSets);
 
         CountDownLatch latch = new CountDownLatch(namespaceList.size() + 1);
 
@@ -199,7 +219,7 @@ public class ClusterOperatorTest {
                 assertThat("Looks like there were more watchers than namespaces",
                         numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
 
-                int expectedNumberOfInformers = 3 * namespaceList.size();
+                int expectedNumberOfInformers = strimziPodSets ? 3 * namespaceList.size() : 0;
                 assertThat("Looks like there were more informers than namespaces",
                         numInformers.get(), is(expectedNumberOfInformers));
 
@@ -215,7 +235,7 @@ public class ClusterOperatorTest {
      * @param context test context passed in for assertions
      * @param namespaces namespaces the operator should be watching and operating on
      */
-    private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift) throws InterruptedException {
+    private void startStopAllNamespaces(VertxTestContext context, String namespaces, boolean openShift, boolean strimziPodSets) throws InterruptedException {
         AtomicInteger numWatchers = new AtomicInteger(0);
         AtomicInteger numInformers = new AtomicInteger(0);
 
@@ -275,7 +295,7 @@ public class ClusterOperatorTest {
         });
 
         // Run the operator
-        Map<String, String> env = buildEnv(namespaces);
+        Map<String, String> env = buildEnv(namespaces, strimziPodSets);
 
         CountDownLatch latch = new CountDownLatch(2);
         Main.run(vertx, client, new PlatformFeaturesAvailability(openShift, KubernetesVersion.V1_16),
@@ -295,7 +315,8 @@ public class ClusterOperatorTest {
                 int maximumExpectedNumberOfWatchers = 7;
                 assertThat("Looks like there were more watchers than custom resources", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
 
-                assertThat("Looks like there were more informers than we should", numInformers.get(), is(3));
+                int numberOfInformers = strimziPodSets ? 3 : 0;
+                assertThat("Looks like there were more informers than we should", numInformers.get(), is(numberOfInformers));
 
                 latch.countDown();
             })));
