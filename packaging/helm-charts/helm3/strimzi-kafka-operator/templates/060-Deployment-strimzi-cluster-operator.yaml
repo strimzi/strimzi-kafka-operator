@@ -129,7 +129,7 @@ spec:
               value: {{ .Values.connectBuildTimeoutMs | quote }}
             {{- end }}
             {{- if .Values.extraEnvs }}
-{{ toYaml .Values.extraEnvs | indent 12 }}
+{{ toYaml .Values.extraEnvs | nindent 12 }}
             {{- end }}
           livenessProbe:
             httpGet:
@@ -147,7 +147,7 @@ spec:
           securityContext: {{ toYaml .| nindent 12 }}
           {{- end }}
           resources:
-{{ toYaml .Values.resources | indent 12 }}
+{{ toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
