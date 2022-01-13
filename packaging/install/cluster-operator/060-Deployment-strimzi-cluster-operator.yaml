@@ -82,7 +82,7 @@ spec:
             - name: STRIMZI_DEFAULT_KAFKA_INIT_IMAGE
               value: quay.io/strimzi/operator:0.27.0
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
-              value: quay.io/strimzi/kafka-bridge:0.21.2
+              value: quay.io/strimzi/kafka-bridge:0.21.3
             - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
               value: quay.io/strimzi/jmxtrans:0.27.0
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
