@@ -41,10 +41,11 @@ import static java.util.Collections.singletonList;
  */
 public class EntityUserOperator extends AbstractModel {
     protected static final String APPLICATION_NAME = "entity-user-operator";
-
+    
     protected static final String USER_OPERATOR_CONTAINER_NAME = "user-operator";
     private static final String NAME_SUFFIX = "-entity-user-operator";
     protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
+    private static final String CERT_SECRET_KEY_NAME = "entity-operator";
 
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8081;
@@ -374,7 +375,7 @@ public class EntityUserOperator extends AbstractModel {
      */
     public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         Secret secret = clusterCa.entityUserOperatorSecret();
-        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, EntityUserOperator.secretName(cluster), name,
-                APPLICATION_NAME, labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
+        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, EntityUserOperator.secretName(cluster), name, 
+            CERT_SECRET_KEY_NAME, labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 }

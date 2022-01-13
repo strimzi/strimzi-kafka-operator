@@ -44,6 +44,7 @@ public class EntityTopicOperator extends AbstractModel {
     protected static final String TOPIC_OPERATOR_CONTAINER_NAME = "topic-operator";
     private static final String NAME_SUFFIX = "-entity-topic-operator";
     protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
+    private static final String CERT_SECRET_KEY_NAME = "entity-operator";
 
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8080;
@@ -379,6 +380,6 @@ public class EntityTopicOperator extends AbstractModel {
     public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         Secret secret = clusterCa.entityTopicOperatorSecret();
         return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, EntityTopicOperator.secretName(cluster), name,
-                APPLICATION_NAME, labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
+            CERT_SECRET_KEY_NAME, labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 }

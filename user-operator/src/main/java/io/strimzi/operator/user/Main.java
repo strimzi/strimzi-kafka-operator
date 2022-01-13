@@ -125,7 +125,7 @@ public class Main {
                 .onComplete(ar -> {
                     if (ar.succeeded()) {
                         Admin adminClient = adminClientProvider.createAdminClient(config.getKafkaBootstrapServers(),
-                                clusterCaCertSecretFuture.result(), euoKeySecretFuture.result(), euoKeySecretFuture.result() != null ? "entity-user-operator" : null);
+                                clusterCaCertSecretFuture.result(), euoKeySecretFuture.result(), euoKeySecretFuture.result() != null ? "entity-operator" : null);
                         promise.complete(adminClient);
                     } else {
                         promise.fail(ar.cause());
