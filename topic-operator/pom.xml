@@ -189,6 +189,10 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-micrometer-metrics</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>config-model</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -217,5 +221,16 @@
                 </executions>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>..</directory>
+                <includes>
+                    <include>kafka-versions.yaml</include>
+                </includes>
+            </resource>
+        </resources>
     </build>
 </project>

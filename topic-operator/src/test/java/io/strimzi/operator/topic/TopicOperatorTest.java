@@ -26,6 +26,7 @@ import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.kafka.common.errors.ClusterAuthorizationException;
+import org.apache.kafka.common.errors.InvalidRequestException;
 import org.apache.kafka.common.errors.TopicDeletionDisabledException;
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
@@ -83,6 +84,7 @@ public class TopicOperatorTest {
         MANDATORY_CONFIG.put(Config.CLIENT_ID.key, "default-client-id");
         // Not mandatory, but makes the time test quicker
         MANDATORY_CONFIG.put(Config.TOPIC_METADATA_MAX_ATTEMPTS.key, "3");
+        MANDATORY_CONFIG.put(Config.TC_KAFKA_VERSION, KafkaVersionTopicTestUtils.kafkaVersion());
     }
 
     @BeforeAll
@@ -153,24 +155,24 @@ public class TopicOperatorTest {
     @Test
     public void testOnKafkaTopicAdded_invalidResource(VertxTestContext context) {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
-                .withMetadata(new ObjectMetaBuilder().withName("invalid").withLabels(labels.labels()).build())
+                .withMetadata(new ObjectMetaBuilder().withNamespace("test").withName("invalid").withLabels(labels.labels()).build())
                 .withNewSpec()
                     .withReplicas(1)
                     .withPartitions(1)
                     .withConfig(singletonMap(null, null))
                 .endSpec()
             .build();
-        String errorMessage = "KafkaTopic's spec.config has invalid entry: The key 'null' of the topic config is invalid: The value corresponding to the key must have a string, number or boolean value but the value was null";
+        String errorMessage = "KafkaTopic test/invalid has invalid spec.config: key cannot be 'null'";
         mockK8s.setGetFromNameResponse(new ResourceName(kafkaTopic), Future.succeededFuture(kafkaTopic));
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.ADDED, kafkaTopic);
         Checkpoint async = context.checkpoint();
         topicOperator.onResourceEvent(logContext, kafkaTopic, ADDED).onComplete(ar -> {
             assertFailed(context, ar);
-            context.verify(() -> assertThat(ar.cause(), instanceOf(InvalidTopicException.class)));
+            context.verify(() -> assertThat(ar.cause(), instanceOf(InvalidRequestException.class)));
             context.verify(() -> assertThat(ar.cause().getMessage(), is(errorMessage)));
             mockKafka.assertEmpty(context);
             mockTopicStore.assertEmpty(context);
-            assertNotReadyStatus(context, new InvalidTopicException(null, ar.cause().getMessage()));
+            assertNotReadyStatus(context, (InvalidRequestException) ar.cause());
             context.verify(() -> {
                 MeterRegistry registry = metrics.meterRegistry();
 
@@ -211,7 +213,7 @@ public class TopicOperatorTest {
             .build();
         mockKafka.setTopicMetadataResponses(
             topicName -> Future.succeededFuture(),
-            topicName -> Future.succeededFuture(Utils.getTopicMetadata(TopicSerialization.fromTopicResource(kafkaTopic))));
+            topicName -> Future.succeededFuture(Utils.getTopicMetadata(TopicSerialization.fromTopicResource(kafkaTopic, config.get(Config.KAFKA_VERSION)))));
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.ADDED, kafkaTopic);
         Checkpoint async = context.checkpoint();
         mockK8s.setGetFromNameResponse(new ResourceName(kafkaTopic), Future.succeededFuture(kafkaTopic));
@@ -230,7 +232,7 @@ public class TopicOperatorTest {
                     ar.cause().printStackTrace();
                 }
                 context.verify(() -> assertThat(ar.cause().getMessage(),  ar.cause().getClass().getName(), is(expectedExceptionType.getName())));
-                TopicName topicName = TopicSerialization.fromTopicResource(kafkaTopic).getTopicName();
+                TopicName topicName = TopicSerialization.fromTopicResource(kafkaTopic, config.get(Config.KAFKA_VERSION)).getTopicName();
                 if (createException != null) {
                     mockKafka.assertNotExists(context, topicName);
                 } else {
@@ -240,7 +242,7 @@ public class TopicOperatorTest {
                 //TODO mockK8s.assertContainsEvent(context, e -> "Error".equals(e.getKind()));
             } else {
                 assertSucceeded(context, ar);
-                Topic expectedTopic = TopicSerialization.fromTopicResource(kafkaTopic);
+                Topic expectedTopic = TopicSerialization.fromTopicResource(kafkaTopic, config.get(Config.KAFKA_VERSION));
                 mockKafka.assertContains(context, expectedTopic);
                 mockTopicStore.assertContains(context, expectedTopic);
                 mockK8s.assertNoEvents(context);
@@ -469,8 +471,8 @@ public class TopicOperatorTest {
      */
     @Test
     public void testOnTopicChanged(VertxTestContext context) {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "baz")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "delete")).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "compact")).build();
         Topic privateTopic = kubeTopic;
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
 
@@ -490,15 +492,15 @@ public class TopicOperatorTest {
         Checkpoint async = context.checkpoint(3);
         topicOperator.onTopicConfigChanged(logContext, topicName).onComplete(ar -> {
             assertSucceeded(context, ar);
-            context.verify(() -> assertThat(mockKafka.getTopicState(topicName).getConfig().get("cleanup.policy"), is("baz")));
+            context.verify(() -> assertThat(mockKafka.getTopicState(topicName).getConfig().get("cleanup.policy"), is("compact")));
             mockTopicStore.read(topicName).onComplete(ar2 -> {
                 assertSucceeded(context, ar2);
-                context.verify(() -> assertThat(ar2.result().getConfig().get("cleanup.policy"), is("baz")));
+                context.verify(() -> assertThat(ar2.result().getConfig().get("cleanup.policy"), is("compact")));
                 async.flag();
             });
             mockK8s.getFromName(resourceName).onComplete(ar2 -> {
                 assertSucceeded(context, ar2);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result()).getConfig().get("cleanup.policy"), is("baz")));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result(), config.get(Config.KAFKA_VERSION)).getConfig().get("cleanup.policy"), is("compact")));
                 async.flag();
             });
 
@@ -531,7 +533,7 @@ public class TopicOperatorTest {
     @Test
     public void testReconcile_withResource_noKafka_noPrivate(VertxTestContext context) throws InterruptedException {
 
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), new ObjectMeta()).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "compact"), new ObjectMeta()).build();
         Topic kafkaTopic = null;
         Topic privateTopic = null;
 
@@ -575,7 +577,7 @@ public class TopicOperatorTest {
     @Test
     public void testReconcile_withResource_noKafka_withPrivate(VertxTestContext context) {
 
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), new ObjectMeta()).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "compact"), new ObjectMeta()).build();
         Topic kafkaTopic = null;
         Topic privateTopic = kubeTopic;
 
@@ -609,7 +611,7 @@ public class TopicOperatorTest {
     public void testReconcile_noResource_withKafka_noPrivate(VertxTestContext context) throws InterruptedException {
 
         Topic kubeTopic = null;
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "delete"), metadata).build();
         Topic privateTopic = null;
 
         CountDownLatch topicCreatedInKafka = new CountDownLatch(1);
@@ -633,7 +635,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result()), is(kafkaTopic)));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), config.get(Config.KAFKA_VERSION)), is(kafkaTopic)));
                 async.countDown();
             });
             try {
@@ -673,7 +675,7 @@ public class TopicOperatorTest {
     @Test
     public void testReconcile_noResource_withKafka_withPrivate(VertxTestContext context) throws InterruptedException {
         Topic kubeTopic = null;
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "compact")).build();
         Topic privateTopic = kafkaTopic;
 
         CountDownLatch topicCreatedInKafkaAndStored = new CountDownLatch(2);
@@ -702,7 +704,7 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_withResource_withKafka_noPrivate_matching(VertxTestContext context) throws InterruptedException {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "compact"), metadata).build();
         Topic kafkaTopic = kubeTopic;
         Topic privateTopic = null;
 
@@ -757,8 +759,8 @@ public class TopicOperatorTest {
     public void testReconcile_withResource_withKafka_noPrivate_overriddenName(VertxTestContext context) throws InterruptedException {
         TopicName topicName = new TopicName("__consumer_offsets");
         ResourceName kubeName = new ResourceName("consumer-offsets");
-        Topic kubeTopic = new Topic.Builder(topicName, kubeName, 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
-        Topic kafkaTopic = new Topic.Builder(topicName, 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic kubeTopic = new Topic.Builder(topicName, kubeName, 10, (short) 2, map("cleanup.policy", "compact"), metadata).build();
+        Topic kafkaTopic = new Topic.Builder(topicName, 10, (short) 2, map("cleanup.policy", "compact"), metadata).build();
         Topic privateTopic = null;
 
         CountDownLatch topicCreatedInKafkaAndK8s = new CountDownLatch(2);
@@ -805,10 +807,10 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_withResource_withKafka_noPrivate_configsReconcilable(VertxTestContext context) throws InterruptedException {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "compact"), metadata).build();
         Topic kafkaTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true"), metadata).build();
         Topic privateTopic = null;
-        Topic mergedTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true", "cleanup.policy", "bar"), metadata).build();
+        Topic mergedTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("unclean.leader.election.enable", "true", "cleanup.policy", "compact"), metadata).build();
 
         CountDownLatch topicCreatedInKafkaAndK8s = new CountDownLatch(2);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
@@ -836,7 +838,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result()), is(mergedTopic)));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), config.get(Config.KAFKA_VERSION)), is(mergedTopic)));
                 async.countDown();
             });
             try {
@@ -865,8 +867,8 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_withResource_withKafka_noPrivate_irreconcilable(VertxTestContext context) throws InterruptedException {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
-        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 12, (short) 2, map("cleanup.policy", "baz"), metadata).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "compact"), metadata).build();
+        Topic kafkaTopic = new Topic.Builder(topicName.toString(), 12, (short) 2, map("cleanup.policy", "delete"), metadata).build();
         Topic privateTopic = null;
 
         CountDownLatch topicCreatedInKafkaAndK8s = new CountDownLatch(2);
@@ -897,7 +899,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result()), is(kafkaTopic)));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), config.get(Config.KAFKA_VERSION)), is(kafkaTopic)));
                 async.countDown();
             });
             try {
@@ -916,10 +918,10 @@ public class TopicOperatorTest {
      */
     @Test
     public void testReconcile_withResource_withKafka_withPrivate_3WayMerge(VertxTestContext context) throws InterruptedException {
-        Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "bar"), metadata).build();
-        Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "baz"), metadata).build();
-        Topic privateTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "baz"), metadata).build();
-        Topic resultTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "bar"), metadata).build();
+        Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "compact"), metadata).build();
+        Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "delete"), metadata).build();
+        Topic privateTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "delete"), metadata).build();
+        Topic resultTopic = new Topic.Builder(topicName, resourceName, 12, (short) 2, map("cleanup.policy", "compact"), metadata).build();
 
         CountDownLatch topicCreatedInKafkaAndK8sAndStored = new CountDownLatch(3);
         mockKafka.setCreateTopicResponse(topicName -> Future.succeededFuture());
@@ -946,7 +948,7 @@ public class TopicOperatorTest {
             });
             mockK8s.getFromName(topicName.asKubeName()).onComplete(readResult -> {
                 assertSucceeded(context, readResult);
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result()), is(resultTopic)));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(readResult.result(), config.get(Config.KAFKA_VERSION)), is(resultTopic)));
                 topicStoreReadSuccess.countDown();
             });
             context.verify(() -> assertThat(mockKafka.getTopicState(topicName), is(resultTopic)));
@@ -970,7 +972,7 @@ public class TopicOperatorTest {
     // + error cases
 
     private void resourceRemoved(VertxTestContext context, CountDownLatch latch, Exception deleteTopicException, Exception storeException) {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "compact")).build();
         Topic kafkaTopic = kubeTopic;
         Topic privateTopic = kubeTopic;
 
@@ -1027,8 +1029,8 @@ public class TopicOperatorTest {
 
     @Test
     public void testOnKafkaTopicChanged(VertxTestContext context) {
-        Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "baz"), null).build();
-        Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "bar"), null).build();
+        Topic kubeTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "delete"), null).build();
+        Topic kafkaTopic = new Topic.Builder(topicName, resourceName, 10, (short) 2, map("cleanup.policy", "compact"), null).build();
         Topic privateTopic = kafkaTopic;
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.zkWatch("///", topicName.toString(), topicOperator.getNamespace(), topicName.toString());
@@ -1051,16 +1053,16 @@ public class TopicOperatorTest {
         CountDownLatch async = new CountDownLatch(3);
         topicOperator.onResourceEvent(logContext, resource, MODIFIED).onComplete(ar -> {
             assertSucceeded(context, ar);
-            context.verify(() -> assertThat(mockKafka.getTopicState(topicName).getConfig().get("cleanup.policy"), is("baz")));
+            context.verify(() -> assertThat(mockKafka.getTopicState(topicName).getConfig().get("cleanup.policy"), is("delete")));
             mockTopicStore.read(topicName).onComplete(ar2 -> {
                 assertSucceeded(context, ar2);
-                context.verify(() -> assertThat(ar2.result().getConfig().get("cleanup.policy"), is("baz")));
+                context.verify(() -> assertThat(ar2.result().getConfig().get("cleanup.policy"), is("delete")));
                 async.countDown();
             });
             mockK8s.getFromName(resourceName).onComplete(ar2 -> {
                 assertSucceeded(context, ar2);
                 context.verify(() -> assertThat(ar2.result(), is(notNullValue())));
-                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result()).getConfig().get("cleanup.policy"), is("baz")));
+                context.verify(() -> assertThat(TopicSerialization.fromTopicResource(ar2.result(), config.get(Config.KAFKA_VERSION)).getConfig().get("cleanup.policy"), is("delete")));
                 async.countDown();
             });
 
@@ -1118,7 +1120,7 @@ public class TopicOperatorTest {
     }
 
     private void topicDeleted(VertxTestContext context, Exception storeException, Exception k8sException, boolean topicExists) {
-        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "bar")).withMapName(resourceName).build();
+        Topic kubeTopic = new Topic.Builder(topicName.toString(), 10, (short) 2, map("cleanup.policy", "compact")).withMapName(resourceName).build();
         Topic kafkaTopic = kubeTopic;
         Topic privateTopic = kubeTopic;
 

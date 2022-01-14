@@ -14,22 +14,28 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.kafka.config.model.ConfigModel;
+import io.strimzi.kafka.config.model.ConfigModels;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.errors.InvalidRequestException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
@@ -45,52 +51,87 @@ class TopicSerialization {
     public static final String JSON_KEY_REPLICAS = "replicas";
     public static final String JSON_KEY_CONFIG = "config";
 
-    @SuppressWarnings("unchecked")
-    private static Map<String, String> topicConfigFromTopicConfig(KafkaTopic kafkaTopic) {
-        if (kafkaTopic.getSpec().getConfig() != null) {
-            Map<String, String> result = new HashMap<>(kafkaTopic.getSpec().getConfig().size());
-            for (Map.Entry<String, Object> entry : kafkaTopic.getSpec().getConfig().entrySet()) {
-                String key = entry.getKey();
-                Object v = entry.getValue();
-                boolean isNumberType = v instanceof Long
-                        || v instanceof Integer
-                        || v instanceof Short
-                        || v instanceof Double
-                        || v instanceof Float;
-                if (v instanceof String
-                        || isNumberType
-                        || v instanceof Boolean) {
-                    result.put(key, v.toString());
-                } else {
-                    String msg = "The value corresponding to the key must have a string, number or boolean value";
-                    if (v == null) {
-                        msg += " but the value was null";
-                    } else {
-                        msg += " but was of type " + v.getClass().getName();
-                    }
-                    throw new InvalidTopicException(kafkaTopic, "KafkaTopic's spec.config has invalid entry: " +
-                            "The key '" + key + "' of the topic config is invalid: " + msg);
+    /**
+     * Gets the config model for the given version of the Kafka broker.
+     * @param kafkaVersion The broker version.
+     * @return The topic config model for that broker version.
+     */
+    private static Map<String, ConfigModel> readConfigModel(String kafkaVersion) {
+        String name = "/kafka-" + kafkaVersion + "-topic-config-model.json";
+        try {
+            try (InputStream in = TopicSerialization.class.getResourceAsStream(name)) {
+                ConfigModels configModels = new ObjectMapper().readValue(in, ConfigModels.class);
+                if (!kafkaVersion.equals(configModels.getVersion())) {
+                    throw new RuntimeException("Incorrect version");
                 }
+                return configModels.getConfigs();
             }
-            return result;
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading from classpath resource " + name, e);
+        }
+    }
+
+    /**
+     * Validate the configs in this KafkaTopicConfiguration returning a list of errors.
+     * @param topicConfiguration The topic configuration.
+     * @param kafkaVersion The broker version.
+     * @return A list of error messages.
+     */
+    private static List<String> validate(Map<String, String> topicConfiguration, String kafkaVersion) {
+        List<String> errors = new ArrayList<>();
+        Map<String, ConfigModel> models = readConfigModel(kafkaVersion);
+        for (Map.Entry<String, String> entry: topicConfiguration.entrySet()) {
+
+            if (entry.getKey() == null) {
+                errors.add("key cannot be 'null'");
+                continue;
+            }
+            String key = entry.getKey();
+            String value = entry.getValue();
+            ConfigModel config = models.get(key);
+            if (config != null) {
+                errors.addAll(config.validate(key, value));
+            } else {
+                errors.add(key + " with value '" + value + "' is not one of the known options");
+            }
+        }
+        return errors;
+    }
+
+    private static void validateConfiguration(KafkaTopic kafkaTopic, String desiredVersion, Map<String, String> configuration) {
+        List<String> errorsInConfig = validate(configuration, desiredVersion);
+
+        if (!errorsInConfig.isEmpty()) {
+            throw new InvalidRequestException("KafkaTopic " +
+                    kafkaTopic.getMetadata().getNamespace() + "/" + kafkaTopic.getMetadata().getName() +
+                    " has invalid spec.config: " +
+                    String.join(", ", errorsInConfig));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, String> topicConfigFromTopicConfig(KafkaTopic kafkaTopic, String kafkaVersion) {
+        if (kafkaTopic.getSpec().getConfig() != null) {
+            Map<String, String> map = kafkaTopic.getSpec().getConfig().entrySet().stream().collect(Collectors.toMap(e -> e.getKey(), e -> Objects.toString(e.getValue())));
+            validateConfiguration(kafkaTopic, kafkaVersion, map);
+            return map;
         } else {
             return Collections.EMPTY_MAP;
         }
     }
 
-
     /**
      * Create a Topic to reflect the given KafkaTopic resource.
-     * @throws InvalidTopicException
+     * @throws InvalidRequestException
      */
-    public static Topic fromTopicResource(KafkaTopic kafkaTopic) {
+    public static Topic fromTopicResource(KafkaTopic kafkaTopic, String kafkaVersion) {
         if (kafkaTopic == null) {
             return null;
         }
         Topic.Builder builder = new Topic.Builder()
                 .withMapName(kafkaTopic.getMetadata().getName())
                 .withTopicName(getTopicName(kafkaTopic))
-                .withConfig(topicConfigFromTopicConfig(kafkaTopic))
+                .withConfig(topicConfigFromTopicConfig(kafkaTopic, kafkaVersion))
                 .withMetadata(kafkaTopic.getMetadata());
 
         if (kafkaTopic.getSpec().getPartitions() != null) {
@@ -102,7 +143,7 @@ class TopicSerialization {
         return builder.build();
     }
 
-    private static String getTopicName(KafkaTopic kafkaTopic) {
+    public static String getTopicName(KafkaTopic kafkaTopic) {
         String prefix = "KafkaTopics's spec.topicName property is invalid as a topic name: ";
         String topicName = kafkaTopic.getSpec().getTopicName();
         if (topicName == null) {

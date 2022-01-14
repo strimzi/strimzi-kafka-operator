@@ -231,6 +231,7 @@ public abstract class TopicOperatorBaseIT {
         m.put(Config.CLIENT_ID.key, CLIENTID);
         m.put(Config.TC_RESOURCE_LABELS, io.strimzi.operator.common.model.Labels.STRIMZI_KIND_LABEL + "=topic");
         m.put(Config.FULL_RECONCILIATION_INTERVAL_MS.key, "20000");
+        m.put(Config.KAFKA_VERSION.key, KafkaVersionTopicTestUtils.kafkaVersion());
         return m;
     }
 
@@ -404,7 +405,7 @@ public abstract class TopicOperatorBaseIT {
         waitFor(() -> {
             KafkaTopic topic = operation().inNamespace(NAMESPACE).withName(resourceName).get();
             LOGGER.info("Polled topic {}, waiting for config change", resourceName);
-            String gotValue = TopicSerialization.fromTopicResource(topic).getConfig().get(key);
+            String gotValue = TopicSerialization.fromTopicResource(topic, KafkaVersionTopicTestUtils.kafkaVersion()).getConfig().get(key);
             LOGGER.info("Expecting value {}, got value {}", expectedValue, gotValue);
             return expectedValue.equals(gotValue);
         }, "Expected the config of topic " + resourceName + " to have " + key + "=" + expectedValue + " in Kube by now");
@@ -448,7 +449,7 @@ public abstract class TopicOperatorBaseIT {
         waitFor(() -> {
             KafkaTopic topic = operation().inNamespace(NAMESPACE).withName(resourceName).get();
             LOGGER.info("Polled topic {}, waiting for partitions change", resourceName);
-            int gotValue = TopicSerialization.fromTopicResource(topic).getNumPartitions();
+            int gotValue = TopicSerialization.fromTopicResource(topic, KafkaVersionTopicTestUtils.kafkaVersion()).getNumPartitions();
             LOGGER.info("Expected value {}, got value {}", changedValue, gotValue);
             return changedValue == gotValue;
         }, "Expected the topic " + topicName + "to have " + changedValue + " partitions by now");

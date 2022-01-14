@@ -3,6 +3,7 @@
 ## 0.28.0
 
 * Update Open Policy Agent authorizer to 1.4.0 and add support for enabling metrics 
+* Validate `spec.config` in the KafkaTopic resources against available Kafka topic configuration options
 
 ## 0.27.0
 

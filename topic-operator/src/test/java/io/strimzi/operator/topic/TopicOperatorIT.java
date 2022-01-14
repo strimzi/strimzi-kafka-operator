@@ -144,7 +144,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     @Test
     public void testInvalidConfig() throws Exception {
         String topicName = "topic-invalid-config";
-        String expectedMessage = "Invalid config value for resource ConfigResource(type=TOPIC, name='" + topicName + "'): Invalid value x for configuration min.insync.replicas: Not a number of type INT";
+        String expectedMessage = "KafkaTopic topic-operator-it/" + topicName + " has invalid spec.config: min.insync.replicas has value 'x' which is not an int";
 
         String resourceName = createTopic(topicName, new NewTopic(topicName, 2, (short) 1));
         KafkaTopic changedTopic = new KafkaTopicBuilder(operation().inNamespace(NAMESPACE).withName(resourceName).get())
@@ -193,14 +193,14 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     public void testKafkaTopicAddedWithUnknownConfig() throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError("test-resource-created-with-unknown-config",
                 singletonMap("aardvark", "zebra"), 1,
-               "org.apache.kafka.common.errors.InvalidConfigurationException: Unknown topic config name: aardvark");
+               "KafkaTopic topic-operator-it/test-resource-created-with-unknown-config has invalid spec.config: aardvark with value 'zebra' is not one of the known options");
     }
 
     @Test
     public void testKafkaTopicAddedWithInvalidConfig() throws InterruptedException, ExecutionException, TimeoutException {
         createKafkaTopicResourceError("test-resource-created-with-invalid-config",
-                singletonMap("message.format.version", "zebra"), 1,
-               "org.apache.kafka.common.errors.InvalidConfigurationException: Invalid value zebra for configuration message.format.version: Version `zebra` is not a valid version");
+                singletonMap("compression.type", "zebra"), 1,
+               "KafkaTopic topic-operator-it/test-resource-created-with-invalid-config has invalid spec.config: compression.type has value 'zebra' which is not one of the allowed values: [uncompressed, zstd, lz4, snappy, gzip, producer]");
     }
 
     @Test
