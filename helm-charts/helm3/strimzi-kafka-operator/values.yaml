@@ -7,7 +7,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.27.0
+defaultImageTag: 0.27.1
 
 image:
   registry: ""
@@ -22,6 +22,12 @@ operationTimeoutMs: 300000
 kubernetesServiceDnsDomain: cluster.local
 featureGates: ""
 tmpDirSizeLimit: 1Mi
+
+# Example on how to configure extraEnvs
+# extraEnvs:
+#   - name: JAVA_OPTS
+#     value: "-Xms=256m -Xmx=256m"
+
 extraEnvs: []
 
 tolerations: []
@@ -90,7 +96,7 @@ kafkaBridge:
     registry: ""
     repository:
     name: kafka-bridge
-    tag: 0.21.2
+    tag: 0.21.3
 kafkaExporter:
   image:
     registry: ""
