@@ -250,7 +250,7 @@ Authentication for the listener can be specified as:
 
 * Mutual TLS (`tls`)
 * SCRAM-SHA-512 (`scram-sha-512`)
-* Token-based OAuth 2.0 (`oauth`).
+* Token-based OAuth 2.0 (`oauth`)
 * xref:io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationCustom.adoc[Custom (`custom`)]
 
 [id='configuration-listener-network-policy-{context}']
