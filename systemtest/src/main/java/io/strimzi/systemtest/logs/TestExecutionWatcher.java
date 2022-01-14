@@ -22,7 +22,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class TestExecutionWatcher implements TestExecutionExceptionHandler, LifecycleMethodExecutionExceptionHandler {
 
     private static final Logger LOGGER = LogManager.getLogger(TestExecutionWatcher.class);
-    private static final Random RANDOM = new Random();
 
     @Override
     public void handleTestExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
