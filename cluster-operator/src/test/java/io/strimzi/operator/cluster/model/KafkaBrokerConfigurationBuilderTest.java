@@ -1453,6 +1453,26 @@ public class KafkaBrokerConfigurationBuilderTest {
     }
 
     @ParallelTest
+    public void testCustomConfigRemovesForbiddenProperties() {
+        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
+                .withName("CUSTOM-LISTENER")
+                .withPort(9092)
+                .withType(KafkaListenerType.INTERNAL)
+                .withTls(false)
+                .withNewKafkaListenerAuthenticationCustomAuth()
+                .withSasl(false)
+                .withListenerConfig(Map.of("ssl.bad.value", "foo"))
+                .endKafkaListenerAuthenticationCustomAuth()
+                .build();
+
+        String configuration = new KafkaBrokerConfigurationBuilder()
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), false)
+                .build();
+
+        assertThat(configuration, !configuration.contains("ssl.bad.value"));
+    }
+
+    @ParallelTest
     public void testCustomConfigSetProtocolMapCorrectlyForPlain() {
         GenericKafkaListener listener = new GenericKafkaListenerBuilder()
                 .withName("CUSTOM-LISTENER")
