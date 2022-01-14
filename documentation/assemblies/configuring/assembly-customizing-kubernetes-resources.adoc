@@ -5,16 +5,18 @@
 [id='assembly-customizing-kubernetes-resources-{context}']
 = Customizing Kubernetes resources
 
-Strimzi creates several Kubernetes resources, such as `Deployments`, `StatefulSets`, `Pods`, and `Services`, which are managed by Strimzi operators.
+[role="_abstract"]
+A Strimzi deployment creates Kubernetes resources, such as `Deployments`, `StatefulSets`, `Pods`, and `Services`.
+These resources are managed by Strimzi operators.
 Only the operator that is responsible for managing a particular Kubernetes resource can change that resource.
 If you try to manually change an operator-managed Kubernetes resource, the operator will revert your changes back.
 
-However, changing an operator-managed Kubernetes resource can be useful if you want to perform certain tasks, such as:
+Changing an operator-managed Kubernetes resource can be useful if you want to perform certain tasks, such as:
 
 - Adding custom labels or annotations that control how `Pods` are treated by Istio or other services
 - Managing how `Loadbalancer`-type Services are created by the cluster
 
-You can make such changes using the `template` property in the Strimzi custom resources.
+You can make the changes using the `template` property in the Strimzi custom resources.
 The `template` property is supported in the following resources.
 The API reference provides more details about the customizable fields.
 
@@ -53,3 +55,4 @@ spec:
 ----
 
 include::../../modules/configuring/con-customizing-image-pull-policy.adoc[leveloffset=+1]
+include::../../modules/configuring/con-applying-termination-grace-period.adoc[leveloffset=+1]

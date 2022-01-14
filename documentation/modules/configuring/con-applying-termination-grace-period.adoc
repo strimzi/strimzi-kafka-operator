@@ -1,0 +1,41 @@
+// Module included in the following assemblies:
+//
+// assembly-customizing-kubernetes-resources.adoc
+
+[id='con-applying-termination-grace-period-{context}']
+= Applying a termination grace period
+
+[role="_abstract"]
+Apply a termination grace period to give a Kafka cluster enough time to shut down cleanly.
+
+Specify the time using the `terminationGracePeriodSeconds` property.
+Add the property to the `template.pod` configuration of the `Kafka` custom resource.
+
+The time you add will depend on the size of your Kafka cluster.
+The Kubernetes default for the termination grace period is 30 seconds.
+If you observe that your clusters are not shutting down cleanly, you can increase the termination grace period.
+
+A termination grace period is applied every time a pod is restarted.
+The period begins when Kubernetes sends a _term_ (termination) signal to the processes running in the pod.
+The period should reflect the amount of time required to transfer the processes of the terminating pod to another pod before they are stopped.
+After the period ends, a _kill_ signal stops any processes still running in the pod.
+
+The following example adds a termination grace period of 120 seconds to the `Kafka` custom resource.
+You can also specify the configuration in the custom resources of other Kafka components.
+
+.Example termination grace period configuration
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    # ...
+    template:
+      pod:
+        terminationGracePeriodSeconds: 120
+        # ...
+    # ...
+----
