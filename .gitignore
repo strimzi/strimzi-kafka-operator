@@ -59,6 +59,5 @@ systemtest/my-plugins/
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
-# Cluster and Topic operator config models
+# Cluster operator config models
 **/cluster-operator/src/main/resources/kafka-*-config-model.json
-**/topic-operator/src/main/resources/kafka-*-topic-config-model.json

@@ -168,7 +168,7 @@ public class EntityOperator extends AbstractModel {
 
             result.setOwnerReference(kafkaAssembly);
 
-            EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly, versions);
+            EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly);
             EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly);
             TlsSidecar tlsSidecar = entityOperatorSpec.getTlsSidecar();
 

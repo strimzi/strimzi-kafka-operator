@@ -14,7 +14,6 @@
     <properties>
         <kafka-metadata-version>${kafka.version}</kafka-metadata-version>
         <config-model-file>../cluster-operator/src/main/resources/kafka-${kafka-metadata-version}-config-model.json</config-model-file>
-        <topic-config-model-file>../topic-operator/src/main/resources/kafka-${kafka-metadata-version}-topic-config-model.json</topic-config-model-file>
     </properties>
 
     <dependencyManagement>
@@ -117,10 +116,9 @@
                         <artifactId>exec-maven-plugin</artifactId>
                         <version>1.6.0</version>
                         <configuration>
-                            <mainClass>io.strimzi.build.kafka.metadata.Main</mainClass>
+                            <mainClass>io.strimzi.build.kafka.metadata.KafkaConfigModelGenerator</mainClass>
                             <arguments>
                                 <argument>${config-model-file}</argument>
-                                <argument>${topic-config-model-file}</argument>
                             </arguments>
                         </configuration>
                     </plugin>
