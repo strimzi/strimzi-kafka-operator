@@ -57,7 +57,7 @@ public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthenticati
         this.sasl = enabled;
     }
 
-    @Description("Configuration to be used for a specific listener. All values are prefixed with lister.name.<lister-name>.")
+    @Description("Configuration to be used for a specific listener. All values are prefixed with listener.name._<listener_name>_.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Map<String, Object> getListenerConfig() {
         return listenerConfig;
