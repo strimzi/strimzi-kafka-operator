@@ -75,22 +75,25 @@ For more information, see {CruiseControlApiDocs}.
 [discrete]
 == Capacity configuration
 
-Cruise Control uses _capacity limits_ to determine if optimization goals for resource distribution are being broken. 
+Cruise Control uses _capacity limits_ to determine if optimization goals for resource distribution are being broken.
 There are four goals of this type:
 
 * `DiskUsageDistributionGoal`            - Disk utilization distribution
-* `CpuUsageDistributionGoal`             - CPU utilization distribution    
+* `CpuUsageDistributionGoal`             - CPU utilization distribution
 * `NetworkInboundUsageDistributionGoal`  - Network inbound utilization distribution
 * `NetworkOutboundUsageDistributionGoal` - Network outbound utilization distribution
 
-You specify capacity limits for Kafka broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` . 
-They are enabled by default and you can change their default values. 
-Capacity limits can be set for the following broker resources, using the standard Kubernetes byte units (K, M, G and T) or their bibyte (power of two) equivalents (Ki, Mi, Gi and Ti):
+You specify capacity limits for Kafka broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` .
+They are enabled by default and you can change their default values.
+Capacity limits can be set for the following broker resources:
 
 * `disk`            - Disk storage per broker (Default: 100000Mi)
 * `cpuUtilization`  - CPU utilization as a percentage (Default: 100)
 * `inboundNetwork`  - Inbound network throughput in byte units per second (Default: 10000KiB/s)
 * `outboundNetwork` - Outbound network throughput in byte units per second (Default: 10000KiB/s)
+
+For disk storage, use a number value with either standard Kubernetes byte units (K, M, G, or T), their bibyte (power of two) equivalents (Ki, Mi, Gi, or Ti), or a byte value with or without E notation.
+For network throughput, use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second.
 
 Because Strimzi Kafka brokers are homogeneous, Cruise Control applies the same capacity limits to every broker it is monitoring.
 
