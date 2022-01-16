@@ -100,7 +100,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         HasMetadata hasMetadata = mock(HasMetadata.class);
         when(mockResource.get()).thenReturn(resource);
 
-        when(mockResource.withPropagationPolicy(true ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockR);
+        when(mockResource.withPropagationPolicy(DeletionPropagation.FOREGROUND)).thenReturn(mockR);
         when(mockR.patch((T) any())).thenReturn(hasMetadata);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
@@ -132,7 +132,7 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         T resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
-        when(mockResource.withPropagationPolicy(true ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN)).thenReturn(mockResource);
+        when(mockResource.withPropagationPolicy(DeletionPropagation.FOREGROUND)).thenReturn(mockResource);
         when(mockResource.patch(any())).thenReturn(resource);
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);

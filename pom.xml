@@ -83,8 +83,8 @@
         <maven.dependency.version>3.1.1</maven.dependency.version>
         <maven.gpg.version>1.6</maven.gpg.version>
         <maven.checkstyle.version>3.1.2</maven.checkstyle.version>
-        <checkstyle.version>9.0.1</checkstyle.version>
-        <spotbugs.version>4.0.3</spotbugs.version>
+        <checkstyle.version>9.2.1</checkstyle.version>
+        <spotbugs.version>4.5.3</spotbugs.version>
         <sonatype.nexus.staging>1.6.3</sonatype.nexus.staging>
         <jacoco.version>0.7.9</jacoco.version>
         <license.maven.version>2.11</license.maven.version>
@@ -1021,7 +1021,7 @@
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
-                <version>4.0.0</version><dependencies>
+                <version>4.5.3.0</version><dependencies>
                 <!-- overwrite dependency on spotbugs if you want to specify the version of˓→spotbugs -->
                 <dependency>
                     <groupId>com.github.spotbugs</groupId>

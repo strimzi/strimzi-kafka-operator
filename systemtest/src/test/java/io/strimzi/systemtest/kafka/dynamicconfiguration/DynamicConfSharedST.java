@@ -152,7 +152,7 @@ public class DynamicConfSharedST extends AbstractST {
                             stochasticChosenValue = false;
                             break;
                         default:
-                            stochasticChosenValue = ThreadLocalRandom.current().nextInt(2) == 0 ? true : false;
+                            stochasticChosenValue = ThreadLocalRandom.current().nextInt(2) == 0;
                     }
                     testCases.put(key, stochasticChosenValue);
                     break;

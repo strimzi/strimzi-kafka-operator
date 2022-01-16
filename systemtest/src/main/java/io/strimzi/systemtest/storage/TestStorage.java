@@ -25,6 +25,7 @@ final public class TestStorage {
     private static final String PRODUCER = "hello-world-producer";
     private static final String CONSUMER = "hello-world-consumer";
     private static final String CLUSTER_NAME_PREFIX = "my-cluster-";
+    private static final Random RANDOM = new Random();
 
     private ExtensionContext extensionContext;
     private String namespaceName;
@@ -44,7 +45,7 @@ final public class TestStorage {
     public TestStorage(ExtensionContext extensionContext, String namespaceName) {
         this.extensionContext = extensionContext;
         this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespaceName, extensionContext) : namespaceName;
-        this.clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
+        this.clusterName = CLUSTER_NAME_PREFIX + RANDOM.nextInt(Integer.MAX_VALUE);
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.streamsTopicTargetName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;

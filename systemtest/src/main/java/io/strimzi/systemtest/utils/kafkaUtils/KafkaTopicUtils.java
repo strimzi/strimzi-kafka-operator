@@ -29,6 +29,7 @@ public class KafkaTopicUtils {
     private static final String TOPIC_NAME_PREFIX = "my-topic-";
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND);
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
+    private static final Random RANDOM = new Random();
 
     private KafkaTopicUtils() {}
 
@@ -37,7 +38,7 @@ public class KafkaTopicUtils {
      * @return random name with additional salt
      */
     public static String generateRandomNameOfTopic() {
-        String salt = new Random().nextInt(Integer.MAX_VALUE) + "-" + new Random().nextInt(Integer.MAX_VALUE);
+        String salt = RANDOM.nextInt(Integer.MAX_VALUE) + "-" + RANDOM.nextInt(Integer.MAX_VALUE);
 
         return  TOPIC_NAME_PREFIX + salt;
     }
