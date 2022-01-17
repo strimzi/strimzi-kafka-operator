@@ -9,9 +9,7 @@ You can contribute by:
 
 All bugs, tasks or enhancements are tracked as [GitHub issues][issues]. Issues which might be a good start for new contributors are marked with the [“good-start”][newbie-issues] label.
 
-The [developer quick start guide][dev-quick-start] describes how to quickly get setup to build Strimzi from source.
-
-The [development guide][development-guide] describes in more detail the various ways you can build Strimzi and how to test your changes before submitting a patch or opening a pull request.
+The [development guide][development-guide] describes how to quickly get setup to build Strimzi from source. It also goes into more detail of various ways you can build Strimzi and how to test your changes before submitting a patch or opening a pull request.
 
 The [release checklist][release-list] describes the steps that need to be completed for a new version release.
 
