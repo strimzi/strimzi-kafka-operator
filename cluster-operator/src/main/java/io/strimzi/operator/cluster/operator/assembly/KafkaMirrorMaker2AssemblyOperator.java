@@ -14,9 +14,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha256;
@@ -26,17 +26,15 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaMirrorMaker2List;
+import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.KafkaConnectorSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
@@ -61,7 +59,6 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -84,9 +81,7 @@ import static java.util.Collections.emptyMap;
  */
 public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List, Resource<KafkaMirrorMaker2>, KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaMirrorMaker2AssemblyOperator.class.getName());
-    private final boolean isNetworkPolicyGeneration;
     private final DeploymentOperator deploymentOperations;
-    private final NetworkPolicyOperator networkPolicyOperator;
     private final KafkaVersion.Lookup versions;
 
     public static final String MIRRORMAKER2_CONNECTOR_PACKAGE = "org.apache.kafka.connect.mirror";
@@ -126,9 +121,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider) {
         super(vertx, pfa, KafkaMirrorMaker2.RESOURCE_KIND, supplier.mirrorMaker2Operator, supplier, config, connectClientProvider, KafkaConnectCluster.REST_API_PORT);
-        this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
         this.deploymentOperations = supplier.deploymentOperations;
-        this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.versions = config.versions();
     }
 
@@ -153,35 +146,28 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         boolean mirrorMaker2HasZeroReplicas = mirrorMaker2Cluster.getReplicas() == 0;
 
         LOGGER.debugCr(reconciliation, "Updating Kafka MirrorMaker 2.0 cluster");
-        mirrorMaker2ServiceAccount(reconciliation, namespace, mirrorMaker2Cluster)
-                .compose(i -> {
-                    if (isNetworkPolicyGeneration) {
-                        return networkPolicyOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateNetworkPolicy(true, operatorNamespace, operatorNamespaceLabels));
-                    } else {
-                        return Future.succeededFuture();
-                    }
-                })
+        connectServiceAccount(reconciliation, namespace, KafkaMirrorMaker2Resources.serviceAccountName(mirrorMaker2Cluster.getCluster()), mirrorMaker2Cluster)
+                .compose(i -> connectNetworkPolicy(reconciliation, namespace, mirrorMaker2Cluster, true))
                 .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
-                .compose(scale -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
-                .compose(i -> Util.metricsAndLogging(reconciliation, configMapOperations, namespace, mirrorMaker2Cluster.getLogging(), mirrorMaker2Cluster.getMetricsConfigInCm()))
-                .compose(metricsAndLoggingCm -> {
-                    ConfigMap logAndMetricsConfigMap = mirrorMaker2Cluster.generateMetricsAndLogConfigMap(metricsAndLoggingCm);
+                .compose(i -> serviceOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getServiceName(), mirrorMaker2Cluster.generateService()))
+                .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, namespace, mirrorMaker2Cluster))
+                .compose(logAndMetricsConfigMap -> {
+                    String logging = logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
                     annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
-                            Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG))));
-                    desiredLogging.set(logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG));
+                        Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
+                    desiredLogging.set(logging);
                     return configMapOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster))
                 .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generatePodDisruptionBudget()))
-                .compose(i -> kafkaMirrorMaker2.getSpec().getClusters() == null ? Future.succeededFuture() : CompositeFuture.join(kafkaMirrorMaker2.getSpec().getClusters().stream().map(cluster ->
-                    Util.authTlsHash(secretOperations, namespace, cluster.getAuthentication(), cluster.getTls() == null ? Collections.emptyList() : cluster.getTls().getTrustedCertificates())).collect(Collectors.toList())))
-                .compose(hashesFut -> {
-                    if (hashesFut != null) {
-                        annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(IntStream.range(0, hashesFut.size()).map(j -> (int) hashesFut.resultAt(j)).sum()));
+                .compose(i -> generateAuthHash(namespace, kafkaMirrorMaker2.getSpec()))
+                .compose(hash -> {
+                    if (hash != null) {
+                        annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     }
-                    return Future.succeededFuture();
+                    Deployment deployment = mirrorMaker2Cluster.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets);
+                    return deploymentOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), deployment);
                 })
-                .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
                 .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.getReplicas()))
                 .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))
                 .compose(i -> mirrorMaker2HasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, mirrorMaker2Cluster.getName(), 1_000, operationTimeoutMs))
@@ -214,11 +200,36 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         return new KafkaMirrorMaker2Status();
     }
 
-    private Future<ReconcileResult<ServiceAccount>> mirrorMaker2ServiceAccount(Reconciliation reconciliation, String namespace, KafkaMirrorMaker2Cluster mirrorMaker2Cluster) {
-        return serviceAccountOperations.reconcile(reconciliation, namespace,
-                KafkaMirrorMaker2Resources.serviceAccountName(mirrorMaker2Cluster.getCluster()),
-                mirrorMaker2Cluster.generateServiceAccount());
+    /**
+     * Generates a hash from the trusted TLS certificates that can be used to spot if it has changed.
+     *
+     * @param namespace               Namespace of the MirrorMaker2 cluster
+     * @param kafkaMirrorMaker2Spec   KafkaMirrorMaker2Spec object
+     * @return                        Future for tracking the asynchronous result of generating the TLS auth hash
+     */
+    Future<Integer> generateAuthHash(String namespace, KafkaMirrorMaker2Spec kafkaMirrorMaker2Spec) {
+        Promise<Integer> authHash = Promise.promise();
+        if (kafkaMirrorMaker2Spec.getClusters() == null) {
+            authHash.complete();
+        } else {
+            CompositeFuture.join(kafkaMirrorMaker2Spec.getClusters()
+                            .stream()
+                            .map(cluster -> {
+                                List<CertSecretSource> trustedCertificates = cluster.getTls() == null ? Collections.emptyList() : cluster.getTls().getTrustedCertificates();
+                                return Util.authTlsHash(secretOperations, namespace, cluster.getAuthentication(), trustedCertificates);
+                            }).collect(Collectors.toList())
+                    )
+                    .onSuccess(hashes -> {
+                        int hash = hashes.<Integer>list()
+                            .stream()
+                            .mapToInt(i -> i)
+                            .sum();
+                        authHash.complete(hash);
+                    }).onFailure(authHash::fail);
+        }
+        return authHash.future();
     }
+
 
     /**
      * Reconcile all the MirrorMaker 2.0 connectors selected by the given MirrorMaker 2.0 instance.
