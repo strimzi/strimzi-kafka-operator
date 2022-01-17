@@ -10,10 +10,7 @@ import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.sundr.builder.annotations.Buildable;
 import lombok.EqualsAndHashCode;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,9 +25,7 @@ import java.util.Map;
 @EqualsAndHashCode
 public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthentication {
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaListenerAuthenticationCustom.class);
-
-    public static final List<String> FORBIDDEN_PREFIXES = List.of("ssl.");
+    public static final String FORBIDDEN_PREFIXES = "ssl.";
 
     private static final long serialVersionUID = 1L;
 
@@ -75,25 +70,5 @@ public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthenticati
 
     public void setSecrets(List<GenericSecretSource> secrets) {
         this.secrets = secrets;
-    }
-
-
-    public Map<String, Object> getFilteredListenerConfig() {
-        if (listenerConfig == null) {
-            return listenerConfig;
-        }
-        HashMap<String, Object> filteredConfig = new HashMap<>();
-        listenerConfig.forEach((key, value) -> {
-            if (key != null) {
-                String cleanedKey = key.toLowerCase().trim();
-                if (FORBIDDEN_PREFIXES.stream().anyMatch(prefix -> cleanedKey.startsWith(prefix.toLowerCase()))) {
-                    LOGGER.warn("Configuration option is forbidden \"{}\" and will not be adding key.", key);
-                    return;
-                }
-                LOGGER.trace("Configuration value is valid \"{}\"  and will be passed through to assembly.", key);
-                filteredConfig.put(key, value);
-            }
-        });
-        return Map.copyOf(filteredConfig);
     }
 }

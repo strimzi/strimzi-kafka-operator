@@ -382,7 +382,7 @@ public class KafkaBrokerConfigurationBuilder {
         } else if (auth instanceof KafkaListenerAuthenticationCustom) {
             KafkaListenerAuthenticationCustom customAuth = (KafkaListenerAuthenticationCustom) auth;
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, customAuth.isSasl())));
-            customAuth.getFilteredListenerConfig().forEach((key, value) -> writer.println(String.format("listener.name.%s.%s=%s", listenerNameInProperty, key, value)));
+            customAuth.getListenerConfig().forEach((key, value) -> writer.println(String.format("listener.name.%s.%s=%s", listenerNameInProperty, key, value)));
         } else {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, false)));
         }

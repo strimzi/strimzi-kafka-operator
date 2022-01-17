@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
@@ -16,10 +17,12 @@ import io.strimzi.operator.common.ReconciliationLogger;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithCustomAuth;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 
 /**
@@ -40,6 +43,7 @@ public class ListenersValidator {
      */
     public static void validate(Reconciliation reconciliation, int replicas, List<GenericKafkaListener> listeners) throws InvalidResourceException {
         Set<String> errors = validateAndGetErrorMessages(replicas, listeners);
+        listeners.forEach(listener -> filterCustomAuthConfiguration(reconciliation, listener));
 
         if (!errors.isEmpty())  {
             LOGGER.errorCr(reconciliation, "Listener configuration is not valid: {}", errors);
@@ -559,5 +563,21 @@ public class ListenersValidator {
      */
     private static List<String> getNames(List<GenericKafkaListener> listeners)    {
         return listeners.stream().map(GenericKafkaListener::getName).distinct().collect(Collectors.toList());
+    }
+
+
+    /**
+     * Filters configuration provided in any custom authentication listeners to remove any forbidden properties
+     * @param reconciliation Current reconciliation attempt
+     * @param listener Listener to filter
+     */
+    private static void filterCustomAuthConfiguration(Reconciliation reconciliation, GenericKafkaListener listener) {
+        if (isListenerWithCustomAuth(listener)) {
+            KafkaListenerAuthenticationCustom customAuth = (KafkaListenerAuthenticationCustom) listener.getAuth();
+            if (customAuth.getListenerConfig() != null) {
+                KafkaListenerCustomAuthConfiguration config = new KafkaListenerCustomAuthConfiguration(reconciliation, customAuth.getListenerConfig().entrySet());
+                customAuth.setListenerConfig(Map.copyOf(config.asOrderedProperties().asMap()));
+            }
+        }
     }
 }

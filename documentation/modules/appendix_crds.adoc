@@ -282,7 +282,7 @@ It must have the value `custom` for the type `KafkaListenerAuthenticationCustom`
 |map
 |sasl            1.2+<.<a|Enable or disable SASL on this listener.
 |boolean
-|secrets         1.2+<.<a|Secrets to be mounted to /mnt/strimzi/custom-auth-secrets/<listener-name>/<secret-key>.
+|secrets         1.2+<.<a|Secrets to be mounted to /opt/kafka/custom-auth-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_.
 |xref:type-GenericSecretSource-{context}[`GenericSecretSource`] array
 |type            1.2+<.<a|Must be `custom`.
 |string

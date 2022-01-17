@@ -282,7 +282,7 @@ spec:
                                 required:
                                 - key
                                 - secretName
-                              description: Secrets to be mounted to /mnt/strimzi/custom-auth-secrets/<listener-name>/<secret-key>.
+                              description: Secrets to be mounted to /opt/kafka/custom-auth-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_.
                             tlsTrustedCertificates:
                               type: array
                               items:
