@@ -64,22 +64,22 @@ public class ConnectBuildOperator {
     }
 
     /**
-     * Builds a new container image with connectors on Kubernetes using Kaniko or on OpenShift using BuildConfig
+     * Asynchronously runs the KafkaConnectBuild (if present) and reconciles the related resources
      *
      * @param reconciliation    The reconciliation
      * @param namespace         Namespace of the Connect cluster
      * @param connectName       Name of the Connect cluster
      * @param connectBuild      KafkaConnectBuild object
-     * @return                  Future for tracking the asynchronous result of the Kubernetes image build
+     * @return                  Future for tracking the asynchronous result of the reconciliation steps
      */
-    public Future<BuildInfo> build(Reconciliation reconciliation, String namespace, String connectName, KafkaConnectBuild connectBuild) {
+    public Future<BuildInfo> reconcile(Reconciliation reconciliation, String namespace, String connectName, KafkaConnectBuild connectBuild) {
         if (connectBuild.getBuild() == null) {
             // Build is not configured => we should delete resources
             return configMapOperations.reconcile(reconciliation, namespace, KafkaConnectResources.dockerFileConfigMapName(connectBuild.getCluster()), null)
                     .compose(ignore -> podOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildPodName(connectBuild.getCluster()), null))
                     .compose(ignore -> serviceAccountOperations.reconcile(reconciliation, namespace, KafkaConnectResources.buildServiceAccountName(connectBuild.getCluster()), null))
                     .compose(ignore -> pfa.supportsS2I() ? buildConfigOperator.reconcile(reconciliation, namespace, KafkaConnectResources.buildConfigName(connectBuild.getCluster()), null) : Future.succeededFuture())
-                    .map(i -> new BuildInfo());
+                    .map(i -> null);
         } else {
             // Build exists => let's build
             return deploymentOperations.getAsync(namespace, connectName)
@@ -113,30 +113,19 @@ public class ConnectBuildOperator {
         String newBuildRevision = dockerfile.hashStub() + Util.sha1Prefix(connectBuild.getBuild().getOutput().getImage());
         ConfigMap dockerFileConfigMap = connectBuild.generateDockerfileConfigMap(dockerfile);
 
-        BuildInfo buildInfo = new BuildInfo();
         if (newBuildRevision.equals(currentBuildRevision)
                 && !forceRebuild) {
             // The revision is the same and rebuild was not forced => nothing to do
             LOGGER.debugCr(reconciliation, "Build configuration did not change. Nothing new to build. Container image {} will be used.", currentImage);
-            buildInfo.image = currentImage;
-            buildInfo.buildRevision = newBuildRevision;
-            return Future.succeededFuture(buildInfo);
+            return Future.succeededFuture(new BuildInfo(currentImage, newBuildRevision));
         } else if (pfa.supportsS2I()) {
             // Revisions differ and we have S2I support => we are on OpenShift and should do a build
             return openShiftBuild(reconciliation, namespace, connectBuild, forceRebuild, dockerfile, newBuildRevision)
-                    .compose(image -> {
-                        buildInfo.image = image;
-                        buildInfo.buildRevision = newBuildRevision;
-                        return Future.succeededFuture(buildInfo);
-                    });
+                    .compose(image -> Future.succeededFuture(new BuildInfo(image, newBuildRevision)));
         } else {
             // Revisions differ and no S2I support => we are on Kubernetes and should do a build
             return kubernetesBuild(reconciliation, namespace, connectBuild, forceRebuild, dockerFileConfigMap, newBuildRevision)
-                    .compose(image -> {
-                        buildInfo.image = image;
-                        buildInfo.buildRevision = newBuildRevision;
-                        return Future.succeededFuture(buildInfo);
-                    });
+                    .compose(image -> Future.succeededFuture(new BuildInfo(image, newBuildRevision)));
         }
     }
 
@@ -374,8 +363,13 @@ public class ConnectBuildOperator {
      * Utility class to return the information about the Kafka Connect Build.
      */
     static class BuildInfo {
-        private String image;
-        private String buildRevision;
+        private final String image;
+        private final String buildRevision;
+
+        public BuildInfo(String image, String buildRevision) {
+            this.image = image;
+            this.buildRevision = buildRevision;
+        }
 
         public String getImage() {
             return image;

@@ -112,12 +112,10 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         connectServiceAccount(reconciliation, namespace, KafkaConnectResources.serviceAccountName(connect.getCluster()), connect)
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, connect, isUseResources(kafkaConnect)))
-                .compose(i -> connectBuildOperator.build(reconciliation, namespace, connect.getName(), build))
+                .compose(i -> connectBuildOperator.reconcile(reconciliation, namespace, connect.getName(), build))
                 .compose(buildInfo -> {
-                    if (buildInfo.getBuildRevision() != null) {
+                    if (buildInfo != null) {
                         annotations.put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, buildInfo.getBuildRevision());
-                    }
-                    if (buildInfo.getImage() != null) {
                         image.set(buildInfo.getImage());
                     }
                     return Future.succeededFuture();
