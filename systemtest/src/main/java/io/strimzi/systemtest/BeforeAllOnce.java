@@ -6,6 +6,7 @@ package io.strimzi.systemtest;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -19,7 +20,7 @@ import java.util.Collections;
  */
 public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
 
-    private static SetupClusterOperator clusterOperator;
+    private static SetupClusterOperator clusterOperator = new SetupClusterOperator();
     private static final Logger LOGGER = LogManager.getLogger(BeforeAllOnce.class);
     private static boolean systemReady = false;
     private static final String SYSTEM_RESOURCES = "SYSTEM_RESOURCES";
@@ -31,28 +32,34 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
      */
     synchronized private static void systemSetup(ExtensionContext extensionContext) throws Exception {
         // 'if' is used to make sure procedure will be executed only once, not before every class
+
         if (!BeforeAllOnce.systemReady) {
             // get root extension context to be different from others context (BeforeAll)
             sharedExtensionContext = extensionContext.getRoot();
-            BeforeAllOnce.systemReady = true;
-            LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-            LOGGER.debug("{} - [BEFORE SUITE] - Going to setup testing system", extensionContext.getRequiredTestClass().getSimpleName());
 
-            // When we set RBAC policy to NAMESPACE, we must copy all Roles to other (parallel) namespaces.
-            if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
-                // setup cluster operator before all suites only once
-                clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                    .withExtensionContext(sharedExtensionContext)
-                    .createInstallation()
-                    .runInstallation();
-            } else {
-                // setup cluster operator before all suites only once
-                clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                    .withExtensionContext(sharedExtensionContext)
-                    .withNamespace(Constants.INFRA_NAMESPACE)
-                    .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-                    .createInstallation()
-                    .runInstallation();
+            // we skip creation of shared Cluster Operator (because @IsolatedSuite has to have deploy brand-new configuration)
+            if (StUtils.isParallelSuite(extensionContext)) {
+                BeforeAllOnce.systemReady = true;
+
+                LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
+                LOGGER.debug("{} - [BEFORE SUITE] - Going to setup testing system", extensionContext.getRequiredTestClass().getSimpleName());
+
+                // When we set RBAC policy to NAMESPACE, we must copy all Roles to other (parallel) namespaces.
+                if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
+                    // setup cluster operator before all suites only once
+                    clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
+                        .withExtensionContext(sharedExtensionContext)
+                        .createInstallation()
+                        .runInstallation();
+                } else {
+                    // setup cluster operator before all suites only once
+                    clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
+                        .withExtensionContext(sharedExtensionContext)
+                        .withNamespace(Constants.INFRA_NAMESPACE)
+                        .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+                        .createInstallation()
+                        .runInstallation();
+                }
             }
             sharedExtensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(SYSTEM_RESOURCES, new BeforeAllOnce());
         }
@@ -83,7 +90,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [AFTER SUITE] has been called", this.getClass().getName());
         BeforeAllOnce.systemReady = false;
-        clusterOperator.unInstall();
+        clusterOperator.defaultInstallation().createInstallation().unInstall();
     }
 
     public static ExtensionContext getSharedExtensionContext() {

@@ -82,6 +82,10 @@ public class SetupClusterOperator {
     private String testMethodName;
 
     private static final Predicate<String> IS_OLM_CLUSTER_WIDE = namespaceToWatch -> namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES) || namespaceToWatch.split(",").length > 1;
+    private static final Predicate<SetupClusterOperator> IS_EMPTY = co -> co.helmResource == null && co.olmResource == null &&
+        co.extensionContext == null && co.clusterOperatorName == null && co.namespaceInstallTo == null &&
+        co.namespaceToWatch == null && co.bindingsNamespaces == null && co.operationTimeout == 0 && co.reconciliationInterval == 0 &&
+        co.extraEnvVars == null && co.clusterOperatorRBACType == null && co.testClassName == null && co.testMethodName == null;
 
     public SetupClusterOperator() {}
     public SetupClusterOperator(SetupClusterOperatorBuilder builder) {
@@ -558,28 +562,34 @@ public class SetupClusterOperator {
     }
 
     public synchronized void unInstall() {
-        LOGGER.info(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.info("Un-installing cluster operator from {} namespace", namespaceInstallTo);
-        LOGGER.info(String.join("", Collections.nCopies(76, "=")));
-        BeforeAllOnce.getSharedExtensionContext().getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, null);
-
-        // trigger that we will again create namespace
-        if (Environment.isHelmInstall()) {
-            helmResource.delete();
-        } else if (Environment.isOlmInstall()) {
-            olmResource.delete();
+        if (IS_EMPTY.test(this)) {
+            LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+            LOGGER.info("Skip un-installation of the cluster operator");
+            LOGGER.info(String.join("", Collections.nCopies(76, "=")));
         } else {
-            // clear all resources related to the extension context
-            try {
-                if (!Environment.SKIP_TEARDOWN) {
-                    ResourceManager.getInstance().deleteResources(BeforeAllOnce.getSharedExtensionContext());
-                }
-            } catch (Exception e) {
-                Thread.currentThread().interrupt();
-                e.printStackTrace();
-            }
+            LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+            LOGGER.info("Un-installing cluster operator from {} namespace", namespaceInstallTo);
+            LOGGER.info(String.join("", Collections.nCopies(76, "=")));
+            BeforeAllOnce.getSharedExtensionContext().getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, null);
 
-            KubeClusterResource.getInstance().deleteAllSetNamespaces();
+            // trigger that we will again create namespace
+            if (Environment.isHelmInstall()) {
+                helmResource.delete();
+            } else if (Environment.isOlmInstall()) {
+                olmResource.delete();
+            } else {
+                // clear all resources related to the extension context
+                try {
+                    if (!Environment.SKIP_TEARDOWN) {
+                        ResourceManager.getInstance().deleteResources(BeforeAllOnce.getSharedExtensionContext());
+                    }
+                } catch (Exception e) {
+                    Thread.currentThread().interrupt();
+                    e.printStackTrace();
+                }
+
+                KubeClusterResource.getInstance().deleteAllSetNamespaces();
+            }
         }
     }
 

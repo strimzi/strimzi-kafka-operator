@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
@@ -229,25 +228,15 @@ class RecoveryIsolatedST extends AbstractST {
      */
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromImpossibleMemoryRequest(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
+        final String kafkaSsName = KafkaResources.kafkaStatefulSetName(sharedClusterName);
+        final Map<String, Quantity> requests = new HashMap<>(1);
 
-        Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("memory", new Quantity("465458732Gi"));
-
-        ResourceRequirements resourceReq = new ResourceRequirementsBuilder()
+        final ResourceRequirements resourceReq = new ResourceRequirementsBuilder()
             .withRequests(requests)
             .build();
 
-        Kafka kafka = KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
-            .editSpec()
-                .editKafka()
-                    .withResources(resourceReq)
-                .endKafka()
-            .endSpec()
-            .build();
-
-        resourceManager.createResource(extensionContext, false, kafka);
+        KafkaResource.replaceKafkaResource(sharedClusterName, k -> k.getSpec().getKafka().setResources(resourceReq));
 
         PodUtils.waitForPendingPod(kafkaSsName);
         PodUtils.verifyThatPendingPodsAreStable(kafkaSsName);
@@ -255,11 +244,10 @@ class RecoveryIsolatedST extends AbstractST {
         requests.put("memory", new Quantity("512Mi"));
         resourceReq.setRequests(requests);
 
-        KafkaResource.replaceKafkaResource(clusterName, k -> k.getSpec().getKafka().setResources(resourceReq));
+        KafkaResource.replaceKafkaResource(sharedClusterName, k -> k.getSpec().getKafka().setResources(resourceReq));
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaSsName, 3, ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET));
-        KafkaUtils.waitForKafkaReady(clusterName);
-        KafkaResource.kafkaClient().inNamespace(INFRA_NAMESPACE).delete(kafka);
+        KafkaUtils.waitForKafkaReady(sharedClusterName);
     }
 
     @BeforeEach
@@ -275,7 +263,7 @@ class RecoveryIsolatedST extends AbstractST {
         sharedClusterName = generateRandomNameOfKafka("recovery-cluster");
         String kafkaClientsName = Constants.KAFKA_CLIENTS + "-" + sharedClusterName;
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(sharedClusterName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(sharedClusterName, KafkaResources.plainBootstrapAddress(sharedClusterName), 1).build());
     }
