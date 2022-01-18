@@ -181,4 +181,12 @@ public class SecretUtils {
                 .out()
                 .trim();
     }
+
+    public static String encodeStringPassword(String plainPassword) {
+        return new String(Base64.getEncoder().encode(plainPassword.getBytes()), StandardCharsets.US_ASCII);
+    }
+
+    public static String decodeStringPassword(String encodedPassword) {
+        return new String(Base64.getDecoder().decode(encodedPassword), StandardCharsets.US_ASCII);
+    }
 }

@@ -131,17 +131,16 @@ public class OauthAbstractST extends AbstractST {
      * f.e name kafka-broker-secret -> will be encoded to base64 format and use as a key.
      */
     private void createSecretsForDeployments(final String namespace) {
-        SecretUtils.createSecret(namespace, OAUTH_KAFKA_PRODUCER_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtcHJvZHVjZXItc2VjcmV0");
-        SecretUtils.createSecret(namespace, OAUTH_KAFKA_CONSUMER_SECRET, OAUTH_KEY, "aGVsbG8td29ybGQtc3RyZWFtcy1zZWNyZXQ=");
-        SecretUtils.createSecret(namespace, OAUTH_TEAM_A_SECRET, OAUTH_KEY, "dGVhbS1hLWNsaWVudC1zZWNyZXQ=");
-        SecretUtils.createSecret(namespace, OAUTH_TEAM_B_SECRET, OAUTH_KEY, "dGVhbS1iLWNsaWVudC1zZWNyZXQ=");
-        SecretUtils.createSecret(namespace, OAUTH_KAFKA_BROKER_SECRET, OAUTH_KEY, "a2Fma2EtYnJva2VyLXNlY3JldA==");
-        SecretUtils.createSecret(namespace, CONNECT_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtY29ubmVjdC1zZWNyZXQ=");
-        SecretUtils.createSecret(namespace, MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLXNlY3JldA==");
-        SecretUtils.createSecret(namespace, MIRROR_MAKER_2_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtbWlycm9yLW1ha2VyLTItc2VjcmV0");
-        SecretUtils.createSecret(namespace, BRIDGE_OAUTH_SECRET, OAUTH_KEY, "a2Fma2EtYnJpZGdlLXNlY3JldA==");
-        SecretUtils.createSecret(namespace, OAUTH_CLIENT_AUDIENCE_SECRET, OAUTH_KEY, "a2Fma2EtYXVkaWVuY2Utc2VjcmV0");
-        SecretUtils.createSecret(namespace, OAUTH_KAFKA_CLIENT_SECRET, OAUTH_KEY, "a2Fma2EtY2xpZW50LXNlY3JldA==");
+        SecretUtils.createSecret(namespace, OAUTH_KAFKA_PRODUCER_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("hello-world-producer-secret"));
+        SecretUtils.createSecret(namespace, OAUTH_KAFKA_CONSUMER_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("hello-world-streams-secret"));
+        SecretUtils.createSecret(namespace, OAUTH_TEAM_A_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("team-a-client-secret"));
+        SecretUtils.createSecret(namespace, OAUTH_TEAM_B_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("team-b-client-secret"));
+        SecretUtils.createSecret(namespace, OAUTH_KAFKA_BROKER_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("kafka-broker-secret"));
+        SecretUtils.createSecret(namespace, MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("kafka-connect-secret"));
+        SecretUtils.createSecret(namespace, MIRROR_MAKER_2_OAUTH_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("kafka-mirror-maker-2-secret"));
+        SecretUtils.createSecret(namespace, BRIDGE_OAUTH_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("kafka-bridge-secret"));
+        SecretUtils.createSecret(namespace, OAUTH_CLIENT_AUDIENCE_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("kafka-audience-secret"));
+        SecretUtils.createSecret(namespace, OAUTH_KAFKA_CLIENT_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("kafka-client-secret"));
     }
 }
 
