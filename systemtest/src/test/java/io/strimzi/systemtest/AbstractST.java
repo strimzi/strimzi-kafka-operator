@@ -79,7 +79,7 @@ public abstract class AbstractST implements TestSeparator {
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
     protected final TestSuiteNamespaceManager testSuiteNamespaceManager = TestSuiteNamespaceManager.getInstance();
     private final SuiteThreadController parallelSuiteController = SuiteThreadController.getInstance();
-    protected SetupClusterOperator clusterOperator = new SetupClusterOperator();
+    protected SetupClusterOperator clusterOperator;
     protected OlmResource olmResource;
     protected KubeClusterResource cluster;
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
@@ -602,6 +602,7 @@ public abstract class AbstractST implements TestSeparator {
 
     private final void beforeAllMustExecute(ExtensionContext extensionContext) {
         try {
+            clusterOperator = SetupClusterOperator.getInstanceHolder();
         } finally {
             // ensures that only one thread will modify @ParallelSuiteController and race-condition could not happen
             synchronized (BEFORE_ALL_LOCK) {

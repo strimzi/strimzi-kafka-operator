@@ -20,7 +20,7 @@ import java.util.Collections;
  */
 public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
 
-    private static SetupClusterOperator clusterOperator = new SetupClusterOperator();
+    private static SetupClusterOperator clusterOperator;
     private static final Logger LOGGER = LogManager.getLogger(BeforeAllOnce.class);
     private static boolean systemReady = false;
     private static final String SYSTEM_RESOURCES = "SYSTEM_RESOURCES";
@@ -90,7 +90,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("{} - [AFTER SUITE] has been called", this.getClass().getName());
         BeforeAllOnce.systemReady = false;
-        clusterOperator.defaultInstallation().createInstallation().unInstall();
+        SetupClusterOperator.getInstanceHolder().unInstall();
     }
 
     public static ExtensionContext getSharedExtensionContext() {

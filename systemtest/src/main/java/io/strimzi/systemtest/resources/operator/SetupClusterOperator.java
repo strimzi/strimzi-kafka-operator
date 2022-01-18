@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.operator;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -63,6 +64,8 @@ public class SetupClusterOperator {
     private static final Logger LOGGER = LogManager.getLogger(SetupClusterOperator.class);
     public static final String CO_INSTALL_DIR = TestUtils.USER_PATH + "/../packaging/install/cluster-operator";
 
+    private static SetupClusterOperator instanceHolder;
+
     private KubeClusterResource cluster = KubeClusterResource.getInstance();
     private HelmResource helmResource;
     private OlmResource olmResource;
@@ -87,7 +90,16 @@ public class SetupClusterOperator {
         co.namespaceToWatch == null && co.bindingsNamespaces == null && co.operationTimeout == 0 && co.reconciliationInterval == 0 &&
         co.extraEnvVars == null && co.clusterOperatorRBACType == null && co.testClassName == null && co.testMethodName == null;
 
+    public synchronized static SetupClusterOperator getInstanceHolder() {
+        if (instanceHolder == null) {
+            // empty cluster operator
+            instanceHolder = new SetupClusterOperator();
+        }
+        return instanceHolder;
+    }
+
     public SetupClusterOperator() {}
+    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     public SetupClusterOperator(SetupClusterOperatorBuilder builder) {
         this.extensionContext = builder.extensionContext;
         this.clusterOperatorName = builder.clusterOperatorName;
@@ -130,6 +142,7 @@ public class SetupClusterOperator {
         if (this.clusterOperatorRBACType == null) {
             this.clusterOperatorRBACType = ClusterOperatorRBACType.CLUSTER;
         }
+        instanceHolder = this;
     }
 
     /**
