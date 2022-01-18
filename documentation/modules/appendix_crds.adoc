@@ -278,7 +278,7 @@ It must have the value `custom` for the type `KafkaListenerAuthenticationCustom`
 [options="header"]
 |====
 |Property               |Description
-|listenerConfig  1.2+<.<a|Configuration to be used for a specific listener. All values are prefixed with lister.name.<lister-name>.
+|listenerConfig  1.2+<.<a|Configuration to be used for a specific listener. All values are prefixed with listener.name._<listener_name>_.
 |map
 |sasl            1.2+<.<a|Enable or disable SASL on this listener.
 |boolean

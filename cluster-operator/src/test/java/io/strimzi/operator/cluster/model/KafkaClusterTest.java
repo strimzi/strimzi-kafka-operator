@@ -3756,7 +3756,7 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testCustomAuthRemovesForbiddenPrefixesFromCnofig() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,KafkaBrokerConfigurationBuilder
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
                 .editKafka()

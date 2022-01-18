@@ -168,7 +168,7 @@ spec:
                               listenerConfig:
                                 x-kubernetes-preserve-unknown-fields: true
                                 type: object
-                                description: Configuration to be used for a specific listener. All values are prefixed with lister.name.<lister-name>.
+                                description: Configuration to be used for a specific listener. All values are prefixed with listener.name._<listener_name>_.
                               maxSecondsWithoutReauthentication:
                                 type: integer
                                 description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`).
@@ -189,7 +189,7 @@ spec:
                                   required:
                                     - key
                                     - secretName
-                                description: Secrets to be mounted to /mnt/strimzi/custom-auth-secrets/<listener-name>/<secret-key>.
+                                description: Secrets to be mounted to /opt/kafka/custom-auth-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_.
                               tlsTrustedCertificates:
                                 type: array
                                 items:
