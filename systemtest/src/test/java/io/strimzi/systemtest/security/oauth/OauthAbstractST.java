@@ -136,7 +136,8 @@ public class OauthAbstractST extends AbstractST {
         SecretUtils.createSecret(namespace, OAUTH_TEAM_A_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("team-a-client-secret"));
         SecretUtils.createSecret(namespace, OAUTH_TEAM_B_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("team-b-client-secret"));
         SecretUtils.createSecret(namespace, OAUTH_KAFKA_BROKER_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("kafka-broker-secret"));
-        SecretUtils.createSecret(namespace, MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("kafka-connect-secret"));
+        SecretUtils.createSecret(namespace, CONNECT_OAUTH_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("kafka-connect-secret"));
+        SecretUtils.createSecret(namespace, MIRROR_MAKER_OAUTH_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("kafka-mirror-maker-secret"));
         SecretUtils.createSecret(namespace, MIRROR_MAKER_2_OAUTH_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("kafka-mirror-maker-2-secret"));
         SecretUtils.createSecret(namespace, BRIDGE_OAUTH_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("kafka-bridge-secret"));
         SecretUtils.createSecret(namespace, OAUTH_CLIENT_AUDIENCE_SECRET, OAUTH_KEY, SecretUtils.encodeStringPassword("kafka-audience-secret"));
