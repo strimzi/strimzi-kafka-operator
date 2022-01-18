@@ -308,6 +308,12 @@ public interface Constants {
     String ISOLATED_SUITE = "isolatedsuite";
 
     /**
+     * Constants for filtering and matching our test suites names
+     */
+    String ISOLATED = "Isolated";
+    String ST = "ST";
+
+    /**
      * Cruise Control related parameters
      */
     String CRUISE_CONTROL_NAME = "Cruise Control";
