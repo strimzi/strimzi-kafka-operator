@@ -3511,7 +3511,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return future.compose(dep -> {
                     // getting the current cluster CA generation from the current deployment, if exists
                     int clusterCaCertGeneration = getCaCertGeneration(this.clusterCa);
-                    int clientsCaCertGeneration = getCaCertGeneration(this.clientsCa);
 
                     Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
                             Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCaCertGeneration));
