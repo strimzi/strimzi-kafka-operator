@@ -62,7 +62,7 @@ public class KafkaListenerAuthenticationCustom extends KafkaListenerAuthenticati
         this.listenerConfig = config;
     }
 
-    @Description("Secrets to be mounted to /opt/kafka/custom-auth-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_")
+    @Description("Secrets to be mounted to /opt/kafka/custom-authn-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public List<GenericSecretSource> getSecrets() {
         return secrets;

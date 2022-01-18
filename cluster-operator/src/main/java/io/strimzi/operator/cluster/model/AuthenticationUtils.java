@@ -300,9 +300,7 @@ public class AuthenticationUtils {
             for (CertSecretSource certSecretSource : trustedCertificates) {
                 Map<String, String> items = Collections.singletonMap(certSecretSource.getCertificate(), "tls.crt");
                 String volumeName = String.format("%s-%d", volumeNamePrefix, i);
-
                 Volume vol = VolumeUtils.createSecretVolume(volumeName, certSecretSource.getSecretName(), items, isOpenShift);
-
                 newVolumes.add(vol);
                 i++;
             }
@@ -329,9 +327,7 @@ public class AuthenticationUtils {
             for (GenericSecretSource genericSecretSource : genericSecretSources) {
                 Map<String, String> items = Collections.singletonMap(genericSecretSource.getKey(), genericSecretSource.getKey());
                 String volumeName = String.format("%s-%d", volumeNamePrefix, i);
-
                 Volume vol = VolumeUtils.createSecretVolume(volumeName, genericSecretSource.getSecretName(), items, isOpenShift);
-
                 newVolumes.add(vol);
                 i++;
             }
@@ -367,8 +363,7 @@ public class AuthenticationUtils {
     }
 
     /**
-     * Generates volume mounts needed for certificates needed to connect to OAuth server.
-     * This is used in both OAuth servers and clients.
+     * Generates volume mounts needed for generic secrets that are being mounted.
      *
      * @param volumeNamePrefix   Prefix which was used to name the secret volumes
      * @param genericSecretSources   List of generic secrets that should be mounted

@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerCon
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
+import io.strimzi.operator.common.Reconciliation;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -42,12 +43,16 @@ import java.util.stream.Collectors;
 public class KafkaBrokerConfigurationBuilder {
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
+    private final Reconciliation reconciliation;
 
     /**
      * Broker configuration template constructor
+     *
+     * @param reconciliation The reconciliation
      */
-    public KafkaBrokerConfigurationBuilder() {
+    public KafkaBrokerConfigurationBuilder(Reconciliation reconciliation) {
         printHeader();
+        this.reconciliation = reconciliation;
     }
 
     /**
@@ -382,7 +387,8 @@ public class KafkaBrokerConfigurationBuilder {
         } else if (auth instanceof KafkaListenerAuthenticationCustom) {
             KafkaListenerAuthenticationCustom customAuth = (KafkaListenerAuthenticationCustom) auth;
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, customAuth.isSasl())));
-            customAuth.getListenerConfig().forEach((key, value) -> writer.println(String.format("listener.name.%s.%s=%s", listenerNameInProperty, key, value)));
+            KafkaListenerCustomAuthConfiguration config = new KafkaListenerCustomAuthConfiguration(reconciliation, customAuth.getListenerConfig().entrySet());
+            config.asOrderedProperties().asMap().forEach((key, value) -> writer.println(String.format("listener.name.%s.%s=%s", listenerNameInProperty, key, value)));
         } else {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, false)));
         }

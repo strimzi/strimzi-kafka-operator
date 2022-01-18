@@ -282,7 +282,7 @@ spec:
                                 required:
                                 - key
                                 - secretName
-                              description: Secrets to be mounted to /opt/kafka/custom-auth-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_.
+                              description: Secrets to be mounted to /opt/kafka/custom-authn-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_.
                             tlsTrustedCertificates:
                               type: array
                               items:

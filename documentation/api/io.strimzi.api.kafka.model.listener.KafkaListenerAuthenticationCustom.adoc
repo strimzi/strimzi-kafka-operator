@@ -42,9 +42,9 @@ All configuration listed under `listener-config` is prefixed with `listener.name
 For example, `sasl.enabled.mechanisms` becomes `listener.name._<listener_name>-<port>_.sasl.enabled.mechanisms`.
 
 .Secrets
-`Secrets` are mounted to `/opt/kafka/custom-auth-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_` in the Kafka broker nodes' containers.
+`Secrets` are mounted to `/opt/kafka/custom-authn-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_` in the Kafka broker nodes' containers.
 
-For example, the mounted secret (`example`) in the example configuration would be located at `/opt/kafka/custom-auth-secrets/custom-oauth-bespoke-9093/example`.
+For example, the mounted secret (`example`) in the example configuration would be located at `/opt/kafka/custom-authn-secrets/custom-oauth-bespoke-9093/example`.
 
 .Principal
 You can set a custom principal builder in the Kafka cluster config.

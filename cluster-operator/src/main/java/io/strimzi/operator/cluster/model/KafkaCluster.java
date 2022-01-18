@@ -129,7 +129,7 @@ public class KafkaCluster extends AbstractModel {
     protected static final String BROKER_CERTS_VOLUME_MOUNT = "/opt/kafka/broker-certs";
     protected static final String CLIENT_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/client-ca-certs";
     protected static final String OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/certificates";
-    protected static final String CUSTOM_AUTH_SECRETS_VOLUME_MOUNT = "/opt/kafka/custom-auth-secrets";
+    protected static final String CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT = "/opt/kafka/custom-authn-secrets";
 
     private static final String NAME_SUFFIX = "-kafka";
 
@@ -1579,7 +1579,7 @@ public class KafkaCluster extends AbstractModel {
 
             if (isListenerWithCustomAuth(listener)) {
                 KafkaListenerAuthenticationCustom custom = (KafkaListenerAuthenticationCustom) listener.getAuth();
-                volumeMountList.addAll(AuthenticationUtils.configureGenericSecretVolumeMounts("custom-listener-" + identifier, custom.getSecrets(), CUSTOM_AUTH_SECRETS_VOLUME_MOUNT + "/custom-listener-" + identifier));
+                volumeMountList.addAll(AuthenticationUtils.configureGenericSecretVolumeMounts("custom-listener-" + identifier, custom.getSecrets(), CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-" + identifier));
             }
         }
 
@@ -2052,7 +2052,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     private String generateBrokerConfiguration(boolean controlPlaneListener)   {
-        return new KafkaBrokerConfigurationBuilder()
+        return new KafkaBrokerConfigurationBuilder(reconciliation)
                 .withBrokerId()
                 .withRackId(rack)
                 .withZookeeper(cluster)
