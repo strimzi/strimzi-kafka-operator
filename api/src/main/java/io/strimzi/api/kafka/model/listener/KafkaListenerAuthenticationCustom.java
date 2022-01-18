@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Configures a listener to use mutual TLS authentication.
+ * Configures a listener to use custom authentication.
  */
 @Buildable(
         editableEnabled = false,
