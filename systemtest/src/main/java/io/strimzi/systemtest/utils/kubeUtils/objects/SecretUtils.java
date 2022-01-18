@@ -76,7 +76,7 @@ public class SecretUtils {
                 .withNamespace(namespaceName)
             .endMetadata()
             .withType("Opaque")
-                .withData(Collections.singletonMap(dataKey, dataValue))
+                .withStringData(Collections.singletonMap(dataKey, dataValue))
             .build());
     }
 
@@ -180,13 +180,5 @@ public class SecretUtils {
                 .execInCurrentNamespace("annotate", "secret", resourceName, annotationKey + "=" + annotationValue)
                 .out()
                 .trim();
-    }
-
-    public static String encodeStringPassword(String plainPassword) {
-        return new String(Base64.getEncoder().encode(plainPassword.getBytes()), StandardCharsets.US_ASCII);
-    }
-
-    public static String decodeStringPassword(String encodedPassword) {
-        return new String(Base64.getDecoder().decode(encodedPassword), StandardCharsets.US_ASCII);
     }
 }
