@@ -36,6 +36,9 @@ public class LogDumpScriptIsolatedST extends AbstractST {
 
     @IsolatedTest
     void dumpPartitions(ExtensionContext context) {
+        clusterOperator.unInstall();
+        clusterOperator = clusterOperator.defaultInstallation().createInstallation().runInstallation();
+
         String clusterName = mapWithClusterNames.get(context.getDisplayName());
         String groupId = "my-group";
         String partitionNumber = "0";
