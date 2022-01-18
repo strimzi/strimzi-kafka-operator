@@ -3,7 +3,7 @@
 // assembly-kafka-connect.adoc
 
 [id='proc-deploying-kafkaconnector-{context}']
-= Deploying the example KafkaConnector resources
+= Deploying example KafkaConnector resources
 
 [role="_abstract"]
 Use KafkaConnectors with Kafka Connect to stream data to and from a Kafka cluster.
