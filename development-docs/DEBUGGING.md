@@ -51,11 +51,11 @@ Apply the modified file:
 
 We also need to open the port for localhost access:
 
-    kubectl port-forward $(oc get pod | grep strimzi-cluster-operator | awk '{printf $1}') 5005
+    kubectl port-forward $(kubectl get pod | grep strimzi-cluster-operator | awk '{printf $1}') 5005
 
 Start tailing the operator pod (to make sure it's waiting for the debugger to attach, and to see the logging output once you attach with the debugger):
 
-    kubectl logs $(oc get pod | grep strimzi-cluster-operator | awk '{printf $1}') -f 
+    kubectl logs $(kubectl get pod | grep strimzi-cluster-operator | awk '{printf $1}') -f 
 
 You can now start the remote debug session from your IDE.
 
