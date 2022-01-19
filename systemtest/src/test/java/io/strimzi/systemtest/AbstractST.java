@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
+import io.strimzi.systemtest.listeners.ExecutionListener;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.parallel.TestSuiteNamespaceManager;
 import io.strimzi.systemtest.parallel.SuiteThreadController;
@@ -534,7 +535,7 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    private final void afterAllMustExecute(ExtensionContext extensionContext) {
+    private final void afterAllMustExecute(ExtensionContext extensionContext)  {
         if (StUtils.isParallelSuite(extensionContext)) {
             parallelSuiteController.removeParallelSuite(extensionContext);
         }
@@ -547,7 +548,10 @@ public abstract class AbstractST implements TestSeparator {
         // ----
         // 2nd case = transition from if previous suite is @IsolatedSuite and now @ParallelSuite is running we must do
         // additional check that configuration is in default
-        if (clusterOperator != null && !clusterOperator.defaultInstallation().createInstallation().equals(clusterOperator)) {
+        if (clusterOperator != null &&
+            !clusterOperator.defaultInstallation().createInstallation().equals(clusterOperator) &&
+            !ExecutionListener.isNextSuiteIsolated(extensionContext) &&
+            !ExecutionListener.isLastSuite(extensionContext)) {
             // install configuration differs from default one we are gonna roll-back
             LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
             LOGGER.debug("{} - Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.", extensionContext.getRequiredTestClass().getSimpleName());
@@ -600,6 +604,7 @@ public abstract class AbstractST implements TestSeparator {
 
     private final void beforeAllMustExecute(ExtensionContext extensionContext) {
         try {
+            clusterOperator = SetupClusterOperator.getInstanceHolder();
         } finally {
             // ensures that only one thread will modify @ParallelSuiteController and race-condition could not happen
             synchronized (BEFORE_ALL_LOCK) {

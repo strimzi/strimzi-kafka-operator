@@ -494,6 +494,10 @@ public class SpecificIsolatedST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
+        clusterOperator.unInstall();
+        clusterOperator.defaultInstallation()
+            .createInstallation()
+            .runInstallation();
         LOGGER.info(BridgeUtils.getBridgeVersion());
     }
 }

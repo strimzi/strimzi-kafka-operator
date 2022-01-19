@@ -73,7 +73,7 @@ public class TestSuiteNamespaceManager {
     private void retrieveAllSystemTestsNames(File stFiles) {
         // adding to the list of all namespaces and also eliminate @IsolatedSuite classes, because these classes could
         // use Constants.INFRA_NAMESPACE for their execution without any auxiliary.
-        if (stFiles.getName().endsWith("ST.java") && !stFiles.getName().contains("Isolated")) {
+        if (stFiles.getName().endsWith(Constants.ST + ".java") && !stFiles.getName().contains(Constants.ISOLATED)) {
             this.stParallelSuitesNames.add(stFiles.getName());
         }
 

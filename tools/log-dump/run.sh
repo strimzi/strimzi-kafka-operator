@@ -43,7 +43,7 @@ check_kube_conn() {
 }
 
 get_kafka_setup() {
-  local kafka_yaml=$(kubectl -n $NAMESPACE get k $CLUSTER -o yaml ||true)
+  local kafka_yaml=$(kubectl -n $NAMESPACE get kafka $CLUSTER -o yaml ||true)
   KAFKA_BROKERS=$(echo "$kafka_yaml" | yq eval ".spec.kafka.replicas" -)
   STORAGE_TYPE=$(echo "$kafka_yaml" | yq eval ".spec.kafka.storage.type" -)
   JBOD_DISKS=$(echo "$kafka_yaml" | yq eval ".spec.kafka.storage.volumes | length" -)

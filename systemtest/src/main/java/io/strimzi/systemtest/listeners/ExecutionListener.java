@@ -4,24 +4,36 @@
  */
 package io.strimzi.systemtest.listeners;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class ExecutionListener implements TestExecutionListener {
     private static final Logger LOGGER = LogManager.getLogger(TestExecutionListener.class);
 
-    public void testPlanExecutionStarted(TestPlan testPlan) {
+    private static List<String> testSuitesNamesToExecute;
+
+    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
+    public void testPlanExecutionStarted(TestPlan plan) {
         LOGGER.info("=======================================================================");
         LOGGER.info("=======================================================================");
         LOGGER.info("                        Test run started");
         LOGGER.info("=======================================================================");
         LOGGER.info("=======================================================================");
-        printSelectedTestClasses(testPlan);
+        printSelectedTestClasses(plan);
+        testSuitesNamesToExecute = new ArrayList<>(plan.getChildren(plan.getRoots().toArray(new TestIdentifier[0])[0])).stream()
+            .map(testIdentifier -> testIdentifier.getDisplayName()).collect(Collectors.toList());
     }
 
     public void testPlanExecutionFinished(TestPlan testPlan) {
@@ -39,5 +51,52 @@ public class ExecutionListener implements TestExecutionListener {
                 .toArray(new TestIdentifier[0])).forEach(testIdentifier -> LOGGER.info("-> {}", testIdentifier.getLegacyReportingName()));
         LOGGER.info("=======================================================================");
         LOGGER.info("=======================================================================");
+    }
+
+    public static boolean isLastSuite(final ExtensionContext extensionContext) {
+        return extensionContext.getRequiredTestClass().getSimpleName().equals(testSuitesNamesToExecute.get(testSuitesNamesToExecute.size() - 1));
+    }
+
+    /**
+     * Auxiliary method, which checks is next suite from the current is @IsolatedSuite. Next suite @code{followingTestSuite}
+     * is obtained by fetching index number from @code{testSuitesNamesToExecute} and then incrementing to one if it is not
+     * the last test suite to execute checked by {@link #isLastSuite(ExtensionContext)}.
+     *
+     * Deep reason of this method, is that when JUnit5 schedule test suites in this order:
+     *
+     *       @IsolatedSuite -> @IsolatedSuite -> @IsolatedSuite
+     *
+     * Here we  use {@link SetupClusterOperator#rollbackToDefaultConfiguration()} to rollback to default
+     * Cluster Operator configuration. If this worst case when there is no {@link io.strimzi.systemtest.annotations.ParallelSuite}
+     * it ends up with:
+     *  ------
+     *  1) first @IsolatedSuite
+     *      a) Deploy Cluster Operator with specific configuration (@BeforeAll)
+     *      b) Delete Cluster Operator with specific configuration (@AfterAll)
+     *      c) Create Cluster Operator with default configuration (@AfterAll) <- unnecessary
+     *  2) second @IsolatedSuite
+     *      a) Delete CLuster Operator with default configuration (@BeforeAll) <- unnecessary
+     *      b) Create Cluster Operator with specific configuration (@BeforeAll)
+     *      c) Delete Cluster Operator with specific configuration (@AfterAll)
+     *      d) Create Cluster Operator with default configuration (@AfterAll) <- unnecessary
+     *      ...
+     *  3) third @IsolatedSuite
+     *      a) Delete CLuster Operator with default configuration (@BeforeAll) <- unnecessary
+     *     ...
+     *
+     * @param extensionContext extension context of current test suite, which is executed
+     * @return true iff next suite is @IsolatedSuite, otherwise false
+     */
+    public static boolean isNextSuiteIsolated(final ExtensionContext extensionContext) {
+        final int currentTestSuite = testSuitesNamesToExecute.indexOf(extensionContext.getRequiredTestClass().getSimpleName());
+        final int followingTestSuite = currentTestSuite + 1;
+
+        if (testSuitesNamesToExecute.size() > 1 && !isLastSuite(extensionContext)) {
+            final String followingTestSuiteName = testSuitesNamesToExecute.get(followingTestSuite);
+            if (followingTestSuiteName.endsWith(Constants.ST) && testSuitesNamesToExecute.get(followingTestSuite).contains(Constants.ISOLATED)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
