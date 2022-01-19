@@ -254,7 +254,7 @@ public class CruiseControlTest {
             .endSpec()
             .build();
         
-				capacity = new Capacity(resource.getSpec(), jbodStorage);
+        capacity = new Capacity(resource.getSpec(), jbodStorage);
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.generateCapacityConfig()));
     }
 

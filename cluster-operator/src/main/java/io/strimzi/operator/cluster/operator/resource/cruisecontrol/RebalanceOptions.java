@@ -114,7 +114,7 @@ public class RebalanceOptions {
             isDryRun = true;
             verbose = false;
             skipHardGoalCheck = false;
-            rebalanceDisk = false;
+            rebalanceDisk = true;
             goals = null;
             excludedTopics = null;
             concurrentPartitionMovementsPerBroker = 0;
@@ -139,8 +139,8 @@ public class RebalanceOptions {
             return this;
         }
 
-        public RebalanceOptionsBuilder withRebalanceDisk() {
-            this.rebalanceDisk = true;
+        public RebalanceOptionsBuilder withRebalanceDisk(boolean rebalanceDisk) {
+            this.rebalanceDisk = rebalanceDisk;
             return this;
         }
 

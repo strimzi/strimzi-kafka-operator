@@ -256,6 +256,7 @@ public class CruiseControlST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCruiseControlIntraBrokerBalancing(ExtensionContext extensionContext) {
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String diskSize = "6Gi";
 
@@ -267,7 +268,7 @@ public class CruiseControlST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
                 .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(namespaceName)
                 .endMetadata()
                     .editOrNewSpec()
                         .editKafka()
@@ -277,18 +278,17 @@ public class CruiseControlST extends AbstractST {
                 .build());
         resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName)
                 .editMetadata()
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(namespaceName)
                 .endMetadata()
                     .editOrNewSpec()
-                        .withRebalanceDisk(true)
                     .endSpec()
                 .build());
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(INFRA_NAMESPACE, clusterName, KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(namespaceName, clusterName, KafkaRebalanceState.ProposalReady);
 
         LOGGER.info("Checking status of KafkaRebalance");
         // The provision status should be "UNDECIDED" when doing an intra-broker disk balance because it is irrelevant to the provision status
-        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(INFRA_NAMESPACE).withName(clusterName).get().getStatus();
+        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("provisionStatus").toString(), containsString("UNDECIDED"));
     }
 }

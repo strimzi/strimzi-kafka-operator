@@ -60,11 +60,11 @@ public class Capacity {
      * @param doc Documentation for broker entry
      * @return Broker entry as a JsonObject
      */
-    private JsonObject generateBrokerCapacity(int brokerId, Object diskCapacity, String doc) {
+    private JsonObject generateBrokerCapacity(int brokerId, JsonObject diskCapacity, String doc) {
         JsonObject brokerCapacity = new JsonObject()
             .put("brokerId", brokerId)
             .put("capacity", new JsonObject()
-                .put("DISK", diskCapacity)
+                .put("DISK", diskCapacity.getValue("DISK"))
                 .put("CPU", Integer.toString(cpuUtilization))
                 .put("NW_IN", Double.toString(inboundNetworkKiBPerSecond))
                 .put("NW_OUT", Double.toString(outboundNetworkKiBPerSecond))
@@ -143,14 +143,15 @@ public class Capacity {
             // Kafka volume paths are not homogeneous across brokers and include
             // the broker pod index in their names.
             for (int idx = 0; idx < replicas; idx++) {
-                JsonObject diskConfig = generateJbodDiskCapacity(storage, idx);
+                JsonObject diskConfig = new JsonObject().put("DISK", generateJbodDiskCapacity(storage, idx));
                 JsonObject brokerEntry = generateBrokerCapacity(idx, diskConfig, "Capacity for Broker " + idx);
                 brokerList.add(brokerEntry);
             }
         } else {
             // A capacity configuration for a cluster without a JBOD configuration
             // can rely on a generic broker entry for all brokers
-            JsonObject defaultBrokerCapacity = generateBrokerCapacity(DEFAULT_BROKER_ID, String.valueOf(diskMiB), DEFAULT_BROKER_DOC);
+            JsonObject diskConfig = new JsonObject().put("DISK", diskMiB);
+            JsonObject defaultBrokerCapacity = generateBrokerCapacity(DEFAULT_BROKER_ID, diskConfig, DEFAULT_BROKER_DOC);
             brokerList.add(defaultBrokerCapacity);
         }
         JsonObject config = new JsonObject();

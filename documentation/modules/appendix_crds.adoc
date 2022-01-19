@@ -3144,7 +3144,7 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |string array
 |skipHardGoalCheck                        1.2+<.<a|Whether to allow the hard goals specified in the Kafka CR to be skipped in optimization proposal generation. This can be useful when some of those hard goals are preventing a balance solution being found. Default is false.
 |boolean
-|rebalanceDisk                            1.2+<.<a|Whether to balance disk space utilization between disks within brokers, known as intra-broker disk balancing (requires JBOD Kafka deployment. ) Default is false.
+|rebalanceDisk                            1.2+<.<a|Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. Only applies to Kafka deployments that use JBOD storage. ) Default is true when using a Kafka deployment with JBOD storage and false otherwise.
 |boolean
 |excludedTopics                           1.2+<.<a|A regular expression where any matching topics will be excluded from the calculation of optimization proposals. This expression will be parsed by the java.util.regex.Pattern class; for more information on the supported formar consult the documentation for that class.
 |string
