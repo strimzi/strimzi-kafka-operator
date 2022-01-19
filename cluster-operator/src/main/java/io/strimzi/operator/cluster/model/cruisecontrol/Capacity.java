@@ -168,6 +168,9 @@ public class Capacity {
      * @return The equivalent number of mebibytes.
      */
     public static Double getSizeInMiB(String size) {
+        if (size == null) {
+            return DEFAULT_BROKER_DISK_MIB_CAPACITY;
+        }
         return parseMemory(size, "Mi");
     }
 

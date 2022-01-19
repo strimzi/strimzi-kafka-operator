@@ -239,7 +239,6 @@ public class CruiseControlTest {
 
         PersistentClaimStorage p2 = new PersistentClaimStorage();
         p2.setId(1);
-        p2.setSize("50G");
         volumes.add(p2);
 
         jbodStorage.setVolumes(volumes);
