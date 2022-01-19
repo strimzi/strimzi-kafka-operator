@@ -63,9 +63,9 @@ public class KafkaRebalanceSpec extends Spec {
         this.skipHardGoalCheck = skipHardGoalCheck;
     }
 
-    @Description("Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. Only applies to Kafka deployments that use JBOD storage. ) " +
+    @Description("Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. Only applies to Kafka deployments that use JBOD storage. " +
             "Default is true when using a Kafka deployment with JBOD storage and false otherwise.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isRebalanceDisk() {
         return rebalanceDisk;
     }
@@ -75,7 +75,7 @@ public class KafkaRebalanceSpec extends Spec {
     }
 
     @Description("A regular expression where any matching topics will be excluded from the calculation of optimization proposals. " +
-            "This expression will be parsed by the java.util.regex.Pattern class; for more information on the supported formar " +
+            "This expression will be parsed by the java.util.regex.Pattern class; for more information on the supported format " +
             "consult the documentation for that class.")
     public String getExcludedTopics() {
         return excludedTopics;

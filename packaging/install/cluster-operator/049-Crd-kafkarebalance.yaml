@@ -56,14 +56,14 @@ spec:
                 type: boolean
                 description: Enables intra-broker disk balancing, which balances disk
                   space utilization between disks on the same broker. Only applies
-                  to Kafka deployments that use JBOD storage. ) Default is true when
+                  to Kafka deployments that use JBOD storage. Default is true when
                   using a Kafka deployment with JBOD storage and false otherwise.
               excludedTopics:
                 type: string
                 description: A regular expression where any matching topics will be
                   excluded from the calculation of optimization proposals. This expression
                   will be parsed by the java.util.regex.Pattern class; for more information
-                  on the supported formar consult the documentation for that class.
+                  on the supported format consult the documentation for that class.
               concurrentPartitionMovementsPerBroker:
                 type: integer
                 minimum: 0
