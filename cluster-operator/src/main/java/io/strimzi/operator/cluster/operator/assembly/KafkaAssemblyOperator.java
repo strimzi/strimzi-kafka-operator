@@ -2147,32 +2147,31 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             for (GenericKafkaListener listener : loadBalancerListeners) {
                 String bootstrapServiceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(name, listener);
 
-                List<String> listenerAddressList = new ArrayList<>(kafkaCluster.getReplicas() + 1);
-                Future<Void> perListenerFut;
+                List<String> bootstrapListenerAddressList = new ArrayList<>(kafkaCluster.getReplicas());
 
-                if (!ListenersUtils.skipCreateBootstrapService(listener)) {
-                    perListenerFut = Future.succeededFuture();
-                } else {
-                    perListenerFut = serviceOperations.hasIngressAddress(reconciliation, namespace, bootstrapServiceName, 1_000, operationTimeoutMs)
-                            .compose(res -> serviceOperations.getAsync(namespace, bootstrapServiceName))
-                            .compose(svc -> {
-                                String bootstrapAddress;
+                Future perListenerFut = Future.succeededFuture().compose(i -> {
+                    if (ListenersUtils.skipCreateBootstrapService(listener)) {
+                        return Future.succeededFuture();
+                    } else {
+                        return serviceOperations.hasIngressAddress(reconciliation, namespace, bootstrapServiceName, 1_000, operationTimeoutMs)
+                                .compose(res -> serviceOperations.getAsync(namespace, bootstrapServiceName))
+                                .compose(svc -> {
+                                    String bootstrapAddress;
 
-                                if (svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
-                                    bootstrapAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname();
-                                } else {
-                                    bootstrapAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getIp();
-                                }
+                                    if (svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
+                                        bootstrapAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname();
+                                    } else {
+                                        bootstrapAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getIp();
+                                    }
 
-                                LOGGER.debugCr(reconciliation, "Found address {} for Service {}", bootstrapAddress, bootstrapServiceName);
+                                    LOGGER.debugCr(reconciliation, "Found address {} for Service {}", bootstrapAddress, bootstrapServiceName);
 
-                                kafkaBootstrapDnsName.add(bootstrapAddress);
-                                listenerAddressList.add(bootstrapAddress);
-                                return Future.succeededFuture();
-                            });
-                }
-                
-                perListenerFut.compose(res -> {
+                                    kafkaBootstrapDnsName.add(bootstrapAddress);
+                                    bootstrapListenerAddressList.add(bootstrapAddress);
+                                    return Future.succeededFuture();
+                                });
+                    }
+                }).compose(res -> {
                     List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
 
                     for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
@@ -2198,7 +2197,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 }
                                 LOGGER.debugCr(reconciliation, "Found address {} for Service {}", brokerAddress, svc.getMetadata().getName());
 
-                                listenerAddressList.add(brokerAddress);
+                                if (ListenersUtils.skipCreateBootstrapService(listener)) {
+                                    bootstrapListenerAddressList.add(brokerAddress);
+                                }
                                 kafkaBrokerDnsNames.computeIfAbsent(podNumber, k -> new HashSet<>(2)).add(brokerAddress);
 
                                 String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
@@ -2219,7 +2220,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }).compose(res -> {
                     ListenerStatus ls = new ListenerStatusBuilder()
                         .withType(listener.getName())
-                        .withAddresses(listenerAddressList.stream()
+                        .withAddresses(bootstrapListenerAddressList.stream()
                                 .map(listenerAddress -> new ListenerAddressBuilder().withHost(listenerAddress)
                                         .withPort(listener.getPort())
                                         .build())
