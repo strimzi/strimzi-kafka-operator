@@ -76,7 +76,7 @@ public class SecretUtils {
                 .withNamespace(namespaceName)
             .endMetadata()
             .withType("Opaque")
-                .withData(Collections.singletonMap(dataKey, dataValue))
+                .withStringData(Collections.singletonMap(dataKey, dataValue))
             .build());
     }
 

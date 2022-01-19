@@ -67,7 +67,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
@@ -75,7 +74,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -651,7 +649,7 @@ class SecurityST extends AbstractST {
         // 1. Create the Secrets already, and a certificate that's already expired
         InputStream secretInputStream = getClass().getClassLoader().getResourceAsStream("security-st-certs/expired-cluster-ca.crt");
         String clusterCaCert = TestUtils.readResource(secretInputStream);
-        SecretUtils.createSecret(namespaceName, clusterCaCertificateSecretName(clusterName), "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
+        SecretUtils.createSecret(namespaceName, clusterCaCertificateSecretName(clusterName), "ca.crt", clusterCaCert);
 
         // 2. Now create a cluster
         createKafkaCluster(extensionContext);
@@ -1217,7 +1215,7 @@ class SecurityST extends AbstractST {
 
         InputStream secretInputStream = getClass().getClassLoader().getResourceAsStream("security-st-certs/expired-cluster-ca.crt");
         String clusterCaCert = TestUtils.readResource(secretInputStream);
-        SecretUtils.createSecret(namespaceName, clusterCaCertificateSecretName(clusterName), "ca.crt", new String(Base64.getEncoder().encode(clusterCaCert.getBytes()), StandardCharsets.US_ASCII));
+        SecretUtils.createSecret(namespaceName, clusterCaCertificateSecretName(clusterName), "ca.crt", clusterCaCert);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
             k.getSpec()
