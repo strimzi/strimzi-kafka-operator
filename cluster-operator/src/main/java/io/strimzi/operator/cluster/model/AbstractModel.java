@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Affinity;
@@ -189,9 +188,6 @@ public abstract class AbstractModel {
             PROXY_ENV_VARS = Collections.emptyList();
         }
     }
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final TypeReference<Map<String, Object>> POD_TYPE = new TypeReference<>() { };
 
     protected final Reconciliation reconciliation;
     protected final String cluster;
@@ -1134,7 +1130,7 @@ public abstract class AbstractModel {
                     imagePullSecrets,
                     isOpenShift);
 
-            pods.add(MAPPER.convertValue(pod, POD_TYPE));
+            pods.add(PodSetUtils.podToMap(pod));
         }
 
         return new StrimziPodSetBuilder()

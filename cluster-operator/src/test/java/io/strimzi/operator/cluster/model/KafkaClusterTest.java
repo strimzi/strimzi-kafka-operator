@@ -376,7 +376,7 @@ public class KafkaClusterTest {
     @ParallelTest
     public void testGenerateStatefulSet() {
         // We expect a single statefulSet ...
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         checkStatefulSet(sts, kafkaAssembly, true);
         checkOwnerReference(kc.createOwnerReference(), sts);
     }
@@ -393,7 +393,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(false, null, null);
+        StatefulSet sts = kc.generateStatefulSet(false, null, null, null);
         assertThat(sts.getSpec().getVolumeClaimTemplates().get(0).getSpec().getSelector().getMatchLabels(), is(selector));
     }
 
@@ -408,7 +408,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(false, null, null);
+        StatefulSet sts = kc.generateStatefulSet(false, null, null, null);
         assertThat(sts.getSpec().getVolumeClaimTemplates().get(0).getSpec().getSelector(), is(nullValue()));
     }
 
@@ -424,7 +424,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(false, null, null);
+        StatefulSet sts = kc.generateStatefulSet(false, null, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
     }
 
@@ -439,7 +439,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(false, null, null);
+        StatefulSet sts = kc.generateStatefulSet(false, null, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(nullValue()));
     }
 
@@ -453,7 +453,7 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, editKafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         checkStatefulSet(sts, editKafkaAssembly, true);
     }
 
@@ -468,7 +468,7 @@ public class KafkaClusterTest {
                             .endKafka()
                         .endSpec().build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, editKafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(false, null, null);
+        StatefulSet sts = kc.generateStatefulSet(false, null, null, null);
         checkStatefulSet(sts, editKafkaAssembly, false);
     }
 
@@ -486,7 +486,7 @@ public class KafkaClusterTest {
                             .endKafka()
                         .endSpec().build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, editKafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(false, null, null);
+        StatefulSet sts = kc.generateStatefulSet(false, null, null, null);
         assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.ORDERED_READY.toValue()));
     }
 
@@ -622,35 +622,35 @@ public class KafkaClusterTest {
     public void withAffinityWithoutRack() throws IOException {
         ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, versions), this.getClass().getSimpleName() + ".withAffinityWithoutRack");
         resourceTester.assertDesiredResource("-STS.yaml",
-            kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+            kc -> kc.generateStatefulSet(true, null, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @ParallelTest
     public void withRackWithoutAffinity() throws IOException {
         ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, versions), this.getClass().getSimpleName() + ".withRackWithoutAffinity");
         resourceTester.assertDesiredResource("-STS.yaml",
-            kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+            kc -> kc.generateStatefulSet(true, null, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @ParallelTest
     public void withRackAndAffinityWithMoreTerms() throws IOException {
         ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, versions), this.getClass().getSimpleName() + ".withRackAndAffinityWithMoreTerms");
         resourceTester.assertDesiredResource("-STS.yaml",
-            kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+            kc -> kc.generateStatefulSet(true, null, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @ParallelTest
     public void withRackAndAffinity() throws IOException {
         ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, versions), this.getClass().getSimpleName() + ".withRackAndAffinity");
         resourceTester.assertDesiredResource("-STS.yaml",
-            kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+            kc -> kc.generateStatefulSet(true, null, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @ParallelTest
     public void withTolerations() throws IOException {
         ResourceTester<Kafka, KafkaCluster> resourceTester = new ResourceTester<>(Kafka.class, VERSIONS, (kafkaAssembly1, versions) -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly1, versions), this.getClass().getSimpleName() + ".withTolerations");
         resourceTester.assertDesiredResource("-STS.yaml",
-            kc -> kc.generateStatefulSet(true, null, null).getSpec().getTemplate().getSpec().getTolerations());
+            kc -> kc.generateStatefulSet(true, null, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @ParallelTest
@@ -674,7 +674,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check StatefulSet changes
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
 
         List<ContainerPort> ports = sts.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
         assertThat(ports.contains(kc.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, "TCP")), is(true));
@@ -846,7 +846,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check StatefulSet changes
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
 
         List<ContainerPort> ports = sts.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
         assertThat(ports.contains(kc.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, "TCP")), is(true));
@@ -1169,7 +1169,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check StatefulSet changes
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
 
         List<ContainerPort> ports = sts.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
         assertThat(ports.contains(kc.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, "TCP")), is(true));
@@ -1214,7 +1214,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check StatefulSet changes
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         Container initCont = sts.getSpec().getTemplate().getSpec().getInitContainers().get(0);
 
         assertThat(initCont, is(notNullValue()));
@@ -1250,7 +1250,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check StatefulSet changes
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
 
         List<ContainerPort> ports = sts.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
         assertThat(ports.contains(kc.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, "TCP")), is(true));
@@ -1602,7 +1602,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check StatefulSet
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         assertThat(sts.getMetadata().getLabels().entrySet().containsAll(expectedStsLabels.entrySet()), is(true));
         assertThat(sts.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()), is(true));
         assertThat(sts.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
@@ -1909,7 +1909,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
     }
 
@@ -1920,7 +1920,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(30)));
     }
 
@@ -1943,7 +1943,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -1962,7 +1962,7 @@ public class KafkaClusterTest {
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap());
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = kc.generateStatefulSet(true, null, secrets);
+        StatefulSet sts = kc.generateStatefulSet(true, null, secrets, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -1987,7 +1987,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = kc.generateStatefulSet(true, null, singletonList(secret1));
+        StatefulSet sts = kc.generateStatefulSet(true, null, singletonList(secret1), null);
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(false));
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -2000,7 +2000,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
@@ -2020,7 +2020,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(Long.valueOf(123)));
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(Long.valueOf(456)));
@@ -2034,7 +2034,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
@@ -2076,11 +2076,11 @@ public class KafkaClusterTest {
         kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = kc.generateStatefulSet(true, ImagePullPolicy.ALWAYS, null);
+        StatefulSet sts = kc.generateStatefulSet(true, ImagePullPolicy.ALWAYS, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getInitContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        sts = kc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT, null);
+        sts = kc.generateStatefulSet(true, ImagePullPolicy.IFNOTPRESENT, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getInitContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
@@ -2282,7 +2282,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Storage annotation on STS
-        assertThat(kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
+        assertThat(kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
                 is(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage())));
 
         // Check PVCs
@@ -2312,7 +2312,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Storage annotation on STS
-        assertThat(kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
+        assertThat(kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
                 is(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage())));
 
         // Check PVCs
@@ -2350,7 +2350,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Storage annotation on STS
-        assertThat(kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
+        assertThat(kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
                 is(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage())));
 
         // Check PVCs
@@ -2402,7 +2402,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Storage annotation on STS
-        assertThat(kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
+        assertThat(kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
                 is(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage())));
 
         // Check PVCs
@@ -2503,7 +2503,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Storage annotation on STS
-        assertThat(kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
+        assertThat(kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
                 is(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage())));
 
         // Check PVCs
@@ -2579,7 +2579,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check Storage annotation on STS
-        assertThat(kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
+        assertThat(kc.generateStatefulSet(true, ImagePullPolicy.NEVER, null, null).getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE),
                 is(ModelUtils.encodeStorageToJson(kafkaAssembly.getSpec().getKafka().getStorage())));
 
         // Check PVCs
@@ -2720,7 +2720,7 @@ public class KafkaClusterTest {
         assertThat(kc.isExposedWithIngress(), is(true));
 
         // Check StatefulSet changes
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
 
         List<ContainerPort> ports = sts.getSpec().getTemplate().getSpec().getContainers().get(0).getPorts();
         assertThat(ports.contains(kc.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, "TCP")), is(true));
@@ -3185,7 +3185,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
         assertThat(kc.templateKafkaContainerSecurityContext, is(securityContext));
 
-        StatefulSet sts = kc.generateStatefulSet(false, null, null);
+        StatefulSet sts = kc.generateStatefulSet(false, null, null, null);
 
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers(),
                 hasItem(allOf(
@@ -3225,7 +3225,7 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(false, null, null);
+        StatefulSet sts = kc.generateStatefulSet(false, null, null, null);
 
         assertThat(sts.getSpec().getTemplate().getSpec().getInitContainers(),
                 hasItem(allOf(
@@ -3261,7 +3261,7 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
@@ -3312,7 +3312,7 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
@@ -3417,7 +3417,7 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         assertThat(cont.getEnv().stream().filter(var -> "STRIMZI_PLAIN_9092_OAUTH_CLIENT_SECRET".equals(var.getName())).findFirst().orElseThrow().getValueFrom().getSecretKeyRef().getName(), is("my-secret-secret"));
@@ -3503,7 +3503,7 @@ public class KafkaClusterTest {
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
 
         Volume vol = sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(v -> "custom-external-9094-certs".equals(v.getName())).findFirst().orElse(null);
 
@@ -3549,7 +3549,7 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
 
         Volume vol = sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(v -> "custom-tls-9093-certs".equals(v.getName())).findFirst().orElse(null);
 
@@ -3635,7 +3635,7 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         // Volume mounts

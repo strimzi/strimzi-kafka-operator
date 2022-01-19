@@ -268,6 +268,14 @@ public class VolumeUtils {
         return volumeMount;
     }
 
+    /**
+     * Generates the list of data volumes as used in StatefulSets. For StatefulSets, we specify only the ephemeral
+     * (emptyDir volumes). The persistent claim volumes are generated from the template by Kubernetes.
+     *
+     * @param storage   Storage configuration
+     *
+     * @return          List of data volumes for use in StatefulSet definition
+     */
     public static List<Volume> getDataVolumes(Storage storage) {
         List<Volume> volumes = new ArrayList<>();
 
@@ -284,6 +292,42 @@ public class VolumeUtils {
                 String name = getVolumePrefix(id);
                 String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
                 volumes.add(createEmptyDirVolume(name, sizeLimit, null));
+            }
+        }
+
+        return volumes;
+    }
+
+    /**
+     * Generates the list of data volumes as used in PodSets and individual Pods. This includes both ephemeral
+     * and persistent data volumes.
+     *
+     * @param podName   Name of the pod used to name the volumes
+     * @param storage   Storage configuration
+     * @param jbod      Indicates that the storage is part of JBOD storage and names volumes accordingly
+     *
+     * @return          List of data volumes to be included in the StrimziPodSet pod
+     */
+    public static List<Volume> getPodDataVolumes(String podName, Storage storage, boolean jbod) {
+        List<Volume> volumes = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    if (volume.getId() == null)
+                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
+                    // it's called recursively for setting the information from the current volume
+                    volumes.addAll(getPodDataVolumes(podName, volume, true));
+                }
+            } else if (storage instanceof EphemeralStorage) {
+                Integer id = ((EphemeralStorage) storage).getId();
+                String name = jbod ? getVolumePrefix(id) : getVolumePrefix(null);
+                String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
+                volumes.add(createEmptyDirVolume(name, sizeLimit, null));
+            } else if (storage instanceof PersistentClaimStorage)   {
+                Integer id = ((PersistentClaimStorage) storage).getId();
+                String name = jbod ? getVolumePrefix(id) : getVolumePrefix(null);
+                volumes.add(createPvcVolume(name, name + "-" + podName));
             }
         }
 

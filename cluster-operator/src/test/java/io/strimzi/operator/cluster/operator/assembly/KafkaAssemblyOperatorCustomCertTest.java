@@ -89,7 +89,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
         ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
             return new ReconciliationState(reconciliation, kafkaAssembly) {
                 @Override
-                Future<Void> maybeRollKafka(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
+                Future<Void> maybeRollKafka(int replicas, Function<Pod, List<String>> podNeedsRestart) {
                     functionArgumentCaptor.add(podNeedsRestart);
                     return Future.succeededFuture();
                 }

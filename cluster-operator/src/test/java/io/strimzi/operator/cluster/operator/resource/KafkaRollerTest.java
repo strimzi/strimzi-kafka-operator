@@ -4,19 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -44,6 +31,19 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static io.vertx.core.Future.failedFuture;
 import static io.vertx.core.Future.succeededFuture;
@@ -585,7 +585,7 @@ public class KafkaRollerTest {
                                   int... controllers) {
             super(new Reconciliation("test", "Kafka", stsNamespace(), clusterName()), KafkaRollerTest.vertx, podOps, 500, 1000,
                 () -> new BackOff(10L, 2, 4),
-                sts, clusterCaCertSecret, coKeySecret, "", "", KafkaVersionTestUtils.getLatestVersion(), true);
+                    sts.getSpec().getReplicas(), clusterCaCertSecret, coKeySecret, "", "", KafkaVersionTestUtils.getLatestVersion(), true);
             this.controllers = controllers;
             this.controllerCall = 0;
             Objects.requireNonNull(acOpenException);

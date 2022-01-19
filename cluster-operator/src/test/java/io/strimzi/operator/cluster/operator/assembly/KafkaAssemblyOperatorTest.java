@@ -674,17 +674,7 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config) {
-            @Override
-            public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
-                return new ReconciliationState(r, ka) {
-                    @Override
-                    public Future<Void> waitForQuiescence(StatefulSet sts) {
-                        return Future.succeededFuture();
-                    }
-                };
-            }
-        };
+                config);
 
         // Now try to create a KafkaCluster based on this CM
         Checkpoint async = context.checkpoint();
@@ -1139,7 +1129,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Mock StatefulSet get
         when(mockStsOps.get(eq(clusterNamespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(
-                originalKafkaCluster.generateStatefulSet(openShift, null, null)
+                originalKafkaCluster.generateStatefulSet(openShift, null, null, null)
         );
         when(mockStsOps.get(eq(clusterNamespace), eq(ZookeeperCluster.zookeeperClusterName(clusterName)))).thenReturn(
                 originalZookeeperCluster.generateStatefulSet(openShift, null, null)
@@ -1249,17 +1239,7 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config) {
-            @Override
-            public ReconciliationState createReconciliationState(Reconciliation r, Kafka ka) {
-                return new ReconciliationState(r, ka) {
-                    @Override
-                    public Future<Void> waitForQuiescence(StatefulSet sts) {
-                        return Future.succeededFuture();
-                    }
-                };
-            }
-        };
+                config);
 
         // Now try to update a KafkaCluster based on this CM
         Checkpoint async = context.checkpoint();
@@ -1269,8 +1249,8 @@ public class KafkaAssemblyOperatorTest {
                 // rolling restart
                 Set<String> expectedRollingRestarts = set();
                 if (StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION,
-                        new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, originalKafkaCluster.generateStatefulSet(openShift, null, null),
-                        updatedKafkaCluster.generateStatefulSet(openShift, null, null)))) {
+                        new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, originalKafkaCluster.generateStatefulSet(openShift, null, null, null),
+                        updatedKafkaCluster.generateStatefulSet(openShift, null, null, null)))) {
                     expectedRollingRestarts.add(originalKafkaCluster.getName());
                 }
                 if (StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION,
@@ -1338,7 +1318,7 @@ public class KafkaAssemblyOperatorTest {
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND);
         when(mockStsOps.list(eq(kafkaNamespace), eq(newLabels))).thenReturn(
-                List.of(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null))
+                List.of(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null, null))
         );
 
         when(mockSecretOps.get(eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(foo.getMetadata().getName()))))
@@ -1350,7 +1330,7 @@ public class KafkaAssemblyOperatorTest {
         Labels barLabels = Labels.forStrimziCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS);
         when(mockStsOps.list(eq(kafkaNamespace), eq(barLabels))).thenReturn(
-                List.of(barCluster.generateStatefulSet(openShift, null, null))
+                List.of(barCluster.generateStatefulSet(openShift, null, null, null))
         );
         when(mockSecretOps.list(eq(kafkaNamespace), eq(barLabels))).thenAnswer(
             invocation -> new ArrayList<>(asList(
@@ -1428,14 +1408,14 @@ public class KafkaAssemblyOperatorTest {
         // providing the list of ALL StatefulSets for all the Kafka clusters
         Labels newLabels = Labels.forStrimziKind(Kafka.RESOURCE_KIND);
         when(mockStsOps.list(eq("*"), eq(newLabels))).thenReturn(
-                List.of(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null))
+                List.of(KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateStatefulSet(openShift, null, null, null))
         );
 
         // providing the list StatefulSets for already "existing" Kafka clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
         KafkaCluster barCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS);
         when(mockStsOps.list(eq("*"), eq(barLabels))).thenReturn(
-                List.of(barCluster.generateStatefulSet(openShift, null, null))
+                List.of(barCluster.generateStatefulSet(openShift, null, null, null))
         );
         when(mockSecretOps.list(eq("*"), eq(barLabels))).thenAnswer(
             invocation -> new ArrayList<>(asList(
