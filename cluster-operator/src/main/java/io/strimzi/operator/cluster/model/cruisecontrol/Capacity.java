@@ -150,7 +150,7 @@ public class Capacity {
         } else {
             // A capacity configuration for a cluster without a JBOD configuration
             // can rely on a generic broker entry for all brokers
-            JsonObject diskConfig = new JsonObject().put("DISK", diskMiB);
+            JsonObject diskConfig = new JsonObject().put("DISK", String.valueOf(diskMiB));
             JsonObject defaultBrokerCapacity = generateBrokerCapacity(DEFAULT_BROKER_ID, diskConfig, DEFAULT_BROKER_DOC);
             brokerList.add(defaultBrokerCapacity);
         }
