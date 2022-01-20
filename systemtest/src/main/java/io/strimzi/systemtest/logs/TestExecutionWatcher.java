@@ -36,7 +36,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
 
     @Override
     public void handleBeforeAllMethodExecutionException(ExtensionContext extensionContext, Throwable throwable) throws Throwable {
-        LOGGER.error("{} - Exception {} has been thrown in @BeforeAll with message:{}. Going to collect logs from components.", extensionContext.getRequiredTestClass().getSimpleName(), throwable.getMessage());
+        LOGGER.error("{} - Exception {} has been thrown in @BeforeAll. Going to collect logs from components.", extensionContext.getRequiredTestClass().getSimpleName(), throwable.getMessage());
         if (!(throwable instanceof TestAbortedException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
             collectLogs(new CollectorElement(testClass));
