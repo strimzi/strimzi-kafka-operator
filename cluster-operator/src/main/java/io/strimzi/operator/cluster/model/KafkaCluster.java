@@ -58,6 +58,7 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
@@ -93,6 +94,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithCustomAuth;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
 import static java.util.Collections.addAll;
 import static java.util.Collections.singletonList;
@@ -127,6 +129,7 @@ public class KafkaCluster extends AbstractModel {
     protected static final String BROKER_CERTS_VOLUME_MOUNT = "/opt/kafka/broker-certs";
     protected static final String CLIENT_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/client-ca-certs";
     protected static final String OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/certificates";
+    protected static final String CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT = "/opt/kafka/custom-authn-secrets";
 
     private static final String NAME_SUFFIX = "-kafka";
 
@@ -1492,6 +1495,11 @@ public class KafkaCluster extends AbstractModel {
                 KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
                 volumeList.addAll(AuthenticationUtils.configureOauthCertificateVolumes("oauth-" + ListenersUtils.identifier(listener), oauth.getTlsTrustedCertificates(), isOpenShift));
             }
+
+            if (isListenerWithCustomAuth(listener)) {
+                KafkaListenerAuthenticationCustom custom = (KafkaListenerAuthenticationCustom) listener.getAuth();
+                volumeList.addAll(AuthenticationUtils.configureGenericSecretVolumes("custom-listener-" + ListenersUtils.identifier(listener), custom.getSecrets(), isOpenShift));
+            }
         }
 
         if (authorization instanceof KafkaAuthorizationKeycloak) {
@@ -1567,6 +1575,11 @@ public class KafkaCluster extends AbstractModel {
             if (isListenerWithOAuth(listener))   {
                 KafkaListenerAuthenticationOAuth oauth = (KafkaListenerAuthenticationOAuth) listener.getAuth();
                 volumeMountList.addAll(AuthenticationUtils.configureOauthCertificateVolumeMounts("oauth-" + identifier, oauth.getTlsTrustedCertificates(), OAUTH_TRUSTED_CERTS_BASE_VOLUME_MOUNT + "/oauth-" + identifier + "-certs"));
+            }
+
+            if (isListenerWithCustomAuth(listener)) {
+                KafkaListenerAuthenticationCustom custom = (KafkaListenerAuthenticationCustom) listener.getAuth();
+                volumeMountList.addAll(AuthenticationUtils.configureGenericSecretVolumeMounts("custom-listener-" + identifier, custom.getSecrets(), CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-" + identifier));
             }
         }
 
@@ -2039,7 +2052,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     private String generateBrokerConfiguration(boolean controlPlaneListener)   {
-        return new KafkaBrokerConfigurationBuilder()
+        return new KafkaBrokerConfigurationBuilder(reconciliation)
                 .withBrokerId()
                 .withRackId(rack)
                 .withZookeeper(cluster)

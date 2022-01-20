@@ -1,0 +1,93 @@
+To configure custom authentication, set the `type` property to `custom`.
+
+Custom authentication allows for any type of kafka-supported authentication to be used.
+
+.Example custom OAuth authentication configuration
+[source,yaml,subs="attributes+"]
+----
+spec:
+  kafka:
+    config:
+      principal.builder.class: SimplePrincipal.class
+    listeners:
+      - name: oauth-bespoke
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: custom
+          sasl: true
+          listener-config:
+            oauthbearer.sasl.client.callback.handler.class: client.class
+            oauthbearer.sasl.server.callback.handler.class: server.class
+            oauthbearer.sasl.login.callback.handler.class: login.class
+            oauthbearer.connections.max.reauth.ms: 999999999
+            sasl.enabled.mechanisms: oauthbearer
+            oauthbearer.sasl.jaas.config: |
+              org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ;
+          secrets:
+            - name: example
+----
+
+.Protocol map
+A protocol map is generated that uses the above `sasl` and `tls` fields to determine which protocol to map to the listener.
+
+* SASL = True, TLS = True -> SASL_SSL
+* SASL = False, TLS = True -> SSL
+* SASL = True, TLS = False -> SASL_PLAINTEXT
+* SASL = False, TLS = False -> PLAINTEXT
+
+.`listener-config`
+All configuration listed under `listener-config` is prefixed with `listener.name._<listener_name>-<port>_`.
+For example, `sasl.enabled.mechanisms` becomes `listener.name._<listener_name>-<port>_.sasl.enabled.mechanisms`.
+
+.Secrets
+`Secrets` are mounted to `/opt/kafka/custom-authn-secrets/custom-listener-_<listener_name>-<port>_/_<secret_name>_` in the Kafka broker nodes' containers.
+
+For example, the mounted secret (`example`) in the example configuration would be located at `/opt/kafka/custom-authn-secrets/custom-oauth-bespoke-9093/example`.
+
+.Principal
+You can set a custom principal builder in the Kafka cluster config.
+
+However, the principal builder is subject to the following requirements:
+
+. The specified principal builder class must exist on the image.
+If you're using the open source Strimzi images, you'll need to rebuild one with the required classes.
+TIP: _Before_ building your own, check if one already exists.
+. No other listener is using `oauth` type authentication.
+This is because an OAuth listener appends its own principle builder to the Kafka configuration.
+. The specified principal builder is compatible with Strimzi.
+
+Custom principal builders must support peer certificates for authentication, as Strimzi uses these to manage the Kafka cluster.
+ifdef::Downloading[]
+A custom OAuth principal builder might be identical or very similar to the Strimzi https://github.com/strimzi/strimzi-kafka-oauth/blob/main/oauth-server/src/main/java/io/strimzi/kafka/oauth/server/OAuthKafkaPrincipalBuilder.java[OAuth principal builder].
+endif::Downloading[]
+NOTE: https://github.com/apache/kafka/blob/trunk/clients/src/main/java/org/apache/kafka/common/security/authenticator/DefaultKafkaPrincipalBuilder.java#L73-L79[Kafka's default principal builder class] supports the building of principals based on the names of peer certificates.
+The custom principal builder should provide a principal of type "user" using the name of the SSL peer certificate.
+
+The following example shows a custom principal builder that satisfies the OAuth requirements of Strimzi.
+
+.Example principal builder for custom OAuth configuration
+[source,java,subs="attributes+"]
+----
+public final class CustomKafkaPrincipalBuilder implements KafkaPrincipalBuilder {
+
+    public KafkaPrincipalBuilder() {}
+
+    @Override
+    public KafkaPrincipal build(AuthenticationContext context) {
+        if (context instanceof SslAuthenticationContext) {
+            SSLSession sslSession = ((SslAuthenticationContext) context).session();
+            try {
+                return new KafkaPrincipal(
+                        KafkaPrincipal.USER_TYPE, sslSession.getPeerPrincipal().getName());
+            } catch (SSLPeerUnverifiedException e) {
+                throw new IllegalArgumentException("Cannot use an unverified peer for authentication", e);
+            }
+        }
+
+        // Create your own KafkaPrincipal here
+        ...
+    }
+}
+----

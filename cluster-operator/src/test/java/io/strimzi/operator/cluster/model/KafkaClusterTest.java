@@ -45,6 +45,7 @@ import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.GenericSecretSourceBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
@@ -59,6 +60,7 @@ import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.RackBuilder;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationCustomBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
@@ -3472,6 +3474,45 @@ public class KafkaClusterTest {
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "oauth-external-9094-2".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "oauth-external-9094-2".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("ca2.crt"));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "oauth-external-9094-2".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("tls.crt"));
+    }
+
+    @ParallelTest
+    public void testCustomAuthSecretsAreMounted() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName("plain")
+                        .withPort(9092)
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withTls(false)
+                        .withAuth(
+                                new KafkaListenerAuthenticationCustomBuilder()
+                                        .withSecrets(new GenericSecretSourceBuilder().withSecretName("test").withKey("foo").build(),
+                                                new GenericSecretSourceBuilder().withSecretName("test2").withKey("bar").build())
+                                        .build())
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+        StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
+        Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        // Volume mounts
+        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-0".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test"));
+        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-1".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test2"));
+
+        // Volumes
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("foo"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("foo"));
+
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("bar"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("bar"));
     }
 
     @ParallelTest

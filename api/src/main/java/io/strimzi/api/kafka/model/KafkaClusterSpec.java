@@ -42,7 +42,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, UnknownProperty
     private static final long serialVersionUID = 1L;
 
     public static final String FORBIDDEN_PREFIXES = "listeners, advertised., broker., listener., host.name, port, "
-            + "inter.broker.listener.name, sasl., ssl., security., password., principal.builder.class, log.dir, "
+            + "inter.broker.listener.name, sasl., ssl., security., password., log.dir, "
             + "zookeeper.connect, zookeeper.set.acl, zookeeper.ssl, zookeeper.clientCnxnSocket, authorizer., super.user, "
             + "cruise.control.metrics.topic, cruise.control.metrics.reporter.bootstrap.servers";
 
