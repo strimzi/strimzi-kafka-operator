@@ -3,6 +3,7 @@
 ## 0.28.0
 
 * Update Open Policy Agent authorizer to 1.4.0 and add support for enabling metrics 
+* Added the option `createBootstrapService` in the Kafka Spec to disable the creation of the bootstrap service for the Load Balancer Type Listener. It will save the cost of one load balancer resource, specially in the public cloud.
 
 ## 0.27.0
 
