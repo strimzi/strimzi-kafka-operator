@@ -1200,19 +1200,6 @@ public class KafkaClusterTest {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
                 .editSpec()
-<<<<<<< HEAD
-                .editKafka()
-                .withListeners(new GenericKafkaListenerBuilder()
-                        .withName("external")
-                        .withPort(9094)
-                        .withType(KafkaListenerType.NODEPORT)
-                        .withTls(true)
-                        .withNewConfiguration()
-                        .withPreferredNodePortAddressType(NodeAddressType.INTERNAL_DNS)
-                        .endConfiguration()
-                        .build())
-                .endKafka()
-=======
                     .editKafka()
                         .withListeners(new GenericKafkaListenerBuilder()
                                 .withName("external")
@@ -1224,17 +1211,12 @@ public class KafkaClusterTest {
                                 .endConfiguration()
                                 .build())
                     .endKafka()
->>>>>>> 523e169fb... remove whitespace changes
                 .endSpec()
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         // Check StatefulSet changes
-<<<<<<< HEAD
         StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
-=======
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
->>>>>>> 523e169fb... remove whitespace changes
         Container initCont = sts.getSpec().getTemplate().getSpec().getInitContainers().get(0);
 
         assertThat(initCont, is(notNullValue()));
@@ -3495,7 +3477,6 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
-<<<<<<< HEAD
     public void testCustomAuthSecretsAreMounted() {
         Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
@@ -3521,22 +3502,20 @@ public class KafkaClusterTest {
         Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
 
         // Volume mounts
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-plain-9092-0".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTH_SECRETS_VOLUME_MOUNT + "/custom-plain-9092/test"));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-plain-9092-1".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTH_SECRETS_VOLUME_MOUNT + "/custom-plain-9092/test2"));
+        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-0".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test"));
+        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-1".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test2"));
 
         // Volumes
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("foo"));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("foo"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("foo"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("foo"));
 
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("bar"));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("bar"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("bar"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("bar"));
     }
 
     @ParallelTest
-=======
->>>>>>> 523e169fb... remove whitespace changes
     public void testExternalCertificateIngress() {
         String cert = "my-external-cert.crt";
         String key = "my.key";
@@ -3712,45 +3691,6 @@ public class KafkaClusterTest {
         assertThat(volumes.stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
         assertThat(volumes.stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("tls.crt"));
         assertThat(volumes.stream().filter(vol -> "authz-keycloak-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("tls.crt"));
-    }
-
-    @ParallelTest
-    public void testCustomAuthSecretsAreMounted() {
-        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
-                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
-                .editSpec()
-                .editKafka()
-                .withListeners(new GenericKafkaListenerBuilder()
-                        .withName("plain")
-                        .withPort(9092)
-                        .withType(KafkaListenerType.INTERNAL)
-                        .withTls(false)
-                        .withAuth(
-                                new KafkaListenerAuthenticationCustomBuilder()
-                                        .withSecrets(new GenericSecretSourceBuilder().withSecretName("test").withKey("foo").build(),
-                                                new GenericSecretSourceBuilder().withSecretName("test2").withKey("bar").build())
-                                        .build())
-                        .build())
-                .endKafka()
-                .endSpec()
-                .build();
-
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        StatefulSet sts = kc.generateStatefulSet(true, null, null);
-        Container cont = sts.getSpec().getTemplate().getSpec().getContainers().get(0);
-
-        // Volume mounts
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-0".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test"));
-        assertThat(cont.getVolumeMounts().stream().filter(mount -> "custom-listener-plain-9092-1".equals(mount.getName())).findFirst().orElseThrow().getMountPath(), is(KafkaCluster.CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT + "/custom-listener-plain-9092/test2"));
-
-        // Volumes
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("foo"));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-0".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("foo"));
-
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().size(), is(1));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getKey(), is("bar"));
-        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream().filter(vol -> "custom-listener-plain-9092-1".equals(vol.getName())).findFirst().orElseThrow().getSecret().getItems().get(0).getPath(), is("bar"));
     }
 
     @ParallelTest
