@@ -113,9 +113,10 @@ public class KeycloakUtils {
      * @return JsonArray with all clients set for the specific realm
      */
     public static JsonArray getKeycloakRealmClients(String namespaceName, String baseURI, String token, String desiredRealm) {
-        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        final String keycloakOperatorPod = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, "keycloak-operator-").get(0).getMetadata().getName();
+
         return new JsonArray(cmdKubeClient(namespaceName).execInPod(
-            coPodName,
+            keycloakOperatorPod,
             "curl",
             "-v",
             "--insecure",
@@ -150,9 +151,10 @@ public class KeycloakUtils {
      * @return JsonArray with results from endpoint
      */
     private static JsonArray getConfigFromResourceServerOfRealm(String namespaceName, String baseURI, String token, String desiredRealm, String clientId, String endpoint) {
-        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        final String keycloakOperatorPod = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, "keycloak-operator-").get(0).getMetadata().getName();
+
         return new JsonArray(cmdKubeClient(namespaceName).execInPod(
-            coPodName,
+            keycloakOperatorPod,
             "curl",
             "-v",
             "--insecure",
@@ -173,9 +175,10 @@ public class KeycloakUtils {
      * @return response from server
      */
     public static String putConfigurationToRealm(String namespaceName, String baseURI, String token, JsonObject config, String desiredRealm) {
-        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        final String keycloakOperatorPod = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, "keycloak-operator-").get(0).getMetadata().getName();
+
         return cmdKubeClient(namespaceName).execInPod(
-            coPodName,
+            keycloakOperatorPod,
             "curl",
             "-v",
             "--insecure",
@@ -199,9 +202,10 @@ public class KeycloakUtils {
      * @return response from server
      */
     public static String updatePolicyOfRealmClient(String namespaceName, String baseURI, String token, JsonObject policy, String desiredRealm, String clientId) {
-        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        final String keycloakOperatorPod = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, "keycloak-operator-").get(0).getMetadata().getName();
+
         return cmdKubeClient(namespaceName).execInPod(
-            coPodName,
+            keycloakOperatorPod,
             "curl",
             "-v",
             "--insecure",

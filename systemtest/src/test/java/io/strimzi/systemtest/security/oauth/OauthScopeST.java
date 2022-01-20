@@ -140,7 +140,7 @@ public class OauthScopeST extends OauthAbstractST {
         // explicitly verifying also logs
         String kafkaPodName = kubeClient().listPodsByPrefixInName(namespace, KafkaResources.kafkaPodName(oauthClusterName, 0)).get(0).getMetadata().getName();
 
-        String kafkaLog = KubeClusterResource.cmdKubeClient(namespace).execInCurrentNamespace(false, "logs", kafkaPodName, "--tail", "50").out();
+        String kafkaLog = KubeClusterResource.cmdKubeClient(namespace).execInCurrentNamespace(false, "logs", kafkaPodName, "--tail", "200").out();
         assertThat(kafkaLog, CoreMatchers.containsString("Access token expires at"));
         assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: $[*][?]"));
         assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: @['scope']"));
