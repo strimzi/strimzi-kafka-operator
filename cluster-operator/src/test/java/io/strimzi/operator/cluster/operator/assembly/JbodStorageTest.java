@@ -156,7 +156,7 @@ public class JbodStorageTest {
                     for (SingleVolumeStorage volume : this.volumes) {
                         if (volume instanceof PersistentClaimStorage) {
 
-                            String expectedPvcName = VolumeUtils.getVolumePrefix(volume.getId()) + "-" + KafkaCluster.kafkaPodName(NAME, podId);
+                            String expectedPvcName = VolumeUtils.createVolumePrefix(volume.getId(), true) + "-" + KafkaCluster.kafkaPodName(NAME, podId);
                             List<PersistentVolumeClaim> matchingPvcs = pvcs.stream()
                                     .filter(pvc -> pvc.getMetadata().getName().equals(expectedPvcName))
                                     .collect(Collectors.toList());

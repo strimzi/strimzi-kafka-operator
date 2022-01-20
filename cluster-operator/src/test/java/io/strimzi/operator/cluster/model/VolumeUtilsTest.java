@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
@@ -14,6 +15,7 @@ import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
 import io.fabric8.kubernetes.api.model.Volume;
+import org.junit.jupiter.api.Assertions;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +27,51 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ParallelSuite
 public class VolumeUtilsTest {
+    private static final Storage JBOD_STORAGE = new JbodStorageBuilder().withVolumes(
+                    new PersistentClaimStorageBuilder()
+                        .withDeleteClaim(false)
+                        .withId(0)
+                        .withSize("20Gi")
+                        .build(),
+                    new PersistentClaimStorageBuilder()
+                        .withDeleteClaim(true)
+                        .withId(1)
+                        .withSize("10Gi")
+                        .build())
+            .build();
+
+    private static final Storage JBOD_STORAGE_WITH_EPHEMERAL = new JbodStorageBuilder().withVolumes(
+                    new PersistentClaimStorageBuilder()
+                        .withDeleteClaim(false)
+                        .withId(0)
+                        .withSize("20Gi")
+                        .build(),
+                    new EphemeralStorageBuilder()
+                        .withId(1)
+                        .build())
+            .build();
+
+    private static final Storage JBOD_STORAGE_WITHOUT_ID = new JbodStorageBuilder().withVolumes(
+                    new PersistentClaimStorageBuilder()
+                        .withDeleteClaim(false)
+                        .withSize("20Gi")
+                        .build())
+            .build();
+
+    private static final Storage PERSISTENT_CLAIM_STORAGE = new PersistentClaimStorageBuilder()
+            .withDeleteClaim(false)
+            .withSize("20Gi")
+            .build();
+
+    private static final Storage PERSISTENT_CLAIM_STORAGE_WITH_ID = new PersistentClaimStorageBuilder()
+            .withDeleteClaim(false)
+            .withId(0)
+            .withSize("20Gi")
+            .build();
+
+    private static final Storage EPHEMERAL_STORAGE = new EphemeralStorageBuilder().build();
+
+
     @ParallelTest
     public void testCreateEmptyDirVolumeWithMedium() {
         Volume volume = VolumeUtils.createEmptyDirVolume("bar", "1Gi", "Memory");
@@ -119,22 +166,13 @@ public class VolumeUtilsTest {
         assertThat(volumeFromPvc.getPersistentVolumeClaim().getClaimName(), is("my-pvc"));
     }
 
-    @ParallelTest
-    public void testPodVolumesWithJbod()    {
-        Storage storage = new JbodStorageBuilder().withVolumes(
-                        new PersistentClaimStorageBuilder()
-                                .withDeleteClaim(false)
-                                .withId(0)
-                                .withSize("20Gi")
-                                .build(),
-                        new PersistentClaimStorageBuilder()
-                                .withDeleteClaim(true)
-                                .withId(1)
-                                .withSize("10Gi")
-                                .build())
-                .build();
+    ////////////////////
+    // PodSet volume tests
+    ////////////////////
 
-        List<Volume> volumes = VolumeUtils.getPodDataVolumes("my-pod", storage, false);
+    @ParallelTest
+    public void testPodSetVolumesWithJbod()    {
+        List<Volume> volumes = VolumeUtils.createPodSetVolumes("my-pod", JBOD_STORAGE, false);
 
         assertThat(volumes.size(), is(2));
         assertThat(volumes.get(0).getName(), is("data-0"));
@@ -144,13 +182,29 @@ public class VolumeUtilsTest {
     }
 
     @ParallelTest
-    public void testPodVolumesPersistentClaimOnly()    {
-        Storage storage = new PersistentClaimStorageBuilder()
-                .withDeleteClaim(false)
-                .withSize("20Gi")
-                .build();
+    public void testPodSetVolumesWithJbodWithEphemeral()    {
+        List<Volume> volumes = VolumeUtils.createPodSetVolumes("my-pod", JBOD_STORAGE_WITH_EPHEMERAL, false);
 
-        List<Volume> volumes = VolumeUtils.getPodDataVolumes("my-pod", storage, false);
+        assertThat(volumes.size(), is(2));
+        assertThat(volumes.get(0).getName(), is("data-0"));
+        assertThat(volumes.get(0).getPersistentVolumeClaim().getClaimName(), is("data-0-my-pod"));
+        assertThat(volumes.get(1).getName(), is("data-1"));
+        assertThat(volumes.get(1).getEmptyDir(), is(notNullValue()));
+    }
+
+    @ParallelTest
+    public void testPodSetVolumesWithJbodWithoutId()    {
+        InvalidResourceException ex = Assertions.assertThrows(
+                InvalidResourceException.class,
+                () -> VolumeUtils.createPodSetVolumes("my-pod", JBOD_STORAGE_WITHOUT_ID, false)
+        );
+
+        assertThat(ex.getMessage(), is("The 'id' property is required for volumes in JBOD storage."));
+    }
+
+    @ParallelTest
+    public void testPodSetVolumesPersistentClaimOnly()    {
+        List<Volume> volumes = VolumeUtils.createPodSetVolumes("my-pod", PERSISTENT_CLAIM_STORAGE, false);
 
         assertThat(volumes.size(), is(1));
         assertThat(volumes.get(0).getName(), is("data"));
@@ -158,14 +212,8 @@ public class VolumeUtilsTest {
     }
 
     @ParallelTest
-    public void testPodVolumesPersistentClaimOnlyWithId()    {
-        Storage storage = new PersistentClaimStorageBuilder()
-                                .withDeleteClaim(false)
-                                .withId(0)
-                                .withSize("20Gi")
-                                .build();
-
-        List<Volume> volumes = VolumeUtils.getPodDataVolumes("my-pod", storage, false);
+    public void testPodSetVolumesPersistentClaimWithId()    {
+        List<Volume> volumes = VolumeUtils.createPodSetVolumes("my-pod", PERSISTENT_CLAIM_STORAGE_WITH_ID, false);
 
         assertThat(volumes.size(), is(1));
         assertThat(volumes.get(0).getName(), is("data"));
@@ -173,15 +221,115 @@ public class VolumeUtilsTest {
     }
 
     @ParallelTest
-    public void testPodVolumesEphemeralOnly()    {
-        Storage storage = new EphemeralStorageBuilder()
-                .withId(0)
-                .build();
-
-        List<Volume> volumes = VolumeUtils.getPodDataVolumes("my-pod", storage, false);
+    public void testPodSetVolumesEphemeralOnly()    {
+        List<Volume> volumes = VolumeUtils.createPodSetVolumes("my-pod", EPHEMERAL_STORAGE, false);
 
         assertThat(volumes.size(), is(1));
         assertThat(volumes.get(0).getName(), is("data"));
         assertThat(volumes.get(0).getEmptyDir(), is(notNullValue()));
+    }
+
+    ////////////////////
+    // StatefulSet volume tests
+    ////////////////////
+
+    @ParallelTest
+    public void testStatefulSetVolumesWithJbod()    {
+        List<Volume> volumes = VolumeUtils.createStatefulSetVolumes(JBOD_STORAGE, false);
+
+        assertThat(volumes.size(), is(0));
+    }
+
+    @ParallelTest
+    public void testStatefulSetVolumesWithJbodWithEphemeral()    {
+        List<Volume> volumes = VolumeUtils.createStatefulSetVolumes(JBOD_STORAGE_WITH_EPHEMERAL, false);
+
+        assertThat(volumes.size(), is(1));
+        assertThat(volumes.get(0).getName(), is("data-1"));
+        assertThat(volumes.get(0).getEmptyDir(), is(notNullValue()));
+    }
+
+    @ParallelTest
+    public void testStatefulSetVolumesWithJbodWithoutId()    {
+        List<Volume> volumes = VolumeUtils.createStatefulSetVolumes(JBOD_STORAGE, false);
+
+        assertThat(volumes.size(), is(0));
+    }
+
+    @ParallelTest
+    public void testStatefulSetVolumesPersistentClaimOnly()    {
+        List<Volume> volumes = VolumeUtils.createStatefulSetVolumes(PERSISTENT_CLAIM_STORAGE, false);
+
+        assertThat(volumes.size(), is(0));
+    }
+
+    @ParallelTest
+    public void testStatefulSetVolumesPersistentClaimWithId()    {
+        List<Volume> volumes = VolumeUtils.createStatefulSetVolumes(PERSISTENT_CLAIM_STORAGE_WITH_ID, false);
+
+        assertThat(volumes.size(), is(0));
+    }
+
+    @ParallelTest
+    public void testStatefulSetVolumesEphemeralOnly()    {
+        List<Volume> volumes = VolumeUtils.createStatefulSetVolumes(EPHEMERAL_STORAGE, false);
+
+        assertThat(volumes.size(), is(1));
+        assertThat(volumes.get(0).getName(), is("data"));
+        assertThat(volumes.get(0).getEmptyDir(), is(notNullValue()));
+    }
+
+    ////////////////////
+    // Persistent Volume CLaim templates tests
+    ////////////////////
+
+    @ParallelTest
+    public void testPvcTemplatesWithJbod()    {
+        List<PersistentVolumeClaim> pvcs = VolumeUtils.createPersistentVolumeClaimTemplates(JBOD_STORAGE, false);
+
+        assertThat(pvcs.size(), is(2));
+        assertThat(pvcs.get(0).getMetadata().getName(), is("data-0"));
+        assertThat(pvcs.get(1).getMetadata().getName(), is("data-1"));
+    }
+
+    @ParallelTest
+    public void testPvcTemplatesWithJbodWithEphemeral()    {
+        List<PersistentVolumeClaim> pvcs = VolumeUtils.createPersistentVolumeClaimTemplates(JBOD_STORAGE_WITH_EPHEMERAL, false);
+
+        assertThat(pvcs.size(), is(1));
+        assertThat(pvcs.get(0).getMetadata().getName(), is("data-0"));
+    }
+
+    @ParallelTest
+    public void testPvcTemplatesWithJbodWithoutId()    {
+        InvalidResourceException ex = Assertions.assertThrows(
+                InvalidResourceException.class,
+                () -> VolumeUtils.createPersistentVolumeClaimTemplates(JBOD_STORAGE_WITHOUT_ID, false)
+        );
+
+        assertThat(ex.getMessage(), is("The 'id' property is required for volumes in JBOD storage."));
+    }
+
+    @ParallelTest
+    public void testPvcTemplatesPersistentClaimOnly()    {
+        List<PersistentVolumeClaim> pvcs = VolumeUtils.createPersistentVolumeClaimTemplates(PERSISTENT_CLAIM_STORAGE, false);
+
+        assertThat(pvcs.size(), is(1));
+        assertThat(pvcs.get(0).getMetadata().getName(), is("data"));
+    }
+
+    @ParallelTest
+    public void testPvcTemplatesPersistentClaimWithId()    {
+        List<PersistentVolumeClaim> pvcs = VolumeUtils.createPersistentVolumeClaimTemplates(PERSISTENT_CLAIM_STORAGE_WITH_ID, false);
+
+        assertThat(pvcs.size(), is(1));
+        assertThat(pvcs.get(0).getMetadata().getName(), is("data"));
+    }
+
+    @ParallelTest
+    public void testPvcTemplatesEphemeralOnly()    {
+        List<PersistentVolumeClaim> pvcs = VolumeUtils.createPersistentVolumeClaimTemplates(EPHEMERAL_STORAGE, false);
+
+        assertThat(pvcs.size(), is(0));
     }
 }

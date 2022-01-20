@@ -544,7 +544,7 @@ public class KafkaAssemblyOperatorTest {
 
         Map<String, PersistentVolumeClaim> kafkaPvcs = createPvcs(kafkaNamespace, kafkaCluster.getStorage(), kafkaCluster.getReplicas(),
             (replica, storageId) -> {
-                String name = VolumeUtils.getVolumePrefix(storageId);
+                String name = VolumeUtils.createVolumePrefix(storageId, false);
                 return name + "-" + KafkaCluster.kafkaPodName(kafkaName, replica);
             });
 
@@ -918,12 +918,12 @@ public class KafkaAssemblyOperatorTest {
         Map<String, PersistentVolumeClaim> kafkaPvcs =
                 createPvcs(clusterNamespace, originalKafkaCluster.getStorage(), originalKafkaCluster.getReplicas(),
                     (replica, storageId) -> {
-                        String name = VolumeUtils.getVolumePrefix(storageId);
+                        String name = VolumeUtils.createVolumePrefix(storageId, false);
                         return name + "-" + KafkaCluster.kafkaPodName(clusterName, replica);
                     });
         kafkaPvcs.putAll(createPvcs(clusterNamespace, updatedKafkaCluster.getStorage(), updatedKafkaCluster.getReplicas(),
             (replica, storageId) -> {
-                String name = VolumeUtils.getVolumePrefix(storageId);
+                String name = VolumeUtils.createVolumePrefix(storageId, false);
                 return name + "-" + KafkaCluster.kafkaPodName(clusterName, replica);
             }));
 

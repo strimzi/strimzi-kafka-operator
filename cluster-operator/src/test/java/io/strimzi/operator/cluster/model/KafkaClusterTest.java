@@ -589,7 +589,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, assembly, VERSIONS);
 
-        List<PersistentVolumeClaim> pvcs = kc.getVolumeClaims();
+        List<PersistentVolumeClaim> pvcs = kc.getPersistentVolumeClaimTemplates();
 
         for (int i = 0; i < replicas; i++) {
             assertThat(pvcs.get(0).getMetadata().getName() + "-" + KafkaCluster.kafkaPodName(cluster, i),
@@ -609,7 +609,7 @@ public class KafkaClusterTest {
                 .build();
         kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, assembly, VERSIONS);
 
-        pvcs = kc.getVolumeClaims();
+        pvcs = kc.getPersistentVolumeClaimTemplates();
 
         for (int i = 0; i < replicas; i++) {
             int id = 0;
