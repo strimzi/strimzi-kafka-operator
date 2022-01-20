@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 
 public class ExecutionListener implements TestExecutionListener {
     private static final Logger LOGGER = LogManager.getLogger(TestExecutionListener.class);
-
     private static List<String> testSuitesNamesToExecute;
 
     @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
@@ -98,5 +97,9 @@ public class ExecutionListener implements TestExecutionListener {
             }
         }
         return false;
+    }
+
+    public static List<String> getTestSuitesNamesToExecute() {
+        return testSuitesNamesToExecute;
     }
 }

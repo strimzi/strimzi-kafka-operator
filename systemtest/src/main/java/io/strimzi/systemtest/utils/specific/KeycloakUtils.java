@@ -47,9 +47,14 @@ public class KeycloakUtils {
         LOGGER.info("Keycloak in namespace {} is ready", namespace);
     }
 
-    public static void deleteKeycloak(String namespace) {
+    public static void deleteKeycloakWithoutCRDs(String namespace) {
         LOGGER.info("Teardown Keycloak in namespace: {}", namespace);
-        Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, namespace, getValidKeycloakVersion());
+        Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, namespace, getValidKeycloakVersion(), "false");
+    }
+
+    public static void deleteKeycloakCRDs() {
+        LOGGER.info("Delete Keycloak CRDs");
+        Exec.exec(true, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, "", getValidKeycloakVersion(), "true");
     }
 
     /**
@@ -61,10 +66,11 @@ public class KeycloakUtils {
      * @return user token
      */
     public static String getToken(String namespaceName, String baseURI, String userName, String password) {
-        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        final String keycloakOperatorPod = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, "keycloak-operator-").get(0).getMetadata().getName();
+
         return new JsonObject(
             cmdKubeClient(namespaceName).execInPod(
-                coPodName,
+                keycloakOperatorPod,
                 "curl",
                 "-v",
                 "--insecure",
@@ -84,9 +90,10 @@ public class KeycloakUtils {
      * @return JsonObject with whole desired realm from Keycloak
      */
     public static JsonObject getKeycloakRealm(String namespaceName, String baseURI, String token, String desiredRealm) {
-        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        final String keycloakOperatorPod = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, "keycloak-operator-").get(0).getMetadata().getName();
+
         return new JsonObject(cmdKubeClient(namespaceName).execInPod(
-            coPodName,
+            keycloakOperatorPod,
             "curl",
             "-v",
             "--insecure",

@@ -266,7 +266,7 @@ public class ResourceManager {
         namedResource.replace(resource);
     }
 
-    public void deleteResources(ExtensionContext testContext) throws Exception {
+    public synchronized void deleteResources(ExtensionContext testContext) throws Exception {
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
         LOGGER.info("Going to clear all resources for {}", testContext.getDisplayName());
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));

@@ -13,6 +13,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
+import io.strimzi.systemtest.listeners.ExecutionListener;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Base64;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.HashMap;
@@ -64,15 +66,19 @@ public class OauthAbstractST extends AbstractST {
 
     protected final String audienceListenerPort = "9098";
 
-    protected KeycloakInstance keycloakInstance;
+    private final static Set<String> OAUTH_NAME_SUITES;
 
-    public static Map<String, Object> connectorConfig;
+    protected static Map<String, Object> connectorConfig;
     static {
         connectorConfig = new HashMap<>();
         connectorConfig.put("config.storage.replication.factor", -1);
         connectorConfig.put("config.topic.cleanup.policy", "compact");
         connectorConfig.put("offset.storage.replication.factor", -1);
         connectorConfig.put("status.storage.replication.factor", -1);
+
+        // fetch all oauth test suites, which are schedule to execution
+        OAUTH_NAME_SUITES = ExecutionListener.getTestSuitesNamesToExecute().stream()
+            .filter(ts -> ts.contains("Oauth")).collect(Collectors.toSet());
     }
 
     protected static final Function<KeycloakInstance, GenericKafkaListener> BUILD_OAUTH_TLS_LISTENER = (keycloakInstance) -> {
@@ -97,7 +103,7 @@ public class OauthAbstractST extends AbstractST {
             .build();
     };
 
-    protected void setupCoAndKeycloak(ExtensionContext extensionContext, String namespace) {
+    protected KeycloakInstance setupCoAndKeycloak(ExtensionContext extensionContext, String namespace, KeycloakInstance keycloakInstance) {
         resourceManager.createResource(extensionContext, NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));
 
         LOGGER.info("Deploying keycloak...");
@@ -110,6 +116,8 @@ public class OauthAbstractST extends AbstractST {
         keycloakInstance = new KeycloakInstance("admin", password, namespace);
 
         createSecretsForDeployments(namespace);
+
+        return keycloakInstance;
     }
 
     @AfterEach
@@ -123,6 +131,31 @@ public class OauthAbstractST extends AbstractST {
         for (Job job : clusterJobList) {
             LOGGER.info("Deleting {} job", job.getMetadata().getName());
             JobUtils.deleteJobWithWait(job.getMetadata().getNamespace(), job.getMetadata().getName());
+        }
+    }
+
+    /**
+     * Provides protection and correct way how to delete CRDs of the Keycloak. Parallel execution could provide
+     * unwanted behaviour, when we delete CRDs of the Keycloak in each oauth classes in @AfterAll.
+     * Such case would cause deletion of Keycloak pods, realms and more. So in each oauth subclass we firstly delete
+     * only CRs using {@link KeycloakUtils#deleteKeycloakWithoutCRDs(String)} and if the last suite is ending its
+     * execution, in that time the number of {@code OAUTH_NAME_SUITES} is equal to zero, which means that there is no other suite,
+     * which could be affected and we can delete also Keycloak CRDs using {@link KeycloakUtils#deleteKeycloakCRDs()}.
+     *
+     * @param extensionContext specific extension context
+     * @throws Exception exception
+     */
+    protected void deleteKeycloakCRDsIfPossible(ExtensionContext extensionContext) throws Exception {
+        final String testSuiteName = extensionContext.getRequiredTestClass().getSimpleName();
+
+        if (OAUTH_NAME_SUITES.contains(testSuiteName)) {
+            LOGGER.debug("Removing {} test suite from HashSet:{}", testSuiteName, OAUTH_NAME_SUITES.toString());
+            OAUTH_NAME_SUITES.remove(testSuiteName);
+        }
+
+        // last test suite in @AfterAll and we can delete Keycloak CRDs
+        if (OAUTH_NAME_SUITES.size() == 0) {
+            KeycloakUtils.deleteKeycloakCRDs();
         }
     }
 
