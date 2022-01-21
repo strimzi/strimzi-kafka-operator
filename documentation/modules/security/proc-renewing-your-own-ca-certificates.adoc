@@ -58,7 +58,7 @@ mv ca.crt ca-$(date -u -d"$(openssl x509 -enddate -noout -in ca.crt | sed 's/.*=
 Saving the current CA certificate has to be done only if you are using a different key for generating the new certificate.
 In this case the CN (Common Name) of the new CA certificate should be different from the previous one.
 For example, when Strimzi cluster operator takes care of the renewal automatically it adds a suffix like "vX" to identify a version "X" (that is, v0, v1, and so on).
-If you are using the same key for generating the new CA certificate saving the current one is not necessary because only one CA certificate at time can be trusted.
+If you are using the same key for generating the new CA certificate you don't have to save the old one in the Secret otherwise it will cause a failure in the underlying trusting system.
 
 . Copy your new CA certificate into the directory, naming it `ca.crt`:
 +
@@ -121,5 +121,5 @@ kubectl annotate secret _CA-KEY-SECRET_ strimzi.io/ca-key-generation=_CA-KEY-GEN
 +
 When the Strimzi generated CA certificates are used, the generation increment is automatically handled by the cluster operator.
 In this case, with manual renewal of your own CA certificates, you have to take care to increment the generation on renewal accordingly.
-The generation annotations have to have the next incremental value of the current ones from the Secret.
+The generation annotations have to have a values higher than the current ones from the Secret.
 This is needed by the Strimzi cluster operator to roll the pods for updating the certificates.
