@@ -272,6 +272,13 @@ Used in: xref:type-ClientTls-{context}[`ClientTls`], xref:type-KafkaAuthorizatio
 
 Used in: xref:type-GenericKafkaListener-{context}[`GenericKafkaListener`]
 
+xref:type-KafkaListenerAuthenticationCustom-schema-{context}[Full list of `KafkaListenerAuthenticationCustom` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationCustom.adoc[leveloffset=+1]
+
+[id='type-KafkaListenerAuthenticationCustom-schema-{context}']
+==== `KafkaListenerAuthenticationCustom` schema properties
+
 
 The `type` property is a discriminator that distinguishes use of the `KafkaListenerAuthenticationCustom` type from xref:type-KafkaListenerAuthenticationTls-{context}[`KafkaListenerAuthenticationTls`], xref:type-KafkaListenerAuthenticationScramSha512-{context}[`KafkaListenerAuthenticationScramSha512`], xref:type-KafkaListenerAuthenticationOAuth-{context}[`KafkaListenerAuthenticationOAuth`].
 It must have the value `custom` for the type `KafkaListenerAuthenticationCustom`.
