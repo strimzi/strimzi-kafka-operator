@@ -545,7 +545,7 @@ spec:
                             createBootstrapService:
                               type: boolean
                               description: Whether to create the bootstrap service
-                                or not.This field can be used with the `loadBalancer`
+                                or not. This field can be used with the `loadBalancer`
                                 type listener.
                             class:
                               type: string
