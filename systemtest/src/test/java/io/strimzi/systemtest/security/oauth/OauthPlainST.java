@@ -653,8 +653,6 @@ public class OauthPlainST extends OauthAbstractST {
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
             .withPort(HTTP_BRIDGE_DEFAULT_PORT)
-            .withDelayMs(1000)
-            .withPollInterval(1000)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge().build());
@@ -766,7 +764,5 @@ public class OauthPlainST extends OauthAbstractST {
         // delete keycloak before namespace
         KeycloakUtils.deleteKeycloakWithoutCRDs(namespace);
         super.deleteKeycloakCRDsIfPossible(extensionContext);
-        // delete namespace etc.
-        super.afterAllMayOverride(extensionContext);
     }
 }

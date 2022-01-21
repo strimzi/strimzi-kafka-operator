@@ -145,7 +145,7 @@ public class OauthAbstractST extends AbstractST {
      * @param extensionContext specific extension context
      * @throws Exception exception
      */
-    protected void deleteKeycloakCRDsIfPossible(ExtensionContext extensionContext) throws Exception {
+    protected synchronized void deleteKeycloakCRDsIfPossible(ExtensionContext extensionContext) throws Exception {
         final String testSuiteName = extensionContext.getRequiredTestClass().getSimpleName();
 
         if (OAUTH_NAME_SUITES.contains(testSuiteName)) {

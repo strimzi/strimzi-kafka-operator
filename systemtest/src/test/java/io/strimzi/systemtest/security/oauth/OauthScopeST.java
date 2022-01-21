@@ -278,7 +278,5 @@ public class OauthScopeST extends OauthAbstractST {
         // delete keycloak before namespace
         KeycloakUtils.deleteKeycloakWithoutCRDs(namespace);
         super.deleteKeycloakCRDsIfPossible(extensionContext);
-        // delete namespace etc.
-        super.afterAllMayOverride(extensionContext);
     }
 }
