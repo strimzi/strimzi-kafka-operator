@@ -206,7 +206,8 @@ public class ListenersValidator {
      */
     private static void validateCreateBootstrapService(Set<String> errors, GenericKafkaListener listener) {
         if (KafkaListenerType.LOADBALANCER != listener.getType()
-                && listener.getConfiguration() != null && !listener.getConfiguration().getCreateBootstrapService())    {
+                && listener.getConfiguration() != null
+                && !listener.getConfiguration().getCreateBootstrapService())    {
             errors.add("listener " + listener.getName() + " cannot configure createBootstrapService because it is not load balancer listener");
         }
     }

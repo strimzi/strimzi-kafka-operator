@@ -230,9 +230,9 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
         this.ipFamilies = ipFamilies;
     }
 
-    @Description("Whether to create the bootstrap service or not." +
+    @Description("Whether to create the bootstrap service or not. " +
             "This field can be used with the `loadBalancer` type listener.")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public Boolean getCreateBootstrapService() {
         return createBootstrapService;
     }
