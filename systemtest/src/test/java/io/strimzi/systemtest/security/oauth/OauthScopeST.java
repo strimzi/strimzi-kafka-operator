@@ -165,6 +165,7 @@ public class OauthScopeST extends OauthAbstractST {
             .withMessageCount(MESSAGE_COUNT)
             // configures SASL/PLAIN to be used
             .withAdditionalConfig(additionalOauthConfig)
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         // clientScope is set to 'test' by default
@@ -174,7 +175,7 @@ public class OauthScopeST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi().build());
         // client should succeeded because we set to `clientScope=test` and also Kafka has `scope=test`
-        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT, oauthInternalClientChecksJob.getDelayMs());
         JobUtils.deleteJobWithWait(namespace, producerName);
     }
 
@@ -196,6 +197,7 @@ public class OauthScopeST extends OauthAbstractST {
             .withMessageCount(MESSAGE_COUNT)
             // configures SASL/PLAIN to be used
             .withAdditionalConfig(additionalOauthConfig)
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         // re-configuring Kafka listener to have client scope assigned to null
@@ -218,7 +220,7 @@ public class OauthScopeST extends OauthAbstractST {
         // client should fail because the listener requires scope: 'test' in JWT token but was (the listener) temporarily
         // configured without clientScope resulting in a JWT token without the scope claim when using the clientId and
         // secret passed via SASL/PLAIN to obtain an access token in client's name.
-        ClientUtils.waitForClientTimeout(producerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientTimeout(producerName, namespace, MESSAGE_COUNT, oauthInternalClientChecksJob.getDelayMs());
         JobUtils.deleteJobWithWait(namespace, producerName);
 
         // rollback previous configuration

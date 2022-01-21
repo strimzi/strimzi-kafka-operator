@@ -64,6 +64,8 @@ public class OauthAbstractST extends AbstractST {
     protected static final String OAUTH_KAFKA_CLIENT_SECRET = "kafka-client-secret";
     protected static final String OAUTH_KEY = "clientSecret";
 
+    protected static final int OAUTH_CLIENT_MSG_DELAY = 100;
+
     protected final String audienceListenerPort = "9098";
 
     private final static Set<String> OAUTH_NAME_SUITES;

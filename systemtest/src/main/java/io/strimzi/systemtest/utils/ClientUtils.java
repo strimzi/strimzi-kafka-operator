@@ -58,19 +58,23 @@ public class ClientUtils {
             () -> kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, producerName, 1) && kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, consumerName, 1));
     }
 
-    public static void waitForClientSuccess(String jobName, String namespace, int messageCount) {
+    public static void waitForClientSuccess(String jobName, String namespace, int messageCount, final long clientDelaySendRecvMsg) {
         LOGGER.info("Waiting for producer/consumer:{} to finished", jobName);
-        TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
+        TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount, clientDelaySendRecvMsg),
             () -> {
                 LOGGER.debug("Job {} in namespace {}, has status {}", jobName, namespace, kubeClient().namespace(namespace).getJobStatus(jobName));
                 return kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, jobName, 1);
             });
     }
 
-    public static void waitForClientTimeout(String jobName, String namespace, int messageCount) throws UnexpectedException {
+    public static void waitForClientSuccess(String jobName, String namespace, int messageCount) {
+        waitForClientSuccess(jobName, namespace, messageCount, 1000);
+    }
+
+    public static void waitForClientTimeout(String jobName, String namespace, int messageCount, final long clientDelaySendRecvMsg) throws UnexpectedException {
         LOGGER.info("Waiting for producer/consumer:{} to finish with failure.", jobName);
         try {
-            TestUtils.waitFor("Job did not finish within time limit (as expected).", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
+            TestUtils.waitFor("Job did not finish within time limit (as expected).", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount, clientDelaySendRecvMsg),
                 () -> kubeClient().namespace(namespace).checkSucceededJobStatus(jobName));
             if (kubeClient().namespace(namespace).getJobStatus(jobName).getFailed().equals(1)) {
                 LOGGER.debug("Job finished with 1 failed pod (expected - timeout).");
@@ -86,9 +90,17 @@ public class ClientUtils {
         }
     }
 
-    private static long timeoutForClientFinishJob(int messagesCount) {
+    public static void waitForClientTimeout(String jobName, String namespace, int messageCount) throws UnexpectedException {
+        waitForClientTimeout(jobName, namespace, messageCount, 1000);
+    }
+
+    private static long timeoutForClientFinishJob(int messagesCount, final long clientDelaySendRecvMsg) {
         // need to add at least 2minutes for finishing the job
-        return (long) messagesCount * 1000 + Duration.ofMinutes(2).toMillis();
+        return (long) messagesCount * clientDelaySendRecvMsg + Duration.ofMinutes(2).toMillis();
+    }
+
+    private static long timeoutForClientFinishJob(int messagesCount) {
+        return timeoutForClientFinishJob(messagesCount, 1000);
     }
 
     public static void waitUntilProducerAndConsumerSuccessfullySendAndReceiveMessages(ExtensionContext extensionContext,

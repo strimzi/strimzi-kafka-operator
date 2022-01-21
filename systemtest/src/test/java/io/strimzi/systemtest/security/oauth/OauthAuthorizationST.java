@@ -36,10 +36,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
@@ -58,7 +55,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @ParallelSuite
 public class OauthAuthorizationST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthAuthorizationST.class);
@@ -88,7 +84,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
     @Description("As a member of team A, I should be able to read and write to all topics starting with a-")
     @ParallelTest
-    @Order(1)
     void smokeTestForClients(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + clusterName;
@@ -109,6 +104,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withOAuthClientId(TEAM_A_CLIENT)
             .withOAuthClientSecret(TEAM_A_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
@@ -120,7 +116,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @Description("As a member of team A, I should be able to write to topics that starts with x- on any cluster and " +
             "and should also write and read to topics starting with 'a-'")
     @ParallelTest
-    @Order(2)
     void testTeamAWriteToTopic(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + clusterName;
@@ -141,6 +136,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withOAuthClientId(TEAM_A_CLIENT)
             .withOAuthClientSecret(TEAM_A_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, topicName);
@@ -183,7 +179,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
     @Description("As a member of team A, I should be able only read from consumer that starts with a_")
     @ParallelTest
-    @Order(3)
     void testTeamAReadFromTopic(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + clusterName;
@@ -204,6 +199,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withOAuthClientId(TEAM_A_CLIENT)
             .withOAuthClientSecret(TEAM_A_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, topicAName);
@@ -235,7 +231,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
     @Description("As a member of team B, I should be able to write and read from topics that starts with b-")
     @ParallelTest
-    @Order(4)
     void testTeamBWriteToTopic(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
@@ -256,6 +251,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withOAuthClientId(TEAM_B_CLIENT)
             .withOAuthClientSecret(TEAM_B_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_NAME);
@@ -279,7 +275,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
     @Description("As a member of team A, I can write to topics starting with 'x-' and " +
             "as a member of team B can read from topics starting with 'x-'")
     @ParallelTest
-    @Order(5)
     void testTeamAWriteToTopicStartingWithXAndTeamBReadFromTopicStartingWithX(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + clusterName;
@@ -303,6 +298,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withOAuthClientId(TEAM_A_CLIENT)
             .withOAuthClientSecret(TEAM_A_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         teamAOauthClientJob = teamAOauthClientJob.toBuilder()
@@ -324,6 +320,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withOAuthClientId(TEAM_B_CLIENT)
             .withOAuthClientSecret(TEAM_B_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         resourceManager.createResource(extensionContext, teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
@@ -332,7 +329,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
     @Description("As a superuser of team A and team B, i am able to break defined authorization rules")
     @ParallelTest
-    @Order(6)
     void testSuperUserWithOauthAuthorization(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -363,6 +359,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withOAuthClientSecret(TEAM_B_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .withUserName(userName)
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
@@ -384,6 +381,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withOAuthClientSecret(TEAM_A_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .withUserName(userName)
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
@@ -433,7 +431,6 @@ public class OauthAuthorizationST extends OauthAbstractST {
      * The re-authentication can be seen in the log of team-a-producer pod.
      */
     @IsolatedTest("Modification of shared Kafka cluster")
-    @Order(7)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testSessionReAuthentication(ExtensionContext extensionContext) {
         String topicXName = TOPIC_X + "-example-topic";
@@ -459,6 +456,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withOAuthClientId(TEAM_A_CLIENT)
             .withOAuthClientSecret(TEAM_A_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
@@ -580,20 +578,17 @@ public class OauthAuthorizationST extends OauthAbstractST {
 
     @Disabled("Will be implemented in next PR")
     @ParallelTest
-    @Order(8)
     void testListTopics(ExtensionContext extensionContext) {
         // TODO: in the new PR add AdminClient support with operations listTopics(), etc.
     }
 
     @Disabled("Will be implemented in next PR")
     @ParallelTest
-    @Order(9)
     void testClusterVerification(ExtensionContext extensionContext) {
         // TODO: create more examples via cluster wide stuff
     }
 
     @ParallelNamespaceTest
-    @Order(10)
     void testKeycloakAuthorizerToDelegateToSimpleAuthorizer(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);
 
@@ -644,6 +639,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .withOAuthClientId(TEAM_A_CLIENT)
             .withOAuthClientSecret(TEAM_A_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(testStorage.getClusterName()).build());

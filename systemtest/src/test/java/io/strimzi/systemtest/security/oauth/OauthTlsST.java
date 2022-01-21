@@ -94,13 +94,14 @@ public class OauthTlsST extends OauthAbstractST {
             .withOAuthClientId(OAUTH_CLIENT_NAME)
             .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT, oauthExampleClients.getDelayMs());
 
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT, oauthExampleClients.getDelayMs());
     }
 
     @Description("As an oauth KafkaConnect, I am able to sink messages from kafka broker topic using encrypted communication.")
@@ -125,14 +126,15 @@ public class OauthTlsST extends OauthAbstractST {
             .withOAuthClientId(OAUTH_CLIENT_NAME)
             .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT, oauthExampleClients.getDelayMs());
         JobUtils.deleteJobWithWait(namespace, producerName);
 
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT, oauthExampleClients.getDelayMs());
         JobUtils.deleteJobWithWait(namespace, consumerName);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespace, false, oauthClusterName + "-" + Constants.KAFKA_CLIENTS).build());
@@ -202,14 +204,15 @@ public class OauthTlsST extends OauthAbstractST {
             .withOAuthClientId(OAUTH_CLIENT_NAME)
             .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT, oauthExampleClients.getDelayMs());
         JobUtils.deleteJobWithWait(namespace, producerName);
 
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT, oauthExampleClients.getDelayMs());
         JobUtils.deleteJobWithWait(namespace, consumerName);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespace, true, kafkaClientsName).build());
@@ -250,10 +253,11 @@ public class OauthTlsST extends OauthAbstractST {
             .withMessageCount(10)
             .withPort(HTTP_BRIDGE_DEFAULT_PORT)
             .withNamespaceName(namespace)
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge().build());
-        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT, kafkaBridgeClientJob.getDelayMs());
         JobUtils.deleteJobWithWait(namespace, producerName);
     }
 
@@ -282,14 +286,15 @@ public class OauthTlsST extends OauthAbstractST {
             .withOAuthClientId(OAUTH_CLIENT_NAME)
             .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT, oauthExampleClients.getDelayMs());
         JobUtils.deleteJobWithWait(namespace, producerName);
 
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName).build());
-        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT, oauthExampleClients.getDelayMs());
         JobUtils.deleteJobWithWait(namespace, consumerName);
 
         String targetKafkaCluster = oauthClusterName + "-target";
@@ -406,11 +411,12 @@ public class OauthTlsST extends OauthAbstractST {
             .withOAuthClientId(OAUTH_CLIENT_NAME)
             .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
             .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+            .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaOauthClientJob.consumerStrimziOauthTls(targetKafkaCluster).build());
 
-        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT, kafkaOauthClientJob.getMessageCount());
         JobUtils.deleteJobWithWait(namespace, consumerName);
     }
 
@@ -471,13 +477,14 @@ public class OauthTlsST extends OauthAbstractST {
                 .withOAuthClientId(OAUTH_CLIENT_NAME)
                 .withOAuthClientSecret(OAUTH_CLIENT_SECRET)
                 .withOAuthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                .withDelayMs(OAUTH_CLIENT_MSG_DELAY)
                 .build();
 
         resourceManager.createResource(extensionContext, oauthInternalClientIntrospectionJob.producerStrimziOauthTls(introspectionKafka).build());
-        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT, oauthInternalClientIntrospectionJob.getDelayMs());
 
         resourceManager.createResource(extensionContext, oauthInternalClientIntrospectionJob.consumerStrimziOauthTls(introspectionKafka).build());
-        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT, oauthInternalClientIntrospectionJob.getDelayMs());
     }
 
     @BeforeAll
