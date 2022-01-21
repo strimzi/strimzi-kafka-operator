@@ -54,6 +54,9 @@ For example `ca-2018-09-27T17-32-00Z.crt`.
 +
 [source,shell,subs="+quotes"]
 mv ca.crt ca-$(date -u -d"$(openssl x509 -enddate -noout -in ca.crt | sed 's/.*=//')" +'%Y-%m-%dT%H-%M-%SZ').crt
++
+Saving the current CA certificate has to be done only if you are using a different key for generating the new certificate.
+If you are using the same key for generating the new CA certificate saving the current one is not necessary because only one CA certificate at time can be trusted.
 
 . Copy your new CA certificate into the directory, naming it `ca.crt`:
 +
@@ -105,3 +108,16 @@ kubectl create secret generic _CA-KEY-SECRET_ --from-file=ca.key=_CA-KEY-SECRET-
 kubectl label secret _CA-CERTIFICATE-SECRET_ strimzi.io/kind=Kafka strimzi.io/cluster=_KAFKA-CLUSTER-NAME_
 kubectl label secret _CA-KEY-SECRET_ strimzi.io/kind=Kafka strimzi.io/cluster=_KAFKA-CLUSTER-NAME_
 ----
+
+. Annotate the secrets with the generation annotations:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate secret _CA-CERTIFICATE-SECRET_ strimzi.io/ca-cert-generation=_CA-CERTIFICATE-GENERATION_
+kubectl annotate secret _CA-KEY-SECRET_ strimzi.io/ca-key-generation=_CA-KEY-GENERATION_
+----
++
+When the Strimzi generated CA certificates are used, the generation increment is automatically handled by the cluster operator.
+In this case, with manual renewal of your own CA certificates, you have to take care to increment the generation on renewal accordingly.
+The generation annotations have to have the next incremental value of the current ones from the Secret.
+This is needed by the Strimzi cluster operator to roll the pods for updating the certificates.
