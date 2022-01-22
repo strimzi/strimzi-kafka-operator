@@ -483,6 +483,8 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
 
     @BeforeAll
     void setUp(ExtensionContext extensionContext) {
+        clusterOperator.unInstall();
+        clusterOperator.defaultInstallation().createInstallation().runInstallation();
         // for namespace
         super.setupCoAndKeycloak(extensionContext, INFRA_NAMESPACE);
 
@@ -506,8 +508,6 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
 
     @AfterAll
     void tearDown(ExtensionContext extensionContext) throws Exception {
-        clusterOperator.unInstall();
-        clusterOperator.defaultInstallation().createInstallation().runInstallation();
         // delete keycloak before namespace
         KeycloakUtils.deleteKeycloak(INFRA_NAMESPACE);
         // delete namespace etc.
