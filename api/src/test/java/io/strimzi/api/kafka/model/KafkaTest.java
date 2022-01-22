@@ -7,13 +7,11 @@ package io.strimzi.api.kafka.model;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
-import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfiguration;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -82,26 +80,14 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
 
     @Test
     public void testNewListenerSerialization() throws URISyntaxException {
-
-        List<GenericKafkaListener> listeners = new ArrayList<>(2);
-        listeners.add(new GenericKafkaListenerBuilder()
+        List<GenericKafkaListener> listeners = Collections.singletonList(
+                new GenericKafkaListenerBuilder()
                         .withName("lst")
                         .withPort(9092)
                         .withType(KafkaListenerType.INTERNAL)
                         .withTls(true)
                 .build()
         );
-
-        GenericKafkaListenerConfiguration genericKafkaListenerConfiguration = new GenericKafkaListenerConfiguration();
-        genericKafkaListenerConfiguration.setCreateBootstrapService(false);
-
-        listeners.add(new GenericKafkaListenerBuilder()
-                .withName("snd")
-                .withPort(9094)
-                .withType(KafkaListenerType.LOADBALANCER)
-                .withTls(true)
-                .withConfiguration(genericKafkaListenerConfiguration)
-                .build());
 
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()

@@ -11,12 +11,6 @@ spec:
       port: 9092
       type: "internal"
       tls: true
-    - name: "snd"
-      port: 9094
-      type: "loadbalancer"
-      tls: true
-      configuration:
-        createBootstrapService: false
     storage:
       type: "ephemeral"
   zookeeper:
