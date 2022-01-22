@@ -298,6 +298,8 @@ public interface Constants {
      */
     String OLM = "olm";
 
+    String ISOLATED_TEST = "isolatedtest";
+    String PARALLEL_TEST = "paralleltest";
     /**
      * Tag for tests which executing in parallel namespaces
      */
@@ -312,6 +314,8 @@ public interface Constants {
      */
     String ISOLATED = "Isolated";
     String ST = "ST";
+
+    String TEST_CASE_NAME_LABEL = "test-case";
 
     /**
      * Cruise Control related parameters

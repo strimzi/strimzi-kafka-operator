@@ -29,7 +29,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         if (!(throwable instanceof TestAbortedException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
             final String testMethod = extensionContext.getRequiredTestMethod().getName();
-            collectLogs(new CollectorElement(testClass, testMethod));
+            collectLogs(extensionContext, new CollectorElement(testClass, testMethod));
         }
         throw throwable;
     }
@@ -39,7 +39,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         LOGGER.error("{} - Exception {} has been thrown in @BeforeAll. Going to collect logs from components.", extensionContext.getRequiredTestClass().getSimpleName(), throwable.getMessage());
         if (!(throwable instanceof TestAbortedException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
-            collectLogs(new CollectorElement(testClass));
+            collectLogs(extensionContext, new CollectorElement(testClass));
         }
         throw throwable;
     }
@@ -50,7 +50,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         if (!(throwable instanceof TestAbortedException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
             final String testMethod = extensionContext.getRequiredTestMethod().getName();
-            collectLogs(new CollectorElement(testClass, testMethod));
+            collectLogs(extensionContext, new CollectorElement(testClass, testMethod));
         }
         throw throwable;
     }
@@ -61,7 +61,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         final String testClass = extensionContext.getRequiredTestClass().getName();
         final String testMethod = extensionContext.getRequiredTestMethod().getName();
 
-        collectLogs(new CollectorElement(testClass, testMethod));
+        collectLogs(extensionContext, new CollectorElement(testClass, testMethod));
         throw throwable;
     }
 
@@ -79,12 +79,12 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
             suiteThreadController.unLockIsolatedSuite();
         }
 
-        collectLogs(new CollectorElement(testClass));
+        collectLogs(extensionContext, new CollectorElement(testClass));
         throw throwable;
     }
 
-    public synchronized static void collectLogs(CollectorElement collectorElement) throws IOException {
-        final LogCollector logCollector = new LogCollector(collectorElement, kubeClient(), Environment.TEST_LOG_DIR);
+    public synchronized static void collectLogs(ExtensionContext extensionContext, CollectorElement collectorElement) throws IOException {
+        final LogCollector logCollector = new LogCollector(extensionContext, collectorElement, kubeClient(), Environment.TEST_LOG_DIR);
         // collecting logs for all resources inside Kubernetes cluster
         logCollector.collect();
     }

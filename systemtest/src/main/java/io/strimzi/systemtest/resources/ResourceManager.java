@@ -67,6 +67,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -163,6 +164,23 @@ public class ResourceManager {
                 }
             }
 
+            // If we are create resource in test case we annotate it with label. This is needed for filtering when
+            // we collect logs from Pods, ReplicaSets, Deployments etc.
+            if (testContext.getTestMethod().isPresent()) {
+                final String testCaseName = testContext.getDisplayName();
+                Map<String, String> labels;
+
+                // TODO: can this even occur??
+                if (resource.getMetadata().getLabels() == null) {
+                    LOGGER.info("This happen really.... :D");
+                    labels = new HashMap<>();
+                    labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
+                } else {
+                    labels = resource.getMetadata().getLabels();
+                    labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
+                }
+                resource.getMetadata().setLabels(labels);
+            }
             type.create(resource);
 
             synchronized (this) {

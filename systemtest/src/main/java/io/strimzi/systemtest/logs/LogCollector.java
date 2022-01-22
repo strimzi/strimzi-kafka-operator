@@ -8,11 +8,16 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.ParallelSuite;
+import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.logs.CollectorElement;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.apache.logging.log4j.Level;
 
 import java.io.File;
@@ -21,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static io.strimzi.test.TestUtils.writeFile;
@@ -68,8 +74,10 @@ public class LogCollector {
     private final String clusterOperatorNamespace;
     private File namespaceFile;
     private CollectorElement collectorElement;
+    private ExtensionContext extensionContext;
 
-    public LogCollector(CollectorElement collectorElement, KubeClient kubeClient, String logDir) throws IOException {
+    public LogCollector(ExtensionContext extensionContext, CollectorElement collectorElement, KubeClient kubeClient, String logDir) throws IOException {
+        this.extensionContext = extensionContext;
         this.collectorElement = collectorElement;
         this.kubeClient = kubeClient;
 
@@ -123,12 +131,35 @@ public class LogCollector {
      *          c) @ParallelNamespaceTest, which is basically in namespace with following pattern namespace-[n], where n is greater than 0.
      *      4.@AfterEach scope
      *      5.@AfterAll scope
+     *
+     *  More advanced is when {@link ParallelTest#annotationType()} or {@link IsolatedTest#annotationType()} are executed inside
+     *  {@link ParallelSuite#annotationType()}, which means they use automatically generated namespace by
+     *  {@link io.strimzi.systemtest.parallel.TestSuiteNamespaceManager#createAdditionalNamespaces(ExtensionContext)}.
+     *  Thus we need ...
+     *
      */
     public synchronized void collect() {
         Set<String> namespaces = KubeClusterResource.getMapWithSuiteNamespaces().get(this.collectorElement);
         // ensure that namespaces is never null
         namespaces = namespaces == null ? new HashSet<>() : namespaces;
         namespaces.add(clusterOperatorNamespace);
+
+        // it's not test suite but test case, and we are gonna collect logs
+        if (!this.collectorElement.getTestMethodName().isEmpty()) {
+            // fetch test suite extensionContext
+            // @ParallelSuite -> this is generated namespace
+            if (StUtils.isParallelSuite(extensionContext.getParent().get())) {
+                // @IsolatedTest or @ParallelTest -> are executed in that generated namespace
+                if (StUtils.isIsolatedTest(extensionContext) || StUtils.isParallelTest(extensionContext)) {
+                    final Set<String> generatedTestSuiteNamespaces =
+                        KubeClusterResource.getMapWithSuiteNamespaces().get(
+                            CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()));
+                    namespaces.addAll(generatedTestSuiteNamespaces);
+                    LOGGER.debug("{} adding to all namespaces, which should be collected: {}", generatedTestSuiteNamespaces, namespaces.toString());
+                }
+            }
+        }
+
         // collect logs for all namespace related to test suite
         namespaces.forEach(namespace -> {
             if (this.collectorElement.getTestMethodName().isEmpty()) {
@@ -172,9 +203,22 @@ public class LogCollector {
             // scrape for Pods, which are not in `cluster-operator` namespace
             } else {
                 kubeClient.listPods(namespace).forEach(pod -> {
-                    String podName = pod.getMetadata().getName();
-                    pod.getStatus().getContainerStatuses().forEach(
-                        containerStatus -> scrapeAndCreateLogs(namespaceFile, podName, containerStatus, namespace));
+                    final String podName = pod.getMetadata().getName();
+
+                    // we are collecting inside for test case
+                    if (extensionContext.getTestMethod().isPresent()) {
+                        // pods, which are created by ResourceManager
+                        Map<String, String> podLabels = pod.getMetadata().getLabels();
+                        if (podLabels.containsKey(Constants.TEST_CASE_NAME_LABEL)) {
+                            // collect these Pods, which are deployed in that test case
+                            if (podLabels.get(Constants.TEST_CASE_NAME_LABEL).equals(this.testCase)) {
+                                pod.getStatus().getContainerStatuses().forEach(
+                                    containerStatus -> scrapeAndCreateLogs(namespaceFile, podName, containerStatus, namespace));
+                            }
+                        }
+                    } else {
+                        // TODO: how this is gonna work for test suite
+                    }
                 });
             }
         } catch (Exception allExceptions) {
