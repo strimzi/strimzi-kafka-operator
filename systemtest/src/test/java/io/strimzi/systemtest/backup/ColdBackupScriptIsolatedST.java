@@ -20,6 +20,7 @@ import io.strimzi.test.annotations.IsolatedSuite;
 import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import io.strimzi.systemtest.AbstractST;
@@ -123,5 +124,11 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
                 .withMessageCount(batchSize)
                 .build();
         return clients;
+    }
+
+    @BeforeAll
+    void setUp() {
+        clusterOperator.unInstall();
+        clusterOperator.defaultInstallation().createInstallation().runInstallation();
     }
 }

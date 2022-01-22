@@ -18,6 +18,7 @@ import io.strimzi.test.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -91,6 +92,12 @@ public class ClusterOperationIsolatedST extends AbstractST {
         producerNames.forEach(producerName -> ClientUtils.waitTillContinuousClientsFinish(producerName, consumerNames.get(producerName.indexOf(producerName)), NAMESPACE, continuousClientsMessageCount));
         producerNames.forEach(producerName -> kubeClient().deleteJob(producerName));
         consumerNames.forEach(consumerName -> kubeClient().deleteJob(consumerName));
+    }
+
+    @BeforeAll
+    void setUp() {
+        clusterOperator.unInstall();
+        clusterOperator.defaultInstallation().createInstallation().runInstallation();
     }
 
     @AfterEach

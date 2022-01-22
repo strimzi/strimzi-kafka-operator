@@ -506,6 +506,8 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
 
     @AfterAll
     void tearDown(ExtensionContext extensionContext) throws Exception {
+        clusterOperator.unInstall();
+        clusterOperator.defaultInstallation().createInstallation().runInstallation();
         // delete keycloak before namespace
         KeycloakUtils.deleteKeycloak(INFRA_NAMESPACE);
         // delete namespace etc.

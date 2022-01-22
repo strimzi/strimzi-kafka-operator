@@ -694,6 +694,8 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
     @BeforeAll
     void setUp(ExtensionContext extensionContext) {
+        clusterOperator.unInstall();
+        clusterOperator.defaultInstallation().createInstallation().runInstallation();
         // for namespace
         super.setupCoAndKeycloak(extensionContext, INFRA_NAMESPACE);
 
