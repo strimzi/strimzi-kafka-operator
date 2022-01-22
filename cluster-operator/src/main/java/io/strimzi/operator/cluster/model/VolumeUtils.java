@@ -221,11 +221,135 @@ public class VolumeUtils {
     }
 
     /**
-     * Creates a PVC template
+     * Creates a Volume mount
      *
-     * @param name    Name of the PVC template
-     * @param storage Storage definition
-     * @return The PVC created
+     * @param name Name of the Volume mount
+     * @param path volume mount path
+     * @return The Volume mount created
+     */
+    public static VolumeMount createVolumeMount(String name, String path) {
+        String validName = getValidVolumeName(name);
+
+        VolumeMount volumeMount = new VolumeMountBuilder()
+                .withName(validName)
+                .withMountPath(path)
+                .build();
+        return volumeMount;
+    }
+
+    /**
+     * Generates the list of data volumes as used in StatefulSets. This method calls itself recursively to create the
+     * volumes from a JBOD storage array. When it does so, it sets the {@code jbod} parameter to {@code true}. When
+     * called from outside, it should be set to {@code false}.
+     *
+     * For StatefulSets, we need only the ephemeral (emptyDir volumes). The persistent claim volumes are generated from
+     * the template by Kubernetes directly. But ephemeral volumes can be still part of JBOD storage, so we need to
+     * iterate through it.
+     *
+     * @param storage   Storage configuration
+     * @param jbod      Indicates that the storage is part of JBOD storage and volume names are created accordingly
+     *
+     * @return          List of data volumes for use in StatefulSet definition
+     */
+    public static List<Volume> createStatefulSetVolumes(Storage storage, boolean jbod) {
+        List<Volume> volumes = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    // it's called recursively for setting the information from the current volume
+                    volumes.addAll(createStatefulSetVolumes(volume, true));
+                }
+            } else if (storage instanceof EphemeralStorage) {
+                EphemeralStorage ephemeralStorage = (EphemeralStorage) storage;
+                volumes.add(
+                        createEmptyDirVolume(
+                                createVolumePrefix(ephemeralStorage.getId(), jbod),
+                                ephemeralStorage.getSizeLimit(),
+                                null
+                        )
+                );
+            }
+        }
+
+        return volumes;
+    }
+
+    /**
+     * Generates the list of data volumes as used in PodSets and individual Pods. This includes both ephemeral and
+     * persistent data volumes. This method calls itself recursively to create the volumes from a JBOD storage array.
+     * When it does so, it sets the {@code jbod} parameter to {@code true}. When called from outside, it should be set
+     * to {@code false}.
+     *
+     * @param podName   Name of the pod used to name the volumes
+     * @param storage   Storage configuration
+     * @param jbod      Indicates that the storage is part of JBOD storage and volume names are created accordingly
+     *
+     * @return          List of data volumes to be included in the StrimziPodSet pod
+     */
+    public static List<Volume> createPodSetVolumes(String podName, Storage storage, boolean jbod) {
+        List<Volume> volumes = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    // it's called recursively for setting the information from the current volume
+                    volumes.addAll(createPodSetVolumes(podName, volume, true));
+                }
+            } else if (storage instanceof EphemeralStorage) {
+                EphemeralStorage ephemeralStorage = (EphemeralStorage) storage;
+                volumes.add(
+                        createEmptyDirVolume(
+                                createVolumePrefix(ephemeralStorage.getId(), jbod),
+                                ephemeralStorage.getSizeLimit(),
+                                null
+                        )
+                );
+            } else if (storage instanceof PersistentClaimStorage)   {
+                String name = createVolumePrefix(((PersistentClaimStorage) storage).getId(), jbod);
+                volumes.add(createPvcVolume(name, name + "-" + podName));
+            }
+        }
+
+        return volumes;
+    }
+
+    /**
+     * Creates list of PersistentVolumeClaims templates required by StatefulSets (Kafka and Zoo). This method calls itself
+     * recursively to handle volumes inside JBOD storage. When it calls itself to handle the volumes inside JBOD array,
+     * the {@code jbod} flag should be set to {@code true}. When called from outside, it should be set to {@code false}.
+     *
+     * @param storage   The storage configuration
+     * @param jbod      Indicator whether the {@code storage} is part of JBOD array or not
+     *
+     * @return          List with Persistent Volume Claims templates
+     */
+    public static List<PersistentVolumeClaim> createPersistentVolumeClaimTemplates(Storage storage, boolean jbod) {
+        List<PersistentVolumeClaim> pvcs = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    // it's called recursively for setting the information from the current volume
+                    pvcs.addAll(createPersistentVolumeClaimTemplates(volume, true));
+                }
+            } else if (storage instanceof PersistentClaimStorage) {
+                PersistentClaimStorage persistentStorage = (PersistentClaimStorage) storage;
+                String name = createVolumePrefix(persistentStorage.getId(), jbod);
+                pvcs.add(createPersistentVolumeClaimTemplate(name, persistentStorage));
+            }
+        }
+
+        return pvcs;
+    }
+
+    /**
+     * Creates a PVC template for use in StatefulSets
+     *
+     * @param name      Name of the PVC in the template
+     * @param storage   Definition of the persistent claim storage configuration
+     *
+     * @return          The PVC created
      */
     public static PersistentVolumeClaim createPersistentVolumeClaimTemplate(String name, PersistentClaimStorage storage) {
         Map<String, Quantity> requests = new HashMap<>(1);
@@ -252,132 +376,27 @@ public class VolumeUtils {
     }
 
     /**
-     * Creates a Volume mount
+     * Creates list of volume mounts used by a Pod. This method calls itself recursively to handle volumes inside JBOD
+     * storage. When it calls itself to handle the volumes inside JBOD array, the {@code jbod} flag should be set to
+     * {@code true}. When called from outside, it should be set to {@code false}.
      *
-     * @param name Name of the Volume mount
-     * @param path volume mount path
-     * @return The Volume mount created
+     * @param storage   The storage configuration
+     * @param mountPath Path into which the volume should be mounted
+     * @param jbod      Indicator whether the {@code storage} is part of JBOD array or not
+     *
+     * @return          List with Persistent Volume Claims templates
      */
-    public static VolumeMount createVolumeMount(String name, String path) {
-        String validName = getValidVolumeName(name);
-
-        VolumeMount volumeMount = new VolumeMountBuilder()
-                .withName(validName)
-                .withMountPath(path)
-                .build();
-        return volumeMount;
-    }
-
-    /**
-     * Generates the list of data volumes as used in StatefulSets. For StatefulSets, we specify only the ephemeral
-     * (emptyDir volumes). The persistent claim volumes are generated from the template by Kubernetes.
-     *
-     * @param storage   Storage configuration
-     *
-     * @return          List of data volumes for use in StatefulSet definition
-     */
-    public static List<Volume> getDataVolumes(Storage storage) {
-        List<Volume> volumes = new ArrayList<>();
-
-        if (storage != null) {
-            if (storage instanceof JbodStorage) {
-                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-                    if (volume.getId() == null)
-                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
-                    // it's called recursively for setting the information from the current volume
-                    volumes.addAll(getDataVolumes(volume));
-                }
-            } else if (storage instanceof EphemeralStorage) {
-                Integer id = ((EphemeralStorage) storage).getId();
-                String name = getVolumePrefix(id);
-                String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
-                volumes.add(createEmptyDirVolume(name, sizeLimit, null));
-            }
-        }
-
-        return volumes;
-    }
-
-    /**
-     * Generates the list of data volumes as used in PodSets and individual Pods. This includes both ephemeral
-     * and persistent data volumes.
-     *
-     * @param podName   Name of the pod used to name the volumes
-     * @param storage   Storage configuration
-     * @param jbod      Indicates that the storage is part of JBOD storage and names volumes accordingly
-     *
-     * @return          List of data volumes to be included in the StrimziPodSet pod
-     */
-    public static List<Volume> getPodDataVolumes(String podName, Storage storage, boolean jbod) {
-        List<Volume> volumes = new ArrayList<>();
-
-        if (storage != null) {
-            if (storage instanceof JbodStorage) {
-                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-                    if (volume.getId() == null)
-                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
-                    // it's called recursively for setting the information from the current volume
-                    volumes.addAll(getPodDataVolumes(podName, volume, true));
-                }
-            } else if (storage instanceof EphemeralStorage) {
-                Integer id = ((EphemeralStorage) storage).getId();
-                String name = jbod ? getVolumePrefix(id) : getVolumePrefix(null);
-                String sizeLimit = ((EphemeralStorage) storage).getSizeLimit();
-                volumes.add(createEmptyDirVolume(name, sizeLimit, null));
-            } else if (storage instanceof PersistentClaimStorage)   {
-                Integer id = ((PersistentClaimStorage) storage).getId();
-                String name = jbod ? getVolumePrefix(id) : getVolumePrefix(null);
-                volumes.add(createPvcVolume(name, name + "-" + podName));
-            }
-        }
-
-        return volumes;
-    }
-
-    public static List<PersistentVolumeClaim> getDataPersistentVolumeClaims(Storage storage) {
-        List<PersistentVolumeClaim> pvcs = new ArrayList<>();
-
-        if (storage != null) {
-            if (storage instanceof JbodStorage) {
-                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-                    if (volume.getId() == null)
-                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
-                    // it's called recursively for setting the information from the current volume
-                    pvcs.addAll(getDataPersistentVolumeClaims(volume));
-                }
-            } else if (storage instanceof PersistentClaimStorage) {
-                Integer id = ((PersistentClaimStorage) storage).getId();
-                String name = getVolumePrefix(id);
-                pvcs.add(createPersistentVolumeClaimTemplate(name, (PersistentClaimStorage) storage));
-            }
-        }
-
-        return pvcs;
-    }
-
-    public static List<VolumeMount> getDataVolumeMountPaths(Storage storage, String mountPath) {
+    public static List<VolumeMount> createVolumeMounts(Storage storage, String mountPath, boolean jbod) {
         List<VolumeMount> volumeMounts = new ArrayList<>();
 
         if (storage != null) {
             if (storage instanceof JbodStorage) {
                 for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-                    if (volume.getId() == null)
-                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
                     // it's called recursively for setting the information from the current volume
-                    volumeMounts.addAll(getDataVolumeMountPaths(volume, mountPath));
+                    volumeMounts.addAll(createVolumeMounts(volume, mountPath, true));
                 }
-            } else {
-                Integer id;
-
-                if (storage instanceof EphemeralStorage) {
-                    id = ((EphemeralStorage) storage).getId();
-                } else if (storage instanceof PersistentClaimStorage) {
-                    id = ((PersistentClaimStorage) storage).getId();
-                } else {
-                    throw new IllegalStateException("The declared storage '" + storage.getType() + "' is not supported");
-                }
-
-                String name = getVolumePrefix(id);
+            } else if (storage instanceof SingleVolumeStorage) {
+                String name = createVolumePrefix(((SingleVolumeStorage) storage).getId(), jbod);
                 String namedMountPath = mountPath + "/" + name;
                 volumeMounts.add(createVolumeMount(name, namedMountPath));
             }
@@ -387,13 +406,24 @@ public class VolumeUtils {
     }
 
     /**
-     * Returns the prefix used for volumes and persistent volume claims
+     * Returns the prefix used for volumes and persistent volume claims. Volumes in JBOD storage contain ID in the name.
+     * Volumes outside the JBOD storage do not.
      *
-     * @param id identification number of the persistent storage
-     * @return The volume prefix.
+     * @param id    ID of the volume used within JBOD storage.
+     * @param jbod  Indicates whether the volume is part of the JBOD storage or not.
+     *
+     * @return      The volume prefix.
      */
-    public static String getVolumePrefix(Integer id) {
-        return id == null ? AbstractModel.VOLUME_NAME : AbstractModel.VOLUME_NAME + "-" + id;
+    public static String createVolumePrefix(Integer id, boolean jbod) {
+        if (jbod) {
+            if (id == null) {
+                throw new InvalidResourceException("The 'id' property is required for volumes in JBOD storage.");
+            }
+
+            return AbstractModel.VOLUME_NAME + "-" + id;
+        } else {
+            return AbstractModel.VOLUME_NAME;
+        }
     }
 
     /**

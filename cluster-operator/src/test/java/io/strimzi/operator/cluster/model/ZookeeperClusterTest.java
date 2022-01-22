@@ -431,7 +431,7 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
 
-        PersistentVolumeClaim pvc = zc.getVolumeClaims().get(0);
+        PersistentVolumeClaim pvc = zc.getPersistentVolumeClaimTemplates().get(0);
 
         for (int i = 0; i < replicas; i++) {
             assertThat(pvc.getMetadata().getName() + "-" + ZookeeperCluster.zookeeperPodName(cluster, i),
