@@ -2959,9 +2959,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 JbodStorage jbodStorage = (JbodStorage) storage;
 
                 if (featureGates.useStrimziPodSetsEnabled()) {
-                    // With PodSet, we can just do a regular rolling update
-                    return withVoid(maybeRollKafka(kafkaPodSetDiffs.resource().getSpec().getPods().size(),
-                            podToCheck -> needsRestartBecauseAddedOrRemovedJbodVolumes(podToCheck, jbodStorage, kafkaCurrentReplicas, kafkaCluster.getReplicas())));
+                    // We need to check whether any rolling is needed first
+                    return kafkaRollToAddOrRemoveVolumesInPodSet(jbodStorage);
                 } else {
                     // StatefulSets need a special process to roll when adding or removing volumes
                     return kafkaRollToAddOrRemoveVolumesInStatefulSet(jbodStorage);
@@ -2973,11 +2972,49 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         /**
          * Checks if any Kafka broker needs rolling update to add or remove JBOD volumes. If it does, we trigger a
+         * rolling update. For PodSets, it can be regular rolling update, not the sequential rolling update as for
+         * StatefulSets.
+         *
+         * This method is used only for PodSets.
+         *
+         * @param jbodStorage   Desired storage configuration
+         *
+         * @return              Future indicating the completion and result of the rolling update
+         */
+        Future<ReconciliationState> kafkaRollToAddOrRemoveVolumesInPodSet(JbodStorage jbodStorage) {
+            // We first check if any broker actually needs the rolling update. Only if at least one of them needs it,
+            // we trigger it. This check helps to not go through the rolling update if not needed.
+            return podOperations.listAsync(namespace, kafkaCluster.getSelectorLabels())
+                    .compose(pods -> {
+                        List<String> needsRestart = new ArrayList<>();
+
+                        // We collect all the pods which might need rolling
+                        for (Pod pod : pods) {
+                            if (!needsRestartBecauseAddedOrRemovedJbodVolumes(pod, jbodStorage, kafkaCurrentReplicas, kafkaCluster.getReplicas()).isEmpty())   {
+                                needsRestart.add(pod.getMetadata().getName());
+                            }
+                        }
+
+                        if (needsRestart.isEmpty()) {
+                            LOGGER.debugCr(reconciliation, "No rolling update of Kafka brokers due to added or removed JBOD volumes is needed");
+                            return withVoid(Future.succeededFuture());
+                        } else {
+                            LOGGER.debugCr(reconciliation, "Kafka brokers {} needs rolling update to add or remove JBOD volumes", needsRestart);
+                            return withVoid(maybeRollKafka(kafkaPodSetDiffs.resource().getSpec().getPods().size(),
+                                    podToCheck -> needsRestartBecauseAddedOrRemovedJbodVolumes(podToCheck, jbodStorage, kafkaCurrentReplicas, kafkaCluster.getReplicas())));
+                        }
+                    });
+        }
+
+        /**
+         * Checks if any Kafka broker needs rolling update to add or remove JBOD volumes. If it does, we trigger a
          * sequential rolling update because the pods need to be rolled in sequence to add or remove volumes.
          *
          * This method is used only for StatefulSets which require special rolling process.
          *
-         * @return
+         * @param jbodStorage   Desired storage configuration
+         *
+         * @return              Future indicating the completion and result of the rolling update
          */
         Future<ReconciliationState> kafkaRollToAddOrRemoveVolumesInStatefulSet(JbodStorage jbodStorage) {
             // We first check if any broker actually needs the rolling update. Only if at least one of them needs it,
