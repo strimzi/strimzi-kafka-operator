@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-# shellcheck source=/dev/null
-source "$(dirname "$(realpath "$0")")"/../tools/multi-platform-support.sh
+if [[ $(uname -s) == "Darwin" ]]; then
+  shopt -s expand_aliases
+  alias echo="gecho"; alias grep="ggrep"; alias sed="gsed"; alias date="gdate"
+fi
 
 NAMESPACE=""
 CLUSTER=""
