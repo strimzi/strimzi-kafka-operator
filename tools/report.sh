@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
+set -Eeuo pipefail
+# shellcheck source=/dev/null
+source "$(dirname "$(realpath "$0")")"/../tools/multi-platform-support.sh
 
+NAMESPACE=""
+CLUSTER=""
 KUBECTL_INSTALLED=false
 OC_INSTALLED=false
 KUBE_CLIENT="kubectl"
@@ -14,11 +19,9 @@ error() {
 }
 
 if [[ $(kubectl &>/dev/null) -eq 0 ]]; then
-  echo "Using kubectl client"
   KUBECTL_INSTALLED=true
 else
   if [[ $(oc &>/dev/null) -eq 0 ]]; then
-    echo "Using oc client"
     OC_INSTALLED=true
     KUBE_CLIENT="oc"
   fi
@@ -56,7 +59,7 @@ done
 shift $((OPTIND-1))
 
 if [[ -z $CLUSTER && -z $NAMESPACE ]]; then
-  echo "--cluster and --namespace are mandatory options."
+  echo "--namespace and --cluster are mandatory options."
   error "$USAGE"
 fi
 
@@ -92,7 +95,7 @@ if [[ -z $($KUBE_CLIENT get kafka "$CLUSTER" -o name -n "$NAMESPACE" --ignore-no
 fi
 
 TMP="$(mktemp -d)" && readonly TMP
-readonly RESOURCES_TO_FETCH=(
+readonly RESOURCES=(
   "deployments"
   "statefulsets"
   "replicasets"
@@ -108,13 +111,13 @@ readonly RESOURCES_TO_FETCH=(
   "ingresses"
   "routes"
 )
-readonly NON_NAMESPACED_RESOURCES_TO_FETCH=(
+readonly CLUSTER_RESOURCES=(
   "clusterroles"
   "clusterrolebindings"
 )
 
 if [[ "$SECRETS_OPT" == "off" ]]; then
-  RESOURCES_TO_FETCH=("${RESOURCES_TO_FETCH[@]/secrets}")
+  RESOURCES=("${RESOURCES[@]/secrets}")
 fi
 
 get_masked_secrets() {
@@ -147,20 +150,21 @@ get_masked_secrets() {
 }
 
 get_namespaced_yamls() {
-  mkdir -p "$TMP"/reports/"$1"
-  local resources && resources=$($KUBE_CLIENT get "$1" -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE")
+  local type="$1"
+  mkdir -p "$TMP"/reports/"$type"
+  local resources && resources=$($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" ||true)
   if [[ -n $resources ]]; then
-    echo "$1"
+    echo "$type"
     for res in $resources; do
       local filename && filename=$(echo "$res" | cut -f 2 -d "/")
       echo "    $res"
       $KUBE_CLIENT get "$res" -o yaml -n "$NAMESPACE" | sed "s${SD}^\(\s*password\s*:\s*\).*${SD}\1*****${SD}" \
-        | sed "s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1*****${SD}" > "$TMP"/reports/"$1"/"$filename".yaml
+        | sed "s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1*****${SD}" > "$TMP"/reports/"$type"/"$filename".yaml
     done
   fi
 }
 
-for RES in "${RESOURCES_TO_FETCH[@]}"; do
+for RES in "${RESOURCES[@]}"; do
   if [[ "$RES" == "secrets" && "$SECRETS_OPT" == "hidden" ]]; then
     get_masked_secrets
   else
@@ -184,7 +188,7 @@ get_nonnamespaced_yamls() {
   done
 }
 
-for RES in "${NON_NAMESPACED_RESOURCES_TO_FETCH[@]}"; do
+for RES in "${CLUSTER_RESOURCES[@]}"; do
   get_nonnamespaced_yamls "$RES"
 done
 
@@ -239,7 +243,7 @@ if [[ -n $CO_DEPLOY ]]; then
     echo "    $CO_POD"
     CO_POD=$(echo "$CO_POD" | cut -d "/" -f 2) && readonly CO_POD
     $KUBE_CLIENT logs "$CO_POD" -n "$NAMESPACE" > "$TMP"/reports/podlogs/cluster-operator.log
-    $KUBE_CLIENT logs "$CO_POD" -p -n "$NAMESPACE" 2>/dev/null > "$TMP"/reports/podlogs/cluster-operator.log.0
+    $KUBE_CLIENT logs "$CO_POD" -p -n "$NAMESPACE" 2>/dev/null ||true > "$TMP"/reports/podlogs/cluster-operator.log.0
   fi
 fi
 
@@ -281,10 +285,10 @@ done
 mkdir -p "$TMP"/reports/events
 EVENTS=$($KUBE_CLIENT get event -n "$NAMESPACE" --ignore-not-found) && readonly EVENTS
 if [[ -n $EVENTS ]]; then
-  echo "Events found"
+  echo "events found"
   echo "$EVENTS" > "$TMP"/reports/events/events.txt
 else
-  echo "No event found"
+  echo "no event found"
 fi
 
 FILENAME="report-$(date +"%d-%m-%Y_%H-%M-%S")" && readonly FILENAME
