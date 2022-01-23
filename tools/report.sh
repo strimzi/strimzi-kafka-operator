@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-if [[ $(uname -s) == "Darwin" ]]; then
-  shopt -s expand_aliases
-  alias echo="gecho"; alias grep="ggrep"; alias sed="gsed"; alias date="gdate"; alias awk="gawk"
-fi
+# shellcheck source=/dev/null
+source "$(dirname "$(realpath "$0")")"/../tools/multi-platform-support.sh
 
 NAMESPACE=""
 CLUSTER=""
@@ -135,7 +133,7 @@ get_masked_secrets() {
     if [[ "$SECRETS_OPT" == "all" ]]; then
       echo "$secret" > "$TMP"/reports/secrets/"$filename".yaml
     else
-      echo "$secret" | sed "$SE" > "$TMP"/reports/secrets/"$filename".yaml
+      echo "$secret" | $SED "$SE" > "$TMP"/reports/secrets/"$filename".yaml
     fi
   done
 }
@@ -152,7 +150,7 @@ get_namespaced_yamls() {
       if [[ "$SECRETS_OPT" == "all" ]]; then
         $KUBE_CLIENT get "$res" -o yaml -n "$NAMESPACE" > "$TMP"/reports/"$type"/"$filename".yaml
       else
-        $KUBE_CLIENT get "$res" -o yaml -n "$NAMESPACE" | sed "$SE" > "$TMP"/reports/"$type"/"$filename".yaml
+        $KUBE_CLIENT get "$res" -o yaml -n "$NAMESPACE" | $SED "$SE" > "$TMP"/reports/"$type"/"$filename".yaml
       fi
     done
   fi
@@ -173,8 +171,8 @@ get_nonnamespaced_yamls() {
     local resources && resources=$($KUBE_CLIENT get "$type" -l app=strimzi -o name -n "$NAMESPACE")
     echo "    $res"
     res=$(echo "$res" | cut -d "/" -f 2)
-    $KUBE_CLIENT get "$type" "$res" -o yaml | sed "s${SD}^\(\s*password\s*:\s*\).*${SD}\1*****${SD}" \
-      | sed "s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1*****${SD}" > "$TMP"/reports/"$type"/"$res".yaml
+    $KUBE_CLIENT get "$type" "$res" -o yaml | $SED "s${SD}^\(\s*password\s*:\s*\).*${SD}\1*****${SD}" \
+      | $SED "s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1*****${SD}" > "$TMP"/reports/"$type"/"$res".yaml
   done
 }
 
@@ -209,7 +207,7 @@ get_pod_logs() {
 echo "podlogs"
 mkdir -p "$TMP"/reports/podlogs
 mkdir -p "$TMP"/reports/configs
-PODS=$($KUBE_CLIENT get po --show-labels | grep "strimzi.io" | awk '{print $1}') && readonly PODS
+PODS=$($KUBE_CLIENT get pods -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" | cut -d "/" -f 2) && readonly PODS
 for POD in $PODS; do
   echo "    $POD"
   if [[ "$POD" == *"-entity-operator-"* ]]; then
@@ -226,11 +224,6 @@ for POD in $PODS; do
     get_pod_logs "$POD" tls-sidecar
     $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c zookeeper -- \
       cat /tmp/zookeeper.properties > "$TMP"/reports/configs/"$POD".cfg
-  elif [[ "$POD" == *"-kafka-exporter-"* 
-       || "$POD" == *"-connect-"* 
-       || "$POD" == *"-bridge-"* 
-       || "$POD" == *"-mirror-maker-"* ]]; then
-    get_pod_logs "$POD"
   fi
 done
 
