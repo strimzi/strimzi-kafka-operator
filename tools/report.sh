@@ -5,6 +5,7 @@ if [[ $(uname -s) == "Darwin" ]]; then
   alias echo="gecho"; alias grep="ggrep"; alias sed="gsed"; alias date="gdate"
 fi
 
+{ # this ensures the entire script is downloaded #
 NAMESPACE=""
 CLUSTER=""
 KUBECTL_INSTALLED=false
@@ -193,12 +194,12 @@ get_pod_logs() {
     if [[ $exists == true ]]; then
       local logs
       # get current logs
-      if [[ -n $con ]]; then logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con")"
-      else logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod")"; fi
+      if [[ -n $con ]]; then logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con" ||true)"
+      else logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" ||true)"; fi
       if [[ -n $logs && -n $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log;
       elif [[ -n $logs && -z $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod".log; fi
       # get previous logs if available
-      if [[ -n $con ]]; then logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con" -p 2>/dev/null ||true)"
+      if [[ -n $con ]]; then logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p -c "$con" 2>/dev/null ||true)"
       else logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p 2>/dev/null ||true)"; fi
       if [[ -n $logs && -n $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log.0;
       elif [[ -n $logs && -z $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod".log.0; fi
@@ -294,3 +295,4 @@ zip -qr "$FILENAME".zip ./reports/
 cd "$OLD_DIR" || exit
 mv "$TMP"/"$FILENAME".zip ./
 echo "Report file $FILENAME.zip created"
+} # this ensures the entire script is downloaded #
