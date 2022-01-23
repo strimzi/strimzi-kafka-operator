@@ -12,8 +12,10 @@ OC_INSTALLED=false
 KUBE_CLIENT="kubectl"
 SECRETS_OPT="hidden"
 
-# sed delimiter
+# sed non-printable text delimiter
 SD=$(echo -en "\001") && readonly SD
+# sed sensitive information filter expression
+SE="s${SD}^\(\s*.*\password\s*:\s*\).*${SD}\1*****${SD}; s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1*****${SD}" && readonly SE
 
 error() {
   echo "$@" 1>&2
@@ -97,7 +99,7 @@ if [[ -z $($KUBE_CLIENT get kafka "$CLUSTER" -o name -n "$NAMESPACE" --ignore-no
 fi
 
 TMP="$(mktemp -d)" && readonly TMP
-readonly RESOURCES=(
+RESOURCES=(
   "deployments"
   "statefulsets"
   "replicasets"
@@ -119,35 +121,22 @@ readonly CLUSTER_RESOURCES=(
 )
 
 if [[ "$SECRETS_OPT" == "off" ]]; then
-  RESOURCES=("${RESOURCES[@]/secrets}")
+  RESOURCES=("${RESOURCES[@]/secrets}") && readonly RESOURCES
 fi
 
 get_masked_secrets() {
-  mkdir -p "$TMP"/reports/secrets
   echo "secrets"
+  mkdir -p "$TMP"/reports/secrets
   local resources && resources=$($KUBE_CLIENT get secrets -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE")
   for res in $resources; do
     local filename && filename=$(echo "$res" | cut -f 2 -d "/")
     echo "    $res"
-    local original_data && original_data=$($KUBE_CLIENT get "$res" -o=jsonpath='{.data}' -n "$NAMESPACE" | cut -c5-)
-    SAVEIFS=$IFS
-    IFS=$'\n'
-    original_data=("$original_data")
-    IFS=$SAVEIFS
-
-    local data_entries && data_entries=()
-    for data in "${original_data[@]}"; do
-      # shellcheck disable=SC2001
-      entry=$(echo "${data}" | sed "s${SD}\(\s*.*\s*\):\s*.*${SD}\1${SD}g")
-      data_entries+=("$entry")
-    done
-
     local secret && secret=$($KUBE_CLIENT get "$res" -o yaml -n "$NAMESPACE")
-    for data_key in "${data_entries[@]}"; do
-      secret=$(echo "$secret" | sed "s${SD}\s*$data_key\s*:\s*.*${SD}  $data_key: *****${SD}")
-    done
-    echo "$secret" | sed "s${SD}^\(\s*password\s*:\s*\).*\n${SD}\1*****${SD}" \
-      | sed "s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1*****${SD}" > "$TMP"/reports/secrets/"$filename".yaml
+    if [[ "$SECRETS_OPT" == "all" ]]; then
+      echo "$secret" > "$TMP"/reports/secrets/"$filename".yaml
+    else
+      echo "$secret" | sed "$SE" > "$TMP"/reports/secrets/"$filename".yaml
+    fi
   done
 }
 
@@ -160,19 +149,18 @@ get_namespaced_yamls() {
     for res in $resources; do
       local filename && filename=$(echo "$res" | cut -f 2 -d "/")
       echo "    $res"
-      $KUBE_CLIENT get "$res" -o yaml -n "$NAMESPACE" | sed "s${SD}^\(\s*password\s*:\s*\).*${SD}\1*****${SD}" \
-        | sed "s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1*****${SD}" > "$TMP"/reports/"$type"/"$filename".yaml
+      if [[ "$SECRETS_OPT" == "all" ]]; then
+        $KUBE_CLIENT get "$res" -o yaml -n "$NAMESPACE" > "$TMP"/reports/"$type"/"$filename".yaml
+      else
+        $KUBE_CLIENT get "$res" -o yaml -n "$NAMESPACE" | sed "$SE" > "$TMP"/reports/"$type"/"$filename".yaml
+      fi
     done
   fi
 }
 
 for RES in "${RESOURCES[@]}"; do
-  if [[ "$RES" == "secrets" && "$SECRETS_OPT" == "hidden" ]]; then
-    get_masked_secrets
-  else
-    if [[ -n "$RES" ]]; then
-      get_namespaced_yamls "$RES"
-    fi
+  if [[ -n "$RES" ]]; then
+    get_namespaced_yamls "$RES"
   fi
 done
 
@@ -295,10 +283,10 @@ for CRD in $CRDS; do
   fi
 done
 
-mkdir -p "$TMP"/reports/events
 EVENTS=$($KUBE_CLIENT get event -n "$NAMESPACE" --ignore-not-found) && readonly EVENTS
 if [[ -n $EVENTS ]]; then
   echo "Events found"
+  mkdir -p "$TMP"/reports/events
   echo "$EVENTS" > "$TMP"/reports/events/events.txt
 else
   echo "Events not found"
