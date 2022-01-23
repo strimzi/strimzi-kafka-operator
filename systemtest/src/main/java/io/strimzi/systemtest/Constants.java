@@ -315,7 +315,8 @@ public interface Constants {
     String ISOLATED = "Isolated";
     String ST = "ST";
 
-    String TEST_CASE_NAME_LABEL = "test-case";
+    String TEST_CASE_NAME_LABEL = "test.case";
+    String TEST_SUITE_NAME_LABEL = "test.suite";
 
     /**
      * Cruise Control related parameters

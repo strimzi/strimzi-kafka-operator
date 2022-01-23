@@ -28,6 +28,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static io.strimzi.test.TestUtils.writeFile;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -135,8 +137,6 @@ public class LogCollector {
      *  More advanced is when {@link ParallelTest#annotationType()} or {@link IsolatedTest#annotationType()} are executed inside
      *  {@link ParallelSuite#annotationType()}, which means they use automatically generated namespace by
      *  {@link io.strimzi.systemtest.parallel.TestSuiteNamespaceManager#createAdditionalNamespaces(ExtensionContext)}.
-     *  Thus we need ...
-     *
      */
     public synchronized void collect() {
         Set<String> namespaces = KubeClusterResource.getMapWithSuiteNamespaces().get(this.collectorElement);
@@ -184,6 +184,40 @@ public class LogCollector {
         });
     }
 
+    /**
+     * Provides collection of tracing Pods (they can't be labeled because CR of the keycloak does not propagate
+     * labels to the Pods ) TODO:....
+     *
+     * @param pod
+     * @param namespace
+     */
+    private final void collectTracingPods(final Pod pod) {
+        // Tracing pods (they can't be labeled because CR of the keycloak does not propagate labels to the Pods )
+        if (pod.getMetadata().getName().contains("jaeger")) {
+            pod.getStatus().getContainerStatuses().forEach(
+                containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
+        }
+    }
+
+    private final void collectLogsForTesSuite(final Pod pod) {
+        if (pod.getMetadata().getLabels().containsKey(Constants.TEST_SUITE_NAME_LABEL)) {
+            if (pod.getMetadata().getLabels().get(Constants.TEST_SUITE_NAME_LABEL).equals(this.collectorElement.getTestClassName())) {
+                pod.getStatus().getContainerStatuses().forEach(
+                    containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
+            }
+        }
+    }
+
+    private final void collectLogsForTestCase(final Pod pod) {
+        if (pod.getMetadata().getLabels().containsKey(Constants.TEST_CASE_NAME_LABEL)) {
+            // collect these Pods, which are deployed in that test case
+            if (pod.getMetadata().getLabels().get(Constants.TEST_CASE_NAME_LABEL).equals(this.collectorElement.getTestMethodName())) {
+                pod.getStatus().getContainerStatuses().forEach(
+                    containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
+            }
+        }
+    }
+
     private void collectLogsFromPods(String namespace) {
         try {
             LOGGER.info("Collecting logs for Pod(s) in Namespace {}", namespace);
@@ -204,20 +238,17 @@ public class LogCollector {
             } else {
                 kubeClient.listPods(namespace).forEach(pod -> {
                     final String podName = pod.getMetadata().getName();
-
                     // we are collecting inside for test case
                     if (extensionContext.getTestMethod().isPresent()) {
                         // pods, which are created by ResourceManager
-                        Map<String, String> podLabels = pod.getMetadata().getLabels();
-                        if (podLabels.containsKey(Constants.TEST_CASE_NAME_LABEL)) {
-                            // collect these Pods, which are deployed in that test case
-                            if (podLabels.get(Constants.TEST_CASE_NAME_LABEL).equals(this.testCase)) {
-                                pod.getStatus().getContainerStatuses().forEach(
-                                    containerStatus -> scrapeAndCreateLogs(namespaceFile, podName, containerStatus, namespace));
-                            }
-                        }
+                        collectLogsForTestCase(pod);
+                        // pods, which are shared between test cases
+                        collectLogsForTesSuite(pod);
+                        collectTracingPods(pod);
                     } else {
-                        // TODO: how this is gonna work for test suite
+                        // pods, which are shared between test cases (@BeforeAll, @AfterAll)
+                        collectLogsForTesSuite(pod);
+                        collectTracingPods(pod);
                     }
                 });
             }

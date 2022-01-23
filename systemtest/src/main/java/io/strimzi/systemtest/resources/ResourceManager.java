@@ -167,7 +167,7 @@ public class ResourceManager {
             // If we are create resource in test case we annotate it with label. This is needed for filtering when
             // we collect logs from Pods, ReplicaSets, Deployments etc.
             if (testContext.getTestMethod().isPresent()) {
-                final String testCaseName = testContext.getDisplayName();
+                final String testCaseName = testContext.getRequiredTestMethod().getName();
                 Map<String, String> labels;
 
                 // TODO: can this even occur??
@@ -180,6 +180,23 @@ public class ResourceManager {
                     labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
                 }
                 resource.getMetadata().setLabels(labels);
+            } else {
+                // this is labeling for shared resources in @BeforeAll
+                if (testContext.getTestClass().isPresent()) {
+                    final String testSuiteName = testContext.getRequiredTestClass().getName();
+                    Map<String, String> labels;
+
+                    // TODO: can this even occur??
+                    if (resource.getMetadata().getLabels() == null) {
+                        LOGGER.info("This happen really in test suite.... :D");
+                        labels = new HashMap<>();
+                        labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
+                    } else {
+                        labels = resource.getMetadata().getLabels();
+                        labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
+                    }
+                    resource.getMetadata().setLabels(labels);
+                }
             }
             type.create(resource);
 
