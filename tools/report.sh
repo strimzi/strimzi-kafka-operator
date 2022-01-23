@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 if [[ $(uname -s) == "Darwin" ]]; then
   shopt -s expand_aliases
-  alias echo="gecho"; alias grep="ggrep"; alias sed="gsed"; alias date="gdate"
+  alias echo="gecho"; alias grep="ggrep"; alias sed="gsed"; alias date="gdate"; alias awk="gawk"
 fi
 
 NAMESPACE=""
@@ -198,7 +198,7 @@ get_pod_logs() {
       if [[ -n $logs && -n $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log;
       elif [[ -n $logs && -z $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod".log; fi
       # get previous logs if available
-      if [[ -n $con ]]; then logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p -c "$con" 2>/dev/null ||true)"
+      if [[ -n $con ]]; then logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con" -p 2>/dev/null ||true)"
       else logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p 2>/dev/null ||true)"; fi
       if [[ -n $logs && -n $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log.0;
       elif [[ -n $logs && -z $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod".log.0; fi
@@ -209,7 +209,7 @@ get_pod_logs() {
 echo "podlogs"
 mkdir -p "$TMP"/reports/podlogs
 mkdir -p "$TMP"/reports/configs
-PODS=$($KUBE_CLIENT get pods -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" | cut -d "/" -f 2) && readonly PODS
+PODS=$($KUBE_CLIENT get po --show-labels | grep "strimzi.io" | awk '{print $1}') && readonly PODS
 for POD in $PODS; do
   echo "    $POD"
   if [[ "$POD" == *"-entity-operator-"* ]]; then
