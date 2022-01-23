@@ -192,17 +192,26 @@ for RES in "${CLUSTER_RESOURCES[@]}"; do
   get_nonnamespaced_yamls "$RES"
 done
 
-get_container_logs_if_present() {
+get_pod_logs() {
   local pod="$1"
-  local con="$2"
-  local out="$3"
-  if [[ -n $pod && -n $con && -n $out ]]; then
-    local found && found="$($KUBE_CLIENT -n "$NAMESPACE" exec "$pod" -c "$con" -- echo true 2>/dev/null ||true)"
-    if [[ $found == true ]]; then
-      local logs && logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con")"
-      if [[ -n $logs ]]; then echo "$logs" > "$out"; fi
-      logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p -c "$con" 2>/dev/null ||true)"
-      if [[ -n $logs ]]; then echo "$logs" > "$out".0; fi
+  local con="${2-}"
+  if [[ -n $pod ]]; then
+    # check if pod/container exists
+    local exists
+    if [[ -n $con ]]; then exists="$($KUBE_CLIENT -n "$NAMESPACE" exec "$pod" -c "$con" -- echo true 2>/dev/null ||true)"
+    else exists="$($KUBE_CLIENT -n "$NAMESPACE" exec "$pod" -- echo true 2>/dev/null ||true)"; fi
+    if [[ $exists == true ]]; then
+      local logs
+      # get current logs
+      if [[ -n $con ]]; then logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con")"
+      else logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod")"; fi
+      if [[ -n $logs && -n $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log;
+      elif [[ -n $logs && -z $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod".log; fi
+      # get previous logs if available
+      if [[ -n $con ]]; then logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p -c "$con" 2>/dev/null ||true)"
+      else logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p 2>/dev/null ||true)"; fi
+      if [[ -n $logs && -n $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log.0;
+      elif [[ -n $logs && -z $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod".log.0; fi
     fi
   fi
 }
@@ -214,21 +223,24 @@ PODS=$($KUBE_CLIENT get pods -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMES
 for POD in $PODS; do
   echo "    $POD"
   if [[ "$POD" == *"-entity-operator-"* ]]; then
-    get_container_logs_if_present "$POD" topic-operator "$TMP"/reports/podlogs/"$POD"-topic-operator.log
-    get_container_logs_if_present "$POD" user-operator "$TMP"/reports/podlogs/"$POD"-user-operator.log
-    get_container_logs_if_present "$POD" tls-sidecar "$TMP"/reports/podlogs/"$POD"-tls-sidecar.log
+    get_pod_logs "$POD" topic-operator
+    get_pod_logs "$POD" user-operator
+    get_pod_logs "$POD" tls-sidecar
   elif [[ "$POD" =~ .*-kafka-[0-9]+ ]]; then
-    get_container_logs_if_present "$POD" kafka "$TMP"/reports/podlogs/"$POD".log
-    get_container_logs_if_present "$POD" tls-sidecar "$TMP"/reports/podlogs/"$POD"-tls-sidecar.log
-    $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c kafka -- cat /tmp/strimzi.properties > "$TMP"/reports/configs/"$POD".cfg
+    get_pod_logs "$POD" kafka
+    get_pod_logs "$POD" tls-sidecar
+    $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c kafka -- \
+      cat /tmp/strimzi.properties > "$TMP"/reports/configs/"$POD".cfg
   elif [[ "$POD" =~ .*-zookeeper-[0-9]+ ]]; then
-    get_container_logs_if_present "$POD" zookeeper "$TMP"/reports/podlogs/"$POD".log
-    get_container_logs_if_present "$POD" tls-sidecar "$TMP"/reports/podlogs/"$POD"-tls-sidecar.log
-    $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c zookeeper -- cat /tmp/zookeeper.properties > "$TMP"/reports/configs/"$POD".cfg
-  elif [[ "$POD" == *"-kafka-exporter-"* || "$POD" == *"-connect-"* || "$POD" == *"-bridge-"* || "$POD" == *"-mirror-maker-"* ]]; then
-    $KUBE_CLIENT logs "$POD" -n "$NAMESPACE" > "$TMP"/reports/podlogs/"$POD".log
-    PPLOG=$($KUBE_CLIENT logs "$POD" -p -n "$NAMESPACE" 2>/dev/null ||true)
-    if [[ -n $PPLOG ]]; then echo "$PPLOG" > "$TMP"/reports/podlogs/"$POD".log.0; fi
+    get_pod_logs "$POD" zookeeper
+    get_pod_logs "$POD" tls-sidecar
+    $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c zookeeper -- \
+      cat /tmp/zookeeper.properties > "$TMP"/reports/configs/"$POD".cfg
+  elif [[ "$POD" == *"-kafka-exporter-"* 
+       || "$POD" == *"-connect-"* 
+       || "$POD" == *"-bridge-"* 
+       || "$POD" == *"-mirror-maker-"* ]]; then
+    get_pod_logs "$POD"
   fi
 done
 
@@ -242,8 +254,7 @@ if [[ -n $CO_DEPLOY ]]; then
   if [[ -n $CO_POD ]]; then
     echo "    $CO_POD"
     CO_POD=$(echo "$CO_POD" | cut -d "/" -f 2) && readonly CO_POD
-    $KUBE_CLIENT logs "$CO_POD" -n "$NAMESPACE" > "$TMP"/reports/podlogs/cluster-operator.log
-    $KUBE_CLIENT logs "$CO_POD" -p -n "$NAMESPACE" 2>/dev/null ||true > "$TMP"/reports/podlogs/cluster-operator.log.0
+    get_pod_logs "$CO_POD"
   fi
 fi
 
@@ -285,10 +296,10 @@ done
 mkdir -p "$TMP"/reports/events
 EVENTS=$($KUBE_CLIENT get event -n "$NAMESPACE" --ignore-not-found) && readonly EVENTS
 if [[ -n $EVENTS ]]; then
-  echo "events found"
+  echo "Events found"
   echo "$EVENTS" > "$TMP"/reports/events/events.txt
 else
-  echo "no event found"
+  echo "Events not found"
 fi
 
 FILENAME="report-$(date +"%d-%m-%Y_%H-%M-%S")" && readonly FILENAME
