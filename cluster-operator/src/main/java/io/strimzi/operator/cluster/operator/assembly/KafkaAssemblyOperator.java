@@ -393,7 +393,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     class ReconciliationState {
         private final String namespace;
         private final String name;
-        private Kafka kafkaAssembly;
+        private final Kafka kafkaAssembly;
         private final Reconciliation reconciliation;
 
         private boolean kafkaStsAlreadyExists = false;
@@ -1661,9 +1661,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .compose(ignore -> {
                         this.kafkaCluster = KafkaCluster.fromCrd(reconciliation, kafkaAssembly, versions, oldKafkaStorage, kafkaCurrentReplicas);
                         this.kafkaBootstrapDnsName.addAll(ListenersUtils.alternativeNames(kafkaCluster.getListeners()));
-                        // Update assembly with the last correct Kafka storage configuration if an illegal Kafka storage change was made.
-                        // This prevents other components like Cruise Control from updating based on illegal Kafka storage changes.
-                        this.kafkaAssembly = updateAssemblyKafkaStorage(this.kafkaAssembly, kafkaCluster);
 
                         return podOperations.listAsync(namespace, this.kafkaCluster.getSelectorLabels());
                     }).compose(pods -> {
@@ -3841,6 +3838,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             this.cruiseControlMetricsAndLogsConfigMap = logAndMetricsConfigMap;
                             this.cruiseControl = cruiseControl;
                             this.ccDeployment = cruiseControl.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
+
                             return Future.succeededFuture(this);
                         });
             } else {
