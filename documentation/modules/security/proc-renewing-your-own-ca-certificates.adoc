@@ -55,10 +55,12 @@ For example `ca-2018-09-27T17-32-00Z.crt`.
 [source,shell,subs="+quotes"]
 mv ca.crt ca-$(date -u -d"$(openssl x509 -enddate -noout -in ca.crt | sed 's/.*=//')" +'%Y-%m-%dT%H-%M-%SZ').crt
 +
-Saving the current CA certificate has to be done only if you are using a different key for generating the new certificate.
-In this case the CN (Common Name) of the new CA certificate should be different from the previous one.
-For example, when Strimzi cluster operator takes care of the renewal automatically it adds a suffix like "vX" to identify a version "X" (that is, v0, v1, and so on).
-If you are using the same key for generating the new CA certificate you don't have to save the old one in the Secret otherwise it will cause a failure in the underlying trusting system.
+If you are using a different key to generate a new certificate, retain the current CA certificate.
+The CN (Common Name) of the new CA certificate must also be different from the current one.
+For example, when the Cluster Operator renews certificates automatically it adds a _v<version_number>_ suffix to identify a version.
+Do the same with your own certificates.
+If you are using the same key for generate a new CA certificate, don't retain the old one in the secret.
+Otherwise, the underlying trusting system with fail.
 
 . Copy your new CA certificate into the directory, naming it `ca.crt`:
 +
