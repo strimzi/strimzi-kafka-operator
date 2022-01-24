@@ -1,0 +1,91 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-cluster-operator.adoc
+
+[id='proc-configuring-fips-mode-cluster-operator-{context}']
+= Configuring the FIPS mode in Cluster Operator
+
+[role="_abstract"]
+When running Strimzi on FIPS enabled Kubernetes cluster, the OpenJDK used in Strimzi container images will automatically switch to FIPS mode.
+Strimzi currently doesn't support running as FIPS compliant with the FIPS mode enabled.
+When you deploy Strimzi on such cluster, you will see errors similar to this:
+
+[source%nowrap]
+----
+Exception in thread "main" io.fabric8.kubernetes.client.KubernetesClientException: An error has occurred.
+	at io.fabric8.kubernetes.client.KubernetesClientException.launderThrowable(KubernetesClientException.java:103)
+	at io.fabric8.kubernetes.client.KubernetesClientException.launderThrowable(KubernetesClientException.java:97)
+	at io.fabric8.kubernetes.client.utils.HttpClientUtils.applyCommonConfiguration(HttpClientUtils.java:210)
+	at io.fabric8.kubernetes.client.okhttp.OkHttpClientFactory.createHttpClient(OkHttpClientFactory.java:89)
+	at io.fabric8.kubernetes.client.utils.HttpClientUtils.createHttpClient(HttpClientUtils.java:160)
+	at io.fabric8.kubernetes.client.BaseClient.<init>(BaseClient.java:48)
+	at io.fabric8.kubernetes.client.BaseClient.<init>(BaseClient.java:40)
+	at io.fabric8.kubernetes.client.BaseKubernetesClient.<init>(BaseKubernetesClient.java:151)
+	at io.fabric8.kubernetes.client.DefaultKubernetesClient.<init>(DefaultKubernetesClient.java:34)
+	at io.strimzi.operator.cluster.Main.main(Main.java:75)
+Caused by: java.security.KeyStoreException: sun.security.pkcs11.wrapper.PKCS11Exception: CKR_SESSION_READ_ONLY
+	at jdk.crypto.cryptoki/sun.security.pkcs11.P11KeyStore.engineSetEntry(P11KeyStore.java:1049)
+	at jdk.crypto.cryptoki/sun.security.pkcs11.P11KeyStore.engineSetCertificateEntry(P11KeyStore.java:515)
+	at java.base/java.security.KeyStore.setCertificateEntry(KeyStore.java:1235)
+	at io.fabric8.kubernetes.client.internal.CertUtils.createTrustStore(CertUtils.java:100)
+	at io.fabric8.kubernetes.client.internal.CertUtils.createTrustStore(CertUtils.java:74)
+	at io.fabric8.kubernetes.client.internal.SSLUtils.trustManagers(SSLUtils.java:140)
+	at io.fabric8.kubernetes.client.internal.SSLUtils.trustManagers(SSLUtils.java:90)
+	at io.fabric8.kubernetes.client.utils.HttpClientUtils.applyCommonConfiguration(HttpClientUtils.java:199)
+	... 7 more
+Caused by: sun.security.pkcs11.wrapper.PKCS11Exception: CKR_SESSION_READ_ONLY
+	at jdk.crypto.cryptoki/sun.security.pkcs11.wrapper.PKCS11.C_CreateObject(Native Method)
+	at jdk.crypto.cryptoki/sun.security.pkcs11.wrapper.PKCS11$FIPSPKCS11.C_CreateObject(PKCS11.java:1950)
+	at jdk.crypto.cryptoki/sun.security.pkcs11.P11KeyStore.storeCert(P11KeyStore.java:1567)
+	at jdk.crypto.cryptoki/sun.security.pkcs11.P11KeyStore.engineSetEntry(P11KeyStore.java:1045)
+	... 14 more
+----
+
+If you want to run Strimzi on your FIPS enabled cluster, you can disable the FIPS mode by setting the `FIPS_MODE` environment variable to `disabled`.
+In this mode, the FIPS mode in OpenJDK will be disabled.
+Such Strimzi deployment will not be FIPS compliant, but the Strimzi operators as well as all its operands will be able to run as on any regular Kubernetes cluster.
+
+.Procedure
+
+. To disable the FIPS mode in the Cluster Operator, update its `Deployment` configuration (`install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml`) and add the `FIPS_MODE` environment variable.
++
+--
+.Example proxy configuration for the Cluster Operator
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  # ...
+  template:
+    spec:
+      serviceAccountName: strimzi-cluster-operator
+      containers:
+        # ...
+        env:
+        # ...
+        - name: "FIPS_MODE"
+          value: "disabled" # <1>
+  # ...
+----
+<1> Disabled the FIPS mode.
+--
++
+Alternatively, edit the `Deployment` directly:
++
+[source,shell,subs=+quotes]
+----
+kubectl edit deployment strimzi-cluster-operator
+----
+
+. If you updated the YAML file instead of editing the `Deployment` directly, apply the changes:
++
+[source,shell,subs=+quotes]
+----
+kubectl apply -f install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
+----
+
+[role="_additional-resources"]
+.Additional resources
+
+* link:https://www.nist.gov/standardsgov/compliance-faqs-federal-information-processing-standards-fips[What are Federal Information Processing Standards (FIPS)^]

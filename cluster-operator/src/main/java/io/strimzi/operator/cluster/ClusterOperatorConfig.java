@@ -35,7 +35,6 @@ import static java.util.Collections.unmodifiableSet;
 public class ClusterOperatorConfig {
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorConfig.class.getName());
 
-
     public static final String STRIMZI_NAMESPACE = "STRIMZI_NAMESPACE";
     public static final String STRIMZI_FULL_RECONCILIATION_INTERVAL_MS = "STRIMZI_FULL_RECONCILIATION_INTERVAL_MS";
     public static final String STRIMZI_OPERATION_TIMEOUT_MS = "STRIMZI_OPERATION_TIMEOUT_MS";
@@ -74,6 +73,12 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE = "STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE";
     public static final String STRIMZI_DEFAULT_MAVEN_BUILDER = "STRIMZI_DEFAULT_MAVEN_BUILDER";
     public static final String STRIMZI_DNS_CACHE_TTL = "STRIMZI_DNS_CACHE_TTL";
+
+    // Env vars configured in the Cluster operator deployment but passed to all operands
+    public static final String HTTP_PROXY = "HTTP_PROXY";
+    public static final String HTTPS_PROXY = "HTTPS_PROXY";
+    public static final String NO_PROXY = "NO_PROXY";
+    public static final String FIPS_MODE = "FIPS_MODE";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;

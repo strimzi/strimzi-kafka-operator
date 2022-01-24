@@ -83,6 +83,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.api.kafka.model.template.PodManagementPolicy;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Annotations;
@@ -159,34 +160,34 @@ public abstract class AbstractModel {
     public static final String ANNO_STRIMZI_IO_STORAGE = Annotations.STRIMZI_DOMAIN + "storage";
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = Annotations.STRIMZI_DOMAIN + "delete-claim";
 
-    private static final String ENV_VAR_HTTP_PROXY = "HTTP_PROXY";
-    private static final String ENV_VAR_HTTPS_PROXY = "HTTPS_PROXY";
-    private static final String ENV_VAR_NO_PROXY = "NO_PROXY";
-
     /**
-     * Configure HTTP/HTTPS Proxy env vars
-     * These are set in the Cluster Operator and then passed to all created containers
+     * Configure statically defined environment variables which are passed to all operands.
+     * This includes HTTP/HTTPS Proxy env vars or the FIPS_MODE.
      */
-    protected static final List<EnvVar> PROXY_ENV_VARS;
+    protected static final List<EnvVar> STATIC_ENV_VARS;
     static {
         List<EnvVar> envVars = new ArrayList<>(3);
 
-        if (System.getenv(ENV_VAR_HTTP_PROXY) != null)    {
-            envVars.add(buildEnvVar(ENV_VAR_HTTP_PROXY, System.getenv(ENV_VAR_HTTP_PROXY)));
+        if (System.getenv(ClusterOperatorConfig.HTTP_PROXY) != null)    {
+            envVars.add(buildEnvVar(ClusterOperatorConfig.HTTP_PROXY, System.getenv(ClusterOperatorConfig.HTTP_PROXY)));
         }
 
-        if (System.getenv(ENV_VAR_HTTPS_PROXY) != null)    {
-            envVars.add(buildEnvVar(ENV_VAR_HTTPS_PROXY, System.getenv(ENV_VAR_HTTPS_PROXY)));
+        if (System.getenv(ClusterOperatorConfig.HTTPS_PROXY) != null)    {
+            envVars.add(buildEnvVar(ClusterOperatorConfig.HTTPS_PROXY, System.getenv(ClusterOperatorConfig.HTTPS_PROXY)));
         }
 
-        if (System.getenv(ENV_VAR_NO_PROXY) != null)    {
-            envVars.add(buildEnvVar(ENV_VAR_NO_PROXY, System.getenv(ENV_VAR_NO_PROXY)));
+        if (System.getenv(ClusterOperatorConfig.NO_PROXY) != null)    {
+            envVars.add(buildEnvVar(ClusterOperatorConfig.NO_PROXY, System.getenv(ClusterOperatorConfig.NO_PROXY)));
+        }
+
+        if (System.getenv(ClusterOperatorConfig.FIPS_MODE) != null)    {
+            envVars.add(buildEnvVar(ClusterOperatorConfig.FIPS_MODE, System.getenv(ClusterOperatorConfig.FIPS_MODE)));
         }
 
         if (envVars.size() > 0) {
-            PROXY_ENV_VARS = Collections.unmodifiableList(envVars);
+            STATIC_ENV_VARS = Collections.unmodifiableList(envVars);
         } else {
-            PROXY_ENV_VARS = Collections.emptyList();
+            STATIC_ENV_VARS = Collections.emptyList();
         }
     }
 
@@ -657,7 +658,7 @@ public abstract class AbstractModel {
      */
     protected List<EnvVar> getRequiredEnvVars() {
         // HTTP Proxy configuration should be passed to all images
-        return PROXY_ENV_VARS;
+        return STATIC_ENV_VARS;
     }
 
     /**

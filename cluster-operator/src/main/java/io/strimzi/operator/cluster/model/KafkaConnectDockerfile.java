@@ -39,9 +39,9 @@ public class KafkaConnectDockerfile {
     private static final String ENV_VAR_HTTPS_PROXY = "HTTPS_PROXY";
     private static final String ENV_VAR_NO_PROXY = "NO_PROXY";
 
-    private static final String HTTP_PROXY = System.getenv(ENV_VAR_HTTP_PROXY);
-    private static final String HTTPS_PROXY = System.getenv(ENV_VAR_HTTPS_PROXY);
-    private static final String NO_PROXY = System.getenv(ENV_VAR_NO_PROXY);
+    private static final String HTTP_PROXY = System.getenv(ClusterOperatorConfig.HTTP_PROXY);
+    private static final String HTTPS_PROXY = System.getenv(ClusterOperatorConfig.HTTPS_PROXY);
+    private static final String NO_PROXY = System.getenv(ClusterOperatorConfig.NO_PROXY);
 
     private final String dockerfile;
 

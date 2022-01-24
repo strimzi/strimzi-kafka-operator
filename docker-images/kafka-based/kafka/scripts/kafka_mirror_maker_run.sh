@@ -63,6 +63,11 @@ if [ "$KAFKA_MIRRORMAKER_METRICS_ENABLED" = "true" ]; then
   export KAFKA_OPTS
 fi
 
+# Disable FIPS if needed
+if [ "$FIPS_MODE" = "disabled" ]; then
+    export KAFKA_OPTS="${KAFKA_OPTS} -Dcom.redhat.fips=false"
+fi
+
 # enabling Tracing agent (initializes Jaeger tracing) as Java agent
 if [ "$STRIMZI_TRACING" = "jaeger" ]; then
   KAFKA_OPTS="$KAFKA_OPTS -javaagent:$(ls "$KAFKA_HOME"/libs/tracing-agent*.jar)=jaeger"

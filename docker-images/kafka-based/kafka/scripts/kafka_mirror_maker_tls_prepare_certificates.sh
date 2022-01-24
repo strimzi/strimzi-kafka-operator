@@ -1,24 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-# Parameters:
-# $1: Path to the new truststore
-# $2: Truststore password
-# $3: Public key to be imported
-# $4: Alias of the certificate
-function create_truststore {
-  keytool -keystore "$1" -storepass "$2" -noprompt -alias "$4" -import -file "$3" -storetype PKCS12
-}
-
-# Parameters:
-# $1: Path to the new keystore
-# $2: Truststore password
-# $3: Public key to be imported
-# $4: Private key to be imported
-# $5: Alias of the certificate
-function create_keystore {
-  RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -name "$5" -password pass:"$2" -out "$1"
-}
+# Load predefined functions for preparing trust- and keystores
+source ./tls_utils.sh
 
 # $1 = trusted certs, $2 = TLS auth cert, $3 = TLS auth key, $4 = truststore path, $5 = keystore path, $6 = certs and key path
 trusted_certs="$1"
@@ -44,7 +28,7 @@ fi
 if [ -n "$tls_auth_cert" ] && [ -n "$tls_auth_key" ]; then
     echo "Preparing keystore"
     rm -f "$keystore_path"
-    create_keystore "$keystore_path" "$CERTS_STORE_PASSWORD" "$certs_key_path/$tls_auth_cert" "$certs_key_path/$tls_auth_key" "$tls_auth_cert"
+    create_keystore_without_ca_file "$keystore_path" "$CERTS_STORE_PASSWORD" "$certs_key_path/$tls_auth_cert" "$certs_key_path/$tls_auth_key" "$tls_auth_cert"
     echo "Preparing keystore is complete"
 fi
 

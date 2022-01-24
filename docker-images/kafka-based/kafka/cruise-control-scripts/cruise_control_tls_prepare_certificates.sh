@@ -2,25 +2,10 @@
 set -e
 set +x
 
-# Parameters:
-# $1: Path to the new truststore
-# $2: Truststore password
-# $3: Public key to be imported
-# $4: Alias of the certificate
-function create_truststore {
-   keytool -keystore "$1" -storepass "$2" -noprompt -alias "$4" -import -file "$3" -storetype PKCS12
-}
-
-# Parameters:
-# $1: Path to the new keystore
-# $2: Truststore password
-# $3: Public key to be imported
-# $4: Private key to be imported
-# $5: CA public key to be imported
-# $6: Alias of the certificate
-function create_keystore {
-   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -name "$6" -password pass:"$2" -out "$1"
-}
+# Load predefined functions for preparing trust- and keystores
+# Shellcheck SC1091 is disabled because the path does not work locally, but does inside the container
+# shellcheck disable=SC1091
+source ../kafka/tls_utils.sh
 
 echo "Preparing truststore for Cruise Control"
 STORE=/tmp/cruise-control/replication.truststore.p12
@@ -35,9 +20,8 @@ echo "Preparing truststore for Cruise Control is complete"
 echo "Preparing keystore for Cruise Control"
 STORE=/tmp/cruise-control/cruise-control.keystore.p12
 rm -f "$STORE"
-create_keystore "$STORE" "$CERTS_STORE_PASSWORD" \
+create_keystore_without_ca_file "$STORE" "$CERTS_STORE_PASSWORD" \
     /etc/tls-sidecar/cc-certs/cruise-control.crt \
     /etc/tls-sidecar/cc-certs/cruise-control.key \
-    /etc/tls-sidecar/cluster-ca-certs/ca.crt \
     cruise-control
 echo "Preparing keystore for Cruise Control is complete"

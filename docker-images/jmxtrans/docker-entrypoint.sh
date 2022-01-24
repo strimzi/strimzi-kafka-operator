@@ -10,6 +10,11 @@ if [ -n "${KAFKA_JMX_USERNAME}" ]; then
   JMXTRANS_OPTS="$JMXTRANS_OPTS -Dkafka.username=${KAFKA_JMX_USERNAME} -Dkafka.password=${KAFKA_JMX_PASSWORD}"
 fi
 
+# Disable FIPS if needed
+if [ "$FIPS_MODE" = "disabled" ]; then
+    JAVA_OPTS="${JAVA_OPTS} -Dcom.redhat.fips=false"
+fi
+
 MONITOR_OPTS="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=false \
               -Dcom.sun.management.jmxremote.authenticate=false \
               -Dcom.sun.management.jmxremote.port=9999 \

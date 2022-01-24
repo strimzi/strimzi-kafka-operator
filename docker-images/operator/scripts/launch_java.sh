@@ -23,6 +23,11 @@ JAVA_OPTS="${JAVA_OPTS} $(get_gc_opts)"
 # Deny illegal access option is supported only on Java 9 and higher
 JAVA_OPTS="${JAVA_OPTS} --illegal-access=deny"
 
+# Disable FIPS if needed
+if [ "$FIPS_MODE" = "disabled" ]; then
+    JAVA_OPTS="${JAVA_OPTS} -Dcom.redhat.fips=false"
+fi
+
 set -x
 
 # shellcheck disable=SC2086

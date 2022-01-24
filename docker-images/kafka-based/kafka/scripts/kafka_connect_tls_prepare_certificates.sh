@@ -1,24 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-# Parameters:
-# $1: Path to the new truststore
-# $2: Truststore password
-# $3: Public key to be imported
-# $4: Alias of the certificate
-function create_truststore {
-  keytool -keystore "$1" -storepass "$2" -noprompt -alias "$4" -import -file "$3" -storetype PKCS12
-}
-
-# Parameters:
-# $1: Path to the new keystore
-# $2: Truststore password
-# $3: Public key to be imported
-# $4: Private key to be imported
-# $5: Alias of the certificate
-function create_keystore {
-  RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -name "$5" -password pass:"$2" -out "$1"
-}
+# Load predefined functions for preparing trust- and keystores
+source ./tls_utils.sh
 
 echo "Preparing truststore"
 STORE=/tmp/kafka/cluster.truststore.p12
@@ -34,7 +18,7 @@ if [ -n "$KAFKA_CONNECT_TLS_AUTH_CERT" ] && [ -n "$KAFKA_CONNECT_TLS_AUTH_KEY" ]
     echo "Preparing keystore"
     STORE=/tmp/kafka/cluster.keystore.p12
     rm -f "$STORE"
-    create_keystore "$STORE" "$CERTS_STORE_PASSWORD" "/opt/kafka/connect-certs/${KAFKA_CONNECT_TLS_AUTH_CERT}" "/opt/kafka/connect-certs/${KAFKA_CONNECT_TLS_AUTH_KEY}" "${KAFKA_CONNECT_TLS_AUTH_CERT}"
+    create_keystore_without_ca_file "$STORE" "$CERTS_STORE_PASSWORD" "/opt/kafka/connect-certs/${KAFKA_CONNECT_TLS_AUTH_CERT}" "/opt/kafka/connect-certs/${KAFKA_CONNECT_TLS_AUTH_KEY}" "${KAFKA_CONNECT_TLS_AUTH_CERT}"
     echo "Preparing keystore is complete"
 fi
 
