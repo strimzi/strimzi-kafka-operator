@@ -5,8 +5,11 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
@@ -127,6 +130,10 @@ public class KafkaAssemblyOperatorIngressKafkaListenerTest {
         StatefulSetOperator mockStsOps = supplier.stsOperations;
         when(mockStsOps.getAsync(eq(NAMESPACE), eq(KafkaCluster.kafkaClusterName(NAME)))).thenReturn(Future.succeededFuture());
 
+        // Mock the StrimziPodSet operator
+        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
+
         // Mock the Pod operations
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
@@ -215,6 +222,10 @@ public class KafkaAssemblyOperatorIngressKafkaListenerTest {
         // Mock the KafkaSet operations
         StatefulSetOperator mockStsOps = supplier.stsOperations;
         when(mockStsOps.getAsync(eq(NAMESPACE), eq(KafkaCluster.kafkaClusterName(NAME)))).thenReturn(Future.succeededFuture());
+
+        // Mock the StrimziPodSet operator
+        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
 
         // Mock the Pod operations
         PodOperator mockPodOps = supplier.podOperations;
