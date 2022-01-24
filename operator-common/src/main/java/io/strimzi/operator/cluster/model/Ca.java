@@ -113,13 +113,6 @@ public abstract class Ca {
         return caCert;
     }
 
-    protected static Secret forceReplacement(Secret caCert, Secret caKey, String key) {
-        if (caCert != null && caKey != null && caKey.getData() != null && caKey.getData().containsKey(key)) {
-            caKey = new SecretBuilder(caKey).editMetadata().addToAnnotations(ANNO_STRIMZI_IO_FORCE_REPLACE, "true").endMetadata().build();
-        }
-        return caKey;
-    }
-
     enum RenewalType {
         NOOP() {
             @Override
