@@ -146,7 +146,7 @@ public class ModelUtils {
         } else {
             if (clusterCa.keyCreated() || clusterCa.certRenewed() ||
                     (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, keyCertName + ".crt")) ||
-                    clusterCa.isCaCertGenerationChanged(secret)) {
+                    clusterCa.hasCaCertGenerationChanged(secret)) {
                 reasons.add("certificate needs to be renewed");
                 shouldBeRegenerated = true;
             }

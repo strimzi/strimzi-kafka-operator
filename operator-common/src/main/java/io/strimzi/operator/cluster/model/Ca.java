@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.KeyStoreException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -515,7 +514,7 @@ public abstract class Ca {
         if (!generateCa) {
             certData = caCertSecret != null ? caCertSecret.getData() : emptyMap();
             keyData = caKeySecret != null ? singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY)) : emptyMap();
-            renewalType = isCaCertGenerationChanged() ? RenewalType.REPLACE_KEY : RenewalType.NOOP;
+            renewalType = hasCaCertGenerationChanged() ? RenewalType.REPLACE_KEY : RenewalType.NOOP;
             caCertsRemoved = false;
         } else {
             this.renewalType = shouldCreateOrRenew(currentCert, namespace, clusterName, maintenanceWindowSatisfied);
@@ -727,21 +726,6 @@ public abstract class Ca {
     public byte[] currentCaKey() {
         Base64.Decoder decoder = Base64.getDecoder();
         return decoder.decode(caKeySecret().getData().get(CA_KEY));
-    }
-
-    /**
-     * @return The base64 encoded thumbprint of the current CA certificate.
-     */
-    public String currentCaCertThumbprint() {
-        try {
-            X509Certificate cert = Ca.x509Certificate(currentCaCertBytes());
-            byte[] signature = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
-            return Base64.getEncoder().encodeToString(signature);
-        } catch (CertificateException e) {
-            throw new RuntimeException("Failed to decode Cluster CA certificate", e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Failed to get certificate signature of Cluster CA", e);
-        }
     }
 
     /**
@@ -1047,7 +1031,7 @@ public abstract class Ca {
      * @return if the current (cluster or clients) CA certificate generation is changed compared to the the one
      *         brought on Secrets containing certificates signed by that CA (i.e ZooKeeper nodes, Kafka brokers, ...)
      */
-    protected abstract boolean isCaCertGenerationChanged();
+    protected abstract boolean hasCaCertGenerationChanged();
 
     /**
      * It checks if the current (cluster or clients) CA certificate generation is changed compared to the one
@@ -1057,7 +1041,7 @@ public abstract class Ca {
      * @return if the current (cluster or clients) CA certificate generation is changed compared to the one
      *         brought by the corresponding annotation on the provided Secret
      */
-    protected boolean isCaCertGenerationChanged(Secret secret) {
+    protected boolean hasCaCertGenerationChanged(Secret secret) {
         if (secret != null) {
             String caCertGenerationAnno = Optional.ofNullable(secret.getMetadata().getAnnotations())
                     .map(annotations -> annotations.get(caCertGenerationAnnotation()))

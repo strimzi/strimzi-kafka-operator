@@ -50,8 +50,8 @@ public class ClientsCa extends Ca {
     }
 
     @Override
-    protected boolean isCaCertGenerationChanged() {
-        return isCaCertGenerationChanged(brokersSecret);
+    protected boolean hasCaCertGenerationChanged() {
+        return hasCaCertGenerationChanged(brokersSecret);
     }
 
     @Override
