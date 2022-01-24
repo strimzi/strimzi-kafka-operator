@@ -40,7 +40,7 @@ public class ClientsCa extends Ca {
         return clientsCaKey;
     }
 
-    public void initCaSecrets(Secret secret) {
+    public void initBrokerSecret(Secret secret) {
         this.brokersSecret = secret;
     }
 
