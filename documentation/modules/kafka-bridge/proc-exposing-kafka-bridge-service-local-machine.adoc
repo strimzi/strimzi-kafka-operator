@@ -24,7 +24,7 @@ pod/quickstart-bridge-589d78784d-9jcnr
 pod/strimzi-cluster-operator-76bcf9bc76-8dnfm
 ----
 
-. Connect to the Kafka Bridge pod on port `8080`.
+. Connect to the Kafka Bridge pod on port `8080`:
 +
 [source,shell,subs=attributes+]
 ----
