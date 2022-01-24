@@ -121,7 +121,6 @@ kubectl annotate secret _CA-CERTIFICATE-SECRET_ strimzi.io/ca-cert-generation=_C
 kubectl annotate secret _CA-KEY-SECRET_ strimzi.io/ca-key-generation=_CA-KEY-GENERATION_
 ----
 +
-When the Strimzi generated CA certificates are used, the generation increment is automatically handled by the cluster operator.
-In this case, with manual renewal of your own CA certificates, you have to take care to increment the generation on renewal accordingly.
-The generation annotations have to have a values higher than the current ones from the Secret.
-This is needed by the Strimzi cluster operator to roll the pods for updating the certificates.
+When Strimzi generates certificates, the certificate generation annotation is automatically incremented by the Cluster Operator.
+For manual renewal of your own CA certificates, set the annotations with a higher incremental value. For example, change `strimzi.io/ca-cert-generation=1` to `strimzi.io/ca-cert-generation=2`.
+The annotations need a value higher than the ones from the current secret so the Cluster Operator can roll the pods and update the certificates.
