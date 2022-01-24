@@ -318,7 +318,7 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |string (one of [RequireDualStack, SingleStack, PreferDualStack])
 |ipFamilies                    1.2+<.<a|Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. Available on Kubernetes 1.20 and newer.
 |string (one or more of [IPv6, IPv4]) array
-|createBootstrapService        1.2+<.<a|Whether to create the bootstrap service or not. This field can be used with the `loadBalancer` type listener.
+|createBootstrapService        1.2+<.<a|Whether to create the bootstrap service or not. The bootstrap service is created by default (if not specified differently). This field can be used with the `loadBalancer` type listener.
 |boolean
 |class                         1.2+<.<a|Configures the `Ingress` class that defines which `Ingress` controller will be used. This field can be used only with `ingress` type listener. If not specified, the default Ingress controller will be used.
 |string
