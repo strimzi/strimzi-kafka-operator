@@ -652,7 +652,6 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
     @BeforeAll
     void setUp(ExtensionContext extensionContext)  {
-        // for namespace
         super.setupCoAndKeycloak(extensionContext, INFRA_NAMESPACE);
 
         keycloakInstance.setRealm(TEST_REALM, true);

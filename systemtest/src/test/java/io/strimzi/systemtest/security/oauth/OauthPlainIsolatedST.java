@@ -694,7 +694,6 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
     @BeforeAll
     void setUp(ExtensionContext extensionContext) {
-        // for namespace
         super.setupCoAndKeycloak(extensionContext, INFRA_NAMESPACE);
 
         final String customClaimListener = "cclistener";
