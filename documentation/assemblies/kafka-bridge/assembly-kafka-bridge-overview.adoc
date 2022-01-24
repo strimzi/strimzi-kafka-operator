@@ -26,6 +26,4 @@ include::modules/con-accessing-kafka-bridge-from-outside.adoc[leveloffset=+1]
 
 include::modules/con-requests-kafka-bridge.adoc[leveloffset=+1]
 
-include::modules/con-deployment-kafka-bridge.adoc[leveloffset=+1]
-
 :context: {parent-context-kafka-bridge-overview}

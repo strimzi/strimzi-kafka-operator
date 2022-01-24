@@ -37,7 +37,7 @@ metadata:
   name: my-bridge
 spec:
   replicas: 3 <1>
-  bootstrapServers: my-cluster-kafka-bootstrap:9092 <2>
+  bootstrapServers: _<cluster_name>_-cluster-kafka-bootstrap:9092 <2>
   tls: <3>
     trustedCertificates:
       - secretName: my-cluster-cluster-cert
@@ -108,7 +108,7 @@ spec:
           value: "6831"
 ----
 <1> xref:con-common-configuration-replicas-reference[The number of replica nodes].
-<2> xref:con-common-configuration-bootstrap-reference[Bootstrap server] for connection to the target Kafka cluster.
+<2> xref:con-common-configuration-bootstrap-reference[Bootstrap server] for connection to the target Kafka cluster. Use the name of the Kafka cluster as the _<cluster_name>_.
 <3> xref:con-common-configuration-trusted-certificates-reference[TLS encryption] with key names under which TLS certificates are stored in X.509 format for the source Kafka cluster. If certificates are stored in the same secret, it can be listed multiple times.
 <4> Authentication for the Kafka Bridge cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha256-reference[SCRAM-SHA-256]/xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
 By default, the Kafka Bridge connects to Kafka brokers without authentication.
