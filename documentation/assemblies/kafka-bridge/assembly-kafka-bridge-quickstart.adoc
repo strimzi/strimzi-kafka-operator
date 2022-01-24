@@ -16,7 +16,6 @@
 [role="_abstract"]
 Use this quickstart to try out the Strimzi Kafka Bridge in your local development environment. You will learn how to:
 
-* Deploy the Kafka Bridge to your Kubernetes cluster
 * Expose the Kafka Bridge service to your local machine by using port-forwarding
 * Produce messages to topics and partitions in your Kafka cluster
 * Create a Kafka Bridge consumer
@@ -36,8 +35,10 @@ In this quickstart, you will produce and consume messages in JSON format, not bi
 * Strimzi is installed.
 * A running Kafka cluster, deployed by the Cluster Operator, in a Kubernetes namespace.
 * The Entity Operator is deployed and running as part of the Kafka cluster.
+* Kafka Bridge is deployed.
 
-include::modules/proc-deploying-kafka-bridge-quickstart.adoc[leveloffset=+1]
+In the following procedures, the example Kafka Bridge deployment is named `quickstart-bridge` and the accompanying Kafka Bridge service is named `quickstart-bridge-service`.
+Substitute these with the name of your own deployment.
 
 include::modules/proc-exposing-kafka-bridge-service-local-machine.adoc[leveloffset=+1]
 

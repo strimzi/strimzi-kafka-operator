@@ -6,7 +6,7 @@
 = Producing messages to topics and partitions
 
 [role="_abstract"]
-After you have deployed Kafka Bridge and exposed its service, you can produce messages to topics in JSON format by using the link:https://strimzi.io/docs/bridge/latest/#_send[topics^] endpoint. You can specify destination partitions for messages in the request body, as shown here. The link:https://strimzi.io/docs/bridge/latest/#_sendtopartition[partitions^] endpoint provides an alternative method for specifying a single destination partition for all messages as a path parameter.
+After you exposed the service of your Kafka Bridge deployment, you can produce messages to topics in JSON format by using the link:https://strimzi.io/docs/bridge/latest/#_send[topics^] endpoint. You can specify destination partitions for messages in the request body, as shown here. The link:https://strimzi.io/docs/bridge/latest/#_sendtopartition[partitions^] endpoint provides an alternative method for specifying a single destination partition for all messages as a path parameter.
 
 .Procedure
 

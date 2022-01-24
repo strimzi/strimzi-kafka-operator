@@ -15,3 +15,8 @@ The required order of deployment to a Kubernetes cluster is as follows:
 ** Kafka MirrorMaker
 ** Kafka Bridge
 ** Components for the monitoring of metrics
+
+The Cluster Operator creates Kubernetes resources for the components,
+such as `Deployment`, `Service`, and `Pod` resources.
+The names of the Kubernetes resources are appended with the name specified for a component when it's deployed.
+For example, a Kafka cluster named `my-kafka-cluster` has a service named `my-kafka-cluster-kafka`.
