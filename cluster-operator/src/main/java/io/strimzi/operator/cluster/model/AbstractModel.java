@@ -78,6 +78,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
@@ -869,6 +870,38 @@ public abstract class AbstractModel {
         ServicePort servicePort = builder.build();
         LOGGER.traceCr(reconciliation, "Created service port {}", servicePort);
         return servicePort;
+    }
+
+    /**
+     * Creates list of PersistentVolumeClaims required by stateful deployments (Kafka and Zoo). This method calls itself
+     * recursively to handle volumes inside JBOD storage. When it calls itself to handle the volumes inside JBOD array,
+     * the {@code jbod} flag should be set to {@code true}. When called from outside, it should be set to {@code false}.
+     *
+     * @param storage   The storage configuration
+     * @param jbod      Indicator whether the {@code storage} is part of JBOD array or not
+     *
+     * @return          List with Persistent Volume Claims
+     */
+    protected List<PersistentVolumeClaim> createPersistentVolumeClaims(Storage storage, boolean jbod)   {
+        List<PersistentVolumeClaim> pvcs = new ArrayList<>();
+
+        if (storage != null) {
+            if (storage instanceof PersistentClaimStorage) {
+                PersistentClaimStorage persistentStorage = (PersistentClaimStorage) storage;
+                String pvcBaseName = VolumeUtils.createVolumePrefix(persistentStorage.getId(), jbod) + "-" + name;
+
+                for (int i = 0; i < replicas; i++) {
+                    pvcs.add(createPersistentVolumeClaim(i, pvcBaseName + "-" + i, persistentStorage));
+                }
+            } else if (storage instanceof JbodStorage) {
+                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
+                    // it's called recursively for setting the information from the current volume
+                    pvcs.addAll(createPersistentVolumeClaims(volume, true));
+                }
+            }
+        }
+
+        return pvcs;
     }
 
     /**

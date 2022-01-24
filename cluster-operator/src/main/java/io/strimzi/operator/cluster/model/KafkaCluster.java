@@ -63,9 +63,6 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
-import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
@@ -785,6 +782,10 @@ public class KafkaCluster extends AbstractModel {
         List<Service> services = new ArrayList<>(externalListeners.size());
 
         for (GenericKafkaListener listener : externalListeners)   {
+            if (ListenersUtils.skipCreateBootstrapService(listener)) {
+                continue;
+            }
+
             String serviceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(cluster, listener);
 
             List<ServicePort> ports = Collections.singletonList(
@@ -1312,8 +1313,8 @@ public class KafkaCluster extends AbstractModel {
         return createStatefulSet(
                 prepareControllerAnnotations(),
                 preparePodAnnotations(podAnnotations),
-                getStsVolumes(isOpenShift),
-                getVolumeClaims(),
+                getStatefulSetVolumes(isOpenShift),
+                getPersistentVolumeClaimTemplates(),
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
@@ -1343,7 +1344,7 @@ public class KafkaCluster extends AbstractModel {
                 replicas,
                 prepareControllerAnnotations(),
                 preparePodAnnotations(podAnnotations),
-                podName -> getPodVolumes(podName, isOpenShift),
+                podName -> getPodSetVolumes(podName, isOpenShift),
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
@@ -1426,27 +1427,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The PersistentVolumeClaims.
      */
     public List<PersistentVolumeClaim> generatePersistentVolumeClaims(Storage storage) {
-        List<PersistentVolumeClaim> pvcs = new ArrayList<>();
-
-        if (storage != null) {
-            if (storage instanceof PersistentClaimStorage) {
-                Integer id = ((PersistentClaimStorage) storage).getId();
-                String pvcBaseName = VolumeUtils.getVolumePrefix(id) + "-" + name;
-
-                for (int i = 0; i < replicas; i++) {
-                    pvcs.add(createPersistentVolumeClaim(i, pvcBaseName + "-" + i, (PersistentClaimStorage) storage));
-                }
-            } else if (storage instanceof JbodStorage) {
-                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-                    if (volume.getId() == null)
-                        throw new InvalidResourceException("Volumes under JBOD storage type have to have 'id' property");
-                    // it's called recursively for setting the information from the current volume
-                    pvcs.addAll(generatePersistentVolumeClaims(volume));
-                }
-            }
-        }
-
-        return pvcs;
+        return createPersistentVolumeClaims(storage, false);
     }
 
     /**
@@ -1512,16 +1493,16 @@ public class KafkaCluster extends AbstractModel {
 
     /**
      * Generates a list of volumes used by StatefulSet. For StatefulSet, it needs to include only ephemeral data
-     * volumes. Persistent claim volumes are generated directly byStatfulSet.
+     * volumes. Persistent claim volumes are generated directly by StatefulSet.
      *
      * @param isOpenShift   Flag whether we are on OpenShift or not
      *
-     * @return              List of volumes to be included in the StatfulSet pod template
+     * @return              List of volumes to be included in the StatefulSet pod template
      */
-    private List<Volume> getStsVolumes(boolean isOpenShift) {
+    private List<Volume> getStatefulSetVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>();
 
-        volumeList.addAll(VolumeUtils.getDataVolumes(storage));
+        volumeList.addAll(VolumeUtils.createStatefulSetVolumes(storage, false));
         volumeList.addAll(getNonDataVolumes(isOpenShift));
 
         return volumeList;
@@ -1536,22 +1517,28 @@ public class KafkaCluster extends AbstractModel {
      *
      * @return              List of volumes to be included in the StrimziPodSet pod
      */
-    private List<Volume> getPodVolumes(String podName, boolean isOpenShift) {
+    private List<Volume> getPodSetVolumes(String podName, boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>();
 
-        volumeList.addAll(VolumeUtils.getPodDataVolumes(podName, storage, false));
+        volumeList.addAll(VolumeUtils.createPodSetVolumes(podName, storage, false));
         volumeList.addAll(getNonDataVolumes(isOpenShift));
 
         return volumeList;
     }
 
-    /* test */ List<PersistentVolumeClaim> getVolumeClaims() {
-        return VolumeUtils.getDataPersistentVolumeClaims(storage);
+    /**
+     * Creates a list of Persistent Volume Claim templates for use in StatefulSets
+     *
+     * @return  List of Persistent Volume Claim Templates
+     */
+    /* test */ List<PersistentVolumeClaim> getPersistentVolumeClaimTemplates() {
+        return VolumeUtils.createPersistentVolumeClaimTemplates(storage, false);
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.getDataVolumeMountPaths(storage, mountPath));
+        List<VolumeMount> volumeMountList = new ArrayList<>();
 
+        volumeMountList.addAll(VolumeUtils.createVolumeMounts(storage, mountPath, false));
         volumeMountList.add(createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
@@ -2056,7 +2043,7 @@ public class KafkaCluster extends AbstractModel {
                 .withBrokerId()
                 .withRackId(rack)
                 .withZookeeper(cluster)
-                .withLogDirs(VolumeUtils.getDataVolumeMountPaths(storage, mountPath))
+                .withLogDirs(VolumeUtils.createVolumeMounts(storage, mountPath, false))
                 .withListeners(cluster, namespace, listeners, controlPlaneListener)
                 .withAuthorization(cluster, authorization)
                 .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)

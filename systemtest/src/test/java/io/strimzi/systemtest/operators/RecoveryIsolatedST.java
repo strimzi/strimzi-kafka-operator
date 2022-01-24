@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.operators;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -14,13 +15,13 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.rollingupdate.KafkaRollerIsolatedST;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -229,6 +230,7 @@ class RecoveryIsolatedST extends AbstractST {
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromImpossibleMemoryRequest(ExtensionContext extensionContext) {
         final String kafkaSsName = KafkaResources.kafkaStatefulSetName(sharedClusterName);
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(sharedClusterName, KafkaResources.kafkaStatefulSetName(sharedClusterName));
         final Map<String, Quantity> requests = new HashMap<>(1);
 
         requests.put("memory", new Quantity("465458732Gi"));
@@ -241,17 +243,12 @@ class RecoveryIsolatedST extends AbstractST {
         PodUtils.waitForPendingPod(kafkaSsName);
         PodUtils.verifyThatPendingPodsAreStable(kafkaSsName);
 
-        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/6203
-        StatefulSet kafkaSts = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(sharedClusterName));
-        assumeTrue(kafkaSts != null);
-
         requests.put("memory", new Quantity("512Mi"));
         resourceReq.setRequests(requests);
 
         KafkaResource.replaceKafkaResource(sharedClusterName, k -> k.getSpec().getKafka().setResources(resourceReq));
 
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaSsName, 3, ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET));
+        RollingUpdateUtils.waitForComponentAndPodsReady(INFRA_NAMESPACE, kafkaSelector, 3);
         KafkaUtils.waitForKafkaReady(sharedClusterName);
     }
 

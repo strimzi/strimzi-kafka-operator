@@ -251,11 +251,6 @@ public class KafkaRollerIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/6203
-        StatefulSet kafkaSts = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName));
-        assumeTrue(kafkaSts != null);
-
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("123456"));
         requests.put("memory", new Quantity("128Mi"));
@@ -319,11 +314,6 @@ public class KafkaRollerIsolatedST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build());
-
-        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/6203
-        StatefulSet kafkaSts = kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName));
-        assumeTrue(kafkaSts != null);
 
         // pods are stable in the Pending state
         PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3);

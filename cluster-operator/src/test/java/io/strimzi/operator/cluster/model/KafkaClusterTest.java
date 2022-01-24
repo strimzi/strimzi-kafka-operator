@@ -589,7 +589,7 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, assembly, VERSIONS);
 
-        List<PersistentVolumeClaim> pvcs = kc.getVolumeClaims();
+        List<PersistentVolumeClaim> pvcs = kc.getPersistentVolumeClaimTemplates();
 
         for (int i = 0; i < replicas; i++) {
             assertThat(pvcs.get(0).getMetadata().getName() + "-" + KafkaCluster.kafkaPodName(cluster, i),
@@ -609,7 +609,7 @@ public class KafkaClusterTest {
                 .build();
         kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, assembly, VERSIONS);
 
-        pvcs = kc.getVolumeClaims();
+        pvcs = kc.getPersistentVolumeClaimTemplates();
 
         for (int i = 0; i < replicas; i++) {
             int id = 0;
@@ -878,6 +878,32 @@ public class KafkaClusterTest {
             assertThat(srv.getSpec().getLoadBalancerSourceRanges(), is(emptyList()));
             checkOwnerReference(kc.createOwnerReference(), srv);
         }
+    }
+
+    @ParallelTest
+    public void testExternalLoadBalancersWithoutBootstrapService() {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap()))
+                .editSpec()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName("external")
+                        .withPort(9094)
+                        .withType(KafkaListenerType.LOADBALANCER)
+                        .withTls(true)
+                        .withNewKafkaListenerAuthenticationTlsAuth()
+                        .endKafkaListenerAuthenticationTlsAuth()
+                        .withNewConfiguration()
+                            .withCreateBootstrapService(false)
+                        .endConfiguration()
+                        .build())
+                .endKafka()
+                .endSpec()
+                .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+
+        // Check external bootstrap service
+        assertThat(kc.generateExternalBootstrapServices().isEmpty(), is(true));
     }
 
     @ParallelTest
