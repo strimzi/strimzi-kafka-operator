@@ -782,6 +782,10 @@ public class KafkaCluster extends AbstractModel {
         List<Service> services = new ArrayList<>(externalListeners.size());
 
         for (GenericKafkaListener listener : externalListeners)   {
+            if (ListenersUtils.skipCreateBootstrapService(listener)) {
+                continue;
+            }
+
             String serviceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(cluster, listener);
 
             List<ServicePort> ports = Collections.singletonList(

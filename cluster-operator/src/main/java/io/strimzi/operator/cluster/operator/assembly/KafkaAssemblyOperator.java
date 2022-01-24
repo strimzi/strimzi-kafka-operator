@@ -2135,7 +2135,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * certificates and advertised addresses. This method for all Load Balancer type listeners:
          *      1) Checks if the bootstrap service has been provisioned (has a loadbalancer address)
          *      2) Collects the relevant addresses and stores them for use in certificates and in CR status
-         *      3) Checks it the broker services have been provisioned (have a loadbalancer address)
+         *      3) Checks if the broker services have been provisioned (have a loadbalancer address)
          *      4) Collects the loadbalancer addresses for certificates and advertised hostnames
          *
          * @return
@@ -2147,78 +2147,89 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             for (GenericKafkaListener listener : loadBalancerListeners) {
                 String bootstrapServiceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(name, listener);
 
-                Future perListenerFut = serviceOperations.hasIngressAddress(reconciliation, namespace, bootstrapServiceName, 1_000, operationTimeoutMs)
-                        .compose(res -> serviceOperations.getAsync(namespace, bootstrapServiceName))
-                        .compose(svc -> {
-                            String bootstrapAddress;
+                List<String> bootstrapListenerAddressList = new ArrayList<>(kafkaCluster.getReplicas());
 
-                            if (svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null)    {
-                                bootstrapAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname();
-                            } else {
-                                bootstrapAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getIp();
-                            }
+                Future perListenerFut = Future.succeededFuture().compose(i -> {
+                    if (ListenersUtils.skipCreateBootstrapService(listener)) {
+                        return Future.succeededFuture();
+                    } else {
+                        return serviceOperations.hasIngressAddress(reconciliation, namespace, bootstrapServiceName, 1_000, operationTimeoutMs)
+                                .compose(res -> serviceOperations.getAsync(namespace, bootstrapServiceName))
+                                .compose(svc -> {
+                                    String bootstrapAddress;
 
-                            LOGGER.debugCr(reconciliation, "Found address {} for Service {}", bootstrapAddress, bootstrapServiceName);
+                                    if (svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null) {
+                                        bootstrapAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname();
+                                    } else {
+                                        bootstrapAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getIp();
+                                    }
 
-                            kafkaBootstrapDnsName.add(bootstrapAddress);
+                                    LOGGER.debugCr(reconciliation, "Found address {} for Service {}", bootstrapAddress, bootstrapServiceName);
 
-                            ListenerStatus ls = new ListenerStatusBuilder()
-                                    .withType(listener.getName())
-                                    .withAddresses(new ListenerAddressBuilder()
-                                            .withHost(bootstrapAddress)
-                                            .withPort(listener.getPort())
-                                            .build())
-                                    .build();
-                            addListenerStatus(ls);
+                                    kafkaBootstrapDnsName.add(bootstrapAddress);
+                                    bootstrapListenerAddressList.add(bootstrapAddress);
+                                    return Future.succeededFuture();
+                                });
+                    }
+                }).compose(res -> {
+                    List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
 
-                            return Future.succeededFuture();
-                        })
-                        .compose(res -> {
-                            List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
+                    for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
+                        perPodFutures.add(
+                                serviceOperations.hasIngressAddress(reconciliation, namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener), 1_000, operationTimeoutMs)
+                        );
+                    }
 
-                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
-                                perPodFutures.add(
-                                        serviceOperations.hasIngressAddress(reconciliation, namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener), 1_000, operationTimeoutMs)
-                                );
-                            }
+                    return CompositeFuture.join(perPodFutures);
+                }).compose(res -> {
+                    List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
 
-                            return CompositeFuture.join(perPodFutures);
-                        })
-                        .compose(res -> {
-                            List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
+                    for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
+                        final int podNumber = pod;
+                        Future<Void> perBrokerFut = serviceOperations.getAsync(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener))
+                            .compose(svc -> {
+                                String brokerAddress;
 
-                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
-                                final int podNumber = pod;
-                                Future<Void> perBrokerFut = serviceOperations.getAsync(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener))
-                                        .compose(svc -> {
-                                            String brokerAddress;
+                                if (svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null)    {
+                                    brokerAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname();
+                                } else {
+                                    brokerAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getIp();
+                                }
+                                LOGGER.debugCr(reconciliation, "Found address {} for Service {}", brokerAddress, svc.getMetadata().getName());
 
-                                            if (svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname() != null)    {
-                                                brokerAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getHostname();
-                                            } else {
-                                                brokerAddress = svc.getStatus().getLoadBalancer().getIngress().get(0).getIp();
-                                            }
+                                if (ListenersUtils.skipCreateBootstrapService(listener)) {
+                                    bootstrapListenerAddressList.add(brokerAddress);
+                                }
+                                kafkaBrokerDnsNames.computeIfAbsent(podNumber, k -> new HashSet<>(2)).add(brokerAddress);
 
-                                            LOGGER.debugCr(reconciliation, "Found address {} for Service {}", brokerAddress, svc.getMetadata().getName());
+                                String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
+                                if (advertisedHostname != null) {
+                                    kafkaBrokerDnsNames.get(podNumber).add(ListenersUtils.brokerAdvertisedHost(listener, podNumber));
+                                }
 
-                                            kafkaBrokerDnsNames.computeIfAbsent(podNumber, k -> new HashSet<>(2)).add(brokerAddress);
+                                kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, podNumber, brokerAddress));
+                                kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, podNumber, listener.getPort()));
 
-                                            String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
-                                            if (advertisedHostname != null) {
-                                                kafkaBrokerDnsNames.get(podNumber).add(ListenersUtils.brokerAdvertisedHost(listener, podNumber));
-                                            }
+                                return Future.succeededFuture();
+                            });
 
-                                            kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, podNumber, brokerAddress));
-                                            kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, podNumber, listener.getPort()));
+                        perPodFutures.add(perBrokerFut);
+                    }
 
-                                            return Future.succeededFuture();
-                                        });
+                    return CompositeFuture.join(perPodFutures);
+                }).compose(res -> {
+                    ListenerStatus ls = new ListenerStatusBuilder()
+                        .withType(listener.getName())
+                        .withAddresses(bootstrapListenerAddressList.stream()
+                                .map(listenerAddress -> new ListenerAddressBuilder().withHost(listenerAddress)
+                                        .withPort(listener.getPort())
+                                        .build())
+                                .collect(Collectors.toList()))
+                        .build();
+                    addListenerStatus(ls);
 
-                                perPodFutures.add(perBrokerFut);
-                            }
-
-                            return CompositeFuture.join(perPodFutures);
-                        });
+                    return Future.succeededFuture();
+                });
 
                 listenerFutures.add(perListenerFut);
             }

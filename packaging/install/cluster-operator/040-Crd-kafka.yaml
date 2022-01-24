@@ -542,6 +542,12 @@ spec:
                                 Kubernetes will choose the default value based on
                                 the `ipFamilyPolicy` setting. Available on Kubernetes
                                 1.20 and newer.
+                            createBootstrapService:
+                              type: boolean
+                              description: Whether to create the bootstrap service
+                                or not. The bootstrap service is created by default
+                                (if not specified differently). This field can be
+                                used with the `loadBalancer` type listener.
                             class:
                               type: string
                               description: Configures the `Ingress` class that defines

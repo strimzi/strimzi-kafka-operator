@@ -616,6 +616,18 @@ public class ListenersUtils {
     }
 
     /**
+     * Check whether we should skip the creation of the bootstrap service.
+     *
+     * @param listener Listener for which the createBootstrapService should be created or not.
+     * @return         Whether we should create the Load Balancer Service for the Bootstrap Service.
+     */
+    public static Boolean skipCreateBootstrapService(GenericKafkaListener listener) {
+        return KafkaListenerType.LOADBALANCER == listener.getType()
+                && listener.getConfiguration() != null
+                && !listener.getConfiguration().getCreateBootstrapService();
+    }
+
+    /**
      * Finds ingress class
      *
      * @param listener  Listener for which the ingress class should be found
