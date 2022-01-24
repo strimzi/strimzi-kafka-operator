@@ -146,7 +146,7 @@ public class ModelUtils {
         } else {
             if (clusterCa.keyCreated() || clusterCa.certRenewed() ||
                     (isMaintenanceTimeWindowsSatisfied && clusterCa.isExpiring(secret, keyCertName + ".crt")) ||
-                    clusterCa.isCaCertThumbprintChanged(secret)) {
+                    clusterCa.isCaCertGenerationChanged(secret)) {
                 reasons.add("certificate needs to be renewed");
                 shouldBeRegenerated = true;
             }
@@ -194,7 +194,7 @@ public class ModelUtils {
         }
 
         return createSecret(secretName, namespace, labels, ownerReference, data,
-                Collections.singletonMap(clusterCa.caCertThumbprintAnnotation(), clusterCa.currentCaCertThumbprint()), emptyMap());
+                Collections.singletonMap(clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration())), emptyMap());
     }
 
     public static Secret createSecret(String name, String namespace, Labels labels, OwnerReference ownerReference,

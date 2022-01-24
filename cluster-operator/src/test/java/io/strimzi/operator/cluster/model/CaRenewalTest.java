@@ -58,12 +58,12 @@ public class CaRenewalTest {
             }
 
             @Override
-            protected boolean isCaCertThumbprintChanged() {
+            protected boolean isCaCertGenerationChanged() {
                 return false;
             }
 
             @Override
-            protected String caCertThumbprintAnnotation() {
+            protected String caCertGenerationAnnotation() {
                 return null;
             }
         };
@@ -125,12 +125,12 @@ public class CaRenewalTest {
             }
 
             @Override
-            protected boolean isCaCertThumbprintChanged() {
+            protected boolean isCaCertGenerationChanged() {
                 return false;
             }
 
             @Override
-            protected String caCertThumbprintAnnotation() {
+            protected String caCertGenerationAnnotation() {
                 return null;
             }
         };
@@ -221,12 +221,12 @@ public class CaRenewalTest {
             }
 
             @Override
-            protected boolean isCaCertThumbprintChanged() {
+            protected boolean isCaCertGenerationChanged() {
                 return false;
             }
 
             @Override
-            protected String caCertThumbprintAnnotation() {
+            protected String caCertGenerationAnnotation() {
                 return null;
             }
         };
@@ -317,12 +317,12 @@ public class CaRenewalTest {
             }
 
             @Override
-            protected boolean isCaCertThumbprintChanged() {
+            protected boolean isCaCertGenerationChanged() {
                 return false;
             }
 
             @Override
-            protected String caCertThumbprintAnnotation() {
+            protected String caCertGenerationAnnotation() {
                 return null;
             }
         };

@@ -1371,9 +1371,10 @@ public class KafkaCluster extends AbstractModel {
             data.put(KafkaCluster.kafkaPodName(cluster, i) + ".p12", cert.keyStoreAsBase64String());
             data.put(KafkaCluster.kafkaPodName(cluster, i) + ".password", cert.storePasswordAsBase64String());
         }
+
         Map<String, String> annotations = Map.of(
-                clusterCa.caCertThumbprintAnnotation(), clusterCa.currentCaCertThumbprint(),
-                clientsCa.caCertThumbprintAnnotation(), clientsCa.currentCaCertThumbprint());
+                clusterCa.caCertGenerationAnnotation(), String.valueOf(clusterCa.certGeneration()),
+                clientsCa.caCertGenerationAnnotation(), String.valueOf(clientsCa.certGeneration()));
         return createSecret(KafkaCluster.brokersSecretName(cluster), data, annotations);
     }
 

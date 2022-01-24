@@ -45,13 +45,13 @@ public class ClientsCa extends Ca {
     }
 
     @Override
-    protected String caCertThumbprintAnnotation() {
-        return ANNO_STRIMZI_IO_CLIENTS_CA_THUMBPRINT;
+    protected String caCertGenerationAnnotation() {
+        return ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION;
     }
 
     @Override
-    protected boolean isCaCertThumbprintChanged() {
-        return isCaCertThumbprintChanged(brokersSecret);
+    protected boolean isCaCertGenerationChanged() {
+        return isCaCertGenerationChanged(brokersSecret);
     }
 
     @Override

@@ -97,8 +97,6 @@ public abstract class Ca {
     public static final String ANNO_STRIMZI_IO_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "ca-cert-generation";
     public static final String ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "cluster-ca-cert-generation";
     public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "clients-ca-cert-generation";
-    public static final String ANNO_STRIMZI_IO_CLUSTER_CA_THUMBPRINT = Annotations.STRIMZI_DOMAIN + "cluster-ca-thumbprint";
-    public static final String ANNO_STRIMZI_IO_CLIENTS_CA_THUMBPRINT = Annotations.STRIMZI_DOMAIN + "clients-ca-thumbprint";
     public static final int INIT_GENERATION = 0;
 
     private final PasswordGenerator passwordGenerator;
@@ -512,12 +510,12 @@ public abstract class Ca {
         X509Certificate currentCert = cert(caCertSecret, CA_CRT);
         Map<String, String> certData;
         Map<String, String> keyData;
-        int caCertGeneration = caCertSecret != null ? Annotations.intAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION) : INIT_GENERATION;
-        int caKeyGeneration = caKeySecret != null ? Annotations.intAnnotation(caKeySecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION) : INIT_GENERATION;
+        int caCertGeneration = certGeneration();
+        int caKeyGeneration = keyGeneration();
         if (!generateCa) {
             certData = caCertSecret != null ? caCertSecret.getData() : emptyMap();
             keyData = caKeySecret != null ? singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY)) : emptyMap();
-            renewalType = isCaCertThumbprintChanged() ? RenewalType.REPLACE_KEY : RenewalType.NOOP;
+            renewalType = isCaCertGenerationChanged() ? RenewalType.REPLACE_KEY : RenewalType.NOOP;
             caCertsRemoved = false;
         } else {
             this.renewalType = shouldCreateOrRenew(currentCert, namespace, clusterName, maintenanceWindowSatisfied);
@@ -777,6 +775,20 @@ public abstract class Ca {
         return renewalType.equals(RenewalType.CREATE);
     }
 
+    /**
+     * @return the generation of the current CA certificate
+     */
+    public int certGeneration() {
+        return caCertSecret != null ? Annotations.intAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION) : INIT_GENERATION;
+    }
+
+    /**
+     * @return the generation of the current CA key
+     */
+    public int keyGeneration() {
+        return caKeySecret != null ? Annotations.intAnnotation(caKeySecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION) : INIT_GENERATION;
+    }
+
     private int removeExpiredCerts(Map<String, String> newData) {
         Iterator<Map.Entry<String, String>> iter = newData.entrySet().iterator();
         List<String> removed = new ArrayList<>();
@@ -1026,34 +1038,34 @@ public abstract class Ca {
     }
 
     /**
-     * @return the name of the annotation bringing the thumbprint of the specific CA certificate type (cluster or clients)
+     * @return the name of the annotation bringing the generation of the specific CA certificate type (cluster or clients)
      *         on the Secrets containing certificates signed by that CA (i.e ZooKeeper nodes, Kafka brokers, ...)
      */
-    protected abstract String caCertThumbprintAnnotation();
+    protected abstract String caCertGenerationAnnotation();
 
     /**
-     * @return if the current (cluster or clients) CA certificate thumbprint is changed compared to the the one
+     * @return if the current (cluster or clients) CA certificate generation is changed compared to the the one
      *         brought on Secrets containing certificates signed by that CA (i.e ZooKeeper nodes, Kafka brokers, ...)
      */
-    protected abstract boolean isCaCertThumbprintChanged();
+    protected abstract boolean isCaCertGenerationChanged();
 
     /**
-     * It checks if the current (cluster or clients) CA certificate thumbprint is changed compared to the the one
+     * It checks if the current (cluster or clients) CA certificate generation is changed compared to the one
      * brought by the corresponding annotation on the provided Secret (i.e ZooKeeper nodes, Kafka brokers, ...)
      *
      * @param secret Secret containing certificates signed by the current (clients or cluster) CA
-     * @return if the current (cluster or clients) CA certificate thumbprint is changed compared to the the one
+     * @return if the current (cluster or clients) CA certificate generation is changed compared to the one
      *         brought by the corresponding annotation on the provided Secret
      */
-    protected boolean isCaCertThumbprintChanged(Secret secret) {
+    protected boolean isCaCertGenerationChanged(Secret secret) {
         if (secret != null) {
-            String caCertThumbprintAnno = Optional.ofNullable(secret.getMetadata().getAnnotations())
-                    .map(annotations -> annotations.get(caCertThumbprintAnnotation()))
+            String caCertGenerationAnno = Optional.ofNullable(secret.getMetadata().getAnnotations())
+                    .map(annotations -> annotations.get(caCertGenerationAnnotation()))
                     .orElse(null);
-            String currentCaCertThumbprint = currentCaCertThumbprint();
-            LOGGER.debugOp("Secret {}/{} thumbprint anno = {}, current CA thumbprint = {}",
-                    secret.getMetadata().getNamespace(), secret.getMetadata().getName(), caCertThumbprintAnno, currentCaCertThumbprint);
-            return caCertThumbprintAnno != null && !caCertThumbprintAnno.equals(currentCaCertThumbprint);
+            int currentCaCertGeneration = certGeneration();
+            LOGGER.debugOp("Secret {}/{} generation anno = {}, current CA generation = {}",
+                    secret.getMetadata().getNamespace(), secret.getMetadata().getName(), caCertGenerationAnno, currentCaCertGeneration);
+            return caCertGenerationAnno != null && Integer.parseInt(caCertGenerationAnno) != currentCaCertGeneration;
         }
         return false;
     }

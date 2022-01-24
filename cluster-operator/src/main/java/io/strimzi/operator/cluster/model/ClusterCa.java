@@ -242,18 +242,18 @@ public class ClusterCa extends Ca {
     }
 
     @Override
-    protected String caCertThumbprintAnnotation() {
-        return ANNO_STRIMZI_IO_CLUSTER_CA_THUMBPRINT;
+    protected String caCertGenerationAnnotation() {
+        return ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION;
     }
 
     @SuppressWarnings("BooleanExpressionComplexity")
     @Override
-    protected boolean isCaCertThumbprintChanged() {
+    protected boolean isCaCertGenerationChanged() {
         // at least one Secret has a different cluster CA certificate thumbprint.
         // it is useful when a renewal cluster CA certificate process needs to be recovered after an operator crash
-        return isCaCertThumbprintChanged(zkNodesSecret) || isCaCertThumbprintChanged(brokersSecret) ||
-                isCaCertThumbprintChanged(entityTopicOperatorSecret) || isCaCertThumbprintChanged(entityUserOperatorSecret) ||
-                isCaCertThumbprintChanged(kafkaExporterSecret) || isCaCertThumbprintChanged(cruiseControlSecret) ||
-                isCaCertThumbprintChanged(clusterOperatorSecret);
+        return isCaCertGenerationChanged(zkNodesSecret) || isCaCertGenerationChanged(brokersSecret) ||
+                isCaCertGenerationChanged(entityTopicOperatorSecret) || isCaCertGenerationChanged(entityUserOperatorSecret) ||
+                isCaCertGenerationChanged(kafkaExporterSecret) || isCaCertGenerationChanged(cruiseControlSecret) ||
+                isCaCertGenerationChanged(clusterOperatorSecret);
     }
 }
