@@ -145,7 +145,7 @@ public class CruiseControlTest {
     private final CruiseControl cc = createCruiseControl(createKafka(cruiseControlSpec));
 
     private CruiseControl createCruiseControl(Kafka kafkaAssembly) {
-        return CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+        return CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS, kafkaStorage);
     }
 
     private Kafka createKafka(CruiseControlSpec cruiseControlSpec) {
@@ -153,6 +153,7 @@ public class CruiseControlTest {
                 .editSpec()
                     .editKafka()
                         .withConfig(kafkaConfig)
+                        .withStorage(kafkaStorage)
                    .endKafka()
                   .withCruiseControl(cruiseControlSpec)
                 .endSpec()
@@ -184,7 +185,7 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS).withValue(CruiseControl.defaultBootstrapServers(cluster)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_MIN_INSYNC_REPLICAS).withValue(minInsyncReplicas).build());
-        expected.add(new EnvVarBuilder().withName(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION).withValue(cc.capacityConfig).build());
+        expected.add(new EnvVarBuilder().withName(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION).withValue(cc.capacity.generateCapacityConfig()).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_SSL_ENABLED).withValue(Boolean.toString(DEFAULT_WEBSERVER_SSL_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTH_ENABLED).withValue(Boolean.toString(DEFAULT_WEBSERVER_SECURITY_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_USER).withValue(API_USER_NAME).build());
@@ -224,7 +225,7 @@ public class CruiseControlTest {
 
         Kafka resource = createKafka(cruiseControlSpec);
 
-        Capacity generatedCapacity = new Capacity(resource.getSpec());
+        Capacity generatedCapacity = new Capacity(resource.getSpec(), kafkaStorage);
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(generatedCapacity.generateCapacityConfig()));
 
         // Test generated disk capacity
@@ -252,8 +253,8 @@ public class CruiseControlTest {
                 .withCruiseControl(cruiseControlSpec)
             .endSpec()
             .build();
+        generatedCapacity = new Capacity(resource.getSpec(), jbodStorage);
 
-        generatedCapacity = new Capacity(resource.getSpec());
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(generatedCapacity.generateCapacityConfig()));
     }
 
@@ -744,7 +745,7 @@ public class CruiseControlTest {
 
         Kafka resource = createKafka(cruiseControlSpec);
 
-        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, kafkaStorage);
 
         EnvVar systemProps = cc.getEnvVars().stream().filter(var -> AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES.equals(var.getName())).findFirst().orElse(null);
         assertThat(systemProps, is(notNullValue()));

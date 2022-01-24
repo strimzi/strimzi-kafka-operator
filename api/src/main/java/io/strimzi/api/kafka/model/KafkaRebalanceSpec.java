@@ -63,7 +63,8 @@ public class KafkaRebalanceSpec extends Spec {
         this.skipHardGoalCheck = skipHardGoalCheck;
     }
 
-    @Description("Whether to balance load between disks within brokers (requires JBOD Kafka deployment) ")
+    @Description("Whether to balance load between disks within brokers, known as intra-broker disk balancing (requires JBOD Kafka deployment. ) " +
+            "Default is false.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public boolean isRebalanceDisk() {
         return rebalanceDisk;

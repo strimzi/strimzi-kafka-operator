@@ -54,8 +54,9 @@ spec:
                   being found. Default is false.
               rebalanceDisk:
                 type: boolean
-                description: Whether to balance load between disks within brokers
-                  (requires JBOD Kafka deployment) .
+                description: Whether to balance load between disks within brokers,
+                  known as intra-broker disk balancing (requires JBOD Kafka deployment.
+                  ) Default is false.
               excludedTopics:
                 type: string
                 description: A regular expression where any matching topics will be

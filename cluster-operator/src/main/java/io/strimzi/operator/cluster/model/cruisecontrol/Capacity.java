@@ -37,11 +37,11 @@ public class Capacity {
     private int replicas;
     private Storage storage;
 
-    public Capacity(KafkaSpec spec) {
+    public Capacity(KafkaSpec spec, Storage storage) {
         BrokerCapacity bc = spec.getCruiseControl().getBrokerCapacity();
 
         this.replicas = spec.getKafka().getReplicas();
-        this.storage = spec.getKafka().getStorage();
+        this.storage = storage;
 
         this.diskMiB = bc != null && bc.getDisk() != null ? getSizeInMiB(bc.getDisk()) : generateDiskCapacity(storage);
         this.cpuUtilization = bc != null && bc.getCpuUtilization() != null ? bc.getCpuUtilization() : DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY;

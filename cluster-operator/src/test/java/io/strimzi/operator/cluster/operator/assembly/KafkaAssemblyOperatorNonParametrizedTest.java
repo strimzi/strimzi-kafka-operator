@@ -42,6 +42,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.lang.reflect.Field;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,6 +56,8 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -323,7 +326,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
      * means the right outcome is returned.
      */
     @Test
-    public void testCruiseControlDescription(VertxTestContext context) {
+    public void testCruiseControlDescription(VertxTestContext context) throws NoSuchFieldException, IllegalAccessException {
         Kafka kafka = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(NAME)
@@ -359,8 +362,15 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
+        KafkaAssemblyOperator.ReconciliationState reconciliationState =  op.new ReconciliationState(reconciliation, kafka);
 
-        op.new ReconciliationState(reconciliation, kafka).getCruiseControlDescription()
+        KafkaCluster mockKafkaCluster = mock(KafkaCluster.class);
+        when(mockKafkaCluster.getStorage()).thenReturn(kafka.getSpec().getKafka().getStorage());
+        Field field = reconciliationState.getClass().getDeclaredField("kafkaCluster");
+        field.setAccessible(true);
+        field.set(reconciliationState, mockKafkaCluster);
+
+        reconciliationState.getCruiseControlDescription()
                 .onComplete(context.failing(c -> context.verify(() -> {
                     assertThat(c.getMessage(), is("Failed ConfigMap getAsync call"));
 
