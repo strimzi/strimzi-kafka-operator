@@ -412,6 +412,14 @@ public class StUtils {
                 .build());
     }
 
+    /**
+     * Parses JsonObjects from pod log, which can contains also normal (not JSON formatted) text
+     * The parses looks for occurrences of \{ and \}, saving all characters between to {@code temp}
+     * After \} is detected, JsonObject from {@code temp} is created, {@code temp} and {@code stack}
+     * are cleared.
+     * @param log - log from pod containing JSON objects/arrays
+     * @return JsonArray with objects found in {@param log}
+     */
     private static JsonArray getJsonArrayFromLog(String log) {
         List<Character> stack = new ArrayList<>();
         List<JsonObject> jsonObjects = new ArrayList<>();

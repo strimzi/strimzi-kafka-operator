@@ -144,7 +144,7 @@ class LoggingChangeST extends AbstractST {
         String configMapCOName = Constants.STRIMZI_DEPLOYMENT_NAME;
 
         String originalCoLoggers = kubeClient().getClient().configMaps()
-            .inNamespace(INFRA_NAMESPACE).withName(configMapCOName).get().getData().get("log4j2.properties");
+            .inNamespace(clusterOperator.getDeploymentNamespace()).withName(configMapCOName).get().getData().get("log4j2.properties");
 
         ConfigMap configMapKafka = new ConfigMapBuilder()
             .withNewMetadata()
@@ -198,7 +198,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapOperators);
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapZookeeper);
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapOperators);
-        kubeClient().getClient().configMaps().inNamespace(INFRA_NAMESPACE).createOrReplace(configMapCO);
+        kubeClient().getClient().configMaps().inNamespace(clusterOperator.getDeploymentNamespace()).createOrReplace(configMapCO);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editOrNewSpec()
@@ -239,9 +239,9 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
-        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(INFRA_NAMESPACE, ResourceManager.getCoDeploymentName());
+        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName());
 
-        StUtils.checkLogForJSONFormat(INFRA_NAMESPACE, operatorSnapshot, ResourceManager.getCoDeploymentName());
+        StUtils.checkLogForJSONFormat(clusterOperator.getDeploymentNamespace(), operatorSnapshot, ResourceManager.getCoDeploymentName());
         StUtils.checkLogForJSONFormat(namespaceName, kafkaPods, "kafka");
         StUtils.checkLogForJSONFormat(namespaceName, zkPods, "zookeeper");
         StUtils.checkLogForJSONFormat(namespaceName, eoPods, "topic-operator");
@@ -249,7 +249,7 @@ class LoggingChangeST extends AbstractST {
 
         // set loggers of CO back to original
         configMapCO.getData().put("log4j2.properties", originalCoLoggers);
-        kubeClient().getClient().configMaps().inNamespace(INFRA_NAMESPACE).createOrReplace(configMapCO);
+        kubeClient().getClient().configMaps().inNamespace(clusterOperator.getDeploymentNamespace()).createOrReplace(configMapCO);
     }
 
     @ParallelNamespaceTest
