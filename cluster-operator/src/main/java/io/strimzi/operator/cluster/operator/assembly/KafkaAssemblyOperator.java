@@ -1229,67 +1229,74 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return
          */
         Future<Void> getZookeeperSetDescription()   {
-            if (featureGates.useStrimziPodSetsEnabled())   {
-                return getZookeeperPodSetDescription();
-            } else {
-                return getZookeeperStatefulSetDescription();
+            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
+
+            return CompositeFuture.join(stsFuture, podSetFuture)
+                    .compose(res -> {
+                        StatefulSet sts = res.resultAt(0);
+                        StrimziPodSet podSet = res.resultAt(1);
+
+                        if (sts != null && podSet != null)  {
+                            // Both StatefulSet and PodSet exist => we create the description based on the feature gate
+                            if (featureGates.useStrimziPodSetsEnabled())    {
+                                zookeeperPodSetDescription(podSet);
+                            } else {
+                                zookeeperStatefulSetDescription(sts);
+                            }
+                        } else if (sts != null) {
+                            // StatefulSet exists, PodSet does nto exist => we create the description from the StatefulSet
+                            zookeeperStatefulSetDescription(sts);
+                        } else if (podSet != null) {
+                            //PodSet exists, StatefulSet does not => we create the description from the PodSet
+                            zookeeperPodSetDescription(podSet);
+                        } else {
+                            // Neither StatefulSet nor PodSet exists => we just create the ZookeeperCluster instance
+                            this.zkCluster = ZookeeperCluster.fromCrd(reconciliation, kafkaAssembly, versions, null, 0);
+                        }
+
+                        return Future.succeededFuture();
+                    });
+        }
+
+        /**
+         * Initializes the ZooKeeper description based on a StatefulSet.
+         */
+        void zookeeperStatefulSetDescription(StatefulSet sts) {
+            Storage oldStorage = getOldStorage(sts);
+
+            if (sts != null && sts.getSpec() != null)   {
+                this.zkCurrentReplicas = sts.getSpec().getReplicas();
+            }
+
+            this.zkCluster = ZookeeperCluster.fromCrd(reconciliation, kafkaAssembly, versions, oldStorage, zkCurrentReplicas != null ? zkCurrentReplicas : 0);
+
+            // We are upgrading from previous Strimzi version which has a sidecars. The older sidecar
+            // configurations allowed only older versions of TLS to be used by default. But the Zookeeper
+            // native TLS support enabled by default only secure TLSv1.2. That is correct, but makes the
+            // upgrade hard since Kafka will be unable to connect. So in the first roll, we enable also
+            // older TLS versions in Zookeeper so that we can configure the Kafka sidecars to enable
+            // TLSv1.2 as well. This will be removed again in the next rolling update of Zookeeper -> done
+            // only when Kafka is ready for it.
+            if (sts != null
+                    && sts.getSpec() != null
+                    && sts.getSpec().getTemplate().getSpec().getContainers().size() > 1)   {
+                zkCluster.getConfiguration().setConfigOption("ssl.protocol", "TLS");
+                zkCluster.getConfiguration().setConfigOption("ssl.enabledProtocols", "TLSv1.2,TLSv1.1,TLSv1");
             }
         }
 
         /**
-         * Gets the ZooKeeper description based on a StatefulSet. This is used when UseStrimziPodSets feature gate is
-         * disabled.
-         *
-         * @return
+         * Initializes the ZooKeeper description based on a StrimziPodSet.
          */
-        Future<Void> getZookeeperStatefulSetDescription() {
-            return stsOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
-                    .compose(sts -> {
-                        Storage oldStorage = getOldStorage(sts);
+        void zookeeperPodSetDescription(StrimziPodSet podSet) {
+            Storage oldStorage = getOldStorage(podSet);
 
-                        if (sts != null && sts.getSpec() != null)   {
-                            this.zkCurrentReplicas = sts.getSpec().getReplicas();
-                        }
+            if (podSet != null && podSet.getSpec() != null)   {
+                this.zkCurrentReplicas = podSet.getSpec().getPods().size();
+            }
 
-                        this.zkCluster = ZookeeperCluster.fromCrd(reconciliation, kafkaAssembly, versions, oldStorage, zkCurrentReplicas != null ? zkCurrentReplicas : 0);
-
-                        // We are upgrading from previous Strimzi version which has a sidecars. The older sidecar
-                        // configurations allowed only older versions of TLS to be used by default. But the Zookeeper
-                        // native TLS support enabled by default only secure TLSv1.2. That is correct, but makes the
-                        // upgrade hard since Kafka will be unable to connect. So in the first roll, we enable also
-                        // older TLS versions in Zookeeper so that we can configure the Kafka sidecars to enable
-                        // TLSv1.2 as well. This will be removed again in the next rolling update of Zookeeper -> done
-                        // only when Kafka is ready for it.
-                        if (sts != null
-                                && sts.getSpec() != null
-                                && sts.getSpec().getTemplate().getSpec().getContainers().size() > 1)   {
-                            zkCluster.getConfiguration().setConfigOption("ssl.protocol", "TLS");
-                            zkCluster.getConfiguration().setConfigOption("ssl.enabledProtocols", "TLSv1.2,TLSv1.1,TLSv1");
-                        }
-
-                        return Future.succeededFuture();
-                    });
-        }
-
-        /**
-         * Gets the ZooKeeper description based on a StrimziPodSet. This is used when UseStrimziPodSets feature gate is
-         * enabled.
-         *
-         * @return
-         */
-        Future<Void> getZookeeperPodSetDescription() {
-            return strimziPodSetOperator.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
-                    .compose(podSet -> {
-                        Storage oldStorage = getOldStorage(podSet);
-
-                        if (podSet != null && podSet.getSpec() != null)   {
-                            this.zkCurrentReplicas = podSet.getSpec().getPods().size();
-                        }
-
-                        this.zkCluster = ZookeeperCluster.fromCrd(reconciliation, kafkaAssembly, versions, oldStorage, zkCurrentReplicas != null ? zkCurrentReplicas : 0);
-
-                        return Future.succeededFuture();
-                    });
+            this.zkCluster = ZookeeperCluster.fromCrd(reconciliation, kafkaAssembly, versions, oldStorage, zkCurrentReplicas != null ? zkCurrentReplicas : 0);
         }
 
         Future<ReconciliationState> withZkStsDiff(Future<ReconcileResult<StatefulSet>> r) {
@@ -1749,53 +1756,60 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return
          */
         Future<Void> getKafkaSetDescription()   {
-            if (featureGates.useStrimziPodSetsEnabled())   {
-                return getKafkaPodSetDescription();
-            } else {
-                return getKafkaStatefulSetDescription();
+            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
+            Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
+
+            return CompositeFuture.join(stsFuture, podSetFuture)
+                    .compose(res -> {
+                        StatefulSet sts = res.resultAt(0);
+                        StrimziPodSet podSet = res.resultAt(1);
+
+                        if (sts != null && podSet != null)  {
+                            // Both StatefulSet and PodSet exist => we create the description based on the feature gate
+                            if (featureGates.useStrimziPodSetsEnabled())    {
+                                kafkaPodSetDescription(podSet);
+                            } else {
+                                kafkaStatefulSetDescription(sts);
+                            }
+                        } else if (sts != null) {
+                            // StatefulSet exists, PodSet does nto exist => we create the description from the StatefulSet
+                            kafkaStatefulSetDescription(sts);
+                        } else if (podSet != null) {
+                            //PodSet exists, StatefulSet does not => we create the description from the PodSet
+                            kafkaPodSetDescription(podSet);
+                        } else {
+                            // Neither StatefulSet nor PodSet exists => we just initialize the current replicas
+                            this.kafkaCurrentReplicas = 0;
+                        }
+
+                        return Future.succeededFuture();
+                    });
+        }
+
+        /**
+         * Initializes the Kafka description based on a StatefulSet.
+         */
+        void kafkaStatefulSetDescription(StatefulSet sts)   {
+            this.kafkaCurrentReplicas = 0;
+            if (sts != null && sts.getSpec() != null)   {
+                this.kafkaCurrentReplicas = sts.getSpec().getReplicas();
+                this.currentStsVersion = Annotations.annotations(sts).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
+                this.oldKafkaStorage = getOldStorage(sts);
+                this.kafkaStsAlreadyExists = true;
             }
         }
 
         /**
-         * Gets the Kafka description based on a StatefulSet. This is used when UseStrimziPodSets feature gate is
-         * disabled.
-         *
-         * @return
+         * Initializes the Kafka description based on a StrimziPodSet.
          */
-        Future<Void> getKafkaStatefulSetDescription()   {
-            return stsOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
-                    .compose(sts -> {
-                        this.kafkaCurrentReplicas = 0;
-                        if (sts != null && sts.getSpec() != null)   {
-                            this.kafkaCurrentReplicas = sts.getSpec().getReplicas();
-                            this.currentStsVersion = Annotations.annotations(sts).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
-                            this.oldKafkaStorage = getOldStorage(sts);
-                            this.kafkaStsAlreadyExists = true;
-                        }
-
-                        return Future.succeededFuture();
-                    });
-        }
-
-        /**
-         * Gets the Kafka cluster description based on a StrimziPodSet. This is used when UseStrimziPodSets feature gate is
-         * enabled.
-         *
-         * @return
-         */
-        Future<Void> getKafkaPodSetDescription()   {
-            return strimziPodSetOperator.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
-                    .compose(podSet -> {
-                        this.kafkaCurrentReplicas = 0;
-                        if (podSet != null && podSet.getSpec() != null)   {
-                            this.kafkaCurrentReplicas = podSet.getSpec().getPods().size();
-                            this.currentStsVersion = Annotations.annotations(podSet).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
-                            this.oldKafkaStorage = getOldStorage(podSet);
-                            this.kafkaStsAlreadyExists = true;
-                        }
-
-                        return Future.succeededFuture();
-                    });
+        void kafkaPodSetDescription(StrimziPodSet podSet)   {
+            this.kafkaCurrentReplicas = 0;
+            if (podSet != null && podSet.getSpec() != null)   {
+                this.kafkaCurrentReplicas = podSet.getSpec().getPods().size();
+                this.currentStsVersion = Annotations.annotations(podSet).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
+                this.oldKafkaStorage = getOldStorage(podSet);
+                this.kafkaStsAlreadyExists = true;
+            }
         }
 
         Future<ReconciliationState> withKafkaStsDiff(Future<ReconcileResult<StatefulSet>> r) {

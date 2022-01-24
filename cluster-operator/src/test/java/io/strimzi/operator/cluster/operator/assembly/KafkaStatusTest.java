@@ -10,9 +10,12 @@ import io.fabric8.kubernetes.api.model.NodeBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
@@ -484,6 +487,10 @@ public class KafkaStatusTest {
         StatefulSetOperator mockStsOps = supplier.stsOperations;
         when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
 
+        // Mock the StrimziPodSet operator
+        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
+
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
@@ -601,6 +608,10 @@ public class KafkaStatusTest {
         StatefulSetOperator mockStsOps = supplier.stsOperations;
         when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
 
+        // Mock the StrimziPodSet operator
+        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
+
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
@@ -708,6 +719,10 @@ public class KafkaStatusTest {
         StatefulSetOperator mockStsOps = supplier.stsOperations;
         when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
 
+        // Mock the StrimziPodSet operator
+        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
+
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
@@ -812,6 +827,10 @@ public class KafkaStatusTest {
         StatefulSetOperator mockStsOps = supplier.stsOperations;
         when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
 
+        // Mock the StrimziPodSet operator
+        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
+
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         when(mockCmOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafkaCluster.generateMetricsAndLogConfigMap(new MetricsAndLogging(null, null))));
@@ -914,6 +933,10 @@ public class KafkaStatusTest {
         // Mock the KafkaSetOperator
         StatefulSetOperator mockStsOps = supplier.stsOperations;
         when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
+
+        // Mock the StrimziPodSet operator
+        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
@@ -1100,6 +1123,10 @@ public class KafkaStatusTest {
         // Mock the KafkaSetOperator
         StatefulSetOperator mockStsOps = supplier.stsOperations;
         when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
+
+        // Mock the StrimziPodSet operator
+        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
 
         // Mock the ConfigMapOperator
         ConfigMapOperator mockCmOps = supplier.configMapOperations;

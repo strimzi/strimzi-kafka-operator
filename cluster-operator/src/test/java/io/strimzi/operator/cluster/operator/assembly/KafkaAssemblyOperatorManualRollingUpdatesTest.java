@@ -128,10 +128,16 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
             when(mockPodSetOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, null)));
             when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSet(kafka.getSpec().getKafka().getReplicas(), false, null, null, null)));
+
+            StatefulSetOperator mockStsOps = supplier.stsOperations;
+            when(mockStsOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
         } else {
             StatefulSetOperator mockStsOps = supplier.stsOperations;
             when(mockStsOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generateStatefulSet(false, null, null)));
             when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
+
+            CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+            when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
         }
 
         PodOperator mockPodOps = supplier.podOperations;
@@ -222,6 +228,9 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 kafkaPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
                 return Future.succeededFuture(kafkaPodSet);
             });
+
+            StatefulSetOperator mockStsOps = supplier.stsOperations;
+            when(mockStsOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
         } else {
             StatefulSetOperator mockStsOps = supplier.stsOperations;
             when(mockStsOps.getAsync(any(), eq(zkCluster.getName()))).thenAnswer(i -> {
@@ -234,6 +243,9 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 sts.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true");
                 return Future.succeededFuture(sts);
             });
+
+            CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+            when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
         }
 
         PodOperator mockPodOps = supplier.podOperations;
@@ -323,10 +335,16 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
             when(mockPodSetOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generatePodSet(kafka.getSpec().getZookeeper().getReplicas(), false, null, null, null)));
             when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSet(kafka.getSpec().getKafka().getReplicas(), false, null, null, null)));
+
+            StatefulSetOperator mockStsOps = supplier.stsOperations;
+            when(mockStsOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
         } else {
             StatefulSetOperator mockStsOps = supplier.stsOperations;
             when(mockStsOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generateStatefulSet(false, null, null)));
             when(mockStsOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
+
+            CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+            when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
         }
 
         PodOperator mockPodOps = supplier.podOperations;
@@ -437,6 +455,9 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getName()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePodSet(kafka.getSpec().getKafka().getReplicas(), false, null, null, null)));
             when(mockPodSetOps.deleteAsync(any(), any(), eq(kafkaCluster.getName()), anyBoolean())).thenReturn(Future.succeededFuture());
             when(mockPodSetOps.reconcile(any(), any(), eq(kafkaCluster.getName()), any())).thenReturn(Future.succeededFuture());
+
+            StatefulSetOperator mockStsOps = supplier.stsOperations;
+            when(mockStsOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
         } else {
             StatefulSetOperator mockStsOps = supplier.stsOperations;
             when(mockStsOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkCluster.generateStatefulSet(false, null, null)));
@@ -445,6 +466,9 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             when(mockStsOps.deleteAsync(any(), any(), eq(kafkaCluster.getName()), anyBoolean())).thenReturn(Future.succeededFuture());
             when(mockStsOps.reconcile(any(), any(), eq(zkCluster.getName()), any())).thenReturn(Future.succeededFuture());
             when(mockStsOps.reconcile(any(), any(), eq(kafkaCluster.getName()), any())).thenReturn(Future.succeededFuture());
+
+            CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
+            when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
         }
 
         PodOperator mockPodOps = supplier.podOperations;
