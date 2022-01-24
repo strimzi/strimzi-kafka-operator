@@ -231,6 +231,7 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
     }
 
     @Description("Whether to create the bootstrap service or not. " +
+            "The bootstrap service is created by default (if not specified differently). " +
             "This field can be used with the `loadBalancer` type listener.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public Boolean getCreateBootstrapService() {
