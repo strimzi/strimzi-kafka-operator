@@ -92,6 +92,9 @@ Capacity limits can be set for the following broker resources:
 * `inboundNetwork`  - Inbound network throughput in byte units per second (Default: 10000KiB/s)
 * `outboundNetwork` - Outbound network throughput in byte units per second (Default: 10000KiB/s)
 
+For disk storage, use a number value with either standard Kubernetes byte units (K, M, G, or T), their bibyte (power of two) equivalents (Ki, Mi, Gi, or Ti), or a byte value with or without E notation.
+For network throughput, use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second.
+
 For Kafka clusters that do not use JBOD storage, Strimz generates a generic Cruise Control capacity configuration entry that applies to every broker. 
 
 For Kafka clusters that use JBOD storage, do not set a disk capacity limit.
