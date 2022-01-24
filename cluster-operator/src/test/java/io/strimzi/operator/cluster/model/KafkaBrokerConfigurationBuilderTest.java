@@ -61,7 +61,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withBrokerId()
                 .build();
 
-        assertThat(configuration, isEquivalent("broker.id=${STRIMZI_BROKER_ID}"));
+        assertThat(configuration, isEquivalent("broker.id=${STRIMZI_BROKER_ID}\n" +
+                "node.id=${STRIMZI_BROKER_ID}"));
     }
 
     @ParallelTest
@@ -124,6 +125,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=${STRIMZI_BROKER_ID}\n" +
+                                                                "node.id=${STRIMZI_BROKER_ID}\n" +
                                                                 "broker.rack=${STRIMZI_RACK_ID}"));
     }
 
