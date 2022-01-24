@@ -16,6 +16,8 @@ public class RebalanceOptions {
     private boolean verbose;
     /** Allows specifying a custom goals list that does not incude all configured hard.goals */
     private boolean skipHardGoalCheck;
+    /** Whether to balance load between disks within brokers (requires JBOD Kafka deployment) */
+    private boolean rebalanceDisk;
     /** Sets whether the response should be JSON formatted or formated for readibility on the command line */
     private boolean json = true;
     /** A regular expression to specify topics that should not be considered for replica movement */
@@ -41,6 +43,10 @@ public class RebalanceOptions {
 
     public boolean isSkipHardGoalCheck() {
         return skipHardGoalCheck;
+    }
+
+    public boolean isRebalanceDisk() {
+        return rebalanceDisk;
     }
 
     public List<String> getGoals() {
@@ -79,6 +85,7 @@ public class RebalanceOptions {
         this.isDryRun = builder.isDryRun;
         this.verbose = builder.verbose;
         this.skipHardGoalCheck = builder.skipHardGoalCheck;
+        this.rebalanceDisk = builder.rebalanceDisk;
         this.goals = builder.goals;
         this.verbose = builder.verbose;
         this.excludedTopics = builder.excludedTopics;
@@ -94,6 +101,7 @@ public class RebalanceOptions {
         private boolean isDryRun;
         private boolean verbose;
         private boolean skipHardGoalCheck;
+        private boolean rebalanceDisk;
         private List<String> goals;
         private String excludedTopics;
         private int concurrentPartitionMovementsPerBroker;
@@ -106,6 +114,7 @@ public class RebalanceOptions {
             isDryRun = true;
             verbose = false;
             skipHardGoalCheck = false;
+            rebalanceDisk = false;
             goals = null;
             excludedTopics = null;
             concurrentPartitionMovementsPerBroker = 0;
@@ -127,6 +136,11 @@ public class RebalanceOptions {
 
         public RebalanceOptionsBuilder withSkipHardGoalCheck() {
             this.skipHardGoalCheck = true;
+            return this;
+        }
+
+        public RebalanceOptionsBuilder withRebalanceDisk() {
+            this.rebalanceDisk = true;
             return this;
         }
 

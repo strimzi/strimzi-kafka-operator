@@ -19,7 +19,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "goals", "skipHardGoalCheck", "excludedTopics", "concurrentPartitionMovementsPerBroker",
+@JsonPropertyOrder({ "goals", "skipHardGoalCheck", "rebalanceDisk", "excludedTopics", "concurrentPartitionMovementsPerBroker",
     "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "replicaMovementStrategies" })
 @EqualsAndHashCode
 public class KafkaRebalanceSpec extends Spec {
@@ -28,6 +28,7 @@ public class KafkaRebalanceSpec extends Spec {
     // Optimization goal configurations
     private List<String> goals;
     private boolean skipHardGoalCheck;
+    private boolean rebalanceDisk;
 
     // Topic configuration
     private String excludedTopics;
@@ -60,6 +61,16 @@ public class KafkaRebalanceSpec extends Spec {
 
     public void setSkipHardGoalCheck(boolean skipHardGoalCheck) {
         this.skipHardGoalCheck = skipHardGoalCheck;
+    }
+
+    @Description("Whether to balance load between disks within brokers (requires JBOD Kafka deployment) ")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public boolean isRebalanceDisk() {
+        return rebalanceDisk;
+    }
+
+    public void setRebalanceDisk(boolean rebalanceDisk) {
+        this.rebalanceDisk = rebalanceDisk;
     }
 
     @Description("A regular expression where any matching topics will be excluded from the calculation of optimization proposals. " +

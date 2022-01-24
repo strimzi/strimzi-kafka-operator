@@ -6,20 +6,7 @@ CC_CLUSTER_CONFIG_FILE="/tmp/clusterConfig.json"
 CC_ACCESS_LOG="/tmp/access.log"
 
 # Generate capacity file
-cat <<EOF > $CC_CAPACITY_FILE
-{
-	"brokerCapacities": [{
-		"brokerId": "-1",
-		"capacity": {
-			"DISK": "$BROKER_DISK_MIB_CAPACITY",
-			"CPU": "$BROKER_CPU_UTILIZATION_CAPACITY",
-			"NW_IN": "$BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY",
-			"NW_OUT": "$BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY"
-		},
-		"doc": "This is the default capacity. Capacity unit used for disk is in MB, cpu is in percentage, network throughput is in KB."
-	}]
-}
-EOF
+echo "${CRUISE_CONTROL_CAPACITY_CONFIGURATION}" > "${CC_CAPACITY_FILE}"
 
 # Generate cluster config
 cat <<EOF > $CC_CLUSTER_CONFIG_FILE

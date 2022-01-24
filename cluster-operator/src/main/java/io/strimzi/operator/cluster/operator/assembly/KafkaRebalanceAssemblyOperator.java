@@ -329,6 +329,9 @@ public class KafkaRebalanceAssemblyOperator
         if (kafkaRebalanceSpec.isSkipHardGoalCheck()) {
             rebalanceOptionsBuilder.withSkipHardGoalCheck();
         }
+        if (kafkaRebalanceSpec.isRebalanceDisk()) {
+            rebalanceOptionsBuilder.withRebalanceDisk();
+        }
         if (kafkaRebalanceSpec.getExcludedTopics() != null) {
             rebalanceOptionsBuilder.withExcludedTopics(kafkaRebalanceSpec.getExcludedTopics());
         }

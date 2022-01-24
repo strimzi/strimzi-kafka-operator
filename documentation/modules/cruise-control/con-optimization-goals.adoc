@@ -27,12 +27,12 @@ The resource distribution goals are controlled using xref:capacity-configuration
 . Topic replica distribution
 . Leader replica distribution
 . Preferred leader election
-//. Intra-broker disk capacity
-//. Intra-broker disk usage distribution   
+. Intra-broker disk capacity
+. Intra-broker disk usage distribution
 
 For more information on each optimization goal, see link:https://github.com/linkedin/cruise-control/wiki/Pluggable-Components#goals[Goals^] in the Cruise Control Wiki.
 
-NOTE: Intra-broker disk goals, "Write your own" goals, and Kafka assigner goals are not yet supported.
+NOTE: "Write your own" goals and Kafka assigner goals are not yet supported.
 
 [discrete]
 == Goals configuration in Strimzi custom resources

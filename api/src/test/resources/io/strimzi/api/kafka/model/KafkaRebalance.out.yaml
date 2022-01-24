@@ -8,6 +8,7 @@ spec:
   - "DiskCapacityGoal"
   - "CpuCapacityGoal"
   skipHardGoalCheck: true
+  rebalanceDisk: false
   concurrentPartitionMovementsPerBroker: 0
   concurrentIntraBrokerPartitionMovements: 0
   concurrentLeaderMovements: 0

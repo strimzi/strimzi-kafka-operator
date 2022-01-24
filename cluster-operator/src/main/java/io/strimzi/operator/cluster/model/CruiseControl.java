@@ -130,10 +130,7 @@ public class CruiseControl extends AbstractModel {
     private String minInsyncReplicas = "1";
     private boolean sslEnabled;
     private boolean authEnabled;
-    private Double brokerDiskMiBCapacity;
-    private int brokerCpuUtilizationCapacity;
-    private Double brokerInboundNetworkKiBPerSecondCapacity;
-    private Double brokerOuboundNetworkKiBPerSecondCapacity;
+    public String capacityConfig;
 
     public static final String REST_API_PORT_NAME = "rest-api";
     public static final int REST_API_PORT = 9090;
@@ -145,10 +142,8 @@ public class CruiseControl extends AbstractModel {
     protected static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     protected static final String ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     protected static final String ENV_VAR_MIN_INSYNC_REPLICAS = "MIN_INSYNC_REPLICAS";
-    protected static final String ENV_VAR_BROKER_DISK_MIB_CAPACITY = "BROKER_DISK_MIB_CAPACITY";
-    protected static final String ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY = "BROKER_CPU_UTILIZATION_CAPACITY";
-    protected static final String ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
-    protected static final String ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
+
+    protected static final String ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION = "CRUISE_CONTROL_CAPACITY_CONFIGURATION";
 
     protected static final String ENV_VAR_API_SSL_ENABLED = "STRIMZI_CC_API_SSL_ENABLED";
     protected static final String ENV_VAR_API_AUTH_ENABLED = "STRIMZI_CC_API_AUTH_ENABLED";
@@ -271,10 +266,7 @@ public class CruiseControl extends AbstractModel {
             }
 
             Capacity capacity = new Capacity(kafkaAssembly.getSpec());
-            cruiseControl.brokerDiskMiBCapacity = capacity.getDiskMiB();
-            cruiseControl.brokerCpuUtilizationCapacity = capacity.getCpuUtilization();
-            cruiseControl.brokerInboundNetworkKiBPerSecondCapacity = capacity.getInboundNetworkKiBPerSecond();
-            cruiseControl.brokerOuboundNetworkKiBPerSecondCapacity = capacity.getOutboundNetworkKiBPerSecond();
+            cruiseControl.capacityConfig = capacity.generateCapacityConfig();
 
             // Parse different types of metrics configurations
             ModelUtils.parseMetrics(cruiseControl, spec);
@@ -530,10 +522,7 @@ public class CruiseControl extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(buildEnvVar(ENV_VAR_MIN_INSYNC_REPLICAS, String.valueOf(minInsyncReplicas)));
 
-        varList.add(buildEnvVar(ENV_VAR_BROKER_DISK_MIB_CAPACITY, String.valueOf(brokerDiskMiBCapacity)));
-        varList.add(buildEnvVar(ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY, String.valueOf(brokerCpuUtilizationCapacity)));
-        varList.add(buildEnvVar(ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY, String.valueOf(brokerInboundNetworkKiBPerSecondCapacity)));
-        varList.add(buildEnvVar(ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY,  String.valueOf(brokerOuboundNetworkKiBPerSecondCapacity)));
+        varList.add(buildEnvVar(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION, String.valueOf(capacityConfig)));
 
         varList.add(buildEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
         varList.add(buildEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));
