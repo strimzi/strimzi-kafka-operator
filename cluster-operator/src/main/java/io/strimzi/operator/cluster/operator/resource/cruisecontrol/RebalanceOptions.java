@@ -114,7 +114,7 @@ public class RebalanceOptions {
             isDryRun = true;
             verbose = false;
             skipHardGoalCheck = false;
-            rebalanceDisk = true;
+            rebalanceDisk = false;
             goals = null;
             excludedTopics = null;
             concurrentPartitionMovementsPerBroker = 0;
