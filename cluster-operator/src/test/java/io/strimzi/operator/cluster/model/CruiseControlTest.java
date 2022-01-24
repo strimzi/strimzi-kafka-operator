@@ -225,8 +225,8 @@ public class CruiseControlTest {
 
         Kafka resource = createKafka(cruiseControlSpec);
 
-        Capacity generatedCapacity = new Capacity(resource.getSpec(), kafkaStorage);
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(generatedCapacity.generateCapacityConfig()));
+        Capacity capacity = new Capacity(resource.getSpec(), kafkaStorage);
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.generateCapacityConfig()));
 
         // Test generated disk capacity
         JbodStorage jbodStorage = new JbodStorage();
@@ -253,9 +253,8 @@ public class CruiseControlTest {
                 .withCruiseControl(cruiseControlSpec)
             .endSpec()
             .build();
-        generatedCapacity = new Capacity(resource.getSpec(), jbodStorage);
-        System.out.println(generatedCapacity.generateCapacityConfig());
-        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(generatedCapacity.generateCapacityConfig()));
+        capacity = new Capacity(resource.getSpec(), jbodStorage);
+        assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.generateCapacityConfig()));
     }
 
     @ParallelTest
