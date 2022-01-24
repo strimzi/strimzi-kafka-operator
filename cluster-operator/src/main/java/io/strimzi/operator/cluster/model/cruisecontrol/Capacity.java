@@ -87,7 +87,7 @@ public class Capacity {
         String size = "";
 
         for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-            name = VolumeUtils.getVolumePrefix(volume.getId());
+            name = VolumeUtils.createVolumePrefix(volume.getId(), true);
             path = AbstractModel.KAFKA_MOUNT_PATH + "/" + name + "/" + AbstractModel.KAFKA_LOG_DIR + idx;
 
             if (volume instanceof PersistentClaimStorage) {
