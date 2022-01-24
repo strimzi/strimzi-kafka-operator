@@ -28,7 +28,7 @@ public class KafkaRebalanceSpec extends Spec {
     // Optimization goal configurations
     private List<String> goals;
     private boolean skipHardGoalCheck;
-    private boolean rebalanceDisk = true;
+    private boolean rebalanceDisk;
 
     // Topic configuration
     private String excludedTopics;
@@ -64,8 +64,8 @@ public class KafkaRebalanceSpec extends Spec {
     }
 
     @Description("Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. Only applies to Kafka deployments that use JBOD storage. " +
-            "Default is true when using a Kafka deployment with JBOD storage and false otherwise.")
-    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+            "When enabled, inter-broker balancing is disabled. Default is false.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     public boolean isRebalanceDisk() {
         return rebalanceDisk;
     }

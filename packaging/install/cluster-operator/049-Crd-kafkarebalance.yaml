@@ -56,8 +56,8 @@ spec:
                 type: boolean
                 description: Enables intra-broker disk balancing, which balances disk
                   space utilization between disks on the same broker. Only applies
-                  to Kafka deployments that use JBOD storage. Default is true when
-                  using a Kafka deployment with JBOD storage and false otherwise.
+                  to Kafka deployments that use JBOD storage. When enabled, inter-broker
+                  balancing is disabled. Default is false.
               excludedTopics:
                 type: string
                 description: A regular expression where any matching topics will be

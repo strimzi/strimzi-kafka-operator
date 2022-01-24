@@ -49,7 +49,9 @@ If the reassignments are equivalent, then it passes them to the next strategy in
 
 Moving a large amount of data between disks on the same broker has less impact than between separate brokers
 If you are running a Kafka deployment that uses JBOD storage, Cruise Control can balance partitions between disks on the same broker. 
-To preform an intra-broker disk balance set `rebalanceDisk` to `true` under the `KafkaRebalance.spec`.
+To preform an intra-broker disk balance and only an intra-broker disk balance set `rebalanceDisk` to `true` under the `KafkaRebalance.spec`.
+When setting `rebalanceDisk` to `true`, do not set a `goals` field in the `KafkaRebalance.spec`, Cruise Control will automatically set the intra-broker goals and ignore the inter-broker goals.
+Cruise Control does not prefrom inter-broker and intra-broker balancing at the same time.
 
 [discrete]
 == Rebalance tuning options

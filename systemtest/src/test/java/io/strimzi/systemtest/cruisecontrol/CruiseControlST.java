@@ -281,6 +281,7 @@ public class CruiseControlST extends AbstractST {
                 .withNamespace(namespaceName)
                 .endMetadata()
                     .editOrNewSpec()
+                        .withRebalanceDisk(true)
                     .endSpec()
                 .build());
 

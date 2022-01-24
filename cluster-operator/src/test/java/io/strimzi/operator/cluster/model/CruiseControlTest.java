@@ -226,6 +226,7 @@ public class CruiseControlTest {
         Kafka resource = createKafka(cruiseControlSpec);
 
         Capacity capacity = new Capacity(resource.getSpec(), kafkaStorage);
+
         assertThat(getCapacityConfigurationFromEnvVar(resource, ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION), is(capacity.generateCapacityConfig()));
 
         // Test generated disk capacity

@@ -97,7 +97,7 @@ For Kafka clusters that do not use JBOD storage, Strimz generates a generic Crui
 For Kafka clusters that use JBOD storage, do not set a disk capacity limit.
 Strimzi generates a specific disk capacity configuration for this type of cluster. 
 This is required because the path names of the Kafka JBOD volumes include a broker ID. 
-The configuration allows for inter-broker disk balancing. 
+The configuration allows for intra-broker disk balancing.
 If you set a disk capacity limit, it will override the capacity configuration for the cluster with a standard configuration.
 
 [NOTE]
