@@ -8,6 +8,8 @@
 [role="_abstract"]
 Use Mirrormaker 2.0 connector configuration for the internal connectors that orchestrate the synchronization of data between Kafka clusters.
 
+The following table describes connector properties and the connectors you configure to use them. 
+
 .MirrorMaker 2.0 connector configuration properties
 [cols="4a,2,2,2",options="header"]
 |===
