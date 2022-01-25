@@ -56,13 +56,13 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.Constants.RECONCILIATION_INTERVAL;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
 import static io.strimzi.systemtest.Constants.STRIMZI_DEPLOYMENT_NAME;
@@ -81,6 +81,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 class LoggingChangeST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(LoggingChangeST.class);
 
+    private static final Pattern DEFAULT_LOG4J_PATTERN = Pattern.compile("^(?<date>[\\d-]+) (?<time>[\\d:,]+) (?<status>\\w+) (?<message>.+)");
+
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(LoggingChangeST.class.getSimpleName()).stream().findFirst().get();
 
     @ParallelNamespaceTest
@@ -93,6 +95,7 @@ class LoggingChangeST extends AbstractST {
 
         // In this test scenario we change configuration for CO and we have to be sure, that CO is installed via YAML bundle instead of helm or OLM
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
+
         String loggersConfigKafka = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
             "log4j.appender.CONSOLE.layout=net.logstash.log4j.JSONEventLayoutV1\n" +
             "kafka.root.logger.level=INFO\n" +
@@ -139,6 +142,9 @@ class LoggingChangeST extends AbstractST {
         String configMapZookeeperName = "json-layout-zookeeper";
         String configMapKafkaName = "json-layout-kafka";
         String configMapCOName = Constants.STRIMZI_DEPLOYMENT_NAME;
+
+        String originalCoLoggers = kubeClient().getClient().configMaps()
+            .inNamespace(clusterOperator.getDeploymentNamespace()).withName(configMapCOName).get().getData().get("log4j2.properties");
 
         ConfigMap configMapKafka = new ConfigMapBuilder()
             .withNewMetadata()
@@ -192,7 +198,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapOperators);
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapZookeeper);
         kubeClient().getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMapOperators);
-        kubeClient().getClient().configMaps().inNamespace(INFRA_NAMESPACE).createOrReplace(configMapCO);
+        kubeClient().getClient().configMaps().inNamespace(clusterOperator.getDeploymentNamespace()).createOrReplace(configMapCO);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editOrNewSpec()
@@ -233,19 +239,23 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
         Map<String, String> eoPods = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
-        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(INFRA_NAMESPACE, ResourceManager.getCoDeploymentName());
+        Map<String, String> operatorSnapshot = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName());
 
-        StUtils.checkLogForJSONFormat(INFRA_NAMESPACE, operatorSnapshot, ResourceManager.getCoDeploymentName());
+        StUtils.checkLogForJSONFormat(clusterOperator.getDeploymentNamespace(), operatorSnapshot, ResourceManager.getCoDeploymentName());
         StUtils.checkLogForJSONFormat(namespaceName, kafkaPods, "kafka");
         StUtils.checkLogForJSONFormat(namespaceName, zkPods, "zookeeper");
         StUtils.checkLogForJSONFormat(namespaceName, eoPods, "topic-operator");
         StUtils.checkLogForJSONFormat(namespaceName, eoPods, "user-operator");
+
+        // set loggers of CO back to original
+        configMapCO.getData().put("log4j2.properties", originalCoLoggers);
+        kubeClient().getClient().configMaps().inNamespace(clusterOperator.getDeploymentNamespace()).createOrReplace(configMapCO);
     }
 
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
-    @SuppressWarnings({"checkstyle:MethodLength"})
-    void testDynamicallySetEOloggingLevels(ExtensionContext extensionContext) throws InterruptedException {
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
+    void testDynamicallySetEOloggingLevels(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -270,6 +280,9 @@ class LoggingChangeST extends AbstractST {
 
         final String eoPodName = eoPods.keySet().iterator().next();
 
+        LOGGER.info("Checking if EO pod contains any log (except configuration)");
+        assertFalse(DEFAULT_LOG4J_PATTERN.matcher(StUtils.getLogFromPodByTime(namespaceName, eoPodName, "user-operator", "30s")).find());
+
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
         InlineLogging ilDebug = new InlineLogging();
         ilDebug.setLoggers(Collections.singletonMap("rootLogger.level", "DEBUG"));
@@ -284,10 +297,16 @@ class LoggingChangeST extends AbstractST {
                         && cmdKubeClient().namespace(namespaceName).execInPodContainer(false, eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
         );
 
-        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
-            () ->
-                StUtils.getLogFromPodByTime(namespaceName, eoPodName, "user-operator", "30s").equals("") &&
-                StUtils.getLogFromPodByTime(namespaceName, eoPodName, "topic-operator", "30s").equals(""));
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> {
+                String uoLog = StUtils.getLogFromPodByTime(namespaceName, eoPodName, "user-operator", "30s");
+                String toLog = StUtils.getLogFromPodByTime(namespaceName, eoPodName, "topic-operator", "30s");
+
+                return uoLog != null && toLog != null &&
+                    !(uoLog.isEmpty() && toLog.isEmpty()) &&
+                    DEFAULT_LOG4J_PATTERN.matcher(uoLog).find() &&
+                    DEFAULT_LOG4J_PATTERN.matcher(toLog).find();
+            });
 
         LOGGER.info("Setting external logging OFF");
         ConfigMap configMapTo = new ConfigMapBuilder()
@@ -363,9 +382,14 @@ class LoggingChangeST extends AbstractST {
         );
 
         TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
-            () ->
-                StUtils.getLogFromPodByTime(namespaceName, eoPodName, "user-operator", "30s").equals("") &&
-                StUtils.getLogFromPodByTime(namespaceName, eoPodName, "topic-operator", "30s").equals(""));
+            () -> {
+                String uoLog = StUtils.getLogFromPodByTime(namespaceName, eoPodName, "user-operator", "30s");
+                String toLog = StUtils.getLogFromPodByTime(namespaceName, eoPodName, "topic-operator", "30s");
+
+                return uoLog != null && toLog != null &&
+                    uoLog.isEmpty() && toLog.isEmpty() &&
+                    !(DEFAULT_LOG4J_PATTERN.matcher(uoLog).find() && DEFAULT_LOG4J_PATTERN.matcher(toLog).find());
+            });
 
         LOGGER.info("Setting external logging OFF");
         configMapTo = new ConfigMapBuilder()
@@ -409,10 +433,16 @@ class LoggingChangeST extends AbstractST {
                         && cmdKubeClient().namespace(namespaceName).execInPodContainer(false, eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
         );
 
-        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
-            () ->
-                StUtils.getLogFromPodByTime(namespaceName, eoPodName, "user-operator", "30s").equals("") &&
-                StUtils.getLogFromPodByTime(namespaceName, eoPodName, "topic-operator", "30s").equals(""));
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> {
+                String uoLog = StUtils.getLogFromPodByTime(namespaceName, eoPodName, "user-operator", "30s");
+                String toLog = StUtils.getLogFromPodByTime(namespaceName, eoPodName, "topic-operator", "30s");
+
+                return uoLog != null && toLog != null &&
+                    !(uoLog.isEmpty() && toLog.isEmpty()) &&
+                    DEFAULT_LOG4J_PATTERN.matcher(uoLog).find() &&
+                    DEFAULT_LOG4J_PATTERN.matcher(toLog).find();
+            });
 
         assertThat("EO pod should not roll", DeploymentUtils.depSnapshot(namespaceName, eoDeploymentName), equalTo(eoPods));
     }
@@ -448,6 +478,10 @@ class LoggingChangeST extends AbstractST {
         KafkaBridgeUtils.waitForKafkaBridgeReady(namespaceName, clusterName);
 
         Map<String, String> bridgeSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaBridgeResources.deploymentName(clusterName));
+        final String bridgePodName = bridgeSnapshot.keySet().iterator().next();
+
+        LOGGER.info("Asserting if log is without records");
+        assertFalse(DEFAULT_LOG4J_PATTERN.matcher(StUtils.getLogFromPodByTime(namespaceName, bridgePodName, "", "30s")).find());
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
         InlineLogging ilDebug = new InlineLogging();
@@ -461,15 +495,17 @@ class LoggingChangeST extends AbstractST {
             bridz.getSpec().setLogging(ilDebug);
         }, namespaceName);
 
-        final String bridgePodName = bridgeSnapshot.keySet().iterator().next();
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(namespaceName).execInPodContainer(false, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
                 && cmdKubeClient().namespace(namespaceName).execInPodContainer(false, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
-        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
-            () -> StUtils.getLogFromPodByTime(namespaceName, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "30s").equals(""));
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> {
+                String bridgeLog = StUtils.getLogFromPodByTime(namespaceName, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "30s");
+                return bridgeLog != null && !bridgeLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(bridgeLog).find();
+            });
 
         ConfigMap configMapBridge = new ConfigMapBuilder()
             .withNewMetadata()
@@ -529,7 +565,10 @@ class LoggingChangeST extends AbstractST {
         );
 
         TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
-            () -> StUtils.getLogFromPodByTime(namespaceName, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "30s").equals(""));
+            () -> {
+                String bridgeLog = StUtils.getLogFromPodByTime(namespaceName, bridgePodName, KafkaBridgeResources.deploymentName(clusterName), "30s");
+                return bridgeLog != null && bridgeLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(bridgeLog).find();
+            });
 
         assertThat("Bridge pod should not roll", DeploymentUtils.depSnapshot(namespaceName, KafkaBridgeResources.deploymentName(clusterName)), equalTo(bridgeSnapshot));
     }
@@ -593,7 +632,11 @@ class LoggingChangeST extends AbstractST {
         assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME)));
 
         TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
-            () -> StUtils.getLogFromPodByTime(INFRA_NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s").equals(""));
+            () -> {
+                String coLog = StUtils.getLogFromPodByTime(INFRA_NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
+                LOGGER.warn(coLog);
+                return coLog != null && coLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(coLog).find();
+            });
 
         LOGGER.info("Changing all levels from OFF to INFO/WARN");
         log4jConfig = log4jConfig.replaceAll("OFF", "INFO");
@@ -614,12 +657,10 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Checking if CO rolled its pod");
         assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(INFRA_NAMESPACE, STRIMZI_DEPLOYMENT_NAME)));
 
-        long reconciliationSleep = RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis();
-
-        TestUtils.waitFor("log to be not empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
-                final String coLog = StUtils.getLogFromPodByTime(INFRA_NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
-                return coLog != null && coLog != "" && coLog.contains("INFO");
+                String coLog = StUtils.getLogFromPodByTime(INFRA_NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
+                return coLog != null && !coLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(coLog).find();
             });
     }
 
@@ -657,6 +698,10 @@ class LoggingChangeST extends AbstractST {
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
 
         Map<String, String> connectSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaConnectResources.deploymentName(clusterName));
+        final String connectPodName = connectSnapshot.keySet().iterator().next();
+
+        LOGGER.info("Asserting if log is without records");
+        assertFalse(DEFAULT_LOG4J_PATTERN.matcher(StUtils.getLogFromPodByTime(namespaceName, connectPodName, "", "30s")).find());
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
         InlineLogging ilDebug = new InlineLogging();
@@ -672,6 +717,12 @@ class LoggingChangeST extends AbstractST {
             () -> cmdKubeClient().namespace(namespaceName).execInPod(kafkaClientsPodName, "curl", "http://" + KafkaConnectResources.serviceName(clusterName)
                         + ":8083/admin/loggers/root").out().contains("DEBUG")
         );
+
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> {
+                String kcLog = StUtils.getLogFromPodByTime(namespaceName, connectPodName, "", "30s");
+                return kcLog != null && !kcLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(kcLog).find();
+            });
 
         String log4jConfig =
                 "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
@@ -717,6 +768,12 @@ class LoggingChangeST extends AbstractST {
                 + ":8083/admin/loggers/root").out().contains("OFF")
         );
 
+        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> {
+                String kcLog = StUtils.getLogFromPodByTime(namespaceName, connectPodName, "", "30s");
+                return kcLog != null && kcLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(kcLog).find();
+            });
+
         assertThat("Connect pod should not roll", DeploymentUtils.depSnapshot(namespaceName, KafkaConnectResources.deploymentName(clusterName)), equalTo(connectSnapshot));
     }
 
@@ -727,11 +784,46 @@ class LoggingChangeST extends AbstractST {
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaName);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
+        InlineLogging ilOff = new InlineLogging();
+        Map<String, String> log4jConfig = new HashMap<>();
+        log4jConfig.put("kafka.root.logger.level", "OFF");
+        log4jConfig.put("log4j.logger.org.I0Itec.zkclient.ZkClient", "OFF");
+        log4jConfig.put("log4j.logger.org.apache.zookeeper", "OFF");
+        log4jConfig.put("log4j.logger.kafka", "OFF");
+        log4jConfig.put("log4j.logger.org.apache.kafka", "OFF");
+        log4jConfig.put("log4j.logger.kafka.request.logger", "OFF, CONSOLE");
+        log4jConfig.put("log4j.logger.kafka.network.Processor", "OFF");
+        log4jConfig.put("log4j.logger.kafka.server.KafkaApis", "OFF");
+        log4jConfig.put("log4j.logger.kafka.network.RequestChannel$", "OFF");
+        log4jConfig.put("log4j.logger.kafka.controller", "OFF");
+        log4jConfig.put("log4j.logger.kafka.log.LogCleaner", "OFF");
+        log4jConfig.put("log4j.logger.state.change.logger", "OFF");
+        log4jConfig.put("log4j.logger.kafka.authorizer.logger", "OFF");
+
+        ilOff.setLoggers(log4jConfig);
+
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
+                .editSpec()
+                    .editKafka()
+                        .withInlineLogging(ilOff)
+                    .endKafka()
+                .endSpec()
+                .build());
+
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
-        InlineLogging ilOff = new InlineLogging();
-        ilOff.setLoggers(Collections.singletonMap("kafka.root.logger.level", "INFO"));
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> {
+                boolean[] correctLogging = {true};
+
+                kafkaPods.keySet().forEach(podName -> {
+                    String kafkaLog = StUtils.getLogFromPodByTime(namespaceName, podName, "kafka", "30s");
+                    correctLogging[0] = kafkaLog != null && kafkaLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(kafkaLog).find();
+                });
+
+                return correctLogging[0];
+            });
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
         InlineLogging ilDebug = new InlineLogging();
@@ -745,6 +837,18 @@ class LoggingChangeST extends AbstractST {
             () -> cmdKubeClient().namespace(namespaceName).execInPodContainer(false, KafkaResources.kafkaPodName(clusterName, 0),
                 "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
                 .contains("root=DEBUG"));
+
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> {
+                boolean[] correctLogging = {true};
+
+                kafkaPods.keySet().forEach(podName -> {
+                    String kafkaLog = StUtils.getLogFromPodByTime(namespaceName, podName, "kafka", "30s");
+                    correctLogging[0] = kafkaLog != null && !kafkaLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(kafkaLog).find();
+                });
+
+                return correctLogging[0];
+            });
 
         LOGGER.info("Setting external logging INFO");
         ConfigMap configMap = new ConfigMapBuilder()
@@ -774,11 +878,11 @@ class LoggingChangeST extends AbstractST {
 
         ExternalLogging elKafka = new ExternalLoggingBuilder()
             .withNewValueFrom()
-            .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
-                .withKey("log4j.properties")
-                .withName("external-configmap")
-                .withOptional(false)
-                .build())
+                .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
+                    .withKey("log4j.properties")
+                    .withName("external-configmap")
+                    .withOptional(false)
+                    .build())
             .endValueFrom()
             .build();
 
@@ -794,6 +898,18 @@ class LoggingChangeST extends AbstractST {
                 "kafka", "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --describe --entity-type broker-loggers --entity-name 0").out()
                 .contains("root=INFO"));
 
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> {
+                boolean[] correctLogging = {true};
+
+                kafkaPods.keySet().forEach(podName -> {
+                    String kafkaLog = StUtils.getLogFromPodByTime(namespaceName, podName, "kafka", "30s");
+                    correctLogging[0] = kafkaLog != null && !kafkaLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(kafkaLog).find();
+                });
+
+                return correctLogging[0];
+            });
+
         assertThat("Kafka pod should not roll", RollingUpdateUtils.componentHasRolled(namespaceName, kafkaSelector, kafkaPods), is(false));
     }
 
@@ -801,10 +917,8 @@ class LoggingChangeST extends AbstractST {
     void testDynamicallySetUnknownKafkaLogger(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
 
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
-        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
@@ -831,7 +945,6 @@ class LoggingChangeST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
 
-        String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
         InlineLogging il = new InlineLogging();
@@ -980,17 +1093,32 @@ class LoggingChangeST extends AbstractST {
         InlineLogging ilOff = new InlineLogging();
         Map<String, String> loggers = new HashMap<>();
         loggers.put("connect.root.logger.level", "OFF");
+        loggers.put("log4j.logger.org.apache.zookeeper", "OFF");
+        loggers.put("log4j.logger.org.I0Itec.zkclient", "OFF");
+        loggers.put("log4j.logger.org.reflections", "OFF");
+
         ilOff.setLoggers(loggers);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-source", 3).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-target", 3).build());
         resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
-        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, clusterName + "-target", clusterName + "-source", 1, false).build());
+        resourceManager.createResource(extensionContext,
+            KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, clusterName + "-target", clusterName + "-source", 1, false)
+                .editOrNewSpec()
+                    .withInlineLogging(ilOff)
+                .endSpec()
+                .build());
 
         String kafkaMM2PodName = kubeClient().namespace(namespaceName).listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
         String mm2LogCheckCmd = "http://localhost:8083/admin/loggers/root";
 
         Map<String, String> mm2Snapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
+
+        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> {
+                String mmLog = StUtils.getLogFromPodByTime(namespaceName, kafkaMM2PodName, "", "30s");
+                return mmLog != null && mmLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(mmLog).find();
+            });
 
         LOGGER.info("Changing rootLogger level to DEBUG with inline logging");
         InlineLogging ilDebug = new InlineLogging();
@@ -1005,6 +1133,12 @@ class LoggingChangeST extends AbstractST {
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(namespaceName).execInPod(kafkaMM2PodName, "curl", mm2LogCheckCmd).out().contains("DEBUG")
         );
+
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> {
+                String mmLog = StUtils.getLogFromPodByTime(namespaceName, kafkaMM2PodName, "", "30s");
+                return mmLog != null && !mmLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(mmLog).find();
+            });
 
         String log4jConfig =
                 "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
@@ -1048,6 +1182,12 @@ class LoggingChangeST extends AbstractST {
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(namespaceName).execInPod(kafkaMM2PodName, "curl", mm2LogCheckCmd).out().contains("OFF")
         );
+
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> {
+                String mmLog = StUtils.getLogFromPodByTime(namespaceName, kafkaMM2PodName, "", "30s");
+                return mmLog != null && !mmLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(mmLog).find();
+            });
 
         assertThat("MirrorMaker2 pod should not roll", DeploymentUtils.depSnapshot(namespaceName, KafkaMirrorMaker2Resources.deploymentName(clusterName)), equalTo(mm2Snapshot));
     }

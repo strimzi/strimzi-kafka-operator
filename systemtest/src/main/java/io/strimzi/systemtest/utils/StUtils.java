@@ -19,6 +19,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
+import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -56,8 +57,6 @@ public class StUtils {
 
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
-    private static final Pattern BETWEEN_JSON_OBJECTS_PATTERN = Pattern.compile("}[\\n\\r]+\\{");
-    private static final Pattern ALL_BEFORE_JSON_PATTERN = Pattern.compile("(.*\\s)}, \\{", Pattern.DOTALL);
     private static final BiFunction<String, ExtensionContext, Boolean> CONTAINS_ANNOTATION =
         (annotationName, extensionContext) -> Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
             annotation -> annotation.annotationType().getName()
@@ -240,12 +239,6 @@ public class StUtils {
 
     /**
      * Method for checking if JSON format logging is set for the {@code pods}
-     * Steps:
-     * 1. get log from pod
-     * 2. find every occurrence of `}\n{` which will be replaced with `}, {` - by {@link #BETWEEN_JSON_OBJECTS_PATTERN}
-     * 3. replace everything from beginning to the first proper JSON object with `{`- by {@link #ALL_BEFORE_JSON_PATTERN}
-     * 4. also add `[` to beginning and `]` to the end of String to create proper JsonArray
-     * 5. try to parse the JsonArray
      * @param namespaceName Namespace name
      * @param pods snapshot of pods to be checked
      * @param containerName name of container from which to take the log
@@ -254,33 +247,17 @@ public class StUtils {
         //this is only for decrease the number of records - kafka have record/line, operators record/11lines
         String tail = "--tail=" + (containerName.contains("operator") ? "100" : "10");
 
-        TestUtils.waitFor("for JSON log in " + pods, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+        TestUtils.waitFor("for JSON log in " + pods, Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT, () -> {
             boolean isJSON = false;
             for (String podName : pods.keySet()) {
                 String log = cmdKubeClient().namespace(namespaceName).execInCurrentNamespace(false, "logs", podName, "-c", containerName, tail).out();
 
-                // remove incomplete JSON from the end
-                int lastBracket = log.lastIndexOf("}");
-                int firstBracket = log.indexOf("{");
-                if (log.length() >= lastBracket) {
-                    log = log.substring(Math.max(0, firstBracket), lastBracket + 1);
-                }
+                JsonArray jsonArray = getJsonArrayFromLog(log);
 
-                Matcher matcher = BETWEEN_JSON_OBJECTS_PATTERN.matcher(log);
-
-                log = matcher.replaceAll("}, \\{");
-                matcher = ALL_BEFORE_JSON_PATTERN.matcher(log);
-                log = "[" + matcher.replaceFirst("{") + "]";
-
-                try {
-                    new JsonArray(log);
-                    LOGGER.info("JSON format logging successfully set for {} - {} in namespace {}", podName, containerName, namespaceName);
+                // 2 is just in case we will take some JSON that is not part of the JSON format logging
+                if (!jsonArray.isEmpty() && jsonArray.size() >= 2) {
+                    LOGGER.info("JSON format logging successfully set for pod: {}", podName);
                     isJSON = true;
-                } catch (Exception e) {
-                    LOGGER.info(log);
-                    LOGGER.info("Failed to set JSON format logging for {} - {} in namespace {}", podName, containerName, namespaceName, e);
-                    isJSON = false;
-                    break;
                 }
             }
             return isJSON;
@@ -433,5 +410,58 @@ public class StUtils {
                 .withType("kubernetes.io/dockerconfigjson")
                 .withData(Collections.singletonMap(".dockerconfigjson", pullSecret.getData().get(".dockerconfigjson")))
                 .build());
+    }
+
+    /**
+     * Parses JsonObjects from pod log, which can contains also normal (not JSON formatted) text
+     * The parses looks for occurrences of \{ and \}, saving all characters between to {@code temp}
+     * After \} is detected, JsonObject from {@code temp} is created, {@code temp} and {@code stack}
+     * are cleared.
+     * @param log - log from pod containing JSON objects/arrays
+     * @return JsonArray with objects found in {@param log}
+     */
+    private static JsonArray getJsonArrayFromLog(String log) {
+        List<Character> stack = new ArrayList<>();
+        List<JsonObject> jsonObjects = new ArrayList<>();
+        StringBuilder temp = new StringBuilder();
+
+        for (char eachChar: log.toCharArray()) {
+            if (stack.isEmpty() && eachChar == '{') {
+                stack.add(eachChar);
+                temp.append(eachChar);
+            } else if (!stack.isEmpty()) {
+                temp.append(eachChar);
+
+                if (stack.get(stack.size() - 1).equals('{') && eachChar == '}') {
+                    stack.remove(stack.size() - 1);
+
+                    if (stack.isEmpty()) {
+                        JsonObject newObject = getJsonObjectFromString(temp.toString());
+                        if (!newObject.isEmpty()) {
+                            jsonObjects.add(newObject);
+                        }
+                        temp = new StringBuilder();
+                    }
+                } else if (eachChar == '{' || eachChar == '}') {
+                    stack.add(eachChar);
+                }
+            } else if (temp.length() > 0) {
+                JsonObject newObject = getJsonObjectFromString(temp.toString());
+                if (!newObject.isEmpty()) {
+                    jsonObjects.add(newObject);
+                }
+                temp = new StringBuilder();
+            }
+        }
+
+        return new JsonArray(jsonObjects);
+    }
+
+    private static JsonObject getJsonObjectFromString(String object) {
+        try {
+            return new JsonObject(object);
+        } catch (DecodeException e) {
+            return new JsonObject("{}");
+        }
     }
 }
