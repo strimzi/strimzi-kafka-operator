@@ -63,7 +63,8 @@ public class KafkaRebalanceSpec extends Spec {
         this.skipHardGoalCheck = skipHardGoalCheck;
     }
 
-    @Description("Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. Only applies to Kafka deployments that use JBOD storage. " +
+    @Description("Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. " +
+            "Only applies to Kafka deployments that use JBOD storage with multiple disks. " +
             "When enabled, inter-broker balancing is disabled. Default is false.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public boolean isRebalanceDisk() {
