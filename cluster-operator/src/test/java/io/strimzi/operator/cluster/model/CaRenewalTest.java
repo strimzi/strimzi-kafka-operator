@@ -6,8 +6,11 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.certs.CertAndKey;
+import io.strimzi.certs.CertManager;
 import io.strimzi.certs.Subject;
+import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -30,33 +33,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class CaRenewalTest {
     @ParallelTest
     public void renewalOfStatefulSetCertificatesWithNullSecret() throws IOException {
-        Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
-            private AtomicInteger invocationCount = new AtomicInteger(0);
-
-            @Override
-            public boolean certRenewed() {
-                return false;
-            }
-
-            @Override
-            public boolean isExpiring(Secret secret, String certKey)  {
-                return false;
-            }
-
-            @Override
-            protected CertAndKey generateSignedCert(Subject subject,
-                                                    File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
-                int index = invocationCount.getAndIncrement();
-
-                return new CertAndKey(
-                        ("new-key" + index).getBytes(),
-                        ("new-cert" + index).getBytes(),
-                        ("new-truststore" + index).getBytes(),
-                        ("new-keystore" + index).getBytes(),
-                        "new-password" + index
-                );
-            }
-        };
+        Ca mockedCa = new MockedCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null);
 
         int replicas = 3;
         Function<Integer, Subject> subjectFn = i -> new Subject.Builder().build();
@@ -87,33 +64,8 @@ public class CaRenewalTest {
 
     @ParallelTest
     public void renewalOfStatefulSetCertificatesWithCaRenewal() throws IOException {
-        Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
-            private AtomicInteger invocationCount = new AtomicInteger(0);
-
-            @Override
-            public boolean certRenewed() {
-                return true;
-            }
-
-            @Override
-            public boolean isExpiring(Secret secret, String certKey)  {
-                return false;
-            }
-
-            @Override
-            protected CertAndKey generateSignedCert(Subject subject,
-                                                    File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
-                int index = invocationCount.getAndIncrement();
-
-                return new CertAndKey(
-                        ("new-key" + index).getBytes(),
-                        ("new-cert" + index).getBytes(),
-                        ("new-truststore" + index).getBytes(),
-                        ("new-keystore" + index).getBytes(),
-                        "new-password" + index
-                );
-            }
-        };
+        MockedCa mockedCa = new MockedCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null);
+        mockedCa.setCertRenewed(true);
 
         Secret initialSecret = new SecretBuilder()
                 .withNewMetadata()
@@ -163,43 +115,8 @@ public class CaRenewalTest {
 
     @ParallelTest
     public void renewalOfStatefulSetCertificatesDelayedRenewalInWindow() throws IOException {
-        Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
-            private AtomicInteger invocationCount = new AtomicInteger(0);
-
-            @Override
-            public boolean certRenewed() {
-                return false;
-            }
-
-            @Override
-            public boolean isExpiring(Secret secret, String certKey)  {
-                return true;
-            }
-
-            @Override
-            protected boolean certSubjectChanged(CertAndKey certAndKey, Subject desiredSubject, String podName)    {
-                return false;
-            }
-
-            @Override
-            public X509Certificate getAsX509Certificate(Secret secret, String key)    {
-                return null;
-            }
-
-            @Override
-            protected CertAndKey generateSignedCert(Subject subject,
-                                                    File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
-                int index = invocationCount.getAndIncrement();
-
-                return new CertAndKey(
-                        ("new-key" + index).getBytes(),
-                        ("new-cert" + index).getBytes(),
-                        ("new-truststore" + index).getBytes(),
-                        ("new-keystore" + index).getBytes(),
-                        "new-password" + index
-                );
-            }
-        };
+        MockedCa mockedCa = new MockedCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null);
+        mockedCa.setCertExpiring(true);
 
         Secret initialSecret = new SecretBuilder()
                 .withNewMetadata()
@@ -249,43 +166,8 @@ public class CaRenewalTest {
 
     @ParallelTest
     public void renewalOfStatefulSetCertificatesDelayedRenewalOutsideWindow() throws IOException {
-        Ca mockedCa = new Ca(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null) {
-            private AtomicInteger invocationCount = new AtomicInteger(0);
-
-            @Override
-            public boolean certRenewed() {
-                return false;
-            }
-
-            @Override
-            public boolean isExpiring(Secret secret, String certKey)  {
-                return true;
-            }
-
-            @Override
-            protected boolean certSubjectChanged(CertAndKey certAndKey, Subject desiredSubject, String podName)    {
-                return false;
-            }
-
-            @Override
-            public X509Certificate getAsX509Certificate(Secret secret, String key)    {
-                return null;
-            }
-
-            @Override
-            protected CertAndKey generateSignedCert(Subject subject,
-                                                    File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
-                int index = invocationCount.getAndIncrement();
-
-                return new CertAndKey(
-                        ("new-key" + index).getBytes(),
-                        ("new-cert" + index).getBytes(),
-                        ("new-truststore" + index).getBytes(),
-                        ("new-keystore" + index).getBytes(),
-                        "new-password" + index
-                );
-            }
-        };
+        MockedCa mockedCa = new MockedCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null);
+        mockedCa.setCertExpiring(true);
 
         Secret initialSecret = new SecretBuilder()
                 .withNewMetadata()
@@ -331,5 +213,67 @@ public class CaRenewalTest {
         assertThat(new String(newCerts.get("pod2").key()), is("old-key"));
         assertThat(new String(newCerts.get("pod2").keyStore()), is("old-keystore"));
         assertThat(newCerts.get("pod2").storePassword(), is("old-password"));
+    }
+
+    public class MockedCa extends Ca {
+        private boolean isCertRenewed;
+        private boolean isCertExpiring;
+        private AtomicInteger invocationCount = new AtomicInteger(0);
+
+        public MockedCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String commonName, String caCertSecretName, Secret caCertSecret, String caKeySecretName, Secret caKeySecret, int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
+            super(reconciliation, certManager, passwordGenerator, commonName, caCertSecretName, caCertSecret, caKeySecretName, caKeySecret, validityDays, renewalDays, generateCa, policy);
+        }
+
+        @Override
+        public boolean certRenewed() {
+            return isCertRenewed;
+        }
+
+        @Override
+        public boolean isExpiring(Secret secret, String certKey)  {
+            return isCertExpiring;
+        }
+
+        @Override
+        protected boolean certSubjectChanged(CertAndKey certAndKey, Subject desiredSubject, String podName)    {
+            return false;
+        }
+
+        @Override
+        public X509Certificate getAsX509Certificate(Secret secret, String key)    {
+            return null;
+        }
+
+        @Override
+        protected CertAndKey generateSignedCert(Subject subject,
+                                                File csrFile, File keyFile, File certFile, File keyStoreFile) throws IOException {
+            int index = invocationCount.getAndIncrement();
+
+            return new CertAndKey(
+                    ("new-key" + index).getBytes(),
+                    ("new-cert" + index).getBytes(),
+                    ("new-truststore" + index).getBytes(),
+                    ("new-keystore" + index).getBytes(),
+                    "new-password" + index
+            );
+        }
+
+        @Override
+        protected boolean hasCaCertGenerationChanged() {
+            return false;
+        }
+
+        @Override
+        protected String caCertGenerationAnnotation() {
+            return null;
+        }
+
+        public void setCertRenewed(boolean certRenewed) {
+            isCertRenewed = certRenewed;
+        }
+
+        public void setCertExpiring(boolean certExpiring) {
+            isCertExpiring = certExpiring;
+        }
     }
 }

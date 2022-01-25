@@ -43,6 +43,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -412,7 +413,7 @@ public abstract class Ca {
         for (int i = replicasInSecret; i < replicas; i++) {
             String podName = podNameFn.apply(i);
 
-            LOGGER.debugCr(reconciliation, "Certificate for {} to generate", podName);
+            LOGGER.debugCr(reconciliation, "Certificate for pod {} to generate", podName);
             CertAndKey k = generateSignedCert(subjectFn.apply(i),
                     brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
             certs.put(podName, k);
@@ -508,11 +509,12 @@ public abstract class Ca {
         X509Certificate currentCert = cert(caCertSecret, CA_CRT);
         Map<String, String> certData;
         Map<String, String> keyData;
-        int caCertGeneration = caCertSecret != null ? Annotations.intAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION) : INIT_GENERATION;
-        int caKeyGeneration = caKeySecret != null ? Annotations.intAnnotation(caKeySecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION) : INIT_GENERATION;
+        int caCertGeneration = certGeneration();
+        int caKeyGeneration = keyGeneration();
         if (!generateCa) {
             certData = caCertSecret != null ? caCertSecret.getData() : emptyMap();
             keyData = caKeySecret != null ? singletonMap(CA_KEY, caKeySecret.getData().get(CA_KEY)) : emptyMap();
+            renewalType = hasCaCertGenerationChanged() ? RenewalType.REPLACE_KEY : RenewalType.NOOP;
             caCertsRemoved = false;
         } else {
             this.renewalType = shouldCreateOrRenew(currentCert, namespace, clusterName, maintenanceWindowSatisfied);
@@ -755,6 +757,20 @@ public abstract class Ca {
 
     public boolean keyCreated() {
         return renewalType.equals(RenewalType.CREATE);
+    }
+
+    /**
+     * @return the generation of the current CA certificate
+     */
+    public int certGeneration() {
+        return caCertSecret != null ? Annotations.intAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION) : INIT_GENERATION;
+    }
+
+    /**
+     * @return the generation of the current CA key
+     */
+    public int keyGeneration() {
+        return caKeySecret != null ? Annotations.intAnnotation(caKeySecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION) : INIT_GENERATION;
     }
 
     private int removeExpiredCerts(Map<String, String> newData) {
@@ -1003,5 +1019,38 @@ public abstract class Ca {
         } catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * @return the name of the annotation bringing the generation of the specific CA certificate type (cluster or clients)
+     *         on the Secrets containing certificates signed by that CA (i.e ZooKeeper nodes, Kafka brokers, ...)
+     */
+    protected abstract String caCertGenerationAnnotation();
+
+    /**
+     * @return if the current (cluster or clients) CA certificate generation is changed compared to the the one
+     *         brought on Secrets containing certificates signed by that CA (i.e ZooKeeper nodes, Kafka brokers, ...)
+     */
+    protected abstract boolean hasCaCertGenerationChanged();
+
+    /**
+     * It checks if the current (cluster or clients) CA certificate generation is changed compared to the one
+     * brought by the corresponding annotation on the provided Secret (i.e ZooKeeper nodes, Kafka brokers, ...)
+     *
+     * @param secret Secret containing certificates signed by the current (clients or cluster) CA
+     * @return if the current (cluster or clients) CA certificate generation is changed compared to the one
+     *         brought by the corresponding annotation on the provided Secret
+     */
+    protected boolean hasCaCertGenerationChanged(Secret secret) {
+        if (secret != null) {
+            String caCertGenerationAnno = Optional.ofNullable(secret.getMetadata().getAnnotations())
+                    .map(annotations -> annotations.get(caCertGenerationAnnotation()))
+                    .orElse(null);
+            int currentCaCertGeneration = certGeneration();
+            LOGGER.debugOp("Secret {}/{} generation anno = {}, current CA generation = {}",
+                    secret.getMetadata().getNamespace(), secret.getMetadata().getName(), caCertGenerationAnno, currentCaCertGeneration);
+            return caCertGenerationAnno != null && Integer.parseInt(caCertGenerationAnno) != currentCaCertGeneration;
+        }
+        return false;
     }
 }

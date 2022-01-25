@@ -1336,7 +1336,7 @@ public class KafkaAssemblyOperatorTest {
             invocation -> new ArrayList<>(asList(
                     barClientsCa.caKeySecret(),
                     barClientsCa.caCertSecret(),
-                    barCluster.generateBrokersSecret(),
+                    barCluster.generateBrokersSecret(barClusterCa, barClientsCa),
                     barClusterCa.caCertSecret()))
         );
         when(mockSecretOps.get(eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())))).thenReturn(barSecrets.get(0));
@@ -1421,7 +1421,7 @@ public class KafkaAssemblyOperatorTest {
             invocation -> new ArrayList<>(asList(
                     barClientsCa.caKeySecret(),
                     barClientsCa.caCertSecret(),
-                    barCluster.generateBrokersSecret(),
+                    barCluster.generateBrokersSecret(barClusterCa, barClientsCa),
                     barClusterCa.caCertSecret()))
         );
 
