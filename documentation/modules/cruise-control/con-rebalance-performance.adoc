@@ -91,7 +91,7 @@ For the server setting, use a comma separated string with the fully qualified na
 .2+| `BaseReplicaMovementStrategy`
 | `replicaMovementStrategies`
 
-| `rebalanceDisk`   .1+|  Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. Only applies to Kafka deployments that use JBOD storage.               .1+| false
+| `rebalanceDisk`   .1+|  Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. Only applies to Kafka deployments that use JBOD storage with multiple disks.               .1+| false
 |============================================================================================================================
 
 Changing the default settings affects the length of time that the rebalance takes to complete, as well as the load placed on the Kafka cluster during the rebalance. 
