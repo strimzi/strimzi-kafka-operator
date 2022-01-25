@@ -55,12 +55,12 @@ For example `ca-2018-09-27T17-32-00Z.crt`.
 [source,shell,subs="+quotes"]
 mv ca.crt ca-$(date -u -d"$(openssl x509 -enddate -noout -in ca.crt | sed 's/.*=//')" +'%Y-%m-%dT%H-%M-%SZ').crt
 +
-If you are using a different key to generate a new certificate, retain the current CA certificate.
+If you are using a different key to generate a new certificate, retain the current CA certificate by storing it in the Secret as described above.
 The CN (Common Name) of the new CA certificate must also be different from the current one.
 For example, when the Cluster Operator renews certificates automatically it adds a _v<version_number>_ suffix to identify a version.
-Do the same with your own certificates.
-If you are using the same key for generate a new CA certificate, don't retain the old one in the secret.
-Otherwise, the underlying trusting system with fail.
+Do the same with your own CA certificate by adding a different suffix on each renewal.
+If you are using the same key for generate a new CA certificate, don't retain the old one in the Secret.
+Otherwise, the underlying trusting system will fail because it finds two valid CA certificates signed with the same key.
 
 . Copy your new CA certificate into the directory, naming it `ca.crt`:
 +
@@ -124,3 +124,5 @@ kubectl annotate secret _CA-KEY-SECRET_ strimzi.io/ca-key-generation=_CA-KEY-GEN
 When Strimzi generates certificates, the certificate generation annotation is automatically incremented by the Cluster Operator.
 For manual renewal of your own CA certificates, set the annotations with a higher incremental value. For example, change `strimzi.io/ca-cert-generation=1` to `strimzi.io/ca-cert-generation=2`.
 The annotations need a value higher than the ones from the current secret so the Cluster Operator can roll the pods and update the certificates.
+The `strimzi.io/ca-cert-generation` has to be incremented on each CA certificate renewal.
+The `strimzi.io/ca-key-generation` has to be incremented only if you are using a different key for generating the new CA certificate.
