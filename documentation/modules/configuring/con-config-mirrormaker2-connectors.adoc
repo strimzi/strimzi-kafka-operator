@@ -1,0 +1,136 @@
+// Module included in the following assemblies:
+//
+// assembly-config-mirrormaker2.adoc
+
+[id='con-config-mirrormaker2-connectors-{context}']
+= Connector configuration
+
+[role="_abstract"]
+Use Mirrormaker 2.0 connector configuration for the internal connectors that orchestrate the synchronization of data between Kafka clusters.
+
+.MirrorMaker 2.0 connector configuration properties
+[cols="4a,2,2,2",options="header"]
+|===
+
+|Property
+|sourceConnector
+|checkpointConnector
+|heartbeatConnector
+
+
+|admin.timeout.ms:: Timeout for admin tasks, such as detecting new topics. Default is `60000` (1 minute).
+|✓
+|✓
+|✓
+
+|consumer.poll.timeout.ms:: Timeout when polling the source cluster. Default is `1000` (1 second).
+|✓
+|✓
+|
+
+|offset-syncs.topic.location:: The location of the `offset-syncs` topic. Default is the _source_ cluster.
+|✓
+|✓
+|
+
+|replication.policy.separator:: The separator used for topic naming in the target cluster. Default is `.` (dot).
+|✓
+|✓
+|
+
+|config.properties.exclude:: Topic configuration properties that should not be replicated. Supports comma-separated property names and regular expressions.
+|✓
+|
+|
+
+|offset.lag.max:: Maximum allowable (out-of-sync) lag time before a remote partition is synchronized. Default is `100` (0.1 second).
+|✓
+|
+|
+
+|offset-syncs.topic.replication.factor:: Replication factor for the internal `offset-syncs` topic. Default is `3`.
+|✓
+|
+|
+
+|refresh.topics.enabled:: Enables check for new topics and partitions. Default is `true`.
+|✓
+|
+|
+
+|refresh.topics.interval.seconds:: Frequency of topic refresh. Default is `600` (10 minutes).
+|✓
+|
+|
+
+|sync.topic.acls.enabled:: Enables synchronization of ACLs from the source cluster. Default is `true`.
+|✓
+|
+|
+
+|sync.topic.acls.interval.seconds:: Frequency of ACL synchronization. Default is `600` (10 minutes).
+|✓
+|
+|
+
+|sync.topic.configs.enabled:: Enables synchronization of topic configuration from the source cluster. Default is `true`.
+|✓
+|
+|
+
+|sync.topic.configs.interval.seconds:: Frequency of topic configuration synchronization. Default `600` (10 minutes).
+|✓
+|
+|
+
+|checkpoints.topic.replication.factor:: Replication factor for the internal `checkpoints` topic. Default is `3`.
+|
+|✓
+|
+
+|emit.checkpoints.enabled:: Enables synchronization of consumer offsets to the target cluster. Default is `true`.
+|
+|✓
+|
+
+|emit.checkpoints.interval.seconds:: Frequency of consumer offset synchronization. Default is `60` (1 minute).
+|
+|✓
+|
+
+|refresh.groups.enabled:: Enables check for new consumer groups. Default is `true`.
+|
+|✓
+|
+
+|refresh.groups.interval.seconds:: Frequency of consumer group refresh. Default is `600` (10 minutes).
+|
+|✓
+|
+
+|sync.group.offsets.enabled:: Enables synchronization of consumer group offsets to the target cluster `__consumer_offsets` topic. Default is `false`.
+|
+|✓
+|
+
+|sync.group.offsets.interval.seconds:: Frequency of consumer group offset synchronization. Default is `60` (1 minute).
+|
+|✓
+|
+
+|emit.heartbeats.enabled:: Enables connectivity checks on the target cluster. Default is `true`.
+|
+|
+|✓
+
+|emit.heartbeats.interval.seconds:: Frequency of connectivity checks. Default is `1` (1 second).
+|
+|
+|✓
+
+|heartbeats.topic.replication.factor:: Replication factor for the internal `heartbeats` topic. Default is `3`.
+|
+|
+|✓
+
+|===
