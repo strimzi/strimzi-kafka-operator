@@ -2111,7 +2111,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 String bootstrapAddress = getInternalServiceHostname(ListenersUtils.backwardsCompatibleBootstrapServiceName(name, listener), useServiceDnsDomain);
 
                 ListenerStatus ls = new ListenerStatusBuilder()
-                        .withType(listener.getName())
+                        .withName(listener.getName())
                         .withAddresses(new ListenerAddressBuilder()
                                 .withHost(bootstrapAddress)
                                 .withPort(listener.getPort())
@@ -2233,7 +2233,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     return CompositeFuture.join(perPodFutures);
                 }).compose(res -> {
                     ListenerStatus ls = new ListenerStatusBuilder()
-                        .withType(listener.getName())
+                        .withName(listener.getName())
                         .withAddresses(bootstrapListenerAddressList.stream()
                                 .map(listenerAddress -> new ListenerAddressBuilder().withHost(listenerAddress)
                                         .withPort(listener.getPort())
@@ -2399,7 +2399,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 }
 
                                 ListenerStatus ls = new ListenerStatusBuilder()
-                                        .withType(listener.getName())
+                                        .withName(listener.getName())
                                         .withAddresses(new ArrayList<>(statusAddresses))
                                         .build();
                                 addListenerStatus(ls);
@@ -2438,7 +2438,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             kafkaBootstrapDnsName.add(bootstrapAddress);
 
                             ListenerStatus ls = new ListenerStatusBuilder()
-                                    .withType(listener.getName())
+                                    .withName(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
                                             .withPort(kafkaCluster.getRoutePort())
@@ -2523,7 +2523,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             kafkaBootstrapDnsName.add(bootstrapAddress);
 
                             ListenerStatus ls = new ListenerStatusBuilder()
-                                    .withType(listener.getName())
+                                    .withName(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
                                             .withPort(kafkaCluster.getRoutePort())
@@ -2601,7 +2601,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             kafkaBootstrapDnsName.add(bootstrapAddress);
 
                             ListenerStatus ls = new ListenerStatusBuilder()
-                                    .withType(listener.getName())
+                                    .withName(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
                                             .withPort(kafkaCluster.getRoutePort())
@@ -4150,7 +4150,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             List<ListenerStatus> listeners = kafkaStatus.getListeners();
 
             if (listeners != null) {
-                ListenerStatus listener = listeners.stream().filter(listenerType -> type.equals(listenerType.getType())).findFirst().orElse(null);
+                ListenerStatus listener = listeners.stream().filter(listenerType -> type.equals(listenerType.getName())).findFirst().orElse(null);
 
                 if (listener != null) {
                     listener.setCertificates(singletonList(certificate));

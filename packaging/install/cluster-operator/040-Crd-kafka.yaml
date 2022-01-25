@@ -6975,8 +6975,10 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: 'The type of the listener. Can be one of the following
-                        three types: `plain`, `tls`, and `external`.'
+                      description: The name of the listener.
+                    name:
+                      type: string
+                      description: The name of the listener.
                     addresses:
                       type: array
                       items:

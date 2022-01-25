@@ -6,6 +6,10 @@
 * Update Open Policy Agent authorizer to 1.4.0 and add support for enabling metrics 
 * Added the option `createBootstrapService` in the Kafka Spec to disable the creation of the bootstrap service for the Load Balancer Type Listener. It will save the cost of one load balancer resource, specially in the public cloud.
 
+### Changes, deprecations and removals
+
+* The `type` field in `ListenerStatus` has been deprecated and will be removed in the future.
+
 ## 0.27.0
 
 * Multi-arch container images with support for x86_64 / AMD64 and AArch64 / ARM64 platforms

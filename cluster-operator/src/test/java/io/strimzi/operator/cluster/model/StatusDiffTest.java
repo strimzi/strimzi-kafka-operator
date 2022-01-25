@@ -27,7 +27,7 @@ public class StatusDiffTest {
     @ParallelTest
     public void testStatusDiff()    {
         ListenerStatus ls1 = new ListenerStatusBuilder()
-                .withType("plain")
+                .withName("plain")
                 .withAddresses(new ListenerAddressBuilder()
                         .withHost("my-service.my-namespace.svc")
                         .withPort(9092)
@@ -35,7 +35,7 @@ public class StatusDiffTest {
                 .build();
 
         ListenerStatus ls2 = new ListenerStatusBuilder()
-                .withType("tls")
+                .withName("tls")
                 .withAddresses(new ListenerAddressBuilder()
                         .withHost("my-service.my-namespace.svc")
                         .withPort(9093)
@@ -43,7 +43,7 @@ public class StatusDiffTest {
                 .build();
 
         ListenerStatus ls3 = new ListenerStatusBuilder()
-                .withType("tls")
+                .withName("tls")
                 .withAddresses(new ListenerAddressBuilder()
                         .withHost("my-service.my-namespace.svc")
                         .withPort(9094)
@@ -114,7 +114,7 @@ public class StatusDiffTest {
     @ParallelTest
     public void testTimestampDiff() throws ParseException {
         ListenerStatus ls1 = new ListenerStatusBuilder()
-                .withType("plain")
+                .withName("plain")
                 .withAddresses(new ListenerAddressBuilder()
                         .withHost("my-service.my-namespace.svc")
                         .withPort(9092)
@@ -122,7 +122,7 @@ public class StatusDiffTest {
                 .build();
 
         ListenerStatus ls2 = new ListenerStatusBuilder()
-                .withType("tls")
+                .withName("tls")
                 .withAddresses(new ListenerAddressBuilder()
                         .withHost("my-service.my-namespace.svc")
                         .withPort(9093)

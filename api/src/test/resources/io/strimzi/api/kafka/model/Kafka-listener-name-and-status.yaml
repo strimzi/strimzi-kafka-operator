@@ -1,0 +1,38 @@
+---
+kind: "Kafka"
+metadata:
+  generation: 2
+  name: "my-cluster"
+  namespace: "my-namespace"
+spec:
+  kafka:
+    replicas: 3
+    listeners:
+    - name: "plain"
+      port: 9092
+      type: "internal"
+      tls: false
+    storage:
+      type: "ephemeral"
+  zookeeper:
+    replicas: 3
+    storage:
+      type: "ephemeral"
+status:
+  conditions:
+  - type: "Ready"
+    status: "True"
+  observedGeneration: 1
+  listeners:
+  - type: "plain"
+    name: "plain"
+    addresses:
+    - host: "my-service.my-namespace.svc"
+      port: 9092
+    bootstrapServers: "my-service.my-namespace.svc:9092"
+  - type: "external"
+    name: "external"
+    addresses:
+    - host: "my-route-address.domain.tld"
+      port: 443
+    bootstrapServers: "my-route-address.domain.tld:443"

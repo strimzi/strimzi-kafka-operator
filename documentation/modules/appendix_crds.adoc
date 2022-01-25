@@ -1540,7 +1540,9 @@ Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
 [options="header"]
 |====
 |Property                 |Description
-|type              1.2+<.<a|The type of the listener. Can be one of the following three types: `plain`, `tls`, and `external`.
+|type              1.2+<.<a|*The `type` property has been deprecated, and should now be configured using `name`.* The name of the listener.
+|string
+|name              1.2+<.<a|The name of the listener.
 |string
 |addresses         1.2+<.<a|A list of the addresses for this listener.
 |xref:type-ListenerAddress-{context}[`ListenerAddress`] array
