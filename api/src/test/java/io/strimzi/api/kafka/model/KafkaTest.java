@@ -8,10 +8,15 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
+import io.strimzi.api.kafka.model.status.ListenerStatus;
+import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.net.URISyntaxException;
+import java.text.ParseException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -130,6 +135,75 @@ public class KafkaTest extends AbstractCrdTest<Kafka> {
 
         assertThat(listeners.get(0).getAuth().getType(), is("scram-sha-512"));
         assertThat(listeners.get(1).getAuth().getType(), is("tls"));
+    }
+
+    @Test
+    public void testListenerTypeAndNameInStatus() throws ParseException, URISyntaxException {
+
+        Kafka kafka = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster")
+                    .withNamespace("my-namespace")
+                    .withGeneration(2L)
+                .endMetadata()
+                .withNewSpec()
+                    .withNewKafka()
+                        .withReplicas(3)
+                        .withListeners(new GenericKafkaListenerBuilder()
+                            .withName("plain")
+                            .withPort(9092)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(false)
+                            .build())
+                        .withNewEphemeralStorage()
+                        .endEphemeralStorage()
+                    .endKafka()
+                    .withNewZookeeper()
+                         .withReplicas(3)
+                         .withNewEphemeralStorage()
+                         .endEphemeralStorage()
+                    .endZookeeper()
+                .endSpec()
+                .withNewStatus()
+                    .withObservedGeneration(1L)
+                    .withConditions(new ConditionBuilder()
+                            .withType("Ready")
+                            .withStatus("True")
+                            .build())
+                    .withListeners(new ListenerStatusBuilder()
+                                   .withName("plain")
+                                   .withAddresses(new ListenerAddressBuilder()
+                                           .withHost("my-service.my-namespace.svc")
+                                           .withPort(9092)
+                                           .build())
+                                   .build(),
+                        new ListenerStatusBuilder()
+                                   .withName("external")
+                                   .withAddresses(new ListenerAddressBuilder()
+                                           .withHost("my-route-address.domain.tld")
+                                           .withPort(443)
+                                           .build())
+                                   .build())
+                .endStatus()
+                .build();
+
+        String path = Objects.requireNonNull(this.getClass().getResource("Kafka-listener-name-and-status.yaml")).toURI().getPath();
+        assertThat(TestUtils.toYamlString(kafka), is(TestUtils.getFileAsString(path)));
+    }
+
+    @Test
+    public void testListenersTypeAndName()    {
+        Kafka model = TestUtils.fromYaml("Kafka-listener-name-and-status" + ".yaml", Kafka.class);
+
+        assertThat(model.getStatus().getListeners(), is(notNullValue()));
+        assertThat(model.getStatus().getListeners().size(), is(2));
+
+        List<ListenerStatus> listeners = model.getStatus().getListeners();
+
+        assertThat(listeners.get(0).getType(), is("plain"));
+        assertThat(listeners.get(1).getType(), is("external"));
+        assertThat(listeners.get(0).getName(), is("plain"));
+        assertThat(listeners.get(1).getName(), is("external"));
     }
 
     public void rt(String resourceName) {

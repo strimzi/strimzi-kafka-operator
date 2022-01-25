@@ -150,7 +150,7 @@ public class KafkaUtils {
         List<ListenerStatus> kafkaListeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getListeners();
 
         for (ListenerStatus listener : kafkaListeners) {
-            if (listener.getType().equals(listenerType))
+            if (listener.getName().equals(listenerType))
                 certs = listener.getCertificates().toString();
         }
         certs = certs.substring(1, certs.length() - 1);

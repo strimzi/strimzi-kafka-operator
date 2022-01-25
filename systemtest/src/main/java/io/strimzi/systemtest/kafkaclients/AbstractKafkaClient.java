@@ -214,7 +214,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
             return listenerStatusList.get(0).getBootstrapServers();
         }
 
-        return listenerStatusList.stream().filter(listener -> listener.getType().equals(listenerName))
+        return listenerStatusList.stream().filter(listener -> listener.getName().equals(listenerName))
             .findFirst()
             .orElseThrow(RuntimeException::new)
             .getBootstrapServers();
