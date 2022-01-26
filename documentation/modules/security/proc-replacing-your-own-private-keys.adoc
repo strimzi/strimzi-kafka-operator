@@ -17,7 +17,7 @@ The procedure describes the renewal of CA certificates in PEM format.
 
 * The Cluster Operator is running.
 * xref:installing-your-own-ca-certificates-{context}[Your own CA certificates and private keys are installed].
-* You have new cluster and clients X.509 certificates and keys in PEM format.
+* You have new cluster or clients X.509 certificates and keys in PEM format.
 
 .Procedure
 
@@ -25,6 +25,31 @@ Before going through the following steps, make sure that the CN (Common Name) of
 For example, when the Cluster Operator renews certificates automatically it adds a _v<version_number>_ suffix to identify a version.
 Do the same with your own CA certificate by adding a different suffix on each renewal.
 By using a different key to generate a new CA certificate, retain the current CA certificate stored in the `Secret`.
+
+. Pause the reconciliation of the `Kafka` custom resource.
++
+.. Annotate the custom resource in Kubernetes, setting the `pause-reconciliation` annotation to `true`:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate Kafka _NAME-OF-CUSTOM-RESOURCE_ strimzi.io/pause-reconciliation="true"
+----
++
+For example, for the a `Kafka` custom resource named `my-cluster`:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate Kafka my-cluster strimzi.io/pause-reconciliation="true"
+----
+.. Check that the status conditions of the custom resource show a change to `ReconciliationPaused`:
++
+[source,shell,subs="+quotes"]
+----
+kubectl describe Kafka _NAME-OF-CUSTOM-RESOURCE_
+----
++
+The `type` condition changes to `ReconciliationPaused` at the `lastTransitionTime`.
++
 
 . Update the corresponding `Secret` retaining the current CA certificate, adding the new CA certificate and updating the generation.
 +
@@ -79,6 +104,27 @@ For example, change `strimzi.io/ca-cert-generation=0` to `strimzi.io/ca-cert-gen
 
 .. Save changes and exit.
 +
+Following the previous example of the `Secret` related to the cluster CA certificate for a Kafka cluster named `my-cluster` with the new CA certificate, and the bumped generation.
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: v1
+kind: Secret
+data:
+  ca.crt: GCa6LS3RTHeKFiFDGBOUDYFAZ0F... <1>
+metadata:
+  annotations:
+    strimzi.io/ca-cert-generation: "1" <2>
+  labels:
+    strimzi.io/cluster: my-cluster
+    strimzi.io/kind: Kafka
+  name: my-cluster-cluster-ca-cert
+  #...
+type: Opaque
+----
+<1> The new CA certificate base64 encoded
+<2> The new CA certificate generation
++
 Save the changes to the `Secret` and exit.
 
 . Update the corresponding `Secret` with the new CA key and generation.
@@ -97,7 +143,7 @@ Following an example of the `Secret` related to the cluster key CA for a Kafka c
 apiVersion: v1
 kind: Secret
 data:
-  ca.key: LS0tLS1CRUdJTiBDRVJUSUZJQ0F... <1>
+  ca.key: SA1cKF1GFDzOIiPOIUQBHDNFGDFS... <1>
 metadata:
   annotations:
     strimzi.io/ca-key-generation: "0" <2>
@@ -111,7 +157,7 @@ type: Opaque
 <1> Current CA key base64 encoded
 <2> Current CA key generation
 
-.. Encode the new key used to sign the new CA certificate into base64.
+.. Encode the new CA key used to sign the new CA certificate into base64.
 +
 [source,shell,subs="+quotes"]
 cat _PATH-TO-NEW-KEY_ | base64
@@ -128,9 +174,51 @@ For example, change `strimzi.io/ca-key-generation=0` to `strimzi.io/ca-key-gener
 
 . Save changes and exit.
 +
+Following the previous example of the `Secret` related to the cluster CA key for a Kafka cluster named `my-cluster` with the new CA key, and the bumped generation.
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: v1
+kind: Secret
+data:
+  ca.key: AB0cKF1GFDzOIiPOIUQWERZJQ0F... <1>
+metadata:
+  annotations:
+    strimzi.io/ca-key-generation: "1" <2>
+  labels:
+    strimzi.io/cluster: my-cluster
+    strimzi.io/kind: Kafka
+  name: my-cluster-cluster-ca
+  #...
+type: Opaque
+----
+<1> The new CA key base64 encoded
+<2> The new CA key generation
++
 Save the changes to the `Secret` and exit.
+
+. Resuming from pause
++
+To resume the `Kafka` custom resource reconciliation, you can set the `pause-reconciliation` annotation to `false`.
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate Kafka _NAME-OF-CUSTOM-RESOURCE_ strimzi.io/pause-reconciliation="false"
+----
++
+You can also do the same by removing the `pause-reconciliation` annotation.
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate Kafka _NAME-OF-CUSTOM-RESOURCE_ strimzi.io/pause-reconciliation-
+----
 
 When Strimzi generates certificates, the certificate and key generation annotations are automatically incremented by the Cluster Operator.
 For manual renewal of your own CA certificates together with a new CA key, set the annotations with a higher incremental value.
 The annotations need a value higher than the ones from the current Secret so the Cluster Operator can roll the pods and update the certificates and keys.
 The `strimzi.io/ca-cert-generation` and `strimzi.io/ca-key-generation` have to be incremented on each CA certificate renewal.
+
+At the next reconciliation the Cluster Operator will start rolling ZooKeeper, Kafka and the other components to trust the new CA certificate.
+When the previous rolling is complete, the Cluster Operator will start a new one for generating new server certificates signed by the new CA key.
+
+If maintenance time windows are configured, the Cluster Operator will roll the pods at the first reconciliation within the next maintenance time window.

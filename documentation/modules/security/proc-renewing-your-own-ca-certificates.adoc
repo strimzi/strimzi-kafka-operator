@@ -17,13 +17,9 @@ The procedure describes the renewal of CA certificates in PEM format.
 
 * The Cluster Operator is running.
 * xref:installing-your-own-ca-certificates-{context}[Your own CA certificates and private keys are installed].
-* You have new cluster and clients X.509 certificates in PEM format.
+* You have new cluster or clients X.509 certificates in PEM format.
 
 .Procedure
-
-Before going through the following steps, make sure that the CN (Common Name) of the new CA certificate is different from the current one.
-For example, when the Cluster Operator renews certificates automatically it adds a _v<version_number>_ suffix to identify a version.
-Do the same with your own CA certificate by adding a different suffix on each renewal.
 
 . Update the corresponding `Secret` with the new CA certificate and generation.
 +
@@ -66,11 +62,32 @@ Copy the new CA certificate base64 encoded got from the previous step into the `
 +
 .. Increase the CA certificate generation.
 +
-Updated the `strimzi.io/ca-cert-generation` annotation with a higher incremental value.
+Update the `strimzi.io/ca-cert-generation` annotation with a higher incremental value.
 For example, change `strimzi.io/ca-cert-generation=0` to `strimzi.io/ca-cert-generation=1`.
 +
 
 . Save changes and exit.
++
+Following the previous example of the `Secret` related to the cluster CA certificate for a Kafka cluster named `my-cluster` with the new CA certificate, and the bumped generation.
++
+[source,yaml,subs=attributes+]
+----
+apiVersion: v1
+kind: Secret
+data:
+  ca.crt: GCa6LS3RTHeKFiFDGBOUDYFAZ0F... <1>
+metadata:
+  annotations:
+    strimzi.io/ca-cert-generation: "1" <2>
+  labels:
+    strimzi.io/cluster: my-cluster
+    strimzi.io/kind: Kafka
+  name: my-cluster-cluster-ca-cert
+  #...
+type: Opaque
+----
+<1> The new CA certificate base64 encoded
+<2> The new CA certificate generation
 +
 Save the changes to the `Secret` and exit.
 
