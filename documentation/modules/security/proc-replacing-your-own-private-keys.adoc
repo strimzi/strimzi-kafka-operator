@@ -83,7 +83,7 @@ type: Opaque
 .. Retain the current CA certificate.
 +
 Rename the current `ca.crt` field in the `data` section as `ca-__DATE__.crt`, where _DATE_ is the certificate expiry date in the format _YEAR-MONTH-DAYTHOUR-MINUTE-SECONDZ_.
-For example `ca-2018-09-27T17-32-00Z.crt`.
+For example `ca-2022-01-26T17-32-00Z.crt`.
 Leave the value for the field as it is to retain the current CA certificate.
 
 .. Encode your new CA certificate into base64.
@@ -99,6 +99,11 @@ Create a new `ca.crt` field in the `data` section of the `Secret` and copy the n
 +
 Updated the `strimzi.io/ca-cert-generation` annotation with a higher incremental value.
 For example, change `strimzi.io/ca-cert-generation=0` to `strimzi.io/ca-cert-generation=1`.
+
+When Strimzi generates certificates, the certificate generation annotation is automatically incremented by the Cluster Operator.
+For manual renewal of your own CA certificates, set the annotation with a higher incremental value.
+The annotation needs a value higher than the ones from the current Secret so the Cluster Operator can roll the pods and update the certificates.
+The `strimzi.io/ca-cert-generation` has to be incremented on each CA certificate renewal.
 +
 
 .. Save changes and exit.
@@ -111,9 +116,10 @@ apiVersion: v1
 kind: Secret
 data:
   ca.crt: GCa6LS3RTHeKFiFDGBOUDYFAZ0F... <1>
+  ca-2022-01-26T17-32-00Z.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0F... <2>
 metadata:
   annotations:
-    strimzi.io/ca-cert-generation: "1" <2>
+    strimzi.io/ca-cert-generation: "1" <3>
   labels:
     strimzi.io/cluster: my-cluster
     strimzi.io/kind: Kafka
@@ -122,7 +128,8 @@ metadata:
 type: Opaque
 ----
 <1> The new CA certificate base64 encoded
-<2> The new CA certificate generation
+<2> The old CA certificate base64 encoded
+<3> The new CA certificate generation
 +
 Save the changes to the `Secret` and exit.
 
@@ -169,6 +176,11 @@ Copy the new CA key base64 encoded got from the first step into the `ca.key` fie
 +
 Updated the `strimzi.io/ca-key-generation` annotation with a higher incremental value.
 For example, change `strimzi.io/ca-key-generation=0` to `strimzi.io/ca-key-generation=1`.
+
+When Strimzi generates certificates, the key generation annotation is automatically incremented by the Cluster Operator.
+For manual renewal of your own CA certificates together with a new CA key, set the annotation with a higher incremental value.
+The annotation needs a value higher than the ones from the current Secret so the Cluster Operator can roll the pods and update the certificates and keys.
+The `strimzi.io/ca-key-generation` has to be incremented on each CA certificate renewal.
 +
 
 . Save changes and exit.
@@ -211,11 +223,6 @@ You can also do the same by removing the `pause-reconciliation` annotation.
 ----
 kubectl annotate Kafka _NAME-OF-CUSTOM-RESOURCE_ strimzi.io/pause-reconciliation-
 ----
-
-When Strimzi generates certificates, the certificate and key generation annotations are automatically incremented by the Cluster Operator.
-For manual renewal of your own CA certificates together with a new CA key, set the annotations with a higher incremental value.
-The annotations need a value higher than the ones from the current Secret so the Cluster Operator can roll the pods and update the certificates and keys.
-The `strimzi.io/ca-cert-generation` and `strimzi.io/ca-key-generation` have to be incremented on each CA certificate renewal.
 
 At the next reconciliation the Cluster Operator will start rolling ZooKeeper, Kafka and the other components to trust the new CA certificate.
 When the previous rolling is complete, the Cluster Operator will start a new one for generating new server certificates signed by the new CA key.
