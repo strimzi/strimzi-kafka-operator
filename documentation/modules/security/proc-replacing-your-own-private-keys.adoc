@@ -99,6 +99,7 @@ Create a new `ca.crt` field in the `data` section of the `Secret` and copy the n
 +
 Updated the `strimzi.io/ca-cert-generation` annotation with a higher incremental value.
 For example, change `strimzi.io/ca-cert-generation=0` to `strimzi.io/ca-cert-generation=1`.
+If the `Secret` is missing the annotation, it is treated as generation `0` so add the annotation with `1` as value.
 
 When Strimzi generates certificates, the certificate generation annotation is automatically incremented by the Cluster Operator.
 For manual renewal of your own CA certificates, set the annotation with a higher incremental value.
@@ -176,6 +177,7 @@ Copy the new CA key base64 encoded got from the first step into the `ca.key` fie
 +
 Updated the `strimzi.io/ca-key-generation` annotation with a higher incremental value.
 For example, change `strimzi.io/ca-key-generation=0` to `strimzi.io/ca-key-generation=1`.
+If the `Secret` is missing the annotation, it is treated as generation `0` so add the annotation with `1` as value.
 
 When Strimzi generates certificates, the key generation annotation is automatically incremented by the Cluster Operator.
 For manual renewal of your own CA certificates together with a new CA key, set the annotation with a higher incremental value.
