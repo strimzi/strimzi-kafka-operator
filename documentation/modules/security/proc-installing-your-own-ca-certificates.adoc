@@ -157,5 +157,5 @@ spec:
 .Additional resources
 
 * To renew CA certificates you have previously installed, see xref:renewing-your-own-ca-certificates-{context}[].
-* To replace private keys of CA certificates you have previously installed, see xref:proc-replacing-your-own-private-keys-{context}[].
+* To replace the private keys of CA certificates you have previously installed, see xref:proc-replacing-your-own-private-keys-{context}[].
 * xref:proc-installing-certs-per-listener-{context}[].
