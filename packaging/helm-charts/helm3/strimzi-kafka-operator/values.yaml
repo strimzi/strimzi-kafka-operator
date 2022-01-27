@@ -26,7 +26,7 @@ tmpDirSizeLimit: 1Mi
 # Example on how to configure extraEnvs
 # extraEnvs:
 #   - name: JAVA_OPTS
-#     value: "-Xms=256m -Xmx=256m"
+#     value: "-Xms256m -Xmx256m"
 
 extraEnvs: []
 
