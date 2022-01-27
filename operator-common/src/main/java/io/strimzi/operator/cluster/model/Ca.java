@@ -763,14 +763,28 @@ public abstract class Ca {
      * @return the generation of the current CA certificate
      */
     public int certGeneration() {
-        return caCertSecret != null ? Annotations.intAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION) : INIT_GENERATION;
+        if (caCertSecret != null) {
+            if (!Annotations.hasAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION)) {
+                LOGGER.warnOp("Secret {}/{} is missing generation annotation {}",
+                        caCertSecret.getMetadata().getNamespace(), caCertSecret.getMetadata().getName(), ANNO_STRIMZI_IO_CA_CERT_GENERATION);
+            }
+            return Annotations.intAnnotation(caCertSecret, ANNO_STRIMZI_IO_CA_CERT_GENERATION, INIT_GENERATION);
+        }
+        return INIT_GENERATION;
     }
 
     /**
      * @return the generation of the current CA key
      */
     public int keyGeneration() {
-        return caKeySecret != null ? Annotations.intAnnotation(caKeySecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION) : INIT_GENERATION;
+        if (caKeySecret != null) {
+            if (!Annotations.hasAnnotation(caKeySecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION)) {
+                LOGGER.warnOp("Secret {}/{} is missing generation annotation {}",
+                        caKeySecret.getMetadata().getNamespace(), caKeySecret.getMetadata().getName(), ANNO_STRIMZI_IO_CA_KEY_GENERATION);
+            }
+            return Annotations.intAnnotation(caKeySecret, ANNO_STRIMZI_IO_CA_KEY_GENERATION, INIT_GENERATION);
+        }
+        return INIT_GENERATION;
     }
 
     private int removeExpiredCerts(Map<String, String> newData) {
