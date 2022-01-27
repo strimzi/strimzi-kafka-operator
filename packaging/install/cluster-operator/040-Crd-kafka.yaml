@@ -6975,7 +6975,8 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: The name of the listener.
+                      description: '*The `type` property has been deprecated, and
+                        should now be configured using `name`.* The name of the listener.'
                     name:
                       type: string
                       description: The name of the listener.
