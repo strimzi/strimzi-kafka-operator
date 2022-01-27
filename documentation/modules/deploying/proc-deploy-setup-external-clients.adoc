@@ -134,7 +134,7 @@ A service is also created as the _external bootstrap address_ for external conne
 +
 The cluster CA certificate to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
 +
-NOTE: Updates to listener configuration will trigger a rolling update of your Kafka cluster.
+NOTE: If you scale your Kafka cluster while using external listeners, it might trigger a rolling update of all Kafka brokers. This depends on the configuration.
 
 . Find the bootstrap address and port from the status of the `Kafka` resource.
 +
