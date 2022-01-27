@@ -104,7 +104,7 @@
         <fasterxml.jackson-databind.version>2.11.3</fasterxml.jackson-databind.version>
         <fasterxml.jackson-dataformat.version>2.10.5</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.11.3</fasterxml.jackson-annotations.version>
-        <kafka.version>3.0.0</kafka.version>
+        <kafka.version>3.1.0</kafka.version>
         <!-- keep in-sync with dataformat-yaml -->
         <json-path.version>4.1.1</json-path.version>
         <zkclient.version>0.11</zkclient.version>

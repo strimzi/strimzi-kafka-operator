@@ -194,7 +194,7 @@ class KafkaAvailability {
 
     protected Future<Collection<TopicDescription>> describeTopics(Set<String> names) {
         Promise<Collection<TopicDescription>> descPromise = Promise.promise();
-        ac.describeTopics(names).all()
+        ac.describeTopics(names).allTopicNames()
                 .whenComplete((tds, error) -> {
                     if (error != null) {
                         descPromise.fail(error);

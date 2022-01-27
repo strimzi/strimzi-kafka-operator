@@ -110,6 +110,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -609,7 +610,7 @@ public class ResourceUtils {
                 } catch (ReflectiveOperationException e) {
                     throw new RuntimeException(e);
                 }
-                when(mock.describeTopics(any())).thenReturn(dtr);
+                when(mock.describeTopics(any(Collection.class))).thenReturn(dtr);
 
                 DescribeConfigsResult dcfr;
                 try {

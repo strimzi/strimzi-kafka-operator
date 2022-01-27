@@ -143,7 +143,7 @@ public class KafkaStreamsTopicStoreService {
     private CompletionStage<Void> validateExistingStoreTopic(String storeTopic, Admin admin, Context c) {
         LOGGER.info("Validating existing store topic: {}", storeTopic);
         ConfigResource storeTopicConfigResource = new ConfigResource(ConfigResource.Type.TOPIC, storeTopic);
-        return toCS(admin.describeTopics(Collections.singleton(storeTopic)).values().get(storeTopic))
+        return toCS(admin.describeTopics(Collections.singleton(storeTopic)).topicNameValues().get(storeTopic))
             .thenApply(td -> c.setRf(td.partitions().stream().map(tp -> tp.replicas().size()).min(Integer::compare).orElseThrow()))
             .thenCompose(c2 -> toCS(admin.describeConfigs(Collections.singleton(storeTopicConfigResource)).values().get(storeTopicConfigResource))
                     .thenApply(cr -> c2.setMinISR(parseInt(cr.get(TopicConfig.MIN_IN_SYNC_REPLICAS_CONFIG).value()))))

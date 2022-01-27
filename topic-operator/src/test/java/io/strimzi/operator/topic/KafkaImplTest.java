@@ -123,7 +123,7 @@ public class KafkaImplTest {
 
     private void mockDescribeTopics(Admin admin, Map<String, Either<TopicDescription, Exception>> result) {
         DescribeTopicsResult describeTopicsResult = mock(DescribeTopicsResult.class);
-        when(describeTopicsResult.values()).thenReturn(result.entrySet().stream().collect(toMap(
+        when(describeTopicsResult.topicNameValues()).thenReturn(result.entrySet().stream().collect(toMap(
             Map.Entry::getKey,
             entry1 -> {
                 KafkaFutureImpl<TopicDescription> kafkaFuture1 = new KafkaFutureImpl<>();
@@ -138,9 +138,9 @@ public class KafkaImplTest {
         if (first.isPresent()) {
             KafkaFutureImpl<Map<String, TopicDescription>> kafkaFuture = new KafkaFutureImpl<>();
             kafkaFuture.completeExceptionally(first.get().right());
-            when(describeTopicsResult.all()).thenReturn(kafkaFuture);
+            when(describeTopicsResult.allTopicNames()).thenReturn(kafkaFuture);
         } else {
-            when(describeTopicsResult.all()).thenReturn(KafkaFuture.completedFuture(
+            when(describeTopicsResult.allTopicNames()).thenReturn(KafkaFuture.completedFuture(
                 result.entrySet().stream().collect(toMap(
                     Map.Entry::getKey,
                     entry -> entry.getValue().left()))

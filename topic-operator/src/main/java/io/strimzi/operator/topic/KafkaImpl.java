@@ -110,7 +110,7 @@ public class KafkaImpl implements Kafka {
         return topicExists(reconciliation, topicName).compose(exists -> {
             if (exists) {
                 Future<TopicDescription> topicDescriptionFuture = mapFuture(adminClient.describeTopics(
-                        singleton(topicName.toString())).values().get(topicName.toString()));
+                        singleton(topicName.toString())).topicNameValues().get(topicName.toString()));
                 Future<Config> configFuture = mapFuture(adminClient.describeConfigs(
                         singleton(resource)).values().get(resource));
                 return CompositeFuture.all(topicDescriptionFuture, configFuture)
