@@ -8,7 +8,15 @@ set +x
 # $3: Public key to be imported
 # $4: Alias of the certificate
 function create_truststore {
-   keytool -keystore "$1" -storepass "$2" -noprompt -alias "$4" -import -file "$3" -storetype PKCS12
+    # Disable FIPS if needed
+    if [ "$FIPS_MODE" = "disabled" ]; then
+        KEYTOOL_OPTS="${KEYTOOL_OPTS} -J-Dcom.redhat.fips=false"
+    else
+        KEYTOOL_OPTS=""
+    fi
+
+    # shellcheck disable=SC2086
+    keytool ${KEYTOOL_OPTS} -keystore "$1" -storepass "$2" -noprompt -alias "$4" -import -file "$3" -storetype PKCS12
 }
 
 # Parameters:
@@ -16,10 +24,9 @@ function create_truststore {
 # $2: Truststore password
 # $3: Public key to be imported
 # $4: Private key to be imported
-# $5: CA public key to be imported
-# $6: Alias of the certificate
-function create_keystore {
-   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -name topic-operator -password pass:"$2" -out "$1"
+# $5: Alias of the certificate
+function create_keystore_without_ca_file {
+   RANDFILE=/tmp/.rnd openssl pkcs12 -export -in "$3" -inkey "$4" -name "$5" -password pass:"$2" -out "$1"
 }
 
 if [ "$STRIMZI_PUBLIC_CA" != "true" ]; then
@@ -38,7 +45,7 @@ if [ "$STRIMZI_TLS_AUTH_ENABLED" != "false" ]; then
   echo "Preparing key store certificates for internal communication"
   STORE=/tmp/topic-operator/replication.keystore.p12
   rm -f "$STORE"
-  create_keystore "$STORE" "$CERTS_STORE_PASSWORD" \
+  create_keystore_without_ca_file "$STORE" "$CERTS_STORE_PASSWORD" \
       /etc/eto-certs/entity-operator.crt \
       /etc/eto-certs/entity-operator.key \
       /etc/tls-sidecar/cluster-ca-certs/ca.crt \

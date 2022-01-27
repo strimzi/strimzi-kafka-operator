@@ -14,3 +14,5 @@ For information on deploying the Cluster Operator, see link:{BookURLDeploying}#c
 include::../../modules/operators/ref-operator-cluster.adoc[leveloffset=+1]
 //Passing proxy configuration variables from Cluster Operator
 include::../../modules/operators/proc-configuring-proxy-config-cluster-operator.adoc[leveloffset=+1]
+// Configuring FIPS mode from Cluster Operator
+include::../../modules/operators/proc-configuring-fips-mode-cluster-operator.adoc[leveloffset=+1]

@@ -50,6 +50,11 @@ ssl.truststore.password=${CERTS_STORE_PASSWORD}"
   ./kafka_tls_prepare_certificates.sh "${USER}"
 fi
 
+# Disable FIPS if needed
+if [ "$FIPS_MODE" = "disabled" ]; then
+    KAFKA_OPTS="${KAFKA_OPTS} -Dcom.redhat.fips=false"
+fi
+
 PROPERTIES_FILE="/tmp/${USER}.properties"
 echo $PROPERTIES_FILE
 

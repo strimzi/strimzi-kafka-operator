@@ -23,6 +23,11 @@ if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
     export KAFKA_OPTS="${KAFKA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
 fi
 
+# Disable FIPS if needed
+if [ "$FIPS_MODE" = "disabled" ]; then
+    export KAFKA_OPTS="${KAFKA_OPTS} -Dcom.redhat.fips=false"
+fi
+
 # enabling Prometheus JMX exporter as Java agent
 if [ "$KAFKA_METRICS_ENABLED" = "true" ]; then
   KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/jmx_prometheus_javaagent*.jar)=9404:$KAFKA_HOME/custom-config/metrics-config.json"
