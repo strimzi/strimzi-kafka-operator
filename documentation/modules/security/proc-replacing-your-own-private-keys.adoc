@@ -25,7 +25,7 @@ By using a different key to generate a new CA certificate, you retain the curren
 
 * The Cluster Operator is running.
 * xref:installing-your-own-ca-certificates-{context}[Your own CA certificates and private keys are installed].
-* You have new cluster or client X.509 certificates and keys in PEM format.
+* You have new cluster or clients X.509 certificates and keys in PEM format.
 
 .Procedure
 
@@ -103,7 +103,7 @@ Create a new `ca.crt` property under `data` and copy the base64-encoded CA certi
 +
 Update the `strimzi.io/ca-cert-generation` annotation with a higher incremental value.
 For example, change `strimzi.io/ca-cert-generation=0` to `strimzi.io/ca-cert-generation=1`.
-If the `Secret` is missing the annotation, the value is treated as `0`, so change the value to `1`.
+If the `Secret` is missing the annotation, the value is treated as `0`, so add the annotation with a value of `1`.
 +
 When Strimzi generates certificates, the certificate generation annotation is automatically incremented by the Cluster Operator.
 For manual renewal of your own CA certificates, set the annotations with a higher incremental value.
@@ -136,7 +136,7 @@ type: Opaque
 
 . Update the `Secret` for the CA key used to sign your new CA certificate.
 +
-.. Edit the existing secret to add the new CA key and update the certificate generation annotation value.
+.. Edit the existing secret to add the new CA key and update the key generation annotation value.
 +
 [source,shell,subs="+quotes"]
 kubectl edit secret _<ca_key_name>_
@@ -178,14 +178,14 @@ Copy the base64-encoded CA key from the previous step as the value for the `ca.k
 +
 Update the `strimzi.io/ca-key-generation` annotation with a higher incremental value.
 For example, change `strimzi.io/ca-key-generation=0` to `strimzi.io/ca-key-generation=1`.
-If the `Secret` is missing the annotation, it is treated as `0`, so change the value to `1`.
+If the `Secret` is missing the annotation, it is treated as `0`, so add the annotation with a value of `1`.
 +
 When Strimzi generates certificates, the key generation annotation is automatically incremented by the Cluster Operator.
 For manual renewal of your own CA certificates together with a new CA key, set the annotation with a higher incremental value.
 The annotation needs a higher value than the one from the current secret so that the Cluster Operator can roll the pods and update the certificates and keys.
 The `strimzi.io/ca-key-generation` has to be incremented on each CA certificate renewal.
 
-. Save the secret with the new CA key and certificate generation annotation value.
+. Save the secret with the new CA key and key generation annotation value.
 +
 .Example secret configuration updated with a new CA key
 [source,yaml,subs=attributes+]

@@ -20,7 +20,7 @@ The procedure describes the renewal of CA certificates in PEM format.
 
 * The Cluster Operator is running.
 * xref:installing-your-own-ca-certificates-{context}[Your own CA certificates and private keys are installed].
-* You have new cluster or client X.509 certificates in PEM format.
+* You have new cluster or clients X.509 certificates in PEM format.
 
 .Procedure
 
@@ -68,7 +68,7 @@ Copy the base64-encoded CA certificate from the previous step as the value for t
 +
 Update the `strimzi.io/ca-cert-generation` annotation with a higher incremental value.
 For example, change `strimzi.io/ca-cert-generation=0` to `strimzi.io/ca-cert-generation=1`.
-If the `Secret` is missing the annotation, the value is treated as `0`, so change the value to `1`.
+If the `Secret` is missing the annotation, the value is treated as `0`, so add the annotation with a value of `1`.
 +
 When Strimzi generates certificates, the certificate generation annotation is automatically incremented by the Cluster Operator.
 For manual renewal of your own CA certificates, set the annotations with a higher incremental value.
