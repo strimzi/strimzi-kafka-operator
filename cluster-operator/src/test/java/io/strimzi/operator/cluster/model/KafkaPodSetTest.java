@@ -21,7 +21,7 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -92,12 +92,17 @@ public class KafkaPodSetTest {
     @ParallelTest
     public void testDefaultPodDisruptionBudget()   {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        PodDisruptionBudget pdb = kc.generateCustomControllerPodDisruptionBudget();
-
+        PodDisruptionBudget pdb = kc.generateCustomControllerPodDisruptionBudget();      
         assertThat(pdb.getMetadata().getName(), is(KafkaCluster.kafkaClusterName(CLUSTER)));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
         assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
+
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generateCustomControllerPodDisruptionBudgetV1Beta1();
+        assertThat(pdbV1Beta1.getMetadata().getName(), is(KafkaCluster.kafkaClusterName(CLUSTER)));
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
+        assertThat(pdbV1Beta1.getSpec().getMinAvailable().getIntVal(), is(2));
+        assertThat(pdbV1Beta1.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
     }
 
     @ParallelTest

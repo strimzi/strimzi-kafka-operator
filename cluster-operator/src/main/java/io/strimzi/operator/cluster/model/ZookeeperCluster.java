@@ -27,7 +27,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
@@ -771,12 +771,30 @@ public class ZookeeperCluster extends AbstractModel {
     }
 
     /**
+     * Generates the PodDisruptionBudgetV1Beta1.
+     *
+     * @return The PodDisruptionBudgetV1Beta1.
+     */
+    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
+        return createPodDisruptionBudgetV1Beta1();
+    }
+
+    /**
      * Generates the PodDisruptionBudget for operator managed pods.
      *
      * @return The PodDisruptionBudget.
      */
     public PodDisruptionBudget generateCustomControllerPodDisruptionBudget() {
         return createCustomControllerPodDisruptionBudget();
+    }
+
+    /**
+     * Generates the PodDisruptionBudget V1Beta1 for operator managed pods.
+     *
+     * @return The PodDisruptionBudget v1beta1.
+     */
+    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generateCustomControllerPodDisruptionBudgetV1Beta1() {
+        return createCustomControllerPodDisruptionBudgetV1Beta1();
     }
 
     @Override

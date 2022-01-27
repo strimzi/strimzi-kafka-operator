@@ -229,6 +229,15 @@ public class PlatformFeaturesAvailability {
         return this.kubernetesVersion.compareTo(KubernetesVersion.V1_19) >= 0;
     }
 
+    /**
+     * Returns true when the Kubernetes cluster has V1 version of the Ingress resource (Kubernetes 1.16 and newer)
+     *
+     * @return True when PodDisruptionBudget V1 is supported. False otherwise.
+     */
+    public boolean hasPodDisruptionBudgetV1() {
+        return this.kubernetesVersion.compareTo(KubernetesVersion.V1_16) >= 0;
+    }
+
     @Override
     public String toString() {
         return "PlatformFeaturesAvailability(" +
