@@ -258,9 +258,6 @@ public class CruiseControlST extends AbstractST {
     @ParallelNamespaceTest
     void testCruiseControlIntraBrokerBalancing(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
-
-        String namespaceName = testStorage.getNamespaceName();
-        String clusterName = testStorage.getClusterName();
         String diskSize = "6Gi";
 
         JbodStorage jbodStorage =  new JbodStorageBuilder()
@@ -269,9 +266,9 @@ public class CruiseControlST extends AbstractST {
                         new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSize).build()
                 ).build();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
                 .editMetadata()
-                .withNamespace(namespaceName)
+                .withNamespace(testStorage.getNamespaceName())
                 .endMetadata()
                     .editOrNewSpec()
                         .editKafka()
@@ -279,20 +276,20 @@ public class CruiseControlST extends AbstractST {
                         .endKafka()
                     .endSpec()
                 .build());
-        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName)
+        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
                 .editMetadata()
-                .withNamespace(namespaceName)
+                .withNamespace(testStorage.getNamespaceName())
                 .endMetadata()
                     .editOrNewSpec()
                         .withRebalanceDisk(true)
                     .endSpec()
                 .build());
 
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(namespaceName, clusterName, KafkaRebalanceState.ProposalReady);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
 
         LOGGER.info("Checking status of KafkaRebalance");
         // The provision status should be "UNDECIDED" when doing an intra-broker disk balance because it is irrelevant to the provision status
-        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();
+        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("provisionStatus").toString(), containsString("UNDECIDED"));
     }
 }
