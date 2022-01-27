@@ -14,32 +14,11 @@ When you deploy Strimzi to the cluster, you will see errors similar to the follo
 [source%nowrap]
 ----
 Exception in thread "main" io.fabric8.kubernetes.client.KubernetesClientException: An error has occurred.
-	at io.fabric8.kubernetes.client.KubernetesClientException.launderThrowable(KubernetesClientException.java:103)
-	at io.fabric8.kubernetes.client.KubernetesClientException.launderThrowable(KubernetesClientException.java:97)
-	at io.fabric8.kubernetes.client.utils.HttpClientUtils.applyCommonConfiguration(HttpClientUtils.java:210)
-	at io.fabric8.kubernetes.client.okhttp.OkHttpClientFactory.createHttpClient(OkHttpClientFactory.java:89)
-	at io.fabric8.kubernetes.client.utils.HttpClientUtils.createHttpClient(HttpClientUtils.java:160)
-	at io.fabric8.kubernetes.client.BaseClient.<init>(BaseClient.java:48)
-	at io.fabric8.kubernetes.client.BaseClient.<init>(BaseClient.java:40)
-	at io.fabric8.kubernetes.client.BaseKubernetesClient.<init>(BaseKubernetesClient.java:151)
-	at io.fabric8.kubernetes.client.DefaultKubernetesClient.<init>(DefaultKubernetesClient.java:34)
-	at io.strimzi.operator.cluster.Main.main(Main.java:75)
+	...
 Caused by: java.security.KeyStoreException: sun.security.pkcs11.wrapper.PKCS11Exception: CKR_SESSION_READ_ONLY
-	at jdk.crypto.cryptoki/sun.security.pkcs11.P11KeyStore.engineSetEntry(P11KeyStore.java:1049)
-	at jdk.crypto.cryptoki/sun.security.pkcs11.P11KeyStore.engineSetCertificateEntry(P11KeyStore.java:515)
-	at java.base/java.security.KeyStore.setCertificateEntry(KeyStore.java:1235)
-	at io.fabric8.kubernetes.client.internal.CertUtils.createTrustStore(CertUtils.java:100)
-	at io.fabric8.kubernetes.client.internal.CertUtils.createTrustStore(CertUtils.java:74)
-	at io.fabric8.kubernetes.client.internal.SSLUtils.trustManagers(SSLUtils.java:140)
-	at io.fabric8.kubernetes.client.internal.SSLUtils.trustManagers(SSLUtils.java:90)
-	at io.fabric8.kubernetes.client.utils.HttpClientUtils.applyCommonConfiguration(HttpClientUtils.java:199)
-	... 7 more
+	...
 Caused by: sun.security.pkcs11.wrapper.PKCS11Exception: CKR_SESSION_READ_ONLY
-	at jdk.crypto.cryptoki/sun.security.pkcs11.wrapper.PKCS11.C_CreateObject(Native Method)
-	at jdk.crypto.cryptoki/sun.security.pkcs11.wrapper.PKCS11$FIPSPKCS11.C_CreateObject(PKCS11.java:1950)
-	at jdk.crypto.cryptoki/sun.security.pkcs11.P11KeyStore.storeCert(P11KeyStore.java:1567)
-	at jdk.crypto.cryptoki/sun.security.pkcs11.P11KeyStore.engineSetEntry(P11KeyStore.java:1045)
-	... 14 more
+	...
 ----
 
 If you want to run Strimzi on your FIPS-enabled cluster, you can disable the OpenJDK FIPS mode by setting the `FIPS_MODE` environment variable to `disabled` in the deployment configuration for the Cluster Operator.
