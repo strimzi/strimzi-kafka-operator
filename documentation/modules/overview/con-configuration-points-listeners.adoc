@@ -33,3 +33,5 @@ For more information on the configuration options for connecting an external cli
 .Listener certificates
 You can provide your own server certificates, called _Kafka listener certificates_, for TLS listeners or external listeners which have TLS encryption enabled.
 For more information, see xref:kafka-listener-certificates-str[Kafka listener certificates].
+
+NOTE: If you scale your Kafka cluster while using external listeners, it might trigger a rolling update of all Kafka brokers. This depends on the configuration. 
