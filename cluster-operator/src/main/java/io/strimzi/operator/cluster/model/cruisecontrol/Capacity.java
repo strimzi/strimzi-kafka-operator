@@ -27,10 +27,10 @@ public class Capacity {
     private static final int DEFAULT_BROKER_ID = -1;
     private static final String DEFAULT_BROKER_DOC = "This is the default capacity. Capacity unit used for disk is in MB, cpu is in percentage, network throughput is in KB.";
 
-    private static final double DEFAULT_BROKER_DISK_MIB_CAPACITY = 100_000;  // in MiB
+    private static final double DEFAULT_BROKER_DISK_CAPACITY_IN_MIB = 100_000;  // in MiB
     private static final int DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY = 100;  // as a percentage (0-100)
-    private static final double DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = 10_000;  // in KiB/s
-    private static final double DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = 10_000;  // in KiB/s
+    private static final double DEFAULT_BROKER_INBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND = 10_000;  // in KiB/s
+    private static final double DEFAULT_BROKER_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND = 10_000;  // in KiB/s
 
     private Double diskMiB;
     private Integer cpuUtilization;
@@ -48,8 +48,8 @@ public class Capacity {
 
         this.diskMiB = bc != null && bc.getDisk() != null ? getSizeInMiB(bc.getDisk()) : generateDiskCapacity(storage);
         this.cpuUtilization = bc != null && bc.getCpuUtilization() != null ? bc.getCpuUtilization() : DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY;
-        this.inboundNetworkKiBPerSecond = bc != null && bc.getInboundNetwork() != null ? getThroughputInKiB(bc.getInboundNetwork()) : DEFAULT_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
-        this.outboundNetworkKiBPerSecond = bc != null && bc.getOutboundNetwork() != null ? getThroughputInKiB(bc.getOutboundNetwork()) : DEFAULT_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY;
+        this.inboundNetworkKiBPerSecond = bc != null && bc.getInboundNetwork() != null ? getThroughputInKiB(bc.getInboundNetwork()) : DEFAULT_BROKER_INBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
+        this.outboundNetworkKiBPerSecond = bc != null && bc.getOutboundNetwork() != null ? getThroughputInKiB(bc.getOutboundNetwork()) : DEFAULT_BROKER_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
     }
 
     /**
@@ -82,13 +82,11 @@ public class Capacity {
      */
     private JsonObject generateJbodDiskCapacity(Storage storage, int idx) {
         JsonObject json = new JsonObject();
-        String name = "";
-        String path = "";
         String size = "";
 
         for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-            name = VolumeUtils.createVolumePrefix(volume.getId(), true);
-            path = AbstractModel.KAFKA_MOUNT_PATH + "/" + name + "/" + AbstractModel.KAFKA_LOG_DIR + idx;
+            String name = VolumeUtils.createVolumePrefix(volume.getId(), true);
+            String path = AbstractModel.KAFKA_MOUNT_PATH + "/" + name + "/" + AbstractModel.KAFKA_LOG_DIR + idx;
 
             if (volume instanceof PersistentClaimStorage) {
                 size =  ((PersistentClaimStorage) volume).getSize();
@@ -113,7 +111,7 @@ public class Capacity {
             if (((EphemeralStorage) storage).getSizeLimit() != null) {
                 return getSizeInMiB(((EphemeralStorage) storage).getSizeLimit());
             } else {
-                return DEFAULT_BROKER_DISK_MIB_CAPACITY;
+                return DEFAULT_BROKER_DISK_CAPACITY_IN_MIB;
             }
         } else if (storage instanceof JbodStorage) {
             // The value generated here for JBOD storage is used for tracking the total
@@ -169,7 +167,7 @@ public class Capacity {
      */
     public static Double getSizeInMiB(String size) {
         if (size == null) {
-            return DEFAULT_BROKER_DISK_MIB_CAPACITY;
+            return DEFAULT_BROKER_DISK_CAPACITY_IN_MIB;
         }
         return parseMemory(size, "Mi");
     }
