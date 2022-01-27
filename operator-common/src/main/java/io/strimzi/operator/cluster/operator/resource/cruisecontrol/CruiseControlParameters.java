@@ -15,6 +15,7 @@ public enum CruiseControlParameters {
     GOALS("goals"),
     VERBOSE("verbose"),
     SKIP_HARD_GOAL_CHECK("skip_hard_goal_check"),
+    REBALANCE_DISK("rebalance_disk"),
     FETCH_COMPLETE("fetch_completed_task"),
     USER_TASK_IDS("user_task_ids"),
     EXCLUDED_TOPICS("excluded_topics"),

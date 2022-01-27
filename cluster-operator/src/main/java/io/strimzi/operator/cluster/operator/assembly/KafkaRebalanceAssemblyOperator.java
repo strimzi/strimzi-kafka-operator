@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatusBuilder;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CruiseControl;
@@ -142,7 +143,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
  * </code></pre>
  */
 public class KafkaRebalanceAssemblyOperator
-        extends AbstractOperator<KafkaRebalance, KafkaRebalanceSpec, KafkaRebalanceStatus, AbstractWatchableStatusedResourceOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>>> {
+       extends AbstractOperator<KafkaRebalance, KafkaRebalanceSpec, KafkaRebalanceStatus, AbstractWatchableStatusedResourceOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList, Resource<KafkaRebalance>>> {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaRebalanceAssemblyOperator.class.getName());
 
@@ -154,6 +155,7 @@ public class KafkaRebalanceAssemblyOperator
     private final SecretOperator secretOperations;
     private final PlatformFeaturesAvailability pfa;
     private final Optional<LabelSelector> kafkaSelector;
+    private boolean usingJbodStorage;
 
     private final ConfigMapOperator configMapOperator;
     /**
@@ -319,7 +321,7 @@ public class KafkaRebalanceAssemblyOperator
         return Future.succeededFuture(kafkaRebalance);
     }
 
-    private RebalanceOptions.RebalanceOptionsBuilder convertRebalanceSpecToRebalanceOptions(KafkaRebalanceSpec kafkaRebalanceSpec) {
+    private RebalanceOptions.RebalanceOptionsBuilder convertRebalanceSpecToRebalanceOptions(KafkaRebalanceSpec kafkaRebalanceSpec, boolean usingJbodStorage) {
 
         RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder = new RebalanceOptions.RebalanceOptionsBuilder();
 
@@ -328,6 +330,13 @@ public class KafkaRebalanceAssemblyOperator
         }
         if (kafkaRebalanceSpec.isSkipHardGoalCheck()) {
             rebalanceOptionsBuilder.withSkipHardGoalCheck();
+        }
+        if (kafkaRebalanceSpec.isRebalanceDisk()) {
+            if (usingJbodStorage) {
+                rebalanceOptionsBuilder.withRebalanceDisk();
+            } else {
+                LOGGER.warnOp("Intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks.");
+            }
         }
         if (kafkaRebalanceSpec.getExcludedTopics() != null) {
             rebalanceOptionsBuilder.withExcludedTopics(kafkaRebalanceSpec.getExcludedTopics());
@@ -369,7 +378,7 @@ public class KafkaRebalanceAssemblyOperator
             return updateStatus(reconciliation, kafkaRebalance, status, null).compose(i -> Future.succeededFuture());
         }
 
-        RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec());
+        RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec(), usingJbodStorage);
 
         return computeNextStatus(reconciliation, host, apiClient, kafkaRebalance, currentState, rebalanceAnnotation, rebalanceOptionsBuilder)
            .compose(desiredStatusAndMap -> {
@@ -1060,6 +1069,10 @@ public class KafkaRebalanceAssemblyOperator
                         return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(),
                                 new InvalidResourceException("Kafka resource lacks 'cruiseControl' declaration "
                                         + ": No deployed Cruise Control for doing a rebalance.")).mapEmpty();
+                    }
+
+                    if (kafka.getSpec().getKafka().getStorage() instanceof JbodStorage) {
+                        usingJbodStorage = true;
                     }
 
                     String ccSecretName =  CruiseControlResources.secretName(clusterName);

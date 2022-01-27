@@ -39,6 +39,7 @@ import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -130,10 +131,7 @@ public class CruiseControl extends AbstractModel {
     private String minInsyncReplicas = "1";
     private boolean sslEnabled;
     private boolean authEnabled;
-    private Double brokerDiskMiBCapacity;
-    private int brokerCpuUtilizationCapacity;
-    private Double brokerInboundNetworkKiBPerSecondCapacity;
-    private Double brokerOuboundNetworkKiBPerSecondCapacity;
+    public Capacity capacity;
 
     public static final String REST_API_PORT_NAME = "rest-api";
     public static final int REST_API_PORT = 9090;
@@ -145,10 +143,8 @@ public class CruiseControl extends AbstractModel {
     protected static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     protected static final String ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     protected static final String ENV_VAR_MIN_INSYNC_REPLICAS = "MIN_INSYNC_REPLICAS";
-    protected static final String ENV_VAR_BROKER_DISK_MIB_CAPACITY = "BROKER_DISK_MIB_CAPACITY";
-    protected static final String ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY = "BROKER_CPU_UTILIZATION_CAPACITY";
-    protected static final String ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
-    protected static final String ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY = "BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY";
+
+    protected static final String ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION = "CRUISE_CONTROL_CAPACITY_CONFIGURATION";
 
     protected static final String ENV_VAR_API_SSL_ENABLED = "STRIMZI_CC_API_SSL_ENABLED";
     protected static final String ENV_VAR_API_AUTH_ENABLED = "STRIMZI_CC_API_AUTH_ENABLED";
@@ -230,7 +226,7 @@ public class CruiseControl extends AbstractModel {
         return isEnabledInConfiguration(config, CruiseControlConfigurationParameters.CRUISE_CONTROL_WEBSERVER_SSL_ENABLE.getValue(), Boolean.toString(DEFAULT_WEBSERVER_SSL_ENABLED));
     }
 
-    public static CruiseControl fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
+    public static CruiseControl fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage storage) {
         CruiseControl cruiseControl = null;
         CruiseControlSpec spec = kafkaAssembly.getSpec().getCruiseControl();
         KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
@@ -270,11 +266,9 @@ public class CruiseControl extends AbstractModel {
                 cruiseControl.minInsyncReplicas = configuration.getConfigOption(MIN_INSYNC_REPLICAS);
             }
 
-            Capacity capacity = new Capacity(kafkaAssembly.getSpec());
-            cruiseControl.brokerDiskMiBCapacity = capacity.getDiskMiB();
-            cruiseControl.brokerCpuUtilizationCapacity = capacity.getCpuUtilization();
-            cruiseControl.brokerInboundNetworkKiBPerSecondCapacity = capacity.getInboundNetworkKiBPerSecond();
-            cruiseControl.brokerOuboundNetworkKiBPerSecondCapacity = capacity.getOutboundNetworkKiBPerSecond();
+            // To avoid illegal storage configurations provided by the user,
+            // we rely on the storage configuration provided by the KafkaAssemblyOperator
+            cruiseControl.capacity =  new Capacity(kafkaAssembly.getSpec(), storage);
 
             // Parse different types of metrics configurations
             ModelUtils.parseMetrics(cruiseControl, spec);
@@ -530,10 +524,7 @@ public class CruiseControl extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(buildEnvVar(ENV_VAR_MIN_INSYNC_REPLICAS, String.valueOf(minInsyncReplicas)));
 
-        varList.add(buildEnvVar(ENV_VAR_BROKER_DISK_MIB_CAPACITY, String.valueOf(brokerDiskMiBCapacity)));
-        varList.add(buildEnvVar(ENV_VAR_BROKER_CPU_UTILIZATION_CAPACITY, String.valueOf(brokerCpuUtilizationCapacity)));
-        varList.add(buildEnvVar(ENV_VAR_BROKER_INBOUND_NETWORK_KIB_PER_SECOND_CAPACITY, String.valueOf(brokerInboundNetworkKiBPerSecondCapacity)));
-        varList.add(buildEnvVar(ENV_VAR_BROKER_OUTBOUND_NETWORK_KIB_PER_SECOND_CAPACITY,  String.valueOf(brokerOuboundNetworkKiBPerSecondCapacity)));
+        varList.add(buildEnvVar(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION, capacity.generateCapacityConfig()));
 
         varList.add(buildEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
         varList.add(buildEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));

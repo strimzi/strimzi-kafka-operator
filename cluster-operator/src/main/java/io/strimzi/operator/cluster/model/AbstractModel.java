@@ -225,6 +225,8 @@ public abstract class AbstractModel {
      */
     protected Storage storage;
     public static final String VOLUME_NAME = "data";
+    public static final String KAFKA_MOUNT_PATH = "/var/lib/kafka";
+    public static final String KAFKA_LOG_DIR = "kafka-log";
     protected String mountPath;
 
     /**

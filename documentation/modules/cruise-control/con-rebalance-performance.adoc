@@ -45,6 +45,16 @@ The first strategy attempts to compare two partition reassignments using its int
 If the reassignments are equivalent, then it passes them to the next strategy in the sequence to decide the order, and so on.
 
 [discrete]
+== Intra-broker disk balancing
+
+Moving a large amount of data between disks on the same broker has less impact than between separate brokers.
+If you are running a Kafka deployment that uses JBOD storage with multiple disks on the same broker, Cruise Control can balance partitions between the disks.
+NOTE: If you are using JBOD storage with a single disk, intra-broker disk balancing will result in a proposal with 0 partition movements since there are no disks to balance between.
+To perform an intra-broker disk balance, set `rebalanceDisk` to `true` under the `KafkaRebalance.spec`.
+When setting `rebalanceDisk` to `true`, do not set a `goals` field in the `KafkaRebalance.spec`, as Cruise Control will automatically set the intra-broker goals and ignore the inter-broker goals.
+Cruise Control does not perform inter-broker and intra-broker balancing at the same time.
+
+[discrete]
 == Rebalance tuning options
 
 Cruise Control provides several configuration options for tuning the rebalance parameters discussed above.
@@ -81,6 +91,7 @@ For the server setting, use a comma separated string with the fully qualified na
 .2+| `BaseReplicaMovementStrategy`
 | `replicaMovementStrategies`
 
+| `rebalanceDisk`   .1+|  Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. Only applies to Kafka deployments that use JBOD storage with multiple disks.               .1+| false
 |============================================================================================================================
 
 Changing the default settings affects the length of time that the rebalance takes to complete, as well as the load placed on the Kafka cluster during the rebalance. 

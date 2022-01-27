@@ -9,6 +9,9 @@ import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
+import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
@@ -20,6 +23,7 @@ import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -249,5 +253,43 @@ public class CruiseControlST extends AbstractST {
         ccPodName = kubeClient().listPodsByPrefixInName(namespaceName, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
         ccConfFileContent = cmdKubeClient(namespaceName).execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, containsString(newReplicaMovementStrategies));
+    }
+
+    @ParallelNamespaceTest
+    void testCruiseControlIntraBrokerBalancing(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        String diskSize = "6Gi";
+
+        JbodStorage jbodStorage =  new JbodStorageBuilder()
+                .withVolumes(
+                        new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSize).build(),
+                        new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSize).build()
+                ).build();
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
+                .editMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+                .endMetadata()
+                    .editOrNewSpec()
+                        .editKafka()
+                            .withStorage(jbodStorage)
+                        .endKafka()
+                    .endSpec()
+                .build());
+        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+                .editMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+                .endMetadata()
+                    .editOrNewSpec()
+                        .withRebalanceDisk(true)
+                    .endSpec()
+                .build());
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
+
+        LOGGER.info("Checking status of KafkaRebalance");
+        // The provision status should be "UNDECIDED" when doing an intra-broker disk balance because it is irrelevant to the provision status
+        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        assertThat(kafkaRebalanceStatus.getOptimizationResult().get("provisionStatus").toString(), containsString("UNDECIDED"));
     }
 }

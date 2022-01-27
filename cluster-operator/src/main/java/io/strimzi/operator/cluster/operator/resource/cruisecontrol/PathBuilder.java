@@ -71,7 +71,8 @@ public class PathBuilder {
         if (options != null) {
             PathBuilder builder = addParameter(CruiseControlParameters.DRY_RUN, String.valueOf(options.isDryRun()))
                     .addParameter(CruiseControlParameters.VERBOSE, String.valueOf(options.isVerbose()))
-                    .addParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()));
+                    .addParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, String.valueOf(options.isSkipHardGoalCheck()))
+                    .addParameter(CruiseControlParameters.REBALANCE_DISK, String.valueOf(options.isRebalanceDisk()));
 
             if (options.getExcludedTopics() != null) {
                 builder.addParameter(CruiseControlParameters.EXCLUDED_TOPICS, options.getExcludedTopics());

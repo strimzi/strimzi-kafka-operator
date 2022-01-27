@@ -33,6 +33,7 @@ public class PathBuilderTest {
                         CruiseControlParameters.DRY_RUN.key + "=false&" +
                         CruiseControlParameters.VERBOSE.key + "=true&" +
                         CruiseControlParameters.SKIP_HARD_GOAL_CHECK.key + "=false&" +
+                        CruiseControlParameters.REBALANCE_DISK.key + "=false&" +
                         CruiseControlParameters.EXCLUDED_TOPICS.key + "=test-.*&" +
                         CruiseControlParameters.GOALS.key + "=");
 
@@ -55,6 +56,7 @@ public class PathBuilderTest {
                 .addParameter(CruiseControlParameters.JSON, "true")
                 .addParameter(CruiseControlParameters.DRY_RUN, "true")
                 .addParameter(CruiseControlParameters.VERBOSE, "false")
+                .addParameter(CruiseControlParameters.REBALANCE_DISK, "false")
                 .build();
 
         assertThat(path, containsString(DEFAULT_QUERY));
@@ -69,6 +71,7 @@ public class PathBuilderTest {
                 .addParameter(CruiseControlParameters.DRY_RUN, "false")
                 .addParameter(CruiseControlParameters.VERBOSE, "true")
                 .addParameter(CruiseControlParameters.SKIP_HARD_GOAL_CHECK, "false")
+                .addParameter(CruiseControlParameters.REBALANCE_DISK, "false")
                 .addParameter(CruiseControlParameters.EXCLUDED_TOPICS, "test-.*")
                 .addParameter(CruiseControlParameters.GOALS, GOALS)
                 .build();

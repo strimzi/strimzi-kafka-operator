@@ -3842,7 +3842,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /*test*/ final Future<ReconciliationState> getCruiseControlDescription() {
-            CruiseControl cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions);
+            CruiseControl cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions, kafkaCluster.getStorage());
 
             if (cruiseControl != null) {
                 return Util.metricsAndLogging(reconciliation, configMapOperations, kafkaAssembly.getMetadata().getNamespace(),

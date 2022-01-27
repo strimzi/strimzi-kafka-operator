@@ -19,7 +19,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "goals", "skipHardGoalCheck", "excludedTopics", "concurrentPartitionMovementsPerBroker",
+@JsonPropertyOrder({ "goals", "skipHardGoalCheck", "rebalanceDisk", "excludedTopics", "concurrentPartitionMovementsPerBroker",
     "concurrentIntraBrokerPartitionMovements", "concurrentLeaderMovements", "replicationThrottle", "replicaMovementStrategies" })
 @EqualsAndHashCode
 public class KafkaRebalanceSpec extends Spec {
@@ -28,6 +28,7 @@ public class KafkaRebalanceSpec extends Spec {
     // Optimization goal configurations
     private List<String> goals;
     private boolean skipHardGoalCheck;
+    private boolean rebalanceDisk;
 
     // Topic configuration
     private String excludedTopics;
@@ -62,8 +63,20 @@ public class KafkaRebalanceSpec extends Spec {
         this.skipHardGoalCheck = skipHardGoalCheck;
     }
 
+    @Description("Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. " +
+            "Only applies to Kafka deployments that use JBOD storage with multiple disks. " +
+            "When enabled, inter-broker balancing is disabled. Default is false.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isRebalanceDisk() {
+        return rebalanceDisk;
+    }
+
+    public void setRebalanceDisk(boolean rebalanceDisk) {
+        this.rebalanceDisk = rebalanceDisk;
+    }
+
     @Description("A regular expression where any matching topics will be excluded from the calculation of optimization proposals. " +
-            "This expression will be parsed by the java.util.regex.Pattern class; for more information on the supported formar " +
+            "This expression will be parsed by the java.util.regex.Pattern class; for more information on the supported format " +
             "consult the documentation for that class.")
     public String getExcludedTopics() {
         return excludedTopics;
