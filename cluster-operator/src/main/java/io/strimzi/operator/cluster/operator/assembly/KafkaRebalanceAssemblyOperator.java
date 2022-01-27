@@ -155,7 +155,7 @@ public class KafkaRebalanceAssemblyOperator
     private final SecretOperator secretOperations;
     private final PlatformFeaturesAvailability pfa;
     private final Optional<LabelSelector> kafkaSelector;
-    private boolean usingJbodStorage = false;
+    private boolean usingJbodStorage;
 
     private final ConfigMapOperator configMapOperator;
     /**
