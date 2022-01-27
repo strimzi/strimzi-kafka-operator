@@ -66,9 +66,9 @@ public class SetupClusterOperator {
 
     private static SetupClusterOperator instanceHolder;
 
-    private KubeClusterResource cluster = KubeClusterResource.getInstance();
-    private HelmResource helmResource;
-    private OlmResource olmResource;
+    private static KubeClusterResource cluster = KubeClusterResource.getInstance();
+    private static HelmResource helmResource;
+    private static OlmResource olmResource;
 
     private ExtensionContext extensionContext;
     private String clusterOperatorName;
@@ -142,6 +142,7 @@ public class SetupClusterOperator {
         if (this.clusterOperatorRBACType == null) {
             this.clusterOperatorRBACType = ClusterOperatorRBACType.CLUSTER;
         }
+        instanceHolder = this;
     }
 
     /**
@@ -231,7 +232,6 @@ public class SetupClusterOperator {
                 cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                 extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
             }
-
             helmResource.create(extensionContext, operationTimeout, reconciliationInterval);
         } else {
             bundleInstallation();
@@ -385,11 +385,6 @@ public class SetupClusterOperator {
         }
 
         public SetupClusterOperator createInstallation() {
-            instanceHolder = new SetupClusterOperator(this);
-            return instanceHolder;
-        }
-
-        public SetupClusterOperator buildInstallation() {
             return new SetupClusterOperator(this);
         }
     }
