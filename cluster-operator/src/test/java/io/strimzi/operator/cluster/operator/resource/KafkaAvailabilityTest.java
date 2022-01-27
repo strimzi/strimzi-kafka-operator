@@ -187,7 +187,7 @@ public class KafkaAvailabilityTest {
         }
 
         void mockDescribeTopics(Admin mockAc) {
-            when(mockAc.describeTopics(any())).thenAnswer(invocation -> {
+            when(mockAc.describeTopics(any(Collection.class))).thenAnswer(invocation -> {
                 DescribeTopicsResult dtr = mock(DescribeTopicsResult.class);
                 Collection<String> topicNames = invocation.getArgument(0);
                 Throwable throwable = null;
@@ -198,7 +198,7 @@ public class KafkaAvailabilityTest {
                     }
                 }
                 if (throwable != null) {
-                    when(dtr.all()).thenReturn(failedFuture(throwable));
+                    when(dtr.allTopicNames()).thenReturn(failedFuture(throwable));
                 } else {
                     Map<String, TopicDescription> tds = topics.entrySet().stream().collect(Collectors.toMap(
                         e -> e.getKey(),
@@ -214,8 +214,8 @@ public class KafkaAvailabilityTest {
                                     }).collect(Collectors.toList()));
                         }
                     ));
-                    when(dtr.all()).thenReturn(KafkaFuture.completedFuture(tds));
-                    when(dtr.values()).thenThrow(notImplemented());
+                    when(dtr.allTopicNames()).thenReturn(KafkaFuture.completedFuture(tds));
+                    when(dtr.topicNameValues()).thenThrow(notImplemented());
                 }
                 return dtr;
             });
