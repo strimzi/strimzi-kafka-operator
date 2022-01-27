@@ -331,13 +331,12 @@ public class KafkaRebalanceAssemblyOperator
         if (kafkaRebalanceSpec.isSkipHardGoalCheck()) {
             rebalanceOptionsBuilder.withSkipHardGoalCheck();
         }
-        if (!usingJbodStorage) {
-            if (kafkaRebalanceSpec.isRebalanceDisk()) {
-                LOGGER.warnOp("Intra-broker balancing only applies to Kafka deployments that use JBOD storage.");
+        if (kafkaRebalanceSpec.isRebalanceDisk()) {
+            if (usingJbodStorage) {
+                rebalanceOptionsBuilder.withRebalanceDisk();
+            } else {
+                LOGGER.warnOp("Intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks.");
             }
-            rebalanceOptionsBuilder.withRebalanceDisk(false);
-        }   else {
-            rebalanceOptionsBuilder.withRebalanceDisk(kafkaRebalanceSpec.isRebalanceDisk());
         }
         if (kafkaRebalanceSpec.getExcludedTopics() != null) {
             rebalanceOptionsBuilder.withExcludedTopics(kafkaRebalanceSpec.getExcludedTopics());

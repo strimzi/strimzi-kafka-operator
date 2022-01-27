@@ -139,8 +139,8 @@ public class RebalanceOptions {
             return this;
         }
 
-        public RebalanceOptionsBuilder withRebalanceDisk(boolean rebalanceDisk) {
-            this.rebalanceDisk = rebalanceDisk;
+        public RebalanceOptionsBuilder withRebalanceDisk() {
+            this.rebalanceDisk = true;
             return this;
         }
 
