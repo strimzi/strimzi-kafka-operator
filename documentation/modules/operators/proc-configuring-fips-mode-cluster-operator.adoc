@@ -3,12 +3,13 @@
 // assembly-using-the-cluster-operator.adoc
 
 [id='proc-configuring-fips-mode-cluster-operator-{context}']
-= Configuring the FIPS mode in Cluster Operator
+= Configuring FIPS mode in the Cluster Operator
 
 [role="_abstract"]
-When running Strimzi on FIPS enabled Kubernetes cluster, the OpenJDK used in Strimzi container images will automatically switch to FIPS mode.
-Strimzi currently doesn't support running as FIPS compliant with the FIPS mode enabled.
-When you deploy Strimzi on such cluster, you will see errors similar to this:
+Federal Information Processing Standards (FIPS) are standards for computer security and interoperability.
+When running Strimzi on a FIPS-enabled Kubernetes cluster, the OpenJDK used in Strimzi container images will automatically switch to FIPS mode.
+This prevents Strimzi from running on the cluster.
+When you deploy Strimzi to the cluster, you will see errors similar to the following:
 
 [source%nowrap]
 ----
@@ -41,16 +42,15 @@ Caused by: sun.security.pkcs11.wrapper.PKCS11Exception: CKR_SESSION_READ_ONLY
 	... 14 more
 ----
 
-If you want to run Strimzi on your FIPS enabled cluster, you can disable the FIPS mode by setting the `FIPS_MODE` environment variable to `disabled`.
-In this mode, the FIPS mode in OpenJDK will be disabled.
-Such Strimzi deployment will not be FIPS compliant, but the Strimzi operators as well as all its operands will be able to run as on any regular Kubernetes cluster.
+If you want to run Strimzi on your FIPS-enabled cluster, you can disable the OpenJDK FIPS mode by setting the `FIPS_MODE` environment variable to `disabled` in the deployment configuration for the Cluster Operator.
+The Strimzi deployment won't be FIPS compliant, but the Strimzi operators as well as all its operands will be able to run on the FIPS-enabled Kubernetes cluster.
 
 .Procedure
 
 . To disable the FIPS mode in the Cluster Operator, update its `Deployment` configuration (`install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml`) and add the `FIPS_MODE` environment variable.
 +
 --
-.Example proxy configuration for the Cluster Operator
+.Example FIPS configuration for the Cluster Operator
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: apps/v1
@@ -68,7 +68,7 @@ spec:
           value: "disabled" # <1>
   # ...
 ----
-<1> Disabled the FIPS mode.
+<1> Disables the FIPS mode.
 --
 +
 Alternatively, edit the `Deployment` directly:
