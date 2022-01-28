@@ -60,7 +60,7 @@ The following table describes connector properties and the connectors you config
 |
 |
 
-|offset.lag.max:: Maximum allowable (out-of-sync) lag time before a remote partition is synchronized. Default is `100` (0.1 second).
+|offset.lag.max:: Maximum allowable (out-of-sync) offset lag before a remote partition is synchronized. Default is `100`.
 |✓
 |
 |
