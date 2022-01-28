@@ -8,7 +8,7 @@
 [role="_abstract"]
 Use Mirrormaker 2.0 connector configuration for the internal connectors that orchestrate the synchronization of data between Kafka clusters.
 
-The following table describes connector properties and the connectors you configure to use them. 
+The following table describes connector properties and the connectors you configure to use them.
 
 .MirrorMaker 2.0 connector configuration properties
 [cols="4a,2,2,2",options="header"]
@@ -35,9 +35,24 @@ The following table describes connector properties and the connectors you config
 |✓
 |
 
+|replication.policy.class:: Policy to define the remote topic naming convention. Default is `org.apache.kafka.connect.mirror.DefaultReplicationPolicy`.
+|✓
+|✓
+|
+
 |replication.policy.separator:: The separator used for topic naming in the target cluster. Default is `.` (dot).
 |✓
 |✓
+|
+
+|topic.filter.class:: Topic filter to select the topics to replicate. Default is `org.apache.kafka.connect.mirror.DefaultTopicFilter`.
+|✓
+|✓
+|
+
+|config.property.filter.class:: Topic filter to select the topic configuration properties to replicate. Default is `org.apache.kafka.connect.mirror.DefaultConfigPropertyFilter`.
+|✓
+|
 |
 
 |config.properties.exclude:: Topic configuration properties that should not be replicated. Supports comma-separated property names and regular expressions.
@@ -65,7 +80,12 @@ The following table describes connector properties and the connectors you config
 |
 |
 
-|sync.topic.acls.enabled:: Enables synchronization of ACLs from the source cluster. Default is `true`.
+|replication.factor:: The replication factor for new topics. Default is `2`.
+|✓
+|
+|
+
+|sync.topic.acls.enabled:: Enables synchronization of ACLs from the source cluster. Default is `true`. Not compatible with the User Operator.
 |✓
 |
 |
@@ -96,6 +116,11 @@ The following table describes connector properties and the connectors you config
 |
 
 |emit.checkpoints.interval.seconds:: Frequency of consumer offset synchronization. Default is `60` (1 minute).
+|
+|✓
+|
+
+|group.filter.class:: Group filter to select the consumer groups to replicate. Default is `org.apache.kafka.connect.mirror.DefaultGroupFilter`.
 |
 |✓
 |
