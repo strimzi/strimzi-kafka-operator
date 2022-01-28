@@ -5,9 +5,9 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -22,7 +22,6 @@ import io.strimzi.operator.common.model.Labels;
 public class PodRevision {
     public static final String STRIMZI_REVISION_ANNOTATION = Labels.STRIMZI_DOMAIN + "revision";
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PodRevision.class.getName());
-    private final static ObjectMapper MAPPER = new ObjectMapper();
 
     /**
      * Generates the revision of the Pod. Currently, it just serializes the Pod using Jackson ObjectMapper and creates
@@ -35,7 +34,7 @@ public class PodRevision {
      */
     public static String getRevision(Reconciliation reconciliation, Pod pod) {
         try {
-            return Util.sha1Prefix(MAPPER.writeValueAsString(pod));
+            return Util.sha1Prefix(PodSetUtils.podToString(pod));
         } catch (JsonProcessingException e) {
             LOGGER.warnCr(reconciliation, "Failed to get pod revision", e);
             throw new RuntimeException("Failed to get pod revision", e);
@@ -56,7 +55,7 @@ public class PodRevision {
                 .getSpec()
                 .getPods()
                 .stream()
-                .map(pod -> MAPPER.convertValue(pod, Pod.class))
+                .map(pod -> PodSetUtils.mapToPod(pod))
                 .filter(pod -> currentPod.getMetadata().getName().equals(pod.getMetadata().getName()))
                 .findFirst()
                 .orElse(null);

@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -22,6 +21,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
@@ -59,7 +59,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaAssemblyOperatorPodSetTest {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final KubernetesVersion KUBERNETES_VERSION = KubernetesVersion.V1_18;
     private static final MockCertManager CERT_MANAGER = new MockCertManager();
@@ -555,7 +554,7 @@ public class KafkaAssemblyOperatorPodSetTest {
 
     // Internal utility methods
     private Pod podFromPodSet(StrimziPodSet podSet, String name) {
-        return podSet.getSpec().getPods().stream().map(p -> MAPPER.convertValue(p, Pod.class)).filter(p -> name.equals(p.getMetadata().getName())).findFirst().orElse(null);
+        return PodSetUtils.mapsToPods(podSet.getSpec().getPods()).stream().filter(p -> name.equals(p.getMetadata().getName())).findFirst().orElse(null);
     }
 
     class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {

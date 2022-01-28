@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -23,6 +22,7 @@ import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.status.StrimziPodSetStatus;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.common.Reconciliation;
@@ -48,8 +48,6 @@ import java.util.stream.Collectors;
  */
 public class StrimziPodSetController implements Runnable {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StrimziPodSetController.class);
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private Thread controllerThread;
 
@@ -244,7 +242,7 @@ public class StrimziPodSetController implements Runnable {
                 podCounter.pods = podSet.getSpec().getPods().size();
 
                 for (Map<String, Object> desiredPod : podSet.getSpec().getPods()) {
-                    Pod pod = MAPPER.convertValue(desiredPod, Pod.class);
+                    Pod pod = PodSetUtils.mapToPod(desiredPod);
                     desiredPods.add(pod.getMetadata().getName());
 
                     maybeCreateOrPatchPod(reconciliation, pod, ModelUtils.createOwnerReference(podSet), podCounter);
