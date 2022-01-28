@@ -14,8 +14,9 @@ We recommend that you configure clients to use OAUTHBEARER whenever possible.
 OAUTHBEARER provides a higher level of security than PLAIN because client credentials are _never_ shared with Kafka brokers.
 Consider using PLAIN only with Kafka clients that do not support OAUTHBEARER.
 
-You configure Kafka broker listeners to use OAuth 2.0 authentication for clients connection.
-If necessary, you can enable OAUTHBEARER and PLAIN on the same `oauth` listener.
+You configure Kafka broker listeners to use OAuth 2.0 authentication for connecting clients.
+If necessary, you can use the OAUTHBEARER and PLAIN mechanisms on the same `oauth` listener.
+The properties to support each mechanism must be explicitly specified in the `oauth` listener configuration. 
 
 .OAUTHBEARER overview
 
@@ -31,10 +32,8 @@ You can set the `enableOauthBearer` property to `true`, though this is not requi
     enableOauthBearer: true
 ----
 
-The OAUTHBEARER authentication mechanism must be explicitly configured.
 Many Kafka client tools use libraries that provide basic support for OAUTHBEARER at the protocol level.
-
-To ease application development, Strimzi provides an _OAuth callback handler_ for the upstream Kafka Client Java libraries (but not for other libraries).
+To support application development, Strimzi provides an _OAuth callback handler_ for the upstream Kafka Client Java libraries (but not for other libraries).
 Therefore, you do not need to write your own callback handlers for such clients.
 An application client can use the callback handler to provide the access token.
 Clients written in other languages, such as Go, must use custom code to connect to the authorization server and obtain the access token.
@@ -71,7 +70,7 @@ If you want to use PLAIN only, you can disable OAUTHBEARER by setting `enableOau
 ----
 
 PLAIN is a simple authentication mechanism used by all Kafka client tools.
-To enable PLAIN to be used together with OAuth 2.0 authentication, Strimzi includes server-side callbacks and calls this _OAuth 2.0 over PLAIN_.
+To enable PLAIN to be used with OAuth 2.0 authentication, Strimzi provides _OAuth 2.0 over PLAIN_ server-side callbacks.
 
 With the Strimzi implementation of PLAIN, the client credentials are not stored in ZooKeeper.
 Instead, client credentials are handled centrally behind a compliant authorization server, similar to when OAUTHBEARER authentication is used.
