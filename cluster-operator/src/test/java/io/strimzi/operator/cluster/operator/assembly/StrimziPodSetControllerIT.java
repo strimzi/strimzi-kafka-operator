@@ -4,8 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -24,6 +22,7 @@ import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -45,7 +44,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -58,8 +56,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ExtendWith(VertxExtension.class)
 public class StrimziPodSetControllerIT {
     private static final Logger LOGGER = LogManager.getLogger(StrimziPodSetControllerIT.class);
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final TypeReference<Map<String, Object>> POD_TYPE = new TypeReference<>() { };
     private static final String NAMESPACE = "strimzi-pod-set-controller-test";
     private static final String KAFKA_NAME = "foo";
     private static final Map<String, String> MATCHING_LABELS = Map.of("selector", "matching");
@@ -180,7 +176,7 @@ public class StrimziPodSetControllerIT {
                     .endMetadata()
                     .withNewSpec()
                         .withSelector(new LabelSelector(null, Map.of(Labels.STRIMZI_KIND_LABEL, "Kafka", Labels.STRIMZI_CLUSTER_LABEL, kafkaName)))
-                        .withPods(Arrays.stream(pods).map(p -> MAPPER.convertValue(p, POD_TYPE)).collect(Collectors.toList()))
+                        .withPods(PodSetUtils.podsToMaps(Arrays.asList(pods)))
                     .endSpec()
                     .build();
     }

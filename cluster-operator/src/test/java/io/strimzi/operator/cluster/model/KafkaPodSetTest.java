@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -42,7 +41,6 @@ import io.strimzi.test.annotations.ParallelTest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -59,7 +57,6 @@ import static org.hamcrest.Matchers.hasProperty;
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 @ParallelSuite
 public class KafkaPodSetTest {
-    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER = "my-cluster";
@@ -148,7 +145,7 @@ public class KafkaPodSetTest {
         assertThat(ps.getSpec().getPods().size(), is(3));
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = ps.getSpec().getPods().stream().map(p -> MAPPER.convertValue(p, Pod.class)).collect(Collectors.toList());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods)  {
             assertThat(pod.getMetadata().getLabels().entrySet().containsAll(kc.getLabelsWithStrimziNameAndPodName(kc.getName(), pod.getMetadata().getName(), null).withStatefulSetPod(pod.getMetadata().getName()).withStrimziPodSetController(kc.getName()).toMap().entrySet()), is(true));
             assertThat(pod.getMetadata().getAnnotations().size(), is(5));
@@ -339,7 +336,7 @@ public class KafkaPodSetTest {
         assertThat(ps.getSpec().getPods().size(), is(3));
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = ps.getSpec().getPods().stream().map(p -> MAPPER.convertValue(p, Pod.class)).collect(Collectors.toList());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods)  {
             assertThat(pod.getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
             assertThat(pod.getMetadata().getAnnotations().entrySet().containsAll(podAnnos.entrySet()), is(true));
@@ -417,7 +414,7 @@ public class KafkaPodSetTest {
         StrimziPodSet ps = kc.generatePodSet(3, true, null, secrets, Map.of());
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = ps.getSpec().getPods().stream().map(p -> MAPPER.convertValue(p, Pod.class)).collect(Collectors.toList());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getImagePullSecrets().size(), is(2));
             assertThat(pod.getSpec().getImagePullSecrets().contains(secret1), is(true));
@@ -447,7 +444,7 @@ public class KafkaPodSetTest {
         StrimziPodSet ps = kc.generatePodSet(3, true, null, List.of(secret1), Map.of());
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = ps.getSpec().getPods().stream().map(p -> MAPPER.convertValue(p, Pod.class)).collect(Collectors.toList());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getImagePullSecrets().size(), is(1));
             assertThat(pod.getSpec().getImagePullSecrets().contains(secret1), is(false));
@@ -463,7 +460,7 @@ public class KafkaPodSetTest {
         StrimziPodSet ps = kc.generatePodSet(3, true, ImagePullPolicy.ALWAYS, null, Map.of());
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = ps.getSpec().getPods().stream().map(p -> MAPPER.convertValue(p, Pod.class)).collect(Collectors.toList());
+        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
         }
@@ -472,7 +469,7 @@ public class KafkaPodSetTest {
         ps = kc.generatePodSet(3, true, ImagePullPolicy.IFNOTPRESENT, null, Map.of());
 
         // We need to loop through the pods to make sure they have the right values
-        pods = ps.getSpec().getPods().stream().map(p -> MAPPER.convertValue(p, Pod.class)).collect(Collectors.toList());
+        pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         }
