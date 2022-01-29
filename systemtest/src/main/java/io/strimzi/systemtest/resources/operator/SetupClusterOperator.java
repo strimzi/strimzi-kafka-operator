@@ -66,9 +66,9 @@ public class SetupClusterOperator {
 
     private static SetupClusterOperator instanceHolder;
 
-    private KubeClusterResource cluster = KubeClusterResource.getInstance();
-    private HelmResource helmResource;
-    private OlmResource olmResource;
+    private static KubeClusterResource cluster = KubeClusterResource.getInstance();
+    private static HelmResource helmResource;
+    private static OlmResource olmResource;
 
     private ExtensionContext extensionContext;
     private String clusterOperatorName;
