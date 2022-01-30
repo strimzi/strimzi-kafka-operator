@@ -727,7 +727,7 @@ class LoggingChangeST extends AbstractST {
         String log4jConfig =
                 "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n\n" +
                         "log4j.rootLogger=OFF, CONSOLE\n" +
                         "log4j.logger.org.apache.zookeeper=ERROR\n" +
                         "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
@@ -1143,7 +1143,7 @@ class LoggingChangeST extends AbstractST {
         String log4jConfig =
                 "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
                         "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]%n\n" +
+                        "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %X{connector.context}%m (%c) [%t]%n\n" +
                         "log4j.rootLogger=OFF, CONSOLE\n" +
                         "log4j.logger.org.apache.zookeeper=ERROR\n" +
                         "log4j.logger.org.I0Itec.zkclient=ERROR\n" +
