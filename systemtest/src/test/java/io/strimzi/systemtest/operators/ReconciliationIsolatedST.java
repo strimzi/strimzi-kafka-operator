@@ -15,10 +15,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -44,7 +41,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -187,17 +183,5 @@ public class ReconciliationIsolatedST extends AbstractST {
         // because approve annotation wasn't reflected, approving again
         KafkaRebalanceUtils.annotateKafkaRebalanceResource(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, namespaceName, clusterName), namespaceName, clusterName, KafkaRebalanceAnnotation.approve);
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(namespaceName, clusterName, KafkaRebalanceState.Ready);
-    }
-
-    @BeforeAll
-    void setup(ExtensionContext extensionContext) {
-        clusterOperator.unInstall();
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
-            .createInstallation()
-            .runInstallation();
     }
 }

@@ -6,10 +6,7 @@ package io.strimzi.systemtest.kafka;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -19,7 +16,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.test.WaitException;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -82,18 +78,6 @@ public class QuotasIsolatedST extends AbstractST {
         String hardLimitLog = "disk is full";
         assertThat("Kafka log doesn't contain '" + softLimitLog + "' log", kafkaLog, CoreMatchers.containsString(softLimitLog));
         assertThat("Kafka log doesn't contain '" + hardLimitLog + "' log", kafkaLog, CoreMatchers.containsString(hardLimitLog));
-    }
-
-    @BeforeAll
-    void setup(ExtensionContext extensionContext) {
-        clusterOperator.unInstall();
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
-            .createInstallation()
-            .runInstallation();
     }
 
     @AfterEach
