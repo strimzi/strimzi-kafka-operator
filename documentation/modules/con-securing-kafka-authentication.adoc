@@ -5,8 +5,8 @@
 [id='con-securing-kafka-authentication-{context}']
 = Listener authentication
 
+[role="_abstract"]
 For clients inside the Kubernetes cluster, you can create `plain` (without encryption) or `tls` _internal_ listeners.
-
 For clients outside the Kubernetes cluster, you create _external_ listeners and specify a connection mechanism,
 which can be `nodeport`, `loadbalancer`, `ingress` or `route` (on OpenShift).
 
@@ -16,9 +16,12 @@ Supported authentication options:
 
 . Mutual TLS authentication (only on the listeners with TLS enabled encryption)
 . SCRAM-SHA-512 authentication
-. xref:assembly-oauth-authentication_str[OAuth 2.0 token based authentication]
+. xref:assembly-oauth-authentication_str[OAuth 2.0 token-based authentication]
+. xref:type-KafkaListenerAuthenticationCustom-reference[Custom authentication]
 
 The authentication option you choose depends on how you wish to authenticate client access to Kafka brokers.
+
+NOTE: Try exploring the standard authentication options before using custom authentication. Custom authentication allows for any type of kafka-supported authentication. It can provide more flexibility, but also adds complexity.
 
 .Kafka listener authentication options
 image::listener-config-options.png[options for listener authentication configuration]
