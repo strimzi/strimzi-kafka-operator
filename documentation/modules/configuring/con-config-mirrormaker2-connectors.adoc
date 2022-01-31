@@ -25,22 +25,22 @@ The following table describes connector properties and the connectors you config
 |✓
 |✓
 
+|replication.policy.class:: Policy to define the remote topic naming convention. Default is `org.apache.kafka.connect.mirror.DefaultReplicationPolicy`.
+|✓
+|✓
+|✓
+
+|replication.policy.separator:: The separator used for topic naming in the target cluster. Default is `.` (dot). It is only used when the `replication.policy.class` is the `DefaultReplicationPolicy`.
+|✓
+|✓
+|✓
+
 |consumer.poll.timeout.ms:: Timeout when polling the source cluster. Default is `1000` (1 second).
 |✓
 |✓
 |
 
-|offset-syncs.topic.location:: The location of the `offset-syncs` topic. Default is the _source_ cluster.
-|✓
-|✓
-|
-
-|replication.policy.class:: Policy to define the remote topic naming convention. Default is `org.apache.kafka.connect.mirror.DefaultReplicationPolicy`.
-|✓
-|✓
-|
-
-|replication.policy.separator:: The separator used for topic naming in the target cluster. Default is `.` (dot).
+|offset-syncs.topic.location:: The location of the `offset-syncs` topic, which can be the `source` (default) or `target` cluster. If you set the property to `target`, read-only access to the source cluster is granted to MirrorMaker.
 |✓
 |✓
 |
