@@ -3,7 +3,8 @@
 ## 0.28.0
 
 * Add support for Kafka 3.1.0; remove Kafka 2.8.0 and 2.8.1
-* Update Open Policy Agent authorizer to 1.4.0 and add support for enabling metrics 
+* Update Open Policy Agent authorizer to 1.4.0 and add support for enabling metrics
+* Add connector context to the default logging configuration in Kafka Connect and Kafka Mirror Maker 2
 * Added the option `createBootstrapService` in the Kafka Spec to disable the creation of the bootstrap service for the Load Balancer Type Listener. It will save the cost of one load balancer resource, specially in the public cloud.
 * Add support for disabling the FIPS mode in OpenJDK
 * Fix renewing your own CA certificates [#5466](https://github.com/strimzi/strimzi-kafka-operator/issues/5466)
