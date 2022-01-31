@@ -11,7 +11,9 @@ The flows must also be supported by the authorization server used.
 
 Kafka broker listener configuration determines how clients authenticate using an access token.
 The client can pass a client ID and secret to request an access token.
-If a listener is configured to use PLAIN authentication, you can use a client username and password to request or pass access tokens.
+
+If a listener is configured to use PLAIN authentication, the client can authenticate with a client ID and secret or username and access token.
+These values are passed as the `username` and `password` properties of the PLAIN mechanism.
 
 Listener configuration supports the following token validation options:
 
@@ -21,16 +23,16 @@ The authorization server provides a JWKS endpoint with public certificates that 
 Each time a new Kafka broker connection is established, the broker passes the access token received from the client to the authorization server.
 The Kafka broker checks the response to confirm whether or not the token is valid.
 
+NOTE: An authorization server might only allow the use of opaque access tokens, which means that local token validation is not possible.
+
 Kafka client credentials can also be configured for the following types of authentication:
 
 * Direct local access using a previously generated long-lived access token
-* Contact with the authorization server for a new access token to be issued
-
-NOTE: An authorization server might only allow the use of opaque access tokens, which means that local token validation is not possible.
+* Contact with the authorization server for a new access token to be issued (using a client ID and a secret, or a refresh token)
 
 == Example client authentication flows using the SASL OAUTHBEARER mechanism
 
-You can use the following communication flows for Kafka authentication using the OAuth SASL OAUTHBEARER mechanism.
+You can use the following communication flows for Kafka authentication using the SASL OAUTHBEARER mechanism.
 
 * xref:oauth-introspection-endpoint-{context}[Client using client ID and secret, with broker delegating validation to authorization server]
 * xref:oauth-jwt-{context}[Client using client ID and secret, with broker performing fast local token validation]

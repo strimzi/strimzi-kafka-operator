@@ -16,7 +16,7 @@ Consider using PLAIN only with Kafka clients that do not support OAUTHBEARER.
 
 You configure Kafka broker listeners to use OAuth 2.0 authentication for connecting clients.
 If necessary, you can use the OAUTHBEARER and PLAIN mechanisms on the same `oauth` listener.
-The properties to support each mechanism must be explicitly specified in the `oauth` listener configuration. 
+The properties to support each mechanism must be explicitly specified in the `oauth` listener configuration.
 
 .OAUTHBEARER overview
 
@@ -34,7 +34,7 @@ You can set the `enableOauthBearer` property to `true`, though this is not requi
 
 Many Kafka client tools use libraries that provide basic support for OAUTHBEARER at the protocol level.
 To support application development, Strimzi provides an _OAuth callback handler_ for the upstream Kafka Client Java libraries (but not for other libraries).
-Therefore, you do not need to write your own callback handlers for such clients.
+Therefore, you do not need to write your own callback handlers.
 An application client can use the callback handler to provide the access token.
 Clients written in other languages, such as Go, must use custom code to connect to the authorization server and obtain the access token.
 
@@ -81,8 +81,15 @@ When used with the OAuth 2.0 over PLAIN callbacks, Kafka clients authenticate wi
 
 * A long-lived access token, obtained manually at configuration time
 
-For both methods, the client must provide a `username` and `password` to pass credentials to the Kafka broker.
-If the password is prefixed with `$accessToken:` followed by the value of an access token, the Kafka broker will interpret the password as the access token.
+For both methods, the client must provide the PLAIN `username` and `password` properties to pass credentials to the Kafka broker.
+For the Kafka broker to interpret a password as an access token, the following configuration is required:
+
+* The broker listener configuration must have a token endpoint (`tokenEndpointUri`) configured
+* The password requires an `$accessToken:` prefix followed by the value of the access token
+
+If a token endpoint is not configured on the broker listener, the password should not include a prefix to pass an access token.
+The password is then interpreted as a raw access token.
+
 Otherwise, the Kafka broker will interpret the `username` as the client ID and the `password` as the client secret.
 
 If the `password` is set as the access token, the `username` must be set to the same principal name that the Kafka broker obtains from the access token.
