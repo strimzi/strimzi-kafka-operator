@@ -82,15 +82,16 @@ When used with the OAuth 2.0 over PLAIN callbacks, Kafka clients authenticate wi
 * A long-lived access token, obtained manually at configuration time
 
 For both methods, the client must provide the PLAIN `username` and `password` properties to pass credentials to the Kafka broker.
+The client uses these properties to pass a client ID and secret or username and access token.
+A client ID and secret are used to obtain an access token.
+
 For the Kafka broker to interpret a password as an access token, the following configuration is required:
 
 * The broker listener configuration must have a token endpoint (`tokenEndpointUri`) configured
 * The password requires an `$accessToken:` prefix followed by the value of the access token
 
-If a token endpoint is not configured on the broker listener, the password should not include a prefix to pass an access token.
-The password is then interpreted as a raw access token.
-
-Otherwise, the Kafka broker will interpret the `username` as the client ID and the `password` as the client secret.
+If a token endpoint is not configured on the broker listener, the Kafka broker interprets the password as a raw access token.
+In this case, the password should not include a prefix.
 
 If the `password` is set as the access token, the `username` must be set to the same principal name that the Kafka broker obtains from the access token.
 The process depends on how you configure username extraction using `userNameClaim`, `fallbackUserNameClaim`, `fallbackUsernamePrefix`, or `userInfoEndpointUri`.
