@@ -107,6 +107,7 @@ public class Kafka extends CustomResource<KafkaSpec, KafkaStatus> implements Nam
     private Map<String, Object> additionalProperties = new HashMap<>(0);
     private KafkaStatus status;
 
+    @Deprecated
     public Kafka() {}
 
     @Buildable(

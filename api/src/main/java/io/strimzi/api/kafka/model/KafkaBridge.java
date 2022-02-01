@@ -105,6 +105,7 @@ public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStat
     private KafkaBridgeStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
+    @Deprecated
     public KafkaBridge() {}
 
     @Buildable(

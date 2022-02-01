@@ -103,6 +103,7 @@ public class KafkaUser extends CustomResource<KafkaUserSpec, KafkaUserStatus> im
     private Map<String, Object> additionalProperties = new HashMap<>(0);
     private KafkaUserStatus status;
 
+    @Deprecated
     public KafkaUser() {}
 
     @Buildable(

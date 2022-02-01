@@ -101,6 +101,7 @@ public class KafkaMirrorMaker2 extends CustomResource<KafkaMirrorMaker2Spec, Kaf
     private KafkaMirrorMaker2Status status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
+    @Deprecated
     public KafkaMirrorMaker2() {}
 
     @Buildable(

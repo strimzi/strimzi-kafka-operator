@@ -105,6 +105,7 @@ public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConn
     private String apiVersion;
     private String kind = RESOURCE_KIND;
 
+    @Deprecated
     public KafkaConnector() {}
 
     @Buildable(

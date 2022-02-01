@@ -104,6 +104,7 @@ public class KafkaConnect extends CustomResource<KafkaConnectSpec, KafkaConnectS
     private KafkaConnectStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
+    @Deprecated
     public KafkaConnect() {}
 
     @Buildable(

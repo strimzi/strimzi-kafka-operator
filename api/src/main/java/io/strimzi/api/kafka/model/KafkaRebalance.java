@@ -89,6 +89,7 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
     private KafkaRebalanceStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
+    @Deprecated
     public KafkaRebalance() {}
 
     @Buildable(

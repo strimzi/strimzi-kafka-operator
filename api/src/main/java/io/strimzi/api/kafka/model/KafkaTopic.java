@@ -104,6 +104,7 @@ public class KafkaTopic extends CustomResource<KafkaTopicSpec, KafkaTopicStatus>
     private KafkaTopicStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
+    @Deprecated
     public KafkaTopic() {}
 
     @Buildable(
