@@ -12,6 +12,7 @@
 ### Changes, deprecations and removals
 
 * The `type` field in `ListenerStatus` has been deprecated and will be removed in the future.
+* The `disk` and `cpuUtilization` fields in the `spec.cruiseControl.capacity` section of the Kafka resource have been deprecated and will be removed in the future.
 
 ## 0.27.0
 
