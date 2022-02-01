@@ -58,12 +58,6 @@ import static java.util.Collections.unmodifiableList;
         }
     )
 )
-@Buildable(
-        editableEnabled = false,
-        generateBuilderPackage = false,
-        builderPackage = Constants.FABRIC8_KUBERNETES_API,
-        refs = {@BuildableReference(ObjectMeta.class)}
-)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
@@ -94,6 +88,21 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
     private KafkaRebalanceSpec spec;
     private KafkaRebalanceStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
+
+    public KafkaRebalance() {}
+
+    @Buildable(
+            editableEnabled = false,
+            generateBuilderPackage = false,
+            builderPackage = Constants.FABRIC8_KUBERNETES_API,
+            refs = {@BuildableReference(ObjectMeta.class)}
+    )
+    public KafkaRebalance(String apiVersion, ObjectMeta metadata, KafkaRebalanceSpec spec, KafkaRebalanceStatus status) {
+        this.apiVersion = apiVersion;
+        this.metadata = metadata;
+        this.spec = spec;
+        this.status = status;
+    }
 
     @JsonProperty("kind")
     @Override

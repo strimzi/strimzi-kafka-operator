@@ -74,11 +74,6 @@ import static java.util.Collections.unmodifiableList;
         }
     )
 )
-@Buildable(
-        editableEnabled = false,
-        builderPackage = Constants.FABRIC8_KUBERNETES_API,
-        refs = {@BuildableReference(ObjectMeta.class)}
-)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
@@ -109,6 +104,20 @@ public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConn
     private ObjectMeta metadata;
     private String apiVersion;
     private String kind = RESOURCE_KIND;
+
+    public KafkaConnector() {}
+
+    @Buildable(
+            editableEnabled = false,
+            builderPackage = Constants.FABRIC8_KUBERNETES_API,
+            refs = {@BuildableReference(ObjectMeta.class)}
+    )
+    public KafkaConnector(String apiVersion, ObjectMeta metadata, KafkaConnectorSpec spec, KafkaConnectorStatus status) {
+        this.apiVersion = apiVersion;
+        this.metadata = metadata;
+        this.spec = spec;
+        this.status = status;
+    }
 
     @Override
     public String getApiVersion() {

@@ -73,11 +73,6 @@ import static java.util.Collections.unmodifiableList;
         }
     )
 )
-@Buildable(
-        editableEnabled = false,
-        builderPackage = Constants.FABRIC8_KUBERNETES_API,
-        refs = {@BuildableReference(ObjectMeta.class)}
-)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
@@ -108,6 +103,20 @@ public class KafkaTopic extends CustomResource<KafkaTopicSpec, KafkaTopicStatus>
     private KafkaTopicSpec spec;
     private KafkaTopicStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
+
+    public KafkaTopic() {}
+
+    @Buildable(
+            editableEnabled = false,
+            builderPackage = Constants.FABRIC8_KUBERNETES_API,
+            refs = {@BuildableReference(ObjectMeta.class)}
+    )
+    public KafkaTopic(String apiVersion, ObjectMeta metadata, KafkaTopicSpec spec, KafkaTopicStatus status) {
+        this.apiVersion = apiVersion;
+        this.metadata = metadata;
+        this.spec = spec;
+        this.status = status;
+    }
 
     @Override
     public String getApiVersion() {
