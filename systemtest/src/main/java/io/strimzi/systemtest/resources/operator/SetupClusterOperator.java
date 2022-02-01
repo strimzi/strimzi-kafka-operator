@@ -606,14 +606,13 @@ public class SetupClusterOperator {
         }
     }
 
-    public synchronized SetupClusterOperator rollbackToDefaultConfiguration() {
+    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
+    public synchronized void rollbackToDefaultConfiguration() {
         // un-install old cluster operator
         unInstall();
 
         // install new one with default configuration
-        return defaultInstallation()
-            .createInstallation()
-            .runInstallation();
+        instanceHolder = defaultInstallation().createInstallation().runInstallation();
     }
 
     @Override
