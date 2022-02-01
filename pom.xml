@@ -90,13 +90,13 @@
         <license.maven.version>2.11</license.maven.version>
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
         <sundrio.version>0.40.1</sundrio.version>
-        <fabric8.kubernetes-client.version>5.11.2</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>5.11.2</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>5.11.2</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>5.12.0</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>5.12.0</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>5.12.0</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
-        <vertx.version>4.2.3</vertx.version>
-        <vertx-junit5.version>4.2.3</vertx-junit5.version>
-        <vertx.kafka.client>4.2.3</vertx.kafka.client>
+        <vertx.version>4.2.4</vertx.version>
+        <vertx-junit5.version>4.2.4</vertx-junit5.version>
+        <vertx.kafka.client>4.2.4</vertx.kafka.client>
         <log4j.version>2.17.1</log4j.version>
         <hamcrest.version>2.2</hamcrest.version>
         <valid4j.version>1.1</valid4j.version>
