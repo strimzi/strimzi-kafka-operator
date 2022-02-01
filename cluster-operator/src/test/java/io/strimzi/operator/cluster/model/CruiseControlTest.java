@@ -213,8 +213,6 @@ public class CruiseControlTest {
     public void testBrokerCapacities() {
         // Test user defined capacities
         BrokerCapacity userDefinedBrokerCapacity = new BrokerCapacity();
-        userDefinedBrokerCapacity.setDisk("20000M");
-        userDefinedBrokerCapacity.setCpuUtilization(95);
         userDefinedBrokerCapacity.setInboundNetwork("50000KB/s");
         userDefinedBrokerCapacity.setOutboundNetwork("50000KB/s");
 

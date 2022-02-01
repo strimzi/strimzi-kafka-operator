@@ -158,7 +158,7 @@ public class CruiseControlConfigurationST extends AbstractST {
 
             CruiseControlSpec cruiseControl = new CruiseControlSpecBuilder()
                 .withNewBrokerCapacity()
-                    .withDisk("200M")
+                    .withOutboundNetwork("20M")
                 .endBrokerCapacity()
                 .build();
 
@@ -174,7 +174,7 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying new configuration in the Kafka CR");
 
         assertThat(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec()
-            .getCruiseControl().getBrokerCapacity().getDisk(), is("200M"));
+            .getCruiseControl().getBrokerCapacity().getOutboundNetwork(), is("20M"));
 
         CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
     }
