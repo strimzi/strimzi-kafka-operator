@@ -28,12 +28,13 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -406,7 +407,7 @@ public class MetricsIsolatedST extends AbstractST {
             .build();
 
         // Attach consumer before producer
-        KafkaBridgeExampleClients kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
+        BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withNamespaceName(INFRA_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)

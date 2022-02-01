@@ -6,7 +6,7 @@ package io.strimzi.systemtest.utils;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.kafkaclients.KafkaClientOperations;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -25,7 +25,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 /**
  * ClientUtils class, which provides static methods for the all type clients
  * @see io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient
- * @see io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient
+ * @see io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient
  */
 public class ClientUtils {
 

@@ -7,8 +7,9 @@ package io.strimzi.systemtest.upgrade;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
@@ -55,7 +56,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
     // clusterName has to be same as cluster name in examples
     private final String clusterName = "my-cluster";
     private final int messageUpgradeCount =  600;
-    private final KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
+    private final KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
         .withProducerName(producerName)
         .withConsumerName(consumerName)
         .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))

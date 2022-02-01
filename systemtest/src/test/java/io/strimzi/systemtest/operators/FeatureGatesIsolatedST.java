@@ -17,9 +17,10 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -105,7 +106,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
             .build();
         resourceManager.createResource(extensionContext, kafkaTopic);
 
-        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
@@ -183,7 +184,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
                 .build();
         resourceManager.createResource(extensionContext, kafkaTopic);
 
-        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
                 .withProducerName(producerName)
                 .withConsumerName(consumerName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))

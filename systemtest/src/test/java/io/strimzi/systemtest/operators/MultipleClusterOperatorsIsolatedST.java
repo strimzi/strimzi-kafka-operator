@@ -17,12 +17,13 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
@@ -141,7 +142,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaBasicExampleClients basicClients = new KafkaBasicExampleClients.Builder()
+        KafkaClients basicClients = new KafkaClientsBuilder()
             .withNamespaceName(DEFAULT_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)

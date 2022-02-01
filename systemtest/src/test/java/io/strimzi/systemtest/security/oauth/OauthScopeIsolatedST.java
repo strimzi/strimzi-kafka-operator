@@ -14,8 +14,9 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -158,7 +159,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        KafkaBasicExampleClients oauthInternalClientChecksJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients oauthInternalClientChecksJob = new KafkaClientsBuilder()
             .withNamespaceName(INFRA_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)
@@ -189,7 +190,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaStatefulSetName(oauthClusterName));
 
-        KafkaBasicExampleClients oauthInternalClientChecksJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients oauthInternalClientChecksJob = new KafkaClientsBuilder()
             .withNamespaceName(INFRA_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)

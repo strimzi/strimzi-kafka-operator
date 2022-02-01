@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.resources.crd.kafkaclients;
+package io.strimzi.systemtest.kafkaclients.internalClients;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
@@ -14,6 +14,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.sundr.builder.annotations.Buildable;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,176 +27,73 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class KafkaBasicExampleClients {
+@Buildable(editableEnabled = false)
+public class KafkaClients extends BaseClients {
+    private static final Logger LOGGER = LogManager.getLogger(KafkaClients.class);
 
-    private static final Logger LOGGER = LogManager.getLogger(KafkaBasicExampleClients.class);
-
-    protected String producerName;
-    protected String consumerName;
-    protected String bootstrapAddress;
-    protected String topicName;
-    protected String message;
-    protected int messageCount;
-    protected String additionalConfig;
-    protected String consumerGroup;
-    protected long delayMs;
-    protected String namespaceName;
-
-    public static class Builder<SELF extends Builder<SELF>> {
-        private String producerName;
-        private String consumerName;
-        private String bootstrapAddress;
-        private String topicName;
-        private String message;
-        private int messageCount;
-        private String additionalConfig;
-        private String consumerGroup;
-        private long delayMs;
-        private String namespaceName;
-
-        public SELF withProducerName(String producerName) {
-            this.producerName = producerName;
-            return self();
-        }
-
-        public SELF withConsumerName(String consumerName) {
-            this.consumerName = consumerName;
-            return self();
-        }
-
-        public SELF withBootstrapAddress(String bootstrapAddress) {
-            this.bootstrapAddress = bootstrapAddress;
-            return self();
-        }
-
-        public SELF withTopicName(String topicName) {
-            this.topicName = topicName;
-            return self();
-        }
-
-        public SELF withMessageCount(int messageCount) {
-            this.messageCount = messageCount;
-            return self();
-        }
-
-        public SELF withMessage(String message) {
-            this.message = message;
-            return self();
-        }
-
-        public SELF withAdditionalConfig(String additionalConfig) {
-            this.additionalConfig = additionalConfig;
-            return self();
-        }
-
-        public SELF withConsumerGroup(String consumerGroup) {
-            this.consumerGroup = consumerGroup;
-            return self();
-        }
-
-        public SELF withDelayMs(long delayMs) {
-            this.delayMs = delayMs;
-            return self();
-        }
-
-        public SELF withNamespaceName(String namespaceName) {
-            this.namespaceName = namespaceName;
-            return self();
-        }
-
-        @SuppressWarnings("unchecked")
-        protected SELF self() {
-            return (SELF) this;
-        }
-
-        public KafkaBasicExampleClients build() {
-            return new KafkaBasicExampleClients(this);
-        }
-    }
-
-    protected KafkaBasicExampleClients(Builder builder) {
-        if (builder.topicName == null || builder.topicName.isEmpty()) throw new InvalidParameterException("Topic name is not set.");
-        if (builder.bootstrapAddress == null || builder.bootstrapAddress.isEmpty()) throw new InvalidParameterException("Bootstrap server is not set.");
-        if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
-        if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
-            LOGGER.info("Consumer group were not specified going to create the random one.");
-            builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
-        }
-        if (builder.message == null || builder.message.isEmpty()) builder.message = "Hello-world";
-        if (builder.additionalConfig == null || builder.additionalConfig.isEmpty()) builder.additionalConfig = "";
-
-        producerName = builder.producerName;
-        consumerName = builder.consumerName;
-        bootstrapAddress = builder.bootstrapAddress;
-        topicName = builder.topicName;
-        message = builder.message;
-        messageCount = builder.messageCount;
-        additionalConfig = builder.additionalConfig;
-        consumerGroup = builder.consumerGroup;
-        delayMs = builder.delayMs;
-        namespaceName = builder.namespaceName;
-    }
+    private String producerName;
+    private String consumerName;
+    private String message;
+    private int messageCount;
+    private String consumerGroup;
+    private long delayMs;
 
     public String getProducerName() {
         return producerName;
+    }
+
+    public void setProducerName(String producerName) {
+        this.producerName = producerName;
     }
 
     public String getConsumerName() {
         return consumerName;
     }
 
-    public String getBootstrapAddress() {
-        return bootstrapAddress;
-    }
-
-    public String getTopicName() {
-        return topicName;
+    public void setConsumerName(String consumerName) {
+        this.consumerName = consumerName;
     }
 
     public String getMessage() {
         return message;
     }
 
+    public void setMessage(String message) {
+        if (message == null || message.isEmpty()) {
+            message = "Hello-world";
+        }
+        this.message = message;
+    }
+
     public int getMessageCount() {
         return messageCount;
     }
 
-    public String getAdditionalConfig() {
-        return additionalConfig;
+    public void setMessageCount(int messageCount) {
+        if (messageCount <= 0) {
+            throw new InvalidParameterException("Message count is less than 1");
+        }
+        this.messageCount = messageCount;
     }
 
     public String getConsumerGroup() {
         return consumerGroup;
     }
 
+    public void setConsumerGroup(String consumerGroup) {
+        if (consumerGroup == null || consumerGroup.isEmpty()) {
+            LOGGER.info("Consumer group were not specified going to create the random one.");
+            consumerGroup = ClientUtils.generateRandomConsumerGroup();
+        }
+        this.consumerGroup = consumerGroup;
+    }
+
     public long getDelayMs() {
         return delayMs;
     }
 
-    public String getNamespaceName() {
-        return namespaceName;
-    }
-
-    protected Builder newBuilder() {
-        return new Builder();
-    }
-
-    protected Builder updateBuilder(Builder builder) {
-        return builder
-            .withConsumerGroup(getConsumerGroup())
-            .withAdditionalConfig(getAdditionalConfig())
-            .withBootstrapAddress(getBootstrapAddress())
-            .withConsumerName(getConsumerName())
-            .withDelayMs(getDelayMs())
-            .withMessageCount(getMessageCount())
-            .withProducerName(getProducerName())
-            .withTopicName(getTopicName())
-            .withMessage(getMessage())
-            .withNamespaceName(getNamespaceName());
-    }
-
-    public Builder toBuilder() {
-        return updateBuilder(newBuilder());
+    public void setDelayMs(long delayMs) {
+        this.delayMs = delayMs;
     }
 
     public JobBuilder producerStrimzi() {
@@ -204,15 +102,15 @@ public class KafkaBasicExampleClients {
 
     public JobBuilder producerScramShaStrimzi(final String clusterName, final String kafkaUserName) {
         // fetch secret
-        final String saslJaasConfigEncrypted = ResourceManager.kubeClient().getSecret(namespaceName, kafkaUserName).getData().get("sasl.jaas.config");
+        final String saslJaasConfigEncrypted = ResourceManager.kubeClient().getSecret(this.getNamespaceName(), kafkaUserName).getData().get("sasl.jaas.config");
         final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
 
-        additionalConfig +=
+        this.setAdditionalConfig(this.getAdditionalConfig() +
             // scram-sha
             "ssl.endpoint.identification.algorithm=\n" +
                 "sasl.mechanism=SCRAM-SHA-512\n" +
                 "security.protocol=" + SecurityProtocol.SASL_SSL + "\n" +
-                "sasl.jaas.config=" + saslJaasConfigDecrypted;
+                "sasl.jaas.config=" + saslJaasConfigDecrypted);
 
         return defaultProducerStrimzi()
             .editSpec()
@@ -227,11 +125,10 @@ public class KafkaBasicExampleClients {
     }
 
     public JobBuilder producerTlsStrimzi(final String clusterName, final String kafkaUserName) {
-        additionalConfig +=
-            // tls
+        this.setAdditionalConfig(this.getAdditionalConfig() +
             "ssl.endpoint.identification.algorithm=\n" +
             "sasl.mechanism=GSSAPI\n" +
-            "security.protocol=" + SecurityProtocol.SSL + "\n";
+            "security.protocol=" + SecurityProtocol.SSL + "\n");
 
         EnvVar userCrt = new EnvVarBuilder()
             .withName("USER_CRT")
@@ -271,10 +168,8 @@ public class KafkaBasicExampleClients {
     }
 
     public JobBuilder defaultProducerStrimzi() {
-        if (producerName == null || producerName.isEmpty()) throw new InvalidParameterException("Producer name is not set.");
-        if (namespaceName == null || namespaceName.isEmpty()) {
-            LOGGER.info("Deploy {} to namespace: {}", producerName, ResourceManager.kubeClient().getNamespace());
-            namespaceName = ResourceManager.kubeClient().getNamespace();
+        if (producerName == null || producerName.isEmpty()) {
+            throw new InvalidParameterException("Producer name is not set.");
         }
 
         Map<String, String> producerLabels = new HashMap<>();
@@ -290,7 +185,7 @@ public class KafkaBasicExampleClients {
 
         return new JobBuilder()
             .withNewMetadata()
-                .withNamespace(namespaceName)
+                .withNamespace(this.getNamespaceName())
                 .withLabels(producerLabels)
                 .withName(producerName)
             .endMetadata()
@@ -299,7 +194,7 @@ public class KafkaBasicExampleClients {
                 .withNewTemplate()
                     .withNewMetadata()
                         .withName(producerName)
-                        .withNamespace(namespaceName)
+                        .withNamespace(this.getNamespaceName())
                         .withLabels(producerLabels)
                     .endMetadata()
                     .withNewSpecLike(podSpecBuilder.build())
@@ -311,11 +206,11 @@ public class KafkaBasicExampleClients {
                                 .withImage(Environment.TEST_PRODUCER_IMAGE)
                                 .addNewEnv()
                                     .withName("BOOTSTRAP_SERVERS")
-                                    .withValue(bootstrapAddress)
+                                    .withValue(this.getBootstrapAddress())
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("TOPIC")
-                                    .withValue(topicName)
+                                    .withValue(this.getTopicName())
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("DELAY_MS")
@@ -339,7 +234,7 @@ public class KafkaBasicExampleClients {
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("ADDITIONAL_CONFIG")
-                                    .withValue(additionalConfig)
+                                    .withValue(this.getAdditionalConfig())
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("BLOCKING_PRODUCER")
@@ -352,10 +247,8 @@ public class KafkaBasicExampleClients {
     }
 
     public JobBuilder defaultConsumerStrimzi() {
-        if (consumerName == null || consumerName.isEmpty()) throw new InvalidParameterException("Consumer name is not set.");
-        if (namespaceName == null || namespaceName.isEmpty()) {
-            LOGGER.info("Deploy {} to namespace: {}", consumerName, ResourceManager.kubeClient().getNamespace());
-            namespaceName = ResourceManager.kubeClient().getNamespace();
+        if (consumerName == null || consumerName.isEmpty()) {
+            throw new InvalidParameterException("Consumer name is not set.");
         }
 
         Map<String, String> consumerLabels = new HashMap<>();
@@ -371,7 +264,7 @@ public class KafkaBasicExampleClients {
 
         return new JobBuilder()
             .withNewMetadata()
-                .withNamespace(namespaceName)
+                .withNamespace(this.getNamespaceName())
                 .withLabels(consumerLabels)
                 .withName(consumerName)
             .endMetadata()
@@ -380,7 +273,7 @@ public class KafkaBasicExampleClients {
                 .withNewTemplate()
                     .withNewMetadata()
                         .withLabels(consumerLabels)
-                        .withNamespace(namespaceName)
+                        .withNamespace(this.getNamespaceName())
                         .withName(consumerName)
                     .endMetadata()
                     .withNewSpecLike(podSpecBuilder.build())
@@ -392,11 +285,11 @@ public class KafkaBasicExampleClients {
                                     .withImage(Environment.TEST_CONSUMER_IMAGE)
                                     .addNewEnv()
                                         .withName("BOOTSTRAP_SERVERS")
-                                        .withValue(bootstrapAddress)
+                                        .withValue(this.getBootstrapAddress())
                                     .endEnv()
                                     .addNewEnv()
                                         .withName("TOPIC")
-                                        .withValue(topicName)
+                                        .withValue(this.getTopicName())
                                     .endEnv()
                                     .addNewEnv()
                                         .withName("DELAY_MS")
@@ -416,7 +309,7 @@ public class KafkaBasicExampleClients {
                                     .endEnv()
                                     .addNewEnv()
                                         .withName("ADDITIONAL_CONFIG")
-                                        .withValue(additionalConfig)
+                                        .withValue(this.getAdditionalConfig())
                                     .endEnv()
                                 .endContainer()
                     .endSpec()

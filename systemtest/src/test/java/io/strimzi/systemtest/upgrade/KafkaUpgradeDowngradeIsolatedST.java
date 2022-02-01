@@ -8,8 +8,9 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -193,7 +194,7 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
             resourceManager.createResource(testContext, KafkaTopicTemplates.topic(clusterName, continuousTopicName, 3, 3, 2).build());
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
-            KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
+            KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
                 .withProducerName(producerName)
                 .withConsumerName(consumerName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
