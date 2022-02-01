@@ -2128,6 +2128,26 @@ spec:
                                   `Deployments`, `Pods`, and `Services`.
                             description: Metadata applied to the resource.
                         description: Template for the Kafka ClusterRoleBinding.
+                      podSet:
+                        type: object
+                        properties:
+                          metadata:
+                            type: object
+                            properties:
+                              labels:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Labels added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                              annotations:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Annotations added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                            description: Metadata applied to the resource.
+                        description: Template for Kafka `StrimziPodSet` resource.
                     description: Template for Kafka cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.
@@ -3165,6 +3185,26 @@ spec:
                             description: Metadata applied to the resource.
                         description: Template for Secret of the Zookeeper Cluster
                           JMX authentication.
+                      podSet:
+                        type: object
+                        properties:
+                          metadata:
+                            type: object
+                            properties:
+                              labels:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Labels added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                              annotations:
+                                x-kubernetes-preserve-unknown-fields: true
+                                type: object
+                                description: Annotations added to the resource template.
+                                  Can be applied to different resources such as `StatefulSets`,
+                                  `Deployments`, `Pods`, and `Services`.
+                            description: Metadata applied to the resource.
+                        description: Template for ZooKeeper `StrimziPodSet` resource.
                     description: Template for ZooKeeper cluster resources. The template
                       allows users to specify how are the `StatefulSet`, `Pods` and
                       `Services` generated.

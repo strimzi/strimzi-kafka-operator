@@ -32,6 +32,7 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
     private static final long serialVersionUID = 1L;
 
     private StatefulSetTemplate statefulset;
+    private ResourceTemplate podSet;
     private PodTemplate pod;
     private InternalServiceTemplate clientService;
     private InternalServiceTemplate nodesService;
@@ -50,6 +51,16 @@ public class ZookeeperClusterTemplate implements Serializable, UnknownPropertyPr
 
     public void setStatefulset(StatefulSetTemplate statefulset) {
         this.statefulset = statefulset;
+    }
+
+    @Description("Template for ZooKeeper `StrimziPodSet` resource.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getPodSet() {
+        return podSet;
+    }
+
+    public void setPodSet(ResourceTemplate podSetTemplate) {
+        this.podSet = podSetTemplate;
     }
 
     @Description("Template for ZooKeeper `Pods`.")

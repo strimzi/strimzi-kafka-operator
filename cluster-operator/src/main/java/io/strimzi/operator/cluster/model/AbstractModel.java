@@ -264,6 +264,8 @@ public abstract class AbstractModel {
      */
     protected Map<String, String> templateStatefulSetLabels;
     protected Map<String, String> templateStatefulSetAnnotations;
+    protected Map<String, String> templatePodSetLabels;
+    protected Map<String, String> templatePodSetAnnotations;
     protected Map<String, String> templateDeploymentLabels;
     protected Map<String, String> templateDeploymentAnnotations;
     protected io.strimzi.api.kafka.model.template.DeploymentStrategy templateDeploymentStrategy = io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
@@ -1176,9 +1178,9 @@ public abstract class AbstractModel {
         return new StrimziPodSetBuilder()
                 .withNewMetadata()
                     .withName(name)
-                    .withLabels(getLabelsWithStrimziName(name, templateStatefulSetLabels).toMap())
+                    .withLabels(getLabelsWithStrimziName(name, templatePodSetLabels).toMap())
                     .withNamespace(namespace)
-                    .withAnnotations(Util.mergeLabelsOrAnnotations(setAnnotations, templateStatefulSetAnnotations))
+                    .withAnnotations(Util.mergeLabelsOrAnnotations(setAnnotations, templatePodSetAnnotations))
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withNewSpec()

@@ -190,8 +190,8 @@ public class KafkaPodSetTest {
     @ParallelTest
     public void testCustomizedPodSet()   {
         // Prepare various template values
-        Map<String, String> stsLabels = TestUtils.map("l1", "v1", "l2", "v2");
-        Map<String, String> stsAnnos = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> spsLabels = TestUtils.map("l1", "v1", "l2", "v2");
+        Map<String, String> spsAnnos = TestUtils.map("a1", "v1", "a2", "v2");
 
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
         Map<String, String> podAnnos = TestUtils.map("a3", "v3", "a4", "v4");
@@ -293,12 +293,12 @@ public class KafkaPodSetTest {
                         .withLivenessProbe(livenessProbe)
                         .withConfig(Map.of("foo", "bar"))
                         .withNewTemplate()
-                            .withNewStatefulset()
+                            .withNewPodSet()
                                 .withNewMetadata()
-                                    .withLabels(stsLabels)
-                                    .withAnnotations(stsAnnos)
+                                    .withLabels(spsLabels)
+                                    .withAnnotations(spsAnnos)
                                 .endMetadata()
-                            .endStatefulset()
+                            .endPodSet()
                             .withNewPod()
                                 .withNewMetadata()
                                     .withLabels(podLabels)
@@ -330,8 +330,8 @@ public class KafkaPodSetTest {
         StrimziPodSet ps = kc.generatePodSet(3, true, null, null, Map.of("special", "annotation"));
 
         assertThat(ps.getMetadata().getName(), is(KafkaCluster.kafkaClusterName(CLUSTER)));
-        assertThat(ps.getMetadata().getLabels().entrySet().containsAll(stsLabels.entrySet()), is(true));
-        assertThat(ps.getMetadata().getAnnotations().entrySet().containsAll(stsAnnos.entrySet()), is(true));
+        assertThat(ps.getMetadata().getLabels().entrySet().containsAll(spsLabels.entrySet()), is(true));
+        assertThat(ps.getMetadata().getAnnotations().entrySet().containsAll(spsAnnos.entrySet()), is(true));
         assertThat(ps.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
         assertThat(ps.getSpec().getPods().size(), is(3));
 
