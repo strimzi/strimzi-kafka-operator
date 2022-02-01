@@ -22,7 +22,7 @@ import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -86,9 +86,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
-@IsolatedSuite
-public class ListenersIsolatedST extends AbstractST {
-    private static final Logger LOGGER = LogManager.getLogger(ListenersIsolatedST.class);
+@ParallelSuite
+public class ListenersST extends AbstractST {
+    private static final Logger LOGGER = LogManager.getLogger(ListenersST.class);
 
     private static final CertAndKeyFiles ROOT_CA_CERT_AND_KEY_1;
     private static final CertAndKeyFiles STRIMZI_CERT_AND_KEY_1;
