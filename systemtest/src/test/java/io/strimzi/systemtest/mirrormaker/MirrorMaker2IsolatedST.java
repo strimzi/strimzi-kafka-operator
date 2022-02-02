@@ -796,8 +796,80 @@ class MirrorMaker2IsolatedST extends AbstractST {
         });
     }
 
+    /*
+     * This test is using the Kafka Identity Replication policy. This is what should be used by all new users.
+     */
     @ParallelNamespaceTest
     void testIdentityReplicationPolicy(ExtensionContext extensionContext) {
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClusterSourceName = clusterName + "-source";
+        String kafkaClusterTargetName = clusterName + "-target";
+        String originalTopicName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+
+        // Deploy source kafka
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
+        // Deploy target kafka
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
+        // Create topic
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, originalTopicName, 3).build());
+
+        resourceManager.createResource(extensionContext, false, KafkaClientsTemplates.kafkaClients(namespaceName, false, kafkaClientsName).build());
+
+        final String kafkaClientsPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(namespaceName, kafkaClientsName).get(0).getMetadata().getName();
+
+        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+            .editSpec()
+                .editMirror(0)
+                    .editSourceConnector()
+                        .addToConfig("replication.policy.class", "org.apache.kafka.connect.mirror.IdentityReplicationPolicy")
+                    .endSourceConnector()
+                .endMirror()
+            .endSpec()
+            .build());
+
+        LOGGER.info("Sending and receiving messages via {}", kafkaClusterSourceName);
+        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+            .withNamespaceName(namespaceName)
+            .withTopicName(originalTopicName)
+            .withClusterName(kafkaClusterSourceName)
+            .withMessageCount(MESSAGE_COUNT)
+            .withUsingPodName(kafkaClientsPodName)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+            .build();
+
+        internalKafkaClient.assertSentAndReceivedMessages(
+            internalKafkaClient.sendMessagesPlain(),
+            internalKafkaClient.receiveMessagesPlain()
+        );
+
+        LOGGER.info("Changing to {} and will try to receive messages", kafkaClusterTargetName);
+
+        internalKafkaClient = internalKafkaClient.toBuilder()
+            .withClusterName(kafkaClusterTargetName)
+            .build();
+
+        assertThat(internalKafkaClient.receiveMessagesPlain(), equalTo(MESSAGE_COUNT));
+
+        LOGGER.info("Checking if the mirrored topic name is same as the original one");
+
+        List<String> kafkaTopics = KafkaCmdClient.listTopicsUsingPodCli(namespaceName, kafkaClusterTargetName, 0);
+        assertNotNull(kafkaTopics.stream().filter(kafkaTopic -> kafkaTopic.equals(originalTopicName)).findAny());
+
+        List<String> kafkaTopicSpec = KafkaCmdClient.describeTopicUsingPodCli(namespaceName, kafkaClusterTargetName, 0, originalTopicName);
+        assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("Topic:")).findFirst().orElse(null), equalTo("Topic:" + originalTopicName));
+        assertThat(kafkaTopicSpec.stream().filter(token -> token.startsWith("PartitionCount:")).findFirst().orElse(null), equalTo("PartitionCount:3"));
+    }
+
+    /*
+     * This test is using the Strimzi Identity Replication policy. This is needed for backwards compatibility for users
+     * who might still have it configured.
+     *
+     * This ST should be deleted once we drop the Strimzi policy completely.
+     */
+    @ParallelNamespaceTest
+    void testStrimziIdentityReplicationPolicy(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String kafkaClusterSourceName = clusterName + "-source";

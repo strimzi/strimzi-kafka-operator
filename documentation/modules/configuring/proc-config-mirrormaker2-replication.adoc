@@ -114,7 +114,7 @@ spec:
         sync.topic.acls.enabled: "false" <23>
         refresh.topics.interval.seconds: 60 <24>
         replication.policy.separator: "" <25>
-        replication.policy.class: "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy" <26>
+        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy" <26>
     heartbeatConnector: <27>
       config:
         heartbeats.topic.replication.factor: 1 <28>
@@ -125,7 +125,7 @@ spec:
         sync.group.offsets.enabled: true <32>
         sync.group.offsets.interval.seconds: 60 <33>
         emit.checkpoints.interval.seconds: 60 <34>
-        replication.policy.class: "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy"
+        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
     topicsPattern: ".*" <35>
     groupsPattern: "group1|group2|group3" <36>
   resources: <37>
