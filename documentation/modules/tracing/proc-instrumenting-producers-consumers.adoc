@@ -34,39 +34,39 @@ You do this by adding the `TracingProducerInterceptor` and `TracingConsumerInter
 [source,xml,subs="attributes+"]
 ----
 <dependency>
-	<groupId>io.opentelemetry</groupId>
-	<artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
-	<version>{OpenTelemetryVersion}</version>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
+  <version>{OpenTelemetryVersion}</version>
 </dependency>
 <dependency>
-	<groupId>io.opentelemetry</groupId>
-	<artifactId>opentelemetry-semconv</artifactId>
-	<version>{OpenTelemetryVersion}</version>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-semconv</artifactId>
+  <version>{OpenTelemetryVersion}</version>
 </dependency>
 <dependency>
-	 <groupId>io.opentelemetry</groupId>
-	<artifactId>opentelemetry-sdk-trace</artifactId>
-	<version>{OpenTelemetryVersionStable}</version>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-sdk-trace</artifactId>
+  <version>{OpenTelemetryVersionStable}</version>
 </dependency>
 <dependency>
-	<groupId>io.opentelemetry.instrumentation</groupId>
-	<artifactId>opentelemetry-kafka-clients-{OpenTelemetryKafkaClient}</artifactId>
-	<version>{OpenTelemetryVersion}</version>
+  <groupId>io.opentelemetry.instrumentation</groupId>
+  <artifactId>opentelemetry-kafka-clients-{OpenTelemetryKafkaClient}</artifactId>
+  <version>{OpenTelemetryVersion}</version>
 </dependency>
 <dependency>
-	<groupId>io.opentelemetry.instrumentation</groupId>
-	<artifactId>opentelemetry-kafka-clients-common</artifactId>
-	<version>{OpenTelemetryVersion}</version>
+  <groupId>io.opentelemetry.instrumentation</groupId>
+  <artifactId>opentelemetry-kafka-clients-common</artifactId>
+  <version>{OpenTelemetryVersion}</version>
 </dependency>
 <dependency>
-	<groupId>io.opentelemetry</groupId>
-	<artifactId>opentelemetry-exporter-jaeger</artifactId>
-	<version>{OpenTelemetryVersionStable}</version>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-exporter-jaeger</artifactId>
+  <version>{OpenTelemetryVersionStable}</version>
 </dependency>
 <dependency>
-	<groupId>io.grpc</groupId>
-	<artifactId>grpc-netty-shaded</artifactId>
-	<version>{OpenTelemetryGrpcVersion}</version>
+  <groupId>io.grpc</groupId>
+  <artifactId>grpc-netty-shaded</artifactId>
+  <version>{OpenTelemetryGrpcVersion}</version>
 </dependency>
 ----
 --
