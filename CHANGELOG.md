@@ -12,7 +12,7 @@
 ### Changes, deprecations and removals
 
 * The Strimzi Identity Replication Policy (class `io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy`) is now deprecated and will be removed in the future.
-  Please update to the Kafka Identity Replication Policy (class `org.apache.kafka.connect.mirror.IdentityReplicationPolicy`) which is part of Apache Kafka itself.
+  Please update to Kafka's own Identity Replication Policy (class `org.apache.kafka.connect.mirror.IdentityReplicationPolicy`).
 * The `type` field in `ListenerStatus` has been deprecated and will be removed in the future.
 
 ## 0.27.0
