@@ -71,7 +71,7 @@ public class SuiteThreadController {
         int isZeroParallelSuitesCounter = 0;
 
         while (preCondition) {
-            LOGGER.debug("{} - Parallel suites count: {}", extensionContext.getRequiredTestClass().getSimpleName(), runningTestSuitesInParallelCount.get());
+            LOGGER.trace("{} - Parallel suites count: {}", extensionContext.getRequiredTestClass().getSimpleName(), runningTestSuitesInParallelCount.get());
             try {
                 Thread.sleep(STARTING_DELAY);
             } catch (InterruptedException e) {
@@ -80,7 +80,7 @@ public class SuiteThreadController {
 
             isZeroParallelSuitesCounter = runningTestSuitesInParallelCount.get() <= 0 ? ++isZeroParallelSuitesCounter : 0;
 
-            LOGGER.debug("{} - isZeroParallelSuitesCounter counter is:{}", extensionContext.getRequiredTestClass().getSimpleName(), isZeroParallelSuitesCounter);
+            LOGGER.trace("{} - isZeroParallelSuitesCounter counter is:{}", extensionContext.getRequiredTestClass().getSimpleName(), isZeroParallelSuitesCounter);
 
             preCondition = runningTestSuitesInParallelCount.get() > 0 || isZeroParallelSuitesCounter < 5;
         }

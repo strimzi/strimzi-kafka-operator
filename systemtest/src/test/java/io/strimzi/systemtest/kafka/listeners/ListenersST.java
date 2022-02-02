@@ -21,12 +21,9 @@ import io.strimzi.api.kafka.model.status.ListenerAddress;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
@@ -51,7 +48,6 @@ import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -90,9 +86,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
-@IsolatedSuite
-public class ListenersIsolatedST extends AbstractST {
-    private static final Logger LOGGER = LogManager.getLogger(ListenersIsolatedST.class);
+@ParallelSuite
+public class ListenersST extends AbstractST {
+    private static final Logger LOGGER = LogManager.getLogger(ListenersST.class);
 
     private static final CertAndKeyFiles ROOT_CA_CERT_AND_KEY_1;
     private static final CertAndKeyFiles STRIMZI_CERT_AND_KEY_1;
@@ -2345,20 +2341,6 @@ public class ListenersIsolatedST extends AbstractST {
             assertThat(certificate.toString(), containsString(advertHostInternalList.get(index)));
             assertThat(certificate.toString(), containsString(advertHostExternalList.get(index++)));
         }
-    }
-
-    @BeforeAll
-    void setup(ExtensionContext extensionContext) {
-        final String namespaceToWatch = Environment.isNamespaceRbacScope() ? INFRA_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
-
-        clusterOperator.unInstall();
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
-            .withWatchingNamespaces(namespaceToWatch)
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
-            .createInstallation()
-            .runInstallation();
     }
 
     @AfterEach
