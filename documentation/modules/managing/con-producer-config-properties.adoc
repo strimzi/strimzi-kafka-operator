@@ -42,6 +42,7 @@ Use a comma-separated list to specify two or three addresses in case a server is
 <5> (Optional) The codec for compressing messages, which are sent and might be stored in compressed format and then decompressed when reaching a consumer.
 Compression is useful for improving throughput and reducing the load on storage, but might not be suitable for low latency applications where the cost of compression or decompression could be prohibitive.
 
+[id='con-producer-config-data-durability-{context}']
 == Data durability
 
 You can apply greater data durability, to minimize the likelihood that messages are lost, using message delivery acknowledgments.
@@ -110,6 +111,7 @@ retries=2147483647
 <1> Set to `false` to disable the idempotent producer.
 <2> Set the number of in-flight requests to exactly `1`.
 
+[id='con-producer-config-reliability-{context}']
 == Reliability guarantees
 
 Idempotence is useful for exactly once writes to a single partition.
@@ -138,6 +140,7 @@ Each transactional id should be used for a unique set of topic partitions.
 For example, this can be achieved using an external mapping of topic partition names to transactional ids,
 or by computing the transactional id from the topic partition names using a function that avoids collisions.
 
+[id='con-producer-config-throughput-{context}']
 == Optimizing throughput and latency
 
 Usually, the requirement of a system is to satisfy a particular throughput target for a proportion of messages within a given latency.

@@ -74,7 +74,7 @@ For example, you can use the Strimzi `KafkaTopic` resource or applications to cr
 For high availability environments, it is advisable to increase the replication factor to at least 3 for topics and set the minimum number of in-sync replicas required to 1 less than the replication factor.
 For topics created using the `KafkaTopic` resource, the replication factor is set using `spec.replicas`.
 
-For xref:data_durability[data durability], you should also set `min.insync.replicas` in your _topic_ configuration and message delivery acknowledgments using `acks=all` in your _producer_ configuration.
+For xref:con-producer-config-data-durability-{context}[data durability], you should also set `min.insync.replicas` in your _topic_ configuration and message delivery acknowledgments using `acks=all` in your _producer_ configuration.
 
 Use `replica.fetch.max.bytes` to set the maximum size, in bytes, of messages fetched by each follower that replicates the leader partition.
 Change this value according to the average message size and throughput. When considering the total memory allocation required for read/write buffering, the memory available must also be able to accommodate the maximum replicated message size when multiplied by all followers.
@@ -94,7 +94,7 @@ delete.topic.enable=true
 
 == Internal topic settings for transactions and commits
 
-If you are xref:reliability_guarantees[using transactions] to enable atomic writes to partitions from producers, the state of the transactions is stored in the internal `__transaction_state` topic.
+If you are xref:con-producer-config-reliability-{context}[using transactions] to enable atomic writes to partitions from producers, the state of the transactions is stored in the internal `__transaction_state` topic.
 By default, the brokers are configured with a replication factor of 3 and a minimum of 2 in-sync replicas for this topic, which means that a minimum of three brokers are required in your Kafka cluster.
 
 [source,env]
@@ -399,7 +399,7 @@ Kafka can accommodate larger batches at a reduced throughput, assuming adequate 
 
 Large message sizes are handled in four ways:
 
-. xref:optimizing_throughput_and_latency[Producer-side message compression] writes compressed messages to the log.
+. xref:con-producer-config-throughput-{context}[Producer-side message compression] writes compressed messages to the log.
 . Reference-based messaging sends only a reference to data stored in some other system in the message’s value.
 . Inline messaging splits messages into chunks that use the same key, which are then combined on output using a stream-processor like Kafka Streams.
 . Broker and producer/consumer client application configuration built to handle larger message sizes.

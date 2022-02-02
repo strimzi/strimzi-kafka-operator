@@ -6,6 +6,6 @@
 
 Instrument Kafka producer and consumer clients, and Kafka Streams API applications for distributed tracing.
 
-include::../../modules/tracing/proc-instrumenting-producers-consumers-opentracing.adoc[leveloffset=+1]
+include::../../modules/tracing/proc-instrumenting-producers-consumers.adoc[leveloffset=+1]
 
 include::../../modules/tracing/proc-instrumenting-kafka-streams-with-tracers.adoc[leveloffset=+1]

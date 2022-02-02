@@ -11,8 +11,9 @@ Configure and initialize a Jaeger tracer using a set of xref:ref-tracing-environ
 
 In each client application:
 
-. Add Maven dependencies for Jaeger to the `pom.xml` file for the client application:
+. Add the Maven dependency for Jaeger to the `pom.xml` file for the client application:
 +
+.Dependency for Jaeger tracing
 [source,xml,subs="attributes+"]
 ----
 <dependency>
@@ -31,7 +32,7 @@ In each client application:
 Tracer tracer = Configuration.fromEnv().getTracer();
 ----
 +
-NOTE: For alternative ways to initialize a Jaeger tracer, see the https://github.com/jaegertracing/jaeger-client-java/tree/master/jaeger-core[Java OpenTracing library^] documentation.
+NOTE: For alternative ways to initialize a Jaeger tracer, see the https://github.com/jaegertracing/jaeger-client-java/tree/master/jaeger-core[core tracing functionality for custom instrumentation^].
 
 . Register the Jaeger tracer as a global tracer:
 +

@@ -1,0 +1,35 @@
+// Module included in the following assemblies:
+//
+// assembly-distributed-tracing.adoc
+
+[id='con-overview-tracing-{context}']
+= Tracing options
+
+[role="_abstract"]
+Use OpenTracing or OpenTelemetry with the Jaeger tracing system.
+
+OpenTracing and OpenTelemetry provide API specifications that are independent from the tracing or monitoring system.
+
+* The APIs are used to _instrument_ application code
+
+* Instrumented applications generate _traces_ for individual transactions across the distributed system
+
+* Traces are composed of _spans_ that define specific units of work over time
+
+Jaeger is a tracing system for microservices-based distributed systems.
+
+* Jaeger implements the tracing APIs and provides client libraries for instrumentation
+
+* The Jaeger user interface allows you to query, filter, and analyze trace data
+
+.The Jaeger user interface showing a simple query
+image:image_con-overview-distributed-tracing.png[The Jaeger user interface showing a simple query]
+
+[role="_additional-resources"]
+.Additional resources
+
+* {JaegerHome}
+* {OpenTracingHome}
+* link:https://github.com/opentracing-contrib/java-kafka-client/blob/master/README.md[OpenTracing Apache Kafka client instrumentation^] library (included with Strimzi)
+* link:https://opentelemetry.io/[OpenTelemetry^]
+* link:https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/main/instrumentation/kafka/kafka-clients[OpenTelemetry Apache Kafka client instrumentation^]

@@ -5,10 +5,15 @@
 [id='ref-tracing-environment-variables-{context}']
 = Environment variables for tracing
 
-Use these environment variables when configuring a Jaeger tracer for Kafka clients.
+[role="_abstract"]
+Use environment variables to configure a Jaeger tracer for Kafka clients.
+The environment variables are specific to OpenTracing or OpenTelemetry.
 
-NOTE: The tracing environment variables are part of the Jaeger project and are subject to change. For the latest environment variables, see the https://github.com/jaegertracing/jaeger-client-java/tree/master/jaeger-core#configuration-via-environment[Jaeger documentation^].
+Use the environment variables to xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[initialize a Jaeger tracer for Kafka clients].
 
+NOTE: Tracing environment variables are part of the Jaeger project and are subject to change. For the latest environment variables, see the https://github.com/jaegertracing/jaeger-client-java/tree/master/jaeger-core#configuration-via-environment[Jaeger documentation^].
+
+.OpenTracing environment variables
 [%autowidth.stretch,cols="3*",options="header",stripes="none",separator=¦]
 |===
 
@@ -89,6 +94,24 @@ The value can also refer to an environment variable using the format `${envVarNa
 
 |===
 
-.Additional resources
+.OpenTelemetry environment variables
+[%autowidth.stretch,cols="3*",options="header",stripes="none",separator=¦]
+|===
 
-* xref:proc-configuring-jaeger-tracer-kafka-clients-{context}[]
+¦Property
+¦Required
+¦Description
+
+m¦OTEL_SERVICE_NAME
+¦Yes
+¦The name of the Jaeger tracing service for OpenTelemetry.
+
+m¦OTEL_EXPORTER_JAEGER_ENDPOINT
+¦Yes
+¦The Jaeger gRPC endpoint to connect to.
+
+m¦OTEL_TRACES_EXPORTER
+¦Yes
+¦The exporter used for tracing. Set to `jaeger`.
+
+|===

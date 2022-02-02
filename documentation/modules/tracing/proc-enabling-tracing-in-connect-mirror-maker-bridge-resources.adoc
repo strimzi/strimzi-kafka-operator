@@ -5,6 +5,7 @@
 [id='proc-enabling-tracing-in-connect-mirror-maker-bridge-resources-{context}']
 = Enabling tracing in MirrorMaker, Kafka Connect, and Kafka Bridge resources
 
+[role="_abstract"]
 Update the configuration of `KafkaMirrorMaker`, `KafkaMirrorMaker2`, `KafkaConnect`, and `KafkaBridge` custom resources to specify and configure a Jaeger tracer service for each resource. Updating a tracing-enabled resource in your Kubernetes cluster triggers two events:
 
 * Interceptor classes are updated in the integrated consumers and producers in MirrorMaker, MirrorMaker 2.0, Kafka Connect, or the Strimzi Kafka Bridge.
@@ -13,14 +14,20 @@ Update the configuration of `KafkaMirrorMaker`, `KafkaMirrorMaker2`, `KafkaConne
 
 * For the Kafka Bridge, a Jaeger tracer based on the tracing configuration defined in the resource is initialized by the Kafka Bridge itself.
 
+You can enable tracing using OpenTracing or OpenTelemetry.
+
 .Procedure
 
 Perform these steps for each `KafkaMirrorMaker`, `KafkaMirrorMaker2`, `KafkaConnect`, and `KafkaBridge` resource.
 
-. In the `spec.template` property, configure the Jaeger tracer service. For example:
+. In the `spec.template` property, configure the Jaeger tracer service.
++
+* Use the xref:ref-tracing-environment-variables-{context}[tracing environment variables] as template configuration properties.
+* For OpenTracing, set the `spec.tracing.type` property to `jaeger`.
+* For OpenTelemetry, set the `spec.tracing.type` property `jaeger-otel`.
 +
 --
-.Jaeger tracer configuration for Kafka Connect
+.Example Jaeger tracer configuration for Kafka Connect using OpenTracing
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaConnectApiVersion}
@@ -38,12 +45,12 @@ spec:
           value: jaeger-agent-name
         - name: JAEGER_AGENT_PORT
           value: "6831"
-  tracing: <2>
-    type: jaeger
+  tracing:
+    type: jaeger <2>
   #...
 ----
 
-.Jaeger tracer configuration for MirrorMaker
+.Example Jaeger tracer configuration for MirrorMaker using OpenTracing
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaMirrorMakerApiVersion}
@@ -66,7 +73,7 @@ spec:
 #...
 ----
 
-.Jaeger tracer configuration for MirrorMaker 2.0
+.Example Jaeger tracer configuration for MirrorMaker 2.0 using OpenTelemetry
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}
@@ -78,18 +85,18 @@ spec:
   template:
     connectContainer:
       env:
-        - name: JAEGER_SERVICE_NAME
+        - name: OTEL_SERVICE_NAME
           value: my-jaeger-service
-        - name: JAEGER_AGENT_HOST
-          value: jaeger-agent-name
-        - name: JAEGER_AGENT_PORT
-          value: "6831"
+        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
+          value: http://jaeger-agent-name:6831
+        - name: OTEL_TRACES_EXPORTER
+          value: jaeger
   tracing:
-    type: jaeger
+    type: jaeger-otel <3>
 #...
 ----
 
-.Jaeger tracer configuration for the Kafka Bridge
+.Jaeger tracer configuration for the Kafka Bridge using OpenTelemetry
 [source,yaml,subs=attributes+]
 ----
 apiVersion: {KafkaBridgeApiVersion}
@@ -101,28 +108,28 @@ spec:
   template:
     bridgeContainer:
       env:
-        - name: JAEGER_SERVICE_NAME
+        - name: OTEL_SERVICE_NAME
           value: my-jaeger-service
-        - name: JAEGER_AGENT_HOST
-          value: jaeger-agent-name
-        - name: JAEGER_AGENT_PORT
-          value: "6831"
+        - name: OTEL_EXPORTER_JAEGER_ENDPOINT
+          value: http://jaeger-agent-name:6831
+        - name: OTEL_TRACES_EXPORTER
+          value: jaeger
   tracing:
-    type: jaeger
+    type: jaeger-otel
 #...
 ----
-<1> Use the xref:ref-tracing-environment-variables-{context}[tracing environment variables] as template configuration properties.
-<2> Set the `spec.tracing.type` property to `jaeger`.
 --
 
 . Create or update the resource:
 +
-[source,shell,subs=attributes+]
+[source,yaml,subs="+quotes,attributes"]
+
 ----
-kubectl apply -f your-file
+kubectl apply -f _<resource_configuration_file>_
 ----
 
+[role="_additional-resources"]
 .Additional resources
 
-* xref:type-ContainerTemplate-reference[]
-* xref:assembly-customizing-kubernetes-resources-{context}[]
+* xref:type-ContainerTemplate-reference[ContainerTemplate schema reference]
+* xref:assembly-customizing-kubernetes-resources-{context}[Customizing Kubernetes resources]

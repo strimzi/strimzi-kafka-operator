@@ -5,7 +5,17 @@
 [id='proc-instrumenting-kafka-streams-with-tracers-{context}']
 = Instrumenting Kafka Streams applications for tracing
 
-This section describes how to instrument Kafka Streams API applications for distributed tracing.
+[role="_abstract"]
+This procedure describes how to instrument Kafka Streams API applications for distributed tracing.
+
+The procedure shows the steps required when using OpenTracing.
+
+You enable Kafka OpenTracing instrumentation in Kafka Streams applications by adding the JARs as a dependency to your project.
+You create a Kafka Streams instance that uses `KafkaClientSupplier`.
+`KafkaClientSupplier` tells the Streams API to use wrapped Kafka consumer and producer clients.
+A `TracingKafkaClientSupplier` class is provided by the Kafka Open Tracing instrumentation project.
+
+To instrument Kafka Streams with OpenTelemetry, you'll need to write your a custom `TracingKafkaClientSupplier`.
 
 .Procedure
 
