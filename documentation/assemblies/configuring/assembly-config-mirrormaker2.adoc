@@ -36,6 +36,9 @@ The full schema of the `KafkaMirrorMaker2` resource is described in the xref:typ
 //Describes the underlying architecture and how it is used in replication
 include::../../modules/configuring/con-config-mirrormaker2-replication.adoc[leveloffset=+1]
 
+//Config for mirrormmaker connectors
+include::../../modules/configuring/con-config-mirrormaker2-connectors.adoc[leveloffset=+1]
+
 //Handling of ACLs in replication
 include::../../modules/configuring/con-config-mirrormaker2-acls.adoc[leveloffset=+1]
 
