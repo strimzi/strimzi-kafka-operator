@@ -113,7 +113,6 @@ spec:
   cruiseControl:
     # ...
     brokerCapacity:
-      cpuUtilization: 100
       inboundNetwork: 10000KiB/s
       outboundNetwork: 10000KiB/s
     # ...
