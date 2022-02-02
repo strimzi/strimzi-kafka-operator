@@ -33,6 +33,7 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
     private static final long serialVersionUID = 1L;
 
     private StatefulSetTemplate statefulset;
+    private ResourceTemplate podSet;
     private PodTemplate pod;
     private InternalServiceTemplate bootstrapService;
     private InternalServiceTemplate brokersService;
@@ -60,6 +61,16 @@ public class KafkaClusterTemplate implements Serializable, UnknownPropertyPreser
 
     public void setStatefulset(StatefulSetTemplate statefulset) {
         this.statefulset = statefulset;
+    }
+
+    @Description("Template for Kafka `StrimziPodSet` resource.")
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public ResourceTemplate getPodSet() {
+        return podSet;
+    }
+
+    public void setPodSet(ResourceTemplate podSetTemplate) {
+        this.podSet = podSetTemplate;
     }
 
     @Description("Template for Kafka `Pods`.")
