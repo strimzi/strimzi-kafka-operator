@@ -78,13 +78,13 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
     public void before() {
         String namespace = getNamespace();
         cluster = KubeClusterResource.getInstance();
-        cluster.setTestNamespace(namespace);
+        cluster.setNamespace(namespace);
 
         assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
         vertx = Vertx.vertx();
         client = new DefaultKubernetesClient();
 
-        if (cluster.getTestNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
+        if (cluster.getNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
             LOGGER.warn("Namespace {} is already created, going to delete it", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);

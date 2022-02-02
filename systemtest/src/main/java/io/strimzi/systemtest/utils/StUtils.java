@@ -464,4 +464,8 @@ public class StUtils {
             return new JsonObject("{}");
         }
     }
+
+    public static String removePackageName(String testClassPath) {
+        return testClassPath.replace("io.strimzi.systemtest.", "");
+    }
 }

@@ -6,6 +6,7 @@ package io.strimzi.systemtest.parallel;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -46,22 +47,22 @@ public class SuiteThreadController {
     }
 
     public synchronized void addParallelSuite(ExtensionContext extensionContext) {
-        LOGGER.debug("{} - Adding parallel suite: {}", extensionContext.getRequiredTestClass().getSimpleName(), extensionContext.getDisplayName());
+        LOGGER.debug("[{}] - Adding parallel suite: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
 
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, runningTestSuitesInParallelCount.incrementAndGet());
 
-        LOGGER.debug("{} - Parallel suites count: {}", extensionContext.getRequiredTestClass().getSimpleName(), runningTestSuitesInParallelCount.get());
+        LOGGER.debug("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
     }
 
     public synchronized void removeParallelSuite(ExtensionContext extensionContext) {
         if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PARALLEL_CLASS_COUNT) == null) {
             throw new RuntimeException("There is no parallel suite running.");
         } else {
-            LOGGER.debug("{} - Removing parallel suite: {}", extensionContext.getRequiredTestClass().getSimpleName(), extensionContext.getDisplayName());
+            LOGGER.debug("[{}] - Removing parallel suite: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, runningTestSuitesInParallelCount.decrementAndGet());
         }
 
-        LOGGER.debug("{} - Parallel suites count: {}", extensionContext.getRequiredTestClass().getSimpleName(), runningTestSuitesInParallelCount.get());
+        LOGGER.debug("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
     }
 
     public boolean waitUntilZeroParallelSuites(ExtensionContext extensionContext) {
@@ -71,7 +72,7 @@ public class SuiteThreadController {
         int isZeroParallelSuitesCounter = 0;
 
         while (preCondition) {
-            LOGGER.trace("{} - Parallel suites count: {}", extensionContext.getRequiredTestClass().getSimpleName(), runningTestSuitesInParallelCount.get());
+            LOGGER.trace("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
             try {
                 Thread.sleep(STARTING_DELAY);
             } catch (InterruptedException e) {
@@ -80,7 +81,7 @@ public class SuiteThreadController {
 
             isZeroParallelSuitesCounter = runningTestSuitesInParallelCount.get() <= 0 ? ++isZeroParallelSuitesCounter : 0;
 
-            LOGGER.trace("{} - isZeroParallelSuitesCounter counter is:{}", extensionContext.getRequiredTestClass().getSimpleName(), isZeroParallelSuitesCounter);
+            LOGGER.trace("[{}] - isZeroParallelSuitesCounter counter is: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), isZeroParallelSuitesCounter);
 
             preCondition = runningTestSuitesInParallelCount.get() > 0 || isZeroParallelSuitesCounter < 5;
         }
@@ -91,7 +92,7 @@ public class SuiteThreadController {
     public synchronized void waitUntilEntryIsOpen(ExtensionContext extensionContext) {
         // other threads must wait until is open
         while (this.isOpen.get()) {
-            LOGGER.debug("{} is waiting to lock to be released.", extensionContext.getRequiredTestClass().getSimpleName());
+            LOGGER.debug("Suite {} is waiting to lock to be released.", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()));
             try {
                 Thread.currentThread().sleep(STARTING_DELAY);
             } catch (InterruptedException e) {
@@ -100,7 +101,7 @@ public class SuiteThreadController {
         }
         // lock flag
         this.isOpen.set(true);
-        LOGGER.debug("{} has locked the @IsolatedSuite and other @IsolatedSuites must wait until lock is released.", extensionContext.getRequiredTestClass().getSimpleName());
+        LOGGER.debug("Suite {} has locked the @IsolatedSuite and other @IsolatedSuites must wait until lock is released.", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()));
     }
 
     public void decrementCounter() {

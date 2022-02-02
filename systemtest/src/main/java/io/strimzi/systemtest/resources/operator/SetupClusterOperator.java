@@ -198,7 +198,7 @@ public class SetupClusterOperator {
         }
 
         if (Environment.isOlmInstall()) {
-            LOGGER.info("Going to install ClusterOperator via OLM");
+            LOGGER.info("Install ClusterOperator via OLM");
             // cluster-wide olm co-operator or multi-namespaces in once we also deploy cluster-wide
             if (IS_OLM_CLUSTER_WIDE.test(namespaceToWatch)) {
                 // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
@@ -225,7 +225,7 @@ public class SetupClusterOperator {
                 olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
             }
         } else if (Environment.isHelmInstall()) {
-            LOGGER.info("Going to install ClusterOperator via Helm");
+            LOGGER.info("Install ClusterOperator via Helm");
             helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
             if (isClusterOperatorNamespaceNotCreated()) {
                 cluster.setNamespace(namespaceInstallTo);
@@ -246,7 +246,7 @@ public class SetupClusterOperator {
     }
 
     private void bundleInstallation() {
-        LOGGER.info("Going to install ClusterOperator via Yaml bundle");
+        LOGGER.info("Install ClusterOperator via Yaml bundle");
         // check if namespace is already created
         if (isClusterOperatorNamespaceNotCreated()) {
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);

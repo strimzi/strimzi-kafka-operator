@@ -105,7 +105,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
 
         // In chainUpgrade we want to setup Kafka only at the begging and then upgrade it via CO
         kafkaYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
-        LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
+        LOGGER.info("Deploy Kafka from: {}", kafkaYaml.getPath());
         KubeClusterResource.cmdKubeClient().create(kafkaYaml);
         // Wait for readiness
         waitForReadinessOfKafkaCluster();
