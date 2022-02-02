@@ -92,6 +92,10 @@ public class KafkaRebalance extends CustomResource<KafkaRebalanceSpec, KafkaReba
     @Deprecated
     public KafkaRebalance() {}
 
+    public KafkaRebalance(String apiVersion, ObjectMeta metadata, KafkaRebalanceSpec spec) {
+        new KafkaRebalance(apiVersion, metadata, spec, null);
+    }
+
     @Buildable(
             editableEnabled = false,
             generateBuilderPackage = false,

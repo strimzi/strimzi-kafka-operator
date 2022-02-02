@@ -106,6 +106,10 @@ public class KafkaUser extends CustomResource<KafkaUserSpec, KafkaUserStatus> im
     @Deprecated
     public KafkaUser() {}
 
+    public KafkaUser(String apiVersion, ObjectMeta metadata, KafkaUserSpec spec) {
+        new KafkaUser(apiVersion, metadata, spec, null);
+    }
+
     @Buildable(
             editableEnabled = false,
             builderPackage = Constants.FABRIC8_KUBERNETES_API,

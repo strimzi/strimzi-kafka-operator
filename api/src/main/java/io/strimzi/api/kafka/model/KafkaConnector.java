@@ -108,6 +108,10 @@ public class KafkaConnector extends CustomResource<KafkaConnectorSpec, KafkaConn
     @Deprecated
     public KafkaConnector() {}
 
+    public KafkaConnector(String apiVersion, ObjectMeta metadata, KafkaConnectorSpec spec) {
+        new KafkaConnector(apiVersion, metadata, spec, null);
+    }
+
     @Buildable(
             editableEnabled = false,
             builderPackage = Constants.FABRIC8_KUBERNETES_API,

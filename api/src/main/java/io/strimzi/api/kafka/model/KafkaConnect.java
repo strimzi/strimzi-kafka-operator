@@ -107,6 +107,10 @@ public class KafkaConnect extends CustomResource<KafkaConnectSpec, KafkaConnectS
     @Deprecated
     public KafkaConnect() {}
 
+    public KafkaConnect(String apiVersion, ObjectMeta metadata, KafkaConnectSpec spec) {
+        new KafkaConnect(apiVersion, metadata, spec, null);
+    }
+
     @Buildable(
             editableEnabled = false,
             builderPackage = Constants.FABRIC8_KUBERNETES_API,

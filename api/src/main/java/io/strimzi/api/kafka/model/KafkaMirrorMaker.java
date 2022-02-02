@@ -119,6 +119,10 @@ public class KafkaMirrorMaker extends CustomResource<KafkaMirrorMakerSpec, Kafka
     @Deprecated
     public KafkaMirrorMaker() {}
 
+    public KafkaMirrorMaker(String apiVersion, ObjectMeta metadata, KafkaMirrorMakerSpec spec) {
+        new KafkaMirrorMaker(apiVersion, metadata, spec, null);
+    }
+
     @Buildable(
             editableEnabled = false,
             builderPackage = Constants.FABRIC8_KUBERNETES_API,

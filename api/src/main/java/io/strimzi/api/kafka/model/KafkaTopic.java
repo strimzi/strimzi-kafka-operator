@@ -107,6 +107,10 @@ public class KafkaTopic extends CustomResource<KafkaTopicSpec, KafkaTopicStatus>
     @Deprecated
     public KafkaTopic() {}
 
+    public KafkaTopic(String apiVersion, ObjectMeta metadata, KafkaTopicSpec spec) {
+        new KafkaTopic(apiVersion, metadata, spec, null);
+    }
+
     @Buildable(
             editableEnabled = false,
             builderPackage = Constants.FABRIC8_KUBERNETES_API,

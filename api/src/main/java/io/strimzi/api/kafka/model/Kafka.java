@@ -110,6 +110,10 @@ public class Kafka extends CustomResource<KafkaSpec, KafkaStatus> implements Nam
     @Deprecated
     public Kafka() {}
 
+    public Kafka(String apiVersion, ObjectMeta metadata, KafkaSpec spec) {
+        new Kafka(apiVersion, metadata, spec, null);
+    }
+
     @Buildable(
             editableEnabled = false,
             builderPackage = Constants.FABRIC8_KUBERNETES_API,

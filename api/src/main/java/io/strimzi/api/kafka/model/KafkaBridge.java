@@ -108,6 +108,10 @@ public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStat
     @Deprecated
     public KafkaBridge() {}
 
+    public KafkaBridge(String apiVersion, ObjectMeta metadata, KafkaBridgeSpec spec) {
+        new KafkaBridge(apiVersion, metadata, spec, null);
+    }
+
     @Buildable(
             editableEnabled = false,
             builderPackage = Constants.FABRIC8_KUBERNETES_API,
