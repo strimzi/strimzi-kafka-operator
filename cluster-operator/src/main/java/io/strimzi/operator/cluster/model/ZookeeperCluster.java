@@ -335,6 +335,11 @@ public class ZookeeperCluster extends AbstractModel {
                 }
             }
 
+            if (template.getPodSet() != null && template.getPodSet().getMetadata() != null) {
+                zk.templatePodSetLabels = template.getPodSet().getMetadata().getLabels();
+                zk.templatePodSetAnnotations = template.getPodSet().getMetadata().getAnnotations();
+            }
+
             ModelUtils.parsePodTemplate(zk, template.getPod());
             ModelUtils.parseInternalServiceTemplate(zk, template.getClientService());
             ModelUtils.parseInternalHeadlessServiceTemplate(zk, template.getNodesService());

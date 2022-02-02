@@ -1,0 +1,163 @@
+// Module included in the following assemblies:
+//
+// assembly-config-mirrormaker2.adoc
+
+[id='con-config-mirrormaker2-connectors-{context}']
+= Connector configuration
+
+[role="_abstract"]
+Use Mirrormaker 2.0 connector configuration for the internal connectors that orchestrate the synchronization of data between Kafka clusters.
+
+The following table describes connector properties and the connectors you configure to use them.
+
+.MirrorMaker 2.0 connector configuration properties
+[cols="4a,2,2,2",options="header"]
+|===
+
+|Property
+|sourceConnector
+|checkpointConnector
+|heartbeatConnector
+
+
+|admin.timeout.ms:: Timeout for admin tasks, such as detecting new topics. Default is `60000` (1 minute).
+|✓
+|✓
+|✓
+
+|replication.policy.class:: Policy to define the remote topic naming convention. Default is `org.apache.kafka.connect.mirror.DefaultReplicationPolicy`.
+|✓
+|✓
+|✓
+
+|replication.policy.separator:: The separator used for topic naming in the target cluster. Default is `.` (dot). It is only used when the `replication.policy.class` is the `DefaultReplicationPolicy`.
+|✓
+|✓
+|✓
+
+|consumer.poll.timeout.ms:: Timeout when polling the source cluster. Default is `1000` (1 second).
+|✓
+|✓
+|
+
+|offset-syncs.topic.location:: The location of the `offset-syncs` topic, which can be the `source` (default) or `target` cluster. If you set the property to `target`, read-only access to the source cluster is granted to MirrorMaker.
+|✓
+|✓
+|
+
+|topic.filter.class:: Topic filter to select the topics to replicate. Default is `org.apache.kafka.connect.mirror.DefaultTopicFilter`.
+|✓
+|✓
+|
+
+|config.property.filter.class:: Topic filter to select the topic configuration properties to replicate. Default is `org.apache.kafka.connect.mirror.DefaultConfigPropertyFilter`.
+|✓
+|
+|
+
+|config.properties.exclude:: Topic configuration properties that should not be replicated. Supports comma-separated property names and regular expressions.
+|✓
+|
+|
+
+|offset.lag.max:: Maximum allowable (out-of-sync) offset lag before a remote partition is synchronized. Default is `100`.
+|✓
+|
+|
+
+|offset-syncs.topic.replication.factor:: Replication factor for the internal `offset-syncs` topic. Default is `3`.
+|✓
+|
+|
+
+|refresh.topics.enabled:: Enables check for new topics and partitions. Default is `true`.
+|✓
+|
+|
+
+|refresh.topics.interval.seconds:: Frequency of topic refresh. Default is `600` (10 minutes).
+|✓
+|
+|
+
+|replication.factor:: The replication factor for new topics. Default is `2`.
+|✓
+|
+|
+
+|sync.topic.acls.enabled:: Enables synchronization of ACLs from the source cluster. Default is `true`. Not compatible with the User Operator.
+|✓
+|
+|
+
+|sync.topic.acls.interval.seconds:: Frequency of ACL synchronization. Default is `600` (10 minutes).
+|✓
+|
+|
+
+|sync.topic.configs.enabled:: Enables synchronization of topic configuration from the source cluster. Default is `true`.
+|✓
+|
+|
+
+|sync.topic.configs.interval.seconds:: Frequency of topic configuration synchronization. Default `600` (10 minutes).
+|✓
+|
+|
+
+|checkpoints.topic.replication.factor:: Replication factor for the internal `checkpoints` topic. Default is `3`.
+|
+|✓
+|
+
+|emit.checkpoints.enabled:: Enables synchronization of consumer offsets to the target cluster. Default is `true`.
+|
+|✓
+|
+
+|emit.checkpoints.interval.seconds:: Frequency of consumer offset synchronization. Default is `60` (1 minute).
+|
+|✓
+|
+
+|group.filter.class:: Group filter to select the consumer groups to replicate. Default is `org.apache.kafka.connect.mirror.DefaultGroupFilter`.
+|
+|✓
+|
+
+|refresh.groups.enabled:: Enables check for new consumer groups. Default is `true`.
+|
+|✓
+|
+
+|refresh.groups.interval.seconds:: Frequency of consumer group refresh. Default is `600` (10 minutes).
+|
+|✓
+|
+
+|sync.group.offsets.enabled:: Enables synchronization of consumer group offsets to the target cluster `__consumer_offsets` topic. Default is `false`.
+|
+|✓
+|
+
+|sync.group.offsets.interval.seconds:: Frequency of consumer group offset synchronization. Default is `60` (1 minute).
+|
+|✓
+|
+
+|emit.heartbeats.enabled:: Enables connectivity checks on the target cluster. Default is `true`.
+|
+|
+|✓
+
+|emit.heartbeats.interval.seconds:: Frequency of connectivity checks. Default is `1` (1 second).
+|
+|
+|✓
+
+|heartbeats.topic.replication.factor:: Replication factor for the internal `heartbeats` topic. Default is `3`.
+|
+|
+|✓
+
+|===

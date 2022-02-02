@@ -21,8 +21,8 @@
         <opa-authorizer.version>1.4.0</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.2.0</kafka-quotas-plugin.version>
         <kafka-mirror-maker-2-extensions.version>1.2.0</kafka-mirror-maker-2-extensions.version>
-        <kafka-kubernetes-config-provider.version>0.1.1</kafka-kubernetes-config-provider.version>
-        <kafka-env-var-config-provider.version>0.1.1</kafka-env-var-config-provider.version>
+        <kafka-kubernetes-config-provider.version>1.0.0</kafka-kubernetes-config-provider.version>
+        <kafka-env-var-config-provider.version>1.0.0</kafka-env-var-config-provider.version>
         <jmx-prometheus-javaagent.version>0.16.1</jmx-prometheus-javaagent.version>
         <json-smart.version>2.4.7</json-smart.version>
         <jsonevent-layout.version>1.7</jsonevent-layout.version>
@@ -325,8 +325,28 @@
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-databind</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.dataformat</groupId>
+                    <artifactId>jackson-dataformat-yaml</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                    <artifactId>jackson-datatype-jsr310</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
+        <!-- BEGIN: To avoid conflicts between Jackson 2.12 used by Kafka and 2.13 used by Fabric8, we have to exclude these libraries and include the right versions -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+            <version>2.12.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.12.3</version>
+        </dependency>
+        <!-- END: To avoid conflicts between Jackson 2.12 used by Kafka and 2.13 used by Fabric8, we have to exclude these libraries and include the right versions -->
         <!-- EnvVar Configuration Provider for Apache Kafka -->
         <dependency>
             <groupId>io.strimzi</groupId>

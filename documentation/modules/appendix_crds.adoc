@@ -850,6 +850,8 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |clusterRoleBinding        1.2+<.<a|Template for the Kafka ClusterRoleBinding.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|podSet                    1.2+<.<a|Template for Kafka `StrimziPodSet` resource.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
 [id='type-StatefulSetTemplate-{context}']
@@ -1104,6 +1106,8 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 |serviceAccount         1.2+<.<a|Template for the ZooKeeper service account.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |jmxSecret              1.2+<.<a|Template for Secret of the Zookeeper Cluster JMX authentication.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|podSet                 1.2+<.<a|Template for ZooKeeper `StrimziPodSet` resource.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
 |====
 
