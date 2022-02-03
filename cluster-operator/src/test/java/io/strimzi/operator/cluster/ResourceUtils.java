@@ -359,11 +359,13 @@ public class ResourceUtils {
                                     KafkaExporterSpec keSpec,
                                     CruiseControlSpec ccSpec) {
 
+        Kafka result = new Kafka();
         ObjectMeta meta = new ObjectMetaBuilder()
             .withNamespace(namespace)
             .withName(name)
             .withLabels(Labels.fromMap(TestUtils.map(Labels.KUBERNETES_DOMAIN + "part-of", "tests", "my-user-label", "cromulent")).toMap())
             .build();
+        result.setMetadata(meta);
 
         KafkaSpec spec = new KafkaSpec();
 
@@ -407,8 +409,9 @@ public class ResourceUtils {
         spec.setKafkaExporter(keSpec);
         spec.setCruiseControl(ccSpec);
         spec.setZookeeper(zk);
+        result.setSpec(spec);
 
-        return new Kafka(null, meta, spec, null);
+        return result;
     }
 
     /**

@@ -323,9 +323,9 @@ public class TopicSerializationTest {
         KafkaTopicSpec spec = new KafkaTopicSpec();
         spec.setPartitions(3);
         spec.setReplicas(3);
-
-        ObjectMeta metadata = new ObjectMetaBuilder().withName("my-topic").build();
-        KafkaTopic kafkaTopic = new KafkaTopic(null, metadata, spec, null);
+        KafkaTopic kafkaTopic = new KafkaTopic();
+        kafkaTopic.setMetadata(new ObjectMetaBuilder().withName("my-topic").build());
+        kafkaTopic.setSpec(spec);
 
         TopicSerialization.fromTopicResource(kafkaTopic);
     }

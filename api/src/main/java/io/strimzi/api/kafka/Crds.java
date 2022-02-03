@@ -59,7 +59,11 @@ public class Crds {
     public static void registerCustomKinds() {
         for (Class<? extends CustomResource> crdClass : CRDS) {
             for (String version : apiVersions(crdClass)) {
-                KubernetesDeserializer.registerCustomKind(version, kind(crdClass), crdClass);
+                try {
+                    KubernetesDeserializer.registerCustomKind(version, crdClass.getDeclaredField("RESOURCE_KIND").toString(), crdClass);
+                } catch (ReflectiveOperationException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
@@ -284,14 +288,6 @@ public class Crds {
                       Class<T> cls,
                       Class<L> listCls) {
         return client.resources(cls, listCls);
-    }
-
-    public static <T extends CustomResource> String kind(Class<T> cls) {
-        try {
-            return cls.getDeclaredConstructor().newInstance().getKind();
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @SuppressWarnings("unchecked")
