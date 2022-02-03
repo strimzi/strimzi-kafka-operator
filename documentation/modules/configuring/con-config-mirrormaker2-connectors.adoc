@@ -40,7 +40,7 @@ The following table describes connector properties and the connectors you config
 |✓
 |
 
-|offset-syncs.topic.location:: The location of the `offset-syncs` topic, which can be the `source` (default) or `target` cluster. If you set the property to `target`, read-only access to the source cluster is granted to MirrorMaker.
+|offset-syncs.topic.location:: The location of the `offset-syncs` topic, which can be the `source` (default) or `target` cluster.
 |✓
 |✓
 |

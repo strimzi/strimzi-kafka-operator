@@ -78,13 +78,18 @@ Only MirrorMaker 2.0 can write to remote topics.
 == Offset tracking
 MirrorMaker 2.0 tracks offsets for consumer groups using _internal topics_.
 
-* The _offset sync_ topic maps the source and target offsets for replicated topic partitions from record metadata
-* The _checkpoint_ topic maps the last committed offset in the source and target cluster for replicated topic partitions in each consumer group
+* The _offset-syncs_ topic maps the source and target offsets for replicated topic partitions from record metadata
+* The _checkpoints_ topic maps the last committed offset in the source and target cluster for replicated topic partitions in each consumer group
 
-Offsets for the _checkpoint_ topic are tracked at predetermined intervals through configuration.
+Offsets for the _checkpoints_ topic are tracked at predetermined intervals through configuration.
 Both topics enable replication to be fully restored from the correct offset position on failover.
 
 MirrorMaker 2.0 uses its `MirrorCheckpointConnector` to emit _checkpoints_ for offset tracking.
+
+The location of the _offset-syncs_ topic is the source cluster by default.
+You can use the `offset-syncs.topic.location` connector configuration to change this to the target cluster.
+You need read/write access to the cluster that contains the topic.
+If you change the default, then you'll only need read access on the source cluster.
 
 == Synchronizing consumer group offsets
 
