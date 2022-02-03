@@ -75,11 +75,6 @@ import static java.util.Collections.unmodifiableList;
         }
     )
 )
-@Buildable(
-        editableEnabled = false,
-        builderPackage = Constants.FABRIC8_KUBERNETES_API,
-        refs = {@BuildableReference(ObjectMeta.class)}
-)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
@@ -111,6 +106,25 @@ public class Kafka extends CustomResource<KafkaSpec, KafkaStatus> implements Nam
     private KafkaSpec spec;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
     private KafkaStatus status;
+
+    @Deprecated
+    public Kafka() {}
+
+    public Kafka(String apiVersion, ObjectMeta metadata, KafkaSpec spec) {
+        new Kafka(apiVersion, metadata, spec, null);
+    }
+
+    @Buildable(
+            editableEnabled = false,
+            builderPackage = Constants.FABRIC8_KUBERNETES_API,
+            refs = {@BuildableReference(ObjectMeta.class)}
+    )
+    public Kafka(String apiVersion, ObjectMeta metadata, KafkaSpec spec, KafkaStatus status) {
+        this.apiVersion = apiVersion;
+        this.metadata = metadata;
+        this.spec = spec;
+        this.status = status;
+    }
 
     @Override
     public String getApiVersion() {

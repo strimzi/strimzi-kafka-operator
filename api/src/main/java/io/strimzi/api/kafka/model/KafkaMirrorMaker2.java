@@ -68,12 +68,6 @@ import static java.util.Collections.unmodifiableList;
         }
     )
 )
-@Buildable(
-        editableEnabled = false, 
-        generateBuilderPackage = false, 
-        builderPackage = Constants.FABRIC8_KUBERNETES_API,
-        refs = {@BuildableReference(ObjectMeta.class)}
-)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "apiVersion", "kind", "metadata", "spec", "status" })
 @EqualsAndHashCode
@@ -106,6 +100,26 @@ public class KafkaMirrorMaker2 extends CustomResource<KafkaMirrorMaker2Spec, Kaf
     private ObjectMeta metadata;
     private KafkaMirrorMaker2Status status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
+
+    @Deprecated
+    public KafkaMirrorMaker2() {}
+
+    public KafkaMirrorMaker2(String apiVersion, ObjectMeta metadata, KafkaMirrorMaker2Spec spec) {
+        new KafkaMirrorMaker2(apiVersion, metadata, spec, null);
+    }
+
+    @Buildable(
+            editableEnabled = false,
+            generateBuilderPackage = false,
+            builderPackage = Constants.FABRIC8_KUBERNETES_API,
+            refs = {@BuildableReference(ObjectMeta.class)}
+    )
+    public KafkaMirrorMaker2(String apiVersion, ObjectMeta metadata, KafkaMirrorMaker2Spec spec, KafkaMirrorMaker2Status status) {
+        this.apiVersion = apiVersion;
+        this.metadata = metadata;
+        this.spec = spec;
+        this.status = status;
+    }
 
     @Override
     public String getApiVersion() {

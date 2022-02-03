@@ -73,11 +73,6 @@ import static java.util.Collections.unmodifiableList;
         }
     )
 )
-@Buildable(
-        editableEnabled = false,
-        builderPackage = Constants.FABRIC8_KUBERNETES_API,
-        refs = {@BuildableReference(ObjectMeta.class)}
-)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
@@ -109,6 +104,25 @@ public class KafkaBridge extends CustomResource<KafkaBridgeSpec, KafkaBridgeStat
     private KafkaBridgeSpec spec;
     private KafkaBridgeStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
+
+    @Deprecated
+    public KafkaBridge() {}
+
+    public KafkaBridge(String apiVersion, ObjectMeta metadata, KafkaBridgeSpec spec) {
+        new KafkaBridge(apiVersion, metadata, spec, null);
+    }
+
+    @Buildable(
+            editableEnabled = false,
+            builderPackage = Constants.FABRIC8_KUBERNETES_API,
+            refs = {@BuildableReference(ObjectMeta.class)}
+    )
+    public KafkaBridge(String apiVersion, ObjectMeta metadata, KafkaBridgeSpec spec, KafkaBridgeStatus status) {
+        this.apiVersion = apiVersion;
+        this.metadata = metadata;
+        this.spec = spec;
+        this.status = status;
+    }
 
     @Override
     public String getApiVersion() {

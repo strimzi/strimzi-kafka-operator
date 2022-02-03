@@ -70,11 +70,6 @@ import static java.util.Collections.unmodifiableList;
         }
     )
 )
-@Buildable(
-        editableEnabled = false,
-        builderPackage = Constants.FABRIC8_KUBERNETES_API,
-        refs = {@BuildableReference(ObjectMeta.class)}
-)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
 @EqualsAndHashCode
@@ -108,6 +103,25 @@ public class KafkaConnect extends CustomResource<KafkaConnectSpec, KafkaConnectS
     private ObjectMeta metadata;
     private KafkaConnectStatus status;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
+
+    @Deprecated
+    public KafkaConnect() {}
+
+    public KafkaConnect(String apiVersion, ObjectMeta metadata, KafkaConnectSpec spec) {
+        new KafkaConnect(apiVersion, metadata, spec, null);
+    }
+
+    @Buildable(
+            editableEnabled = false,
+            builderPackage = Constants.FABRIC8_KUBERNETES_API,
+            refs = {@BuildableReference(ObjectMeta.class)}
+    )
+    public KafkaConnect(String apiVersion, ObjectMeta metadata, KafkaConnectSpec spec, KafkaConnectStatus status) {
+        this.apiVersion = apiVersion;
+        this.metadata = metadata;
+        this.spec = spec;
+        this.status = status;
+    }
 
     @Override
     public String getApiVersion() {
