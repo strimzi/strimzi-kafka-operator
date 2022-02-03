@@ -13,6 +13,7 @@ import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.spi.StandardLevel;
 
 import java.io.File;
 import java.io.IOException;
@@ -212,13 +213,13 @@ public class LogCollector {
 
     private void collectStrimzi(String namespace) {
         LOGGER.info("Collecting Strimzi in Namespace {}", namespace);
-        String crData = cmdKubeClient(namespace).exec(false, false, "get", "strimzi", "-o", "yaml", "-n", namespaceFile.getName()).out();
+        String crData = cmdKubeClient(namespace).exec(false, StandardLevel.DEBUG, "get", "strimzi", "-o", "yaml", "-n", namespaceFile.getName()).out();
         writeFile(namespaceFile + "/strimzi-custom-resources.log", crData);
     }
 
     private void collectClusterInfo(String namespace) {
         LOGGER.info("Collecting cluster status");
-        String nodes = cmdKubeClient(namespace).exec(false, false, "describe", "nodes").out();
+        String nodes = cmdKubeClient(namespace).exec(false, StandardLevel.DEBUG, "describe", "nodes").out();
         writeFile(this.testSuite + "/cluster-status.log", nodes);
     }
 

@@ -15,6 +15,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.spi.StandardLevel;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -62,7 +63,7 @@ public class CruiseControlUtils {
                 + " --user admin:$(cat /opt/cruise-control/api-auth-config/cruise-control.apiAdminPassword) ";
         }
 
-        return cmdKubeClient(namespaceName).execInPodContainer(false, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
+        return cmdKubeClient(namespaceName).execInPodContainer(StandardLevel.DEBUG, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
             "curl -X" + method.name() + args + " " + scheme + "://localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString()).out();
     }
 
@@ -71,7 +72,7 @@ public class CruiseControlUtils {
     public static String callApi(String namespaceName, SupportedHttpMethods method, String endpoint) {
         String ccPodName = PodUtils.getFirstPodNameContaining(namespaceName, CONTAINER_NAME);
 
-        return cmdKubeClient(namespaceName).execInPodContainer(false, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
+        return cmdKubeClient(namespaceName).execInPodContainer(StandardLevel.DEBUG, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
             "curl -X" + method.name() + " localhost:" + CRUISE_CONTROL_METRICS_PORT + endpoint).out();
     }
 

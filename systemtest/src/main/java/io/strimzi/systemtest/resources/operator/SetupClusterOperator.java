@@ -35,6 +35,7 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.spi.StandardLevel;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
@@ -406,7 +407,7 @@ public class SetupClusterOperator {
             if (kubeClient().getNamespace(Environment.STRIMZI_ORG) != null) {
                 for (String namespace : namespaces) {
                     LOGGER.debug("Setting group policy for Openshift registry in namespace: " + namespace);
-                    Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, false, false);
+                    Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, StandardLevel.DEBUG, false);
                 }
             }
         }
