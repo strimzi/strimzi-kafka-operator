@@ -1611,7 +1611,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkScaleDownStatefulSetOrPodSet(int desiredScale)   {
             if (featureGates.useStrimziPodSetsEnabled())   {
-                return zkPodSet(desiredScale);
+                return zkPodSet(desiredScale)
+                        // We wait for the pod to be deleted, otherwise it might disrupt the rolling update
+                        .compose(ignore -> podOperations.waitFor(
+                                reconciliation,
+                                namespace,
+                                ZookeeperCluster.zookeeperPodName(name, desiredScale),
+                                "to be deleted",
+                                1_000L,
+                                operationTimeoutMs,
+                                (podNamespace, podName) -> podOperations.get(podNamespace, podName) == null)
+                        ).map(this);
             } else {
                 return withVoid(stsOperations.scaleDown(reconciliation, namespace, zkCluster.getName(), desiredScale));
             }
