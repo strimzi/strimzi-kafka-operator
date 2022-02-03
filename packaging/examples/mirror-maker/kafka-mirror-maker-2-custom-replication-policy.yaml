@@ -25,7 +25,7 @@ spec:
         offset-syncs.topic.replication.factor: 1
         sync.topic.acls.enabled: "false"
         replication.policy.separator: ""
-        replication.policy.class: "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy"
+        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
     heartbeatConnector:
       config:
         heartbeats.topic.replication.factor: 1
@@ -33,6 +33,6 @@ spec:
       config:
         checkpoints.topic.replication.factor: 1
         replication.policy.separator: ""
-        replication.policy.class: "io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy"
+        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
     topicsPattern: ".*"
     groupsPattern: ".*"

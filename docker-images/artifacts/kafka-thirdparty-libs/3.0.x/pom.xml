@@ -20,7 +20,7 @@
         <cruise-control.version>2.5.79</cruise-control.version>
         <opa-authorizer.version>1.4.0</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.2.0</kafka-quotas-plugin.version>
-        <kafka-mirror-maker-2-extensions.version>1.1.0</kafka-mirror-maker-2-extensions.version>
+        <kafka-mirror-maker-2-extensions.version>1.2.0</kafka-mirror-maker-2-extensions.version>
         <kafka-kubernetes-config-provider.version>1.0.0</kafka-kubernetes-config-provider.version>
         <kafka-env-var-config-provider.version>1.0.0</kafka-env-var-config-provider.version>
         <jmx-prometheus-javaagent.version>0.16.1</jmx-prometheus-javaagent.version>
