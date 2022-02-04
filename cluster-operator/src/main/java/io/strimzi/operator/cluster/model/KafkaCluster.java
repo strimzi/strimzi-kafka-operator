@@ -1267,10 +1267,11 @@ public class KafkaCluster extends AbstractModel {
      * annotations passed from KafkaAssemblyOperator with additional annotations.
      *
      * @param existingPodAnnotations    Annotations requested from higher level classes
+     * @param storageAnnotation         Indicates whether the storage annotation should be added or not
      *
      * @return                          Map with all pod annotations required by Strimzi
      */
-    private Map<String, String> preparePodAnnotations(Map<String, String> existingPodAnnotations)   {
+    private Map<String, String> preparePodAnnotations(Map<String, String> existingPodAnnotations, boolean storageAnnotation)   {
         Map<String, String> podAnnotations;
 
         if (existingPodAnnotations != null) {
@@ -1280,7 +1281,10 @@ public class KafkaCluster extends AbstractModel {
             podAnnotations = new HashMap<>(4);
         }
 
-        podAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
+        if (storageAnnotation) {
+            podAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
+        }
+
         podAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
         podAnnotations.put(ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION, getLogMessageFormatVersion());
         podAnnotations.put(ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION, getInterBrokerProtocolVersion());
@@ -1317,7 +1321,7 @@ public class KafkaCluster extends AbstractModel {
                                            Map<String, String> podAnnotations) {
         return createStatefulSet(
                 prepareControllerAnnotations(),
-                preparePodAnnotations(podAnnotations),
+                preparePodAnnotations(podAnnotations, true),
                 getStatefulSetVolumes(isOpenShift),
                 getPersistentVolumeClaimTemplates(),
                 getMergedAffinity(),
@@ -1348,7 +1352,7 @@ public class KafkaCluster extends AbstractModel {
         return createPodSet(
                 replicas,
                 prepareControllerAnnotations(),
-                preparePodAnnotations(podAnnotations),
+                preparePodAnnotations(podAnnotations, false),
                 podName -> getPodSetVolumes(podName, isOpenShift),
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
