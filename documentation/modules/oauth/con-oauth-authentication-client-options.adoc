@@ -9,7 +9,7 @@
 OAuth 2.0 authentication flows depend on the underlying Kafka client and Kafka broker configuration.
 The flows must also be supported by the authorization server used.
 
-Kafka broker listener configuration determines how clients authenticate using an access token.
+The Kafka broker listener configuration determines how clients authenticate using an access token.
 The client can pass a client ID and secret to request an access token.
 
 If a listener is configured to use PLAIN authentication, the client can authenticate with a client ID and secret or username and access token.
@@ -17,9 +17,9 @@ These values are passed as the `username` and `password` properties of the PLAIN
 
 Listener configuration supports the following token validation options:
 
-* Fast local token validation based on JWT signature checking and local token introspection, without contacting an authorization server.
+* You can use fast local token validation based on JWT signature checking and local token introspection, without contacting an authorization server.
 The authorization server provides a JWKS endpoint with public certificates that are used to validate signatures on the tokens.
-* A call to a token introspection endpoint provided by an authorization server.
+* You can use a call to a token introspection endpoint provided by an authorization server.
 Each time a new Kafka broker connection is established, the broker passes the access token received from the client to the authorization server.
 The Kafka broker checks the response to confirm whether or not the token is valid.
 
@@ -95,11 +95,11 @@ image:oauth-plain-client-id.png[Client using a client ID and secret, with the br
 
 . The Kafka client passes a `clientId` as a username and a `secret` as a password.
 . The Kafka broker uses a token endpoint to pass the `clientId` and `secret` to the authorization server.
-. The authorization server returns a fresh access token in exchange or an error if the client credentials aren't valid.
+. The authorization server returns a fresh access token or an error if the client credentials are not valid.
 . The Kafka broker validates the token in one of the following ways:
 .. If a token introspection endpoint is specified, the Kafka broker validates the access token by calling the endpoint on the authorization server.
-A session is established if the token validation was successful.
-.. If local token introspection is used, there is no request made to the authorization server.
+A session is established if the token validation is successful.
+.. If local token introspection is used, a request is not made to the authorization server.
 The Kafka broker validates the access token locally using a JWT token signature check.
 
 [id='oauth-plain-access-token-{context}']
@@ -113,5 +113,5 @@ image:oauth-plain-access-token.png[Client using a long-lived access token withou
 .. If the token endpoint is not configured on the Kafka broker listener (enforcing a `no-client-credentials mode`), the password should provide the access token without the prefix. The Kafka broker interprets the username as the account username.
 In this mode, the client doesn't use a client ID and secret, and the `password` parameter is always interpreted as a raw access token.
 . The Kafka broker validates the token in one of the following ways:
-.. If a token introspection endpoint is specified, the Kafka broker validates the access token by calling the endpoint on the authorization server. Session is established if token validation was successful.
+.. If a token introspection endpoint is specified, the Kafka broker validates the access token by calling the endpoint on the authorization server. A session is established if token validation is successful.
 .. If local token introspection is used, there is no request made to the authorization server. Kafka broker validates the access token locally using a JWT token signature check.

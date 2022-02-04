@@ -23,7 +23,7 @@ When configuring the Kafka broker you have two options for the mechanism used to
 For more information on the configuration of OAuth 2.0 authentication for Kafka broker listeners, see:
 
 * xref:type-KafkaListenerAuthenticationOAuth-reference[KafkaListenerAuthenticationOAuth schema reference]
-* xref:assembly-securing-access-{context}[Managing access to Kafka]
+* xref:con-oauth-authentication-flow-str[OAuth 2.0 authentication mechanisms]
 
 .Prerequisites
 
