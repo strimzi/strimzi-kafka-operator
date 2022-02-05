@@ -17,7 +17,8 @@ The following resources are created by the Cluster Operator in the Kubernetes cl
 
 .ZooKeeper nodes
 
-`_cluster-name_-zookeeper`:: StatefulSet which is in charge of managing the ZooKeeper node pods.
+`_cluster-name_-zookeeper`:: StatefulSet which is in charge of managing the ZooKeeper node pods (used only when xref:ref-operator-use-strimzi-pod-sets-feature-gate-{context}[`UseStrimziPodSets` feature gate] is disabled).
+`_cluster-name_-zookeeper`:: StrimziPodSet which is in charge of managing the ZooKeeper node pods (used only when xref:ref-operator-use-strimzi-pod-sets-feature-gate-{context}[`UseStrimziPodSets` feature gate] is enabled).
 `_cluster-name_-zookeeper-_idx_`:: Pods created by the ZooKeeper StatefulSet.
 `_cluster-name_-zookeeper-nodes`:: Headless Service needed to have DNS resolve the ZooKeeper pods IP addresses directly.
 `_cluster-name_-zookeeper-client`:: Service used by Kafka brokers to connect to ZooKeeper nodes as clients.
@@ -30,7 +31,8 @@ The following resources are created by the Cluster Operator in the Kubernetes cl
 
 .Kafka brokers
 
-`_cluster-name_-kafka`:: StatefulSet which is in charge of managing the Kafka broker pods.
+`_cluster-name_-kafka`:: StatefulSet which is in charge of managing the Kafka broker pods (used only when xref:ref-operator-use-strimzi-pod-sets-feature-gate-{context}[`UseStrimziPodSets` feature gate] is disabled).
+`_cluster-name_-kafka`:: StrimziPodSet which is in charge of managing the Kafka broker pods (used only when xref:ref-operator-use-strimzi-pod-sets-feature-gate-{context}[`UseStrimziPodSets` feature gate] is enabled).
 `_cluster-name_-kafka-_idx_`:: Pods created by the Kafka StatefulSet.
 `_cluster-name_-kafka-brokers`:: Service needed to have DNS resolve the Kafka broker pods IP addresses directly.
 `_cluster-name_-kafka-bootstrap`:: Service can be used as bootstrap servers for Kafka clients connecting from within the Kubernetes cluster.
