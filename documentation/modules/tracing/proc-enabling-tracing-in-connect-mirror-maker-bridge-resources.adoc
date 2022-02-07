@@ -88,7 +88,7 @@ spec:
         - name: OTEL_SERVICE_NAME
           value: my-jaeger-service
         - name: OTEL_EXPORTER_JAEGER_ENDPOINT
-          value: http://jaeger-agent-name:14250
+          value: http://jaeger-exporter-host-name:14250
         - name: OTEL_TRACES_EXPORTER
           value: jaeger
   tracing:
@@ -111,7 +111,7 @@ spec:
         - name: OTEL_SERVICE_NAME
           value: my-jaeger-service
         - name: OTEL_EXPORTER_JAEGER_ENDPOINT
-          value: http://jaeger-agent-name:14250
+          value: http://jaeger-exporter-host-name:14250
         - name: OTEL_TRACES_EXPORTER
           value: jaeger
   tracing:
