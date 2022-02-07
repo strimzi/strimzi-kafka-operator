@@ -327,7 +327,7 @@ public class KafkaClusterOAuthValidationTest {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
                     .withValidIssuerUri("http://valid-issuer")
                     .withJwksEndpointUri("http://jwks-endpoint")
-                    .withGroupsClaim("bad-query")
+                    .withGroupsClaim("['bad'.'query']")
                     .build();
 
             ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, getListeners(auth));
