@@ -47,17 +47,8 @@ import org.apache.logging.log4j.Logger;
 @SuppressFBWarnings("DM_EXIT")
 public class Main {
     private static final Logger LOGGER = LogManager.getLogger(Main.class.getName());
-    private static Vertx vertx = Vertx.vertx(
-        new VertxOptions().setMetricsOptions(
-            new MicrometerMetricsOptions()
-                .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-                .setJvmMetricsEnabled(true)
-                .setEnabled(true)));
 
     static {
-        // Verticle.stop() methods are not executed if you don't call Vertx.close()
-        // Vertx registers a shutdown hook for that, but only if you use its Launcher as main class
-        Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(vertx)));
         try {
             Crds.registerCustomKinds();
         } catch (Error | RuntimeException t) {
@@ -72,10 +63,22 @@ public class Main {
 
         // setting DNS cache TTL
         Security.setProperty("networkaddress.cache.ttl", String.valueOf(config.getDnsCacheTtlSec()));
+
+        // setup Micrometer metrics options
+        VertxOptions options = new VertxOptions().setMetricsOptions(
+            new MicrometerMetricsOptions()
+                .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                .setJvmMetricsEnabled(true)
+                .setEnabled(true));
+        Vertx vertx = Vertx.vertx(options);
+
+        // Verticle.stop() methods are not executed if you don't call Vertx.close()
+        // Vertx registers a shutdown hook for that, but only if you use its Launcher as main class
+        Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(vertx)));
         
         KubernetesClient client = new DefaultKubernetesClient();
 
-        maybeCreateClusterRoles(config, client).onComplete(crs -> {
+        maybeCreateClusterRoles(vertx, config, client).onComplete(crs -> {
             if (crs.succeeded())    {
                 PlatformFeaturesAvailability.create(vertx, client).onComplete(pfa -> {
                     if (pfa.succeeded()) {
@@ -161,7 +164,7 @@ public class Main {
         return CompositeFuture.join(futures);
     }
 
-    /*test*/ static Future<Void> maybeCreateClusterRoles(ClusterOperatorConfig config, KubernetesClient client)  {
+    /*test*/ static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
         if (config.isCreateClusterRoles()) {
             List<Future> futures = new ArrayList<>();
             ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);

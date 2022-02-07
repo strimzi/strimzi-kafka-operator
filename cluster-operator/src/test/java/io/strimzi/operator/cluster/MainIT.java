@@ -67,7 +67,7 @@ public class MainIT {
         ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
 
         Checkpoint a = context.checkpoint();
-        Main.maybeCreateClusterRoles(config, client)
+        Main.maybeCreateClusterRoles(vertx, config, client)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(cro.get("strimzi-cluster-operator-namespaced"), is(notNullValue()));
                 assertThat(cro.get("strimzi-cluster-operator-global"), is(notNullValue()));

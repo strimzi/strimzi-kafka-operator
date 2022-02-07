@@ -17,11 +17,10 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
 public class ShutdownHookTest {
-    private static Vertx vertx = Vertx.vertx();
-
     @Test
     public void testTerminationRunnable() {
-        final int nVerticles = 10;
+        int nVerticles = 10;
+        Vertx vertx = Vertx.vertx();
         List<MyVerticle> verticles = new ArrayList<>(nVerticles);
         while (verticles.size() < nVerticles) {
             MyVerticle myVerticle = new MyVerticle();
