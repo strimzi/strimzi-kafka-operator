@@ -169,16 +169,29 @@ public class Exec {
                 if (input != null && !input.contains("CustomResourceDefinition")) {
                     logData(logLevel, String.format("Input: %s", input.trim()));
                 }
-                logData(logLevel, String.format("RETURN code: %s", ret));
-                if (!executor.out().isEmpty()) {
-                    logData(logLevel, "======STDOUT START=======");
-                    logData(logLevel, String.format("%s", cutExecutorLog(executor.out().trim())));
-                    logData(logLevel, "======STDOUT END======");
-                }
-                if (!executor.err().isEmpty()) {
-                    logData(logLevel, "======STDERR START=======");
-                    logData(logLevel, String.format("%s", cutExecutorLog(executor.err().trim())));
-                    logData(logLevel, "======STDERR END======");
+                logData(logLevel, String.format("Return code: %s", ret));
+                if (ret != 0) {
+                    if (!executor.out().isEmpty()) {
+                        logData(logLevel, "======STDOUT START=======");
+                        logData(logLevel, String.format("%s", cutExecutorLog(executor.out().trim())));
+                        logData(logLevel, "======STDOUT END======");
+                    }
+                    if (!executor.err().isEmpty()) {
+                        logData(logLevel, "======STDERR START=======");
+                        logData(logLevel, String.format("%s", cutExecutorLog(executor.err().trim())));
+                        logData(logLevel, "======STDERR END======");
+                    } else {
+                        if (!executor.out().isEmpty()) {
+                            logData(StandardLevel.TRACE, "======STDOUT START=======");
+                            logData(StandardLevel.TRACE, String.format("%s", cutExecutorLog(executor.out().trim())));
+                            logData(StandardLevel.TRACE, "======STDOUT END======");
+                        }
+                        if (!executor.err().isEmpty()) {
+                            logData(StandardLevel.TRACE, "======STDERR START=======");
+                            logData(StandardLevel.TRACE, String.format("%s", cutExecutorLog(executor.err().trim())));
+                            logData(StandardLevel.TRACE, "======STDERR END======");
+                        }
+                    }
                 }
             }
 

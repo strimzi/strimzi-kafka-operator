@@ -94,7 +94,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     public String getEvents() {
-        return Exec.exec(null, namespacedCommand("get", "events"), 0 , StandardLevel.DEBUG).out();
+        return Exec.exec(null, namespacedCommand("get", "events"), 0, StandardLevel.DEBUG).out();
     }
 
     @Override

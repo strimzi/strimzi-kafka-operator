@@ -191,7 +191,8 @@ public class SetupClusterOperator {
      * Don't use this method in tests, where specific configuration of CO is needed.
      */
     public SetupClusterOperator runInstallation() {
-        LOGGER.info("Cluster operator installation configuration:\n{}", this::toString);
+        LOGGER.info("Cluster operator installation configuration:\n{}", this::prettyPrint);
+        LOGGER.debug("Cluster operator installation configuration:\n{}", this::toString);
         // if it's shared context (before suite) skip
         if (BeforeAllOnce.getSharedExtensionContext() != extensionContext) {
             testClassName = extensionContext.getRequiredTestClass() != null ? extensionContext.getRequiredTestClass().getName() : "";
@@ -705,6 +706,29 @@ public class SetupClusterOperator {
             ", testClassName='" + testClassName + '\'' +
             ", testMethodName='" + testMethodName + '\'' +
             '}';
+    }
+
+    public String prettyPrint() {
+        return String.format("extensionContext=%s\n" +
+                "clusterOperatorName=%s\n" +
+                "namespaceInstallTo=%s\n" +
+                "namespaceToWatch=%s\n" +
+                "bindingsNamespaces=%s\n" +
+                "operationTimeout=%s\n" +
+                "reconciliationInterval=%s\n" +
+                "clusterOperatorRBACType=%s\n" +
+                "%s%s%s%s", extensionContext,
+                clusterOperatorName,
+                namespaceInstallTo,
+                namespaceToWatch,
+                bindingsNamespaces,
+                operationTimeout,
+                reconciliationInterval,
+                clusterOperatorRBACType,
+                extraEnvVars.isEmpty() ? "" : ", extraEnvVars=" + extraEnvVars + "\n",
+                extraLabels.isEmpty() ? "" : "extraLabels=" + extraLabels + "\n",
+                testClassName == null ? "" : "testClassName='" + testClassName + '\'' + "\n",
+                testMethodName == null ? "" : "testMethodName='" + testMethodName + '\'' + "\n").trim();
     }
 
     /**
