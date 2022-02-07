@@ -22,10 +22,6 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -38,6 +34,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
@@ -47,8 +47,17 @@ import org.apache.logging.log4j.Logger;
 @SuppressFBWarnings("DM_EXIT")
 public class Main {
     private static final Logger LOGGER = LogManager.getLogger(Main.class.getName());
+    private static Vertx vertx = Vertx.vertx(
+        new VertxOptions().setMetricsOptions(
+            new MicrometerMetricsOptions()
+                .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                .setJvmMetricsEnabled(true)
+                .setEnabled(true)));
 
     static {
+        // Verticle.stop() methods are not executed if you don't call Vertx.close()
+        // Vertx registers a shutdown hook for that, but only if you use its Launcher as main class
+        Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(vertx)));
         try {
             Crds.registerCustomKinds();
         } catch (Error | RuntimeException t) {
@@ -63,18 +72,10 @@ public class Main {
 
         // setting DNS cache TTL
         Security.setProperty("networkaddress.cache.ttl", String.valueOf(config.getDnsCacheTtlSec()));
-
-        //Setup Micrometer metrics options
-        VertxOptions options = new VertxOptions().setMetricsOptions(
-                new MicrometerMetricsOptions()
-                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-                        .setJvmMetricsEnabled(true)
-                        .setEnabled(true));
-        Vertx vertx = Vertx.vertx(options);
         
         KubernetesClient client = new DefaultKubernetesClient();
 
-        maybeCreateClusterRoles(vertx, config, client).onComplete(crs -> {
+        maybeCreateClusterRoles(config, client).onComplete(crs -> {
             if (crs.succeeded())    {
                 PlatformFeaturesAvailability.create(vertx, client).onComplete(pfa -> {
                     if (pfa.succeeded()) {
@@ -160,7 +161,7 @@ public class Main {
         return CompositeFuture.join(futures);
     }
 
-    /*test*/ static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
+    /*test*/ static Future<Void> maybeCreateClusterRoles(ClusterOperatorConfig config, KubernetesClient client)  {
         if (config.isCreateClusterRoles()) {
             List<Future> futures = new ArrayList<>();
             ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);

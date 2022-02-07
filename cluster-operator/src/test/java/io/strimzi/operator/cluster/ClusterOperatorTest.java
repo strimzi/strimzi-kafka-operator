@@ -22,8 +22,6 @@ import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -49,8 +47,12 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class ClusterOperatorTest {
-    private static Vertx vertx;
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperatorTest.class);
+    private static Vertx vertx = Vertx.vertx(
+        new VertxOptions().setMetricsOptions(
+            new MicrometerMetricsOptions()
+                .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
+                .setEnabled(true)));
 
     private static Map<String, String> buildEnv(String namespaces, boolean strimziPodSets) {
         Map<String, String> env = new HashMap<>();
@@ -66,20 +68,6 @@ public class ClusterOperatorTest {
         }
 
         return env;
-    }
-
-    @BeforeAll
-    public static void before() {
-        VertxOptions options = new VertxOptions().setMetricsOptions(
-                new MicrometerMetricsOptions()
-                        .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))
-                        .setEnabled(true));
-        vertx = Vertx.vertx(options);
-    }
-
-    @AfterAll
-    public static void after() {
-        vertx.close();
     }
 
     @Test
