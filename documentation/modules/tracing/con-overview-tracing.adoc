@@ -12,7 +12,7 @@ OpenTracing and OpenTelemetry provide API specifications that are independent fr
 
 * The APIs are used to _instrument_ application code
 
-* Instrumented applications generate _traces_ for individual transactions across the distributed system
+* Instrumented applications generate _traces_ for individual requests across the distributed system
 
 * Traces are composed of _spans_ that define specific units of work over time
 
