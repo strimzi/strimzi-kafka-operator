@@ -26,7 +26,7 @@
       </repository>
       <repository>
           <id>oauth-pre</id>
-          <url>https://github.com/mstruk/strimzi-kafka-oauth/raw/m2repo/m2repo</url>
+          <url>https://oss.sonatype.org/content/repositories/iostrimzi-1161</url>
       </repository>
     </repositories>
 

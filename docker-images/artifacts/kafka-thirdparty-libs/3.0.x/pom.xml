@@ -16,7 +16,7 @@
     </licenses>
 
     <properties>
-        <strimzi-oauth.version>0.10.0-rc1-pre2</strimzi-oauth.version>
+        <strimzi-oauth.version>0.10.0</strimzi-oauth.version>
         <cruise-control.version>2.5.79</cruise-control.version>
         <opa-authorizer.version>1.4.0</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.2.0</kafka-quotas-plugin.version>
@@ -38,7 +38,7 @@
         </repository>
         <repository>
             <id>oauth-pre</id>
-            <url>https://github.com/mstruk/strimzi-kafka-oauth/raw/m2repo/m2repo</url>
+            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1161</url>
         </repository>
     </repositories>
 
