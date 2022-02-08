@@ -309,7 +309,7 @@ Add `-ServiceAccountPatching` to the `STRIMZI_FEATURE_GATES` environment variabl
 NOTE: The `ServiceAccountPatching` feature gate moved to beta stage in Strimzi 0.27.0 and is expected to remain in the beta stage until Strimzi 0.30.
 
 [id='ref-operator-use-strimzi-pod-sets-feature-gate-{context}']
-=== Use `StrimziPodSets` feature gate
+=== `UseStrimziPodSets` feature gate
 
 Currently, Strimzi relies on StatefulSets to create and manage Pods for the ZooKeeper and Kafka clusters.
 Strimzi creates the StatefulSet and Kubernetes creates the Pods according to the StatefulSet definition.
