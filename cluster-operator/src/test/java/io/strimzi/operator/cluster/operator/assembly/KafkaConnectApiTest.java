@@ -18,6 +18,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.IsolatedTest;
+import io.strimzi.test.container.StrimziKafkaCluster;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -28,7 +29,6 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.connect.cli.ConnectDistributed;
 import org.apache.kafka.connect.runtime.Connect;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectApiTest {
-    private static EmbeddedKafkaCluster cluster;
+    private static StrimziKafkaCluster cluster;
     private static Vertx vertx;
     private Connect connect;
     private static final int PORT = 18083;
@@ -70,7 +70,7 @@ public class KafkaConnectApiTest {
         workerProps.put("offset.storage.topic", getClass().getSimpleName() + "-offsets");
         workerProps.put("config.storage.topic", getClass().getSimpleName() + "-config");
         workerProps.put("status.storage.topic", getClass().getSimpleName() + "-status");
-        workerProps.put("bootstrap.servers", cluster.bootstrapServers());
+        workerProps.put("bootstrap.servers", cluster.getBootstrapServers());
         //DistributedConfig config = new DistributedConfig(workerProps);
         //RestServer rest = new RestServer(config);
         //rest.initializeServer();
@@ -97,8 +97,9 @@ public class KafkaConnectApiTest {
     @BeforeAll
     public static void before() throws IOException {
         vertx = Vertx.vertx();
-
-        cluster = new EmbeddedKafkaCluster(3);
+        final Map<String, String> kafkaClusterConfiguration = new HashMap<>();
+        kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
+        cluster = new StrimziKafkaCluster(3, 1, kafkaClusterConfiguration);
         cluster.start();
     }
 
