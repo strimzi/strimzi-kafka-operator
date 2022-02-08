@@ -149,6 +149,11 @@ public interface Constants {
     String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-mirror-maker-2-metrics.yaml";
 
     /**
+     * Feature gate related constants
+     */
+    String USE_STRIMZI_POD_SET = "+UseStrimziPodSets";
+
+    /**
      * Default value which allows execution of tests with any tags
      */
     String DEFAULT_TAG = "all";
