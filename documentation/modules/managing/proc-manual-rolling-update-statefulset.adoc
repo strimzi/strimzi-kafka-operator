@@ -24,7 +24,7 @@ kubectl annotate statefulset _cluster-name_-kafka strimzi.io/manual-rolling-upda
 kubectl annotate statefulset _cluster-name_-zookeeper strimzi.io/manual-rolling-update=true
 ----
 +
-If you enabled the xref:ref-operator-use-strimzi-pod-sets-feature-gate-{context}[`UseStrimziPodSets` feature gate], you should annotate the `StrimziPodSet` resources instead of the `StatefulSet` resources:
+If you enabled the xref:ref-operator-use-strimzi-pod-sets-feature-gate-{context}[`UseStrimziPodSets` feature gate], annotate the `StrimziPodSet` resources instead of the `StatefulSet` resources:
 +
 [source,shell,subs=+quotes]
 ----
