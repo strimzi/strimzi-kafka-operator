@@ -67,7 +67,7 @@ public class KafkaTopicUtils {
     public static String waitTopicHasRolled(final String namespaceName, String topicName, String topicUid) {
         TestUtils.waitFor("Topic " + topicName + " has rolled", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> !topicUid.equals(topicSnapshot(namespaceName, topicName)));
-        return topicSnapshot(topicName);
+        return topicSnapshot(namespaceName, topicName);
     }
 
     public static String waitTopicHasRolled(String topicName, String topicUid) {

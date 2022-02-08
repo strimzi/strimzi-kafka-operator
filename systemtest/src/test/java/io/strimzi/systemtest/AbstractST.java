@@ -536,6 +536,8 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     private final void afterAllMustExecute(ExtensionContext extensionContext)  {
+        clusterOperator = SetupClusterOperator.getInstanceHolder();
+
         if (StUtils.isParallelSuite(extensionContext)) {
             parallelSuiteController.removeParallelSuite(extensionContext);
         }
@@ -559,7 +561,7 @@ public abstract class AbstractST implements TestSeparator {
             LOGGER.debug("Default Cluster Operator configuration:\n" + clusterOperator.defaultInstallation().createInstallation().toString());
             LOGGER.info("Current Cluster Operator configuration differs from default Cluster Operator in these attributes:{}", clusterOperator.diff(clusterOperator.defaultInstallation().createInstallation()));
             LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-            clusterOperator = clusterOperator.rollbackToDefaultConfiguration();
+            clusterOperator.rollbackToDefaultConfiguration();
         }
     }
 
