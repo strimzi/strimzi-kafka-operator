@@ -52,6 +52,7 @@ public class SuiteThreadController {
         return instance;
     }
 
+    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     private SuiteThreadController() {
         runningTestSuitesInParallelCount = new AtomicInteger(0);
         isOpen = new AtomicBoolean(false);
@@ -176,7 +177,7 @@ public class SuiteThreadController {
      * additional threads, which exceed parallelism limit. This ensures that {@link io.strimzi.systemtest.annotations.ParallelSuite}
      * will not deadlock.
      *
-     * @param extensionContext
+     * @param extensionContext extension context for identifying, which test suite notifies.
      */
     public void notifyParallelSuiteToAllowExecution(ExtensionContext extensionContext) {
         LOGGER.info("{} - Notifies waiting test suites:{} to and randomly select one to start execution", extensionContext.getRequiredTestClass().getSimpleName(), waitingTestSuites.toString());
