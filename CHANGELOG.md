@@ -13,6 +13,7 @@
 * Add support for disabling the FIPS mode in OpenJDK
 * Fix renewing your own CA certificates [#5466](https://github.com/strimzi/strimzi-kafka-operator/issues/5466)
 * Update Strimzi Kafka Bridge to 0.21.4
+* Update Cruise Control to 2.5.82
 
 ### Changes, deprecations and removals
 
