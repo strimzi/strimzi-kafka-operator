@@ -12,6 +12,8 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,29 +29,41 @@ public class SuiteThreadController {
 
     private static final long STARTING_DELAY = Duration.ofSeconds(5).toMillis();
     private static final Logger LOGGER = LogManager.getLogger(SuiteThreadController.class);
+    private static final String JUNIT_PARALLEL_COUNT_PROPERTY_NAME = "junit.jupiter.execution.parallel.config.fixed.parallelism";
 
     private static SuiteThreadController instance;
-
-    private AtomicInteger runningTestSuitesInParallelCount;
-    private AtomicBoolean isOpen;
+    private static List<String> waitingTestSuites;
+    private static Integer maxTestSuitesInParallel;
+    private static AtomicInteger runningTestSuitesInParallelCount;
+    private static AtomicBoolean isOpen;
+    private static AtomicBoolean isParallelSuiteReleased;
 
     public synchronized static SuiteThreadController getInstance() {
         if (instance == null) {
             instance = new SuiteThreadController();
+            if (System.getProperties().get(JUNIT_PARALLEL_COUNT_PROPERTY_NAME) != null) {
+                maxTestSuitesInParallel =  Integer.parseInt((String) System.getProperties().get(JUNIT_PARALLEL_COUNT_PROPERTY_NAME));
+            } else {
+                LOGGER.error("User did not specify junit.jupiter.execution.parallel.config.fixed.parallelism " +
+                    "in junit-platform.properties gonna use default as 1 (sequence mode)");
+                maxTestSuitesInParallel = 1;
+            }
         }
         return instance;
     }
 
-    public SuiteThreadController() {
-
-        this.runningTestSuitesInParallelCount = new AtomicInteger(0);
-        this.isOpen = new AtomicBoolean(false);
+    private SuiteThreadController() {
+        runningTestSuitesInParallelCount = new AtomicInteger(0);
+        isOpen = new AtomicBoolean(false);
+        isParallelSuiteReleased = new AtomicBoolean(false);
+        waitingTestSuites = new ArrayList<>();
     }
 
     public synchronized void addParallelSuite(ExtensionContext extensionContext) {
         LOGGER.debug("[{}] - Adding parallel suite: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
 
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, runningTestSuitesInParallelCount.incrementAndGet());
+        runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.incrementAndGet());
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, runningTestSuitesInParallelCount.get());
 
         LOGGER.debug("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
     }
@@ -59,7 +73,8 @@ public class SuiteThreadController {
             throw new RuntimeException("There is no parallel suite running.");
         } else {
             LOGGER.debug("[{}] - Removing parallel suite: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, runningTestSuitesInParallelCount.decrementAndGet());
+            runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.decrementAndGet());
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, runningTestSuitesInParallelCount.get());
         }
 
         LOGGER.debug("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
@@ -104,8 +119,68 @@ public class SuiteThreadController {
         LOGGER.debug("Suite {} has locked the @IsolatedSuite and other @IsolatedSuites must wait until lock is released.", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()));
     }
 
+    public boolean isRunningAllowedNumberTestSuitesInParallel() {
+        return runningTestSuitesInParallelCount.get() <= maxTestSuitesInParallel;
+    }
+
+    /**
+     * Synchronise point where {@link io.strimzi.systemtest.annotations.ParallelSuite} end it in situation when
+     * Junit5 {@link java.util.concurrent.ForkJoinPool} spawn additional threads, which can exceed limit specified
+     * and thus many threads can start execute test suites which could potentially destroy cluster. This is mechanism,
+     * which will all additional threads (i.e., not needed) put into waiting room. After one of the
+     * {@link io.strimzi.systemtest.annotations.ParallelSuite} is done with execution we release
+     * ({@link #notifyParallelSuiteToAllowExecution(ExtensionContext)} one test suite setting {@code isParallelSuiteReleased} flag.
+     * This ensures that only one test suite will continue with execution and others will still wait.
+     *
+     * @param extensionContext Extension context for test suite name
+     */
+    public void waitUntilAllowedNumberTestSuitesInParallel(ExtensionContext extensionContext) {
+        final String testSuiteToWait = extensionContext.getRequiredTestClass().getSimpleName();
+        waitingTestSuites.add(testSuiteToWait);
+
+        while (!isRunningAllowedNumberTestSuitesInParallel()) {
+            LOGGER.debug("{} is waiting to proceed with execution but current thread exceed maximum " +
+                "of allowed test suites in parallel. ({}/{})",
+                testSuiteToWait,
+                runningTestSuitesInParallelCount.get(),
+                maxTestSuitesInParallel);
+
+            try {
+                Thread.currentThread().sleep(STARTING_DELAY);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            // release and lock again
+            if (isParallelSuiteReleased.get()) {
+                // lock
+                isParallelSuiteReleased.set(false);
+                waitingTestSuites.remove(testSuiteToWait);
+                break;
+            }
+        }
+        LOGGER.debug("{} suite now can proceed its execution", testSuiteToWait);
+    }
+
+    public void incrementParallelSuiteCounter() {
+        runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.incrementAndGet());
+    }
+
     public void decrementCounter() {
-        runningTestSuitesInParallelCount.decrementAndGet();
+        runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.decrementAndGet());
+    }
+
+    /**
+     * Notifies one of the {@link io.strimzi.systemtest.annotations.ParallelSuite} to continue its execution. Specifically
+     * {@code waitingTestSuites}, which are waiting because {@link java.util.concurrent.ForkJoinPool} spawns
+     * additional threads, which exceed parallelism limit. This ensures that {@link io.strimzi.systemtest.annotations.ParallelSuite}
+     * will not deadlock.
+     *
+     * @param extensionContext
+     */
+    public void notifyParallelSuiteToAllowExecution(ExtensionContext extensionContext) {
+        LOGGER.info("{} - Notifies waiting test suites:{} to and randomly select one to start execution", extensionContext.getRequiredTestClass().getSimpleName(), waitingTestSuites.toString());
+        isParallelSuiteReleased.set(true);
     }
 
     public void unLockIsolatedSuite() {

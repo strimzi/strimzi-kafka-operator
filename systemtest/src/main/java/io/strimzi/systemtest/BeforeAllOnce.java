@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.strimzi.systemtest.parallel.SuiteThreadController;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
@@ -40,6 +41,12 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
             // we skip creation of shared Cluster Operator (because @IsolatedSuite has to have deploy brand-new configuration)
             if (StUtils.isParallelSuite(extensionContext)) {
                 BeforeAllOnce.systemReady = true;
+                // ---start
+                // This is needed for one scenario (2 in parallel) and @ParallelSuite is selected for deployment of .
+                // Cluster Operator and the other one @IsolatedSuite checking condition if there is @ParallelSuite running.
+                // Without this line @IsolatedSuite will start execution even @ParallelSuite is deploying CO for @ParallelSuite,
+                // which ends up in race.
+                SuiteThreadController.getInstance().incrementParallelSuiteCounter();
 
                 LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
                 LOGGER.debug("[{} - Before Suite] - Setup Suite environment", extensionContext.getRequiredTestClass().getName());
@@ -60,6 +67,9 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
                         .createInstallation()
                         .runInstallation();
                 }
+                // ---end
+                // we have to decrement here, because thread will also call it in @BeforeAll part.
+                SuiteThreadController.getInstance().decrementCounter();
             }
             sharedExtensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(SYSTEM_RESOURCES, new BeforeAllOnce());
         }

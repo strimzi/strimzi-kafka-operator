@@ -84,10 +84,6 @@ public abstract class AbstractST implements TestSeparator {
     protected KubeClusterResource cluster;
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
 
-    // {thread-safe} this lock ensures that no race-condition happen in @BeforeAll part
-    private static final Object BEFORE_ALL_LOCK = new Object();
-    // {thread-safe} this lock ensures that no race-condition happen in @AfterALl part in deletion of namespaces
-    private static final Object AFTER_ALL_LOCK = new Object();
     // {thread-safe} this needs to be static because when more threads spawns diff. TestSuites it might produce race conditions
     private static final Object LOCK = new Object();
 
@@ -539,6 +535,7 @@ public abstract class AbstractST implements TestSeparator {
         clusterOperator = SetupClusterOperator.getInstanceHolder();
 
         if (StUtils.isParallelSuite(extensionContext)) {
+            parallelSuiteController.notifyParallelSuiteToAllowExecution(extensionContext);
             parallelSuiteController.removeParallelSuite(extensionContext);
         }
 
@@ -608,15 +605,13 @@ public abstract class AbstractST implements TestSeparator {
         try {
             clusterOperator = SetupClusterOperator.getInstanceHolder();
         } finally {
-            // ensures that only one thread will modify @ParallelSuiteController and race-condition could not happen
-            synchronized (BEFORE_ALL_LOCK) {
-                // (optional) create additional namespace/namespaces for test suites if needed
-                testSuiteNamespaceManager.createAdditionalNamespaces(extensionContext);
-
-                if (StUtils.isParallelSuite(extensionContext)) {
-                    parallelSuiteController.addParallelSuite(extensionContext);
-                }
+            if (StUtils.isParallelSuite(extensionContext)) {
+                parallelSuiteController.addParallelSuite(extensionContext);
+                parallelSuiteController.waitUntilAllowedNumberTestSuitesInParallel(extensionContext);
             }
+            // (optional) create additional namespace/namespaces for test suites if needed
+            testSuiteNamespaceManager.createAdditionalNamespaces(extensionContext);
+
             if (StUtils.isIsolatedSuite(extensionContext)) {
                 cluster.setNamespace(Constants.INFRA_NAMESPACE);
                 // wait for parallel suites are done
