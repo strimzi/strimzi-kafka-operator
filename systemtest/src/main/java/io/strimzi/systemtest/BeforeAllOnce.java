@@ -69,7 +69,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
                 }
                 // ---end
                 // we have to decrement here, because thread will also call it in @BeforeAll part.
-                SuiteThreadController.getInstance().decrementCounter();
+                SuiteThreadController.getInstance().decrementParallelSuiteCounter();
             }
             sharedExtensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(SYSTEM_RESOURCES, new BeforeAllOnce());
         }

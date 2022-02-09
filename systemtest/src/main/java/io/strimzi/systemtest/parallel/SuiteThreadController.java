@@ -44,7 +44,7 @@ public class SuiteThreadController {
             if (System.getProperties().get(JUNIT_PARALLEL_COUNT_PROPERTY_NAME) != null) {
                 maxTestSuitesInParallel =  Integer.parseInt((String) System.getProperties().get(JUNIT_PARALLEL_COUNT_PROPERTY_NAME));
             } else {
-                LOGGER.error("User did not specify junit.jupiter.execution.parallel.config.fixed.parallelism " +
+                LOGGER.warn("User did not specify junit.jupiter.execution.parallel.config.fixed.parallelism " +
                     "in junit-platform.properties gonna use default as 1 (sequence mode)");
                 maxTestSuitesInParallel = 1;
             }
@@ -139,8 +139,11 @@ public class SuiteThreadController {
         final String testSuiteToWait = extensionContext.getRequiredTestClass().getSimpleName();
         waitingTestSuites.add(testSuiteToWait);
 
+        LOGGER.debug("[{}] moved to the WaitZone, because current thread exceed maximum of allowed " +
+            "test suites in parallel. ({}/{})", testSuiteToWait, runningTestSuitesInParallelCount.get(),
+            maxTestSuitesInParallel);
         while (!isRunningAllowedNumberTestSuitesInParallel()) {
-            LOGGER.debug("{} is waiting to proceed with execution but current thread exceed maximum " +
+            LOGGER.trace("{} is waiting to proceed with execution but current thread exceed maximum " +
                 "of allowed test suites in parallel. ({}/{})",
                 testSuiteToWait,
                 runningTestSuitesInParallelCount.get(),
@@ -167,7 +170,7 @@ public class SuiteThreadController {
         runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.incrementAndGet());
     }
 
-    public void decrementCounter() {
+    public void decrementParallelSuiteCounter() {
         runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.decrementAndGet());
     }
 
@@ -180,7 +183,7 @@ public class SuiteThreadController {
      * @param extensionContext extension context for identifying, which test suite notifies.
      */
     public void notifyParallelSuiteToAllowExecution(ExtensionContext extensionContext) {
-        LOGGER.info("{} - Notifies waiting test suites:{} to and randomly select one to start execution", extensionContext.getRequiredTestClass().getSimpleName(), waitingTestSuites.toString());
+        LOGGER.debug("{} - Notifies waiting test suites:{} to and randomly select one to start execution", extensionContext.getRequiredTestClass().getSimpleName(), waitingTestSuites.toString());
         isParallelSuiteReleased.set(true);
     }
 

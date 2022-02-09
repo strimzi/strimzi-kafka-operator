@@ -190,6 +190,7 @@ public class SetupClusterOperator {
      * It can install operator by classic way (apply bundle yamls) or use OLM. For OLM you need to set all other OLM env variables.
      * Don't use this method in tests, where specific configuration of CO is needed.
      */
+    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     public SetupClusterOperator runInstallation() {
         LOGGER.info("Cluster operator installation configuration:\n{}", this::prettyPrint);
         LOGGER.debug("Cluster operator installation configuration:\n{}", this::toString);
@@ -659,9 +660,6 @@ public class SetupClusterOperator {
         }
         if (this.reconciliationInterval != otherClusterOperator.reconciliationInterval) {
             diffString.append("reconciliationInterval=").append(this.reconciliationInterval).append(", ");
-        }
-        if (this.cluster != otherClusterOperator.cluster) {
-            diffString.append("cluster=").append(this.cluster).append(", ");
         }
         if (!this.clusterOperatorName.equals(otherClusterOperator.clusterOperatorName)) {
             diffString.append("clusterOperatorName=").append(this.clusterOperatorName).append(", ");
