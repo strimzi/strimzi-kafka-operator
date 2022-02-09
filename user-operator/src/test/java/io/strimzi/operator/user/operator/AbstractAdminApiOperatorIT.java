@@ -6,13 +6,13 @@ package io.strimzi.operator.user.operator;
 
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.user.model.KafkaUserModel;
+import io.strimzi.test.container.StrimziKafkaContainer;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.Matchers;
@@ -21,8 +21,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -36,26 +37,23 @@ public abstract class AbstractAdminApiOperatorIT<T, S extends Collection<String>
     public static final String SCRAM_USERNAME = "my-user";
     public static final String TLS_USERNAME = "CN=my-user";
 
-    private static EmbeddedKafkaCluster kafkaCluster;
+    private static StrimziKafkaContainer kafkaContainer;
     protected static Vertx vertx;
     protected static Admin adminClient;
 
     @BeforeAll
     public static void beforeAll() {
         vertx = Vertx.vertx();
-        try {
-            Properties config = new Properties();
-            config.setProperty("authorizer.class.name", "kafka.security.authorizer.AclAuthorizer");
-            config.setProperty("super.users", "User:ANONYMOUS");
-
-            kafkaCluster = new EmbeddedKafkaCluster(1, config);
-            kafkaCluster.start();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to start Kafka cluster");
-        }
+        Map<String, String> additionalConfiguration = Map.of(
+            "authorizer.class.name", "kafka.security.authorizer.AclAuthorizer",
+            "super.users", "User:ANONYMOUS");
+        kafkaContainer = new StrimziKafkaContainer()
+            .withBrokerId(1)
+            .withKafkaConfigurationMap(additionalConfiguration);
+        kafkaContainer.start();
 
         Properties p = new Properties();
-        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.bootstrapServers());
+        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.getBootstrapServers());
         adminClient = Admin.create(p);
     }
 
@@ -69,7 +67,7 @@ public abstract class AbstractAdminApiOperatorIT<T, S extends Collection<String>
             adminClient.close();
         }
 
-        kafkaCluster.stop();
+        kafkaContainer.stop();
     }
 
     abstract AbstractAdminApiOperator<T, S> operator();
