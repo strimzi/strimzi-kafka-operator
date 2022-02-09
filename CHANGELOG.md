@@ -11,6 +11,7 @@
 * Added the option `createBootstrapService` in the Kafka Spec to disable the creation of the bootstrap service for the Load Balancer Type Listener. It will save the cost of one load balancer resource, specially in the public cloud.
 * Add support for disabling the FIPS mode in OpenJDK
 * Fix renewing your own CA certificates [#5466](https://github.com/strimzi/strimzi-kafka-operator/issues/5466)
+* Update Strimzi Kafka Bridge to 0.21.4
 
 ### Changes, deprecations and removals
 
