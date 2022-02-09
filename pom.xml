@@ -160,7 +160,7 @@
         <module>api</module>
         <module>mockkube</module>
         <module>config-model</module>
-<!--        <module>config-model-generator</module>-->
+        <module>config-model-generator</module>
         <module>operator-common</module>
         <module>topic-operator</module>
         <module>cluster-operator</module>
