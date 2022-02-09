@@ -160,7 +160,7 @@
         <module>api</module>
         <module>mockkube</module>
         <module>config-model</module>
-        <module>config-model-generator</module>
+<!--        <module>config-model-generator</module>-->
         <module>operator-common</module>
         <module>topic-operator</module>
         <module>cluster-operator</module>
@@ -587,47 +587,6 @@
                 <artifactId>strimzi-test-container</artifactId>
                 <version>${strimzi-test-container.version}</version>
             </dependency>
-            <!-- Used by EmbeddedKafkaCluster -->
-            <dependency>
-                <groupId>org.apache.kafka</groupId>
-                <artifactId>kafka-streams</artifactId>
-                <version>${kafka.version}</version>
-                <classifier>test</classifier>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>*</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.kafka</groupId>
-                <artifactId>kafka-clients</artifactId>
-                <version>${kafka.version}</version>
-                <classifier>test</classifier>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>*</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.kafka</groupId>
-                <artifactId>kafka_2.13</artifactId>
-                <version>${kafka.version}</version>
-                <classifier>test</classifier>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>*</artifactId>
-                        <groupId>*</groupId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <!-- ^^^^^ Used by EmbeddedKafkaCluster -->
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>

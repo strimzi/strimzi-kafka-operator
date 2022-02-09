@@ -5,9 +5,9 @@
 package io.strimzi.operator.topic;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.test.container.StrimziKafkaCluster;
 import io.vertx.core.Future;
 import kafka.server.KafkaConfig$;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -15,16 +15,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
-    protected static EmbeddedKafkaCluster kafkaCluster;
+    protected static StrimziKafkaCluster kafkaCluster;
 
     @BeforeAll
     public static void beforeAll() throws IOException {
-        kafkaCluster = new EmbeddedKafkaCluster(numKafkaBrokers(), kafkaClusterConfig());
+        kafkaCluster = new StrimziKafkaCluster(numKafkaBrokers(), numKafkaBrokers(), kafkaClusterConfig());
         kafkaCluster.start();
 
         setupKubeCluster();
@@ -50,10 +51,11 @@ public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
         return 1;
     }
 
-    protected static Properties kafkaClusterConfig() {
-        Properties config = new Properties();
-        config.setProperty(KafkaConfig$.MODULE$.DeleteTopicEnableProp(), "false");
-        return config;
+    protected static Map<String, String> kafkaClusterConfig() {
+        Map<String, String> p = new HashMap<>();
+        p.put(KafkaConfig$.MODULE$.DeleteTopicEnableProp(), "false");
+        p.put("zookeeper.connect", "zookeeper:2181");
+        return p;
     }
 
     @Test
