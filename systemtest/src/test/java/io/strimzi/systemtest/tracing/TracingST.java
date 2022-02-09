@@ -95,11 +95,15 @@ public class TracingST extends AbstractST {
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(TracingST.class.getSimpleName()).stream().findFirst().get();
 
-    @ParallelTest
+    @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     void testProducerConsumerStreamsService(ExtensionContext extensionContext) {
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
         assumeFalse(Environment.isNamespaceRbacScope());
+
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(
+                storageMap.get(extensionContext).getClusterName(), 3, 1).build());
 
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
