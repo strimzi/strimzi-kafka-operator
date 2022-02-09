@@ -26,10 +26,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static io.strimzi.test.TestUtils.writeFile;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -184,27 +181,18 @@ public class LogCollector {
         });
     }
 
-    /**
-     * Provides collection of tracing Pods (they can't be labeled because CR of the keycloak does not propagate
-     * labels to the Pods ) TODO:....
-     *
-     * @param pod
-     * @param namespace
-     */
-    private final void collectTracingPods(final Pod pod) {
-        // Tracing pods (they can't be labeled because CR of the keycloak does not propagate labels to the Pods )
-        if (pod.getMetadata().getName().contains("jaeger")) {
-            pod.getStatus().getContainerStatuses().forEach(
-                containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
-        }
-    }
-
-    private final void collectLogsForTesSuite(final Pod pod) {
+    private final void collectLogsForTestSuite(final Pod pod) {
         if (pod.getMetadata().getLabels().containsKey(Constants.TEST_SUITE_NAME_LABEL)) {
             if (pod.getMetadata().getLabels().get(Constants.TEST_SUITE_NAME_LABEL).equals(this.collectorElement.getTestClassName())) {
+                LOGGER.trace("Collecting logs for TestSuite: {}, and Pod: {}", this.collectorElement.getTestClassName(), pod.getMetadata().getName());
                 pod.getStatus().getContainerStatuses().forEach(
                     containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
             }
+        // Tracing pods (they can't be labeled because CR of the Jaeger does not propagate labels to the Pods )
+        } else if (pod.getMetadata().getName().contains("jaeger")) {
+            LOGGER.trace("Collecting logs for TestSuite: {}, and Jaeger Pods: {}", this.collectorElement.getTestClassName(), pod.getMetadata().getName());
+            pod.getStatus().getContainerStatuses().forEach(
+                containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
         }
     }
 
@@ -212,6 +200,7 @@ public class LogCollector {
         if (pod.getMetadata().getLabels().containsKey(Constants.TEST_CASE_NAME_LABEL)) {
             // collect these Pods, which are deployed in that test case
             if (pod.getMetadata().getLabels().get(Constants.TEST_CASE_NAME_LABEL).equals(this.collectorElement.getTestMethodName())) {
+                LOGGER.trace("Collecting logs for TestCase: {}, and Pod: {}", this.collectorElement.getTestMethodName(), pod.getMetadata().getName());
                 pod.getStatus().getContainerStatuses().forEach(
                     containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
             }
@@ -237,18 +226,15 @@ public class LogCollector {
             // scrape for Pods, which are not in `cluster-operator` namespace
             } else {
                 kubeClient.listPods(namespace).forEach(pod -> {
-                    final String podName = pod.getMetadata().getName();
                     // we are collecting inside for test case
                     if (extensionContext.getTestMethod().isPresent()) {
                         // pods, which are created by ResourceManager
                         collectLogsForTestCase(pod);
                         // pods, which are shared between test cases
-                        collectLogsForTesSuite(pod);
-                        collectTracingPods(pod);
+                        collectLogsForTestSuite(pod);
                     } else {
                         // pods, which are shared between test cases (@BeforeAll, @AfterAll)
-                        collectLogsForTesSuite(pod);
-                        collectTracingPods(pod);
+                        collectLogsForTestSuite(pod);
                     }
                 });
             }
