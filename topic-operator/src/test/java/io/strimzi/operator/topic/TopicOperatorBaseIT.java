@@ -225,7 +225,6 @@ public abstract class TopicOperatorBaseIT {
     protected Map<String, String> topicOperatorConfig(StrimziKafkaCluster kafkaCluster) {
         Map<String, String> m = new HashMap<>();
         m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.getBootstrapServers());
-        // TODO: check this one..
         m.put(Config.ZOOKEEPER_CONNECT.key, kafkaCluster.getZookeeper().getHost() + ":" + kafkaCluster.getZookeeper().getFirstMappedPort());
         m.put(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
         m.put(Config.NAMESPACE.key, NAMESPACE);
