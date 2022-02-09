@@ -34,6 +34,8 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     private String scope;
     private String audience;
     private String tokenEndpointUri;
+    private Integer connectTimeoutSeconds;
+    private Integer readTimeoutSeconds;
     private GenericSecretSource clientSecret;
     private GenericSecretSource accessToken;
     private GenericSecretSource refreshToken;
@@ -89,6 +91,26 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setTokenEndpointUri(String tokenEndpointUri) {
         this.tokenEndpointUri = tokenEndpointUri;
+    }
+
+    @Description("The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getConnectTimeoutSeconds() {
+        return connectTimeoutSeconds;
+    }
+
+    public void setConnectTimeoutSeconds(Integer connectTimeoutSeconds) {
+        this.connectTimeoutSeconds = connectTimeoutSeconds;
+    }
+
+    @Description("The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getReadTimeoutSeconds() {
+        return readTimeoutSeconds;
+    }
+
+    public void setReadTimeoutSeconds(Integer readTimeoutSeconds) {
+        this.readTimeoutSeconds = readTimeoutSeconds;
     }
 
     @Description("Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate "

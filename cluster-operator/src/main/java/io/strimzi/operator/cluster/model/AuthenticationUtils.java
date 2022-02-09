@@ -68,19 +68,36 @@ public class AuthenticationUtils {
                     throw new InvalidResourceException("PLAIN authentication selected, but username or password configuration is missing.");
                 }
             } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
-                KafkaClientAuthenticationOAuth auth = (KafkaClientAuthenticationOAuth) authentication;
-
-                if ((auth.getAccessToken() != null)
-                        || (auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getRefreshToken() != null)
-                        || (auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getClientSecret() != null))    {
-                    // Valid options, lets just pass it through.
-                    // This way the condition is easier to read and understand.
-                } else {
-                    throw new InvalidResourceException("OAUTH authentication selected, but some options are missing. You have to specify one of the following commbinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientsecret].");
-                }
+                validateClientAuthenticationOAuth((KafkaClientAuthenticationOAuth) authentication);
             }
         }
         return warnMsg;
+    }
+
+    private static void validateClientAuthenticationOAuth(KafkaClientAuthenticationOAuth auth) {
+
+        boolean accessTokenCase = auth.getAccessToken() != null;
+        boolean refreshTokenCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getRefreshToken() != null;
+        boolean clientSecretCase = auth.getTokenEndpointUri() != null && auth.getClientId() != null && auth.getClientSecret() != null;
+
+        // If not one of valid cases throw exception
+        if (!(accessTokenCase || refreshTokenCase || clientSecretCase)) {
+            throw new InvalidResourceException("OAUTH authentication selected, but some options are missing. You have to specify one of the following combinations: [accessToken], [tokenEndpointUri, clientId, refreshToken], [tokenEndpointUri, clientId, clientSecret].");
+        }
+
+        // Additional validation
+        ArrayList<String> errors = new ArrayList<>();
+
+        if (auth.getConnectTimeoutSeconds() != null && auth.getConnectTimeoutSeconds() <= 0) {
+            errors.add("If specified, 'connectTimeoutSeconds' has to be greater than 0");
+        }
+        if (auth.getReadTimeoutSeconds() != null && auth.getReadTimeoutSeconds() <= 0) {
+            errors.add("If specified, 'readTimeoutSeconds' has to be greater than 0");
+        }
+
+        if (errors.size() > 0) {
+            throw new InvalidResourceException("OAUTH authentication selected, but some options are invalid. " + errors);
+        }
     }
 
     /**
@@ -273,6 +290,8 @@ public class AuthenticationUtils {
                 if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
                 if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, false));
                 if (oauth.getMaxTokenExpirySeconds() > 0) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, oauth.getMaxTokenExpirySeconds()));
+                if (oauth.getConnectTimeoutSeconds() != null && oauth.getConnectTimeoutSeconds() > 0) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, oauth.getConnectTimeoutSeconds()));
+                if (oauth.getReadTimeoutSeconds() != null && oauth.getReadTimeoutSeconds() > 0)  options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, oauth.getReadTimeoutSeconds()));
 
                 properties.put(OAUTH_CONFIG, String.join(" ", options));
             }

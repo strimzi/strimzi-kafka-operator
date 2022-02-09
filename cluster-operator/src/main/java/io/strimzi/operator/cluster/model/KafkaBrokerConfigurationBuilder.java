@@ -450,6 +450,12 @@ public class KafkaBrokerConfigurationBuilder {
             addOption(options, ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
         }
 
+        if (oauth.getConnectTimeoutSeconds() != null && oauth.getConnectTimeoutSeconds() > 0) {
+            addOption(options, ServerConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, String.valueOf(oauth.getConnectTimeoutSeconds()));
+        }
+        if (oauth.getReadTimeoutSeconds() != null && oauth.getReadTimeoutSeconds() > 0) {
+            addOption(options, ServerConfig.OAUTH_READ_TIMEOUT_SECONDS, String.valueOf(oauth.getReadTimeoutSeconds()));
+        }
         return options;
     }
 
@@ -538,6 +544,8 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("strimzi.authorization.delegate.to.kafka.acl=" + keycloakAuthz.isDelegateToKafkaAcls());
             addOption(writer, "strimzi.authorization.grants.refresh.period.seconds", keycloakAuthz.getGrantsRefreshPeriodSeconds());
             addOption(writer, "strimzi.authorization.grants.refresh.pool.size", keycloakAuthz.getGrantsRefreshPoolSize());
+            addOption(writer, "strimzi.authorization.connect.timeout.seconds", keycloakAuthz.getConnectTimeoutSeconds());
+            addOption(writer, "strimzi.authorization.read.timeout.seconds", keycloakAuthz.getReadTimeoutSeconds());
             writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
 
             if (keycloakAuthz.getTlsTrustedCertificates() != null && keycloakAuthz.getTlsTrustedCertificates().size() > 0)    {

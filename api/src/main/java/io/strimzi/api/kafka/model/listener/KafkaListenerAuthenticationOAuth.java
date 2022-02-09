@@ -61,6 +61,8 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private String tokenEndpointUri;
     private boolean enableOauthBearer = true;
     private String customClaimCheck;
+    private Integer connectTimeoutSeconds;
+    private Integer readTimeoutSeconds;
     private String clientScope = null;
     private String clientAudience = null;
 
@@ -134,6 +136,26 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setCustomClaimCheck(String customClaimCheck) {
         this.customClaimCheck = customClaimCheck;
+    }
+
+    @Description("The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getConnectTimeoutSeconds() {
+        return connectTimeoutSeconds;
+    }
+
+    public void setConnectTimeoutSeconds(Integer connectTimeoutSeconds) {
+        this.connectTimeoutSeconds = connectTimeoutSeconds;
+    }
+
+    @Description("The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Integer getReadTimeoutSeconds() {
+        return readTimeoutSeconds;
+    }
+
+    public void setReadTimeoutSeconds(Integer readTimeoutSeconds) {
+        this.readTimeoutSeconds = readTimeoutSeconds;
     }
 
     @Description("The scope to use when making requests to the authorization server's token endpoint. Used for inter-broker authentication and for configuring OAuth 2.0 over PLAIN using the `clientId` and `secret` method.")

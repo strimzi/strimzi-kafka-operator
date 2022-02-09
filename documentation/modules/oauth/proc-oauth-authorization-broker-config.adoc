@@ -65,6 +65,8 @@ spec:
         certificate: ca.crt
       grantsRefreshPeriodSeconds: 60 <8>
       grantsRefreshPoolSize: 5 <9>
+      connectTimeoutSeconds: 60 <10>
+      readTimeoutSeconds: 60 <11>
     #...
 ----
 <1> Type `keycloak` enables Keycloak authorization.
@@ -79,7 +81,8 @@ Default is `false`.
 <7> (Optional) Trusted certificates for TLS connection to the authorization server.
 <8> (Optional) The time between two consecutive grants refresh runs. That is the maximum time for active sessions to detect any permissions changes for the user on Keycloak. The default value is 60.
 <9> (Optional) The number of threads to use to refresh (in parallel) the grants for the active sessions. The default value is 5.
-
+<10> (Optional) The connect timeout in seconds when connecting to the Keycloak token endpoint. The default value is 60.
+<11> (Optional) The read timeout in seconds when connecting to the Keycloak token endpoint. The default value is 60.
 . Save and exit the editor, then wait for rolling updates to complete.
 
 . Check the update in the logs or by watching the pod state transitions:

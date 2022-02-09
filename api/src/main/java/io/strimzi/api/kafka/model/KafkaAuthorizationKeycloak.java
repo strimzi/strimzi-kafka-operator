@@ -25,7 +25,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "clientId", "tokenEndpointUri",
     "tlsTrustedCertificates", "disableTlsHostnameVerification",
-    "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize", "superUsers"})
+    "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize", "superUsers", "connectTimeoutSeconds", "readTimeoutSeconds"})
 @EqualsAndHashCode
 public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private static final long serialVersionUID = 1L;
@@ -41,6 +41,8 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private boolean delegateToKafkaAcls = false;
     private Integer grantsRefreshPeriodSeconds;
     private Integer grantsRefreshPoolSize;
+    private Integer connectTimeoutSeconds;
+    private Integer readTimeoutSeconds;
     private List<String> superUsers;
 
     @Description("Must be `" + TYPE_KEYCLOAK + "`")
@@ -143,5 +145,27 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
 
     public void setSuperUsers(List<String> superUsers) {
         this.superUsers = superUsers;
+    }
+
+    @Description("The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.")
+    @Minimum(1)
+    @DefaultValue("60")
+    public Integer getConnectTimeoutSeconds() {
+        return connectTimeoutSeconds;
+    }
+
+    public void setConnectTimeoutSeconds(Integer connectTimeoutSeconds) {
+        this.connectTimeoutSeconds = connectTimeoutSeconds;
+    }
+
+    @Description("The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.")
+    @Minimum(1)
+    @DefaultValue("60")
+    public Integer getReadTimeoutSeconds() {
+        return readTimeoutSeconds;
+    }
+
+    public void setReadTimeoutSeconds(Integer readTimeoutSeconds) {
+        this.readTimeoutSeconds = readTimeoutSeconds;
     }
 }

@@ -126,6 +126,9 @@ spec:
                                   - key
                                   - secretName
                                 description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka broker can use to authenticate against the authorization server and use the introspect endpoint URI.
+                              connectTimeoutSeconds:
+                                type: integer
+                                description: The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.
                               customClaimCheck:
                                 type: string
                                 description: JsonPath filter query to be applied to the JWT token or to the response of the introspection endpoint for additional token validation. Not set by default.
@@ -172,6 +175,9 @@ spec:
                               maxSecondsWithoutReauthentication:
                                 type: integer
                                 description: Maximum number of seconds the authenticated session remains valid without re-authentication. This enables Apache Kafka re-authentication feature, and causes sessions to expire when the access token expires. If the access token expires before max time or if max time is reached, the client has to re-authenticate, otherwise the server will drop the connection. Not set by default - the authenticated session does not expire when the access token expires. This option only applies to SASL_OAUTHBEARER authentication mechanism (when `enableOauthBearer` is `true`).
+                              readTimeoutSeconds:
+                                type: integer
+                                description: The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.
                               sasl:
                                 type: boolean
                                 description: Enable or disable SASL on this listener.
@@ -544,6 +550,10 @@ spec:
                         clientId:
                           type: string
                           description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
+                        connectTimeoutSeconds:
+                          type: integer
+                          minimum: 1
+                          description: The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.
                         delegateToKafkaAcls:
                           type: boolean
                           description: Whether authorization decision should be delegated to the 'Simple' authorizer if DENIED by Keycloak Authorization Services policies. Default value is `false`.
@@ -570,6 +580,10 @@ spec:
                         maximumCacheSize:
                           type: integer
                           description: Maximum capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request. Defaults to `50000`.
+                        readTimeoutSeconds:
+                          type: integer
+                          minimum: 1
+                          description: The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.
                         superUsers:
                           type: array
                           items:

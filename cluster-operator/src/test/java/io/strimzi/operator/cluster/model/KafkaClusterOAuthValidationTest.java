@@ -67,6 +67,8 @@ public class KafkaClusterOAuthValidationTest {
                         .withJwksRefreshSeconds(30)
                         .withJwksExpirySeconds(90)
                         .withJwksMinRefreshPauseSeconds(5)
+                        .withConnectTimeoutSeconds(20)
+                        .withReadTimeoutSeconds(20)
                         .withMaxSecondsWithoutReauthentication(1800)
                         .withNewClientSecret()
                             .withSecretName("my-secret-secret")
@@ -277,6 +279,42 @@ public class KafkaClusterOAuthValidationTest {
     public void testOAuthValidationNoUriSpecified() {
         assertThrows(InvalidResourceException.class, () -> {
             KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder().build();
+
+            ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, getListeners(auth));
+        });
+    }
+
+    @ParallelTest
+    public void testOAuthValidationWithMinimumJWKS() {
+        KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
+                .withValidIssuerUri("http://valid-issuer")
+                .withJwksEndpointUri("http://jwks-endpoint")
+                .build();
+
+        ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, getListeners(auth));
+    }
+
+    @ParallelTest
+    public void testOAuthValidationWithConnectTimeout() {
+        assertThrows(InvalidResourceException.class, () -> {
+            KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
+                    .withValidIssuerUri("http://valid-issuer")
+                    .withJwksEndpointUri("http://jwks-endpoint")
+                    .withConnectTimeoutSeconds(0)
+                    .build();
+
+            ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, getListeners(auth));
+        });
+    }
+
+    @ParallelTest
+    public void testOAuthValidationWithReadTimeout() {
+        assertThrows(InvalidResourceException.class, () -> {
+            KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
+                    .withValidIssuerUri("http://valid-issuer")
+                    .withJwksEndpointUri("http://jwks-endpoint")
+                    .withReadTimeoutSeconds(0)
+                    .build();
 
             ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, getListeners(auth));
         });

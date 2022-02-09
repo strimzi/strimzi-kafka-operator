@@ -126,6 +126,8 @@ Depending on how you apply OAuth 2.0 authentication, and the type of authorizati
     customClaimCheck: "@.custom == 'custom-value'" <10>
     clientAudience: __AUDIENCE__ <11>
     clientScope: __SCOPE__ <12>
+    connectTimeoutSeconds: 60 <13>
+    readTimeoutSeconds: 60 <14>
 ----
 <1> If your authorization server does not provide an `iss` claim, it is not possible to perform an issuer check. In this situation, set `checkIssuer` to `false` and do not specify a `validIssuerUri`. Default is `true`.
 <2> If your authorization server provides an `aud` (audience) claim, and you want to enforce an audience check, set `checkAudience` to `true`. Audience checks identify the intended recipients of tokens. As a result, the Kafka broker will reject tokens that do not have its `clientId` in their `aud` claim. Default is `false`.
@@ -139,6 +141,8 @@ Depending on how you apply OAuth 2.0 authentication, and the type of authorizati
 <10> Additional custom rules can be imposed on the JWT access token during validation by setting this to a JsonPath filter query. If the access token does not contain the necessary data, it is rejected. When using the `introspectionEndpointUri`, the custom check is applied to the introspection endpoint response JSON.
 <11> (Optional) An `audience` parameter passed to the token endpoint. An _audience_ is used  when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth 2.0 over PLAIN client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
 <12> (Optional) A `scope` parameter passed to the token endpoint. A _scope_ is used when obtaining an access token for inter-broker authentication. It is also used in the name of a client for OAuth 2.0 over PLAIN client authentication using a `clientId` and `secret`. This only affects the ability to obtain the token, and the content of the token, depending on the authorization server. It does not affect token validation rules by the listener.
+<13> (Optional) The connect timeout in seconds when connecting to the authorization server. The default value is 60.
+<14> (Optional) The read timeout in seconds when connecting to the authorization server. The default value is 60.
 
 . Save and exit the editor, then wait for rolling updates to complete.
 

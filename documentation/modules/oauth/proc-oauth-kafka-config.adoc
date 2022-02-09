@@ -97,6 +97,8 @@ spec:
     accessTokenIsJwt: false <3>
     scope: any <4>
     audience: kafka <5>
+    connectTimeoutSeconds: 60 <6>
+    readTimeoutSeconds: 60 <7>
 ----
 <1> (Optional) Disable TLS hostname verification. Default is `false`.
 <2> If the authorization server does not return a `typ` (type) claim inside the JWT token, you can apply `checkAccessTokenType: false` to skip the token type check. Default is `true`.
@@ -107,6 +109,8 @@ In this case it is `any`.
 <5> (Optional) The `audience` for requesting the token from the token endpoint.
 An authorization server may require a client to specify the audience.
 In this case it is `kafka`.
+<6> (Optional) The connect timeout in seconds when connecting to the authorization server. The default value is 60.
+<7> (Optional) The read timeout in seconds when connecting to the authorization server. The default value is 60.
 
 . Apply the changes to the deployment of your Kafka resource.
 +
