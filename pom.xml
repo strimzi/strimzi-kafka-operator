@@ -149,13 +149,6 @@
         </repository>
     </distributionManagement>
 
-    <repositories>
-        <repository>
-            <id>oauth-pre</id>
-            <url>https://oss.sonatype.org/content/repositories/iostrimzi-1161</url>
-        </repository>
-    </repositories>
-
     <modules>
         <module>kafka-agent</module>
         <module>mirror-maker-agent</module>
