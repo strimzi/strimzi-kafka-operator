@@ -177,6 +177,16 @@ pipeline {
                 }
             }
         }
+        stage('Prepare system tests for method-wide parallelism') {
+            steps {
+                script {
+                    sh(script: """
+                        find ${env.WORKSPACE}/systemtest/src/test/java/io/strimzi/systemtest/ -type f -name "*.java" -print0 | xargs -0 sed -i '' -e 's/^@ParallelSuite\$//g'
+                        find ${env.WORKSPACE}/systemtest/src/test/java/io/strimzi/systemtest/ -type f -name "*.java" -print0 | xargs -0 sed -i '' -e 's/^import io.strimzi.test.annotations.ParallelSuite;\$//g'
+                        """)
+                }
+            }
+        }
         stage('Execute system tests') {
             steps {
                 script {
