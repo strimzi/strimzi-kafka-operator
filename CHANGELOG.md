@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.29.0
+
+* n/a
+
 ## 0.28.0
 
 * Add support for Kafka 3.1.0; remove Kafka 2.8.0 and 2.8.1
