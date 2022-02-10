@@ -125,11 +125,11 @@ public class SuiteThreadController {
     }
 
     /**
-     * Synchronise point where {@link io.strimzi.systemtest.annotations.ParallelSuite} end it in situation when
+     * Synchronise point where {@link io.strimzi.test.annotations.ParallelSuite} end it in situation when
      * Junit5 {@link java.util.concurrent.ForkJoinPool} spawn additional threads, which can exceed limit specified
      * and thus many threads can start execute test suites which could potentially destroy cluster. This is mechanism,
      * which will all additional threads (i.e., not needed) put into waiting room. After one of the
-     * {@link io.strimzi.systemtest.annotations.ParallelSuite} is done with execution we release
+     * {@link io.strimzi.test.annotations.ParallelSuite} is done with execution we release
      * ({@link #notifyParallelSuiteToAllowExecution(ExtensionContext)} one test suite setting {@code isParallelSuiteReleased} flag.
      * This ensures that only one test suite will continue with execution and others will still wait.
      *
@@ -175,9 +175,9 @@ public class SuiteThreadController {
     }
 
     /**
-     * Notifies one of the {@link io.strimzi.systemtest.annotations.ParallelSuite} to continue its execution. Specifically
+     * Notifies one of the {@link io.strimzi.test.annotations.ParallelSuite} to continue its execution. Specifically
      * {@code waitingTestSuites}, which are waiting because {@link java.util.concurrent.ForkJoinPool} spawns
-     * additional threads, which exceed parallelism limit. This ensures that {@link io.strimzi.systemtest.annotations.ParallelSuite}
+     * additional threads, which exceed parallelism limit. This ensures that {@link io.strimzi.test.annotations.ParallelSuite}
      * will not deadlock.
      *
      * @param extensionContext extension context for identifying, which test suite notifies.
