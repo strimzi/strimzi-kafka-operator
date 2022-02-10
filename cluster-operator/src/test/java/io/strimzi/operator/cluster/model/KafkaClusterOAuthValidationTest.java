@@ -69,6 +69,7 @@ public class KafkaClusterOAuthValidationTest {
                         .withJwksMinRefreshPauseSeconds(5)
                         .withConnectTimeoutSeconds(20)
                         .withReadTimeoutSeconds(20)
+                        .withGroupsClaim("$.groups")
                         .withMaxSecondsWithoutReauthentication(1800)
                         .withNewClientSecret()
                             .withSecretName("my-secret-secret")
@@ -314,6 +315,19 @@ public class KafkaClusterOAuthValidationTest {
                     .withValidIssuerUri("http://valid-issuer")
                     .withJwksEndpointUri("http://jwks-endpoint")
                     .withReadTimeoutSeconds(0)
+                    .build();
+
+            ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, getListeners(auth));
+        });
+    }
+
+    @ParallelTest
+    public void testOAuthValidationWithGroupsClaim() {
+        assertThrows(InvalidResourceException.class, () -> {
+            KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
+                    .withValidIssuerUri("http://valid-issuer")
+                    .withJwksEndpointUri("http://jwks-endpoint")
+                    .withGroupsClaim("['bad'.'query']")
                     .build();
 
             ListenersValidator.validate(Reconciliation.DUMMY_RECONCILIATION, 3, getListeners(auth));

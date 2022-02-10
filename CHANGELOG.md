@@ -9,7 +9,7 @@
 * Intra-broker disk balancing using Cruise Control
 * Add connector context to the default logging configuration in Kafka Connect and Kafka Mirror Maker 2
 * Added the option `createBootstrapService` in the Kafka Spec to disable the creation of the bootstrap service for the Load Balancer Type Listener. It will save the cost of one load balancer resource, specially in the public cloud.
-* Added the `connectTimeoutSeconds` and `readTimeoutSeconds` options to OAuth authentication configuration. The default connect and read timeouts are set to 60 seconds (previously there was no timeout).
+* Added the `connectTimeoutSeconds` and `readTimeoutSeconds` options to OAuth authentication configuration. The default connect and read timeouts are set to 60 seconds (previously there was no timeout). Also added `groupsClaim` and `groupsClaimDelimiter` options in the listener configuration of Kafka Spec to allow extracting group information from JWT token at authentication time, and making it available to the custom authorizer. These features are enabled by the updated Strimzi Kafka OAuth library (0.10.0).
 * Add support for disabling the FIPS mode in OpenJDK
 * Fix renewing your own CA certificates [#5466](https://github.com/strimzi/strimzi-kafka-operator/issues/5466)
 * Update Strimzi Kafka Bridge to 0.21.4

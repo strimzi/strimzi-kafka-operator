@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerCon
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.kafka.oauth.jsonpath.JsonPathFilterQuery;
+import io.strimzi.kafka.oauth.jsonpath.JsonPathQuery;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 
@@ -561,6 +562,15 @@ public class ListenersValidator {
 
             if (oAuth.getValidTokenType() != null && oAuth.getIntrospectionEndpointUri() == null) {
                 errors.add("listener " + listenerName + ": 'validTokenType' can only be used when 'introspectionEndpointUri' is set");
+            }
+
+            String groupsQuery = oAuth.getGroupsClaim();
+            if (groupsQuery != null) {
+                try {
+                    JsonPathQuery.parse(groupsQuery);
+                } catch (Exception e) {
+                    errors.add("listener " + listenerName + ": 'groupsClaim' value not a valid JsonPath query - " + e.getMessage());
+                }
             }
         }
     }
