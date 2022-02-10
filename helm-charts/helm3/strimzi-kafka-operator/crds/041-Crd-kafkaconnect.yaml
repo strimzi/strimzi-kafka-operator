@@ -132,6 +132,9 @@ spec:
                         - key
                         - secretName
                       description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
+                    connectTimeoutSeconds:
+                      type: integer
+                      description: The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.
                     disableTlsHostnameVerification:
                       type: boolean
                       description: Enable or disable TLS hostname verification. Default value is `false`.
@@ -151,6 +154,9 @@ spec:
                         - password
                         - secretName
                       description: Reference to the `Secret` which holds the password.
+                    readTimeoutSeconds:
+                      type: integer
+                      description: The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds.
                     refreshToken:
                       type: object
                       properties:
