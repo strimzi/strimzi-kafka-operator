@@ -184,13 +184,13 @@ public class LogCollector {
     private final void collectLogsForTestSuite(final Pod pod) {
         if (pod.getMetadata().getLabels().containsKey(Constants.TEST_SUITE_NAME_LABEL)) {
             if (pod.getMetadata().getLabels().get(Constants.TEST_SUITE_NAME_LABEL).equals(this.collectorElement.getTestClassName())) {
-                LOGGER.trace("Collecting logs for TestSuite: {}, and Pod: {}", this.collectorElement.getTestClassName(), pod.getMetadata().getName());
+                LOGGER.debug("Collecting logs for TestSuite: {}, and Pod: {}", this.collectorElement.getTestClassName(), pod.getMetadata().getName());
                 pod.getStatus().getContainerStatuses().forEach(
                     containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
             }
         // Tracing pods (they can't be labeled because CR of the Jaeger does not propagate labels to the Pods )
         } else if (pod.getMetadata().getName().contains("jaeger")) {
-            LOGGER.trace("Collecting logs for TestSuite: {}, and Jaeger Pods: {}", this.collectorElement.getTestClassName(), pod.getMetadata().getName());
+            LOGGER.debug("Collecting logs for TestSuite: {}, and Jaeger Pods: {}", this.collectorElement.getTestClassName(), pod.getMetadata().getName());
             pod.getStatus().getContainerStatuses().forEach(
                 containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
         }
@@ -200,7 +200,7 @@ public class LogCollector {
         if (pod.getMetadata().getLabels().containsKey(Constants.TEST_CASE_NAME_LABEL)) {
             // collect these Pods, which are deployed in that test case
             if (pod.getMetadata().getLabels().get(Constants.TEST_CASE_NAME_LABEL).equals(this.collectorElement.getTestMethodName())) {
-                LOGGER.trace("Collecting logs for TestCase: {}, and Pod: {}", this.collectorElement.getTestMethodName(), pod.getMetadata().getName());
+                LOGGER.debug("Collecting logs for TestCase: {}, and Pod: {}", this.collectorElement.getTestMethodName(), pod.getMetadata().getName());
                 pod.getStatus().getContainerStatuses().forEach(
                     containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
             }
