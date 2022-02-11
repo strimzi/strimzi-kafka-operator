@@ -32,7 +32,7 @@ def buildStrimziImages() {
 }
 
 def prepareMethodWideParallelism(String workspace) {
-    sh(script: "${workspace}/.jenkins/scripts/prepare_method_wide_parallelism.sh")
+    sh(script: "${workspace}/.jenkins/scripts/prepare_method_wide_parallelism.sh ${workspace}")
 }
 
 def runSystemTests(String workspace, String testCases, String testProfile, String testGroups, String excludeGroups, String testsInParallel) {
