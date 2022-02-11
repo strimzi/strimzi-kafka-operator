@@ -37,9 +37,9 @@ pipeline {
         TEST_HELM3_VERSION = "v3.4.2"
         TEST_CLUSTER = "minikube"
         COPY_DOCKER_LOGIN = "true"
+        //Use hardcoding for ghprbCommentBody since we are not setting up GitHub PRB integration.
         ghprbCommentBody = "ok to test"
         JAVA_HOME = "/usr/lib/jvm/java-11-openjdk"
-        //MAVEN_HOME = "/usr/lib/apache-maven-3.8.2"
         PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
         DOCKER_BUILDX = "buildx"
         DOCKER_BUILD_ARGS = "--platform linux/s390x --load"
@@ -102,7 +102,7 @@ pipeline {
                         env.TEST_ONLY = "false"
                         env.DOCKER_ORG="strimzi"
                         env.DOCKER_REGISTRY = "localhost:5000"
-                        env.DOCKER_TAG="pr"
+                        env.DOCKER_TAG="latest"
                     }
                     if (env.ghprbCommentBody.contains('install_type=')) {
                         env.CLUSTER_OPERATOR_INSTALL_TYPE = env.ghprbCommentBody.split('install_type=')[1].split(/\s/)[0]
@@ -245,7 +245,7 @@ pipeline {
                 sh(script: "docker rm s390x-registry || true")
                 sh(script: "sudo ./systemtest/scripts/results_info.sh ./systemtest/target/failsafe-reports/ ${env.TEST_CASE} ${env.TEST_PROFILE} ${env.BUILD_NUMBER} ${env.KUBE_VERSION} ${env.TEST_ONLY} ${env.TEST_COUNT_RUNNING_IN_PARALLEL} ${env.EXCLUDE_GROUPS} ${env.ENV_VARS}")
                 //lib.postGithubPrComment("results.json")
-                lib.postAction(env.ARTIFACTS_DIR, env.ghprbPullId, env.ghprbActualCommitAuthor, env.ghprbPullTitle, env.ghprbPullLink, env.BUILD_URL, env.WORKSPACE, env.STRIMZI_MAILING_LIST)
+                lib.postAction(env.ARTIFACTS_DIR, env.ghprbPullId, env.ghprbActualCommitAuthor, env.ghprbPullTitle, env.ghprbPullLink, env.BUILD_URL, env.WORKSPACE, "mail not enabled")
             }
         }
         failure {

@@ -12,10 +12,6 @@ def setupShellheck() {
     sh(script: "${workspace}/.azure/scripts/setup_shellcheck.sh")
 }
 
-def clearImages() {
-    sh(script: "docker rmi -f \$(docker images -q) 2>/dev/null || echo 'No more images to remove.'")
-}
-
 def installHelm(String workspace) {
     sh(script: "${workspace}/.azure/scripts/setup-helm.sh")
 }
