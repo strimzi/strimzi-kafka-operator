@@ -31,6 +31,10 @@ def buildStrimziImages() {
     """)
 }
 
+def prepareMethodWideParallelism(String workspace) {
+    sh(script: "${workspace}/.jenkins/scripts/prepare_method_wide_parallelism.sh")
+}
+
 def runSystemTests(String workspace, String testCases, String testProfile, String testGroups, String excludeGroups, String testsInParallel) {
     def groupsTag = testGroups.isEmpty() ? "" : "-Dgroups=${testGroups} "
     withMaven(mavenOpts: '-Djansi.force=true') {
