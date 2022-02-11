@@ -8,7 +8,7 @@ import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.spi.StandardLevel;
+import org.apache.logging.log4j.Level;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ public class HelmClient {
                 "--set", values,
                 "--timeout", INSTALL_TIMEOUT_SECONDS,
                 "--debug",
-                chart.toString()))), 0, StandardLevel.INFO, true);
+                chart.toString()))), 0, Level.INFO, true);
         return this;
     }
 
@@ -69,7 +69,7 @@ public class HelmClient {
      */
     public HelmClient delete(String namespace, String releaseName) {
         LOGGER.info("Deleting helm-chart:{} in namespace:{}", releaseName, namespace);
-        Exec.exec(null, command("delete", releaseName, "--namespace", namespace), 0, StandardLevel.DEBUG, false);
+        Exec.exec(null, command("delete", releaseName, "--namespace", namespace), 0, Level.DEBUG, false);
         return this;
     }
 

@@ -6,7 +6,7 @@ package io.strimzi.test.k8s.cmdClient;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import io.strimzi.test.executor.ExecResult;
-import org.apache.logging.log4j.spi.StandardLevel;
+import org.apache.logging.log4j.Level;
 
 import java.io.File;
 import java.util.Date;
@@ -102,11 +102,11 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
      */
     ExecResult execInPod(String pod, String... command);
 
-    ExecResult execInPod(StandardLevel logLevel, String pod, String... command);
+    ExecResult execInPod(Level logLevel, String pod, String... command);
 
     ExecResult execInCurrentNamespace(String... commands);
 
-    ExecResult execInCurrentNamespace(StandardLevel logLevel, String... commands);
+    ExecResult execInCurrentNamespace(Level logLevel, String... commands);
 
     /**
      * Execute the given {@code command} in the given {@code container} which is deployed in {@code pod}.
@@ -117,7 +117,7 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
      */
     ExecResult execInPodContainer(String pod, String container, String... command);
 
-    ExecResult execInPodContainer(StandardLevel logLeve, String pod, String container, String... command);
+    ExecResult execInPodContainer(Level logLevel, String pod, String container, String... command);
 
     /**
      * Execute the given {@code command}.
@@ -148,7 +148,7 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
      * @param logLevel determines log level where the output will be printed to
      * @return The process result.
      */
-    ExecResult exec(boolean throwError, StandardLevel logLevel, String... command);
+    ExecResult exec(boolean throwError, Level logLevel, String... command);
 
     /**
      * Execute the given {@code command}. You can specify if potential failure will thrown the exception or not.
@@ -157,7 +157,7 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
      * @param logLevel determines log level where the output will be printed to
      * @return The process result.
      */
-    ExecResult exec(boolean throwError, StandardLevel logLevel, List<String> command);
+    ExecResult exec(boolean throwError, Level logLevel, List<String> command);
 
     /**
      * Wait for the resource with the given {@code name} to be reach the state defined by the predicate.

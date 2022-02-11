@@ -36,7 +36,7 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.util.IOUtils;
-import org.apache.logging.log4j.spi.StandardLevel;
+import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 
@@ -584,7 +584,7 @@ public class AbstractUpgradeST extends AbstractST {
         // run conversion of crs
         // CRs conversion may fail, because for 0.23 for example it's already done
         // CRS conversion needs old versions of Strimzi CRDs, which are not available after 0.22
-        if (cmdKubeClient().exec(true, StandardLevel.DEBUG, "get", "crd", "kafkas.kafka.strimzi.io", "-o", "jsonpath={.spec.versions}").out().trim().contains(Constants.V1ALPHA1)) {
+        if (cmdKubeClient().exec(true, Level.DEBUG, "get", "crd", "kafkas.kafka.strimzi.io", "-o", "jsonpath={.spec.versions}").out().trim().contains(Constants.V1ALPHA1)) {
             ExecResult execResult = Exec.exec(convertorPath, "cr", "-n=" + namespace);
             LOGGER.debug("CRs conversion STDOUT:");
             LOGGER.debug(execResult.out());
@@ -609,6 +609,6 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void waitForKafkaCRDChange() {
         TestUtils.waitFor("Kafka CRD kafkas.kafka.strimzi.io will change it's api version", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
-            () -> cmdKubeClient().exec(true, StandardLevel.TRACE, "get", "crd", "kafkas.kafka.strimzi.io", "-o", "jsonpath={.status.storedVersions}").out().trim().contains(Constants.V1BETA2));
+            () -> cmdKubeClient().exec(true, Level.TRACE, "get", "crd", "kafkas.kafka.strimzi.io", "-o", "jsonpath={.status.storedVersions}").out().trim().contains(Constants.V1BETA2));
     }
 }

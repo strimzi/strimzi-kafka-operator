@@ -7,7 +7,7 @@ package io.strimzi.test.executor;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.spi.StandardLevel;
+import org.apache.logging.log4j.Level;
 
 import java.io.File;
 import java.io.IOException;
@@ -113,7 +113,7 @@ public class Exec {
      * @param command arguments for command
      * @return execution results
      */
-    public static ExecResult exec(StandardLevel level, String... command) {
+    public static ExecResult exec(Level level, String... command) {
         List<String> commands = new ArrayList<>(Arrays.asList(command));
         return exec(null, commands, 0, level);
     }
@@ -125,7 +125,7 @@ public class Exec {
      * @return execution results
      */
     public static ExecResult exec(List<String> command) {
-        return exec(null, command, 0, StandardLevel.DEBUG);
+        return exec(null, command, 0, Level.DEBUG);
     }
 
     /**
@@ -135,7 +135,7 @@ public class Exec {
      * @return execution results
      */
     public static ExecResult exec(String input, List<String> command) {
-        return exec(input, command, 0, StandardLevel.DEBUG);
+        return exec(input, command, 0, Level.DEBUG);
     }
 
     /**
@@ -145,7 +145,7 @@ public class Exec {
      * @param logLevel log output level
      * @return execution results
      */
-    public static ExecResult exec(String input, List<String> command, int timeout, StandardLevel logLevel) {
+    public static ExecResult exec(String input, List<String> command, int timeout, Level logLevel) {
         return exec(input, command, timeout, logLevel, true);
     }
 
@@ -157,7 +157,7 @@ public class Exec {
      * @param throwErrors look for errors in output and throws exception if true
      * @return execution results
      */
-    public static ExecResult exec(String input, List<String> command, int timeout, StandardLevel logLevel, boolean throwErrors) {
+    public static ExecResult exec(String input, List<String> command, int timeout, Level logLevel, boolean throwErrors) {
         int ret = 1;
         ExecResult execResult;
         try {
@@ -182,14 +182,14 @@ public class Exec {
                         logData(logLevel, "======STDERR END======");
                     } else {
                         if (!executor.out().isEmpty()) {
-                            logData(StandardLevel.TRACE, "======STDOUT START=======");
-                            logData(StandardLevel.TRACE, String.format("%s", cutExecutorLog(executor.out().trim())));
-                            logData(StandardLevel.TRACE, "======STDOUT END======");
+                            logData(Level.TRACE, "======STDOUT START=======");
+                            logData(Level.TRACE, String.format("%s", cutExecutorLog(executor.out().trim())));
+                            logData(Level.TRACE, "======STDOUT END======");
                         }
                         if (!executor.err().isEmpty()) {
-                            logData(StandardLevel.TRACE, "======STDERR START=======");
-                            logData(StandardLevel.TRACE, String.format("%s", cutExecutorLog(executor.err().trim())));
-                            logData(StandardLevel.TRACE, "======STDERR END======");
+                            logData(Level.TRACE, "======STDERR START=======");
+                            logData(Level.TRACE, String.format("%s", cutExecutorLog(executor.err().trim())));
+                            logData(Level.TRACE, "======STDERR END======");
                         }
                     }
                 }
@@ -412,16 +412,16 @@ public class Exec {
         }
     }
 
-    private static void logData(StandardLevel level, String log) {
-        if (level.equals(StandardLevel.INFO)) {
+    private static void logData(Level level, String log) {
+        if (level.equals(Level.INFO)) {
             LOGGER.info(log);
-        } else if (level.equals(StandardLevel.DEBUG)) {
+        } else if (level.equals(Level.DEBUG)) {
             LOGGER.debug(log);
-        } else if (level.equals(StandardLevel.TRACE)) {
+        } else if (level.equals(Level.TRACE)) {
             LOGGER.trace(log);
-        } else if (level.equals(StandardLevel.WARN)) {
+        } else if (level.equals(Level.WARN)) {
             LOGGER.warn(log);
-        } else if (level.equals(StandardLevel.ERROR)) {
+        } else if (level.equals(Level.ERROR)) {
             LOGGER.error(log);
         }
     }

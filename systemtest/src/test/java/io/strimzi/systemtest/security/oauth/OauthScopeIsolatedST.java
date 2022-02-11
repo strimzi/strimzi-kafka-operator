@@ -27,7 +27,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
-import org.apache.logging.log4j.spi.StandardLevel;
+import org.apache.logging.log4j.Level;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -142,7 +142,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         // explicitly verifying also logs
         String kafkaPodName = kubeClient().listPodsByPrefixInName(INFRA_NAMESPACE, KafkaResources.kafkaPodName(oauthClusterName, 0)).get(0).getMetadata().getName();
 
-        String kafkaLog = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(StandardLevel.DEBUG, "logs", kafkaPodName, "--tail", "50").out();
+        String kafkaLog = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaPodName, "--tail", "50").out();
         assertThat(kafkaLog, CoreMatchers.containsString("Access token expires at"));
         assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: $[*][?]"));
         assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: @['scope']"));

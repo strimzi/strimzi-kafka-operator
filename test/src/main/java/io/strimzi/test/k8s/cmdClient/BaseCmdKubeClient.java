@@ -13,7 +13,7 @@ import io.strimzi.test.executor.ExecResult;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.spi.StandardLevel;
+import org.apache.logging.log4j.Level;
 
 import java.io.File;
 import java.io.IOException;
@@ -89,12 +89,12 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     public String get(String resource, String resourceName) {
-        return Exec.exec(null, namespacedCommand("get", resource, resourceName, "-o", "yaml"), 0, StandardLevel.DEBUG).out();
+        return Exec.exec(null, namespacedCommand("get", resource, resourceName, "-o", "yaml"), 0, Level.DEBUG).out();
     }
 
     @Override
     public String getEvents() {
-        return Exec.exec(null, namespacedCommand("get", "events"), 0, StandardLevel.DEBUG).out();
+        return Exec.exec(null, namespacedCommand("get", "events"), 0, Level.DEBUG).out();
     }
 
     @Override
@@ -107,7 +107,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
             command.add("--validate=false");
         }
 
-        Exec.exec(null, command, 0, StandardLevel.DEBUG, true);
+        Exec.exec(null, command, 0, Level.DEBUG, true);
 
         return (K) this;
     }
@@ -119,7 +119,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
             try {
                 create(file);
             } catch (KubeClusterException.AlreadyExists e) {
-                Exec.exec(null, namespacedCommand(REPLACE, "-f", file.getAbsolutePath()), 0, StandardLevel.DEBUG);
+                Exec.exec(null, namespacedCommand(REPLACE, "-f", file.getAbsolutePath()), 0, Level.DEBUG);
             }
 
             return (K) this;
@@ -176,7 +176,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
         for (File f : files) {
             if (f.isFile()) {
                 if (f.getName().endsWith(".yaml")) {
-                    execResults.put(f, Exec.exec(null, namespacedCommand(subcommand, "-f", f.getAbsolutePath()), 0, StandardLevel.DEBUG, false));
+                    execResults.put(f, Exec.exec(null, namespacedCommand(subcommand, "-f", f.getAbsolutePath()), 0, Level.DEBUG, false));
                 }
             } else if (f.isDirectory()) {
                 File[] children = f.listFiles();
@@ -210,7 +210,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K applyContent(String yamlContent) {
         try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, namespacedCommand(APPLY, "-f", "-"), 0, StandardLevel.INFO);
+            Exec.exec(yamlContent, namespacedCommand(APPLY, "-f", "-"), 0, Level.INFO);
             return (K) this;
         }
     }
@@ -219,7 +219,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K createContent(String yamlContent) {
         try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, namespacedCommand(CREATE, "-f", "-"), 0, StandardLevel.INFO);
+            Exec.exec(yamlContent, namespacedCommand(CREATE, "-f", "-"), 0, Level.INFO);
             return (K) this;
         }
     }
@@ -231,7 +231,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
             try {
                 createContent(yamlContent);
             } catch (KubeClusterException.AlreadyExists e) {
-                Exec.exec(yamlContent, namespacedCommand(REPLACE, "-f", "-"), 0, StandardLevel.INFO);
+                Exec.exec(yamlContent, namespacedCommand(REPLACE, "-f", "-"), 0, Level.INFO);
             }
 
             return (K) this;
@@ -242,7 +242,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K deleteContent(String yamlContent) {
         try (Context context = defaultContext()) {
-            Exec.exec(yamlContent, namespacedCommand(DELETE, "-f", "-"), 0, StandardLevel.INFO, false);
+            Exec.exec(yamlContent, namespacedCommand(DELETE, "-f", "-"), 0, Level.INFO, false);
             return (K) this;
         }
     }
@@ -251,7 +251,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K createNamespace(String name) {
         try (Context context = adminContext()) {
-            Exec.exec(null, namespacedCommand(CREATE, "namespace", name), 0, StandardLevel.INFO);
+            Exec.exec(null, namespacedCommand(CREATE, "namespace", name), 0, Level.INFO);
         }
         return (K) this;
     }
@@ -260,7 +260,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     @SuppressWarnings("unchecked")
     public K deleteNamespace(String name) {
         try (Context context = adminContext()) {
-            Exec.exec(null, namespacedCommand(DELETE, "namespace", name), 0, StandardLevel.INFO, false);
+            Exec.exec(null, namespacedCommand(DELETE, "namespace", name), 0, Level.INFO, false);
         }
         return (K) this;
     }
@@ -276,11 +276,11 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     public ExecResult execInPod(String pod, String... command) {
-        return execInPod(StandardLevel.INFO, pod, command);
+        return execInPod(Level.INFO, pod, command);
     }
 
     @Override
-    public ExecResult execInPod(StandardLevel logLeve, String pod, String... command) {
+    public ExecResult execInPod(Level logLeve, String pod, String... command) {
         List<String> cmd = namespacedCommand("exec", pod, "--");
         cmd.addAll(asList(command));
         return Exec.exec(null, cmd, 0, logLeve);
@@ -288,11 +288,11 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     public ExecResult execInPodContainer(String pod, String container, String... command) {
-        return execInPodContainer(StandardLevel.INFO, pod, container, command);
+        return execInPodContainer(Level.INFO, pod, container, command);
     }
 
     @Override
-    public ExecResult execInPodContainer(StandardLevel logLevel, String pod, String container, String... command) {
+    public ExecResult execInPodContainer(Level logLevel, String pod, String container, String... command) {
         List<String> cmd = namespacedCommand("exec", pod, "-c", container, "--");
         cmd.addAll(asList(command));
         return Exec.exec(null, cmd, 0, logLevel);
@@ -305,21 +305,21 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
 
     @Override
     public ExecResult exec(List<String> command) {
-        return exec(true, StandardLevel.INFO, command);
+        return exec(true, Level.INFO, command);
     }
 
     @Override
     public ExecResult exec(boolean throwError, String... command) {
-        return exec(throwError, StandardLevel.INFO, asList(command));
+        return exec(throwError, Level.INFO, asList(command));
     }
 
     @Override
-    public ExecResult exec(boolean throwError, StandardLevel logLevel, String... command) {
+    public ExecResult exec(boolean throwError, Level logLevel, String... command) {
         return exec(throwError, logLevel, asList(command));
     }
 
     @Override
-    public ExecResult exec(boolean throwError, StandardLevel logLevel, List<String> command) {
+    public ExecResult exec(boolean throwError, Level logLevel, List<String> command) {
         List<String> cmd = new ArrayList<>();
         cmd.add(cmd());
         cmd.addAll(command);
@@ -332,7 +332,7 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
-    public ExecResult execInCurrentNamespace(StandardLevel logLevel, String... commands) {
+    public ExecResult execInCurrentNamespace(Level logLevel, String... commands) {
         return Exec.exec(null, namespacedCommand(commands), 0, logLevel);
     }
 
