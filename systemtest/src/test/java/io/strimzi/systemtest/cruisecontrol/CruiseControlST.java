@@ -33,8 +33,10 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -44,7 +46,9 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.STRIMZI_DEPLOYMENT_NAME;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -291,5 +295,29 @@ public class CruiseControlST extends AbstractST {
         // The provision status should be "UNDECIDED" when doing an intra-broker disk balance because it is irrelevant to the provision status
         KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("provisionStatus").toString(), containsString("UNDECIDED"));
+    }
+
+    @ParallelNamespaceTest
+    void testCruiseControlIntraBrokerBalancingWithoutSpecifyingJBODStorage(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
+        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+            .editOrNewSpec()
+            .withRebalanceDisk(true)
+            .endSpec()
+            .build());
+
+        final String coPodName = KubeClusterResource.kubeClient(INFRA_NAMESPACE).getClusterOperatorPodName();
+        final String coLog = StUtils.getLogFromPodByTime(INFRA_NAMESPACE, coPodName, STRIMZI_DEPLOYMENT_NAME, "60s");
+
+        // CO logs must contain warning message
+        assertThat(coLog, CoreMatchers.containsString("Intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks."));
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
+        // The provision status should be "RIGHT_SIZED", because we use Ephemeral storage and there is no additional
+        // disks to balance between and also 0 partition movements since there are no disks to balance between.
+        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
+        assertThat(kafkaRebalanceStatus.getOptimizationResult().get("provisionStatus").toString(), containsString("RIGHT_SIZED"));
     }
 }
