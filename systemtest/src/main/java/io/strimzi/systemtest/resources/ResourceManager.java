@@ -186,7 +186,7 @@ public class ResourceManager {
             } else {
                 // this is labeling for shared resources in @BeforeAll
                 if (testContext.getTestClass().isPresent()) {
-                    final String testSuiteName = testContext.getRequiredTestClass().getName();
+                    final String testSuiteName = StUtils.removePackageName(testContext.getRequiredTestClass().getName());
 
                     if (resource.getMetadata().getLabels() == null) {
                         labels = new HashMap<>();
