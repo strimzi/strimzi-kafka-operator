@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
