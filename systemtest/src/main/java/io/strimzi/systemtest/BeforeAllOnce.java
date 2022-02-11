@@ -39,7 +39,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
             sharedExtensionContext = extensionContext.getRoot();
 
             // we skip creation of shared Cluster Operator (because @IsolatedSuite has to have deploy brand-new configuration)
-            if (StUtils.isParallelSuite(extensionContext)) {
+            if (!StUtils.isIsolatedSuite(extensionContext)) {
                 BeforeAllOnce.systemReady = true;
                 // ---start
                 // This is needed for one scenario (2 in parallel) and @ParallelSuite is selected for deployment of .
