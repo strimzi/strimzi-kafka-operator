@@ -91,7 +91,7 @@ You can use the following communication flows for Kafka authentication using the
 [id='oauth-plain-client-id-{context}']
 .Client using a client ID and secret, with the broker obtaining the access token for the client
 
-image:oauth-plain-client-id.png[Client using a client ID and secret, with the broker obtaining the access token for the client]
+image:oauth-plain-client-id.png[Client using a client ID and secret with the broker obtaining the access token for the client]
 
 . The Kafka client passes a `clientId` as a username and a `secret` as a password.
 . The Kafka broker uses a token endpoint to pass the `clientId` and `secret` to the authorization server.
