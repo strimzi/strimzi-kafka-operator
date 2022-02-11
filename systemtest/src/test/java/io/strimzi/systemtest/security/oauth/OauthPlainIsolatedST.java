@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -48,6 +49,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
+import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
@@ -657,6 +659,10 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, kafkaClientsName).build());
+
+        InlineLogging ilDebug = new InlineLogging();
+        ilDebug.setLoggers(Map.of("rootLogger.level", "DEBUG"));
+
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
             .editMetadata()
                 .withNamespace(INFRA_NAMESPACE)
@@ -672,14 +678,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                     .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
                     .withReadTimeoutSeconds(READ_TIMEOUT_S)
                 .endKafkaClientAuthenticationOAuth()
-                .withNewInlineLogging()
-                    // TODO: bridge logs seems to be only on INFO level
-                    // I tried this and nothing works...
-                        // 1. `bridge.root.logger.level`
-                        // 2. `logger.bridge.level`
-                        // 3. `bridge.root.logger`
-                    .addToLoggers("rootLogger.level", "DEBUG")
-                .endInlineLogging()
+                .withLogging(ilDebug)
             .endSpec()
             .build());
 
