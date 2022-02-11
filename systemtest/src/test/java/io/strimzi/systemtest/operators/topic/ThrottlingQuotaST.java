@@ -290,7 +290,7 @@ public class ThrottlingQuotaST extends AbstractST {
 
     void setupKafkaInNamespace(ExtensionContext extensionContext) {
         // Deploy kafka with ScramSHA512
-        LOGGER.info("Deploying shared kafka across all test cases in {} namespace", namespace);
+        LOGGER.info("Deploying shared Kafka across all test cases in {} namespace", namespace);
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(CLUSTER_NAME, 1)
             .editMetadata()
                 .withNamespace(namespace)

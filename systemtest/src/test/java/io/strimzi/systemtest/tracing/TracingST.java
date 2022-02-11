@@ -516,9 +516,9 @@ public class TracingST extends AbstractST {
             .endSpec()
             .build();
 
-        LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
+        LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
         resourceManager.createResource(extensionContext, networkPolicy);
-        LOGGER.info("Network policy for jaeger successfully applied");
+        LOGGER.info("Network policy for jaeger successfully created");
     }
 
     /**

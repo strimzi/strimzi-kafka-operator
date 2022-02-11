@@ -596,10 +596,10 @@ public abstract class AbstractST implements TestSeparator {
             mapWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
             mapWithKafkaClientNames.put(testName, clusterName + "-" + Constants.KAFKA_CLIENTS);
 
-            LOGGER.debug("CLUSTER_NAMES_MAP: \n{}", mapWithClusterNames);
-            LOGGER.debug("USERS_NAME_MAP: \n{}", mapWithTestUsers);
-            LOGGER.debug("TOPIC_NAMES_MAP: \n{}", mapWithTestTopics);
-            LOGGER.debug("============THIS IS CLIENTS MAP:\n{}", mapWithKafkaClientNames);
+            LOGGER.trace("CLUSTER_NAMES_MAP: {}", mapWithClusterNames);
+            LOGGER.trace("USERS_NAME_MAP: {}", mapWithTestUsers);
+            LOGGER.trace("TOPIC_NAMES_MAP: {}", mapWithTestTopics);
+            LOGGER.trace("THIS IS CLIENTS MAP: {}", mapWithKafkaClientNames);
             testSuiteNamespaceManager.createParallelNamespace(extensionContext);
         }
     }
@@ -643,14 +643,14 @@ public abstract class AbstractST implements TestSeparator {
     @BeforeEach
     void setUpTestCase(ExtensionContext extensionContext) {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("{} - [BEFORE EACH] has been called", this.getClass().getName());
+        LOGGER.debug("[{} - Before Each] - Setup test case environment", StUtils.removePackageName(this.getClass().getName()));
         beforeEachMayOverride(extensionContext);
     }
 
     @BeforeAll
     void setUpTestSuite(ExtensionContext extensionContext) {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("{} - [BEFORE ALL] has been called", this.getClass().getName());
+        LOGGER.debug("[{} - Before All] - Setup test suite environment", StUtils.removePackageName(this.getClass().getName()));
         beforeAllMayOverride(extensionContext);
         beforeAllMustExecute(extensionContext);
     }
@@ -658,14 +658,14 @@ public abstract class AbstractST implements TestSeparator {
     @AfterEach
     void tearDownTestCase(ExtensionContext extensionContext) throws Exception {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("{} - [AFTER EACH] has been called", this.getClass().getName());
+        LOGGER.debug("[{} - After Each] - Clean up after test", StUtils.removePackageName(this.getClass().getName()));
         afterEachMayOverride(extensionContext);
     }
 
     @AfterAll
     void tearDownTestSuite(ExtensionContext extensionContext) throws Exception {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("{} - [AFTER ALL] has been called", this.getClass().getName());
+        LOGGER.debug("[{} - After All] - Clean up after test suite", StUtils.removePackageName(this.getClass().getName()));
         afterAllMayOverride(extensionContext);
         afterAllMustExecute(extensionContext);
     }

@@ -46,7 +46,6 @@ public class KubeClusterResource {
     private static KubeClusterResource kubeClusterResource;
 
     private String namespace;
-    private String testNamespace;
     // {test-suite-name} -> {{namespace-1}, {namespace-2},...,}
     private final static Map<CollectorElement, Set<String>> MAP_WITH_SUITE_NAMESPACES = new HashMap<>();
 
@@ -58,8 +57,7 @@ public class KubeClusterResource {
         if (kubeClusterResource == null) {
             kubeClusterResource = new KubeClusterResource();
             initNamespaces();
-            LOGGER.info("Cluster default namespace is {}", kubeClusterResource.getNamespace());
-            LOGGER.info("Cluster command line client default namespace is {}", kubeClusterResource.getTestNamespace());
+            LOGGER.info("Cluster default namespace is '{}'", kubeClusterResource.getNamespace());
         }
         return kubeClusterResource;
     }
@@ -68,11 +66,6 @@ public class KubeClusterResource {
 
     private static void initNamespaces() {
         kubeClusterResource.setDefaultNamespace(cmdKubeClient().defaultNamespace());
-        kubeClusterResource.setTestNamespace(cmdKubeClient().defaultNamespace());
-    }
-
-    public void setTestNamespace(String testNamespace) {
-        this.testNamespace = testNamespace;
     }
 
     public void setDefaultNamespace(String namespace) {
@@ -86,7 +79,7 @@ public class KubeClusterResource {
      */
     public String setNamespace(String futureNamespace) {
         String previousNamespace = namespace;
-        LOGGER.info("Changing to {} namespace", futureNamespace);
+        LOGGER.info("Client use Namespace: {}", futureNamespace);
         namespace = futureNamespace;
         return previousNamespace;
     }
@@ -160,7 +153,7 @@ public class KubeClusterResource {
                 cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
             }
 
-            LOGGER.info("Creating Namespace {}", namespace);
+            LOGGER.info("Creating Namespace: {}", namespace);
             deploymentNamespaces.add(namespace);
             kubeClient().createNamespace(namespace);
             cmdKubeClient().waitForResourceCreation("Namespace", namespace);
@@ -168,8 +161,6 @@ public class KubeClusterResource {
                 addNamespaceToSet(collectorElement, namespace);
             }
         }
-        testNamespace = useNamespace;
-        LOGGER.info("Using Namespace {}", useNamespace);
         kubeClusterResource.setNamespace(useNamespace);
     }
 
@@ -192,17 +183,17 @@ public class KubeClusterResource {
     public void deleteNamespaces(CollectorElement collectorElement) {
         Collections.reverse(deploymentNamespaces);
         for (String namespace: deploymentNamespaces) {
-            LOGGER.info("Deleting Namespace {}", namespace);
+            LOGGER.info("Deleting Namespace: {}", namespace);
             kubeClient().deleteNamespace(namespace);
             cmdKubeClient().waitForResourceDeletion("Namespace", namespace);
             if (collectorElement != null) deleteNamespaceFromSet(collectorElement, namespace);
         }
         deploymentNamespaces.clear();
         bindingsNamespaces = null;
-        LOGGER.info("Using Namespace {}", testNamespace);
-        setNamespace(testNamespace);
+        LOGGER.info("Using Namespace: {}", this.namespace);
+        setNamespace(this.namespace);
 
-        if (collectorElement != null) deleteNamespaceFromSet(collectorElement, testNamespace);
+        if (collectorElement != null) deleteNamespaceFromSet(collectorElement, this.namespace);
     }
 
     public void deleteNamespaces() {
@@ -218,15 +209,11 @@ public class KubeClusterResource {
     }
 
     public synchronized void deleteAllSetNamespaces() {
-        LOGGER.info(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.info("Deleting these namespaces:\n{}", MAP_WITH_SUITE_NAMESPACES::toString);
-        LOGGER.info(String.join("", Collections.nCopies(76, "=")));
-
         MAP_WITH_SUITE_NAMESPACES.values()
             .forEach(setOfNamespaces ->
                 setOfNamespaces.parallelStream()
                     .forEach(namespaceName -> {
-                        LOGGER.debug("Deleting {} namespace", namespaceName);
+                        LOGGER.debug("Deleting Namespace: {}", namespaceName);
                         kubeClient().deleteNamespace(namespaceName);
                         client.getClient().namespaces().withName(namespaceName).waitUntilCondition(
                             namespace -> client.getClient().namespaces().withName(namespaceName).get() == null, 4, TimeUnit.MINUTES);
@@ -376,10 +363,6 @@ public class KubeClusterResource {
         return kubeCluster;
     }
 
-    public String getTestNamespace() {
-        return testNamespace;
-    }
-
     public String getDefaultOlmNamespace() {
         return cluster().defaultOlmNamespace();
     }
@@ -394,7 +377,6 @@ public class KubeClusterResource {
     }
 
     private synchronized void addNamespaceToSet(CollectorElement collectorElement, String namespaceName) {
-        // TODO tady vzdycky pridaj aj CO namespace
         if (MAP_WITH_SUITE_NAMESPACES.containsKey(collectorElement)) {
             Set<String> testSuiteNamespaces = MAP_WITH_SUITE_NAMESPACES.get(collectorElement);
             testSuiteNamespaces.add(namespaceName);
@@ -404,7 +386,7 @@ public class KubeClusterResource {
             MAP_WITH_SUITE_NAMESPACES.put(collectorElement, new HashSet<>(Set.of(namespaceName)));
         }
 
-        LOGGER.debug("SUITE_NAMESPACE_MAP: \n{}", MAP_WITH_SUITE_NAMESPACES);
+        LOGGER.trace("SUITE_NAMESPACE_MAP: {}", MAP_WITH_SUITE_NAMESPACES);
     }
 
     private synchronized void deleteNamespaceFromSet(CollectorElement collectorElement, String namespaceName) {
@@ -413,7 +395,7 @@ public class KubeClusterResource {
         Set<String> testSuiteNamespaces = MAP_WITH_SUITE_NAMESPACES.get(collectorElement);
         testSuiteNamespaces.remove(namespaceName);
         MAP_WITH_SUITE_NAMESPACES.put(collectorElement, testSuiteNamespaces);
-        LOGGER.debug("SUITE_NAMESPACE_MAP after deletion: \n{}", MAP_WITH_SUITE_NAMESPACES);
+        LOGGER.trace("SUITE_NAMESPACE_MAP after deletion: {}", MAP_WITH_SUITE_NAMESPACES);
     }
 
     public static Map<CollectorElement, Set<String>> getMapWithSuiteNamespaces() {

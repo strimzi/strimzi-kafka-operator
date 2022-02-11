@@ -30,7 +30,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
      * Separate method with 'synchronized static' required for make sure procedure will be executed
      * only once across all simultaneously running threads
      */
-    synchronized private static void systemSetup(ExtensionContext extensionContext) throws Exception {
+    synchronized private static void systemSetup(ExtensionContext extensionContext) {
         // 'if' is used to make sure procedure will be executed only once, not before every class
 
         if (!BeforeAllOnce.systemReady) {
@@ -42,7 +42,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
                 BeforeAllOnce.systemReady = true;
 
                 LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-                LOGGER.debug("{} - [BEFORE SUITE] - Going to setup testing system", extensionContext.getRequiredTestClass().getSimpleName());
+                LOGGER.debug("[{} - Before Suite] - Setup Suite environment", extensionContext.getRequiredTestClass().getName());
 
                 // When we set RBAC policy to NAMESPACE, we must copy all Roles to other (parallel) namespaces.
                 if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
@@ -87,8 +87,6 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
     // In this case only `one` thread at a time will access the close() method because of `synchronized` monitor.
     public synchronized void close() throws Exception {
         // clean data from system
-        LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("{} - [AFTER SUITE] has been called", this.getClass().getName());
         BeforeAllOnce.systemReady = false;
         SetupClusterOperator.getInstanceHolder().unInstall();
     }

@@ -148,7 +148,7 @@ public class ResourceManager {
     public final <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
-            LOGGER.info("Create/Update of {} {} in namespace {}",
+            LOGGER.info("Create/Update {} {} in namespace {}",
                 resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace() == null ? "(not set)" : resource.getMetadata().getNamespace());
 
             // ignore test context of shared Cluster Operator
@@ -157,7 +157,7 @@ public class ResourceManager {
                 if (StUtils.isParallelNamespaceTest(testContext)) {
                     if (!Environment.isNamespaceRbacScope()) {
                         final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-                        LOGGER.info("Using namespace: {}", namespace);
+                        LOGGER.info("Using Namespace: {}", namespace);
                         resource.getMetadata().setNamespace(namespace);
                     }
                 }
@@ -268,12 +268,11 @@ public class ResourceManager {
 
     public void deleteResources(ExtensionContext testContext) throws Exception {
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
-        LOGGER.info("Going to clear all resources for {}", testContext.getDisplayName());
-        LOGGER.info(String.join("", Collections.nCopies(76, "#")));
         if (!STORED_RESOURCES.containsKey(testContext.getDisplayName()) || STORED_RESOURCES.get(testContext.getDisplayName()).isEmpty()) {
             LOGGER.info("In context {} is everything deleted.", testContext.getDisplayName());
+        } else {
+            LOGGER.info("Delete all resources for {}", testContext.getDisplayName());
         }
-
 
         // if stack is created for specific test suite or test case
         AtomicInteger numberOfResources = STORED_RESOURCES.get(testContext.getDisplayName()) != null ?
@@ -292,8 +291,8 @@ public class ResourceManager {
                 }
             );
         }
-        LOGGER.info(String.join("", Collections.nCopies(76, "#")));
         STORED_RESOURCES.remove(testContext.getDisplayName());
+        LOGGER.info(String.join("", Collections.nCopies(76, "#")));
     }
 
     /**
@@ -310,7 +309,7 @@ public class ResourceManager {
             if (printWholeCR.contains(kind)) {
                 LOGGER.info(customResource);
             } else {
-                List<String> log = new ArrayList<>(asList("\n", kind, " status:\n", "\nConditions:\n"));
+                List<String> log = new ArrayList<>(asList(kind, " status:\n", "\nConditions:\n"));
 
                 if (customResource.getStatus() != null) {
                     List<Condition> conditions = customResource.getStatus().getConditions();
@@ -331,11 +330,14 @@ public class ResourceManager {
                             if (podCondition.getMessage() != null) {
                                 log.add("\n\tType: " + podCondition.getType() + "\n");
                                 log.add("\tMessage: " + podCondition.getMessage() + "\n");
+                            } else {
+                                log.add("\n\tType: <EMPTY>\n");
+                                log.add("\tMessage: <EMPTY>\n");
                             }
                         }
                         log.add("\n\n");
                     }
-                    LOGGER.info("{}", String.join("", log));
+                    LOGGER.info("{}", String.join("", log).strip());
                 }
             }
         }

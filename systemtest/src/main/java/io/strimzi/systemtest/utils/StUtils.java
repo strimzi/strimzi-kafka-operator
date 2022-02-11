@@ -24,6 +24,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
@@ -250,7 +251,7 @@ public class StUtils {
         TestUtils.waitFor("for JSON log in " + pods, Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT, () -> {
             boolean isJSON = false;
             for (String podName : pods.keySet()) {
-                String log = cmdKubeClient().namespace(namespaceName).execInCurrentNamespace(false, "logs", podName, "-c", containerName, tail).out();
+                String log = cmdKubeClient().namespace(namespaceName).execInCurrentNamespace(Level.TRACE, "logs", podName, "-c", containerName, tail).out();
 
                 JsonArray jsonArray = getJsonArrayFromLog(log);
 
@@ -463,5 +464,9 @@ public class StUtils {
         } catch (DecodeException e) {
             return new JsonObject("{}");
         }
+    }
+
+    public static String removePackageName(String testClassPath) {
+        return testClassPath.replace("io.strimzi.systemtest.", "");
     }
 }

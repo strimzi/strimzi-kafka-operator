@@ -35,6 +35,7 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
@@ -190,7 +191,8 @@ public class SetupClusterOperator {
      * Don't use this method in tests, where specific configuration of CO is needed.
      */
     public SetupClusterOperator runInstallation() {
-        LOGGER.info("Cluster operator installation configuration:\n{}", this::toString);
+        LOGGER.info("Cluster operator installation configuration:\n{}", this::prettyPrint);
+        LOGGER.debug("Cluster operator installation configuration:\n{}", this::toString);
         // if it's shared context (before suite) skip
         if (BeforeAllOnce.getSharedExtensionContext() != extensionContext) {
             testClassName = extensionContext.getRequiredTestClass() != null ? extensionContext.getRequiredTestClass().getName() : "";
@@ -198,7 +200,7 @@ public class SetupClusterOperator {
         }
 
         if (Environment.isOlmInstall()) {
-            LOGGER.info("Going to install ClusterOperator via OLM");
+            LOGGER.info("Install ClusterOperator via OLM");
             // cluster-wide olm co-operator or multi-namespaces in once we also deploy cluster-wide
             if (IS_OLM_CLUSTER_WIDE.test(namespaceToWatch)) {
                 // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
@@ -225,7 +227,7 @@ public class SetupClusterOperator {
                 olmResource.create(extensionContext, operationTimeout, reconciliationInterval);
             }
         } else if (Environment.isHelmInstall()) {
-            LOGGER.info("Going to install ClusterOperator via Helm");
+            LOGGER.info("Install ClusterOperator via Helm");
             helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
             if (isClusterOperatorNamespaceNotCreated()) {
                 cluster.setNamespace(namespaceInstallTo);
@@ -246,7 +248,7 @@ public class SetupClusterOperator {
     }
 
     private void bundleInstallation() {
-        LOGGER.info("Going to install ClusterOperator via Yaml bundle");
+        LOGGER.info("Install ClusterOperator via Yaml bundle");
         // check if namespace is already created
         if (isClusterOperatorNamespaceNotCreated()) {
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
@@ -406,7 +408,7 @@ public class SetupClusterOperator {
             if (kubeClient().getNamespace(Environment.STRIMZI_ORG) != null) {
                 for (String namespace : namespaces) {
                     LOGGER.debug("Setting group policy for Openshift registry in namespace: " + namespace);
-                    Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, false, false);
+                    Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, Level.DEBUG, false);
                 }
             }
         }
@@ -703,6 +705,29 @@ public class SetupClusterOperator {
             ", testClassName='" + testClassName + '\'' +
             ", testMethodName='" + testMethodName + '\'' +
             '}';
+    }
+
+    public String prettyPrint() {
+        return String.format("extensionContext=%s\n" +
+                "clusterOperatorName=%s\n" +
+                "namespaceInstallTo=%s\n" +
+                "namespaceToWatch=%s\n" +
+                "bindingsNamespaces=%s\n" +
+                "operationTimeout=%s\n" +
+                "reconciliationInterval=%s\n" +
+                "clusterOperatorRBACType=%s\n" +
+                "%s%s%s%s", extensionContext,
+                clusterOperatorName,
+                namespaceInstallTo,
+                namespaceToWatch,
+                bindingsNamespaces,
+                operationTimeout,
+                reconciliationInterval,
+                clusterOperatorRBACType,
+                extraEnvVars.isEmpty() ? "" : ", extraEnvVars=" + extraEnvVars + "\n",
+                extraLabels.isEmpty() ? "" : "extraLabels=" + extraLabels + "\n",
+                testClassName == null ? "" : "testClassName='" + testClassName + '\'' + "\n",
+                testMethodName == null ? "" : "testMethodName='" + testMethodName + '\'' + "\n").trim();
     }
 
     /**

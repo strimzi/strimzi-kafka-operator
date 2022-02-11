@@ -20,6 +20,7 @@ import io.strimzi.test.annotations.IsolatedSuite;
 import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
@@ -70,7 +71,7 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
         String[] backupCommand = new String[] {
             USER_PATH + "/../tools/cold-backup/run.sh", "backup", "-n", INFRA_NAMESPACE, "-c", clusterName, "-t", backupFilePath, "-y"
         };
-        Exec.exec(true, backupCommand);
+        Exec.exec(Level.INFO, backupCommand);
 
         clusterOperator.unInstall();
         clusterOperator = clusterOperator.defaultInstallation().createInstallation().runInstallation();
@@ -80,7 +81,7 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
         String[] restoreCommand = new String[] {
             USER_PATH + "/../tools/cold-backup/run.sh", "restore", "-n", INFRA_NAMESPACE, "-c", clusterName, "-s", backupFilePath, "-y"
         };
-        Exec.exec(true, restoreCommand);
+        Exec.exec(Level.INFO, restoreCommand);
 
         // check consumer group offsets
         KafkaUtils.waitForKafkaReady(clusterName);

@@ -55,7 +55,7 @@ public class TopicScalabilityIsolatedST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         clusterOperator.unInstall();
         clusterOperator.defaultInstallation().createInstallation().runInstallation();
-        LOGGER.info("Deploying shared kafka across all test cases in {} namespace", INFRA_NAMESPACE);
+        LOGGER.info("Deploying shared Kafka across all test cases in {} namespace", INFRA_NAMESPACE);
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1)
             .editMetadata()
                 .withNamespace(INFRA_NAMESPACE)
