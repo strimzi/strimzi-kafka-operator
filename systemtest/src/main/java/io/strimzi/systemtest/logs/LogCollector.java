@@ -199,7 +199,9 @@ public class LogCollector {
     private final void collectLogsForTestCase(final Pod pod) {
         if (pod.getMetadata().getLabels().containsKey(Constants.TEST_CASE_NAME_LABEL)) {
             // collect these Pods, which are deployed in that test case
-            if (pod.getMetadata().getLabels().get(Constants.TEST_CASE_NAME_LABEL).equals(this.collectorElement.getTestMethodName())) {
+            // startWith is used because when we put inside Pod label with test case sometimes this test case exceed 63
+            // characters and we have to cut it to avoid exception
+            if (this.collectorElement.getTestMethodName().startsWith(pod.getMetadata().getLabels().get(Constants.TEST_CASE_NAME_LABEL))) {
                 LOGGER.debug("Collecting logs for TestCase: {}, and Pod: {}", this.collectorElement.getTestMethodName(), pod.getMetadata().getName());
                 pod.getStatus().getContainerStatuses().forEach(
                     containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));

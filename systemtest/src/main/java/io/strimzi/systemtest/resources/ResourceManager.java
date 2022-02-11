@@ -168,7 +168,12 @@ public class ResourceManager {
             // we collect logs from Pods, ReplicaSets, Deployments etc.
             final Map<String, String> labels;
             if (testContext.getTestMethod().isPresent()) {
-                final String testCaseName = testContext.getRequiredTestMethod().getName();
+                String testCaseName = testContext.getRequiredTestMethod().getName();
+                // because label values `must be no more than 63 characters`
+                if (testCaseName.length() > 63) {
+                    // we cut to 62 characters
+                    testCaseName = testCaseName.substring(0, 62);
+                }
 
                 if (resource.getMetadata().getLabels() == null) {
                     labels = new HashMap<>();
