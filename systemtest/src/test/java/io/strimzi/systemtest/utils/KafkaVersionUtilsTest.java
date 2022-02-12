@@ -4,8 +4,8 @@
  */
 package io.strimzi.systemtest.utils;
 
-import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
+import io.strimzi.systemtest.annotations.ParallelTest;
 
 import java.util.List;
 

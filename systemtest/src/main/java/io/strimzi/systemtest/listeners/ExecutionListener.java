@@ -67,7 +67,7 @@ public class ExecutionListener implements TestExecutionListener {
      *       @IsolatedSuite -> @IsolatedSuite -> @IsolatedSuite
      *
      * Here we  use {@link SetupClusterOperator#rollbackToDefaultConfiguration()} to rollback to default
-     * Cluster Operator configuration. If this worst case when there is no {@link io.strimzi.test.annotations.ParallelSuite}
+     * Cluster Operator configuration. If this worst case when there is no {@link io.strimzi.systemtest.annotations.ParallelSuite}
      * it ends up with:
      *  ------
      *  1) first @IsolatedSuite
