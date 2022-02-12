@@ -23,7 +23,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;

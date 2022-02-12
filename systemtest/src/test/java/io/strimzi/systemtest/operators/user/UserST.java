@@ -32,7 +32,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.test.executor.ExecResult;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;

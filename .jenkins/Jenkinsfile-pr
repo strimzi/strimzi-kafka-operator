@@ -177,13 +177,6 @@ pipeline {
                 }
             }
         }
-        stage('Prepare system tests for method-wide parallelism') {
-            steps {
-                script {
-                    lib.prepareMethodWideParallelism(env.WORKSPACE)
-                }
-            }
-        }
         stage('Execute system tests') {
             steps {
                 script {

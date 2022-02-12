@@ -31,10 +31,6 @@ def buildStrimziImages() {
     """)
 }
 
-def prepareMethodWideParallelism(String workspace) {
-    sh(script: "${workspace}/.jenkins/scripts/prepare_method_wide_parallelism.sh ${workspace}")
-}
-
 def runSystemTests(String workspace, String testCases, String testProfile, String testGroups, String excludeGroups, String testsInParallel) {
     def groupsTag = testGroups.isEmpty() ? "" : "-Dgroups=${testGroups} "
     withMaven(mavenOpts: '-Djansi.force=true') {
@@ -49,7 +45,7 @@ def runSystemTests(String workspace, String testCases, String testProfile, Strin
             "--no-transfer-progress " +
             "-Dfailsafe.rerunFailingTestsCount=2 " +
             "-Djunit.jupiter.execution.parallel.enabled=true " +
-            // sequence mode with testInParallel=1 otherwise parallel
+            // sequence mode with testInParallel=1 otherwise parallel (default method-wide parallelism)
             "-Djunit.jupiter.execution.parallel.config.fixed.parallelism=${testsInParallel}")
     }
 }
