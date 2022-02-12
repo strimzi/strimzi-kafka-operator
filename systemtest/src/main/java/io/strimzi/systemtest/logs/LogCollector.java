@@ -146,8 +146,10 @@ public class LogCollector {
             // fetch test suite extensionContext
             // @ParallelSuite -> this is generated namespace
             if (StUtils.isParallelSuite(extensionContext.getParent().get())) {
-                // @IsolatedTest or @ParallelTest -> are executed in that generated namespace
-                if (StUtils.isIsolatedTest(extensionContext) || StUtils.isParallelTest(extensionContext)) {
+                // @IsolatedTest or @ParallelTest or @ParallelNamespaceTest -> are executed in that generated namespace
+                if (StUtils.isIsolatedTest(extensionContext) ||
+                    StUtils.isParallelTest(extensionContext) ||
+                    StUtils.isParallelNamespaceTest(extensionContext))  {
                     final Set<String> generatedTestSuiteNamespaces =
                         KubeClusterResource.getMapWithSuiteNamespaces().get(
                             CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()));
