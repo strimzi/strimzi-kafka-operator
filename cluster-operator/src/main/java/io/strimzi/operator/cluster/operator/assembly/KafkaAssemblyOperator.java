@@ -1392,7 +1392,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkPodDisruptionBudget() {
-            if (pfa.hasPodDisruptionBudgetV1()) {
+            if (!pfa.hasPodDisruptionBudgetV1()) {
                 return Future.succeededFuture(this);
             }
 

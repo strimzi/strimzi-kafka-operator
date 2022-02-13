@@ -21,6 +21,7 @@ public class KubernetesVersion implements Comparable<KubernetesVersion> {
     public static final KubernetesVersion V1_18 = new KubernetesVersion(1, 18);
     public static final KubernetesVersion V1_19 = new KubernetesVersion(1, 19);
     public static final KubernetesVersion V1_20 = new KubernetesVersion(1, 20);
+    public static final KubernetesVersion V1_21 = new KubernetesVersion(1, 21);
 
     public static final KubernetesVersion MINIMAL_SUPPORTED_VERSION = V1_16;
     public static final int MINIMAL_SUPPORTED_MAJOR = MINIMAL_SUPPORTED_VERSION.major;

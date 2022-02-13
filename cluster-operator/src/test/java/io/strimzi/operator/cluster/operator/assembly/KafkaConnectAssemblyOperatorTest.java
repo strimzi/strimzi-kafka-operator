@@ -152,7 +152,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
-        
+
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
         when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
 
@@ -200,7 +200,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 PodDisruptionBudget pdb = capturedPdb.get(0);
                 assertThat(pdb.getMetadata().getName(), is(connect.getName()));
                 assertThat(pdb, is(connect.generatePodDisruptionBudget()));
-            
+
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
                 assertThat(capturedConnects, hasSize(1));
