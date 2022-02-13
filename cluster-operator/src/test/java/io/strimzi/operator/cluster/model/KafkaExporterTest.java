@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -64,8 +65,6 @@ public class KafkaExporterTest {
     private final String image = "my-image:latest";
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
-    private final Map<String, Object> metricsCm = singletonMap("animal", "wombat");
-    private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String metricsCMName = "metrics-cm";
     private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
     private final Map<String, Object> kafkaConfig = singletonMap("foo", "bar");
@@ -113,25 +112,6 @@ public class KafkaExporterTest {
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
         assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
         assertThat(resource.getMetadata().getOwnerReferences().get(0), is(ownerRef));
-    }
-
-    private Map<String, String> expectedLabels(String name)    {
-        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
-                "my-user-label", "cromulent",
-                Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND,
-                Labels.STRIMZI_NAME_LABEL, name,
-                Labels.KUBERNETES_NAME_LABEL, KafkaExporter.APPLICATION_NAME,
-                Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
-                Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,
-                Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
-    }
-
-    private Map<String, String> expectedSelectorLabels()    {
-        return Labels.fromMap(expectedLabels()).strimziSelectorLabels().toMap();
-    }
-
-    private Map<String, String> expectedLabels()    {
-        return expectedLabels(KafkaExporterResources.deploymentName(cluster));
     }
 
     private List<EnvVar> getExpectedEnvVars() {
@@ -189,6 +169,19 @@ public class KafkaExporterTest {
         assertThat(containers.get(0).getPorts().get(0).getName(), is(KafkaExporter.METRICS_PORT_NAME));
         assertThat(containers.get(0).getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(dep.getSpec().getStrategy().getType(), is("RollingUpdate"));
+
+        // Test healthchecks
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getHttpGet().getPath(), is("/healthz"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getHttpGet().getPort(), is(new IntOrString(KafkaExporter.METRICS_PORT_NAME)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds(), is(KafkaExporter.DEFAULT_HEALTHCHECK_DELAY));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getPeriodSeconds(), is(KafkaExporter.DEFAULT_HEALTHCHECK_PERIOD));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds(), is(KafkaExporter.DEFAULT_HEALTHCHECK_TIMEOUT));
+
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getHttpGet().getPath(), is("/healthz"));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getHttpGet().getPort(), is(new IntOrString(KafkaExporter.METRICS_PORT_NAME)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds(), is(KafkaExporter.DEFAULT_HEALTHCHECK_DELAY));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getPeriodSeconds(), is(KafkaExporter.DEFAULT_HEALTHCHECK_PERIOD));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds(), is(KafkaExporter.DEFAULT_HEALTHCHECK_TIMEOUT));
 
         // Test volumes
         List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();

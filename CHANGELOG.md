@@ -2,7 +2,7 @@
 
 ## 0.29.0
 
-* n/a
+* Use `/healthz` endpoint for Kafka Exporter health checks
 
 ## 0.28.0
 
