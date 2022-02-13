@@ -11,7 +11,8 @@ docker-images/kafka-based/kafka/cruise-control-scripts/*.sh
 docker-images/kafka-based/kafka/stunnel-scripts/*.sh
 docker-images/kafka-based/kafka/exporter-scripts/*.sh
 docker-images/jmxtrans/*.sh
-tools/olm-bundle/*.sh"
+tools/olm-bundle/*.sh
+tools/report.sh"
 
 for SCRIPTS in $SCRIPT_DIRS; do
     shellcheck -a -P $(dirname "$SCRIPTS") -x "$SCRIPTS"
