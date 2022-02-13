@@ -469,11 +469,11 @@ public class TracingST extends AbstractST {
      */
     void deleteJaeger() {
         while (!jaegerConfigs.empty()) {
-            cmdKubeClient().namespace(cluster.getNamespace()).deleteContent(jaegerConfigs.pop());
+            cmdKubeClient().namespace(namespace).deleteContent(jaegerConfigs.pop());
         }
     }
 
-    private void deployJaegerContent() throws FileNotFoundException {
+    private void deployJaegerContent(ExtensionContext extensionContext) throws FileNotFoundException {
         File folder = new File(jaegerOperatorFilesPath);
         File[] files = folder.listFiles();
 
@@ -493,7 +493,7 @@ public class TracingST extends AbstractST {
     private void deployJaegerOperator(ExtensionContext extensionContext) throws IOException, FileNotFoundException {
         LOGGER.info("=== Applying jaeger operator install files ===");
 
-        deployJaegerContent();
+        deployJaegerContent(extensionContext);
 
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem(() -> this.deleteJaeger()));
@@ -536,7 +536,7 @@ public class TracingST extends AbstractST {
 
     @BeforeEach
     void createTestResources(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
+        TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
         storageMap.put(extensionContext, testStorage);
 

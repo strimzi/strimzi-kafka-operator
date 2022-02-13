@@ -41,9 +41,6 @@ import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.Constants.ISOLATED_SUITE;
-import static io.strimzi.systemtest.Constants.PARALLEL_NAMESPACE;
-import static io.strimzi.systemtest.Constants.PARALLEL_SUITE;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -356,30 +353,53 @@ public class StUtils {
     }
 
     /**
-     * Checking if test case contains annotation ParallelNamespaceTest
+     * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelTest}
      * @param extensionContext context of the test case
-     * @return true if test case contains annotation ParallelNamespaceTest, otherwise false
+     * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelTest},
+     * otherwise false
+     */
+    public static boolean isParallelTest(ExtensionContext extensionContext) {
+        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_TEST, extensionContext);
+    }
+
+    /**
+     * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedTest}
+     * @param extensionContext context of the test case
+     * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedTest},
+     * otherwise false
+     */
+    public static boolean isIsolatedTest(ExtensionContext extensionContext) {
+        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_TEST, extensionContext);
+    }
+
+    /**
+     * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest}
+     * @param extensionContext context of the test case
+     * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest},
+     * otherwise false
      */
     public static boolean isParallelNamespaceTest(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(PARALLEL_NAMESPACE, extensionContext);
+        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_NAMESPACE, extensionContext);
     }
 
     /**
-     * Checking if test case contains annotation ParallelSuite
+     * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelSuite}
      * @param extensionContext context of the test case
-     * @return true if test case contains annotation ParallelSuite, otherwise false
+     * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelSuite},
+     * otherwise false
      */
     public static boolean isParallelSuite(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(PARALLEL_SUITE, extensionContext);
+        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_SUITE, extensionContext);
     }
 
     /**
-     * Checking if test case contains annotation IsolatedSuite
+     * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedSuite}
      * @param extensionContext context of the test case
-     * @return true if test case contains annotation IsolatedSuite, otherwise false
+     * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedSuite},
+     * otherwise false
      */
     public static boolean isIsolatedSuite(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(ISOLATED_SUITE, extensionContext);
+        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_SUITE, extensionContext);
     }
 
     /**

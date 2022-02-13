@@ -67,6 +67,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -163,6 +164,40 @@ public class ResourceManager {
                 }
             }
 
+            // If we are create resource in test case we annotate it with label. This is needed for filtering when
+            // we collect logs from Pods, ReplicaSets, Deployments etc.
+            final Map<String, String> labels;
+            if (testContext.getTestMethod().isPresent()) {
+                String testCaseName = testContext.getRequiredTestMethod().getName();
+                // because label values `must be no more than 63 characters`
+                if (testCaseName.length() > 63) {
+                    // we cut to 62 characters
+                    testCaseName = testCaseName.substring(0, 62);
+                }
+
+                if (resource.getMetadata().getLabels() == null) {
+                    labels = new HashMap<>();
+                    labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
+                } else {
+                    labels = resource.getMetadata().getLabels();
+                    labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
+                }
+                resource.getMetadata().setLabels(labels);
+            } else {
+                // this is labeling for shared resources in @BeforeAll
+                if (testContext.getTestClass().isPresent()) {
+                    final String testSuiteName = StUtils.removePackageName(testContext.getRequiredTestClass().getName());
+
+                    if (resource.getMetadata().getLabels() == null) {
+                        labels = new HashMap<>();
+                        labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
+                    } else {
+                        labels = resource.getMetadata().getLabels();
+                        labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
+                    }
+                    resource.getMetadata().setLabels(labels);
+                }
+            }
             type.create(resource);
 
             synchronized (this) {
