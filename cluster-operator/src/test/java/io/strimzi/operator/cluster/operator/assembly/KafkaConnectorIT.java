@@ -20,6 +20,7 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.test.container.StrimziKafkaCluster;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -29,7 +30,6 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -40,6 +40,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -55,7 +56,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectorIT {
-    private static EmbeddedKafkaCluster cluster;
+    private static StrimziKafkaCluster cluster;
     private static Vertx vertx;
     private ConnectCluster connectCluster;
 
@@ -67,7 +68,9 @@ public class KafkaConnectorIT {
                         .setEnabled(true)
         ));
 
-        cluster = new EmbeddedKafkaCluster(3);
+        final Map<String, String> kafkaClusterConfiguration = new HashMap<>();
+        kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
+        cluster = new StrimziKafkaCluster(3, 1, kafkaClusterConfiguration);
         cluster.start();
     }
 
@@ -83,7 +86,7 @@ public class KafkaConnectorIT {
 
         // Start a 3 node connect cluster
         connectCluster = new ConnectCluster()
-                .usingBrokers(cluster.bootstrapServers())
+                .usingBrokers(cluster.getBootstrapServers())
                 .addConnectNodes(3);
         connectCluster.startup();
     }

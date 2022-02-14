@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.test.container.StrimziKafkaCluster;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -24,7 +25,6 @@ import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.ConfigResource;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -53,7 +54,7 @@ public class TopicOperatorMockTest {
 
     private KubernetesClient kubeClient;
     private Session session;
-    private EmbeddedKafkaCluster cluster;
+    private StrimziKafkaCluster kafkaCluster;
     private static Vertx vertx;
     private String deploymentId;
     private AdminClient adminClient;
@@ -83,19 +84,21 @@ public class TopicOperatorMockTest {
         //Create cluster in @BeforeEach instead of @BeforeAll as once the checkpoints causing premature success were fixed,
         //tests were failing due to topic "my-topic" already existing, and trying to delete the topics at the end of the test was timing out occasionally.
         //So works best when the cluster is recreated for each test to avoid shared state
-        cluster = new EmbeddedKafkaCluster(1);
-        cluster.start();
+        Map<String, String> config = new HashMap<>();
+        config.put("zookeeper.connect", "zookeeper:2181");
+        kafkaCluster = new StrimziKafkaCluster(1, 1, config);
+        kafkaCluster.start();
 
         MockKube mockKube = new MockKube();
         mockKube.withCustomResourceDefinition(Crds.kafkaTopic(),
                         KafkaTopic.class, KafkaTopicList.class, KafkaTopic::getStatus, KafkaTopic::setStatus);
 
         kubeClient = mockKube.build();
-        adminClient = AdminClient.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.bootstrapServers()));
+        adminClient = AdminClient.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers()));
 
         Config topicConfig = new Config(Map.of(
-            Config.KAFKA_BOOTSTRAP_SERVERS.key, cluster.bootstrapServers(),
-            Config.ZOOKEEPER_CONNECT.key, cluster.zKConnectString(),
+            Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.getBootstrapServers(),
+            Config.ZOOKEEPER_CONNECT.key, kafkaCluster.getZookeeper().getHost() + ":" + kafkaCluster.getZookeeper().getFirstMappedPort(),
             Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000",
             Config.NAMESPACE.key, "myproject",
             Config.CLIENT_ID.key, "myproject-client-id",
@@ -153,7 +156,7 @@ public class TopicOperatorMockTest {
                     adminClient.close();
                 }
 
-                cluster.stop();
+                kafkaCluster.stop();
                 
                 context.completeNow();
             });

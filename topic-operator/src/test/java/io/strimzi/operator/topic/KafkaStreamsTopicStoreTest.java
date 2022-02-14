@@ -10,18 +10,18 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import io.strimzi.test.container.StrimziKafkaContainer;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 public class KafkaStreamsTopicStoreTest extends TopicStoreTestBase {
     private static final Map<String, String> MANDATORY_CONFIG;
-    private static EmbeddedKafkaCluster cluster;
+    private static StrimziKafkaContainer kafkaContainer;
 
     static {
         MANDATORY_CONFIG = new HashMap<>();
@@ -60,11 +60,12 @@ public class KafkaStreamsTopicStoreTest extends TopicStoreTestBase {
 
     @BeforeAll
     public static void before() throws Exception {
-        cluster = new EmbeddedKafkaCluster(1);
-        cluster.start();
+        kafkaContainer = new StrimziKafkaContainer()
+            .withBrokerId(1);
+        kafkaContainer.start();
 
-        MANDATORY_CONFIG.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, cluster.bootstrapServers());
-        MANDATORY_CONFIG.put(Config.ZOOKEEPER_CONNECT.key, cluster.zKConnectString());
+        MANDATORY_CONFIG.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaContainer.getBootstrapServers());
+        MANDATORY_CONFIG.put(Config.ZOOKEEPER_CONNECT.key, "zookeeper:2181");
 
         service = service(Collections.emptyMap());
     }
@@ -75,7 +76,7 @@ public class KafkaStreamsTopicStoreTest extends TopicStoreTestBase {
             service.stop();
         }
 
-        cluster.stop();
+        kafkaContainer.stop();
     }
 
     @BeforeEach

@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.container.StrimziKafkaCluster;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
@@ -34,7 +35,6 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -136,12 +136,12 @@ public abstract class TopicOperatorBaseIT {
         }
     }
 
-    public void setup(EmbeddedKafkaCluster kafkaCluster) throws Exception {
+    public void setup(StrimziKafkaCluster kafkaCluster) throws Exception {
         LOGGER.info("Setting up test");
         cluster.cluster();
 
         Properties p = new Properties();
-        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.bootstrapServers());
+        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers());
         adminClient = AdminClient.create(p);
 
         kubeClient = kubeClient().getClient();
@@ -204,7 +204,7 @@ public abstract class TopicOperatorBaseIT {
         latch.await(30, TimeUnit.SECONDS);
     }
 
-    protected void startTopicOperator(EmbeddedKafkaCluster kafkaCluster) throws InterruptedException, ExecutionException, TimeoutException {
+    protected void startTopicOperator(StrimziKafkaCluster kafkaCluster) throws InterruptedException, ExecutionException, TimeoutException {
 
         LOGGER.info("Starting Topic Operator");
         session = new Session(kubeClient, new Config(topicOperatorConfig(kafkaCluster)));
@@ -222,10 +222,10 @@ public abstract class TopicOperatorBaseIT {
         LOGGER.info("Started Topic Operator");
     }
 
-    protected Map<String, String> topicOperatorConfig(EmbeddedKafkaCluster kafkaCluster) {
+    protected Map<String, String> topicOperatorConfig(StrimziKafkaCluster kafkaCluster) {
         Map<String, String> m = new HashMap<>();
-        m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.bootstrapServers());
-        m.put(Config.ZOOKEEPER_CONNECT.key, kafkaCluster.zKConnectString());
+        m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.getBootstrapServers());
+        m.put(Config.ZOOKEEPER_CONNECT.key, kafkaCluster.getZookeeper().getHost() + ":" + kafkaCluster.getZookeeper().getFirstMappedPort());
         m.put(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
         m.put(Config.NAMESPACE.key, NAMESPACE);
         m.put(Config.CLIENT_ID.key, CLIENTID);
