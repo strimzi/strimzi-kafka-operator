@@ -41,6 +41,7 @@ import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -327,7 +328,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(INFRA_NAMESPACE, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 99\"");
 
-        final String kafkaConnectLogs = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(false, "logs", kafkaConnectPodName).out();
+        final String kafkaConnectLogs = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaConnectPodName).out();
         verifyOauthConfiguration(kafkaConnectLogs);
     }
 
@@ -441,7 +442,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                 .build());
 
         final String kafkaMirrorMakerPodName = kubeClient(INFRA_NAMESPACE).listPods(INFRA_NAMESPACE, oauthClusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName();
-        final String kafkaMirrorMakerLogs = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(false, "logs", kafkaMirrorMakerPodName).out();
+        final String kafkaMirrorMakerLogs = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaMirrorMakerPodName).out();
         verifyOauthConfiguration(kafkaMirrorMakerLogs);
 
         TestUtils.waitFor("Waiting for Mirror Maker will copy messages from " + oauthClusterName + " to " + targetKafkaCluster,
@@ -593,7 +594,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .build());
 
         final String kafkaMirrorMaker2PodName = kubeClient(INFRA_NAMESPACE).listPods(INFRA_NAMESPACE, oauthClusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
-        final String kafkaMirrorMaker2Logs = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(false, "logs", kafkaMirrorMaker2PodName).out();
+        final String kafkaMirrorMaker2Logs = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaMirrorMaker2PodName).out();
         verifyOauthConfiguration(kafkaMirrorMaker2Logs);
 
         TestUtils.waitFor("Waiting for Mirror Maker 2 will copy messages from " + kafkaSourceClusterName + " to " + kafkaTargetClusterName,
@@ -685,7 +686,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .build());
 
         final String kafkaBridgePodName = kubeClient(INFRA_NAMESPACE).listPods(INFRA_NAMESPACE, oauthClusterName, Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName();
-        final String kafkaBridgeLogs = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(false, "logs", kafkaBridgePodName).out();
+        final String kafkaBridgeLogs = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaBridgePodName).out();
         verifyOauthConfiguration(kafkaBridgeLogs);
 
         String bridgeProducerName = "bridge-producer-" + clusterName;
