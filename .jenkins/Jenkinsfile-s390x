@@ -15,14 +15,14 @@ pipeline {
         maven 'maven-3.8.4'
     }
     parameters {
-        string(name: 'TEST_CASE', defaultValue: '*ST', description: 'maven parameter for executing specific tests')
+        string(name: 'TEST_CASE', defaultValue: "", description: 'maven parameter for executing specific tests')
         string(name: 'TEST_PROFILE', defaultValue: 'acceptance', description: 'maven parameter for executing specific test profile')
         string(name: 'TEST_GROUPS', defaultValue: "", description: 'maven parameter for executing specific test groups')
         string(name: 'EXCLUDE', defaultValue: "${DEFAULT_EXCLUDED_GROUPS}", description: 'maven parameter for exclude specific test tag')
         string(name: 'ENV_VARS', defaultValue: "", description: 'maven parameter for setting values of environment variables used in STs')
     }
     options {
-        timeout(time: 15, unit: 'HOURS')
+        timeout(time: 24, unit: 'HOURS')
         ansiColor('xterm')
     }
     environment {

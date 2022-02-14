@@ -38,18 +38,19 @@ def buildStrimziImages() {
 
 def runSystemTests(String workspace, String testCases, String testProfile, String testGroups, String excludeGroups, String testsInParallel) {
     def groupsTag = testGroups.isEmpty() ? "" : "-Dgroups=${testGroups} "
+    def testcasesTag = testCases.isEmpty() ? "" : "-Dit.test=${testCases} "
     //withMaven(maven: 'maven-3.8.4', mavenOpts: '-Djansi.force=true') {
         sh(script: "mvn -f ${workspace}/systemtest/pom.xml verify " +
             "-P${testProfile} " +
             "${groupsTag}" +
             "-DexcludedGroups=${excludeGroups} " +
+            "${testcasesTag}" +
             "-Dmaven.javadoc.skip=true -B -V " +
-            "-Dit.test=${testCases} " +
-            //"-Djava.net.preferIPv4Stack=true " +
-            //"-DtrimStackTrace=false " +
-            //"-Djansi.force=true " +
-            //"-Dstyle.color=always " +
-            //"--no-transfer-progress " +
+            "-Djava.net.preferIPv4Stack=true " +
+            "-DtrimStackTrace=false " +
+            "-Djansi.force=true " +
+            "-Dstyle.color=always " +
+            "--no-transfer-progress " +
             "-Dfailsafe.rerunFailingTestsCount=2 " +
             "-Djunit.jupiter.execution.parallel.enabled=false " +
             // sequence mode with testInParallel=1 otherwise parallel
