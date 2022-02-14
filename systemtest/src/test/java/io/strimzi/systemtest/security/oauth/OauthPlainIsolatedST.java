@@ -313,6 +313,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                 .endKafkaClientAuthenticationOAuth()
                 .withTls(null)
                 .withNewInlineLogging()
+                    // needed for a verification of oauth configuration
                     .addToLoggers("connect.root.logger.level", "DEBUG")
                 .endInlineLogging()
             .endSpec()
@@ -660,6 +661,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, kafkaClientsName).build());
 
+        // needed for a verification of oauth configuration
         InlineLogging ilDebug = new InlineLogging();
         ilDebug.setLoggers(Map.of("rootLogger.level", "DEBUG"));
 
