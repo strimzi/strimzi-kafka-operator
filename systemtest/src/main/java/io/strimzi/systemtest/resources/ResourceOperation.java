@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.systemtest.Constants;
 
@@ -37,6 +38,7 @@ public class ResourceOperation {
             case KafkaMirrorMaker.RESOURCE_KIND:
             case KafkaBridge.RESOURCE_KIND:
             case Constants.STATEFUL_SET:
+            case StrimziPodSet.RESOURCE_KIND:
             case Constants.KAFKA_CRUISE_CONTROL_DEPLOYMENT:
             case Constants.KAFKA_EXPORTER_DEPLOYMENT:
             case Constants.DEPLOYMENT:

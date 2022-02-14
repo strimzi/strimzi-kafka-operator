@@ -234,6 +234,11 @@ public class Environment {
         return STRIMZI_RBAC_SCOPE_NAMESPACE.equals(STRIMZI_RBAC_SCOPE);
     }
 
+    public static boolean isStrimziPodSetEnabled() {
+        // REMINDER: this will not work once StrimziPodSet will be moved to beta FG
+        return STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_POD_SET);
+    }
+
     public static boolean useLatestReleasedBridge() {
         return Environment.BRIDGE_IMAGE.equals(Environment.BRIDGE_IMAGE_DEFAULT);
     }
