@@ -35,17 +35,20 @@ For example:
 [source,env, subs="+quotes,attributes"]
 ----
 System.setProperty(ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, “_https://<auth-server-address>/auth/realms/master/protocol/openid-connect/token_”); <1>
-System.setProperty(ClientConfig.OAUTH_CLIENT_ID, "_<client-name>_"); <2>
-System.setProperty(ClientConfig.OAUTH_CLIENT_SECRET, "_<client-secret>_"); <3>
-System.setProperty(ClientConfig.OAUTH_SCOPE, "_SCOPE-VALUE_") <4>
+System.setProperty(ClientConfig.OAUTH_CLIENT_ID, "_<client_name>_"); <2>
+System.setProperty(ClientConfig.OAUTH_CLIENT_SECRET, "_<client_secret>_"); <3>
+System.setProperty(ClientConfig.OAUTH_SCOPE, "_<scope_value>_") <4>
+System.setProperty(ClientConfig.OAUTH_AUDIENCE, "_<audience_value_") <5>
 ----
 <1> URI of the authorization server token endpoint.
 <2> Client ID, which is the name used when creating the _client_ in the authorization server.
 <3> Client secret created when creating the _client_ in the authorization server.
 <4> (Optional) The `scope` for requesting the token from the token endpoint.
 An authorization server may require a client to specify the scope.
+<5> (Optional) The `audience` for requesting the token from the token endpoint.
+An authorization server may require a client to specify the audience.
 
-. Enable the _OAUTHBEARER_ OR _PLAIN_ mechanism on a TLS encrypted connection in the Kafka client configuration.
+. Enable the _OAUTHBEARER_ or _PLAIN_ mechanism on a TLS encrypted connection in the Kafka client configuration.
 +
 For example:
 +
@@ -53,7 +56,6 @@ For example:
 [source,env]
 ----
 props.put("sasl.jaas.config", "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required;");
-props.put("security.protocol", "SASL_SSL");
 props.put("security.protocol", "SASL_SSL");
 props.put("sasl.mechanism", "OAUTHBEARER");
 props.put("sasl.login.callback.handler.class", "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
