@@ -33,6 +33,7 @@ import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
@@ -766,6 +767,8 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                                     .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                     .withEnablePlain(true)
                                     .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                                    .withGroupsClaim(GROUPS_CLAIM)
+                                    .withGroupsClaimDelimiter(GROUPS_CLAIM_DELIMITER)
                                 .endKafkaListenerAuthenticationOAuth()
                                 .build(),
                             new GenericKafkaListenerBuilder()
@@ -804,6 +807,8 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                 .endKafka()
             .endSpec()
             .build());
+
+        verifyOauthListenerConfiguration(kubeClient(INFRA_NAMESPACE).logsInSpecificNamespace(INFRA_NAMESPACE, KafkaResources.kafkaPodName(oauthClusterName, 0)));
     }
 
     @AfterAll
