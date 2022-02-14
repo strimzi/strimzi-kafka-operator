@@ -41,7 +41,7 @@ Clients written in other languages, such as Go, must use custom code to connect 
 With OAUTHBEARER, the client initiates a session with the Kafka broker for credentials exchange, where credentials take the form of a bearer token provided by the callback handler.
 Using the callbacks, you can configure token provision in one of three ways:
 
-* Client ID and Secret (by using the OAuth 2.0 client credentials mechanism)
+* Client ID and Secret (by using the _OAuth 2.0 client credentials_ mechanism)
 
 * A long-lived access token, obtained manually at configuration time
 
