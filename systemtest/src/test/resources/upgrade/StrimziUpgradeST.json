@@ -70,9 +70,9 @@
     "strimziFeatureGatesFlags": ""
   },
   {
-    "fromVersion":"0.27.0",
-    "fromExamples":"strimzi-0.27.0",
-    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.27.0/strimzi-0.27.0.zip",
+    "fromVersion":"0.28.0",
+    "fromExamples":"strimzi-0.28.0",
+    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.28.0/strimzi-0.28.0.zip",
     "convertCRDs": false,
     "conversionTool": {
       "urlToConversionTool": "",
@@ -80,10 +80,10 @@
     },
     "generateTopics": true,
     "additionalTopics": 2,
-    "oldestKafka": "2.8.0",
+    "oldestKafka": "3.0.0",
     "imagesBeforeKafkaUpgrade": {
-      "zookeeper": "strimzi/kafka:latest-kafka-3.0.0",
-      "kafka": "strimzi/kafka:latest-kafka-3.0.0",
+      "zookeeper": "strimzi/kafka:latest-kafka-3.1.0",
+      "kafka": "strimzi/kafka:latest-kafka-3.1.0",
       "topicOperator": "strimzi/operator:latest",
       "userOperator": "strimzi/operator:latest"
     },
