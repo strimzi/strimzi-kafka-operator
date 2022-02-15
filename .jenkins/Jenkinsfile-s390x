@@ -33,7 +33,6 @@ pipeline {
         OPERATOR_IMAGE_PULL_POLICY = "IfNotPresent"
         COMPONENTS_IMAGE_PULL_POLICY = "IfNotPresent"
         JAVA_VERSION = "11"
-        TEST_HELM2_VERSION = "v2.17.0"
         TEST_HELM3_VERSION = "v3.4.2"
         TEST_CLUSTER = "minikube"
         COPY_DOCKER_LOGIN = "true"
@@ -43,10 +42,8 @@ pipeline {
         PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
         DOCKER_BUILDX = "buildx"
         DOCKER_BUILD_ARGS = "--platform linux/s390x --load"
-        BRIDGE_IMAGE = "quay.io/strimzi/kafka-bridge:latest"
         TEST_CLIENTS_VERSION = "latest"
         S390X_IMAGE_TARBALL_DIR = "s390x-image-tarballs"
-        ROCKSDBJNI_DIR = "rocksdbjni"
     }
     stages {
         stage('Clean WS') {
