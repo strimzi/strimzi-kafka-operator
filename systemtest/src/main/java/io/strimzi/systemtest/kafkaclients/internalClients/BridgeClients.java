@@ -6,6 +6,7 @@ package io.strimzi.systemtest.kafkaclients.internalClients;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -37,7 +38,7 @@ public class BridgeClients extends KafkaClients {
         this.port = port;
     }
 
-    public JobBuilder producerStrimziBridge() {
+    public Job producerStrimziBridge() {
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", this.getProducerName());
         producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
@@ -90,10 +91,11 @@ public class BridgeClients extends KafkaClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec();
+            .endSpec()
+            .build();
     }
 
-    public JobBuilder consumerStrimziBridge() {
+    public Job consumerStrimziBridge() {
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", this.getConsumerName());
         consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
@@ -150,6 +152,7 @@ public class BridgeClients extends KafkaClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec();
+            .endSpec()
+            .build();
     }
 }

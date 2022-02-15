@@ -157,7 +157,7 @@ public class ConfigProviderST extends AbstractST {
             .withNamespaceName(namespaceName)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
 
         String kafkaConnectPodName = kubeClient().listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, kafkaConnectPodName, customFileSinkPath, "Hello-world - 99");

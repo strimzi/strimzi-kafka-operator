@@ -6,13 +6,12 @@ package io.strimzi.systemtest.kafkaclients.internalClients;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.sundr.builder.annotations.Buildable;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidParameterException;
@@ -26,8 +25,6 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 @Buildable(editableEnabled = false)
 public class KafkaAdminClients extends BaseClients {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaAdminClients.class);
-
     private int partitions;
     private int replicationFactor;
     private String topicOperation;
@@ -98,7 +95,7 @@ public class KafkaAdminClients extends BaseClients {
             "request.timeout.ms=" + timeoutMs;
     }
 
-    public JobBuilder defaultAdmin() {
+    public Job defaultAdmin() {
         Map<String, String> adminLabels = new HashMap<>();
         adminLabels.put("app", adminName);
         adminLabels.put(Constants.KAFKA_ADMIN_CLIENT_LABEL_KEY, Constants.KAFKA_ADMIN_CLIENT_LABEL_VALUE);
@@ -170,6 +167,7 @@ public class KafkaAdminClients extends BaseClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec();
+            .endSpec()
+            .build();
     }
 }

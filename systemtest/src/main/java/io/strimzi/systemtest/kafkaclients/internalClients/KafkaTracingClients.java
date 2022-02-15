@@ -6,6 +6,7 @@ package io.strimzi.systemtest.kafkaclients.internalClients;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -67,7 +68,7 @@ public class KafkaTracingClients  extends KafkaClients {
         this.streamsTopicTargetName = streamsTopicTargetName;
     }
 
-    public JobBuilder consumerWithTracing() {
+    public Job consumerWithTracing() {
         return defaultConsumerStrimzi()
             .editSpec()
                 .editTemplate()
@@ -92,10 +93,11 @@ public class KafkaTracingClients  extends KafkaClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec();
+            .endSpec()
+            .build();
     }
 
-    public JobBuilder producerWithTracing() {
+    public Job producerWithTracing() {
         return defaultProducerStrimzi()
             .editSpec()
                 .editTemplate()
@@ -120,10 +122,11 @@ public class KafkaTracingClients  extends KafkaClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec();
+            .endSpec()
+            .build();
     }
 
-    public JobBuilder kafkaStreamsWithTracing() {
+    public Job kafkaStreamsWithTracing() {
         String kafkaStreamsName = "hello-world-streams";
 
         Map<String, String> kafkaStreamLabels = new HashMap<>();
@@ -193,6 +196,7 @@ public class KafkaTracingClients  extends KafkaClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec();
+            .endSpec()
+            .build();
     }
 }

@@ -10,7 +10,7 @@ import io.sundr.builder.annotations.Buildable;
 import java.security.InvalidParameterException;
 
 @Buildable(editableEnabled = false)
-public class BaseClients {
+public abstract class BaseClients {
     private String bootstrapAddress;
     private String topicName;
     private String additionalConfig;

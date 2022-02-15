@@ -205,6 +205,7 @@
             <artifactId>builder-annotations</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!-- These are needed for builders and fluents, in api we are using fabric8 imports instead of sundrio's. -->
         <dependency>
             <groupId>io.sundr</groupId>
             <artifactId>sundr-core</artifactId>

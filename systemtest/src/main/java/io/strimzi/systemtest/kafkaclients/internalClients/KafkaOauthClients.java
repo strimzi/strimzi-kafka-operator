@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.kafkaclients.internalClients;
 
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
@@ -89,8 +90,8 @@ public class KafkaOauthClients extends KafkaClients {
         this.clientUserName = clientUserName;
     }
 
-    public JobBuilder producerStrimziOauthPlain() {
-        return defaultProducerStrimziOauthPlain();
+    public Job producerStrimziOauthPlain() {
+        return defaultProducerStrimziOauthPlain().build();
     }
 
     private JobBuilder defaultProducerStrimziOauthPlain() {
@@ -136,7 +137,7 @@ public class KafkaOauthClients extends KafkaClients {
             .endSpec();
     }
 
-    public JobBuilder producerStrimziOauthTls(String clusterName) {
+    public Job producerStrimziOauthTls(String clusterName) {
 
         return defaultProducerStrimziOauthPlain()
             .editSpec()
@@ -178,11 +179,12 @@ public class KafkaOauthClients extends KafkaClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec();
+            .endSpec()
+            .build();
     }
 
-    public JobBuilder consumerStrimziOauthPlain() {
-        return defaultConsumerStrimziOauth();
+    public Job consumerStrimziOauthPlain() {
+        return defaultConsumerStrimziOauth().build();
     }
 
     private JobBuilder defaultConsumerStrimziOauth() {
@@ -232,7 +234,7 @@ public class KafkaOauthClients extends KafkaClients {
             .endSpec();
     }
 
-    public JobBuilder consumerStrimziOauthTls(String clusterName) {
+    public Job consumerStrimziOauthTls(String clusterName) {
 
         return defaultConsumerStrimziOauth()
             .editSpec()
@@ -274,7 +276,8 @@ public class KafkaOauthClients extends KafkaClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec();
+            .endSpec()
+            .build();
     }
 
     private void checkParameters() {

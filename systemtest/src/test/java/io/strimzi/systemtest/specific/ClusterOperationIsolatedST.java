@@ -78,8 +78,8 @@ public class ClusterOperationIsolatedST extends AbstractST {
                 .withDelayMs(1000)
                 .build();
 
-            resourceManager.createResource(extensionContext, kafkaBasicClientResource.producerStrimzi().build());
-            resourceManager.createResource(extensionContext, kafkaBasicClientResource.consumerStrimzi().build());
+            resourceManager.createResource(extensionContext, kafkaBasicClientResource.producerStrimzi());
+            resourceManager.createResource(extensionContext, kafkaBasicClientResource.consumerStrimzi());
         }
 
         // ##############################

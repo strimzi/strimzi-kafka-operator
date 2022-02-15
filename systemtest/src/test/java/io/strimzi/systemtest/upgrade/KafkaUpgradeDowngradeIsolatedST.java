@@ -204,8 +204,8 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
                 .withDelayMs(1000)
                 .build();
 
-            resourceManager.createResource(testContext, kafkaBasicClientJob.producerStrimzi().build());
-            resourceManager.createResource(testContext, kafkaBasicClientJob.consumerStrimzi().build());
+            resourceManager.createResource(testContext, kafkaBasicClientJob.producerStrimzi());
+            resourceManager.createResource(testContext, kafkaBasicClientJob.consumerStrimzi());
             // ##############################
 
         } else {

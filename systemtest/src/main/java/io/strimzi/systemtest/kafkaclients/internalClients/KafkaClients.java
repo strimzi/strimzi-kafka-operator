@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
@@ -96,11 +97,11 @@ public class KafkaClients extends BaseClients {
         this.delayMs = delayMs;
     }
 
-    public JobBuilder producerStrimzi() {
-        return defaultProducerStrimzi();
+    public Job producerStrimzi() {
+        return defaultProducerStrimzi().build();
     }
 
-    public JobBuilder producerScramShaStrimzi(final String clusterName, final String kafkaUserName) {
+    public Job producerScramShaStrimzi(final String clusterName, final String kafkaUserName) {
         // fetch secret
         final String saslJaasConfigEncrypted = ResourceManager.kubeClient().getSecret(this.getNamespaceName(), kafkaUserName).getData().get("sasl.jaas.config");
         final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
@@ -121,10 +122,11 @@ public class KafkaClients extends BaseClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec();
+            .endSpec()
+            .build();
     }
 
-    public JobBuilder producerTlsStrimzi(final String clusterName, final String kafkaUserName) {
+    public Job producerTlsStrimzi(final String clusterName, final String kafkaUserName) {
         this.setAdditionalConfig(this.getAdditionalConfig() +
             "ssl.endpoint.identification.algorithm=\n" +
             "sasl.mechanism=GSSAPI\n" +
@@ -159,12 +161,13 @@ public class KafkaClients extends BaseClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec();
+            .endSpec()
+            .build();
     }
 
 
-    public JobBuilder consumerStrimzi() {
-        return defaultConsumerStrimzi();
+    public Job consumerStrimzi() {
+        return defaultConsumerStrimzi().build();
     }
 
     public JobBuilder defaultProducerStrimzi() {

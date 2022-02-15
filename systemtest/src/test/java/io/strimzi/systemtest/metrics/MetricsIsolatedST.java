@@ -419,8 +419,8 @@ public class MetricsIsolatedST extends AbstractST {
             .withPollInterval(200)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge().build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge());
 
         TestUtils.waitFor("KafkaProducer metrics will be available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             LOGGER.info("Looking for 'strimzi_bridge_kafka_producer_count' in bridge metrics");

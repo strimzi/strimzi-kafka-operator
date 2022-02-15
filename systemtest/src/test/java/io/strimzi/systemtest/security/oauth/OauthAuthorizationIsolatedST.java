@@ -110,9 +110,9 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAConsumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -145,7 +145,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, topicName);
         LOGGER.info("Producer will not produce messages because authorization topic will failed. Team A can write only to topic starting with 'x-'");
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamAProducerName, INFRA_NAMESPACE, 30_000);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
@@ -157,13 +157,13 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicXName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamAProducerName, INFRA_NAMESPACE, 30_000);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
         // Team A can not create topic starting with 'x-' only write to existing on
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, INFRA_NAMESPACE).build());
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
@@ -176,7 +176,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicAName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -206,7 +206,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .build();
 
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, topicAName);
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
@@ -217,7 +217,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicAName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamAConsumerName, INFRA_NAMESPACE, 30_000);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
@@ -228,7 +228,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicAName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -259,7 +259,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_NAME);
         // Producer will not produce messages because authorization topic will failed. Team A can write only to topic starting with 'x-'
-        resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamBProducerName, INFRA_NAMESPACE, 30_000);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamBProducerName);
 
@@ -270,8 +270,8 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(TOPIC_B)
             .build();
 
-        resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
-        resourceManager.createResource(extensionContext, teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResource(extensionContext, teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitTillContinuousClientsFinish(teamBProducerName, teamBConsumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -309,7 +309,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicXName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
         KafkaOauthClients teamBOauthClientJob = new KafkaOauthClientsBuilder()
@@ -325,7 +325,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResource(extensionContext, teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamBConsumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -364,7 +364,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withClientUserName(userName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamBProducerName, INFRA_NAMESPACE, 30_000);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamBProducerName);
 
@@ -385,7 +385,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withClientUserName(userName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamAConsumerName, INFRA_NAMESPACE, 30_000);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAConsumerName);
 
@@ -404,7 +404,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         LOGGER.info("Verifying that team B is able to write to topic starting with 'x-' and break authorization rule");
 
-        resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamBProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
         LOGGER.info("Verifying that team A is able to write to topic starting with 'x-' and break authorization rule");
@@ -414,7 +414,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicXName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAConsumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -460,7 +460,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
@@ -550,7 +550,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicAName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
@@ -565,7 +565,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withDelayMs(1000)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
@@ -645,9 +645,9 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(testStorage.getClusterName()).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(teamAProducerName, testStorage.getNamespaceName(), MESSAGE_COUNT);
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(testStorage.getClusterName()).build());
+        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(teamAConsumerName, testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 

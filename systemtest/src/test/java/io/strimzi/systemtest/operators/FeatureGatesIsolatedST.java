@@ -116,8 +116,8 @@ public class FeatureGatesIsolatedST extends AbstractST {
             .withNamespaceName(INFRA_NAMESPACE)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
         JobUtils.waitForJobRunning(consumerName, INFRA_NAMESPACE);
 
         LOGGER.info("Delete first found Kafka broker pod.");
@@ -194,8 +194,8 @@ public class FeatureGatesIsolatedST extends AbstractST {
                 .withNamespaceName(INFRA_NAMESPACE)
                 .build();
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
         JobUtils.waitForJobRunning(consumerName, INFRA_NAMESPACE);
 
         // Delete one Zoo Pod

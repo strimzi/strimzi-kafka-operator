@@ -93,10 +93,10 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
-        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -135,10 +135,10 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .withAdditionalConfig(String.format(plainAdditionalConfig, OAUTH_CLIENT_AUDIENCE_PRODUCER, OAUTH_CLIENT_AUDIENCE_SECRET))
             .build();
 
-        resourceManager.createResource(extensionContext, plainSaslOauthProducerClientsJob.producerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, plainSaslOauthProducerClientsJob.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(audienceProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
-        resourceManager.createResource(extensionContext, plainSaslOauthConsumerClientsJob.consumerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, plainSaslOauthConsumerClientsJob.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(audienceConsumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 
@@ -165,9 +165,9 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .build();
 
         LOGGER.info("Use clients without access token containing audience token");
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.producerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthInternalClientJob.producerStrimziOauthPlain());
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(producerName, INFRA_NAMESPACE, MESSAGE_COUNT));
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.consumerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthInternalClientJob.consumerStrimziOauthPlain());
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT));
 
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
@@ -187,10 +187,10 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResource(extensionContext, oauthAudienceInternalClientJob.producerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthAudienceInternalClientJob.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(audienceProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
-        resourceManager.createResource(extensionContext, oauthAudienceInternalClientJob.consumerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthAudienceInternalClientJob.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(audienceConsumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, audienceProducerName);
@@ -221,9 +221,9 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResource(extensionContext, oauthAudienceInternalClientJob.producerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthAudienceInternalClientJob.producerStrimziOauthPlain());
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(audienceProducerName, INFRA_NAMESPACE, MESSAGE_COUNT));
-        resourceManager.createResource(extensionContext, oauthAudienceInternalClientJob.consumerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthAudienceInternalClientJob.consumerStrimziOauthPlain());
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(audienceConsumerName, INFRA_NAMESPACE, MESSAGE_COUNT));
 
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, audienceProducerName);
@@ -243,9 +243,9 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.producerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthInternalClientJob.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        resourceManager.createResource(extensionContext, oauthInternalClientJob.consumerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthInternalClientJob.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
@@ -276,11 +276,11 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
-        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
 
-        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
@@ -341,11 +341,11 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
-        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
 
-        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
@@ -442,7 +442,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                     .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                     .build();
 
-                resourceManager.createResource(extensionContext, kafkaOauthClientJob.consumerStrimziOauthPlain().build());
+                resourceManager.createResource(extensionContext, kafkaOauthClientJob.consumerStrimziOauthPlain());
 
                 try {
                     ClientUtils.waitForClientSuccess(OAUTH_CONSUMER_NAME, INFRA_NAMESPACE, MESSAGE_COUNT);
@@ -477,11 +477,11 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
-        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
 
-        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
@@ -587,7 +587,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                     .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
                     .build();
 
-                resourceManager.createResource(extensionContext, kafkaOauthClientJob.consumerStrimziOauthPlain().build());
+                resourceManager.createResource(extensionContext, kafkaOauthClientJob.consumerStrimziOauthPlain());
 
                 try {
                     ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
@@ -622,11 +622,11 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
-        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
 
-        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain().build());
+        resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthPlain());
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
@@ -660,7 +660,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .withPollInterval(1000)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge());
         ClientUtils.waitForClientSuccess(bridgeProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, bridgeProducerName);
     }

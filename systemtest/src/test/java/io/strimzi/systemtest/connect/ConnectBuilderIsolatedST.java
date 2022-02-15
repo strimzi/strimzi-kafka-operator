@@ -530,7 +530,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .withDelayMs(0)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaClient.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaClient.consumerStrimzi());
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 

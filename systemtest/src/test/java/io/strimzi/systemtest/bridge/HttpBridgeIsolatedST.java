@@ -96,7 +96,7 @@ class HttpBridgeIsolatedST extends AbstractST {
                 .withNamespace(INFRA_NAMESPACE)
             .endMetadata()
             .build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge());
 
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
@@ -139,7 +139,7 @@ class HttpBridgeIsolatedST extends AbstractST {
             .withNamespaceName(INFRA_NAMESPACE)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge());
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()

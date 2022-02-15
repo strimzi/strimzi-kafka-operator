@@ -70,7 +70,7 @@ public class QuotasST extends AbstractST {
             .withMessage(String.join("", Collections.nCopies(1000, "#")))
             .build();
 
-        resourceManager.createResource(extensionContext, basicClients.producerStrimzi().build());
+        resourceManager.createResource(extensionContext, basicClients.producerStrimzi());
         // Kafka Quotas Plugin should stop producer in around 10-20 seconds with configured throughput
         assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(producerName, INFRA_NAMESPACE, 120_000));
 

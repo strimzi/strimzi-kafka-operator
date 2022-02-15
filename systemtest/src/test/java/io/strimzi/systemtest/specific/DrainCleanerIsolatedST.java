@@ -96,8 +96,8 @@ public class DrainCleanerIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext,
-            kafkaBasicExampleClients.producerStrimzi().build(),
-            kafkaBasicExampleClients.consumerStrimzi().build());
+            kafkaBasicExampleClients.producerStrimzi(),
+            kafkaBasicExampleClients.consumerStrimzi());
 
         for (int i = 0; i < replicas; i++) {
             String zkPodName = KafkaResources.zookeeperPodName(testStorage.getClusterName(), i);
@@ -226,8 +226,8 @@ public class DrainCleanerIsolatedST extends AbstractST {
                 .build();
 
             resourceManager.createResource(extensionContext,
-                kafkaBasicExampleClients.producerStrimzi().build(),
-                kafkaBasicExampleClients.consumerStrimzi().build());
+                kafkaBasicExampleClients.producerStrimzi(),
+                kafkaBasicExampleClients.consumerStrimzi());
         }
 
         LOGGER.info("Starting Node drain");

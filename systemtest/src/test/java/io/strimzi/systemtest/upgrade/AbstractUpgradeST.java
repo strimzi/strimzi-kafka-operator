@@ -521,8 +521,8 @@ public class AbstractUpgradeST extends AbstractST {
                 .withDelayMs(1000)
                 .build();
 
-            resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
-            resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+            resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+            resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
             // ##############################
         }
 

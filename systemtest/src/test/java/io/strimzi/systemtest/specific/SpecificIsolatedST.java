@@ -142,8 +142,8 @@ public class SpecificIsolatedST extends AbstractST {
             .withDelayMs(0)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
     }
 
     @IsolatedTest("Modification of shared Cluster Operator configuration")

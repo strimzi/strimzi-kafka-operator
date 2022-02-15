@@ -70,7 +70,7 @@ public class ThrottlingQuotaST extends AbstractST {
                 .withTopicOperation(AdminClientOperations.CREATE_TOPICS.toString())
                 .withAdditionalConfig(KafkaAdminClients.getAdminClientScramConfig(namespace, kafkaUsername, 240000))
                 .build();
-        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin());
         String createPodName = kubeClient(namespace).listPodNamesInSpecificNamespace(namespace, "job-name", createAdminName).get(0);
         PodUtils.waitUntilMessageIsInPodLogs(
                 namespace,
@@ -110,7 +110,7 @@ public class ThrottlingQuotaST extends AbstractST {
             LOGGER.info("Executing {}/{} iteration.", i + 1, iterations);
             createAdminClientJob = new KafkaAdminClientsBuilder(createAdminClientJob).withTopicOffset(i * offset).build();
 
-            resourceManager.createResource(extensionContext, createAdminClientJob.defaultAdmin().build());
+            resourceManager.createResource(extensionContext, createAdminClientJob.defaultAdmin());
             ClientUtils.waitForClientSuccess(createAdminName, namespace, 100);
             createPodName = kubeClient(namespace).listPodNamesInSpecificNamespace(namespace, "job-name", createAdminName).get(0);
             PodUtils.waitUntilMessageIsInPodLogs(namespace, createPodName, "All topics created", Constants.GLOBAL_TIMEOUT);
@@ -127,7 +127,7 @@ public class ThrottlingQuotaST extends AbstractST {
                 .withTopicOperation(AdminClientOperations.DELETE_TOPICS.toString())
                 .withAdditionalConfig(KafkaAdminClients.getAdminClientScramConfig(namespace, kafkaUsername, 240000))
                 .build();
-        resourceManager.createResource(extensionContext, deleteAdminClientJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, deleteAdminClientJob.defaultAdmin());
         String deletePodName = kubeClient(namespace).listPodNamesInSpecificNamespace(namespace, "job-name", deleteAdminName).get(0);
         PodUtils.waitUntilMessageIsInPodLogs(
                 namespace,
@@ -145,7 +145,7 @@ public class ThrottlingQuotaST extends AbstractST {
                     .withTopicCount(100)
                     .withAdditionalConfig("")
                     .build();
-            resourceManager.createResource(extensionContext, deleteAdminClientJob.defaultAdmin().build());
+            resourceManager.createResource(extensionContext, deleteAdminClientJob.defaultAdmin());
             ClientUtils.waitForClientSuccess(deleteAdminName, namespace, 10);
             JobUtils.deleteJobWithWait(namespace, deleteAdminName);
         }
@@ -171,7 +171,7 @@ public class ThrottlingQuotaST extends AbstractST {
                 .withTopicOperation(AdminClientOperations.CREATE_TOPICS.toString())
                 .withAdditionalConfig(KafkaAdminClients.getAdminClientScramConfig(namespace, kafkaUsername, 240000))
                 .build();
-        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin());
         String createPodName = kubeClient(namespace).listPodNamesInSpecificNamespace(namespace, "job-name", createAdminName).get(0);
         PodUtils.waitUntilMessageIsInPodLogs(
                 namespace,
@@ -190,7 +190,7 @@ public class ThrottlingQuotaST extends AbstractST {
                 .withTopicCount(topicAlter)
                 .withPartitions(1)
                 .build();
-        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin());
         createPodName = kubeClient(namespace).listPodNamesInSpecificNamespace(namespace, "job-name", createAdminName).get(0);
         PodUtils.waitUntilMessageIsInPodLogs(namespace, createPodName, "All topics created", GLOBAL_TIMEOUT);
         JobUtils.deleteJobWithWait(namespace, createAdminName);
@@ -202,7 +202,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .withPartitions(500)
             .withTopicOperation(AdminClientOperations.UPDATE_TOPICS.toString())
             .build();
-        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin());
         String alterPodName = kubeClient(namespace).listPodNamesInSpecificNamespace(namespace, "job-name", alterAdminName).get(0);
         PodUtils.waitUntilMessageIsInPodLogs(
                 namespace,
@@ -222,7 +222,7 @@ public class ThrottlingQuotaST extends AbstractST {
                 .withNamespaceName(namespace)
                 .withTopicOperation(AdminClientOperations.DELETE_TOPICS.toString())
                 .build();
-        resourceManager.createResource(extensionContext, deleteAdminClientJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, deleteAdminClientJob.defaultAdmin());
         ClientUtils.waitForClientSuccess(teardownClientName, namespace, 10);
         JobUtils.deleteJobWithWait(namespace, teardownClientName);
     }
@@ -247,7 +247,7 @@ public class ThrottlingQuotaST extends AbstractST {
                 .withTopicOperation(AdminClientOperations.CREATE_TOPICS.toString())
                 .withAdditionalConfig(KafkaAdminClients.getAdminClientScramConfig(namespace, kafkaUsername, 240000))
                 .build();
-        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin());
         ClientUtils.waitForClientSuccess(createAdminName, namespace, topicsCountBelowQuota);
         String createPodName = kubeClient(namespace).listPodNamesInSpecificNamespace(namespace, "job-name", createAdminName).get(0);
         PodUtils.waitUntilMessageIsInPodLogs(namespace, createPodName, "All topics created");
@@ -260,7 +260,7 @@ public class ThrottlingQuotaST extends AbstractST {
                 .withTopicOperation(AdminClientOperations.LIST_TOPICS.toString())
                 .withAdditionalConfig(KafkaAdminClients.getAdminClientScramConfig(namespace, kafkaUsername, 600000))
                 .build();
-        resourceManager.createResource(extensionContext, adminClientListJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, adminClientListJob.defaultAdmin());
         ClientUtils.waitForClientSuccess(listAdminName, namespace, 0);
         String listPodName = kubeClient().listPodNamesInSpecificNamespace(namespace, "job-name", listAdminName).get(0);
         PodUtils.waitUntilMessageIsInPodLogs(namespace, listPodName, topicNamePrefix + "-" + (topicsCountBelowQuota - 1));
@@ -271,13 +271,13 @@ public class ThrottlingQuotaST extends AbstractST {
                 .withAdminName(deleteAdminName)
                 .withTopicOperation(AdminClientOperations.DELETE_TOPICS.toString())
                 .build();
-        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, adminClientJob.defaultAdmin());
         ClientUtils.waitForClientSuccess(deleteAdminName, namespace, 10);
         String deletePodName = kubeClient(namespace).listPodNamesInSpecificNamespace(namespace, "job-name", deleteAdminName).get(0);
         PodUtils.waitUntilMessageIsInPodLogs(namespace, deletePodName, "Successfully removed all " + topicsCountBelowQuota);
 
         // List topics after deletion
-        resourceManager.createResource(extensionContext, adminClientListJob.defaultAdmin().build());
+        resourceManager.createResource(extensionContext, adminClientListJob.defaultAdmin());
         ClientUtils.waitForClientSuccess(listAdminName, namespace, 0);
         listPodName = kubeClient(namespace).listPodNamesInSpecificNamespace(namespace, "job-name", listAdminName).get(0);
         String afterDeletePodLogs = kubeClient(namespace).logsInSpecificNamespace(namespace, listPodName);

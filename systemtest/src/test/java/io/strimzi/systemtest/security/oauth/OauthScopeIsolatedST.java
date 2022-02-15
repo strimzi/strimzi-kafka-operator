@@ -175,7 +175,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         // verification phase the KafkaClient to authenticate.
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
 
-        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi().build());
+        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi());
         // client should succeeded because we set to `clientScope=test` and also Kafka has `scope=test`
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
@@ -217,7 +217,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         // verification phase client should fail here because clientScope is set to 'null'
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
 
-        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi().build());
+        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi());
         // client should fail because the listener requires scope: 'test' in JWT token but was (the listener) temporarily
         // configured without clientScope resulting in a JWT token without the scope claim when using the clientId and
         // secret passed via SASL/PLAIN to obtain an access token in client's name.

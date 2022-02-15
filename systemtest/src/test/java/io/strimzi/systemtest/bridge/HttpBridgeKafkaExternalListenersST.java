@@ -204,11 +204,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
         final Service service = KafkaBridgeUtils.createBridgeNodePortService(clusterName, namespace, BRIDGE_EXTERNAL_SERVICE);
         ServiceResource.createServiceResource(extensionContext, service, namespace);
 
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge()
-            .editMetadata()
-                .withNamespace(namespace)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge());
 
         final String kafkaProducerExternalName = "kafka-producer-external" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -228,10 +224,10 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
 
         if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
             // tls producer
-            resourceManager.createResource(extensionContext, externalKafkaProducer.producerTlsStrimzi(clusterName, weirdUserName).build());
+            resourceManager.createResource(extensionContext, externalKafkaProducer.producerTlsStrimzi(clusterName, weirdUserName));
         } else {
             // scram-sha producer
-            resourceManager.createResource(extensionContext, externalKafkaProducer.producerScramShaStrimzi(clusterName, weirdUserName).build());
+            resourceManager.createResource(extensionContext, externalKafkaProducer.producerScramShaStrimzi(clusterName, weirdUserName));
         }
 
         ClientUtils.waitForClientSuccess(kafkaProducerExternalName, namespace, MESSAGE_COUNT);

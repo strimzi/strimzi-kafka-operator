@@ -68,11 +68,7 @@ class HttpBridgeScramShaST extends AbstractST {
                 .withNamespace(namespace)
             .endMetadata()
             .build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.producerStrimziBridge()
-            .editMetadata()
-                .withNamespace(namespace)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.producerStrimziBridge());
 
         ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT);
 
@@ -99,11 +95,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .editMetadata()
                 .withNamespace(namespace)
             .endMetadata().build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.consumerStrimziBridge()
-            .editMetadata()
-                .withNamespace(namespace)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.consumerStrimziBridge());
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()

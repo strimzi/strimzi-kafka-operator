@@ -70,11 +70,7 @@ class HttpBridgeTlsST extends AbstractST {
                 .withNamespace(namespace)
             .endMetadata()
             .build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJobProduce.producerStrimziBridge()
-            .editMetadata()
-                .withNamespace(namespace)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJobProduce.producerStrimziBridge());
 
         ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT);
 
@@ -102,11 +98,7 @@ class HttpBridgeTlsST extends AbstractST {
                 .withNamespace(namespace)
             .endMetadata()
             .build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJobConsume.consumerStrimziBridge()
-            .editMetadata()
-                .withNamespace(namespace)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJobConsume.consumerStrimziBridge());
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()

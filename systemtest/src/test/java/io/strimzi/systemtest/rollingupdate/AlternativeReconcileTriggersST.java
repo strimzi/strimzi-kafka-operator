@@ -116,8 +116,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withNamespaceName(namespaceName)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
@@ -380,8 +380,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withNamespaceName(namespaceName)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
