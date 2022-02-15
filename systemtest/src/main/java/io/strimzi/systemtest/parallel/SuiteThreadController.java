@@ -33,10 +33,13 @@ public class SuiteThreadController {
 
     private static SuiteThreadController instance;
     private static List<String> waitingTestSuites;
+    private static List<String> waitingTestCases;
     private static Integer maxTestSuitesInParallel;
     private static AtomicInteger runningTestSuitesInParallelCount;
+    private static AtomicInteger runningTestCasesInParallelCount;
     private static AtomicBoolean isOpen;
     private static AtomicBoolean isParallelSuiteReleased;
+    private static AtomicBoolean isParallelTestReleased;
 
     public synchronized static SuiteThreadController getInstance() {
         if (instance == null) {
@@ -55,9 +58,12 @@ public class SuiteThreadController {
     @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     private SuiteThreadController() {
         runningTestSuitesInParallelCount = new AtomicInteger(0);
+        runningTestCasesInParallelCount = new AtomicInteger(0);
         isOpen = new AtomicBoolean(false);
         isParallelSuiteReleased = new AtomicBoolean(false);
+        isParallelTestReleased = new AtomicBoolean(false);
         waitingTestSuites = new ArrayList<>();
+        waitingTestCases = new ArrayList<>();
     }
 
     public synchronized void addParallelSuite(ExtensionContext extensionContext) {
@@ -67,6 +73,14 @@ public class SuiteThreadController {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, runningTestSuitesInParallelCount.get());
 
         LOGGER.debug("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
+    }
+
+    public synchronized void addParallelTest(ExtensionContext extensionContext) {
+        LOGGER.debug("[{}] - Adding parallel test: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
+
+        runningTestCasesInParallelCount.set(runningTestCasesInParallelCount.incrementAndGet());
+
+        LOGGER.debug("[{}] - Parallel test count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestCasesInParallelCount.get());
     }
 
     public synchronized void removeParallelSuite(ExtensionContext extensionContext) {
@@ -79,6 +93,14 @@ public class SuiteThreadController {
         }
 
         LOGGER.debug("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
+    }
+
+    public synchronized void removeParallelTest(ExtensionContext extensionContext) {
+        LOGGER.debug("[{}] - Removing parallel test: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
+
+        runningTestCasesInParallelCount.set(runningTestCasesInParallelCount.decrementAndGet());
+
+        LOGGER.debug("[{}] - Parallel test count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestCasesInParallelCount.get());
     }
 
     public boolean waitUntilZeroParallelSuites(ExtensionContext extensionContext) {
@@ -139,9 +161,11 @@ public class SuiteThreadController {
         final String testSuiteToWait = extensionContext.getRequiredTestClass().getSimpleName();
         waitingTestSuites.add(testSuiteToWait);
 
-        LOGGER.debug("[{}] moved to the WaitZone, because current thread exceed maximum of allowed " +
-            "test suites in parallel. ({}/{})", testSuiteToWait, runningTestSuitesInParallelCount.get(),
-            maxTestSuitesInParallel);
+        if (runningTestSuitesInParallelCount.get() > maxTestSuitesInParallel) {
+            LOGGER.debug("[{}] moved to the WaitZone, because current thread exceed maximum of allowed " +
+                    "test suites in parallel. ({}/{})", testSuiteToWait, runningTestSuitesInParallelCount.get(),
+                maxTestSuitesInParallel);
+        }
         while (!isRunningAllowedNumberTestSuitesInParallel()) {
             LOGGER.trace("{} is waiting to proceed with execution but current thread exceed maximum " +
                 "of allowed test suites in parallel. ({}/{})",
@@ -166,6 +190,56 @@ public class SuiteThreadController {
         LOGGER.debug("{} suite now can proceed its execution", testSuiteToWait);
     }
 
+    /**
+     * Synchronise point where {@link io.strimzi.test.annotations.ParallelTest} or
+     * {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest} end it in situation when Junit5
+     * {@link java.util.concurrent.ForkJoinPool} spawn additional threads, which can exceed limit specified
+     * and thus many threads can start execute test cases which could potentially destroy cluster. This is mechanism,
+     * which will all additional threads (i.e., not needed) put into waiting room. After one of the
+     * {@link io.strimzi.test.annotations.ParallelTest} or {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest}
+     * is done with execution we release ({@link #notifyParallelTestToAllowExecution(ExtensionContext)} one test case
+     * setting {@code isParallelTestReleased} flag. This ensures that only one test suite will continue with execution
+     * and others will still wait.
+     *
+     * @param extensionContext Extension context for test suite name
+     */
+    public void waitUntilAllowedNumberTestCasesParallel(ExtensionContext extensionContext) {
+        final String testCaseToWait = extensionContext.getDisplayName();
+        waitingTestCases.add(testCaseToWait);
+
+        if (runningTestCasesInParallelCount.get() > maxTestSuitesInParallel) {
+            LOGGER.debug("[{}] moved to the WaitZone, because current thread exceed maximum of allowed " +
+                    "test cases in parallel. ({}/{})", testCaseToWait, runningTestCasesInParallelCount.get(),
+                maxTestSuitesInParallel);
+        }
+        while (!isRunningAllowedNumberTestInParallel()) {
+            LOGGER.trace("{} is waiting to proceed with execution but current thread exceed maximum " +
+                    "of allowed test cases in parallel. ({}/{})",
+                testCaseToWait,
+                runningTestCasesInParallelCount.get(),
+                maxTestSuitesInParallel);
+
+            try {
+                Thread.currentThread().sleep(STARTING_DELAY);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            // release and lock again
+            if (isParallelTestReleased.get()) {
+                // lock
+                isParallelTestReleased.set(false);
+                waitingTestCases.remove(testCaseToWait);
+                break;
+            }
+        }
+        LOGGER.debug("{} test now can proceed its execution", testCaseToWait);
+    }
+
+    public boolean isRunningAllowedNumberTestInParallel() {
+        return runningTestCasesInParallelCount.get() <= maxTestSuitesInParallel;
+    }
+
     public void incrementParallelSuiteCounter() {
         runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.incrementAndGet());
     }
@@ -185,6 +259,19 @@ public class SuiteThreadController {
     public void notifyParallelSuiteToAllowExecution(ExtensionContext extensionContext) {
         LOGGER.debug("{} - Notifies waiting test suites:{} to and randomly select one to start execution", extensionContext.getRequiredTestClass().getSimpleName(), waitingTestSuites.toString());
         isParallelSuiteReleased.set(true);
+    }
+
+    /**
+     * Notifies one of the {@link io.strimzi.systemtest.annotations.ParallelTest} or {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest}
+     * to continue its execution. Specifically {@code waitingTestCases}, which are waiting because {@link java.util.concurrent.ForkJoinPool}
+     * spawns additional threads, which exceed parallelism limit. This ensures that {@link io.strimzi.systemtest.annotations.ParallelTest}
+     * or {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest} won't cause deadlock.
+     *
+     * @param extensionContext extension context for identifying, which test suite notifies.
+     */
+    public void notifyParallelTestToAllowExecution(ExtensionContext extensionContext) {
+        LOGGER.debug("{} - Notifies waiting test cases:{} to and randomly select one to start execution", extensionContext.getDisplayName(), waitingTestCases.toString());
+        isParallelTestReleased.set(true);
     }
 
     public void unLockIsolatedSuite() {

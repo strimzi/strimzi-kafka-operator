@@ -524,6 +524,14 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.info("Docker images verified");
     }
 
+    private final void afterEachMustExecute(ExtensionContext extensionContext) {
+        if (StUtils.isParallelTest(extensionContext) ||
+            StUtils.isParallelNamespaceTest(extensionContext)) {
+            parallelSuiteController.notifyParallelTestToAllowExecution(extensionContext);
+            parallelSuiteController.removeParallelTest(extensionContext);
+        }
+    }
+
     protected void afterEachMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(extensionContext);
@@ -601,6 +609,14 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
+    private final void beforeEachMustExecute(ExtensionContext extensionContext) {
+        if (StUtils.isParallelNamespaceTest(extensionContext) ||
+            StUtils.isParallelTest(extensionContext)) {
+            parallelSuiteController.addParallelTest(extensionContext);
+            parallelSuiteController.waitUntilAllowedNumberTestCasesParallel(extensionContext);
+        }
+    }
+
     private final void beforeAllMustExecute(ExtensionContext extensionContext) {
         try {
             clusterOperator = SetupClusterOperator.getInstanceHolder();
@@ -639,6 +655,7 @@ public abstract class AbstractST implements TestSeparator {
     void setUpTestCase(ExtensionContext extensionContext) {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("[{} - Before Each] - Setup test case environment", StUtils.removePackageName(this.getClass().getName()));
+        beforeEachMustExecute(extensionContext);
         beforeEachMayOverride(extensionContext);
     }
 
@@ -655,6 +672,7 @@ public abstract class AbstractST implements TestSeparator {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("[{} - After Each] - Clean up after test", StUtils.removePackageName(this.getClass().getName()));
         afterEachMayOverride(extensionContext);
+        afterEachMustExecute(extensionContext);
     }
 
     @AfterAll
