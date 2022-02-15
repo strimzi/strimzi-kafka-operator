@@ -158,8 +158,8 @@ public class Environment {
     private static final String STRIMZI_FEATURE_GATES_DEFAULT = "";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
-    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.0.0";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.1.1";
+    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.1.0";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.2.0";
 
     /**
      * Set values
