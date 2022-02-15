@@ -4,8 +4,12 @@
  */
 package io.strimzi.systemtest.security.oauth;
 
+import io.strimzi.api.kafka.model.InlineLogging;
+import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -33,9 +37,11 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
+import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -44,6 +50,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
+import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
@@ -302,18 +309,27 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                         .withSecretName(CONNECT_OAUTH_SECRET)
                         .withKey(OAUTH_KEY)
                     .endClientSecret()
+                    .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
+                    .withReadTimeoutSeconds(READ_TIMEOUT_S)
                 .endKafkaClientAuthenticationOAuth()
                 .withTls(null)
+                .withNewInlineLogging()
+                    // needed for a verification of oauth configuration
+                    .addToLoggers("connect.root.logger.level", "DEBUG")
+                .endInlineLogging()
             .endSpec()
             .build());
 
-        String kafkaConnectPodName = kubeClient(INFRA_NAMESPACE).listPods(INFRA_NAMESPACE, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        final String kafkaConnectPodName = kubeClient(INFRA_NAMESPACE).listPods(INFRA_NAMESPACE, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(INFRA_NAMESPACE, kafkaConnectPodName);
 
         KafkaConnectorUtils.createFileSinkConnector(INFRA_NAMESPACE, kafkaConnectPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, "http://localhost:8083");
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(INFRA_NAMESPACE, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 99\"");
+
+        final String kafkaConnectLogs = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaConnectPodName).out();
+        verifyOauthConfiguration(kafkaConnectLogs);
     }
 
     @Description("As an oauth mirror maker, I should be able to replicate topic data between kafka clusters")
@@ -402,6 +418,8 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                                 .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
                                 .withKey(OAUTH_KEY)
                             .endClientSecret()
+                            .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
+                            .withReadTimeoutSeconds(READ_TIMEOUT_S)
                         .endKafkaClientAuthenticationOAuth()
                         .withTls(null)
                     .endConsumer()
@@ -414,12 +432,18 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                                 .withSecretName(MIRROR_MAKER_OAUTH_SECRET)
                                 .withKey(OAUTH_KEY)
                             .endClientSecret()
+                            .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
+                            .withReadTimeoutSeconds(READ_TIMEOUT_S)
                         .endKafkaClientAuthenticationOAuth()
                         .addToConfig(ProducerConfig.ACKS_CONFIG, "all")
                         .withTls(null)
                     .endProducer()
                 .endSpec()
                 .build());
+
+        final String kafkaMirrorMakerPodName = kubeClient(INFRA_NAMESPACE).listPods(INFRA_NAMESPACE, oauthClusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName();
+        final String kafkaMirrorMakerLogs = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaMirrorMakerPodName).out();
+        verifyOauthConfiguration(kafkaMirrorMakerLogs);
 
         TestUtils.waitFor("Waiting for Mirror Maker will copy messages from " + oauthClusterName + " to " + targetKafkaCluster,
             Constants.GLOBAL_CLIENTS_POLL, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
@@ -536,6 +560,8 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                     .withSecretName(MIRROR_MAKER_2_OAUTH_SECRET)
                     .withKey(OAUTH_KEY)
                 .endClientSecret()
+                .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
+                .withReadTimeoutSeconds(READ_TIMEOUT_S)
             .endKafkaClientAuthenticationOAuth()
             .build();
 
@@ -550,6 +576,8 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                     .withSecretName(MIRROR_MAKER_2_OAUTH_SECRET)
                     .withKey(OAUTH_KEY)
                 .endClientSecret()
+                .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
+                .withReadTimeoutSeconds(READ_TIMEOUT_S)
             .endKafkaClientAuthenticationOAuth()
             .build();
 
@@ -564,6 +592,10 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                 .endMirror()
             .endSpec()
             .build());
+
+        final String kafkaMirrorMaker2PodName = kubeClient(INFRA_NAMESPACE).listPods(INFRA_NAMESPACE, oauthClusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND).get(0).getMetadata().getName();
+        final String kafkaMirrorMaker2Logs = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaMirrorMaker2PodName).out();
+        verifyOauthConfiguration(kafkaMirrorMaker2Logs);
 
         TestUtils.waitFor("Waiting for Mirror Maker 2 will copy messages from " + kafkaSourceClusterName + " to " + kafkaTargetClusterName,
             Duration.ofSeconds(30).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
@@ -629,6 +661,11 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, kafkaClientsName).build());
+
+        // needed for a verification of oauth configuration
+        InlineLogging ilDebug = new InlineLogging();
+        ilDebug.setLoggers(Map.of("rootLogger.level", "DEBUG"));
+
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(oauthClusterName, KafkaResources.plainBootstrapAddress(oauthClusterName), 1)
             .editMetadata()
                 .withNamespace(INFRA_NAMESPACE)
@@ -641,9 +678,16 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                         .withSecretName(BRIDGE_OAUTH_SECRET)
                         .withKey(OAUTH_KEY)
                     .endClientSecret()
+                    .withConnectTimeoutSeconds(CONNECT_TIMEOUT_S)
+                    .withReadTimeoutSeconds(READ_TIMEOUT_S)
                 .endKafkaClientAuthenticationOAuth()
+                .withLogging(ilDebug)
             .endSpec()
             .build());
+
+        final String kafkaBridgePodName = kubeClient(INFRA_NAMESPACE).listPods(INFRA_NAMESPACE, oauthClusterName, Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName();
+        final String kafkaBridgeLogs = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaBridgePodName).out();
+        verifyOauthConfiguration(kafkaBridgeLogs);
 
         String bridgeProducerName = "bridge-producer-" + clusterName;
 
