@@ -32,14 +32,17 @@ Use the `ControlPlaneListener` feature gate to change the communication paths us
 In Strimzi, control plane traffic consists of controller connections that maintain the desired state of the Kafka cluster.
 Data plane traffic mainly consists of data replication between the leader broker and the follower brokers.
 
-To disable the `ControlPlaneListener` feature gate, specify `-ControlPlaneListener` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
-When the `ControlPlaneListener` feature gate is disabled, control plane and data plane traffic go through the same internal listener on port 9091.
-This was the default behavior before the feature gate was introduced.
-
 When `ControlPlaneListener` is enabled, control plane traffic goes through a dedicated _control plane listener_ on port 9090.
 Data plane traffic continues to use the internal listener on port 9091.
 
 Using control plane listeners might improve performance because important controller connections, such as partition leadership changes, are not delayed by data replication across brokers.
+
+.Disabling the ControlPlaneListener feature gate
+To disable the `ControlPlaneListener` feature gate, specify `-ControlPlaneListener` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+When the `ControlPlaneListener` feature gate is disabled, control plane and data plane traffic go through the same internal listener on port 9091.
+This was the default behavior before the feature gate was introduced.
+
+IMPORTANT: The `ControlPlaneListener` feature gate must be disabled when upgrading from or downgrading to Strimzi 0.22 and earlier versions.
 
 == ServiceAccountPatching feature gate
 
@@ -49,14 +52,13 @@ By default, the Cluster Operator reconciles service accounts and updates them wh
 For example, you can change service account labels and annotations after the operands are already created.
 To disable service account patching, disable the `ServiceAccountPatching` feature gate.
 
+.Disabling the ControlPlaneListener feature gate
 To disable the `ServiceAccountPatching` feature gate, specify `-ServiceAccountPatching` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 [id='ref-operator-use-strimzi-pod-sets-feature-gate-{context}']
 == UseStrimziPodSets feature gate
 
 The `UseStrimziPodSets` feature gate has a default state of _disabled_.
-
-To enable it, specify `+UseStrimziPodSets` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 Currently, Strimzi relies on StatefulSets to create and manage pods for the ZooKeeper and Kafka clusters.
 Strimzi creates the StatefulSet and Kubernetes creates the pods according to the StatefulSet definition.
@@ -71,3 +73,8 @@ The `UseStrimziPodSets` feature gate introduces a resource for managing pods cal
 When the feature gate is enabled, this resource is used instead of the StatefulSets.
 Strimzi handles the creation and management of pods instead of Kubernetes.
 Using StrimziPodSets instead of StatefulSets provides more control over the functionality.
+
+.Enabling the UseStrimziPodSets feature gate
+To enable the `UseStrimziPodSets` feature gate, specify `+UseStrimziPodSets` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+
+IMPORTANT: The `UseStrimziPodSets` feature gate must be disabled when downgrading to Strimzi 0.27 and earlier versions.
