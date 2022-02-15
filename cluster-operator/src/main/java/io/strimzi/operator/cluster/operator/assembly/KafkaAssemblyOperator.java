@@ -45,6 +45,7 @@ import io.strimzi.api.kafka.model.status.ListenerAddress;
 import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.PlatformFeaturesAvailability;
@@ -70,6 +71,7 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.NodeUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
+import io.strimzi.operator.cluster.model.StorageDiff;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ConcurrentDeletionException;
@@ -127,8 +129,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
-import java.util.function.Function;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -321,6 +323,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaJmxSecret())
                 .compose(state -> state.kafkaPodDisruptionBudget())
                 .compose(state -> state.kafkaStatefulSet())
+                .compose(state -> state.kafkaRollToAddOrRemoveVolumes())
                 .compose(state -> state.kafkaRollingUpdate())
                 .compose(state -> state.kafkaScaleUp())
                 .compose(state -> state.kafkaPodsReady())
@@ -729,7 +732,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(i -> kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)))
                         .compose(sts -> new KafkaRoller(vertx, reconciliation, podOperations, 1_000, operationTimeoutMs,
                             () -> new BackOff(250, 2, 10), sts, clusterCa.caCertSecret(), oldCoSecret, adminClientProvider,
-                            kafkaCluster.getBrokersConfiguration(), kafkaCluster.getKafkaVersion())
+                            kafkaCluster.getBrokersConfiguration(), kafkaCluster.getKafkaVersion(), true)
                             .rollingRestart(rollPodAndLogReason))
                         .compose(i -> rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reason.toString()))
                         .compose(i -> rollDeploymentIfExists(KafkaExporter.kafkaExporterName(name), reason.toString()))
@@ -1271,16 +1274,31 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         /**
+         * Rolls Kafka pods if needed
          *
          * @param sts Kafka statefullset
          * @param podNeedsRestart this function serves as a predicate whether to roll pod or not
+         *
          * @return succeeded future if kafka pod was rolled and is ready
          */
         Future<Void> maybeRollKafka(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart) {
+            return maybeRollKafka(sts, podNeedsRestart, true);
+        }
+
+        /**
+         * Rolls Kafka pods if needed
+         *
+         * @param sts Kafka statefullset
+         * @param podNeedsRestart this function serves as a predicate whether to roll pod or not
+         * @param allowReconfiguration defines whether the rolling update should also attempt to do dynamic reconfiguration or not
+         *
+         * @return succeeded future if kafka pod was rolled and is ready
+         */
+        Future<Void> maybeRollKafka(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, boolean allowReconfiguration) {
             return adminClientSecrets()
                 .compose(compositeFuture -> new KafkaRoller(vertx, reconciliation, podOperations, 1_000, operationTimeoutMs,
                     () -> new BackOff(250, 2, 10), sts, compositeFuture.resultAt(0), compositeFuture.resultAt(1), adminClientProvider,
-                        kafkaCluster.getBrokersConfiguration(), kafkaCluster.getKafkaVersion())
+                        kafkaCluster.getBrokersConfiguration(), kafkaCluster.getKafkaVersion(), allowReconfiguration)
                     .rollingRestart(podNeedsRestart));
         }
 
@@ -2439,6 +2457,62 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             List<PersistentVolumeClaim> pvcs = kafkaCluster.generatePersistentVolumeClaims(kafkaCluster.getStorage());
 
             return maybeResizeReconcilePvcs(pvcs, kafkaCluster);
+        }
+
+        Future<ReconciliationState> maybeRollKafkaInSequence(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, int nextPod, int lastPod) {
+            if (nextPod <= lastPod)  {
+                final int podToRoll = nextPod;
+
+                return maybeRollKafka(sts, pod -> {
+                    if (pod != null && pod.getMetadata().getName().endsWith("-" + podToRoll))    {
+                        return podNeedsRestart.apply(pod);
+                    } else {
+                        return null;
+                    }
+                }, false).compose(ignore -> maybeRollKafkaInSequence(sts, podNeedsRestart, nextPod + 1, lastPod));
+            } else {
+                // All pods checked for sequential RU => nothing more to do
+                return withVoid(Future.succeededFuture());
+            }
+        }
+
+        Future<ReconciliationState> kafkaRollToAddOrRemoveVolumes() {
+            Storage storage = kafkaCluster.getStorage();
+
+            // If storage is not Jbod storage, we never add or remove volumes
+            if (storage instanceof JbodStorage) {
+                JbodStorage jbodStorage = (JbodStorage) storage;
+
+                return kafkaSetOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
+                        .compose(sts -> {
+                            if (sts != null) {
+                                int lastPodIndex = Math.min(kafkaCurrentReplicas, kafkaCluster.getReplicas()) - 1;
+                                return maybeRollKafkaInSequence(sts, pod -> needsRestartBecauseAddedOrRemovedJbodVolumes(pod, jbodStorage, kafkaCurrentReplicas, kafkaCluster.getReplicas()), 0, lastPodIndex);
+                            } else {
+                                // STS does not exist => nothing to roll
+                                return withVoid(Future.succeededFuture());
+                            }
+                        });
+            } else {
+                return withVoid(Future.succeededFuture());
+            }
+        }
+
+        private List<String> needsRestartBecauseAddedOrRemovedJbodVolumes(Pod pod, JbodStorage desiredStorage, int currentReplicas, int desiredReplicas)  {
+            if (pod != null
+                    && pod.getMetadata() != null) {
+                String jsonStorage = Annotations.stringAnnotation(pod, ANNO_STRIMZI_IO_STORAGE, null);
+
+                if (jsonStorage != null) {
+                    Storage currentStorage = ModelUtils.decodeStorageFromJson(jsonStorage);
+
+                    if (new StorageDiff(currentStorage, desiredStorage, currentReplicas, desiredReplicas).isVolumesAddedOrRemoved()) {
+                        return singletonList("JBOD volumes were added or removed");
+                    }
+                }
+            }
+
+            return null;
         }
 
         StatefulSet getKafkaStatefulSet()   {

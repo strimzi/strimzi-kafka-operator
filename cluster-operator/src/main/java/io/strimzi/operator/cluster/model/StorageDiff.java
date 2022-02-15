@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static io.fabric8.kubernetes.client.internal.PatchUtils.patchMapper;
+import static java.util.Objects.isNull;
 
 /**
  * Class for diffing storage configuration
@@ -36,6 +37,7 @@ public class StorageDiff extends AbstractResourceDiff {
     private final boolean isEmpty;
     private final boolean changesType;
     private final boolean shrinkSize;
+    private final boolean volumesAddedOrRemoved;
 
     /**
      * Diffs the storage for allowed or not allowed changes. Examples of allowed changes is increasing volume size or
@@ -65,20 +67,25 @@ public class StorageDiff extends AbstractResourceDiff {
         boolean changesType = false;
         boolean shrinkSize = false;
         boolean isEmpty = true;
+        boolean volumesAddedOrRemoved = false;
 
         if (current instanceof JbodStorage && desired instanceof JbodStorage) {
+            JbodStorage currentJbodStorage = (JbodStorage) current;
+            JbodStorage desiredJbodStorage = (JbodStorage) desired;
             Set<Integer> volumeIds = new HashSet<>();
 
-            volumeIds.addAll(((JbodStorage) current).getVolumes().stream().map(SingleVolumeStorage::getId).collect(Collectors.toSet()));
-            volumeIds.addAll(((JbodStorage) desired).getVolumes().stream().map(SingleVolumeStorage::getId).collect(Collectors.toSet()));
+            volumeIds.addAll(currentJbodStorage.getVolumes().stream().map(SingleVolumeStorage::getId).collect(Collectors.toSet()));
+            volumeIds.addAll(desiredJbodStorage.getVolumes().stream().map(SingleVolumeStorage::getId).collect(Collectors.toSet()));
 
             for (Integer volumeId : volumeIds)  {
-                SingleVolumeStorage currentVolume = ((JbodStorage) current).getVolumes().stream()
+                SingleVolumeStorage currentVolume = currentJbodStorage.getVolumes().stream()
                         .filter(volume -> volume != null && volumeId.equals(volume.getId()))
                         .findAny().orElse(null);
-                SingleVolumeStorage desiredVolume = ((JbodStorage) desired).getVolumes().stream()
+                SingleVolumeStorage desiredVolume = desiredJbodStorage.getVolumes().stream()
                         .filter(volume -> volume != null && volumeId.equals(volume.getId()))
                         .findAny().orElse(null);
+
+                volumesAddedOrRemoved |= isNull(currentVolume) != isNull(desiredVolume);
 
                 StorageDiff diff = new StorageDiff(currentVolume, desiredVolume, currentReplicas, desiredReplicas, "(volume ID: " + volumeId + ") ");
 
@@ -142,6 +149,7 @@ public class StorageDiff extends AbstractResourceDiff {
         this.isEmpty = isEmpty;
         this.changesType = changesType;
         this.shrinkSize = shrinkSize;
+        this.volumesAddedOrRemoved = volumesAddedOrRemoved;
     }
 
     /**
@@ -170,6 +178,15 @@ public class StorageDiff extends AbstractResourceDiff {
      */
     public boolean shrinkSize() {
         return shrinkSize;
+    }
+
+    /**
+     * Returns true if some JBOD volumes were added or removed
+     *
+     * @return true when volumes were added or removed
+     */
+    public boolean isVolumesAddedOrRemoved() {
+        return volumesAddedOrRemoved;
     }
 
     /**

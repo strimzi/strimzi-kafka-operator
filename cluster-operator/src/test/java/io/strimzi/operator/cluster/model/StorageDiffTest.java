@@ -31,11 +31,13 @@ public class StorageDiffTest {
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(true));
         assertThat(diff.shrinkSize(), is(false));
+        assertThat(diff.isVolumesAddedOrRemoved(), is(false));
 
         diff = new StorageDiff(jbod, jbod2, 3, 3);
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(false));
         assertThat(diff.shrinkSize(), is(false));
+        assertThat(diff.isVolumesAddedOrRemoved(), is(false));
     }
 
     @Test

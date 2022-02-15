@@ -4,24 +4,6 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -52,6 +34,24 @@ import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static java.util.Collections.singletonList;
 
@@ -112,20 +112,22 @@ public class KafkaRoller {
     private final String kafkaConfig;
     private final KafkaVersion kafkaVersion;
     private final Reconciliation reconciliation;
+    private final boolean allowReconfiguration;
 
     public KafkaRoller(Vertx vertx, Reconciliation reconciliation, PodOperator podOperations,
             long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
             StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
-            String kafkaConfig, KafkaVersion kafkaVersion) {
+            String kafkaConfig, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
         this(vertx, reconciliation, podOperations, pollingIntervalMs, operationTimeoutMs, backOffSupplier,
-                sts, clusterCaCertSecret, coKeySecret, new DefaultAdminClientProvider(), kafkaConfig, kafkaVersion);
+                sts, clusterCaCertSecret, coKeySecret, new DefaultAdminClientProvider(), kafkaConfig, kafkaVersion, allowReconfiguration);
     }
 
     public KafkaRoller(Vertx vertx, Reconciliation reconciliation, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
                        StatefulSet sts, Secret clusterCaCertSecret, Secret coKeySecret,
                        AdminClientProvider adminClientProvider,
-                       String kafkaConfig, KafkaVersion kafkaVersion) {
+                       String kafkaConfig, KafkaVersion kafkaVersion,
+                       boolean allowReconfiguration) {
         this.namespace = sts.getMetadata().getNamespace();
         this.cluster = Labels.cluster(sts);
         this.numPods = sts.getSpec().getReplicas();
@@ -140,6 +142,7 @@ public class KafkaRoller {
         this.kafkaConfig = kafkaConfig;
         this.kafkaVersion = kafkaVersion;
         this.reconciliation = reconciliation;
+        this.allowReconfiguration = allowReconfiguration;
     }
 
     /**
@@ -409,7 +412,7 @@ public class KafkaRoller {
         KafkaBrokerConfigurationDiff diff = null;
         boolean needsReconfig = false;
         Admin adminClient = adminClient(podId, false);
-        if (!needsRestart) {
+        if (!needsRestart && allowReconfiguration) {
             diff = diff(adminClient, podId);
             if (diff.getDiffSize() > 0) {
                 if (diff.canBeUpdatedDynamically()) {
@@ -420,7 +423,7 @@ public class KafkaRoller {
                     needsRestart = true;
                 }
             }
-        } else {
+        } else if (needsRestart) {
             log.info("{}: Pod {} needs to be restarted. Reason: {}", reconciliation, podId, reasonToRestartPod);
         }
         return new RestartPlan(adminClient, needsRestart, needsReconfig, diff);
