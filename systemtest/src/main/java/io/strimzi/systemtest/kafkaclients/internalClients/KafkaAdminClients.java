@@ -31,6 +31,7 @@ public class KafkaAdminClients extends BaseClients {
     private String adminName;
     private int topicCount;
     private int topicOffset;
+    private String topicName;
 
     public String getAdminName() {
         return adminName;
@@ -84,6 +85,16 @@ public class KafkaAdminClients extends BaseClients {
             throw new InvalidParameterException("Topic name (or 'prefix' if topic count > 1) is not set.");
         }
         this.topicOperation = topicOperation;
+    }
+
+    @Override
+    public void setTopicName(String topicName) {
+        this.topicName = topicName;
+    }
+
+    @Override
+    public String getTopicName() {
+        return this.topicName;
     }
 
     public static String getAdminClientScramConfig(String namespace, String kafkaUsername, int timeoutMs) {
