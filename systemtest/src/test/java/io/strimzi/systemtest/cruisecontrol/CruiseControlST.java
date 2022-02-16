@@ -304,7 +304,7 @@ public class CruiseControlST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
         resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
             .editOrNewSpec()
-            .withRebalanceDisk(true)
+                .withRebalanceDisk(true)
             .endSpec()
             .build());
 
@@ -315,8 +315,9 @@ public class CruiseControlST extends AbstractST {
         assertThat(coLog, CoreMatchers.containsString("Intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks."));
 
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
-        // The provision status should be "RIGHT_SIZED", because we use Ephemeral storage and there is no additional
-        // disks to balance between and also 0 partition movements since there are no disks to balance between.
+        // Strimzi will force an inter-broker balance when rebalanceDisk=`true` and a JBOD configuration is not found.
+        // The provision status should be "RIGHT_SIZED" because Strimzi is preforming an inter-broker balance here and the
+        // cluster should not be under or over provisioned by this rebalance.
         KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
         assertThat(kafkaRebalanceStatus.getOptimizationResult().get("provisionStatus").toString(), containsString("RIGHT_SIZED"));
     }
