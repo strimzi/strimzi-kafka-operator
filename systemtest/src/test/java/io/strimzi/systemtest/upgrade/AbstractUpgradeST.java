@@ -12,9 +12,10 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -509,7 +510,7 @@ public class AbstractUpgradeST extends AbstractST {
 
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
-            KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
+            KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
                 .withProducerName(producerName)
                 .withConsumerName(consumerName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
@@ -520,8 +521,8 @@ public class AbstractUpgradeST extends AbstractST {
                 .withDelayMs(1000)
                 .build();
 
-            resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
-            resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+            resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+            resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
             // ##############################
         }
 

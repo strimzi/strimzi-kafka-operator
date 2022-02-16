@@ -8,7 +8,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.StUtils;
@@ -59,7 +60,7 @@ public class QuotasST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
 
         // Send more messages than disk can store to see if the integration works
-        KafkaBasicExampleClients basicClients = new KafkaBasicExampleClients.Builder()
+        KafkaClients basicClients = new KafkaClientsBuilder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
@@ -69,7 +70,7 @@ public class QuotasST extends AbstractST {
             .withMessage(String.join("", Collections.nCopies(1000, "#")))
             .build();
 
-        resourceManager.createResource(extensionContext, basicClients.producerStrimzi().build());
+        resourceManager.createResource(extensionContext, basicClients.producerStrimzi());
         // Kafka Quotas Plugin should stop producer in around 10-20 seconds with configured throughput
         assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(producerName, INFRA_NAMESPACE, 120_000));
 

@@ -21,9 +21,10 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -104,7 +105,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
-        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
@@ -115,8 +116,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withNamespaceName(namespaceName)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
@@ -368,7 +369,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
-        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
@@ -379,8 +380,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withNamespaceName(namespaceName)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();

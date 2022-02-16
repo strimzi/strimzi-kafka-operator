@@ -2,161 +2,73 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.resources.crd.kafkaclients;
+package io.strimzi.systemtest.kafkaclients.internalClients;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.sundr.builder.annotations.Buildable;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
-
+@Buildable(editableEnabled = false)
+public class KafkaTracingClients  extends KafkaClients {
     private static final String JAEGER_SAMPLER_TYPE =  "const";
     private static final String JAEGER_SAMPLER_PARAM =  "1";
 
-    private final String jaegerServiceProducerName;
-    private final String jaegerServiceConsumerName;
-    private final String jaegerServiceStreamsName;
-    private final String jaegerServerAgentName;
-    private final String streamsTopicTargetName;
-
-    public static class Builder extends KafkaBasicExampleClients.Builder {
-        private String jaegerServiceProducerName;
-        private String jaegerServiceConsumerName;
-        private String jaegerServiceStreamsName;
-        private String jaegerServerAgentName;
-        private String streamsTopicTargetName;
-
-        public Builder withJaegerServiceProducerName(String jaegerServiceProducerName) {
-            this.jaegerServiceProducerName = jaegerServiceProducerName;
-            return this;
-        }
-
-        public Builder withJaegerServiceConsumerName(String jaegerServiceConsumerName) {
-            this.jaegerServiceConsumerName = jaegerServiceConsumerName;
-            return this;
-        }
-
-        public Builder withJaegerServiceStreamsName(String jaegerServiceStreamsName) {
-            this.jaegerServiceStreamsName = jaegerServiceStreamsName;
-            return this;
-        }
-
-        public Builder withJaegerServiceAgentName(String jaegerServerAgentName) {
-            this.jaegerServerAgentName = jaegerServerAgentName;
-            return this;
-        }
-
-        public Builder withStreamsTopicTargetName(String streamsTopicTargetName) {
-            this.streamsTopicTargetName = streamsTopicTargetName;
-            return this;
-        }
-
-        @Override
-        public Builder withProducerName(String producerName) {
-            return (Builder) super.withProducerName(producerName);
-        }
-
-        @Override
-        public Builder withConsumerName(String consumerName) {
-            return (Builder) super.withConsumerName(consumerName);
-        }
-
-        @Override
-        public Builder withBootstrapAddress(String bootstrapAddress) {
-            return (Builder) super.withBootstrapAddress(bootstrapAddress);
-        }
-
-        @Override
-        public Builder withTopicName(String topicName) {
-            return (Builder) super.withTopicName(topicName);
-        }
-
-        @Override
-        public Builder withMessageCount(int messageCount) {
-            return (Builder) super.withMessageCount(messageCount);
-        }
-
-        @Override
-        public Builder withAdditionalConfig(String additionalConfig) {
-            return (Builder) super.withAdditionalConfig(additionalConfig);
-        }
-
-        @Override
-        public Builder withConsumerGroup(String consumerGroup) {
-            return (Builder) super.withConsumerGroup(consumerGroup);
-        }
-
-        @Override
-        public Builder withDelayMs(long delayMs) {
-            return (Builder) super.withDelayMs(delayMs);
-        }
-
-        @Override
-        public Builder withNamespaceName(String namespaceName) {
-            return (Builder) super.withNamespaceName(namespaceName);
-        }
-
-        @Override
-        public KafkaTracingExampleClients build() {
-            return new KafkaTracingExampleClients(this);
-        }
-    }
+    private String jaegerServiceProducerName;
+    private String jaegerServiceConsumerName;
+    private String jaegerServiceStreamsName;
+    private String jaegerServerAgentName;
+    private String streamsTopicTargetName;
 
     public String getJaegerServiceConsumerName() {
         return jaegerServiceConsumerName;
+    }
+
+    public void setJaegerServiceConsumerName(String jaegerServiceConsumerName) {
+        this.jaegerServiceConsumerName = jaegerServiceConsumerName;
     }
 
     public String getJaegerServiceProducerName() {
         return jaegerServiceProducerName;
     }
 
+    public void setJaegerServiceProducerName(String jaegerServiceProducerName) {
+        this.jaegerServiceProducerName = jaegerServiceProducerName;
+    }
+
     public String getJaegerServiceStreamsName() {
         return jaegerServiceStreamsName;
     }
 
-    public String getJaegerServiceAgentName() {
+    public void setJaegerServiceStreamsName(String jaegerServiceStreamsName) {
+        this.jaegerServiceStreamsName = jaegerServiceStreamsName;
+    }
+
+    public String getJaegerServerAgentName() {
         return jaegerServerAgentName;
+    }
+
+    public void setJaegerServerAgentName(String jaegerServerAgentName) {
+        this.jaegerServerAgentName = jaegerServerAgentName;
     }
 
     public String getStreamsTopicTargetName() {
         return streamsTopicTargetName;
     }
 
-    protected Builder newBuilder() {
-        return new Builder();
+    public void setStreamsTopicTargetName(String streamsTopicTargetName) {
+        this.streamsTopicTargetName = streamsTopicTargetName;
     }
 
-    protected Builder updateBuilder(Builder builder) {
-        super.updateBuilder(builder);
-        return builder
-            .withJaegerServiceProducerName(getJaegerServiceProducerName())
-            .withJaegerServiceConsumerName(getJaegerServiceConsumerName())
-            .withJaegerServiceStreamsName(getJaegerServiceStreamsName())
-            .withJaegerServiceAgentName(getJaegerServiceAgentName())
-            .withStreamsTopicTargetName(getStreamsTopicTargetName());
-    }
-
-    public Builder toBuilder() {
-        return updateBuilder(newBuilder());
-    }
-
-    public KafkaTracingExampleClients(KafkaTracingExampleClients.Builder builder) {
-        super(builder);
-        jaegerServiceProducerName = builder.jaegerServiceProducerName;
-        jaegerServiceConsumerName = builder.jaegerServiceConsumerName;
-        jaegerServiceStreamsName = builder.jaegerServiceStreamsName;
-        jaegerServerAgentName = builder.jaegerServerAgentName;
-        streamsTopicTargetName = builder.streamsTopicTargetName;
-    }
-
-    public JobBuilder consumerWithTracing() {
+    public Job consumerWithTracing() {
         return defaultConsumerStrimzi()
             .editSpec()
                 .editTemplate()
@@ -181,10 +93,11 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec();
+            .endSpec()
+            .build();
     }
 
-    public JobBuilder producerWithTracing() {
+    public Job producerWithTracing() {
         return defaultProducerStrimzi()
             .editSpec()
                 .editTemplate()
@@ -209,10 +122,11 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec();
+            .endSpec()
+            .build();
     }
 
-    public JobBuilder kafkaStreamsWithTracing() {
+    public Job kafkaStreamsWithTracing() {
         String kafkaStreamsName = "hello-world-streams";
 
         Map<String, String> kafkaStreamLabels = new HashMap<>();
@@ -245,7 +159,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                             .withImage(Environment.TEST_STREAMS_IMAGE)
                             .addNewEnv()
                                 .withName("BOOTSTRAP_SERVERS")
-                                .withValue(bootstrapAddress)
+                                .withValue(this.getBootstrapAddress())
                               .endEnv()
                             .addNewEnv()
                                 .withName("APPLICATION_ID")
@@ -253,7 +167,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                             .endEnv()
                             .addNewEnv()
                                 .withName("SOURCE_TOPIC")
-                                .withValue(topicName)
+                                .withValue(this.getTopicName())
                             .endEnv()
                             .addNewEnv()
                                 .withName("TARGET_TOPIC")
@@ -282,6 +196,7 @@ public class KafkaTracingExampleClients extends KafkaBasicExampleClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec();
+            .endSpec()
+            .build();
     }
 }
