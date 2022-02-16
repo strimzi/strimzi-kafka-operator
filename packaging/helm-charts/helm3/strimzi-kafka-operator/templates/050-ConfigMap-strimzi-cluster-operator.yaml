@@ -6,6 +6,9 @@ metadata:
     app: strimzi
 data:
   log4j2.properties: |
+    {{- if .Values.logConfiguration }}
+    {{- tpl .Values.logConfiguration . | nindent 4 }}
+    {{- else }}
     name = COConfig
     monitorInterval = 30
 
@@ -33,3 +36,4 @@ data:
     logger.netty.name = io.netty
     logger.netty.level = INFO
     logger.netty.additivity = false
+    {{- end }}
