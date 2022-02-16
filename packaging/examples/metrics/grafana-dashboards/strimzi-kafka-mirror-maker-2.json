@@ -20,31 +20,19 @@
       "type": "panel",
       "id": "graph",
       "name": "Graph",
-      "version": ""
+      "version": "5.0.0"
     },
     {
       "type": "datasource",
       "id": "prometheus",
       "name": "Prometheus",
-      "version": "1.0.0"
+      "version": "5.0.0"
     },
     {
       "type": "panel",
       "id": "singlestat",
       "name": "Singlestat",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "stat",
-      "name": "Stat",
-      "version": ""
-    },
-    {
-      "type": "panel",
-      "id": "table",
-      "name": "Table",
-      "version": ""
+      "version": "5.0.0"
     }
   ],
   "annotations": {
@@ -64,7 +52,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1644856359723,
+  "iteration": 1536950082067,
   "links": [],
   "panels": [
     {
@@ -77,12 +65,6 @@
         "rgba(50, 172, 45, 0.97)"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -166,12 +148,6 @@
         "rgba(50, 172, 45, 0.97)"
       ],
       "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -250,21 +226,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 8,
         "x": 8,
         "y": 0
       },
-      "hiddenSeries": false,
       "id": 28,
       "legend": {
         "avg": false,
@@ -279,11 +247,7 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
       "percentage": false,
-      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -306,7 +270,6 @@
       ],
       "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
       "title": "Incoming bytes",
       "tooltip": {
@@ -351,21 +314,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 8,
         "x": 16,
         "y": 0
       },
-      "hiddenSeries": false,
       "id": 29,
       "legend": {
         "avg": false,
@@ -380,11 +335,7 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
       "percentage": false,
-      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -407,7 +358,6 @@
       ],
       "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
       "title": "Outgoing bytes",
       "tooltip": {
@@ -479,8 +429,7 @@
               }
             ]
           },
-          "unit": "none",
-          "decimals": 0
+          "unit": "none"
         },
         "overrides": []
       },
@@ -509,7 +458,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.1.1",
       "targets": [
         {
           "expr": "sum(kafka_connect_worker_task_count{strimzi_io_kind=~\"KafkaMirrorMaker2\",strimzi_io_cluster=\"$strimzi_mirror_maker_cluster_name\"})",
@@ -657,21 +606,14 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
+
       "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 8,
         "x": 0,
         "y": 8
       },
-      "hiddenSeries": false,
       "id": 30,
       "legend": {
         "avg": false,
@@ -686,11 +628,7 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
       "percentage": false,
-      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -713,7 +651,6 @@
       ],
       "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
       "title": "CPU Usage",
       "tooltip": {
@@ -758,12 +695,6 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -772,7 +703,6 @@
         "x": 8,
         "y": 8
       },
-      "hiddenSeries": false,
       "id": 31,
       "legend": {
         "avg": false,
@@ -787,11 +717,7 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
       "percentage": false,
-      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -814,7 +740,6 @@
       ],
       "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
       "title": "JVM Memory",
       "tooltip": {
@@ -859,21 +784,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
       "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 8,
         "x": 16,
         "y": 8
       },
-      "hiddenSeries": false,
       "id": 32,
       "legend": {
         "avg": false,
@@ -888,11 +805,7 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
       "percentage": false,
-      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -915,7 +828,6 @@
       ],
       "thresholds": [],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
       "title": "Time spent in GC",
       "tooltip": {
@@ -1248,8 +1160,7 @@
           },
           "custom": {
             "align": "auto",
-            "displayMode": "auto",
-            "filterable": false
+            "displayMode": "auto"
           },
           "mappings": [],
           "thresholds": {
@@ -1370,7 +1281,7 @@
           }
         ]
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.1.1",
       "targets": [
         {
           "exemplar": false,
@@ -1464,8 +1375,7 @@
           },
           "custom": {
             "align": "auto",
-            "displayMode": "auto",
-            "filterable": false
+            "displayMode": "auto"
           },
           "mappings": [],
           "thresholds": {
@@ -1586,7 +1496,7 @@
           }
         ]
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.1.1",
       "targets": [
         {
           "exemplar": false,
@@ -1680,8 +1590,7 @@
           },
           "custom": {
             "align": "auto",
-            "displayMode": "auto",
-            "filterable": false
+            "displayMode": "auto"
           },
           "mappings": [],
           "thresholds": {
@@ -1814,7 +1723,7 @@
           }
         ]
       },
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.1.1",
       "targets": [
         {
           "exemplar": false,
@@ -1907,12 +1816,7 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
-      "fieldConfig": {
-        "defaults": {
-          "custom": {}
-        },
-        "overrides": []
-      },
+
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1939,7 +1843,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.3.7",
+      "pluginVersion": "7.1.1",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -2006,8 +1910,7 @@
           },
           "custom": {
             "align": "auto",
-            "displayMode": "auto",
-            "filterable": false
+            "displayMode": "auto"
           },
           "mappings": [],
           "thresholds": {
@@ -2036,7 +1939,6 @@
       "options": {
         "showHeader": true
       },
-      "pluginVersion": "7.3.7",
       "targets": [
         {
           "exemplar": true,
@@ -2083,10 +1985,11 @@
     "list": [
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "text": "",
+          "value": ""
+        },
         "datasource": "${DS_PROMETHEUS}",
-        "definition": "",
-        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "Namespace",
@@ -2096,7 +1999,6 @@
         "query": "query_result(kafka_connect_worker_connector_count{strimzi_io_kind=\"KafkaMirrorMaker2\"})",
         "refresh": 1,
         "regex": "/.*namespace=\"([^\"]*).*/",
-        "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
         "tags": [],
@@ -2106,10 +2008,11 @@
       },
       {
         "allValue": null,
-        "current": {},
+        "current": {
+          "text": "my-mirror-maker-2-cluster",
+          "value": "my-mirror-maker-2-cluster"
+        },
         "datasource": "${DS_PROMETHEUS}",
-        "definition": "",
-        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "Cluster Name",
@@ -2119,7 +2022,6 @@
         "query": "query_result(kafka_connect_worker_connector_count{namespace=\"$kubernetes_namespace\", strimzi_io_kind=\"KafkaMirrorMaker2\"})",
         "refresh": 1,
         "regex": "/.*strimzi_io_cluster=\"([^\"]*).*/",
-        "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
         "tags": [],
@@ -2159,7 +2061,8 @@
     ]
   },
   "timezone": "",
+
   "title": "Strimzi Kafka Mirror Maker 2",
   "uid": "spCQwc0mz",
-  "version": 1
+  "version": 6
 }
