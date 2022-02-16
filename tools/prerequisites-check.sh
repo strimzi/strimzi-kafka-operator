@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-source $(dirname $(realpath $0))/../tools/multi-platform-support.sh
+# shellcheck source=./multi-platform-support.sh
+source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"/../tools/multi-platform-support.sh
 
 RED="\033[0;31m"
 NO_COLOUR="\033[0m"
@@ -19,7 +20,7 @@ check_command_present shellcheck
 # After version 3.3.1, yq --version sends the string to STDERR instead of STDOUT
 YQ_VERSION="$(yq --version 2>&1 | ${SED} 's/^.* //g')"
 
-YQ_ARRAY=($(echo "$YQ_VERSION" | tr '.' '\n'))
+IFS="." read -r -a YQ_ARRAY <<< "$YQ_VERSION"
 
 yq_err_msg="${RED}yq version is ${YQ_VERSION}, version must be 4.2.1 or above. Please download the latest version from https://github.com/mikefarah/yq/releases${NO_COLOUR}"
 

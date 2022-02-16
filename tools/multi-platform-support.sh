@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2209,SC2034
+# ^^^ Disables false-positives which should be ignored
 
 # Define commands for Linux and MacOS
 # This script should be sourced into other scripts
@@ -16,7 +18,7 @@ HEAD=head
 TEE=tee
 
 UNAME_S=$(uname -s)
-if [ $UNAME_S = "Darwin" ];
+if [ "$UNAME_S" = "Darwin" ];
 then
     # MacOS GNU versions which can be installed through Homebrew
     FIND=gfind
