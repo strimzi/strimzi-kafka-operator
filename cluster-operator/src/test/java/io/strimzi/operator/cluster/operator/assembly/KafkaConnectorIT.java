@@ -21,6 +21,7 @@ import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.test.container.StrimziKafkaCluster;
+import io.strimzi.test.container.StrimziKafkaContainer;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -56,7 +57,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectorIT {
-    private static StrimziKafkaCluster cluster;
+    private static StrimziKafkaContainer cluster;
     private static Vertx vertx;
     private ConnectCluster connectCluster;
 
@@ -68,9 +69,7 @@ public class KafkaConnectorIT {
                         .setEnabled(true)
         ));
 
-        final Map<String, String> kafkaClusterConfiguration = new HashMap<>();
-        kafkaClusterConfiguration.put("zookeeper.connect", "zookeeper:2181");
-        cluster = new StrimziKafkaCluster(3, 1, kafkaClusterConfiguration);
+        cluster = new StrimziKafkaContainer();
         cluster.start();
     }
 
