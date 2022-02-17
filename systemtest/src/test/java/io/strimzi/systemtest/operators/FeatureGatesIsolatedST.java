@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Annotations;
@@ -19,6 +20,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -26,6 +28,8 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.annotations.IsolatedTest;
@@ -241,5 +245,75 @@ public class FeatureGatesIsolatedST extends AbstractST {
         LOGGER.info("Waiting for clients to finish sending/receiving messages.");
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+    }
+
+    @IsolatedTest
+    void testSwitchingStrimziPodSetFeatureGateOnAndOff(ExtensionContext extensionContext) {
+        assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
+
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String producerName = "producer-test-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String consumerName = "consumer-test-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+
+        int zkReplicas = 3;
+        int kafkaReplicas = 3;
+
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+
+        int messageCount = 500;
+
+        LOGGER.info("Deploying CO with STS - SPS is disabled");
+
+        clusterOperator.unInstall();
+        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withNamespace(INFRA_NAMESPACE)
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .createInstallation()
+            .runInstallation();
+
+        LOGGER.info("Deploying Kafka");
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, kafkaReplicas, zkReplicas).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);
+        Map<String, String> zkPods = PodUtils.podSnapshot(INFRA_NAMESPACE, zkSelector);
+        Map<String, String> coPod = DeploymentUtils.depSnapshot(ResourceManager.getCoDeploymentName());
+
+        KafkaClients clients = new KafkaClientsBuilder()
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
+            .withTopicName(topicName)
+            .withMessageCount(messageCount)
+            .withDelayMs(500)
+            .withNamespaceName(INFRA_NAMESPACE)
+            .build();
+
+        resourceManager.createResource(extensionContext,
+            clients.producerStrimzi(),
+            clients.consumerStrimzi()
+        );
+
+        LOGGER.info("Re-deploying CO with SPS enabled");
+        List<EnvVar> coEnvVars = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst()
+            .ifPresentOrElse(env -> env.setValue("+UseStrimziPodSets"),
+                () -> coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseStrimziPodSets", null)));
+
+        Deployment coDep = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
+        coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
+        kubeClient().getClient().apps().deployments().inNamespace(INFRA_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).replace(coDep);
+
+        DeploymentUtils.waitTillDepHasRolled(Constants.STRIMZI_DEPLOYMENT_NAME, 1, coPod);
+
+        RollingUpdateUtils.waitTillComponentHasRolled(zkSelector, zkReplicas, zkPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(kafkaSelector, kafkaReplicas, kafkaPods);
+
+        KafkaUtils.waitForKafkaReady(clusterName);
+
+        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, INFRA_NAMESPACE, messageCount);
     }
 }
