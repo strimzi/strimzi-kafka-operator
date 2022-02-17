@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -37,6 +38,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
@@ -101,7 +103,7 @@ class RecoveryIsolatedST extends AbstractST {
 
         LOGGER.info("Waiting for recovery {}", zookeeperName);
         StUtils.waitForStrimziPodSetOrStatefulSetRecovery(zookeeperName, zookeeperUid);
-        StUtils.waitForStrimziPodSetOrStatefulSetAndPodsReady(zookeeperName, 1);
+        StUtils.waitForStrimziPodSetOrStatefulSetAndPodsReady(zookeeperName, 2);
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
@@ -273,12 +275,15 @@ class RecoveryIsolatedST extends AbstractST {
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(sharedClusterName, kafkaName);
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(sharedClusterName, zkName);
 
-        LOGGER.info("Deleting all Kafka and ZK pods");
-        kubeClient(INFRA_NAMESPACE).deletePodsByLabelSelector(kafkaSelector);
-        kubeClient(INFRA_NAMESPACE).deletePodsByLabelSelector(zkSelector);
+        LOGGER.info("Deleting most of the Kafka and ZK pods");
+        List<Pod> kafkaPodList = kubeClient().listPods(kafkaSelector);
+        List<Pod> zkPodList = kubeClient().listPods(zkSelector);
+
+        kafkaPodList.subList(0, kafkaPodList.size() - 1).forEach(pod -> kubeClient().deletePod(pod));
+        zkPodList.subList(0, zkPodList.size() - 1).forEach(pod -> kubeClient().deletePod(pod));
 
         StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(kafkaName, 3);
-        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(zkName, 1);
+        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(zkName, 2);
         KafkaUtils.waitForKafkaReady(sharedClusterName);
     }
 
@@ -295,7 +300,7 @@ class RecoveryIsolatedST extends AbstractST {
         sharedClusterName = generateRandomNameOfKafka("recovery-cluster");
         String kafkaClientsName = Constants.KAFKA_CLIENTS + "-" + sharedClusterName;
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(sharedClusterName, 3, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(sharedClusterName, 3, 2).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(sharedClusterName, KafkaResources.plainBootstrapAddress(sharedClusterName), 1).build());
     }
