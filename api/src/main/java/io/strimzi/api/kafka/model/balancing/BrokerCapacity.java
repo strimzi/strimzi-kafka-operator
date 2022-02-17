@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.balancing;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -42,6 +43,8 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
     private String outboundNetwork;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
+    @Deprecated
+    @DeprecatedProperty(description = "The Cruise Control disk capacity setting has been deprecated, is ignored, and will be removed in the future")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     @Pattern("^[0-9]+([.][0-9]*)?([KMGTPE]i?|e[0-9]+)?$")
     @Description("Broker capacity for disk in bytes. " +
@@ -55,6 +58,8 @@ public class BrokerCapacity implements UnknownPropertyPreserving, Serializable {
         this.disk = disk;
     }
 
+    @Deprecated
+    @DeprecatedProperty(description = "The Cruise Control CPU capacity setting has been deprecated, is ignored, and will be removed in the future")
     @Minimum(0)
     @Maximum(100)
     @JsonInclude(JsonInclude.Include.NON_NULL)

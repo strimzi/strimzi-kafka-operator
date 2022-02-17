@@ -1368,9 +1368,9 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`]
 [options="header"]
 |====
 |Property                |Description
-|disk             1.2+<.<a|Broker capacity for disk in bytes. Use a number value with either standard Kubernetes byte units (K, M, G, or T), their bibyte (power of two) equivalents (Ki, Mi, Gi, or Ti), or a byte value with or without E notation. For example, 100000M, 100000Mi, 104857600000, or 1e+11.
+|disk             1.2+<.<a|*The `disk` property has been deprecated.* The Cruise Control disk capacity setting has been deprecated, is ignored, and will be removed in the future Broker capacity for disk in bytes. Use a number value with either standard Kubernetes byte units (K, M, G, or T), their bibyte (power of two) equivalents (Ki, Mi, Gi, or Ti), or a byte value with or without E notation. For example, 100000M, 100000Mi, 104857600000, or 1e+11.
 |string
-|cpuUtilization   1.2+<.<a|Broker capacity for CPU resource utilization as a percentage (0 - 100).
+|cpuUtilization   1.2+<.<a|*The `cpuUtilization` property has been deprecated.* The Cruise Control CPU capacity setting has been deprecated, is ignored, and will be removed in the future Broker capacity for CPU resource utilization as a percentage (0 - 100).
 |integer
 |inboundNetwork   1.2+<.<a|Broker capacity for inbound network throughput in bytes per second. Use an integer value with standard Kubernetes byte units (K, M, G) or their bibyte (power of two) equivalents (Ki, Mi, Gi) per second. For example, 10000KiB/s.
 |string
