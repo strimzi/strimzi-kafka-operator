@@ -345,7 +345,7 @@ public class KubeClient {
     /**
      * Deletes pod
      */
-    public Boolean deletePod(LabelSelector labelSelector) {
+    public Boolean deletePodsByLabelSelector(LabelSelector labelSelector) {
         return client.pods().inNamespace(getNamespace()).withLabelSelector(labelSelector).delete();
     }
 

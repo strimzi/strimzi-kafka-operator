@@ -621,7 +621,7 @@ class RollingUpdateST extends AbstractST {
 
         LabelSelector coLabelSelector = kubeClient(INFRA_NAMESPACE).getDeployment(INFRA_NAMESPACE, ResourceManager.getCoDeploymentName()).getSpec().getSelector();
         LOGGER.info("Deleting Cluster Operator pod with labels {}", coLabelSelector);
-        kubeClient(INFRA_NAMESPACE).deletePod(coLabelSelector);
+        kubeClient(INFRA_NAMESPACE).deletePodsByLabelSelector(coLabelSelector);
         LOGGER.info("Cluster Operator pod deleted");
 
         RollingUpdateUtils.waitTillComponentHasRolled(namespace, zkSelector, 3, zkPods);
@@ -630,7 +630,7 @@ class RollingUpdateST extends AbstractST {
             () -> kubeClient(namespace).listPods().stream().map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).contains("Pending"));
 
         LOGGER.info("Deleting Cluster Operator pod with labels {}", coLabelSelector);
-        kubeClient(INFRA_NAMESPACE).deletePod(coLabelSelector);
+        kubeClient(INFRA_NAMESPACE).deletePodsByLabelSelector(coLabelSelector);
         LOGGER.info("Cluster Operator pod deleted");
 
         RollingUpdateUtils.waitTillComponentHasRolled(namespace, kafkaSelector, 3, kafkaPods);

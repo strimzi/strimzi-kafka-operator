@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
@@ -14,7 +15,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.systemtest.annotations.StatefulSetTest;
+import io.strimzi.systemtest.annotations.StrimziPodSetTest;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.rollingupdate.KafkaRollerIsolatedST;
@@ -22,10 +23,11 @@ import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +38,7 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
@@ -70,41 +73,37 @@ class RecoveryIsolatedST extends AbstractST {
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
-    @StatefulSetTest
     void testRecoveryFromKafkaStatefulSetDeletion() {
         // kafka cluster already deployed
-        String kafkaStatefulSetName = KafkaResources.kafkaStatefulSetName(sharedClusterName);
-        String kafkaStatefulSetUid = kubeClient().getStatefulSetUid(kafkaStatefulSetName);
+        String kafkaName = KafkaResources.kafkaStatefulSetName(sharedClusterName);
+        String kafkaUid = StUtils.getStrimziPodSetOrStatefulSetUID(kafkaName);
 
         kubeClient().getClient().apps().deployments().inNamespace(INFRA_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(0, true);
-        kubeClient().deleteStatefulSet(kafkaStatefulSetName);
+        StUtils.deleteStrimziPodSetOrStatefulSet(kafkaName);
 
-        PodUtils.waitForPodsWithPrefixDeletion(kafkaStatefulSetName);
+        PodUtils.waitForPodsWithPrefixDeletion(kafkaName);
         kubeClient().getClient().apps().deployments().inNamespace(INFRA_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(1, true);
 
-        LOGGER.info("Waiting for recovery {}", kafkaStatefulSetName);
-        StatefulSetUtils.waitForStatefulSetRecovery(kafkaStatefulSetName, kafkaStatefulSetUid);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(kafkaStatefulSetName, 3);
+        LOGGER.info("Waiting for recovery {}", kafkaName);
+        StUtils.waitForStrimziPodSetOrStatefulSetRecovery(kafkaName, kafkaUid);
+        StUtils.waitForStrimziPodSetOrStatefulSetAndPodsReady(kafkaName, 3);
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
-    @StatefulSetTest
     void testRecoveryFromZookeeperStatefulSetDeletion() {
         // kafka cluster already deployed
-        LOGGER.info("Running deleteZookeeperStatefulSet with cluster {}", sharedClusterName);
-
-        String zookeeperStatefulSetName = KafkaResources.zookeeperStatefulSetName(sharedClusterName);
-        String zookeeperStatefulSetUid = kubeClient().getStatefulSetUid(zookeeperStatefulSetName);
+        String zookeeperName = KafkaResources.zookeeperStatefulSetName(sharedClusterName);
+        String zookeeperUid = StUtils.getStrimziPodSetOrStatefulSetUID(zookeeperName);
 
         kubeClient().getClient().apps().deployments().inNamespace(INFRA_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(0, true);
-        kubeClient().deleteStatefulSet(zookeeperStatefulSetName);
+        StUtils.deleteStrimziPodSetOrStatefulSet(zookeeperName);
 
-        PodUtils.waitForPodsWithPrefixDeletion(zookeeperStatefulSetName);
+        PodUtils.waitForPodsWithPrefixDeletion(zookeeperName);
         kubeClient().getClient().apps().deployments().inNamespace(INFRA_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(1, true);
 
-        LOGGER.info("Waiting for recovery {}", zookeeperStatefulSetName);
-        StatefulSetUtils.waitForStatefulSetRecovery(zookeeperStatefulSetName, zookeeperStatefulSetUid);
-        StatefulSetUtils.waitForAllStatefulSetPodsReady(zookeeperStatefulSetName, 1);
+        LOGGER.info("Waiting for recovery {}", zookeeperName);
+        StUtils.waitForStrimziPodSetOrStatefulSetRecovery(zookeeperName, zookeeperUid);
+        StUtils.waitForStrimziPodSetOrStatefulSetAndPodsReady(zookeeperName, 2);
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
@@ -267,6 +266,27 @@ class RecoveryIsolatedST extends AbstractST {
         KafkaUtils.waitForKafkaReady(sharedClusterName);
     }
 
+    @IsolatedTest
+    @StrimziPodSetTest
+    void testRecoveryFromKafkaAndZookeeperPodDeletion() {
+        final String kafkaName = KafkaResources.kafkaStatefulSetName(sharedClusterName);
+        final String zkName = KafkaResources.zookeeperStatefulSetName(sharedClusterName);
+
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(sharedClusterName, kafkaName);
+        final LabelSelector zkSelector = KafkaResource.getLabelSelector(sharedClusterName, zkName);
+
+        LOGGER.info("Deleting most of the Kafka and ZK pods");
+        List<Pod> kafkaPodList = kubeClient().listPods(kafkaSelector);
+        List<Pod> zkPodList = kubeClient().listPods(zkSelector);
+
+        kafkaPodList.subList(0, kafkaPodList.size() - 1).forEach(pod -> kubeClient().deletePod(pod));
+        zkPodList.subList(0, zkPodList.size() - 1).forEach(pod -> kubeClient().deletePod(pod));
+
+        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(kafkaName, 3);
+        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(zkName, 2);
+        KafkaUtils.waitForKafkaReady(sharedClusterName);
+    }
+
     @BeforeEach
     void setup(ExtensionContext extensionContext) {
         clusterOperator.unInstall();
@@ -280,7 +300,7 @@ class RecoveryIsolatedST extends AbstractST {
         sharedClusterName = generateRandomNameOfKafka("recovery-cluster");
         String kafkaClientsName = Constants.KAFKA_CLIENTS + "-" + sharedClusterName;
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(sharedClusterName, 3, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(sharedClusterName, 3, 2).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(sharedClusterName, KafkaResources.plainBootstrapAddress(sharedClusterName), 1).build());
     }
