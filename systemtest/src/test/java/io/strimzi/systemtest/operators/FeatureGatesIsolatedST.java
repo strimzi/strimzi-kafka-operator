@@ -288,7 +288,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
             .withTopicName(topicName)
             .withMessageCount(messageCount)
-            .withDelayMs(500)
+            .withDelayMs(1000)
             .withNamespaceName(INFRA_NAMESPACE)
             .build();
 
@@ -297,7 +297,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
             clients.consumerStrimzi()
         );
 
-        LOGGER.info("Re-deploying CO with SPS enabled");
+        LOGGER.info("Changing FG env variable to enable SPS");
         List<EnvVar> coEnvVars = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst()
             .ifPresentOrElse(env -> env.setValue("+UseStrimziPodSets"),
@@ -307,12 +307,24 @@ public class FeatureGatesIsolatedST extends AbstractST {
         coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
         kubeClient().getClient().apps().deployments().inNamespace(INFRA_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).replace(coDep);
 
+        coPod = DeploymentUtils.waitTillDepHasRolled(Constants.STRIMZI_DEPLOYMENT_NAME, 1, coPod);
+
+        zkPods = RollingUpdateUtils.waitTillComponentHasRolled(zkSelector, zkReplicas, zkPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(kafkaSelector, kafkaReplicas, kafkaPods);
+
+        KafkaUtils.waitForKafkaReady(clusterName);
+
+        LOGGER.info("Changing FG env variable to disable again SPS");
+        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("");
+
+        coDep = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
+        coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
+        kubeClient().getClient().apps().deployments().inNamespace(INFRA_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).replace(coDep);
+
         DeploymentUtils.waitTillDepHasRolled(Constants.STRIMZI_DEPLOYMENT_NAME, 1, coPod);
 
         RollingUpdateUtils.waitTillComponentHasRolled(zkSelector, zkReplicas, zkPods);
         RollingUpdateUtils.waitTillComponentHasRolled(kafkaSelector, kafkaReplicas, kafkaPods);
-
-        KafkaUtils.waitForKafkaReady(clusterName);
 
         ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, INFRA_NAMESPACE, messageCount);
     }
