@@ -67,10 +67,17 @@ public class OauthAbstractST extends AbstractST {
     // broker oauth configuration
     protected static final Integer CONNECT_TIMEOUT_S = 100;
     protected static final Integer READ_TIMEOUT_S = 100;
+    protected static final String GROUPS_CLAIM = "$.groups";
+    protected static final String GROUPS_CLAIM_DELIMITER = "."; // default is `,`
 
-    protected static final Map<String, Object> FIELDS_TO_VERIFY = Map.of(
+    protected static final Map<String, Object> COMPONENT_FIELDS_TO_VERIFY = Map.of(
         "connectTimeout", CONNECT_TIMEOUT_S,
         "readTimeout", READ_TIMEOUT_S
+    );
+
+    protected static final Map<String, Object> LISTENER_FIELDS_TO_VERIFY = Map.of(
+        "groupsClaimQuery", GROUPS_CLAIM,
+        "groupsClaimDelimiter", GROUPS_CLAIM_DELIMITER
     );
 
     protected final String audienceListenerPort = "9098";
@@ -159,16 +166,28 @@ public class OauthAbstractST extends AbstractST {
     }
 
     /**
-     * Checks {@link #FIELDS_TO_VERIFY} oauth configuration for components logs (i.e., Kafka, KafkaConnect, KafkaBridge,
+     * Checks {@link #COMPONENT_FIELDS_TO_VERIFY} oauth configuration for components logs (i.e., Kafka, KafkaConnect, KafkaBridge,
      * KafkaMirrorMaker, KafkaMirrorMaker2).
      *
      * @param componentLogs specific component logs scraped from pod
      */
     protected final void verifyOauthConfiguration(final String componentLogs) {
-        for (Map.Entry<String, Object> configField : FIELDS_TO_VERIFY.entrySet()) {
+        for (Map.Entry<String, Object> configField : COMPONENT_FIELDS_TO_VERIFY.entrySet()) {
             assertThat(componentLogs, CoreMatchers.containsString(configField.getKey() + ": " + configField.getValue()));
         }
         assertThat(componentLogs, CoreMatchers.containsString("Successfully logged in"));
+    }
+
+    /**
+     * Checks {@link #LISTENER_FIELDS_TO_VERIFY} oauth configuration for Kafka Oauth listener.
+     *
+     * @param kafkaLogs kafka logs to proof that configuration is propagated inside Pods
+     */
+    protected final void verifyOauthListenerConfiguration(final String kafkaLogs) {
+        for (Map.Entry<String, Object> configField : LISTENER_FIELDS_TO_VERIFY.entrySet()) {
+            assertThat(kafkaLogs, CoreMatchers.containsString(configField.getKey() + ": " + configField.getValue()));
+        }
+        assertThat(kafkaLogs, CoreMatchers.containsString("Successfully logged in"));
     }
 }
 

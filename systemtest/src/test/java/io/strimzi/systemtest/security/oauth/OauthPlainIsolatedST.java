@@ -766,6 +766,8 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                                     .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                     .withEnablePlain(true)
                                     .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
+                                    .withGroupsClaim(GROUPS_CLAIM)
+                                    .withGroupsClaimDelimiter(GROUPS_CLAIM_DELIMITER)
                                 .endKafkaListenerAuthenticationOAuth()
                                 .build(),
                             new GenericKafkaListenerBuilder()
@@ -804,6 +806,8 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
                 .endKafka()
             .endSpec()
             .build());
+
+        verifyOauthListenerConfiguration(kubeClient(INFRA_NAMESPACE).logsInSpecificNamespace(INFRA_NAMESPACE, KafkaResources.kafkaPodName(oauthClusterName, 0)));
     }
 
     @AfterAll
