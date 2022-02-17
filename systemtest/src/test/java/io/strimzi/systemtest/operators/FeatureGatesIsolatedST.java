@@ -264,6 +264,9 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         int messageCount = 500;
 
+        List<EnvVar> coEnvVars = new ArrayList<>();
+        coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-UseStrimziPodSets", null));
+
         LOGGER.info("Deploying CO with STS - SPS is disabled");
 
         clusterOperator.unInstall();
@@ -271,6 +274,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .withExtraEnvVars(coEnvVars)
             .createInstallation()
             .runInstallation();
 
@@ -298,10 +302,8 @@ public class FeatureGatesIsolatedST extends AbstractST {
         );
 
         LOGGER.info("Changing FG env variable to enable SPS");
-        List<EnvVar> coEnvVars = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst()
-            .ifPresentOrElse(env -> env.setValue("+UseStrimziPodSets"),
-                () -> coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseStrimziPodSets", null)));
+        coEnvVars = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("+UseStrimziPodSets");
 
         Deployment coDep = kubeClient().getDeployment(Constants.STRIMZI_DEPLOYMENT_NAME);
         coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
