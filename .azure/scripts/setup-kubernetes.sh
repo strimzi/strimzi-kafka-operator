@@ -16,6 +16,9 @@ echo "[INFO] MINIKUBE_MEMORY: ${MINIKUBE_MEMORY}"
 echo "[INFO] MINIKUBE_CPU: ${MINIKUBE_CPU}"
 
 ARCH=$1
+if [ -z "$ARCH" ]; then
+    ARCH="amd64"
+fi
 
 function install_kubectl {
     if [ "${TEST_KUBECTL_VERSION:-latest}" = "latest" ]; then
