@@ -45,7 +45,7 @@ def runSystemTests(String workspace, String testCases, String testProfile, Strin
             "--no-transfer-progress " +
             "-Dfailsafe.rerunFailingTestsCount=2 " +
             "-Djunit.jupiter.execution.parallel.enabled=true " +
-            // sequence mode with testInParallel=1 otherwise parallel
+            // sequence mode with testInParallel=1 otherwise parallel (default method-wide parallelism)
             "-Djunit.jupiter.execution.parallel.config.fixed.parallelism=${testsInParallel}")
     }
 }

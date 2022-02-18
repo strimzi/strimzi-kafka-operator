@@ -214,6 +214,74 @@ On the other hand you can also override it in mvn command using additional param
 - -Djunit.jupiter.execution.parallel.enabled=true
 - -Djunit.jupiter.execution.parallel.config.fixed.parallelism=5
 
+### Parallelism architecture
+
+Key aspects:
+1. [JUnit5 parallelism](https://junit.org/junit5/docs/snapshot/user-guide/#writing-tests-parallel-execution)
+2. **annotations** = overrides parallelism configuration in runtime phase (i.e., @IsolatedTest, @ParallelTest,
+   @ParallelNamespaceTest, @IsolatedSuite, @ParallelSuite).
+3. **auxiliary classes** (i.e., `SuiteThreadController`, `TestSuiteNamespaceManager`, `BeforeAllOnce`)
+
+#### 1. JUnit5 parallelism
+
+Provides [ForkJoinPool](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/concurrent/ForkJoinPool.html)
+class spawns as many threads as we specify in the `JUnit-platform.properties`.
+
+#### 2. Annotations
+
+- **@IsolatedTest** = using `@ResourceLock` (prohibit read-write mode), which ensures this test case is executed in isolation.
+- **@ParallelTest** = overrides parallelism configuration by `@Execution(ExecutionMode.CONCURRENT)` and thus test case will
+  run simultaneously with other parallel tests
+- **@ParallelNamespaceTest** = same as @ParallelTest but with additional change. This type of test automatically creates
+  its namespace where all resources will be deployed (f.e., needed where we deploy `Kafka` or `KafkaMirrorMaker`).
+- **@IsolatedSuite** = used for identification such test class/suite and synchronization.
+- **@ParallelSuite** = overrides parallelism configuration by `@Execution(ExecutionMode.CONCURRENT)`, which provides
+  package-wide parallelism with multiple test classes/suites. Moreover, used for identification.
+
+#### 3. Auxiliary classes
+
+- **BeforeAllOnce** = responsible for **setup** and **teardown** shared Cluster Operator across all test suites.
+    1. **setup phase** - based on generated [TestPlan](https://junit.org/junit5/docs/5.0.3/api/org/junit/platform/launcher/TestPlan.html)
+       it chooses a test suite, which will run @BeforeAllCallback. If it's `@ParallelSuite`, it deploys a shared Cluster Operator.
+       Otherwise (i.e., `@IsolatedSuite`), will create Cluster Operator inside a specific test suite with different CO configuration.
+    2. **teardown phase** - we use [ExtensionContext.Store.CloseableResource](https://junit.org/junit5/docs/5.6.2/api/org.junit.jupiter.api/org/junit/jupiter/api/extension/ExtensionContext.Store.CloseableResource.html),
+       which ensures that `close()` implemented in this class is called after all execution. Moreover, we need to put inside
+       class object inside store and thus such method will be invoked (i.e., `sharedExtensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(SYSTEM_RESOURCES, new BeforeAllOnce());`).
+- **TestSuiteNamespaceManager** = provides complete management of namespaces for specific test suites.
+    1. **@ParallelSuite** - such a test suite creates its namespace (f.e., for TracingST creates `tracing-st` namespace).
+       This is needed because we must ensure that each parallel suite runs in a separate namespace and thus runs in isolation.
+    2. **@ParallelNamespaceTest** = responsible for creating and deleting auxiliary namespaces for such test cases.
+- **SuiteThreadController** = provides synchronization between test suites (i.e., @ParallelSuite, @IsolatedSuite). There are a
+  few cases that have to synchronise if parallelism is enabled.
+    1. case = only @ParallelSuites are executed (no need synchronization)
+    2. case = only @IsolatedSuites are executed
+        - synchronization provided by `waitUntilEntryIsOpen()` invoked in `@BeforeAll`. When first IsolatedSuite
+          start execution it locks other @IsolatedSuite, which have to wait until execution of first @IsolatedSuites is done and
+          after that such lock is released by `unLockIsolatedSuite()` in `@AfterAll`)
+    3. case = we run few @ParallelSuites and few @IsolatedSuites.
+        - synchronization by mechanism from 2. point and also all @IsolatedSuites has to wait until all @ParallelSuites are done.
+          This is achieved by an atomic counter (i.e., `runningTestSuitesInParallelCount`) inside this class. Whether @ParallelSuite
+          starts its execution, we increment such counter (`@BeforeAll`), and analogically we decrement it in `@AfterAll`.
+    4. case = we run a few @IsolatedSuites and a few @ParallelSuites.
+        - this covers synchronization introduced in 2. point.
+    5. case = we run @ParallelSuites -> @IsolatedSuites -> @ParallelSuites
+        - a combination of synchronization introduced in 2., 3. point
+    6. case = we run @IsolatedSuites -> @ParallelSuites -> @IsolatedSuites
+        - the combination of synchronization introduced in 2., 3. point
+    7. case (specific) = there is a case when the user can specify to run fixed parallelism with two threads. If Thread A
+       is @ParallelSuite and runs first, he has to deploy a shared Cluster Operator (in `BeforeAllOnce.class`). The Thread B
+       is @IsolatedSuite and is the second one. Thread B waits only it can start execution controlled by method (`waitUntilZeroParallelSuites()`).
+       This condition is true, so @IsolatedSuite will start deploying Cluster Operator even Thread A is deploying a shared Cluster Operator.
+       That's why we increment counter (i.e., `runningTestSuitesInParallelCount`) in `BeforeAllOnce` and eliminate such a problem.
+    8. case (specific) = ForkJoinPool spawns additional (unnecessary) threads, exceeding our configured parallelism limit.
+    - synchronization provide by `waitUntilAllowedNumberTestSuitesInParallel()` and `notifyParallelSuiteToAllowExecution()` method
+    - synchronize point where @ParallelSuite end it in a situation when `ForkJoinPool` spawn additional threads,
+      which can exceed the limit specified. Thus many threads can start executing test suites which could potentially
+      destroy clusters. This mechanism will put all other threads (i.e., not needed) into the waiting room.
+      After one of the `ParallelSuite` is done with execution we release `notifyParallelSuiteToAllowExecution()`one test suite
+      setting `isParallelSuiteReleased` flag. This ensures that only one test suite will continue execution, and others
+      will still wait.
+
 ## Cluster Operator log check
 
 After each test, there is a check for cluster operator logs, which searches for unexpected errors or exceptions.

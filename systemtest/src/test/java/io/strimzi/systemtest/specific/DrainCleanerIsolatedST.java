@@ -7,6 +7,7 @@ package io.strimzi.systemtest.specific;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -262,7 +263,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
             .createInstallation()
