@@ -7,12 +7,14 @@ package io.strimzi.systemtest.specific;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MultiNodeClusterOnly;
 import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.draincleaner.SetupDrainCleaner;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -84,7 +86,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
         String kafkaName = KafkaResources.kafkaStatefulSetName(testStorage.getClusterName());
         String zkName = KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName());
 
-        KafkaBasicExampleClients kafkaBasicExampleClients = new KafkaBasicExampleClients.Builder()
+        KafkaClients kafkaBasicExampleClients = new KafkaClientsBuilder()
             .withMessageCount(300)
             .withTopicName(testStorage.getTopicName())
             .withNamespaceName(Constants.DRAIN_CLEANER_NAMESPACE)
@@ -95,8 +97,8 @@ public class DrainCleanerIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext,
-            kafkaBasicExampleClients.producerStrimzi().build(),
-            kafkaBasicExampleClients.consumerStrimzi().build());
+            kafkaBasicExampleClients.producerStrimzi(),
+            kafkaBasicExampleClients.consumerStrimzi());
 
         for (int i = 0; i < replicas; i++) {
             String zkPodName = KafkaResources.zookeeperPodName(testStorage.getClusterName(), i);
@@ -209,10 +211,10 @@ public class DrainCleanerIsolatedST extends AbstractST {
         );
 
         String producerAdditionConfiguration = "delivery.timeout.ms=30000\nrequest.timeout.ms=30000";
-        KafkaBasicExampleClients kafkaBasicExampleClients;
+        KafkaClients kafkaBasicExampleClients;
 
         for (int i = 0; i < size; i++) {
-            kafkaBasicExampleClients = new KafkaBasicExampleClients.Builder()
+            kafkaBasicExampleClients = new KafkaClientsBuilder()
                 .withProducerName(producerNames.get(i))
                 .withConsumerName(consumerNames.get(i))
                 .withTopicName(topicNames.get(i))
@@ -225,8 +227,8 @@ public class DrainCleanerIsolatedST extends AbstractST {
                 .build();
 
             resourceManager.createResource(extensionContext,
-                kafkaBasicExampleClients.producerStrimzi().build(),
-                kafkaBasicExampleClients.consumerStrimzi().build());
+                kafkaBasicExampleClients.producerStrimzi(),
+                kafkaBasicExampleClients.consumerStrimzi());
         }
 
         LOGGER.info("Starting Node drain");
@@ -261,7 +263,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
             .createInstallation()

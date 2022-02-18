@@ -7,6 +7,7 @@ package io.strimzi.systemtest.mirrormaker;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
@@ -28,15 +29,16 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
@@ -714,7 +716,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         //deploying example clients for checking if mm2 will mirror messages with headers
 
-        KafkaBasicExampleClients targetKafkaClientsJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients targetKafkaClientsJob = new KafkaClientsBuilder()
             .withConsumerName(targetConsumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
             .withTopicName(targetExampleTopic)
@@ -722,9 +724,9 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .withDelayMs(1000)
             .build();
 
-        resourceManager.createResource(extensionContext, targetKafkaClientsJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, targetKafkaClientsJob.consumerStrimzi());
 
-        KafkaBasicExampleClients sourceKafkaClientsJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients sourceKafkaClientsJob = new KafkaClientsBuilder()
             .withProducerName(sourceProducerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .withTopicName(sourceExampleTopic)
@@ -732,7 +734,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .withDelayMs(1000)
             .build();
 
-        resourceManager.createResource(extensionContext, sourceKafkaClientsJob.producerStrimzi()
+        resourceManager.createResource(extensionContext, new JobBuilder(sourceKafkaClientsJob.producerStrimzi())
             .editSpec()
                 .editTemplate()
                     .editSpec()
@@ -1065,7 +1067,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             // deploy topic
             KafkaTopicTemplates.topic(kafkaClusterSourceName, topicSourceNameMirrored, 3).build());
 
-        KafkaBasicExampleClients initialInternalClientSourceJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients initialInternalClientSourceJob = new KafkaClientsBuilder()
                 .withProducerName(sourceProducerName)
                 .withConsumerName(sourceConsumerName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
@@ -1076,7 +1078,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
                 .withNamespaceName(namespaceName)
                 .build();
 
-        KafkaBasicExampleClients initialInternalClientTargetJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients initialInternalClientTargetJob = new KafkaClientsBuilder()
                 .withProducerName(targetProducerName)
                 .withConsumerName(targetConsumerName)
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
@@ -1088,8 +1090,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         LOGGER.info("Send & receive {} messages to/from Source cluster.", MESSAGE_COUNT);
         resourceManager.createResource(extensionContext,
-            initialInternalClientSourceJob.producerStrimzi().build(),
-            initialInternalClientSourceJob.consumerStrimzi().build());
+            initialInternalClientSourceJob.producerStrimzi(),
+            initialInternalClientSourceJob.consumerStrimzi());
 
         ClientUtils.waitForClientSuccess(sourceProducerName, namespaceName, MESSAGE_COUNT);
         ClientUtils.waitForClientSuccess(sourceConsumerName, namespaceName, MESSAGE_COUNT);
@@ -1098,55 +1100,55 @@ class MirrorMaker2IsolatedST extends AbstractST {
         JobUtils.deleteJobWithWait(namespaceName, sourceConsumerName);
 
         LOGGER.info("Send {} messages to Source cluster.", MESSAGE_COUNT);
-        KafkaBasicExampleClients internalClientSourceJob = initialInternalClientSourceJob.toBuilder().withMessage("Producer B").build();
+        KafkaClients internalClientSourceJob = new KafkaClientsBuilder(initialInternalClientSourceJob).withMessage("Producer B").build();
 
         resourceManager.createResource(extensionContext,
-            internalClientSourceJob.producerStrimzi().build());
+            internalClientSourceJob.producerStrimzi());
         ClientUtils.waitForClientSuccess(sourceProducerName, namespaceName, MESSAGE_COUNT);
 
         LOGGER.info("Wait 1 second as 'sync.group.offsets.interval.seconds=1'. As this is insignificant wait, we're skipping it");
 
         LOGGER.info("Receive {} messages from mirrored topic on Target cluster.", MESSAGE_COUNT);
         resourceManager.createResource(extensionContext,
-            initialInternalClientTargetJob.consumerStrimzi().build());
+            initialInternalClientTargetJob.consumerStrimzi());
         ClientUtils.waitForClientSuccess(targetConsumerName, namespaceName, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(namespaceName, sourceProducerName);
         JobUtils.deleteJobWithWait(namespaceName, targetConsumerName);
 
         LOGGER.info("Send 50 messages to Source cluster");
-        internalClientSourceJob = internalClientSourceJob.toBuilder().withMessageCount(50).withMessage("Producer C").build();
+        internalClientSourceJob = new KafkaClientsBuilder(internalClientSourceJob).withMessageCount(50).withMessage("Producer C").build();
         resourceManager.createResource(extensionContext,
-            internalClientSourceJob.producerStrimzi().build());
+            internalClientSourceJob.producerStrimzi());
         ClientUtils.waitForClientSuccess(sourceProducerName, namespaceName, 50);
         JobUtils.deleteJobWithWait(namespaceName, sourceProducerName);
 
         LOGGER.info("Wait 1 second as 'sync.group.offsets.interval.seconds=1'. As this is insignificant wait, we're skipping it");
         LOGGER.info("Receive 10 msgs from source cluster");
-        internalClientSourceJob = internalClientSourceJob.toBuilder().withMessageCount(10).withAdditionalConfig("max.poll.records=10").build();
+        internalClientSourceJob = new KafkaClientsBuilder(internalClientSourceJob).withMessageCount(10).withAdditionalConfig("max.poll.records=10").build();
         resourceManager.createResource(extensionContext,
-            internalClientSourceJob.consumerStrimzi().build());
+            internalClientSourceJob.consumerStrimzi());
         ClientUtils.waitForClientSuccess(sourceConsumerName, namespaceName, 10);
         JobUtils.deleteJobWithWait(namespaceName, sourceConsumerName);
 
         LOGGER.info("Wait 1 second as 'sync.group.offsets.interval.seconds=1'. As this is insignificant wait, we're skipping it");
 
         LOGGER.info("Receive 40 msgs from mirrored topic on Target cluster");
-        KafkaBasicExampleClients internalClientTargetJob = initialInternalClientTargetJob.toBuilder().withMessageCount(40).build();
+        KafkaClients internalClientTargetJob = new KafkaClientsBuilder(initialInternalClientTargetJob).withMessageCount(40).build();
         resourceManager.createResource(extensionContext,
-            internalClientTargetJob.consumerStrimzi().build());
+            internalClientTargetJob.consumerStrimzi());
         ClientUtils.waitForClientSuccess(targetConsumerName, namespaceName, 40);
         JobUtils.deleteJobWithWait(namespaceName, targetConsumerName);
 
         LOGGER.info("There should be no more messages to read. Try to consume at least 1 message. " +
                 "This client job should fail on timeout.");
         resourceManager.createResource(extensionContext,
-            initialInternalClientTargetJob.consumerStrimzi().build());
+            initialInternalClientTargetJob.consumerStrimzi());
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(targetConsumerName, namespaceName, 1));
 
         LOGGER.info("As it's Active-Active MM2 mode, there should be no more messages to read from Source cluster" +
                 " topic. This client job should fail on timeout.");
         resourceManager.createResource(extensionContext,
-            initialInternalClientSourceJob.consumerStrimzi().build());
+            initialInternalClientSourceJob.consumerStrimzi());
         assertDoesNotThrow(() -> ClientUtils.waitForClientTimeout(sourceConsumerName, namespaceName, 1));
     }
 

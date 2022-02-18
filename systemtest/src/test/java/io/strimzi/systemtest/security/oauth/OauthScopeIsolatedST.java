@@ -14,8 +14,9 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -27,6 +28,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
+import org.apache.logging.log4j.Level;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -141,7 +143,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         // explicitly verifying also logs
         String kafkaPodName = kubeClient().listPodsByPrefixInName(INFRA_NAMESPACE, KafkaResources.kafkaPodName(oauthClusterName, 0)).get(0).getMetadata().getName();
 
-        String kafkaLog = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(false, "logs", kafkaPodName, "--tail", "50").out();
+        String kafkaLog = KubeClusterResource.cmdKubeClient(INFRA_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaPodName, "--tail", "50").out();
         assertThat(kafkaLog, CoreMatchers.containsString("Access token expires at"));
         assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: $[*][?]"));
         assertThat(kafkaLog, CoreMatchers.containsString("Evaluating path: @['scope']"));
@@ -157,7 +159,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        KafkaBasicExampleClients oauthInternalClientChecksJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients oauthInternalClientChecksJob = new KafkaClientsBuilder()
             .withNamespaceName(INFRA_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)
@@ -173,7 +175,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         // verification phase the KafkaClient to authenticate.
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
 
-        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi().build());
+        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi());
         // client should succeeded because we set to `clientScope=test` and also Kafka has `scope=test`
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
         JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
@@ -188,7 +190,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaStatefulSetName(oauthClusterName));
 
-        KafkaBasicExampleClients oauthInternalClientChecksJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients oauthInternalClientChecksJob = new KafkaClientsBuilder()
             .withNamespaceName(INFRA_NAMESPACE)
             .withProducerName(producerName)
             .withConsumerName(consumerName)
@@ -215,7 +217,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         // verification phase client should fail here because clientScope is set to 'null'
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, INFRA_NAMESPACE).build());
 
-        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi().build());
+        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi());
         // client should fail because the listener requires scope: 'test' in JWT token but was (the listener) temporarily
         // configured without clientScope resulting in a JWT token without the scope claim when using the clientId and
         // secret passed via SASL/PLAIN to obtain an access token in client's name.

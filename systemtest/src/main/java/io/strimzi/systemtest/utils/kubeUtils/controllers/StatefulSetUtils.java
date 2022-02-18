@@ -47,6 +47,10 @@ public class StatefulSetUtils {
         LOGGER.info("StatefulSet {} is ready", statefulSetName);
     }
 
+    public static void waitForAllStatefulSetPodsReady(String namespaceName, String statefulSetName, int expectPods) {
+        waitForAllStatefulSetPodsReady(namespaceName, statefulSetName, expectPods, READINESS_TIMEOUT);
+    }
+
     public static void waitForAllStatefulSetPodsReady(String statefulSetName, int expectPods, long timeout) {
         waitForAllStatefulSetPodsReady(kubeClient().getNamespace(), statefulSetName, expectPods, timeout);
     }

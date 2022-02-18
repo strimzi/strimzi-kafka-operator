@@ -15,7 +15,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -392,15 +392,15 @@ public class TopicST extends AbstractST {
         int sent = internalKafkaClient.sendMessagesPlain();
 
         String topicUid = KafkaTopicUtils.topicSnapshot(namespace, topicName);
-        LOGGER.info("Going to delete topic {}", topicName);
+        LOGGER.info("Deleting KafkaTopic: {}", topicName);
         KafkaTopicResource.kafkaTopicClient().inNamespace(namespace).withName(topicName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        LOGGER.info("Topic {} deleted", topicName);
+        LOGGER.info("KafkaTopic {} deleted", topicName);
 
         KafkaTopicUtils.waitTopicHasRolled(namespace, topicName, topicUid);
 
-        LOGGER.info("Wait topic {} recreation", topicName);
+        LOGGER.info("Wait KafkaTopic {} recreation", topicName);
         KafkaTopicUtils.waitForKafkaTopicCreation(namespace, topicName);
-        LOGGER.info("Topic {} recreated", topicName);
+        LOGGER.info("KafkaTopic {} recreated", topicName);
 
         int received = internalKafkaClient.receiveMessagesPlain();
         assertThat(received, is(sent));
@@ -488,7 +488,7 @@ public class TopicST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        LOGGER.info("Deploying shared kafka across all test cases in {} namespace", namespace);
+        LOGGER.info("Deploying shared Kafka across all test cases in {} namespace", namespace);
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(TOPIC_CLUSTER_NAME, 3, 1)
             .editMetadata()
                 .withNamespace(namespace)

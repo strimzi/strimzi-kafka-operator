@@ -26,10 +26,11 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
@@ -521,7 +522,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaBasicExampleClients kafkaClient = new KafkaBasicExampleClients.Builder()
+        KafkaClients kafkaClient = new KafkaClientsBuilder()
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(INFRA_NAMESPACE))
             .withTopicName(topicName)
@@ -529,7 +530,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .withDelayMs(0)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaClient.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaClient.consumerStrimzi());
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 

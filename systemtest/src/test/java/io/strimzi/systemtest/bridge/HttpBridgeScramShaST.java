@@ -15,8 +15,9 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
+import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -54,12 +55,12 @@ class HttpBridgeScramShaST extends AbstractST {
     private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
     private String kafkaClientsPodName;
-    private KafkaBridgeExampleClients kafkaBridgeClientJob;
+    private BridgeClients kafkaBridgeClientJob;
 
     @ParallelTest
     void testSendSimpleMessageTlsScramSha(ExtensionContext extensionContext) {
         final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        final KafkaBridgeExampleClients kafkaBridgeClientJb = kafkaBridgeClientJob.toBuilder().withTopicName(topicName).build();
+        final BridgeClients kafkaBridgeClientJb = new BridgeClientsBuilder(kafkaBridgeClientJob).withTopicName(topicName).build();
 
         // Create topic
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, topicName)
@@ -67,11 +68,7 @@ class HttpBridgeScramShaST extends AbstractST {
                 .withNamespace(namespace)
             .endMetadata()
             .build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.producerStrimziBridge()
-            .editMetadata()
-                .withNamespace(namespace)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.producerStrimziBridge());
 
         ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT);
 
@@ -92,17 +89,13 @@ class HttpBridgeScramShaST extends AbstractST {
     @ParallelTest
     void testReceiveSimpleMessageTlsScramSha(ExtensionContext extensionContext) {
         final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        final KafkaBridgeExampleClients kafkaBridgeClientJb = kafkaBridgeClientJob.toBuilder().withTopicName(topicName).build();
+        final BridgeClients kafkaBridgeClientJb = new BridgeClientsBuilder(kafkaBridgeClientJob).withTopicName(topicName).build();
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, TOPIC_NAME)
             .editMetadata()
                 .withNamespace(namespace)
             .endMetadata().build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.consumerStrimziBridge()
-            .editMetadata()
-                .withNamespace(namespace)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.consumerStrimziBridge());
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -186,7 +179,7 @@ class HttpBridgeScramShaST extends AbstractST {
                     .endTls()
                 .endSpec().build());
 
-        kafkaBridgeClientJob = new KafkaBridgeExampleClients.Builder()
+        kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeScramShaClusterName))

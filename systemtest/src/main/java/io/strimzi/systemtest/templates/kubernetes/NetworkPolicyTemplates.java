@@ -59,7 +59,7 @@ public class NetworkPolicyTemplates {
                 .build();
         }
 
-        LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
+        LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
 
         return networkPolicy;
     }

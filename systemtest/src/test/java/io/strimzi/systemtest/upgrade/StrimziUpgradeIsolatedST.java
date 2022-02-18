@@ -93,7 +93,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         // Modify + apply installation files
         copyModifyApply(coDir, INFRA_NAMESPACE, extensionContext, "");
         // Apply Kafka Persistent without version
-        LOGGER.info("Going to deploy Kafka from: {}", startKafkaPersistent.getPath());
+        LOGGER.info("Deploy Kafka from: {}", startKafkaPersistent.getPath());
         // Change kafka version of it's empty (null is for remove the version)
         cmdKubeClient().applyContent(KafkaUtils.changeOrRemoveKafkaConfiguration(startKafkaPersistent, null, startLogMessageFormat, startInterBrokerProtocol));
         // Wait for readiness

@@ -149,6 +149,11 @@ public interface Constants {
     String PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG = Constants.PATH_TO_PACKAGING_EXAMPLES + "/metrics/kafka-mirror-maker-2-metrics.yaml";
 
     /**
+     * Feature gate related constants
+     */
+    String USE_STRIMZI_POD_SET = "+UseStrimziPodSets";
+
+    /**
      * Default value which allows execution of tests with any tags
      */
     String DEFAULT_TAG = "all";
@@ -298,6 +303,8 @@ public interface Constants {
      */
     String OLM = "olm";
 
+    String ISOLATED_TEST = "isolatedtest";
+    String PARALLEL_TEST = "paralleltest";
     /**
      * Tag for tests which executing in parallel namespaces
      */
@@ -312,6 +319,9 @@ public interface Constants {
      */
     String ISOLATED = "Isolated";
     String ST = "ST";
+
+    String TEST_CASE_NAME_LABEL = "test.case";
+    String TEST_SUITE_NAME_LABEL = "test.suite";
 
     /**
      * Cruise Control related parameters

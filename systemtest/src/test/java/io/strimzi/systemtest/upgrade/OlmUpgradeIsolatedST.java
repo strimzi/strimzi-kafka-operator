@@ -7,8 +7,9 @@ package io.strimzi.systemtest.upgrade;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
@@ -55,7 +56,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
     // clusterName has to be same as cluster name in examples
     private final String clusterName = "my-cluster";
     private final int messageUpgradeCount =  600;
-    private final KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
+    private final KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
         .withProducerName(producerName)
         .withConsumerName(consumerName)
         .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
@@ -105,15 +106,15 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
 
         // In chainUpgrade we want to setup Kafka only at the begging and then upgrade it via CO
         kafkaYaml = new File(dir, testParameters.getString("fromExamples") + "/examples/kafka/kafka-persistent.yaml");
-        LOGGER.info("Going to deploy Kafka from: {}", kafkaYaml.getPath());
+        LOGGER.info("Deploy Kafka from: {}", kafkaYaml.getPath());
         KubeClusterResource.cmdKubeClient().create(kafkaYaml);
         // Wait for readiness
         waitForReadinessOfKafkaCluster();
 
         OlmResource.getClosedMapInstallPlan().put(OlmResource.getNonUsedInstallPlan(), Boolean.TRUE);
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
 
         String clusterOperatorDeploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         LOGGER.info("Old deployment name of cluster operator is {}", clusterOperatorDeploymentName);

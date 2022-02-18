@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.29.0
+
+* Use `/healthz` endpoint for Kafka Exporter health checks
+
 ## 0.28.0
 
 * Add support for Kafka 3.1.0; remove Kafka 2.8.0 and 2.8.1
@@ -20,6 +24,7 @@
 * The Strimzi Identity Replication Policy (class `io.strimzi.kafka.connect.mirror.IdentityReplicationPolicy`) is now deprecated and will be removed in the future.
   Please update to Kafka's own Identity Replication Policy (class `org.apache.kafka.connect.mirror.IdentityReplicationPolicy`).
 * The `type` field in `ListenerStatus` has been deprecated and will be removed in the future.
+* The `disk` and `cpuUtilization` fields in the `spec.cruiseControl.capacity` section of the Kafka resource have been deprecated, are ignored, and will be removed in the future.
 
 ## 0.27.0
 

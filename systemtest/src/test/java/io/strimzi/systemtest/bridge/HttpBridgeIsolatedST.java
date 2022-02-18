@@ -18,9 +18,10 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBridgeExampleClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
@@ -78,7 +79,7 @@ class HttpBridgeIsolatedST extends AbstractST {
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
 
-        final KafkaBridgeExampleClients kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
+        final BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withProducerName(producerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeClusterName))
             .withTopicName(topicName)
@@ -95,7 +96,7 @@ class HttpBridgeIsolatedST extends AbstractST {
                 .withNamespace(INFRA_NAMESPACE)
             .endMetadata()
             .build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge());
 
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
@@ -127,7 +128,7 @@ class HttpBridgeIsolatedST extends AbstractST {
             .endMetadata()
             .build());
 
-        final KafkaBridgeExampleClients kafkaBridgeClientJob = (KafkaBridgeExampleClients) new KafkaBridgeExampleClients.Builder()
+        final BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeClusterName))
             .withTopicName(topicName)
@@ -138,7 +139,7 @@ class HttpBridgeIsolatedST extends AbstractST {
             .withNamespaceName(INFRA_NAMESPACE)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge().build());
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge());
 
         // Send messages to Kafka
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()

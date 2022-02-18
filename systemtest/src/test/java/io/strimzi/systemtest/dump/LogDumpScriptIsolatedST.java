@@ -12,7 +12,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -21,6 +21,7 @@ import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -62,7 +63,7 @@ public class LogDumpScriptIsolatedST extends AbstractST {
         String[] printCmd = new String[] {
             USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", INFRA_NAMESPACE, "--cluster", clusterName, "--topic", topicName, "--partition", partitionNumber, "--dry-run"
         };
-        Exec.exec(true, printCmd);
+        Exec.exec(Level.INFO, printCmd);
         assertThat("Output directory created in dry mode", Files.notExists(Paths.get(outPath)));
         
         // partition dump
@@ -70,7 +71,7 @@ public class LogDumpScriptIsolatedST extends AbstractST {
         String[] dumpPartCmd = new String[] {
             USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", INFRA_NAMESPACE, "--cluster", clusterName, "--topic", topicName, "--partition", partitionNumber, "--out-path", outPath
         };
-        Exec.exec(true, dumpPartCmd);
+        Exec.exec(Level.INFO, dumpPartCmd);
         assertThat("No output directory created", Files.exists(Paths.get(outPath)));
         String dumpPartFilePath = outPath + "/" + topicName + "/kafka-0-" + topicName + "-" + partitionNumber + "/00000000000000000000.log";
         assertThat("No partition file created", Files.exists(Paths.get(dumpPartFilePath)));
@@ -81,7 +82,7 @@ public class LogDumpScriptIsolatedST extends AbstractST {
         String[] dumpCgCmd = new String[] {
             USER_PATH + "/../tools/log-dump/run.sh", "cg_offsets", "--namespace", INFRA_NAMESPACE, "--cluster", clusterName, "--group-id", groupId, "--out-path", outPath
         };
-        Exec.exec(true, dumpCgCmd);
+        Exec.exec(Level.INFO, dumpCgCmd);
         assertThat("No output directory created", Files.exists(Paths.get(outPath)));
         String dumpCgFilePath = outPath + "/__consumer_offsets/kafka-0-__consumer_offsets-12/00000000000000000000.log";
         assertThat("No partition file created", Files.exists(Paths.get(dumpCgFilePath)));

@@ -85,9 +85,9 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .endSpec()
             .build();
 
-        LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
+        LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
         ResourceManager.getInstance().createResource(extensionContext, networkPolicy);
-        LOGGER.info("Network policy for LabelSelector {} successfully applied", labelSelector);
+        LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
     public static void allowNetworkPolicySettingsForEntityOperator(ExtensionContext extensionContext, String clusterName) {
@@ -123,9 +123,9 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .endSpec()
             .build();
 
-        LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
+        LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
         ResourceManager.getInstance().createResource(extensionContext, networkPolicy);
-        LOGGER.info("Network policy for LabelSelector {} successfully applied", labelSelector);
+        LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
     public static void allowNetworkPolicySettingsForKafkaExporter(ExtensionContext extensionContext, String clusterName) {
@@ -156,9 +156,9 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .endSpec()
             .build();
 
-        LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
+        LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
         ResourceManager.getInstance().createResource(extensionContext, networkPolicy);
-        LOGGER.info("Network policy for LabelSelector {} successfully applied", labelSelector);
+        LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
     /**
@@ -224,9 +224,9 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .endSpec()
             .build();
 
-        LOGGER.debug("Going to apply the following NetworkPolicy: {}", networkPolicy.toString());
+        LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
         ResourceManager.getInstance().createResource(extensionContext, networkPolicy);
-        LOGGER.info("Network policy for LabelSelector {} successfully applied", labelSelector);
+        LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
     public static void applyDefaultNetworkPolicySettings(ExtensionContext extensionContext, List<String> namespaces) {

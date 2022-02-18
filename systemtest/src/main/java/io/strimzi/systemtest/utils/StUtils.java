@@ -10,13 +10,20 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.jayway.jsonpath.JsonPath;
+import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.json.DecodeException;
@@ -24,6 +31,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
@@ -40,9 +48,6 @@ import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.Constants.ISOLATED_SUITE;
-import static io.strimzi.systemtest.Constants.PARALLEL_NAMESPACE;
-import static io.strimzi.systemtest.Constants.PARALLEL_SUITE;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -250,7 +255,7 @@ public class StUtils {
         TestUtils.waitFor("for JSON log in " + pods, Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT, () -> {
             boolean isJSON = false;
             for (String podName : pods.keySet()) {
-                String log = cmdKubeClient().namespace(namespaceName).execInCurrentNamespace(false, "logs", podName, "-c", containerName, tail).out();
+                String log = cmdKubeClient().namespace(namespaceName).execInCurrentNamespace(Level.TRACE, "logs", podName, "-c", containerName, tail).out();
 
                 JsonArray jsonArray = getJsonArrayFromLog(log);
 
@@ -355,30 +360,53 @@ public class StUtils {
     }
 
     /**
-     * Checking if test case contains annotation ParallelNamespaceTest
+     * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelTest}
      * @param extensionContext context of the test case
-     * @return true if test case contains annotation ParallelNamespaceTest, otherwise false
+     * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelTest},
+     * otherwise false
+     */
+    public static boolean isParallelTest(ExtensionContext extensionContext) {
+        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_TEST, extensionContext);
+    }
+
+    /**
+     * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedTest}
+     * @param extensionContext context of the test case
+     * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedTest},
+     * otherwise false
+     */
+    public static boolean isIsolatedTest(ExtensionContext extensionContext) {
+        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_TEST, extensionContext);
+    }
+
+    /**
+     * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest}
+     * @param extensionContext context of the test case
+     * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest},
+     * otherwise false
      */
     public static boolean isParallelNamespaceTest(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(PARALLEL_NAMESPACE, extensionContext);
+        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_NAMESPACE, extensionContext);
     }
 
     /**
-     * Checking if test case contains annotation ParallelSuite
+     * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelSuite}
      * @param extensionContext context of the test case
-     * @return true if test case contains annotation ParallelSuite, otherwise false
+     * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelSuite},
+     * otherwise false
      */
     public static boolean isParallelSuite(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(PARALLEL_SUITE, extensionContext);
+        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_SUITE, extensionContext);
     }
 
     /**
-     * Checking if test case contains annotation IsolatedSuite
+     * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedSuite}
      * @param extensionContext context of the test case
-     * @return true if test case contains annotation IsolatedSuite, otherwise false
+     * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedSuite},
+     * otherwise false
      */
     public static boolean isIsolatedSuite(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(ISOLATED_SUITE, extensionContext);
+        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_SUITE, extensionContext);
     }
 
     /**
@@ -463,5 +491,117 @@ public class StUtils {
         } catch (DecodeException e) {
             return new JsonObject("{}");
         }
+    }
+
+    public static String removePackageName(String testClassPath) {
+        return testClassPath.replace("io.strimzi.systemtest.", "");
+    }
+
+    /**
+     * These methods are operating with StatefulSets or StrimziPodSets depending on ENV variable.
+     * They should be removed together with StatefulSets in the future - and we should use
+     * StrimziPodSets related methods instead.
+     */
+
+    public static void annotateStatefulSetOrStrimziPodSet(String namespaceName, String resourceName, Map<String, String> annotations) {
+        if (Environment.isStrimziPodSetEnabled()) {
+            StrimziPodSetResource.replaceStrimziPodSetInSpecificNamespace(resourceName,
+                strimziPodSet -> strimziPodSet.getMetadata().setAnnotations(annotations), namespaceName);
+        } else {
+            kubeClient(namespaceName)
+                .statefulSet(resourceName)
+                .withPropagationPolicy(DeletionPropagation.ORPHAN)
+                .edit(sts -> new StatefulSetBuilder(sts)
+                .editMetadata()
+                    .addToAnnotations(annotations)
+                .endMetadata()
+                .build());
+        }
+    }
+
+    public static Map<String, String> getAnnotationsOfStatefulSetOrStrimziPodSet(String namespaceName, String resourceName) {
+        if (Environment.isStrimziPodSetEnabled()) {
+            return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getAnnotations();
+        }
+        return kubeClient().getStatefulSet(namespaceName, resourceName).getMetadata().getAnnotations();
+    }
+
+    public static Map<String, String> getLabelsOfStatefulSetOrStrimziPodSet(String namespaceName, String resourceName) {
+        if (Environment.isStrimziPodSetEnabled()) {
+            return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getLabels();
+        }
+        return kubeClient().getStatefulSet(namespaceName, resourceName).getMetadata().getLabels();
+    }
+
+    public static void waitForStatefulSetOrStrimziPodSetLabelsChange(String namespaceName, String resourceName, Map<String, String> labels) {
+        if (Environment.isStrimziPodSetEnabled()) {
+            StrimziPodSetUtils.waitForStrimziPodSetLabelsChange(namespaceName, resourceName, labels);
+        } else {
+            StatefulSetUtils.waitForStatefulSetLabelsChange(namespaceName, resourceName, labels);
+        }
+    }
+
+    public static void waitForStatefulSetOrStrimziPodSetLabelsDeletion(String namespaceName, String resourceName, String... labelKeys) {
+        if (Environment.isStrimziPodSetEnabled()) {
+            StrimziPodSetUtils.waitForStrimziPodSetLabelsDeletion(namespaceName, resourceName, labelKeys);
+        } else {
+            StatefulSetUtils.waitForStatefulSetLabelsDeletion(namespaceName, resourceName, labelKeys);
+        }
+    }
+
+    public static Affinity getStatefulSetOrStrimziPodSetAffinity(String resourceName) {
+        return getStatefulSetOrStrimziPodSetAffinity(kubeClient().getNamespace(), resourceName);
+    }
+
+    public static Affinity getStatefulSetOrStrimziPodSetAffinity(String namespaceName, String resourceName) {
+        if (Environment.isStrimziPodSetEnabled()) {
+            Pod firstPod = StrimziPodSetUtils.getFirstPodFromSpec(namespaceName, resourceName);
+            return firstPod.getSpec().getAffinity();
+        } else {
+            return kubeClient().getStatefulSet(namespaceName, resourceName).getSpec().getTemplate().getSpec().getAffinity();
+        }
+    }
+
+    public static void deleteStrimziPodSetOrStatefulSet(String namespaceName, String resourceName) {
+        if (Environment.isStrimziPodSetEnabled()) {
+            StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).delete();
+        } else {
+            kubeClient(namespaceName).deleteStatefulSet(resourceName);
+        }
+    }
+
+    public static void deleteStrimziPodSetOrStatefulSet(String resourceName) {
+        deleteStrimziPodSetOrStatefulSet(kubeClient().getNamespace(), resourceName);
+    }
+
+    public static void waitForStrimziPodSetOrStatefulSetRecovery(String resourceName, String resourceUID) {
+        if (Environment.isStrimziPodSetEnabled()) {
+            StrimziPodSetUtils.waitForStrimziPodSetRecovery(resourceName, resourceUID);
+        } else {
+            StatefulSetUtils.waitForStatefulSetRecovery(resourceName, resourceUID);
+        }
+    }
+
+    public static void waitForStrimziPodSetOrStatefulSetAndPodsReady(String namespaceName, String resourceName, int expectPods) {
+        if (Environment.isStrimziPodSetEnabled()) {
+            StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(namespaceName, resourceName, expectPods);
+        } else {
+            StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, resourceName, expectPods);
+        }
+    }
+
+    public static void waitForStrimziPodSetOrStatefulSetAndPodsReady(String resourceName, int expectPods) {
+        waitForStrimziPodSetOrStatefulSetAndPodsReady(kubeClient().getNamespace(), resourceName, expectPods);
+    }
+
+    public static String getStrimziPodSetOrStatefulSetUID(String namespaceName, String resourceName) {
+        if (Environment.isStrimziPodSetEnabled()) {
+            return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getUid();
+        }
+        return kubeClient(namespaceName).getStatefulSetUid(resourceName);
+    }
+
+    public static String getStrimziPodSetOrStatefulSetUID(String resourceName) {
+        return getStrimziPodSetOrStatefulSetUID(kubeClient().getNamespace(), resourceName);
     }
 }

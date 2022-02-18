@@ -4,14 +4,12 @@
  */
 package io.strimzi.systemtest.rollingupdate;
 
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
@@ -21,10 +19,12 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.kafkaclients.KafkaBasicExampleClients;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -37,7 +37,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -105,7 +105,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
-        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
@@ -116,8 +116,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withNamespaceName(namespaceName)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();
@@ -140,58 +140,44 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         internalKafkaClient.produceTlsMessagesUntilOperationIsSuccessful(MESSAGE_COUNT);
 
-        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
-        StatefulSet kafkaSts = kubeClient(namespaceName).getStatefulSet(namespaceName, kafkaName);
-        if (kafkaSts != null) {
-            // rolling update for kafka
-            // set annotation to trigger Kafka rolling update
-            LOGGER.info("Annotate Kafka StatefulSet {} with manual rolling update annotation", kafkaName);
-            kubeClient(namespaceName).statefulSet(kafkaName).withPropagationPolicy(DeletionPropagation.ORPHAN).edit(sts -> new StatefulSetBuilder(sts)
-                    .editMetadata()
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                    .endMetadata()
-                    .build());
+        // rolling update for kafka
+        // set annotation to trigger Kafka rolling update
+        LOGGER.info("Annotate Kafka {} {} with manual rolling update annotation",
+            Environment.isStrimziPodSetEnabled() ? StrimziPodSet.RESOURCE_KIND : Constants.STATEFUL_SET, kafkaName);
 
-            // check annotation to trigger rolling update
-            assertThat(Boolean.parseBoolean(kubeClient(namespaceName).getStatefulSet(kafkaName)
-                    .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
+        StUtils.annotateStatefulSetOrStrimziPodSet(namespaceName, kafkaName, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
-            RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
+        // check annotation to trigger rolling update
+        assertThat(Boolean.parseBoolean(StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(namespaceName, kafkaName)
+            .get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
 
-            // wait when annotation will be removed
-            TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
-                    () -> kubeClient(namespaceName).getStatefulSet(kafkaName).getMetadata().getAnnotations() == null
-                            || !kubeClient(namespaceName).getStatefulSet(kafkaName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
-        }
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
+
+        // wait when annotation will be removed
+        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
+                () -> StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(namespaceName, zkName) == null
+                        || !StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(namespaceName, zkName).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
         int received = internalKafkaClient.receiveMessagesTls();
         assertThat(received, is(MESSAGE_COUNT));
 
-        // TODO: Temporary workaround for UseStrimziPodSets feature gate => this should be also tested with StrimziPodSets in the future
-        // GitHub issue: https://github.com/strimzi/strimzi-kafka-operator/issues/5956
-        StatefulSet zooSts = kubeClient(namespaceName).getStatefulSet(namespaceName, zkName);
-        if (zooSts != null) {
-            // rolling update for zookeeper
-            // set annotation to trigger Zookeeper rolling update
-            LOGGER.info("Annotate Zookeeper StatefulSet {} with manual rolling update annotation", zkName);
-            kubeClient(namespaceName).statefulSet(zkName).withPropagationPolicy(DeletionPropagation.ORPHAN).edit(sts -> new StatefulSetBuilder(sts)
-                    .editMetadata()
-                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
-                    .endMetadata()
-                    .build());
+        // rolling update for zookeeper
+        // set annotation to trigger Zookeeper rolling update
+        LOGGER.info("Annotate Zookeeper {} {} with manual rolling update annotation",
+            Environment.isStrimziPodSetEnabled() ? StrimziPodSet.RESOURCE_KIND : Constants.STATEFUL_SET, zkName);
 
-            // check annotation to trigger rolling update
-            assertThat(Boolean.parseBoolean(kubeClient(namespaceName).getStatefulSet(zkName)
-                    .getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
+        StUtils.annotateStatefulSetOrStrimziPodSet(namespaceName, zkName, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
-            RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkPods);
+        // check annotation to trigger rolling update
+        assertThat(Boolean.parseBoolean(StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(namespaceName, zkName)
+            .get(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE)), is(true));
 
-            // wait when annotation will be removed
-            TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
-                    () -> kubeClient(namespaceName).getStatefulSet(zkName).getMetadata().getAnnotations() == null
-                            || !kubeClient(namespaceName).getStatefulSet(zkName).getMetadata().getAnnotations().containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
-        }
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkPods);
+
+        // wait when annotation will be removed
+        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
+                () -> StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(namespaceName, zkName) == null
+                        || !StUtils.getAnnotationsOfStatefulSetOrStrimziPodSet(namespaceName, zkName).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
         internalKafkaClient = internalKafkaClient.toBuilder()
             .withConsumerGroupName(ClientUtils.generateRandomConsumerGroup())
@@ -383,7 +369,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\ntransactional.id=" + continuousTopicName + ".1");
         producerAdditionConfiguration = producerAdditionConfiguration.concat("\nenable.idempotence=true");
 
-        KafkaBasicExampleClients kafkaBasicClientJob = new KafkaBasicExampleClients.Builder()
+        KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
@@ -394,8 +380,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withNamespaceName(namespaceName)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi().build());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi().build());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());
         // ##############################
 
         String userName = KafkaUserUtils.generateRandomNameOfKafkaUser();

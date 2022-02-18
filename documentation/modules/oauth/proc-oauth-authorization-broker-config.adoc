@@ -70,7 +70,7 @@ spec:
     #...
 ----
 <1> Type `keycloak` enables Keycloak authorization.
-<2> URI of the Keycloak token endpoint. For production, always use HTTPs.
+<2> URI of the Keycloak token endpoint. For production, always use `https://` urls.
 When you configure token-based `oauth` authentication, you specify a `jwksEndpointUri` as the URI for local JWT validation.
 The hostname for the `tokenEndpointUri` URI must be the same.
 <3> The client ID of the OAuth 2.0 client definition in Keycloak that has Authorization Services enabled. Typically, `kafka` is used as the ID.

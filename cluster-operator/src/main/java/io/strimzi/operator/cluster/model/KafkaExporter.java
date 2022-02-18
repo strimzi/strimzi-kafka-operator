@@ -46,9 +46,9 @@ public class KafkaExporter extends AbstractModel {
     protected static final String CLUSTER_CA_CERTS_VOLUME_MOUNT = "/etc/kafka-exporter/cluster-ca-certs/";
 
     // Configuration defaults
-    private static final int DEFAULT_HEALTHCHECK_DELAY = 15;
-    private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 15;
-    private static final int DEFAULT_HEALTHCHECK_PERIOD = 30;
+    /*test*/ static final int DEFAULT_HEALTHCHECK_DELAY = 15;
+    /*test*/ static final int DEFAULT_HEALTHCHECK_TIMEOUT = 15;
+    /*test*/ static final int DEFAULT_HEALTHCHECK_PERIOD = 30;
     public static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).withPeriodSeconds(DEFAULT_HEALTHCHECK_PERIOD).build();
 
     protected static final String ENV_VAR_KAFKA_EXPORTER_LOGGING = "KAFKA_EXPORTER_LOGGING";
@@ -89,9 +89,9 @@ public class KafkaExporter extends AbstractModel {
         super(reconciliation, resource, APPLICATION_NAME);
         this.name = KafkaExporterResources.deploymentName(cluster);
         this.replicas = 1;
-        this.readinessPath = "/metrics";
+        this.readinessPath = "/healthz";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
-        this.livenessPath = "/metrics";
+        this.livenessPath = "/healthz";
         this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
 
         this.saramaLoggingEnabled = false;

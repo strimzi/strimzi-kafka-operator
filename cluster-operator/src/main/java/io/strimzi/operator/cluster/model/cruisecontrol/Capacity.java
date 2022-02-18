@@ -46,8 +46,8 @@ public class Capacity {
         this.replicas = spec.getKafka().getReplicas();
         this.storage = storage;
 
-        this.diskMiB = bc != null && bc.getDisk() != null ? getSizeInMiB(bc.getDisk()) : generateDiskCapacity(storage);
-        this.cpuUtilization = bc != null && bc.getCpuUtilization() != null ? bc.getCpuUtilization() : DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY;
+        this.diskMiB = generateDiskCapacity(storage);
+        this.cpuUtilization = DEFAULT_BROKER_CPU_UTILIZATION_CAPACITY;
         this.inboundNetworkKiBPerSecond = bc != null && bc.getInboundNetwork() != null ? getThroughputInKiB(bc.getInboundNetwork()) : DEFAULT_BROKER_INBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
         this.outboundNetworkKiBPerSecond = bc != null && bc.getOutboundNetwork() != null ? getThroughputInKiB(bc.getOutboundNetwork()) : DEFAULT_BROKER_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND;
     }

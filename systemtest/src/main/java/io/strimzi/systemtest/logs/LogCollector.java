@@ -8,11 +8,17 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.annotations.ParallelSuite;
+import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.logs.CollectorElement;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.apache.logging.log4j.Level;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,8 +73,10 @@ public class LogCollector {
     private final String clusterOperatorNamespace;
     private File namespaceFile;
     private CollectorElement collectorElement;
+    private ExtensionContext extensionContext;
 
-    public LogCollector(CollectorElement collectorElement, KubeClient kubeClient, String logDir) throws IOException {
+    public LogCollector(ExtensionContext extensionContext, CollectorElement collectorElement, KubeClient kubeClient, String logDir) throws IOException {
+        this.extensionContext = extensionContext;
         this.collectorElement = collectorElement;
         this.kubeClient = kubeClient;
 
@@ -122,12 +130,35 @@ public class LogCollector {
      *          c) @ParallelNamespaceTest, which is basically in namespace with following pattern namespace-[n], where n is greater than 0.
      *      4.@AfterEach scope
      *      5.@AfterAll scope
+     *
+     *  More advanced is when {@link ParallelTest#annotationType()} or {@link IsolatedTest#annotationType()} are executed inside
+     *  {@link ParallelSuite#annotationType()}, which means they use automatically generated namespace by
+     *  {@link io.strimzi.systemtest.parallel.TestSuiteNamespaceManager#createAdditionalNamespaces(ExtensionContext)}.
      */
     public synchronized void collect() {
         Set<String> namespaces = KubeClusterResource.getMapWithSuiteNamespaces().get(this.collectorElement);
         // ensure that namespaces is never null
         namespaces = namespaces == null ? new HashSet<>() : namespaces;
         namespaces.add(clusterOperatorNamespace);
+
+        // it's not test suite but test case, and we are gonna collect logs
+        if (!this.collectorElement.getTestMethodName().isEmpty()) {
+            // fetch test suite extensionContext
+            // @ParallelSuite -> this is generated namespace
+            if (StUtils.isParallelSuite(extensionContext.getParent().get())) {
+                // @IsolatedTest or @ParallelTest or @ParallelNamespaceTest -> are executed in that generated namespace
+                if (StUtils.isIsolatedTest(extensionContext) ||
+                    StUtils.isParallelTest(extensionContext) ||
+                    StUtils.isParallelNamespaceTest(extensionContext))  {
+                    final Set<String> generatedTestSuiteNamespaces =
+                        KubeClusterResource.getMapWithSuiteNamespaces().get(
+                            CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()));
+                    namespaces.addAll(generatedTestSuiteNamespaces);
+                    LOGGER.debug("{} adding to all namespaces, which should be collected: {}", generatedTestSuiteNamespaces, namespaces.toString());
+                }
+            }
+        }
+
         // collect logs for all namespace related to test suite
         namespaces.forEach(namespace -> {
             if (this.collectorElement.getTestMethodName().isEmpty()) {
@@ -152,6 +183,34 @@ public class LogCollector {
         });
     }
 
+    private final void collectLogsForTestSuite(final Pod pod) {
+        if (pod.getMetadata().getLabels().containsKey(Constants.TEST_SUITE_NAME_LABEL)) {
+            if (pod.getMetadata().getLabels().get(Constants.TEST_SUITE_NAME_LABEL).equals(StUtils.removePackageName(this.collectorElement.getTestClassName()))) {
+                LOGGER.debug("Collecting logs for TestSuite: {}, and Pod: {}", this.collectorElement.getTestClassName(), pod.getMetadata().getName());
+                pod.getStatus().getContainerStatuses().forEach(
+                    containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
+            }
+        // Tracing pods (they can't be labeled because CR of the Jaeger does not propagate labels to the Pods )
+        } else if (pod.getMetadata().getName().contains("jaeger")) {
+            LOGGER.debug("Collecting logs for TestSuite: {}, and Jaeger Pods: {}", this.collectorElement.getTestClassName(), pod.getMetadata().getName());
+            pod.getStatus().getContainerStatuses().forEach(
+                containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
+        }
+    }
+
+    private final void collectLogsForTestCase(final Pod pod) {
+        if (pod.getMetadata().getLabels().containsKey(Constants.TEST_CASE_NAME_LABEL)) {
+            // collect these Pods, which are deployed in that test case
+            // startWith is used because when we put inside Pod label with test case sometimes this test case exceed 63
+            // characters and we have to cut it to avoid exception
+            if (this.collectorElement.getTestMethodName().startsWith(pod.getMetadata().getLabels().get(Constants.TEST_CASE_NAME_LABEL))) {
+                LOGGER.debug("Collecting logs for TestCase: {}, and Pod: {}", this.collectorElement.getTestMethodName(), pod.getMetadata().getName());
+                pod.getStatus().getContainerStatuses().forEach(
+                    containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
+            }
+        }
+    }
+
     private void collectLogsFromPods(String namespace) {
         try {
             LOGGER.info("Collecting logs for Pod(s) in Namespace {}", namespace);
@@ -171,9 +230,16 @@ public class LogCollector {
             // scrape for Pods, which are not in `cluster-operator` namespace
             } else {
                 kubeClient.listPods(namespace).forEach(pod -> {
-                    String podName = pod.getMetadata().getName();
-                    pod.getStatus().getContainerStatuses().forEach(
-                        containerStatus -> scrapeAndCreateLogs(namespaceFile, podName, containerStatus, namespace));
+                    // we are collecting inside for test case
+                    if (extensionContext.getTestMethod().isPresent()) {
+                        // pods, which are created by ResourceManager
+                        collectLogsForTestCase(pod);
+                        // pods, which are shared between test cases
+                        collectLogsForTestSuite(pod);
+                    } else {
+                        // pods, which are shared between test cases (@BeforeAll, @AfterAll)
+                        collectLogsForTestSuite(pod);
+                    }
                 });
             }
         } catch (Exception allExceptions) {
@@ -212,13 +278,13 @@ public class LogCollector {
 
     private void collectStrimzi(String namespace) {
         LOGGER.info("Collecting Strimzi in Namespace {}", namespace);
-        String crData = cmdKubeClient(namespace).exec(false, false, "get", "strimzi", "-o", "yaml", "-n", namespaceFile.getName()).out();
+        String crData = cmdKubeClient(namespace).exec(false, Level.DEBUG, "get", "strimzi", "-o", "yaml", "-n", namespaceFile.getName()).out();
         writeFile(namespaceFile + "/strimzi-custom-resources.log", crData);
     }
 
     private void collectClusterInfo(String namespace) {
         LOGGER.info("Collecting cluster status");
-        String nodes = cmdKubeClient(namespace).exec(false, false, "describe", "nodes").out();
+        String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "describe", "nodes").out();
         writeFile(this.testSuite + "/cluster-status.log", nodes);
     }
 

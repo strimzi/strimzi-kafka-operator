@@ -2,10 +2,10 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.kafkaclients.internalClients;
+package io.strimzi.systemtest.kafkaclients.clients;
 
-import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
-import static io.strimzi.systemtest.kafkaclients.internalClients.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
+import static io.strimzi.systemtest.kafkaclients.clients.ClientType.CLI_KAFKA_VERIFIABLE_CONSUMER;
+import static io.strimzi.systemtest.kafkaclients.clients.ClientType.CLI_KAFKA_VERIFIABLE_PRODUCER;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.time.Duration;

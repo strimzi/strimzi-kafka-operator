@@ -9,7 +9,6 @@ import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -24,11 +23,11 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
+import io.strimzi.test.container.StrimziKafkaCluster;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.InvalidRequestException;
-import org.apache.kafka.streams.integration.utils.EmbeddedKafkaCluster;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -46,11 +45,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class TopicOperatorIT extends TopicOperatorBaseIT {
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
-    protected static EmbeddedKafkaCluster kafkaCluster;
+    protected static StrimziKafkaCluster kafkaCluster;
 
     @BeforeAll
     public static void beforeAll() throws IOException {
-        kafkaCluster = new EmbeddedKafkaCluster(numKafkaBrokers(), kafkaClusterConfig());
+        kafkaCluster = new StrimziKafkaCluster(numKafkaBrokers(), numKafkaBrokers(), kafkaClusterConfig());
         kafkaCluster.start();
 
         setupKubeCluster();
@@ -76,9 +75,10 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         return 1;
     }
 
-    protected static Properties kafkaClusterConfig() {
-        Properties p = new Properties();
-        p.setProperty(KafkaConfig$.MODULE$.AutoCreateTopicsEnableProp(), "false");
+    protected static Map<String, String> kafkaClusterConfig() {
+        Map<String, String> p = new HashMap<>();
+        p.put(KafkaConfig$.MODULE$.AutoCreateTopicsEnableProp(), "false");
+        p.put("zookeeper.connect", "zookeeper:2181");
         return p;
     }
 

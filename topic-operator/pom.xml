@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.strimzi</groupId>
         <artifactId>strimzi</artifactId>
-        <version>0.28.0-SNAPSHOT</version>
+        <version>0.29.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>topic-operator</artifactId>
@@ -116,26 +116,10 @@
             <groupId>io.strimzi</groupId>
             <artifactId>test</artifactId>
         </dependency>
-        <!-- Used by EmbeddedKafkaCluster -->
         <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-streams</artifactId>
-            <classifier>test</classifier>
-            <scope>test</scope>
+            <groupId>io.strimzi</groupId>
+            <artifactId>strimzi-test-container</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-clients</artifactId>
-            <classifier>test</classifier>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_2.13</artifactId>
-            <classifier>test</classifier>
-            <scope>test</scope>
-        </dependency>
-        <!-- ^^^^^ Used by EmbeddedKafkaCluster -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>

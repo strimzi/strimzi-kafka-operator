@@ -1,0 +1,71 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-cluster-operator.adoc
+
+[id='ref-operator-cluster-feature-gate-releases-{context}']
+= Feature gate releases
+
+[role="_abstract"]
+Feature gates have three stages of maturity:
+
+* Alpha — typically disabled by default
+* Beta — typically enabled by default
+* General Availability (GA) — typically always enabled
+
+Alpha stage features might be experimental or unstable, subject to change, or not sufficiently tested for production use.
+Beta stage features are well tested and their functionality is not likely to change.
+GA stage features are stable and should not change in the future.
+Alpha and beta stage features are removed if they do not prove to be useful.
+
+* The `ControlPlaneListener` feature gate moved to beta stage in Strimzi 0.27 and is expected to remain in the beta stage until Strimzi 0.31.
+* The `ServiceAccountPatching` feature gate moved to beta stage in Strimzi 0.27 and is expected to remain in the beta stage until Strimzi 0.30.
+* The `UseStrimziPodSets` feature gate is currently planned to move to the beta stage in Strimzi 0.30.
+
+NOTE: Feature gates might be removed when they reach GA. This means that the feature was incorporated into the Strimzi core features and can no longer be disabled.
+
+.Feature gates and the Strimzi versions when they moved to alpha, beta, or GA
+[cols="4*",options="header",stripes="none",separator=¦]
+|===
+
+¦Feature gate
+¦Alpha
+¦Beta
+¦GA
+
+¦`ControlPlaneListener`
+¦0.23
+¦0.27
+¦ -
+
+¦`ServiceAccountPatching`
+¦0.24
+¦0.27
+¦ -
+
+¦`UseStrimziPodSets`
+¦0.28
+¦ -
+¦ -
+
+|===
+
+If a feature gate is enabled, you may need to disable it before upgrading or downgrading from a specific Strimzi version.
+The following table shows which feature gates you need to disable when upgrading or downgrading Strimzi versions.
+
+.Feature gates to disable when upgrading or downgrading Strimzi
+[cols="3*",options="header",stripes="none",separator=¦]
+|===
+
+¦Disable Feature gate
+¦Upgrading from Strimzi version
+¦Downgrading to Strimzi version
+
+¦`ControlPlaneListener`
+¦0.22 and earlier
+¦0.22 and earlier
+
+¦`UseStrimziPodSets`
+¦-
+¦0.27 and earlier
+
+|===

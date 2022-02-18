@@ -24,7 +24,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.kafkaclients.internalClients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -40,7 +40,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.ParallelSuite;
+import io.strimzi.systemtest.annotations.ParallelSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -621,7 +621,7 @@ class RollingUpdateST extends AbstractST {
 
         LabelSelector coLabelSelector = kubeClient(INFRA_NAMESPACE).getDeployment(INFRA_NAMESPACE, ResourceManager.getCoDeploymentName()).getSpec().getSelector();
         LOGGER.info("Deleting Cluster Operator pod with labels {}", coLabelSelector);
-        kubeClient(INFRA_NAMESPACE).deletePod(coLabelSelector);
+        kubeClient(INFRA_NAMESPACE).deletePodsByLabelSelector(coLabelSelector);
         LOGGER.info("Cluster Operator pod deleted");
 
         RollingUpdateUtils.waitTillComponentHasRolled(namespace, zkSelector, 3, zkPods);
@@ -630,7 +630,7 @@ class RollingUpdateST extends AbstractST {
             () -> kubeClient(namespace).listPods().stream().map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).contains("Pending"));
 
         LOGGER.info("Deleting Cluster Operator pod with labels {}", coLabelSelector);
-        kubeClient(INFRA_NAMESPACE).deletePod(coLabelSelector);
+        kubeClient(INFRA_NAMESPACE).deletePodsByLabelSelector(coLabelSelector);
         LOGGER.info("Cluster Operator pod deleted");
 
         RollingUpdateUtils.waitTillComponentHasRolled(namespace, kafkaSelector, 3, kafkaPods);
