@@ -12,7 +12,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import io.apicurio.registry.utils.ConcurrentUtil;
 import io.strimzi.operator.topic.zk.Zk;
-import io.strimzi.test.container.StrimziKafkaCluster;
+import io.strimzi.test.container.StrimziKafkaContainer;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
@@ -31,7 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(VertxExtension.class)
 public class TopicStoreUpgradeTest {
     private static final Map<String, String> MANDATORY_CONFIG;
-    private static StrimziKafkaCluster cluster;
+    private static StrimziKafkaContainer kafkaContainer;
 
     static {
         MANDATORY_CONFIG = new HashMap<>();
@@ -120,16 +120,13 @@ public class TopicStoreUpgradeTest {
     public static void before() throws Exception {
         vertx = Vertx.vertx();
 
-        Map<String, String> config = new HashMap<>();
-        config.put("zookeeper.connect", "zookeeper:2181");
+        kafkaContainer = new StrimziKafkaContainer();
+        kafkaContainer.start();
 
-        cluster = new StrimziKafkaCluster(1, 1, config);
-        cluster.start();
+        MANDATORY_CONFIG.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaContainer.getBootstrapServers());
+        MANDATORY_CONFIG.put(Config.ZOOKEEPER_CONNECT.key, kafkaContainer.getInternalZooKeeperConnect());
 
-        MANDATORY_CONFIG.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, cluster.getBootstrapServers());
-        MANDATORY_CONFIG.put(Config.ZOOKEEPER_CONNECT.key, cluster.getZookeeper().getHost() + ":" + cluster.getZookeeper().getFirstMappedPort());
-
-        ZkClient zkc = new ZkClient(cluster.getZookeeper().getHost() + ":" + cluster.getZookeeper().getFirstMappedPort());
+        ZkClient zkc = new ZkClient(kafkaContainer.getInternalZooKeeperConnect());
         try {
             zkc.create("/strimzi", null, CreateMode.PERSISTENT);
             zkc.create("/strimzi/topics", null, CreateMode.PERSISTENT);
@@ -140,7 +137,7 @@ public class TopicStoreUpgradeTest {
 
     @AfterAll
     public static void after() {
-        cluster.stop();
+        kafkaContainer.stop();
         vertx.close();
     }
 }

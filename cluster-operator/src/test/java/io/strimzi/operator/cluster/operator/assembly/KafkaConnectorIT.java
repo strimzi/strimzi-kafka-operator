@@ -20,7 +20,6 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.test.container.StrimziKafkaCluster;
 import io.strimzi.test.container.StrimziKafkaContainer;
 import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
@@ -41,7 +40,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +55,7 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectorIT {
-    private static StrimziKafkaContainer cluster;
+    private static StrimziKafkaContainer kafkaContainer;
     private static Vertx vertx;
     private ConnectCluster connectCluster;
 
@@ -69,13 +67,13 @@ public class KafkaConnectorIT {
                         .setEnabled(true)
         ));
 
-        cluster = new StrimziKafkaContainer();
-        cluster.start();
+        kafkaContainer = new StrimziKafkaContainer();
+        kafkaContainer.start();
     }
 
     @AfterAll
     public static void after() {
-        cluster.stop();
+        kafkaContainer.stop();
         vertx.close();
     }
 
@@ -85,7 +83,7 @@ public class KafkaConnectorIT {
 
         // Start a 3 node connect cluster
         connectCluster = new ConnectCluster()
-                .usingBrokers(cluster.getBootstrapServers())
+                .usingBrokers(kafkaContainer.getBootstrapServers())
                 .addConnectNodes(3);
         connectCluster.startup();
     }

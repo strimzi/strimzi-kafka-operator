@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.container.StrimziKafkaCluster;
+import io.strimzi.test.container.StrimziKafkaContainer;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
@@ -39,6 +40,7 @@ import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.TestInstance;
+import org.testcontainers.lifecycle.Startable;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -74,7 +76,7 @@ public abstract class TopicOperatorBaseIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorBaseIT.class);
 
-    private static KubeClusterResource cluster;
+    protected static KubeClusterResource cluster;
 
     protected static String oldNamespace;
 
@@ -140,12 +142,22 @@ public abstract class TopicOperatorBaseIT {
         }
     }
 
-    public void setup(StrimziKafkaCluster kafkaCluster) throws Exception {
+    public <T extends Startable> void setup(final T strimziContainer) throws Exception {
         LOGGER.info("Setting up test");
         cluster.cluster();
 
         Properties p = new Properties();
-        p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaCluster.getBootstrapServers());
+
+        if (strimziContainer instanceof StrimziKafkaCluster) {
+            final StrimziKafkaCluster kCluster = ((StrimziKafkaCluster) strimziContainer);
+            p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kCluster.getBootstrapServers());
+        } else if (strimziContainer instanceof StrimziKafkaContainer) {
+            final StrimziKafkaContainer kContainer = ((StrimziKafkaContainer) strimziContainer);
+            p.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kContainer.getBootstrapServers());
+        } else {
+            throw new RuntimeException("Using not supported known type of Strimzi test container");
+        }
+
         adminClient = AdminClient.create(p);
 
         kubeClient = kubeClient().getClient();
@@ -208,10 +220,10 @@ public abstract class TopicOperatorBaseIT {
         latch.await(30, TimeUnit.SECONDS);
     }
 
-    protected void startTopicOperator(StrimziKafkaCluster kafkaCluster) throws InterruptedException, ExecutionException, TimeoutException {
+    protected <T extends Startable> void startTopicOperator(final T strimziContainer) throws InterruptedException, ExecutionException, TimeoutException {
 
         LOGGER.info("Starting Topic Operator");
-        session = new Session(kubeClient, new Config(topicOperatorConfig(kafkaCluster)));
+        session = new Session(kubeClient, new Config(topicOperatorConfig(strimziContainer)));
 
         CompletableFuture<Void> async = new CompletableFuture<>();
         vertx.deployVerticle(session, ar -> {
@@ -226,10 +238,21 @@ public abstract class TopicOperatorBaseIT {
         LOGGER.info("Started Topic Operator");
     }
 
-    protected Map<String, String> topicOperatorConfig(StrimziKafkaCluster kafkaCluster) {
-        Map<String, String> m = new HashMap<>();
-        m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kafkaCluster.getBootstrapServers());
-        m.put(Config.ZOOKEEPER_CONNECT.key, kafkaCluster.getZookeeper().getHost() + ":" + kafkaCluster.getZookeeper().getFirstMappedPort());
+    protected <T extends Startable> Map<String, String> topicOperatorConfig(final T strimziContainer) {
+        final Map<String, String> m = new HashMap<>();
+
+        if (strimziContainer instanceof StrimziKafkaCluster) {
+            final StrimziKafkaCluster kCluster = ((StrimziKafkaCluster) strimziContainer);
+            m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kCluster.getBootstrapServers());
+            m.put(Config.ZOOKEEPER_CONNECT.key, kCluster.getZookeeper().getConnectString());
+        } else if (strimziContainer instanceof StrimziKafkaContainer) {
+            final StrimziKafkaContainer kContainer = ((StrimziKafkaContainer) strimziContainer);
+            m.put(Config.KAFKA_BOOTSTRAP_SERVERS.key, kContainer.getBootstrapServers());
+            m.put(Config.ZOOKEEPER_CONNECT.key, kContainer.getInternalZooKeeperConnect());
+        } else {
+            throw new RuntimeException("Using not supported known type of Strimzi test container");
+        }
+
         m.put(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS.key, "30000");
         m.put(Config.NAMESPACE.key, NAMESPACE);
         m.put(Config.CLIENT_ID.key, CLIENTID);

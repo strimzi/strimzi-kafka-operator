@@ -22,7 +22,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.test.container.StrimziKafkaCluster;
+import io.strimzi.test.container.StrimziKafkaContainer;
 import kafka.server.KafkaConfig$;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class TopicOperatorIT extends TopicOperatorBaseIT {
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
-    protected static StrimziKafkaCluster kafkaCluster;
+    protected static StrimziKafkaContainer kafkaContainer;
 
     @BeforeAll
     public void beforeAll() throws Exception {
@@ -73,13 +73,6 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
 
     protected static int numKafkaBrokers() {
         return 1;
-    }
-
-    protected static Map<String, String> kafkaClusterConfig() {
-        Map<String, String> p = new HashMap<>();
-        p.put(KafkaConfig$.MODULE$.AutoCreateTopicsEnableProp(), "false");
-        p.put("zookeeper.connect", "zookeeper:2181");
-        return p;
     }
 
 
@@ -537,7 +530,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         }
 
         // 4. Start TO
-        startTopicOperator(kafkaCluster);
+        startTopicOperator(kafkaContainer);
 
         // 5. Verify topics A, X and Y exist on both sides
         waitForTopicInKafka(topicNameA);

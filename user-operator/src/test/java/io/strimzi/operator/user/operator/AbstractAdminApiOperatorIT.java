@@ -43,12 +43,13 @@ public abstract class AbstractAdminApiOperatorIT<T, S extends Collection<String>
     @BeforeAll
     public static void beforeAll() {
         vertx = Vertx.vertx();
-        Map<String, String> additionalConfiguration = Map.of(
-            "authorizer.class.name", "kafka.security.authorizer.AclAuthorizer",
-            "super.users", "User:ANONYMOUS");
+
         kafkaContainer = new StrimziKafkaContainer()
             .withBrokerId(1)
-            .withKafkaConfigurationMap(additionalConfiguration);
+            .withKafkaConfigurationMap(
+                Map.of(
+                "authorizer.class.name", "kafka.security.authorizer.AclAuthorizer",
+                "super.users", "User:ANONYMOUS"));
         kafkaContainer.start();
 
         Properties p = new Properties();

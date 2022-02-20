@@ -17,11 +17,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.lifecycle.Startable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -62,14 +62,8 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
         return 2;
     }
 
-    protected static Map<String, String> kafkaClusterConfig() {
-        Map<String, String> p = new HashMap<>();
-        p.put("zookeeper.connect", "zookeeper:2181");
-        return p;
-    }
-
     @Override
-    protected Map<String, String> topicOperatorConfig(StrimziKafkaCluster kafkaCluster) {
+    protected <T extends Startable> Map<String, String> topicOperatorConfig(T strimziContainer) {
         Map<String, String> m = super.topicOperatorConfig(kafkaCluster);
         m.put(Config.FULL_RECONCILIATION_INTERVAL_MS.key, "20000");
         return m;

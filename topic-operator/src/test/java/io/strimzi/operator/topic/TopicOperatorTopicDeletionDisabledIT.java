@@ -5,7 +5,7 @@
 package io.strimzi.operator.topic;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.test.container.StrimziKafkaCluster;
+import io.strimzi.test.container.StrimziKafkaContainer;
 import io.vertx.core.Future;
 import kafka.server.KafkaConfig$;
 import org.junit.jupiter.api.AfterAll;
@@ -19,7 +19,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
-    protected static StrimziKafkaCluster kafkaCluster;
+    protected static StrimziKafkaContainer kafkaContainer;
 
     @BeforeAll
     public void beforeAll() throws Exception {
@@ -42,17 +42,6 @@ public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
     @AfterEach
     public void afterEach() throws InterruptedException, TimeoutException, ExecutionException {
         clearKafkaTopics(false);
-    }
-
-    protected static int numKafkaBrokers() {
-        return 1;
-    }
-
-    protected static Map<String, String> kafkaClusterConfig() {
-        Map<String, String> p = new HashMap<>();
-        p.put(KafkaConfig$.MODULE$.DeleteTopicEnableProp(), "false");
-        p.put("zookeeper.connect", "zookeeper:2181");
-        return p;
     }
 
     @Test
