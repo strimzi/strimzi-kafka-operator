@@ -6,7 +6,7 @@
 
 = Kafka listener certificates
 
-You can provide your own server certificates and private keys for any listener with enabled TLS encryption.
+You can provide your own server certificates and private keys for any listener with TLS encryption enabled.
 These user-provided certificates are called _Kafka listener certificates_.
 
 Providing Kafka listener certificates allows you to leverage existing security infrastructure, such as your organization's private CA or a public CA.
