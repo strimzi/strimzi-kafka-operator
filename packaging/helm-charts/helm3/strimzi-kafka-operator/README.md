@@ -187,6 +187,7 @@ the documentation for more details.
 | `mavenBuilder.image.repository`      | Maven Builder image repository            | `nil`                                                |
 | `mavenBuilder.image.name`            | Override default Maven Builder image name                  | `maven-builder`                     |
 | `mavenBuilder.image.tag`             | Override default Maven Builder image tag                   | `nil`                               |
+| `logConfiguration`                   | Override default `log4j.properties` content                | `nil`                               |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 
