@@ -34,35 +34,35 @@ start_cluster() {
   if [[ -n $NAMESPACE && -n $CLUSTER_NAME ]]; then
     echo "Starting cluster $CLUSTER_NAME"
     if [[ $COMMAND == "backup" && -n $ZK_REPLICAS && -n $KAFKA_REPLICAS ]]; then
-      local zoo_ss="$(kubectl -n $NAMESPACE get statefulset $CLUSTER_NAME-zookeeper -o name --ignore-not-found)"
+      local zoo_ss && zoo_ss="$(kubectl -n "$NAMESPACE" get sts "$CLUSTER_NAME"-zookeeper -o name --ignore-not-found)"
       if [[ -n $zoo_ss ]]; then
-        kubectl -n $NAMESPACE scale $zoo_ss --replicas $ZK_REPLICAS
-        wait_for condition=ready pod "strimzi.io/name=$CLUSTER_NAME-zookeeper"
+        kubectl -n "$NAMESPACE" scale "$zoo_ss" --replicas "$ZK_REPLICAS"
+        wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-zookeeper"
       fi
-      local kafka_ss="$(kubectl -n $NAMESPACE get statefulset $CLUSTER_NAME-kafka -o name --ignore-not-found)"
+      local kafka_ss && kafka_ss="$(kubectl -n "$NAMESPACE" get sts "$CLUSTER_NAME"-kafka -o name --ignore-not-found)"
       if [[ -n $kafka_ss ]]; then
-        kubectl -n $NAMESPACE scale $kafka_ss --replicas $KAFKA_REPLICAS
-        wait_for condition=ready pod "strimzi.io/name=$CLUSTER_NAME-kafka"
+        kubectl -n "$NAMESPACE" scale "$kafka_ss" --replicas "$KAFKA_REPLICAS"
+        wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka"
       fi
-      local eo_deploy="$(kubectl -n $NAMESPACE get deploy $CLUSTER_NAME-entity-operator -o name --ignore-not-found)"
+      local eo_deploy && eo_deploy="$(kubectl -n "$NAMESPACE" get deploy "$CLUSTER_NAME"-entity-operator -o name --ignore-not-found)"
       if [[ -n $eo_deploy ]]; then
-        kubectl -n $NAMESPACE scale $eo_deploy --replicas 1
-        wait_for condition=ready pod "strimzi.io/name=$CLUSTER_NAME-entity-operator"
+        kubectl -n "$NAMESPACE" scale "$eo_deploy" --replicas 1
+        wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-entity-operator"
       fi
-      local ke_deploy="$(kubectl -n $NAMESPACE get deploy $CLUSTER_NAME-kafka-exporter -o name --ignore-not-found)"
+      local ke_deploy && ke_deploy="$(kubectl -n "$NAMESPACE" get deploy "$CLUSTER_NAME"-kafka-exporter -o name --ignore-not-found)"
       if [[ -n $ke_deploy ]]; then
-        kubectl -n $NAMESPACE scale $ke_deploy --replicas 1
-        wait_for condition=ready pod "strimzi.io/name=$CLUSTER_NAME-kafka-exporter"
+        kubectl -n "$NAMESPACE" scale "$ke_deploy" --replicas 1
+        wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka-exporter"
       fi
     fi
     if [[ $COMMAND == "backup" || $COMMAND == "restore" ]]; then
-      local co_deploy="$(kubectl -n $NAMESPACE get deploy strimzi-cluster-operator -o name --ignore-not-found)"
+      local co_deploy && co_deploy="$(kubectl -n "$NAMESPACE" get deploy strimzi-cluster-operator -o name --ignore-not-found)"
       if [[ -n $co_deploy ]]; then
-        kubectl -n $NAMESPACE scale $co_deploy --replicas 1
-        wait_for condition=ready pod "strimzi.io/kind=cluster-operator"
+        kubectl -n "$NAMESPACE" scale "$co_deploy" --replicas 1
+        wait_for "condition=Ready" "pod -l strimzi.io/kind=cluster-operator"
       fi
       if [[ $COMMAND == "restore" ]]; then
-        wait_for condition=ready pod "strimzi.io/name=$CLUSTER_NAME-kafka"
+        wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka"
       fi
     fi
   fi
@@ -71,40 +71,40 @@ start_cluster() {
 stop_cluster() {
   if [[ -n $NAMESPACE && -n $CLUSTER_NAME ]]; then
     echo "Stopping cluster $CLUSTER_NAME"
-    local co_deploy="$(kubectl -n $NAMESPACE get deploy strimzi-cluster-operator -o name --ignore-not-found)"
+    local co_deploy && co_deploy="$(kubectl -n "$NAMESPACE" get deploy strimzi-cluster-operator -o name --ignore-not-found)"
     if [[ -n $co_deploy ]]; then
-      kubectl -n $NAMESPACE scale $co_deploy --replicas 0
-      wait_for delete pod "strimzi.io/kind=cluster-operator"
+      kubectl -n "$NAMESPACE" scale "$co_deploy" --replicas 0
+      wait_for "delete" "pod -l strimzi.io/kind=cluster-operator"
     else
       echo "No local operator found, make sure no cluster-wide operator is watching this namespace"
       confirm
     fi
-    local eo_deploy="$(kubectl -n $NAMESPACE get deploy $CLUSTER_NAME-entity-operator -o name --ignore-not-found)"
+    local eo_deploy && eo_deploy="$(kubectl -n "$NAMESPACE" get deploy "$CLUSTER_NAME"-entity-operator -o name --ignore-not-found)"
     if [[ -n $eo_deploy ]]; then
-      kubectl -n $NAMESPACE scale $eo_deploy --replicas 0
-      wait_for delete pod "strimzi.io/name=$CLUSTER_NAME-entity-operator"
+      kubectl -n "$NAMESPACE" scale "$eo_deploy" --replicas 0
+      wait_for "delete" "pod -l strimzi.io/name=$CLUSTER_NAME-entity-operator"
     fi
-    local ke_deploy="$(kubectl -n $NAMESPACE get deploy $CLUSTER_NAME-kafka-exporter -o name --ignore-not-found)"
+    local ke_deploy && ke_deploy="$(kubectl -n "$NAMESPACE" get deploy "$CLUSTER_NAME"-kafka-exporter -o name --ignore-not-found)"
     if [[ -n $ke_deploy ]]; then
-      kubectl -n $NAMESPACE scale $ke_deploy --replicas 0
-      wait_for delete pod "strimzi.io/name=$CLUSTER_NAME-kafka-exporter"
+      kubectl -n "$NAMESPACE" scale "$ke_deploy" --replicas 0
+      wait_for "delete" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka-exporter"
     fi
-    local kafka_ss="$(kubectl -n $NAMESPACE get statefulset $CLUSTER_NAME-kafka -o name --ignore-not-found)"
+    local kafka_ss && kafka_ss="$(kubectl -n "$NAMESPACE" get statefulset "$CLUSTER_NAME"-kafka -o name --ignore-not-found)"
     if [[ -n $kafka_ss ]]; then
-      kubectl -n $NAMESPACE scale $kafka_ss --replicas 0
-      wait_for delete pod "strimzi.io/name=$CLUSTER_NAME-kafka"
+      kubectl -n "$NAMESPACE" scale "$kafka_ss" --replicas 0
+      wait_for "delete" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka"
     fi
-    local zoo_ss="$(kubectl -n $NAMESPACE get statefulset $CLUSTER_NAME-zookeeper -o name --ignore-not-found)"
+    local zoo_ss && zoo_ss="$(kubectl -n "$NAMESPACE" get statefulset "$CLUSTER_NAME"-zookeeper -o name --ignore-not-found)"
     if [[ -n $zoo_ss ]]; then
-      kubectl -n $NAMESPACE scale $zoo_ss --replicas 0
-      wait_for delete pod "strimzi.io/name=$CLUSTER_NAME-zookeeper"
+      kubectl -n "$NAMESPACE" scale "$zoo_ss" --replicas 0
+      wait_for "delete" "pod -l strimzi.io/name=$CLUSTER_NAME-zookeeper"
     fi
   fi
 }
 
 cleanup() {
   if [[ -n $COMMAND && $CLEANUP == true ]]; then
-    kubectl -n $NAMESPACE delete pod $RSYNC_POD_NAME 2>/dev/null ||true
+    kubectl -n "$NAMESPACE" delete pod "$RSYNC_POD_NAME" 2>/dev/null ||true
     start_cluster
   fi
 }
@@ -115,7 +115,7 @@ error() {
 }
 
 confirm() {
-  read -p "Please confirm (y/n) " reply
+  read -rp "Please confirm (y/n) " reply
   if [[ ! $reply =~ ^[Yy]$ ]]; then
     CLEANUP=false
     exit 0
@@ -127,25 +127,22 @@ check_kube_conn() {
 }
 
 wait_for() {
-  local cond="$1"
+  local condition="$1"
   local resource="$2"
-  local label="${3-}"
+  local namespace="${3-$NAMESPACE}"
   local timeout_sec=300
-  if [[ -z $cond || -z $resource ]]; then
+  if [[ -z $condition || -z $resource || -z $namespace ]]; then
     error "Missing parameters"
   fi
-  if [[ -n $label ]]; then
-    resource="$resource -l $label"
-  fi
-  echo "Waiting for $cond on $resource"
-  local res_cmd="kubectl -n $NAMESPACE get $resource -o name --ignore-not-found"
-  local wait_cmd="kubectl -n $NAMESPACE wait --for=$cond $resource --timeout=${timeout_sec}s"
-  # wait for resource
+  echo "Waiting for \"$condition\" on \"$resource\" in namespace \"$namespace\""
+  local res_cmd="kubectl -n $namespace get $resource -o name --ignore-not-found"
+  local con_cmd="kubectl -n $namespace wait --for=$condition $resource --timeout=${timeout_sec}s"
+  # waiting for resource
   local i=0; while [[ ! $($res_cmd) && $i -lt $timeout_sec ]]; do
     i=$((i+1)) && sleep 1
   done
-  # wait for condition
-  $wait_cmd
+  # waiting for condition
+  $con_cmd
 }
 
 export_env() {
@@ -155,15 +152,15 @@ export_env() {
   fi
   echo "Exporting environment"
   local zk_label="strimzi.io/name=$CLUSTER_NAME-zookeeper"
-  ZK_REPLICAS=$(kubectl -n $NAMESPACE get kafka $CLUSTER_NAME -o yaml | yq eval ".spec.zookeeper.replicas" -)
-  mapfile -t ZK_PVC < <(kubectl -n $NAMESPACE get pvc -l $zk_label -o yaml | yq eval ".items[].metadata.name" -)
-  ZK_PVC_SIZE=$(kubectl -n $NAMESPACE get pvc -l $zk_label -o yaml | yq eval ".items[0].spec.resources.requests.storage" -)
-  ZK_PVC_CLASS=$(kubectl -n $NAMESPACE get pvc -l $zk_label -o yaml | yq eval ".items[0].spec.storageClassName" -)
+  ZK_REPLICAS=$(kubectl -n "$NAMESPACE" get kafka "$CLUSTER_NAME" -o yaml | yq eval ".spec.zookeeper.replicas" -)
+  mapfile -t ZK_PVC < <(kubectl -n "$NAMESPACE" get pvc -l "$zk_label" -o yaml | yq eval ".items[].metadata.name" -)
+  ZK_PVC_SIZE=$(kubectl -n "$NAMESPACE" get pvc -l "$zk_label" -o yaml | yq eval ".items[0].spec.resources.requests.storage" -)
+  ZK_PVC_CLASS=$(kubectl -n "$NAMESPACE" get pvc -l "$zk_label" -o yaml | yq eval ".items[0].spec.storageClassName" -)
   local kafka_label="strimzi.io/name=$CLUSTER_NAME-kafka"
-  KAFKA_REPLICAS=$(kubectl -n $NAMESPACE get kafka $CLUSTER_NAME -o yaml | yq eval ".spec.kafka.replicas" -)
-  mapfile -t KAFKA_PVC < <(kubectl -n $NAMESPACE get pvc -l $kafka_label -o yaml | yq eval ".items[].metadata.name" -)
-  KAFKA_PVC_SIZE=$(kubectl -n $NAMESPACE get pvc -l $kafka_label -o yaml | yq eval ".items[0].spec.resources.requests.storage" -)
-  KAFKA_PVC_CLASS=$(kubectl -n $NAMESPACE get pvc -l $kafka_label -o yaml | yq eval ".items[0].spec.storageClassName" -)
+  KAFKA_REPLICAS=$(kubectl -n "$NAMESPACE" get kafka "$CLUSTER_NAME" -o yaml | yq eval ".spec.kafka.replicas" -)
+  mapfile -t KAFKA_PVC < <(kubectl -n "$NAMESPACE" get pvc -l "$kafka_label" -o yaml | yq eval ".items[].metadata.name" -)
+  KAFKA_PVC_SIZE=$(kubectl -n "$NAMESPACE" get pvc -l "$kafka_label" -o yaml | yq eval ".items[0].spec.resources.requests.storage" -)
+  KAFKA_PVC_CLASS=$(kubectl -n "$NAMESPACE" get pvc -l "$kafka_label" -o yaml | yq eval ".items[0].spec.storageClassName" -)
   declare -px ZK_REPLICAS ZK_PVC ZK_PVC_SIZE ZK_PVC_CLASS KAFKA_REPLICAS KAFKA_PVC KAFKA_PVC_SIZE KAFKA_PVC_CLASS > "$dest_path"
 }
 
@@ -174,21 +171,20 @@ export_res() {
   if [[ -z $res_type || -z $res_id || -z $dest_path ]]; then
     error "Missing parameters"
   fi
-  local resources=$(kubectl -n $NAMESPACE get $res_type -l $res_id -o name --ignore-not-found ||true)
+  local resources && resources=$(kubectl -n "$NAMESPACE" get "$res_type" -l "$res_id" -o name --ignore-not-found ||true)
   if [[ -z $resources ]]; then
-    resources=$(kubectl -n $NAMESPACE get $res_type $res_id -o name --ignore-not-found 2>/dev/null ||true)
+    resources=$(kubectl -n "$NAMESPACE" get "$res_type" "$res_id" -o name --ignore-not-found 2>/dev/null ||true)
   fi
-  if [[ -n $resources ]]; then
-    echo "Exporting $res_type $res_id"
-    # delete runtime metadata expression
-    local exp="del(.metadata.namespace, .items[].metadata.namespace, \
-      .metadata.resourceVersion, .items[].metadata.resourceVersion, \
-      .metadata.selfLink, .items[].metadata.selfLink, \
-      .metadata.uid, .items[].metadata.uid, \
-      .status, .items[].status)"
-    local file_name=$(printf $res_type-$res_id | sed 's/\//-/g;s/ //g')
-    kubectl -n $NAMESPACE get $resources -o yaml | yq eval "$exp" - > $dest_path/$file_name.yaml
-  fi
+  local del_metadata="del(.metadata.namespace, .items[].metadata.namespace, \
+    .metadata.resourceVersion, .items[].metadata.resourceVersion, \
+    .metadata.selfLink, .items[].metadata.selfLink, \
+    .metadata.uid, .items[].metadata.uid, \
+    .status, .items[].status)"
+  for res in $resources; do
+    echo "Exporting $res"
+    local file_name && file_name=$(echo "$res" | sed 's/\//-/g;s/ //g')
+    kubectl -n "$NAMESPACE" get "$res" -o yaml | yq eval "$del_metadata" - > "$dest_path/$file_name.yaml"
+  done
 }
 
 rsync() {
@@ -202,21 +198,21 @@ rsync() {
   if [[ $source != "$BACKUP_PATH/"* ]]; then
     # download from pod to local (backup)
     flags="$flags --exclude=data/version-2/{currentEpoch,acceptedEpoch}"
-    local patch=$(sed "s@\$name@$source@g" $BASE/templates/patch.json)
-    kubectl -n $NAMESPACE run $RSYNC_POD_NAME --image "dummy" --restart "Never" --overrides "$patch"
-    wait_for condition=ready pod "run=$RSYNC_POD_NAME"
+    local patch && patch=$(sed "s@\$name@$source@g" "$BASE/templates/patch.json")
+    kubectl -n "$NAMESPACE" run "$RSYNC_POD_NAME" --image "dummy" --restart "Never" --overrides "$patch"
+    wait_for "condition=Ready" "pod -l run=$RSYNC_POD_NAME"
     # ignore the sporadic file changed error
-    kubectl -n $NAMESPACE exec -i $RSYNC_POD_NAME -- sh -c "tar $flags -C /data -c ." \
-      | tar $flags -C $target -xv -f - && if [[ $? == 1 ]]; then exit 0; fi
-    kubectl -n $NAMESPACE delete pod $RSYNC_POD_NAME
+    kubectl -n "$NAMESPACE" exec -i "$RSYNC_POD_NAME" -- bash -c "tar $flags -C /data -c ." \
+      | bash -c "tar $flags -C $target -xv -f - && if [[ $? == 1 ]]; then exit 0; fi"
+    kubectl -n "$NAMESPACE" delete pod "$RSYNC_POD_NAME"
   else
     # upload from local to pod (restore)
-    local patch=$(sed "s@\$name@$target@g" $BASE/templates/patch.json)
-    kubectl -n $NAMESPACE run $RSYNC_POD_NAME --image "dummy" --restart "Never" --overrides "$patch"
-    wait_for condition=ready pod "run=$RSYNC_POD_NAME"
-    tar $flags -C $source -c . \
-      | kubectl -n $NAMESPACE exec -i $RSYNC_POD_NAME -- sh -c "tar $flags -C /data -xv -f -"
-    kubectl -n $NAMESPACE delete pod $RSYNC_POD_NAME
+    local patch && patch=$(sed "s@\$name@$target@g" "$BASE/templates/patch.json")
+    kubectl -n "$NAMESPACE" run "$RSYNC_POD_NAME" --image "dummy" --restart "Never" --overrides "$patch"
+    wait_for "condition=ready" "pod -l run=$RSYNC_POD_NAME"
+    bash -c "tar $flags -C $source -c ." \
+      | kubectl -n "$NAMESPACE" exec -i "$RSYNC_POD_NAME" -- bash -c "tar $flags -C /data -xv -f -"
+    kubectl -n "$NAMESPACE" delete pod "$RSYNC_POD_NAME"
   fi
 }
 
@@ -232,7 +228,7 @@ create_pvc() {
     exp="s/\$name/$name/g; s/\$size/$size/g; s/\$class/$class/g"
   fi
   echo "Creating pvc $name of size $size"
-  sed "$exp" $BASE/templates/pvc.yaml | kubectl -n $NAMESPACE create -f -
+  sed "$exp" "$BASE"/templates/pvc.yaml | kubectl -n "$NAMESPACE" create -f -
 }
 
 compress() {
@@ -241,12 +237,12 @@ compress() {
   if [[ -z $source_dir || -z $target_file ]]; then
     error "Missing parameters"
   fi
-  local current_dir=$(pwd)
-  cd $source_dir
+  local current_dir && current_dir=$(pwd)
+  cd "$source_dir"
   echo "Compressing $source_dir to $target_file"
-  zip -FSqr $BACKUP_NAME *
-  mv $BACKUP_NAME $BACKUP_PATH
-  cd $current_dir
+  zip -FSqr "$BACKUP_NAME" .
+  mv "$BACKUP_NAME" "$BACKUP_PATH"
+  cd "$current_dir"
 }
 
 uncompress() {
@@ -256,9 +252,9 @@ uncompress() {
     error "Missing parameters"
   fi
   echo "Uncompressing $source_file to $target_dir"
-  mkdir -p $target_dir
-  unzip -qo $source_file -d $target_dir
-  chmod -R ugo+rwx $target_dir
+  mkdir -p "$target_dir"
+  unzip -qo "$source_file" -d "$target_dir"
+  chmod -R ugo+rwx "$target_dir"
 }
 
 backup() {
@@ -266,61 +262,61 @@ backup() {
     CLEANUP=false
     error "Specify namespace, cluster name and target file to backup"
   fi
-  if [[ ! -d "$(dirname $TARGET_FILE)" ]]; then
-    error "$(dirname $TARGET_FILE) not found"
+  if [[ ! -d "$(dirname "$TARGET_FILE")" ]]; then
+    error "$(dirname "$TARGET_FILE") not found"
   fi
 
-  # init context
   local tmp="$BACKUP_PATH/$NAMESPACE/$CLUSTER_NAME"
-  if [[ ! -z "$(ls -A $tmp 2>/dev/null ||true)" ]]; then
+  if [[ -n "$(ls -A $tmp 2>/dev/null ||true)" ]]; then
     CLEANUP=false
     error "Non empty directory: $tmp"
   fi
-  check_kube_conn
+  
   if [[ $CONFIRM == true ]]; then
     echo "Backup of cluster $NAMESPACE/$CLUSTER_NAME"
     echo "The cluster won't be available for the entire duration of the process"
     confirm
   fi
-  echo "Starting backup"
-  mkdir -p $tmp/resources $tmp/data
-  export_env $tmp/env
+  
+  mkdir -p "$tmp/resources" "$tmp/data"
+  export_env "$tmp/log-dump-env"
+  check_kube_conn
   stop_cluster
 
   # export resources
-  export_res kafka $CLUSTER_NAME $tmp/resources
-  export_res kafkatopics strimzi.io/cluster=$CLUSTER_NAME $tmp/resources
-  export_res kafkausers strimzi.io/cluster=$CLUSTER_NAME $tmp/resources
-  export_res kafkarebalances strimzi.io/cluster=$CLUSTER_NAME $tmp/resources
+  export_res kafka "$CLUSTER_NAME" "$tmp"/resources
+  export_res kafkatopics "strimzi.io/cluster=$CLUSTER_NAME" "$tmp/resources"
+  export_res kafkausers "strimzi.io/cluster=$CLUSTER_NAME" "$tmp/resources"
+  export_res kafkarebalances "strimzi.io/cluster=$CLUSTER_NAME" "$tmp/resources"
   # cluster configmap and secrets
-  export_res configmaps app.kubernetes.io/instance=$CLUSTER_NAME $tmp/resources
-  export_res secrets app.kubernetes.io/instance=$CLUSTER_NAME $tmp/resources
+  export_res configmaps "app.kubernetes.io/instance=$CLUSTER_NAME" "$tmp/resources"
+  export_res secrets "app.kubernetes.io/instance=$CLUSTER_NAME" "$tmp/resources"
   # custom configmap and secrets
   if [[ -n $CUSTOM_CM ]]; then
-    for name in $(printf $CUSTOM_CM | sed "s/,/ /g"); do
-      export_res configmap $name $tmp/resources
+    for name in ${CUSTOM_CM//,/ }; do
+      export_res configmap "$name" "$tmp"/resources
     done
   fi
   if [[ -n $CUSTOM_SE ]]; then
-    for name in $(printf $CUSTOM_SE | sed "s/,/ /g"); do
-      export_res secret $name $tmp/resources
+    for name in ${CUSTOM_SE//,/ }; do
+      export_res secret "$name" "$tmp"/resources
     done
   fi
 
   # for each PVC, rsync data from PV to backup
   for name in "${ZK_PVC[@]}"; do
     local path="$tmp/data/$name"
-    mkdir -p $path
-    rsync $name $path
+    mkdir -p "$path"
+    rsync "$name" "$path"
   done
   for name in "${KAFKA_PVC[@]}"; do
     local path="$tmp/data/$name"
-    mkdir -p $path
-    rsync $name $path
+    mkdir -p "$path"
+    rsync "$name" "$path"
   done
 
   # create the archive
-  compress $tmp $TARGET_FILE
+  compress "$tmp" "$TARGET_FILE"
 }
 
 restore() {
@@ -331,32 +327,37 @@ restore() {
   if [[ ! -f $SOURCE_FILE ]]; then
     error "$SOURCE_FILE file not found"
   fi
-
-  # init context
-  local tmp="$BACKUP_PATH/$NAMESPACE/$CLUSTER_NAME"
+  
   check_kube_conn
+  if [[ -z $(kubectl get ns "$NAMESPACE" -o name --ignore-not-found) ]]; then
+    error "Namespace not found"
+  fi
+
   if [[ $CONFIRM == true ]]; then
     echo "Restore of cluster $NAMESPACE/$CLUSTER_NAME"
     confirm
   fi
-  uncompress $SOURCE_FILE $tmp
-  source $tmp/env
+  
+  local tmp="$BACKUP_PATH/$NAMESPACE/$CLUSTER_NAME"
+  uncompress "$SOURCE_FILE" "$tmp"
+  # shellcheck disable=SC1091
+  source "$tmp/log-dump-env"
   stop_cluster
 
   # for each PVC, create it and rsync data from backup to PV
   for name in "${ZK_PVC[@]}"; do
-    create_pvc $name $ZK_PVC_SIZE $ZK_PVC_CLASS
-    rsync $tmp/data/$name/. $name
+    create_pvc "$name" "$ZK_PVC_SIZE" "$ZK_PVC_CLASS"
+    rsync "$tmp/data/$name/." "$name"
   done
   for name in "${KAFKA_PVC[@]}"; do
-    create_pvc $name $KAFKA_PVC_SIZE $KAFKA_PVC_CLASS
-    rsync $tmp/data/$name/. $name
+    create_pvc "$name" "$KAFKA_PVC_SIZE" "$KAFKA_PVC_CLASS"
+    rsync "$tmp/data/$name/." "$name"
   done
 
   # import resources
   # KafkaTopic resources must be created *before*
   # deploying the Topic Operator or it will delete them
-  kubectl -n $NAMESPACE apply -f $tmp/resources
+  kubectl -n "$NAMESPACE" apply -f "$tmp"/resources
 }
 
 readonly USAGE="
@@ -374,47 +375,35 @@ Options:
   -s  Source file path
   -m  Custom config maps (-m cm0,cm1,cm2)
   -x  Custom secrets (-x se0,se1,se2)
-
-Examples:
-  # Full backup with custom cm and secrets
-  $0 backup -n test -c my-cluster \\
-    -t /tmp/my-cluster.zip \\
-    -m kafka-metrics,log4j-properties \\
-    -x ext-listener-crt
-
-  # Restore to a new namespace
-  $0 restore -n test-new -c my-cluster \\
-    -s /tmp/my-cluster.zip
 "
-readonly PARAMS="${@}"
-readonly PARRAY=($PARAMS)
-i=0; for param in $PARAMS; do
-  i=$(($i+1))
+readonly PARAMS=("$@")
+i=0; for param in "${PARAMS[@]}"; do
+  i=$((i+1))
   case $param in
     -y)
-      readonly CONFIRM=false && export CONFIRM
+      CONFIRM=false && readonly CONFIRM && export CONFIRM
       ;;
     -n)
-      readonly NAMESPACE=${PARRAY[i]} && export NAMESPACE
+      NAMESPACE=${PARAMS[i]} && readonly NAMESPACE && export NAMESPACE
       ;;
     -c)
-      readonly CLUSTER_NAME=${PARRAY[i]} && export CLUSTER_NAME
+      CLUSTER_NAME=${PARAMS[i]} && readonly CLUSTER_NAME && export CLUSTER_NAME
       ;;
     -t)
-      readonly TARGET_FILE=${PARRAY[i]} && export TARGET_FILE
-      readonly BACKUP_PATH=$(dirname $TARGET_FILE) && export BACKUP_PATH
-      readonly BACKUP_NAME=$(basename $TARGET_FILE) && export BACKUP_NAME
+      TARGET_FILE=${PARAMS[i]} && readonly TARGET_FILE && export TARGET_FILE
+      BACKUP_PATH=$(dirname "$TARGET_FILE") && readonly BACKUP_PATH && export BACKUP_PATH
+      BACKUP_NAME=$(basename "$TARGET_FILE") && readonly BACKUP_NAME && export BACKUP_NAME
       ;;
     -s)
-      readonly SOURCE_FILE=${PARRAY[i]} && export SOURCE_FILE
-      readonly BACKUP_PATH=$(dirname $SOURCE_FILE) && export BACKUP_PATH
-      readonly BACKUP_NAME=$(basename $SOURCE_FILE) && export BACKUP_NAME
+      SOURCE_FILE=${PARAMS[i]} && readonly SOURCE_FILE && export SOURCE_FILE
+      BACKUP_PATH=$(dirname "$SOURCE_FILE") && readonly BACKUP_PATH && export BACKUP_PATH
+      BACKUP_NAME=$(basename "$SOURCE_FILE") && readonly BACKUP_NAME && export BACKUP_NAME
       ;;
     -m)
-      readonly CUSTOM_CM=${PARRAY[i]} && export CUSTOM_CM
+      CUSTOM_CM=${PARAMS[i]} && readonly CUSTOM_CM && export CUSTOM_CM
       ;;
     -x)
-      readonly CUSTOM_SE=${PARRAY[i]} && export CUSTOM_SE
+      CUSTOM_SE=${PARAMS[i]} && readonly CUSTOM_SE && export CUSTOM_SE
       ;;
   esac
 done
