@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -143,9 +144,9 @@ public class LogCollector {
 
         // it's not test suite but test case, and we are gonna collect logs
         if (!this.collectorElement.getTestMethodName().isEmpty()) {
-            // fetch test suite extensionContext
-            // @ParallelSuite -> this is generated namespace
-            if (StUtils.isParallelSuite(extensionContext.getParent().get())) {
+            // @ParallelSuite -> this is generated namespace but we collect logs only iff STRIMZI_RBAC_SCOPE=CLUSTER
+            // because when e we run STRIMZI_RBAC_SCOPE=NAMESPACE mode we use one namespace (i.e., clusterOperatorNamespace).
+            if (StUtils.isParallelSuite(extensionContext.getParent().get()) && !Environment.isNamespaceRbacScope()) {
                 // @IsolatedTest or @ParallelTest or @ParallelNamespaceTest -> are executed in that generated namespace
                 if (StUtils.isIsolatedTest(extensionContext) ||
                     StUtils.isParallelTest(extensionContext) ||
