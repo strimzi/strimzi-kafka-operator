@@ -32,7 +32,6 @@ If you need to cancel a reassignment, wait for it to complete and then perform a
 The `kafka-reassign-partitions.sh` will print the reassignment JSON for this reversion as part of its output.
 Very large reassignments should be broken down into a number of smaller reassignments in case there is a need to stop in-progress reassignment.
 
-[discrete]
 == Partition reassignment JSON file
 
 The _reassignment JSON file_ has a specific structure:
@@ -84,7 +83,6 @@ The following is an example reassignment JSON file that assigns partition `4` of
 
 Partitions not included in the JSON are not changed.
 
-[discrete]
 == Partition reassignment between JBOD volumes
 
 When using JBOD storage in your Kafka cluster, you can choose to reassign the partitions between specific volumes and their log directories (each volume has a single log directory).

@@ -9,7 +9,6 @@
 You can adjust several performance tuning options for cluster rebalances. 
 These options control how partition replica and leadership movements in a rebalance are executed, as well as the bandwidth that is allocated to a rebalance operation.
 
-[discrete]
 == Partition reassignment commands
 
 xref:con-optimization-proposals-{context}[Optimization proposals] are comprised of separate partition reassignment commands. 
@@ -26,7 +25,6 @@ A partition reassignment command consists of either of the following types of op
 Cruise Control issues partition reassignment commands to the Kafka cluster in batches.
 The performance of the cluster during the rebalance is affected by the number of each type of movement contained in each batch.
 
-[discrete]
 == Replica movement strategies
 
 Cluster rebalance performance is also influenced by the _replica movement strategy_ that is applied to the batches of partition reassignment commands. 
@@ -44,7 +42,6 @@ These strategies can be configured as a sequence.
 The first strategy attempts to compare two partition reassignments using its internal logic. 
 If the reassignments are equivalent, then it passes them to the next strategy in the sequence to decide the order, and so on.
 
-[discrete]
 == Intra-broker disk balancing
 
 Moving a large amount of data between disks on the same broker has less impact than between separate brokers.
@@ -54,7 +51,6 @@ To perform an intra-broker disk balance, set `rebalanceDisk` to `true` under the
 When setting `rebalanceDisk` to `true`, do not set a `goals` field in the `KafkaRebalance.spec`, as Cruise Control will automatically set the intra-broker goals and ignore the inter-broker goals.
 Cruise Control does not perform inter-broker and intra-broker balancing at the same time.
 
-[discrete]
 == Rebalance tuning options
 
 Cruise Control provides several configuration options for tuning the rebalance parameters discussed above.
