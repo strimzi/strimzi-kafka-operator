@@ -6,14 +6,10 @@
 
 = Kafka listener certificates
 
-You can provide your own server certificates and private keys for the following types of listeners:
-
-* Internal TLS listeners for communication within the Kubernetes cluster
-* External listeners (`route`, `loadbalancer`, `ingress`, and `nodeport` types), which have TLS encryption enabled, for communication between Kafka clients and Kafka brokers
-
+You can provide your own server certificates and private keys for any listener with TLS encryption enabled.
 These user-provided certificates are called _Kafka listener certificates_.
 
-Providing Kafka listener certificates for external listeners allows you to leverage existing security infrastructure, such as your organization's private CA or a public CA.
-Kafka clients will connect to Kafka brokers using Kafka listener certificates rather than certificates signed by the cluster CA or clients CA.
+Providing Kafka listener certificates allows you to leverage existing security infrastructure, such as your organization's private CA or a public CA.
+Kafka clients will need to trust the CA which was used to sign the listener certificate.
 
 You must manually renew Kafka listener certificates when needed.
