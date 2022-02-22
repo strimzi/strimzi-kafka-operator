@@ -63,7 +63,6 @@ import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
-import org.apache.commons.collections.map.UnmodifiableMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -183,14 +182,8 @@ public class ResourceManager {
                     labels = new HashMap<>();
                     labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
                 } else {
-                    if (resource.getMetadata().getLabels() instanceof UnmodifiableMap) {
-                        LOGGER.warn("Resource: {} in namespace: {} is using UnmodifiableMap: {} and thus we are not able to put {} label. " +
-                            "This mean that no Pod logs will be collected for such resource.", resource.getMetadata().getName(),
-                            resource.getMetadata().getNamespace(), Constants.TEST_CASE_NAME_LABEL, resource.getMetadata().getLabels());
-                    } else {
-                        labels = resource.getMetadata().getLabels();
-                        labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
-                    }
+                    labels = new HashMap<>(resource.getMetadata().getLabels());
+                    labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
                 }
                 resource.getMetadata().setLabels(labels);
             } else {
@@ -202,14 +195,8 @@ public class ResourceManager {
                         labels = new HashMap<>();
                         labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
                     } else {
-                        if (resource.getMetadata().getLabels() instanceof UnmodifiableMap) {
-                            LOGGER.warn("Resource: {} in namespace: {} is using UnmodifiableMap: {} and thus we are not able to put {} label. " +
-                                    "This mean that no Pod logs will be collected for such resource.", resource.getMetadata().getName(),
-                                resource.getMetadata().getNamespace(), Constants.TEST_SUITE_NAME_LABEL, resource.getMetadata().getLabels());
-                        } else {
-                            labels = resource.getMetadata().getLabels();
-                            labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
-                        }
+                        labels = new HashMap<>(resource.getMetadata().getLabels());
+                        labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
                     }
                     resource.getMetadata().setLabels(labels);
                 }
@@ -299,10 +286,10 @@ public class ResourceManager {
      * @param <R> {@link PodTemplateSpec}
      */
     private final <T extends HasMetadata, R extends PodTemplateSpec> void copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(final T resource, final R resourcePodTemplate) {
-        if (!(resourcePodTemplate.getMetadata().getLabels() instanceof UnmodifiableMap)) {
+        if (resource.getMetadata().getLabels() != null && resourcePodTemplate.getMetadata().getLabels() != null) {
             // 1. fetch Controller and PodTemplate labels
-            final Map<String, String> controllerLabels = resource.getMetadata().getLabels();
-            final Map<String, String> podLabels = resourcePodTemplate.getMetadata().getLabels();
+            final Map<String, String> controllerLabels = new HashMap<>(resource.getMetadata().getLabels());
+            final Map<String, String> podLabels = new HashMap<>(resourcePodTemplate.getMetadata().getLabels());
 
             // 2. a) add label for test.suite
             if (controllerLabels.containsKey(Constants.TEST_SUITE_NAME_LABEL)) {
