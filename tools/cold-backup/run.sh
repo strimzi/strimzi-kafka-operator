@@ -340,7 +340,8 @@ restore() {
   
   local tmp="$BACKUP_PATH/$NAMESPACE/$CLUSTER_NAME"
   uncompress "$SOURCE_FILE" "$tmp"
-  # shellcheck disable=SC1091
+  # do not access external source file
+  # shellcheck source=/dev/null 
   source "$tmp/log-dump-env"
   stop_cluster
 

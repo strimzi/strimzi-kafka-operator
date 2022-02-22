@@ -27,24 +27,26 @@ kubectl config set-context --current --namespace="myproject"
 kubectl create -f ./install/cluster-operator
 kubectl create -f ./examples/kafka/kafka-persistent.yaml
 kubectl create -f ./examples/topic/kafka-topic.yaml
+CLIENT_IMAGE="quay.io/strimzi/kafka:latest-kafka-3.1.0"
 
 # send 100000 messages and consume them
-kubectl exec -it my-cluster-kafka-0 -c kafka -- \
+kubectl run producer-perf -it --image="$CLIENT_IMAGE" --rm="true" --restart="Never" -- \
   bin/kafka-producer-perf-test.sh --topic my-topic --record-size 1000 --num-records 100000 \
-  --throughput -1 --producer-props acks=1 bootstrap.servers="my-cluster-kafka-bootstrap:9092"
+    --throughput -1 --producer-props acks=1 bootstrap.servers="my-cluster-kafka-bootstrap:9092"
 
-kubectl exec -it my-cluster-kafka-0 -c kafka -- \
-  bin/kafka-console-consumer.sh --bootstrap-server :9092 \
-  --topic my-topic --group my-group --from-beginning --timeout-ms 15000
+kubectl run consumer -it --image="$CLIENT_IMAGE" --rm="true" --restart="Never" -- \
+  bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 \
+    --topic my-topic --group my-group --from-beginning --timeout-ms 15000
 
-# save consumer group offsets
-kubectl exec -it my-cluster-kafka-0 -c kafka -- \
-  bin/kafka-consumer-groups.sh --bootstrap-server :9092 --group my-group --describe > /tmp/offsets.txt
+# save consumer group offsets    
+kubectl run consumer-groups -it --image="$CLIENT_IMAGE" --rm="true" --restart="Never" -- \
+  bin/kafka-consumer-groups.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 \
+    --group my-group --describe
 
 # send additional 12345 messages
-kubectl exec -it my-cluster-kafka-0 -c kafka -- \
+kubectl run producer-perf -it --image="$CLIENT_IMAGE" --rm="true" --restart="Never" -- \
   bin/kafka-producer-perf-test.sh --topic my-topic --record-size 1000 --num-records 12345 \
-  --throughput -1 --producer-props acks=1 bootstrap.servers="my-cluster-kafka-bootstrap:9092"
+    --throughput -1 --producer-props acks=1 bootstrap.servers="my-cluster-kafka-bootstrap:9092"
 
 # run backup procedure
 ./tools/cold-backup/run.sh backup -n myproject -c my-cluster -t /tmp/my-cluster.zip
@@ -58,18 +60,17 @@ kubectl create -f ./install/cluster-operator
 ./tools/cold-backup/run.sh restore -n myproject -c my-cluster -s /tmp/my-cluster.zip
 
 # check consumer group offsets (expected: current-offset match)
-kubectl exec -it my-cluster-kafka-0 -c kafka -- \
-  bin/kafka-consumer-groups.sh --bootstrap-server :9092 \
+kubectl run consumer-groups -it --image="$CLIENT_IMAGE" --rm="true" --restart="Never" -- \
+  bin/kafka-consumer-groups.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 \
   --group my-group --describe
-cat /tmp/offsets.txt
 
 # check consumer group recovery (expected: 12345)
-kubectl exec -it my-cluster-kafka-0 -c kafka -- \
-  bin/kafka-console-consumer.sh --bootstrap-server :9092 \
+kubectl run consumer -it --image="$CLIENT_IMAGE" --rm="true" --restart="Never" -- \
+  bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 \
   --topic my-topic --group my-group --from-beginning --timeout-ms 15000
 
 # check total number of messages (expected: 112345)
-kubectl exec -it my-cluster-kafka-0 -c kafka -- \
-  bin/kafka-console-consumer.sh --bootstrap-server :9092 \
+kubectl run consumer -it --image="$CLIENT_IMAGE" --rm="true" --restart="Never" -- \
+  bin/kafka-console-consumer.sh --bootstrap-server my-cluster-kafka-bootstrap:9092 \
   --topic my-topic --group new-group --from-beginning --timeout-ms 15000
 ```
