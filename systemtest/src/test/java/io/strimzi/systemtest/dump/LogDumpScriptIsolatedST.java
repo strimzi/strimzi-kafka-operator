@@ -22,6 +22,7 @@ import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Level;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -35,11 +36,14 @@ import java.nio.file.Paths;
 public class LogDumpScriptIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(LogDumpScriptIsolatedST.class);
 
-    @IsolatedTest
-    void dumpPartitions(ExtensionContext context) {
+    @BeforeAll
+    void setUp() {
         clusterOperator.unInstall();
         clusterOperator = clusterOperator.defaultInstallation().createInstallation().runInstallation();
+    }
 
+    @IsolatedTest
+    void dumpPartitions(ExtensionContext context) {
         String clusterName = mapWithClusterNames.get(context.getDisplayName());
         String groupId = "my-group";
         String partitionNumber = "0";

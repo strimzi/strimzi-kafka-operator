@@ -21,6 +21,7 @@ import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Level;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import io.strimzi.systemtest.AbstractST;
@@ -37,11 +38,14 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 public class ColdBackupScriptIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ColdBackupScriptIsolatedST.class);
 
-    @IsolatedTest
-    void backupAndRestore(ExtensionContext context) {
+    @BeforeAll
+    void setUp() {
         clusterOperator.unInstall();
         clusterOperator = clusterOperator.defaultInstallation().createInstallation().runInstallation();
-        
+    }
+
+    @IsolatedTest
+    void backupAndRestore(ExtensionContext context) {
         String clusterName = mapWithClusterNames.get(context.getDisplayName());
         String groupId = "my-group", newGroupId = "new-group";
         int firstBatchSize = 100, secondBatchSize = 10;
