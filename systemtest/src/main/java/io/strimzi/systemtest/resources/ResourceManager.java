@@ -10,6 +10,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
+import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
@@ -263,6 +264,33 @@ public class ResourceManager {
             });
 
         return resourceReady[0];
+    }
+
+    /**
+     * Auxiliary method for copying Controller {@link Constants.TEST_SUITE_NAME_LABEL} and {@link Constants.TEST_CASE_NAME_LABEL} labels
+     * into PodTemplate ensuring that in case of failure {@link io.strimzi.systemtest.logs.LogCollector} will collect all
+     * related Pods, which corespondents to such Controller (i.e., Job, Deployment)
+     *
+     * @param resource controller resource from which we copy test suite or test case labels
+     * @param resourcePodTemplate {@link PodTemplateSpec} of the specific resource
+     * @param <T> resource, which sings contract with {@link HasMetadata} interface
+     * @param <R> {@link PodTemplateSpec}
+     */
+    public <T extends HasMetadata, R extends PodTemplateSpec> void copyTsOrTcControllerLabelsIntoPodTemplate(T resource, R resourcePodTemplate) {
+        // 1. fetch Controller and PodTemplate labels
+        final Map<String, String> controllerLabels = resource.getMetadata().getLabels();
+        final Map<String, String> podLabels = resourcePodTemplate.getMetadata().getLabels();
+
+        // 2. a) add label for test.suite
+        if (controllerLabels.containsKey(Constants.TEST_SUITE_NAME_LABEL)) {
+            podLabels.putIfAbsent(Constants.TEST_SUITE_NAME_LABEL, controllerLabels.get(Constants.TEST_SUITE_NAME_LABEL));
+        }
+        // 2. b) add label for test.case
+        if (controllerLabels.containsKey(Constants.TEST_CASE_NAME_LABEL)) {
+            podLabels.putIfAbsent(Constants.TEST_CASE_NAME_LABEL, controllerLabels.get(Constants.TEST_CASE_NAME_LABEL));
+        }
+        // 3. modify PodTemplates labels for LogCollector using reference and thus not need to return
+        resourcePodTemplate.getMetadata().setLabels(podLabels);
     }
 
     /**

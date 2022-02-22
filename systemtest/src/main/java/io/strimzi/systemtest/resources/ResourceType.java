@@ -6,6 +6,7 @@ package io.strimzi.systemtest.resources;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
+
 /**
  * Providing contract for all resources which must implement REST API methods for create, update (refresh) and so on.
  * @param <T> type for all our resources for instance KafkaResource, KafkaConnectResource, OlmResource, ServiceResource etc.

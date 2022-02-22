@@ -21,6 +21,7 @@ public class JobResource implements ResourceType<Job> {
     }
     @Override
     public void create(Job resource) {
+        ResourceManager.getInstance().copyTsOrTcControllerLabelsIntoPodTemplate(resource, resource.getSpec().getTemplate());
         ResourceManager.kubeClient().createJob(resource);
     }
     @Override

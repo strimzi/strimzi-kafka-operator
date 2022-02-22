@@ -24,6 +24,7 @@ public class DeploymentResource implements ResourceType<Deployment> {
     }
     @Override
     public void create(Deployment resource) {
+        ResourceManager.getInstance().copyTsOrTcControllerLabelsIntoPodTemplate(resource, resource.getSpec().getTemplate());
         ResourceManager.kubeClient().createOrReplaceDeployment(resource);
     }
     @Override
