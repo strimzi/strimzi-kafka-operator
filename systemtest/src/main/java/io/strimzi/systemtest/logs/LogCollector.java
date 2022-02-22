@@ -145,7 +145,7 @@ public class LogCollector {
         // it's not test suite but test case, and we are gonna collect logs
         if (!this.collectorElement.getTestMethodName().isEmpty()) {
             // @ParallelSuite -> this is generated namespace but we collect logs only iff STRIMZI_RBAC_SCOPE=CLUSTER
-            // because when e we run STRIMZI_RBAC_SCOPE=NAMESPACE mode we use one namespace (i.e., clusterOperatorNamespace).
+            // because when we run STRIMZI_RBAC_SCOPE=NAMESPACE mode we use one namespace (i.e., clusterOperatorNamespace).
             if (StUtils.isParallelSuite(extensionContext.getParent().get()) && !Environment.isNamespaceRbacScope()) {
                 // @IsolatedTest or @ParallelTest or @ParallelNamespaceTest -> are executed in that generated namespace
                 if (StUtils.isIsolatedTest(extensionContext) ||
