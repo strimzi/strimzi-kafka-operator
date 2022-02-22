@@ -52,7 +52,6 @@ public class MultipleListenersST extends AbstractST {
     private Object lock = new Object();
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(MultipleListenersST.class.getSimpleName()).stream().findFirst().get();
-
     // only 4 type of listeners
     private Map<KafkaListenerType, List<GenericKafkaListener>> testCases = new HashMap<>(4);
 
@@ -110,9 +109,8 @@ public class MultipleListenersST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleRoutes(ExtensionContext extensionContext) throws Exception {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String shortClusterNameForRoute = clusterName.substring(0, clusterName.length() - 5);
 
-        runListenersTest(extensionContext, testCases.get(KafkaListenerType.ROUTE), shortClusterNameForRoute);
+        runListenersTest(extensionContext, testCases.get(KafkaListenerType.ROUTE), clusterName);
     }
 
     @OpenShiftOnly
@@ -122,7 +120,6 @@ public class MultipleListenersST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMixtureOfExternalListeners(ExtensionContext extensionContext) throws Exception {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String shortClusterNameForRoute = clusterName.substring(0, clusterName.length() - 5);
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -133,7 +130,7 @@ public class MultipleListenersST extends AbstractST {
         multipleDifferentListeners.addAll(nodeportListeners);
 
         // run ROUTE + NODEPORT listeners
-        runListenersTest(extensionContext, multipleDifferentListeners, shortClusterNameForRoute);
+        runListenersTest(extensionContext, multipleDifferentListeners, clusterName);
     }
 
     @OpenShiftOnly
@@ -144,7 +141,6 @@ public class MultipleListenersST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfEveryKindOfListener(ExtensionContext extensionContext) throws Exception {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String shortClusterNameForRoute = clusterName.substring(0, clusterName.length() - 5);
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -159,7 +155,7 @@ public class MultipleListenersST extends AbstractST {
         multipleDifferentListeners.addAll(loadbalancersListeners);
 
         // run INTERNAL + NODEPORT + ROUTE + LOADBALANCER listeners
-        runListenersTest(extensionContext, multipleDifferentListeners, shortClusterNameForRoute);
+        runListenersTest(extensionContext, multipleDifferentListeners, clusterName);
     }
 
     private void runListenersTest(ExtensionContext extensionContext, List<GenericKafkaListener> listeners, String clusterName) throws Exception {
