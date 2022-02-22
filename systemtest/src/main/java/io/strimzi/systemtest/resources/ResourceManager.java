@@ -298,21 +298,23 @@ public class ResourceManager {
      * @param <T> resource, which sings contract with {@link HasMetadata} interface
      * @param <R> {@link PodTemplateSpec}
      */
-    private <T extends HasMetadata, R extends PodTemplateSpec> void copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(T resource, R resourcePodTemplate) {
-        // 1. fetch Controller and PodTemplate labels
-        final Map<String, String> controllerLabels = resource.getMetadata().getLabels();
-        final Map<String, String> podLabels = resourcePodTemplate.getMetadata().getLabels();
+    private final <T extends HasMetadata, R extends PodTemplateSpec> void copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(final T resource, final R resourcePodTemplate) {
+        if (!(resourcePodTemplate.getMetadata().getLabels() instanceof UnmodifiableMap)) {
+            // 1. fetch Controller and PodTemplate labels
+            final Map<String, String> controllerLabels = resource.getMetadata().getLabels();
+            final Map<String, String> podLabels = resourcePodTemplate.getMetadata().getLabels();
 
-        // 2. a) add label for test.suite
-        if (controllerLabels.containsKey(Constants.TEST_SUITE_NAME_LABEL)) {
-            podLabels.putIfAbsent(Constants.TEST_SUITE_NAME_LABEL, controllerLabels.get(Constants.TEST_SUITE_NAME_LABEL));
+            // 2. a) add label for test.suite
+            if (controllerLabels.containsKey(Constants.TEST_SUITE_NAME_LABEL)) {
+                podLabels.putIfAbsent(Constants.TEST_SUITE_NAME_LABEL, controllerLabels.get(Constants.TEST_SUITE_NAME_LABEL));
+            }
+            // 2. b) add label for test.case
+            if (controllerLabels.containsKey(Constants.TEST_CASE_NAME_LABEL)) {
+                podLabels.putIfAbsent(Constants.TEST_CASE_NAME_LABEL, controllerLabels.get(Constants.TEST_CASE_NAME_LABEL));
+            }
+            // 3. modify PodTemplates labels for LogCollector using reference and thus not need to return
+            resourcePodTemplate.getMetadata().setLabels(podLabels);
         }
-        // 2. b) add label for test.case
-        if (controllerLabels.containsKey(Constants.TEST_CASE_NAME_LABEL)) {
-            podLabels.putIfAbsent(Constants.TEST_CASE_NAME_LABEL, controllerLabels.get(Constants.TEST_CASE_NAME_LABEL));
-        }
-        // 3. modify PodTemplates labels for LogCollector using reference and thus not need to return
-        resourcePodTemplate.getMetadata().setLabels(podLabels);
     }
 
     /**
