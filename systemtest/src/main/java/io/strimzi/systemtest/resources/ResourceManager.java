@@ -13,6 +13,8 @@ import io.fabric8.kubernetes.api.model.PodCondition;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -61,6 +63,7 @@ import io.strimzi.test.k8s.HelmClient;
 import io.strimzi.test.k8s.KubeClient;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
+import org.apache.commons.collections.map.UnmodifiableMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -147,7 +150,7 @@ public class ResourceManager {
     }
 
     @SafeVarargs
-    public final <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
+        public final <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
             LOGGER.info("Create/Update {} {} in namespace {}",
@@ -167,7 +170,7 @@ public class ResourceManager {
 
             // If we are create resource in test case we annotate it with label. This is needed for filtering when
             // we collect logs from Pods, ReplicaSets, Deployments etc.
-            final Map<String, String> labels;
+            Map<String, String> labels = null;
             if (testContext.getTestMethod().isPresent()) {
                 String testCaseName = testContext.getRequiredTestMethod().getName();
                 // because label values `must be no more than 63 characters`
@@ -180,8 +183,14 @@ public class ResourceManager {
                     labels = new HashMap<>();
                     labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
                 } else {
-                    labels = resource.getMetadata().getLabels();
-                    labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
+                    if (resource.getMetadata().getLabels() instanceof UnmodifiableMap) {
+                        LOGGER.warn("Resource: {} in namespace: {} is using UnmodifiableMap: {} and thus we are not able to put {} label. " +
+                            "This mean that no Pod logs will be collected for such resource.", resource.getMetadata().getName(),
+                            resource.getMetadata().getNamespace(), Constants.TEST_CASE_NAME_LABEL, resource.getMetadata().getLabels());
+                    } else {
+                        labels = resource.getMetadata().getLabels();
+                        labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
+                    }
                 }
                 resource.getMetadata().setLabels(labels);
             } else {
@@ -193,11 +202,24 @@ public class ResourceManager {
                         labels = new HashMap<>();
                         labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
                     } else {
-                        labels = resource.getMetadata().getLabels();
-                        labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
+                        if (resource.getMetadata().getLabels() instanceof UnmodifiableMap) {
+                            LOGGER.warn("Resource: {} in namespace: {} is using UnmodifiableMap: {} and thus we are not able to put {} label. " +
+                                    "This mean that no Pod logs will be collected for such resource.", resource.getMetadata().getName(),
+                                resource.getMetadata().getNamespace(), Constants.TEST_SUITE_NAME_LABEL, resource.getMetadata().getLabels());
+                        } else {
+                            labels = resource.getMetadata().getLabels();
+                            labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
+                        }
                     }
                     resource.getMetadata().setLabels(labels);
                 }
+            }
+
+            // adding test.suite and test.case labels to the PodTemplate
+            if (resource.getKind().equals(Constants.JOB)) {
+                this.copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(resource, ((Job) resource).getSpec().getTemplate());
+            } else if (resource.getKind().equals(Constants.DEPLOYMENT)) {
+                this.copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(resource, ((Deployment) resource).getSpec().getTemplate());
             }
             type.create(resource);
 
@@ -267,7 +289,7 @@ public class ResourceManager {
     }
 
     /**
-     * Auxiliary method for copying Controller {@link Constants.TEST_SUITE_NAME_LABEL} and {@link Constants.TEST_CASE_NAME_LABEL} labels
+     * Auxiliary method for copying {@link Constants.TEST_SUITE_NAME_LABEL} and {@link Constants.TEST_CASE_NAME_LABEL} labels
      * into PodTemplate ensuring that in case of failure {@link io.strimzi.systemtest.logs.LogCollector} will collect all
      * related Pods, which corespondents to such Controller (i.e., Job, Deployment)
      *
@@ -276,7 +298,7 @@ public class ResourceManager {
      * @param <T> resource, which sings contract with {@link HasMetadata} interface
      * @param <R> {@link PodTemplateSpec}
      */
-    public <T extends HasMetadata, R extends PodTemplateSpec> void copyTsOrTcControllerLabelsIntoPodTemplate(T resource, R resourcePodTemplate) {
+    private <T extends HasMetadata, R extends PodTemplateSpec> void copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(T resource, R resourcePodTemplate) {
         // 1. fetch Controller and PodTemplate labels
         final Map<String, String> controllerLabels = resource.getMetadata().getLabels();
         final Map<String, String> podLabels = resourcePodTemplate.getMetadata().getLabels();

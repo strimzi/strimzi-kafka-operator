@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
@@ -13,7 +14,7 @@ public class JobResource implements ResourceType<Job> {
 
     @Override
     public String getKind() {
-        return "Job";
+        return Constants.JOB;
     }
     @Override
     public Job get(String namespace, String name) {
@@ -21,7 +22,6 @@ public class JobResource implements ResourceType<Job> {
     }
     @Override
     public void create(Job resource) {
-        ResourceManager.getInstance().copyTsOrTcControllerLabelsIntoPodTemplate(resource, resource.getSpec().getTemplate());
         ResourceManager.kubeClient().createJob(resource);
     }
     @Override

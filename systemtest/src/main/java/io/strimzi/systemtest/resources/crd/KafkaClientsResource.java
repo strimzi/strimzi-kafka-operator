@@ -26,7 +26,6 @@ public class KafkaClientsResource implements ResourceType<Deployment> {
 
     @Override
     public void create(Deployment resource) {
-        ResourceManager.getInstance().copyTsOrTcControllerLabelsIntoPodTemplate(resource, resource.getSpec().getTemplate());
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createOrReplaceDeployment(resource);
     }
     @Override
