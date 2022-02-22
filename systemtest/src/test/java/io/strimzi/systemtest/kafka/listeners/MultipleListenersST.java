@@ -110,7 +110,7 @@ public class MultipleListenersST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleRoutes(ExtensionContext extensionContext) throws Exception {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String shortClusterNameForRoute = clusterName.substring(clusterName.length() - 10, clusterName.length());
+        final String shortClusterNameForRoute = clusterName.substring(0, clusterName.length() - 5);
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.ROUTE), shortClusterNameForRoute);
     }
@@ -122,7 +122,7 @@ public class MultipleListenersST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMixtureOfExternalListeners(ExtensionContext extensionContext) throws Exception {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String shortClusterNameForRoute = clusterName.substring(clusterName.length() - 10, clusterName.length());
+        final String shortClusterNameForRoute = clusterName.substring(0, clusterName.length() - 5);
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -144,7 +144,7 @@ public class MultipleListenersST extends AbstractST {
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfEveryKindOfListener(ExtensionContext extensionContext) throws Exception {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String shortClusterNameForRoute = clusterName.substring(clusterName.length() - 10, clusterName.length());
+        final String shortClusterNameForRoute = clusterName.substring(0, clusterName.length() - 5);
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
