@@ -328,10 +328,12 @@ public class StUtils {
                     ((ObjectNode) envVar).remove("valueFrom");
                     ((ObjectNode) envVar).put("value", namespace);
                 }
+
                 if (varName.matches("STRIMZI_LOG_LEVEL")) {
                     ((ObjectNode) envVar).put("value", Environment.STRIMZI_LOG_LEVEL);
                 }
             }
+
             // Change image pull policy
             ObjectMapper objectMapper = new ObjectMapper();
             ObjectNode imagePulPolicyEnvVar = objectMapper.createObjectNode();
@@ -603,5 +605,16 @@ public class StUtils {
 
     public static String getStrimziPodSetOrStatefulSetUID(String resourceName) {
         return getStrimziPodSetOrStatefulSetUID(kubeClient().getNamespace(), resourceName);
+    }
+
+    public static Map<String, String> getStrimziPodSetOrStatefulSetMatchLabels(String namespaceName, String resourceName, boolean isSpsEnabled) {
+        if (isSpsEnabled) {
+            return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getSpec().getSelector().getMatchLabels();
+        }
+        return kubeClient().getStatefulSet(namespaceName, resourceName).getSpec().getSelector().getMatchLabels();
+    }
+
+    public static Map<String, String> getStrimziPodSetOrStatefulSetMatchLabels(String resourceName, boolean isSpsEnabled) {
+        return getStrimziPodSetOrStatefulSetMatchLabels(kubeClient().getNamespace(), resourceName, isSpsEnabled);
     }
 }
