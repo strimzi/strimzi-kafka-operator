@@ -32,11 +32,13 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Level;
+import org.junit.jupiter.api.ClassDescriptor;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,12 +64,23 @@ public class StUtils {
 
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
-    private static final BiFunction<String, ExtensionContext, Boolean> CONTAINS_ANNOTATION =
-        (annotationName, extensionContext) -> Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
-            annotation -> annotation.annotationType().getName()
-                .toLowerCase(Locale.ENGLISH)
-                // more than one because in some cases the TestSuite can inherit the annotation
-                .contains(annotationName)).count() >= 1;
+    private static final BiFunction<String, Object, Boolean> CONTAINS_ANNOTATION =
+        (annotationName, annotationHolder) -> {
+            Annotation[] annotations;
+            if (annotationHolder instanceof ExtensionContext) {
+                annotations = ((ExtensionContext) annotationHolder).getElement().get().getAnnotations();
+            } else if (annotationHolder instanceof ClassDescriptor) {
+                annotations = ((ClassDescriptor) annotationHolder).getTestClass().getAnnotations();
+            } else {
+                throw new RuntimeException("Using type: " + annotationHolder + " which is not supported!");
+            }
+            return Arrays.stream(annotations).filter(
+                annotation -> annotation.annotationType().getName()
+                    .toLowerCase(Locale.ENGLISH)
+                    // more than one because in some cases the TestSuite can inherit the annotation
+                    .contains(annotationName)).count() >= 1;
+
+        };
 
     private StUtils() { }
 
@@ -367,48 +380,48 @@ public class StUtils {
      * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelTest},
      * otherwise false
      */
-    public static boolean isParallelTest(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_TEST, extensionContext);
+    public static boolean isParallelTest(Object annotationHolder) {
+        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_TEST, annotationHolder);
     }
 
     /**
      * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedTest}
-     * @param extensionContext context of the test case
+     * @param annotationHolder context of the test case
      * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedTest},
      * otherwise false
      */
-    public static boolean isIsolatedTest(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_TEST, extensionContext);
+    public static boolean isIsolatedTest(Object annotationHolder) {
+        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_TEST, annotationHolder);
     }
 
     /**
      * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest}
-     * @param extensionContext context of the test case
+     * @param annotationHolder context of the test case
      * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest},
      * otherwise false
      */
-    public static boolean isParallelNamespaceTest(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_NAMESPACE, extensionContext);
+    public static boolean isParallelNamespaceTest(Object annotationHolder) {
+        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_NAMESPACE, annotationHolder);
     }
 
     /**
      * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelSuite}
-     * @param extensionContext context of the test case
+     * @param annotationHolder context of the test case
      * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelSuite},
      * otherwise false
      */
-    public static boolean isParallelSuite(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_SUITE, extensionContext);
+    public static boolean isParallelSuite(Object annotationHolder) {
+        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_SUITE, annotationHolder);
     }
 
     /**
      * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedSuite}
-     * @param extensionContext context of the test case
+     * @param annotationHolder context of the test case
      * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedSuite},
      * otherwise false
      */
-    public static boolean isIsolatedSuite(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_SUITE, extensionContext);
+    public static boolean isIsolatedSuite(Object annotationHolder) {
+        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_SUITE, annotationHolder);
     }
 
     /**
