@@ -37,24 +37,24 @@ import java.util.Comparator;
  * are the last one to execute.
  *
  *  Following testclasses are selected for run:
- *  -> io.strimzi.systemtest.cruisecontrol.CruiseControlST
- *  -> io.strimzi.systemtest.cruisecontrol.CruiseControlConfigurationST
- *  -> io.strimzi.systemtest.cruisecontrol.CruiseControlApiST
- *  -> io.strimzi.systemtest.kafka.listeners.ListenersST
- *  -> io.strimzi.systemtest.kafka.listeners.MultipleListenersST
- *  -> io.strimzi.systemtest.kafka.ConfigProviderST
- *  -> io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfSharedST
- *  -> io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfST
- *  -> io.strimzi.systemtest.kafka.KafkaST
- *  -> io.strimzi.systemtest.bridge.HttpBridgeTlsST
- *  -> io.strimzi.systemtest.bridge.HttpBridgeScramShaST
- *  -> io.strimzi.systemtest.mirrormaker.MirrorMakerIsolatedST
- *  -> io.strimzi.systemtest.mirrormaker.MirrorMaker2IsolatedST
- *  -> io.strimzi.systemtest.connect.ConnectIsolatedST
- *  -> io.strimzi.systemtest.connect.ConnectBuilderIsolatedST
- *  -> io.strimzi.systemtest.bridge.HttpBridgeIsolatedST
- *  -> io.strimzi.systemtest.metrics.MetricsIsolatedST
- *  -> io.strimzi.systemtest.metrics.JmxIsolatedST
+ *  -&lt; io.strimzi.systemtest.cruisecontrol.CruiseControlST
+ *  -&lt; io.strimzi.systemtest.cruisecontrol.CruiseControlConfigurationST
+ *  -&lt; io.strimzi.systemtest.cruisecontrol.CruiseControlApiST
+ *  -&lt; io.strimzi.systemtest.kafka.listeners.ListenersST
+ *  -&lt; io.strimzi.systemtest.kafka.listeners.MultipleListenersST
+ *  -&lt; io.strimzi.systemtest.kafka.ConfigProviderST
+ *  -&lt; io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfSharedST
+ *  -&lt; io.strimzi.systemtest.kafka.dynamicconfiguration.DynamicConfST
+ *  -&lt; io.strimzi.systemtest.kafka.KafkaST
+ *  -&lt; io.strimzi.systemtest.bridge.HttpBridgeTlsST
+ *  -&lt; io.strimzi.systemtest.bridge.HttpBridgeScramShaST
+ *  -&lt; io.strimzi.systemtest.mirrormaker.MirrorMakerIsolatedST
+ *  -&lt; io.strimzi.systemtest.mirrormaker.MirrorMaker2IsolatedST
+ *  -&lt; io.strimzi.systemtest.connect.ConnectIsolatedST
+ *  -&lt; io.strimzi.systemtest.connect.ConnectBuilderIsolatedST
+ *  -&lt; io.strimzi.systemtest.bridge.HttpBridgeIsolatedST
+ *  -&lt; io.strimzi.systemtest.metrics.MetricsIsolatedST
+ *  -&lt; io.strimzi.systemtest.metrics.JmxIsolatedST
  *
  */
 public class OrderTestSuites implements ClassOrderer {

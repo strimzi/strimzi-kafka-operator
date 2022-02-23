@@ -376,7 +376,7 @@ public class StUtils {
 
     /**
      * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelTest}
-     * @param extensionContext context of the test case
+     * @param annotationHolder context of the test case
      * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelTest},
      * otherwise false
      */
