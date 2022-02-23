@@ -10,8 +10,11 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodCondition;
+import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -146,7 +149,7 @@ public class ResourceManager {
     }
 
     @SafeVarargs
-    public final <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
+        public final <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
             LOGGER.info("Create/Update {} {} in namespace {}",
@@ -166,7 +169,7 @@ public class ResourceManager {
 
             // If we are create resource in test case we annotate it with label. This is needed for filtering when
             // we collect logs from Pods, ReplicaSets, Deployments etc.
-            final Map<String, String> labels;
+            Map<String, String> labels = null;
             if (testContext.getTestMethod().isPresent()) {
                 String testCaseName = testContext.getRequiredTestMethod().getName();
                 // because label values `must be no more than 63 characters`
@@ -179,7 +182,7 @@ public class ResourceManager {
                     labels = new HashMap<>();
                     labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
                 } else {
-                    labels = resource.getMetadata().getLabels();
+                    labels = new HashMap<>(resource.getMetadata().getLabels());
                     labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
                 }
                 resource.getMetadata().setLabels(labels);
@@ -192,11 +195,18 @@ public class ResourceManager {
                         labels = new HashMap<>();
                         labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
                     } else {
-                        labels = resource.getMetadata().getLabels();
+                        labels = new HashMap<>(resource.getMetadata().getLabels());
                         labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
                     }
                     resource.getMetadata().setLabels(labels);
                 }
+            }
+
+            // adding test.suite and test.case labels to the PodTemplate
+            if (resource.getKind().equals(Constants.JOB)) {
+                this.copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(resource, ((Job) resource).getSpec().getTemplate());
+            } else if (resource.getKind().equals(Constants.DEPLOYMENT)) {
+                this.copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(resource, ((Deployment) resource).getSpec().getTemplate());
             }
             type.create(resource);
 
@@ -263,6 +273,35 @@ public class ResourceManager {
             });
 
         return resourceReady[0];
+    }
+
+    /**
+     * Auxiliary method for copying {@link Constants.TEST_SUITE_NAME_LABEL} and {@link Constants.TEST_CASE_NAME_LABEL} labels
+     * into PodTemplate ensuring that in case of failure {@link io.strimzi.systemtest.logs.LogCollector} will collect all
+     * related Pods, which corespondents to such Controller (i.e., Job, Deployment)
+     *
+     * @param resource controller resource from which we copy test suite or test case labels
+     * @param resourcePodTemplate {@link PodTemplateSpec} of the specific resource
+     * @param <T> resource, which sings contract with {@link HasMetadata} interface
+     * @param <R> {@link PodTemplateSpec}
+     */
+    private final <T extends HasMetadata, R extends PodTemplateSpec> void copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(final T resource, final R resourcePodTemplate) {
+        if (resource.getMetadata().getLabels() != null && resourcePodTemplate.getMetadata().getLabels() != null) {
+            // 1. fetch Controller and PodTemplate labels
+            final Map<String, String> controllerLabels = new HashMap<>(resource.getMetadata().getLabels());
+            final Map<String, String> podLabels = new HashMap<>(resourcePodTemplate.getMetadata().getLabels());
+
+            // 2. a) add label for test.suite
+            if (controllerLabels.containsKey(Constants.TEST_SUITE_NAME_LABEL)) {
+                podLabels.putIfAbsent(Constants.TEST_SUITE_NAME_LABEL, controllerLabels.get(Constants.TEST_SUITE_NAME_LABEL));
+            }
+            // 2. b) add label for test.case
+            if (controllerLabels.containsKey(Constants.TEST_CASE_NAME_LABEL)) {
+                podLabels.putIfAbsent(Constants.TEST_CASE_NAME_LABEL, controllerLabels.get(Constants.TEST_CASE_NAME_LABEL));
+            }
+            // 3. modify PodTemplates labels for LogCollector using reference and thus not need to return
+            resourcePodTemplate.getMetadata().setLabels(podLabels);
+        }
     }
 
     /**

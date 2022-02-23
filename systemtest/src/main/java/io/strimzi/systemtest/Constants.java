@@ -108,7 +108,7 @@ public interface Constants {
     String STATEFUL_SET = "StatefulSet";
     String POD = "Pod";
     String NETWORK_POLICY = "NetworkPolicy";
-    String JOB = "job";
+    String JOB = "Job";
     String VALIDATION_WEBHOOK_CONFIG = "ValidatingWebhookConfiguration";
 
     /**
