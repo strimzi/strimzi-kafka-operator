@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.upgrade;
 
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.Constants;
@@ -12,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -177,7 +179,12 @@ public class AbstractUpgradeST extends AbstractST {
             procedures.put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
             data.put("proceduresAfterOperatorUpgrade", procedures);
 
-            parameters.add(Arguments.of(data.getString("fromVersion"), "HEAD", data));
+            parameters.add(Arguments.of(
+                data.getString("fromVersion"),
+                "HEAD",
+                data.getString("strimziFeatureGatesFlagsBefore").isEmpty() ? "None" : data.getString("strimziFeatureGatesFlagsBefore"),
+                data.getString("strimziFeatureGatesFlagsAfter").isEmpty() ? "None" : data.getString("strimziFeatureGatesFlagsAfter"),
+                data));
         });
 
         return parameters.stream();
@@ -282,11 +289,11 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected void logPodImages(String clusterName) {
-        List<Pod> pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(KafkaResources.zookeeperStatefulSetName(clusterName)));
+        List<Pod> pods = kubeClient().listPods(KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName)));
         for (Pod pod : pods) {
             LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
         }
-        pods = kubeClient().listPods(kubeClient().getStatefulSetSelectors(KafkaResources.kafkaStatefulSetName(clusterName)));
+        pods = kubeClient().listPods(KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName)));
         for (Pod pod : pods) {
             LOGGER.info("Pod {} has image {}", pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getImage());
         }
@@ -328,7 +335,7 @@ public class AbstractUpgradeST extends AbstractST {
             coDir = new File(dir, testParameters.getString("toExamples") + "/install/cluster-operator/");
         }
 
-        copyModifyApply(coDir, namespace, extensionContext, testParameters.getString("strimziFeatureGatesFlags"));
+        copyModifyApply(coDir, namespace, extensionContext, testParameters.getString("strimziFeatureGatesFlagsAfter"));
 
         LOGGER.info("Waiting for CO upgrade");
         DeploymentUtils.waitTillDepHasRolled(ResourceManager.getCoDeploymentName(), 1, coPods);
@@ -385,8 +392,14 @@ public class AbstractUpgradeST extends AbstractST {
         String tOImage = images.getString("topicOperator");
         String uOImage = images.getString("userOperator");
 
-        checkContainerImages(kubeClient().getStatefulSet(KafkaResources.zookeeperStatefulSetName(clusterName)).getSpec().getSelector().getMatchLabels(), zkImage);
-        checkContainerImages(kubeClient().getStatefulSet(KafkaResources.kafkaStatefulSetName(clusterName)).getSpec().getSelector().getMatchLabels(), kafkaImage);
+        List<EnvVar> envVars = kubeClient().getDeployment(io.strimzi.systemtest.Constants.STRIMZI_DEPLOYMENT_NAME)
+            .getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+
+        boolean spsEnabled = envVars.stream()
+            .anyMatch(envVar -> envVar.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV) && envVar.getValue() != null && envVar.getValue().contains("+UseStrimziPodSets"));
+
+        checkContainerImages(StUtils.getStrimziPodSetOrStatefulSetMatchLabels(KafkaResources.zookeeperStatefulSetName(clusterName), spsEnabled), zkImage);
+        checkContainerImages(StUtils.getStrimziPodSetOrStatefulSetMatchLabels(KafkaResources.kafkaStatefulSetName(clusterName), spsEnabled), kafkaImage);
         checkContainerImages(kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), tOImage);
         checkContainerImages(kubeClient().getDeployment(KafkaResources.entityOperatorDeploymentName(clusterName)).getSpec().getSelector().getMatchLabels(), 1, uOImage);
     }
@@ -427,7 +440,7 @@ public class AbstractUpgradeST extends AbstractST {
         }
 
         // Modify + apply installation files
-        copyModifyApply(coDir, namespace, extensionContext, testParameters.getString("strimziFeatureGatesFlags"));
+        copyModifyApply(coDir, namespace, extensionContext, testParameters.getString("strimziFeatureGatesFlagsBefore"));
 
         LOGGER.info("Waiting for {} deployment", ResourceManager.getCoDeploymentName());
         DeploymentUtils.waitForDeploymentAndPodsReady(ResourceManager.getCoDeploymentName(), 1);
