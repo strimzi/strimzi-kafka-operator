@@ -11,12 +11,6 @@
     "generateTopics": true,
     "additionalTopics": 2,
     "oldestKafka": "2.6.0",
-    "imagesBeforeKafkaUpgrade": {
-      "zookeeper": "strimzi/kafka:latest-kafka-3.0.0",
-      "kafka": "strimzi/kafka:latest-kafka-3.0.0",
-      "topicOperator": "strimzi/operator:latest",
-      "userOperator": "strimzi/operator:latest"
-    },
     "imagesAfterKafkaUpgrade": {
       "zookeeper": "strimzi/kafka:latest-kafka-3.1.0",
       "kafka": "strimzi/kafka:latest-kafka-3.1.0",
@@ -47,12 +41,6 @@
     "generateTopics": true,
     "additionalTopics": 2,
     "oldestKafka": "3.0.0",
-    "imagesBeforeKafkaUpgrade": {
-      "zookeeper": "strimzi/kafka:latest-kafka-3.1.0",
-      "kafka": "strimzi/kafka:latest-kafka-3.1.0",
-      "topicOperator": "strimzi/operator:latest",
-      "userOperator": "strimzi/operator:latest"
-    },
     "imagesAfterKafkaUpgrade": {
       "zookeeper": "strimzi/kafka:latest-kafka-3.1.0",
       "kafka": "strimzi/kafka:latest-kafka-3.1.0",
@@ -70,5 +58,35 @@
     },
     "strimziFeatureGatesFlagsBefore": "-UseStrimziPodSets",
     "strimziFeatureGatesFlagsAfter": "+UseStrimziPodSets"
+  },
+  {
+    "fromVersion":"0.28.0",
+    "fromExamples":"strimzi-0.28.0",
+    "urlFrom":"https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.28.0/strimzi-0.28.0.zip",
+    "convertCRDs": false,
+    "conversionTool": {
+      "urlToConversionTool": "",
+      "toConversionTool": ""
+    },
+    "generateTopics": true,
+    "additionalTopics": 2,
+    "oldestKafka": "3.0.0",
+    "imagesAfterKafkaUpgrade": {
+      "zookeeper": "strimzi/kafka:latest-kafka-3.1.0",
+      "kafka": "strimzi/kafka:latest-kafka-3.1.0",
+      "topicOperator": "strimzi/operator:latest",
+      "userOperator": "strimzi/operator:latest"
+    },
+    "client": {
+      "continuousClientsMessages": 500
+    },
+    "environmentInfo": {
+      "maxK8sVersion": "latest",
+      "status": "stable",
+      "flakyEnvVariable": "none",
+      "reason" : "Test is working on all environment used by QE."
+    },
+    "strimziFeatureGatesFlagsBefore": "",
+    "strimziFeatureGatesFlagsAfter": ""
   }
 ]
