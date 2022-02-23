@@ -4,6 +4,10 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodCondition;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.fabric8.kubernetes.api.model.batch.v1.JobCondition;
 import io.fabric8.kubernetes.api.model.batch.v1.JobStatus;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceOperation;
@@ -11,7 +15,11 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static java.util.Arrays.asList;
 
 public class JobUtils {
 
@@ -86,5 +94,63 @@ public class JobUtils {
             });
 
         return true;
+    }
+
+    /**
+     * Log actual status of Job with pods.
+     * @param jobName - name of the job, for which we should scrape status
+     * @param namespace - namespace/project where is job running
+     */
+    public static void logCurrentJobStatus(String jobName, String namespace) {
+        Job currentJob = kubeClient().getJob(namespace, jobName);
+
+        if (currentJob != null && currentJob.getStatus() != null) {
+            List<String> log = new ArrayList<>(asList(Constants.JOB, " status:\n"));
+
+            List<JobCondition> conditions = currentJob.getStatus().getConditions();
+
+            log.add("\tActive: " + currentJob.getStatus().getActive());
+            log.add("\n\tFailed: " + currentJob.getStatus().getFailed());
+            log.add("\n\tReady: " + currentJob.getStatus().getReady());
+            log.add("\n\tSucceeded: " + currentJob.getStatus().getSucceeded());
+
+            if (conditions != null) {
+                List<String> conditionList = new ArrayList<>();
+
+                for (JobCondition condition : conditions) {
+                    if (condition.getMessage() != null) {
+                        conditionList.add("\t\tType: " + condition.getType() + "\n");
+                        conditionList.add("\t\tMessage: " + condition.getMessage() + "\n");
+                    }
+                }
+
+                if (!conditionList.isEmpty()) {
+                    log.add("\n\tConditions:\n");
+                    log.addAll(conditionList);
+                }
+            }
+
+            log.add("\n\nPods with conditions and messages:\n\n");
+
+            for (Pod pod : kubeClient().namespace(currentJob.getMetadata().getNamespace()).listPodsByPrefixInName(jobName)) {
+                log.add(pod.getMetadata().getName() + ":");
+                List<String> podConditions = new ArrayList<>();
+
+                for (PodCondition podCondition : pod.getStatus().getConditions()) {
+                    if (podCondition.getMessage() != null) {
+                        podConditions.add("\n\tType: " + podCondition.getType() + "\n");
+                        podConditions.add("\tMessage: " + podCondition.getMessage() + "\n");
+                    }
+                }
+
+                if (podConditions.isEmpty()) {
+                    log.add("\n\t<EMPTY>");
+                } else {
+                    log.addAll(podConditions);
+                }
+                log.add("\n\n");
+            }
+            LOGGER.info("{}", String.join("", log).strip());
+        }
     }
 }

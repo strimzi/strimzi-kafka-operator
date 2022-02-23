@@ -39,6 +39,7 @@ public class KafkaClients extends BaseClients {
     private String consumerGroup;
     private long delayMs;
     private String userName;
+    private String caCertSecretName;
 
     public String getProducerName() {
         return producerName;
@@ -104,6 +105,14 @@ public class KafkaClients extends BaseClients {
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public String getCaCertSecretName() {
+        return caCertSecretName;
+    }
+
+    public void setCaCertSecretName(String caCertSecretName) {
+        this.caCertSecretName = caCertSecretName;
     }
 
     public Job producerStrimzi() {
@@ -341,11 +350,14 @@ public class KafkaClients extends BaseClients {
     }
 
     protected EnvVar getClusterCaCertEnv(String clusterName) {
+        final String caSecretName = this.getCaCertSecretName() == null || this.getCaCertSecretName().isEmpty() ?
+            KafkaResources.clusterCaCertificateSecretName(clusterName) : this.getCaCertSecretName();
+
         return new EnvVarBuilder()
             .withName("CA_CRT")
             .withNewValueFrom()
                 .withNewSecretKeyRef()
-                    .withName(KafkaResources.clusterCaCertificateSecretName(clusterName))
+                    .withName(caSecretName)
                     .withKey("ca.crt")
                 .endSecretKeyRef()
             .endValueFrom()

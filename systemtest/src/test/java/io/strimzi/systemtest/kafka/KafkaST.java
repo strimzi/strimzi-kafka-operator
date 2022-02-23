@@ -37,13 +37,15 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
-import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -665,7 +667,6 @@ class KafkaST extends AbstractST {
 
         Instant startTime = Instant.now();
 
-
         LOGGER.info("Deploying Kafka cluster {}", clusterName);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -937,9 +938,8 @@ class KafkaST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testPersistentStorageSize(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext);
+
         final String[] diskSizes = {"70Gi", "20Gi"};
         final int kafkaRepl = 2;
         final int diskCount = 2;
@@ -950,7 +950,7 @@ class KafkaST extends AbstractST {
                         new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizes[1]).build()
                 ).build();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, kafkaRepl)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaRepl)
             .editSpec()
                 .editKafka()
                     .withStorage(jbodStorage)
@@ -961,30 +961,25 @@ class KafkaST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
 
-        List<PersistentVolumeClaim> volumes = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream().filter(
-            persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName)).collect(Collectors.toList());
+        List<PersistentVolumeClaim> volumes = kubeClient(testStorage.getNamespaceName()).listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
+            persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(testStorage.getClusterName())).collect(Collectors.toList());
 
         checkStorageSizeForVolumes(volumes, diskSizes, kafkaRepl, diskCount);
 
-        String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
-        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
         );
     }
 
@@ -1040,11 +1035,9 @@ class KafkaST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     @Tag(INTERNAL_CLIENTS_USED)
     void testLabelModificationDoesNotBreakCluster(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final int kafkaReplicas = 3;
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 
         Map<String, String> labels = new HashMap<>();
         final String[] labelKeys = {"label-name-1", "label-name-2", ""};
@@ -1053,33 +1046,36 @@ class KafkaST extends AbstractST {
         labels.put(labelKeys[0], labelValues[0]);
         labels.put(labelKeys[1], labelValues[1]);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas, 1)
             .editMetadata()
                 .withLabels(labels)
             .endMetadata()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
 
-        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
+        );
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector);
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StUtils.waitForStatefulSetOrStrimziPodSetLabelsChange(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), labels);
+        StUtils.waitForStatefulSetOrStrimziPodSetLabelsChange(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), labels);
 
         LOGGER.info("Getting labels from stateful set resource");
-        Map<String, String> kafkaLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 
         LOGGER.info("Verifying default labels in the Kafka CR");
 
@@ -1096,45 +1092,45 @@ class KafkaST extends AbstractST {
                 "name-of-the-label-1", labelValues[0], "name-of-the-label-2", labelValues[1], labelKeys[2], labelValues[2]);
 
         LOGGER.info("Edit kafka labels in Kafka CR");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, resource -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), resource -> {
             resource.getMetadata().getLabels().put(labelKeys[0], labelValues[0]);
             resource.getMetadata().getLabels().put(labelKeys[1], labelValues[1]);
             resource.getMetadata().getLabels().put(labelKeys[2], labelValues[2]);
-        }, namespaceName);
+        }, testStorage.getNamespaceName());
 
         labels.put(labelKeys[0], labelValues[0]);
         labels.put(labelKeys[1], labelValues[1]);
         labels.put(labelKeys[2], labelValues[2]);
 
         LOGGER.info("Waiting for kafka service labels changed {}", labels);
-        ServiceUtils.waitForServiceLabelsChange(namespaceName, KafkaResources.brokersServiceName(clusterName), labels);
+        ServiceUtils.waitForServiceLabelsChange(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()), labels);
 
         LOGGER.info("Verifying kafka labels via services");
-        Service service = kubeClient(namespaceName).getService(namespaceName, KafkaResources.brokersServiceName(clusterName));
+        Service service = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()));
 
         verifyPresentLabels(labels, service.getMetadata().getLabels());
 
-        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, kafkaReplicas)) {
-            LOGGER.info("Waiting for Kafka ConfigMap {} in namespace {} to have new labels: {}", cmName, namespaceName, labels);
-            ConfigMapUtils.waitForConfigMapLabelsChange(namespaceName, cmName, labels);
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(testStorage.getClusterName(), kafkaReplicas)) {
+            LOGGER.info("Waiting for Kafka ConfigMap {} in namespace {} to have new labels: {}", cmName, testStorage.getNamespaceName(), labels);
+            ConfigMapUtils.waitForConfigMapLabelsChange(testStorage.getNamespaceName(), cmName, labels);
 
-            LOGGER.info("Verifying Kafka labels on ConfigMap {} in namespace {}", cmName, namespaceName);
-            ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, cmName);
+            LOGGER.info("Verifying Kafka labels on ConfigMap {} in namespace {}", cmName, testStorage.getNamespaceName());
+            ConfigMap configMap = kubeClient(testStorage.getNamespaceName()).getConfigMap(testStorage.getNamespaceName(), cmName);
 
             verifyPresentLabels(labels, configMap.getMetadata().getLabels());
         }
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StUtils.waitForStatefulSetOrStrimziPodSetLabelsChange(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), labels);
+        StUtils.waitForStatefulSetOrStrimziPodSetLabelsChange(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), labels);
 
         LOGGER.info("Verifying kafka labels via stateful set");
 
-        verifyPresentLabels(labels, StUtils.getLabelsOfStatefulSetOrStrimziPodSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName)));
+        verifyPresentLabels(labels, StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName())));
 
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), kafkaSelector, 3, kafkaPods);
 
         LOGGER.info("Verifying via kafka pods");
-        labels = kubeClient(namespaceName).getPod(namespaceName, KafkaResources.kafkaPodName(clusterName, 0)).getMetadata().getLabels();
+        labels = kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)).getMetadata().getLabels();
 
         assertThat("Label exists in kafka pods", labelValues[0].equals(labels.get(labelKeys[0])));
         assertThat("Label exists in kafka pods", labelValues[1].equals(labels.get(labelKeys[1])));
@@ -1142,86 +1138,77 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Removing labels: {} -> {}, {} -> {}, {} -> {}", labelKeys[0], labels.get(labelKeys[0]),
             labelKeys[1], labels.get(labelKeys[1]), labelKeys[2], labels.get(labelKeys[2]));
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, resource -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), resource -> {
             resource.getMetadata().getLabels().remove(labelKeys[0]);
             resource.getMetadata().getLabels().remove(labelKeys[1]);
             resource.getMetadata().getLabels().remove(labelKeys[2]);
-        }, namespaceName);
+        }, testStorage.getNamespaceName());
 
         labels.remove(labelKeys[0]);
         labels.remove(labelKeys[1]);
         labels.remove(labelKeys[2]);
 
         LOGGER.info("Waiting for kafka service labels deletion {}", labels.toString());
-        ServiceUtils.waitForServiceLabelsDeletion(namespaceName, KafkaResources.brokersServiceName(clusterName), labelKeys[0], labelKeys[1], labelKeys[2]);
+        ServiceUtils.waitForServiceLabelsDeletion(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()), labelKeys[0], labelKeys[1], labelKeys[2]);
 
         LOGGER.info("Verifying kafka labels via services");
-        service = kubeClient(namespaceName).getService(namespaceName, KafkaResources.brokersServiceName(clusterName));
+        service = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()));
 
         verifyNullLabels(labelKeys, service);
 
-        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, kafkaReplicas)) {
-            LOGGER.info("Waiting for Kafka ConfigMap {} in namespace {} to have labels removed: {}", cmName, namespaceName, labelKeys);
-            ConfigMapUtils.waitForConfigMapLabelsDeletion(namespaceName, cmName, labelKeys[0], labelKeys[1], labelKeys[2]);
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(testStorage.getClusterName(), kafkaReplicas)) {
+            LOGGER.info("Waiting for Kafka ConfigMap {} in namespace {} to have labels removed: {}", cmName, testStorage.getNamespaceName(), labelKeys);
+            ConfigMapUtils.waitForConfigMapLabelsDeletion(testStorage.getNamespaceName(), cmName, labelKeys[0], labelKeys[1], labelKeys[2]);
 
-            LOGGER.info("Verifying Kafka labels on ConfigMap {} in namespace {}", cmName, namespaceName);
-            ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, cmName);
+            LOGGER.info("Verifying Kafka labels on ConfigMap {} in namespace {}", cmName, testStorage.getNamespaceName());
+            ConfigMap configMap = kubeClient(testStorage.getNamespaceName()).getConfigMap(testStorage.getNamespaceName(), cmName);
 
             verifyNullLabels(labelKeys, configMap);
         }
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StUtils.waitForStatefulSetOrStrimziPodSetLabelsDeletion(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), labelKeys[0], labelKeys[1], labelKeys[2]);
+        StUtils.waitForStatefulSetOrStrimziPodSetLabelsDeletion(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), labelKeys[0], labelKeys[1], labelKeys[2]);
 
         LOGGER.info("Verifying kafka labels via stateful set");
-        verifyNullLabels(labelKeys, StUtils.getLabelsOfStatefulSetOrStrimziPodSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName)));
+        verifyNullLabels(labelKeys, StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName())));
 
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), kafkaSelector, 3, kafkaPods);
 
         LOGGER.info("Waiting for kafka pod labels deletion {}", labels.toString());
-        PodUtils.waitUntilPodLabelsDeletion(namespaceName, KafkaResources.kafkaPodName(clusterName, 0), labelKeys[0], labelKeys[1], labelKeys[2]);
+        PodUtils.waitUntilPodLabelsDeletion(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), labelKeys[0], labelKeys[1], labelKeys[2]);
 
-        labels = kubeClient(namespaceName).getPod(namespaceName, KafkaResources.kafkaPodName(clusterName, 0)).getMetadata().getLabels();
+        labels = kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)).getMetadata().getLabels();
 
         LOGGER.info("Verifying via kafka pods");
         verifyNullLabels(labelKeys, labels);
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
         );
     }
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testAppDomainLabels(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
 
-        final String kafkaClientsPodName =
-            kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
-
-        Map<String, String> labels;
 
         LOGGER.info("---> PODS <---");
 
-        List<Pod> pods = kubeClient(namespaceName).listPods(namespaceName, clusterName).stream()
-                .filter(pod -> pod.getMetadata().getName().startsWith(clusterName))
-                .filter(pod -> !pod.getMetadata().getName().startsWith(clusterName + "-" + Constants.KAFKA_CLIENTS))
+        List<Pod> pods = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+                .filter(pod -> pod.getMetadata().getName().startsWith(testStorage.getClusterName()))
                 .collect(Collectors.toList());
 
         for (Pod pod : pods) {
@@ -1231,20 +1218,20 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> STATEFUL SETS <---");
 
-        Map<String, String> kafkaLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> kafkaLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 
         LOGGER.info("Getting labels from stateful set of kafka resource");
         verifyAppLabels(kafkaLabels);
 
-        Map<String, String> zooLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(namespaceName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        Map<String, String> zooLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), KafkaResources.zookeeperStatefulSetName(testStorage.getClusterName()));
 
         LOGGER.info("Getting labels from stateful set of zookeeper resource");
         verifyAppLabels(zooLabels);
 
         LOGGER.info("---> SERVICES <---");
 
-        List<Service> services = kubeClient(namespaceName).listServices(namespaceName).stream()
-                .filter(service -> service.getMetadata().getName().startsWith(clusterName))
+        List<Service> services = kubeClient(testStorage.getNamespaceName()).listServices(testStorage.getNamespaceName()).stream()
+                .filter(service -> service.getMetadata().getName().startsWith(testStorage.getClusterName()))
                 .collect(Collectors.toList());
 
         for (Service service : services) {
@@ -1254,8 +1241,8 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> SECRETS <---");
 
-        List<Secret> secrets = kubeClient(namespaceName).listSecrets(namespaceName).stream()
-                .filter(secret -> secret.getMetadata().getName().startsWith(clusterName) && secret.getType().equals("Opaque"))
+        List<Secret> secrets = kubeClient(testStorage.getNamespaceName()).listSecrets(testStorage.getNamespaceName()).stream()
+                .filter(secret -> secret.getMetadata().getName().startsWith(testStorage.getClusterName()) && secret.getType().equals("Opaque"))
                 .collect(Collectors.toList());
 
         for (Secret secret : secrets) {
@@ -1265,17 +1252,18 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> CONFIG MAPS <---");
 
-        List<ConfigMap> configMaps = kubeClient(namespaceName).listConfigMapsInSpecificNamespace(namespaceName, clusterName);
+        List<ConfigMap> configMaps = kubeClient(testStorage.getNamespaceName()).listConfigMapsInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         for (ConfigMap configMap : configMaps) {
             LOGGER.info("Getting labels from {} config map", configMap.getMetadata().getName());
             verifyAppLabelsForSecretsAndConfigMaps(configMap.getMetadata().getLabels());
         }
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
         );
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 
     @ParallelNamespaceTest
@@ -1307,69 +1295,65 @@ class KafkaST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testMessagesAreStoredInDisk(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1).build());
 
-        Map<String, String> kafkaPodsSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+        Map<String, String> kafkaPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector);
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 1, 1).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 1).build());
 
-        final String kafkaClientsPodName =
-            kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         TestUtils.waitFor("KafkaTopic creation inside kafka pod", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash",
-                        "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1").out().contains(topicName));
+            () -> cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), "/bin/bash",
+                        "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1").out().contains(testStorage.getTopicName()));
 
-        String topicDirNameInPod = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash",
-                "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/" + topicName + "/p'").out();
+        String topicDirNameInPod = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), "/bin/bash",
+                "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1 | sed -n '/" + testStorage.getTopicName() + "/p'").out();
 
         String commandToGetDataFromTopic =
                 "cd /var/lib/kafka/data/kafka-log0/" + topicDirNameInPod + "/;cat 00000000000000000000.log";
 
-        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(clusterName, 0));
-        String topicData = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0),
+        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        String topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
                 "/bin/bash", "-c", commandToGetDataFromTopic).out();
 
-        LOGGER.info("Topic {} is present in kafka broker {} with no data", topicName, KafkaResources.kafkaPodName(clusterName, 0));
+        LOGGER.info("Topic {} is present in kafka broker {} with no data", testStorage.getTopicName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
         assertThat("Topic contains data", topicData, emptyOrNullString());
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
-        );
 
-        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(clusterName, 0));
-        topicData = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c",
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
+        );
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
+
+        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), "/bin/bash", "-c",
                 commandToGetDataFromTopic).out();
 
         assertThat("Topic has no data", topicData, notNullValue());
 
-        List<Pod> kafkaPods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        List<Pod> kafkaPods = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 
         for (Pod kafkaPod : kafkaPods) {
             LOGGER.info("Deleting kafka pod {}", kafkaPod.getMetadata().getName());
-            kubeClient(namespaceName).deletePod(namespaceName, kafkaPod);
+            kubeClient(testStorage.getNamespaceName()).deletePod(testStorage.getNamespaceName(), kafkaPod);
         }
 
         LOGGER.info("Wait for kafka to rolling restart ...");
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 1, kafkaPodsSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), kafkaSelector, 1, kafkaPodsSnapshot);
 
-        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(clusterName, 0));
-        topicData = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c",
+        LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), "/bin/bash", "-c",
                 commandToGetDataFromTopic).out();
 
         assertThat("Topic has no data", topicData, notNullValue());
@@ -1378,15 +1362,12 @@ class KafkaST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testConsumerOffsetFiles(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "3");
         kafkaConfig.put("offsets.topic.num.partitions", "100");
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
             .editSpec()
                 .editKafka()
                     .withConfig(kafkaConfig)
@@ -1394,26 +1375,22 @@ class KafkaST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 3, 1).build());
 
-        final String kafkaClientsPodName =
-            kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-            .withUsingPodName(kafkaClientsPodName)
-            .withTopicName(topicName)
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
             .build();
 
         String commandToGetFiles =  "cd /var/lib/kafka/data/kafka-log0/;" +
                 "ls -1 | sed -n \"s#__consumer_offsets-\\([0-9]*\\)#\\1#p\" | sort -V";
 
-        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(clusterName, 0));
-        String result = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0),
+        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        String result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
                 "/bin/bash", "-c", commandToGetFiles).out();
 
         // TODO / FIXME
@@ -1421,13 +1398,14 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Result: \n" + result);
 
-        internalKafkaClient.checkProducedAndConsumedMessages(
-            internalKafkaClient.sendMessagesPlain(),
-            internalKafkaClient.receiveMessagesPlain()
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
         );
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(clusterName, 0));
-        result = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0),
+        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
                 "/bin/bash", "-c", commandToGetFiles).out();
 
         StringBuilder stringToMatch = new StringBuilder();
@@ -1580,11 +1558,9 @@ class KafkaST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(CRUISE_CONTROL)
     void testReadOnlyRootFileSystem(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
                 .editSpec()
                     .editKafka()
                         .withNewTemplate()
@@ -1633,28 +1609,22 @@ class KafkaST extends AbstractST {
                 .endSpec()
                 .build());
 
-        KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, clusterName + "-" + Constants.KAFKA_CLIENTS).build());
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withMessageCount(MESSAGE_COUNT)
+            .build();
 
-        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-                .withUsingPodName(kafkaClientsPodName)
-                .withTopicName(topicName)
-                .withNamespaceName(namespaceName)
-                .withClusterName(clusterName)
-                .withMessageCount(MESSAGE_COUNT)
-                .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-                .build();
-
-        LOGGER.info("Checking produced and consumed messages to pod:{}", kafkaClientsPodName);
-
-        internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesPlain(),
-                internalKafkaClient.receiveMessagesPlain()
+        resourceManager.createResource(extensionContext,
+            kafkaClients.producerStrimzi(),
+            kafkaClients.consumerStrimzi()
         );
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 
     protected void checkKafkaConfiguration(String namespaceName, String podNamePrefix, Map<String, Object> config, String clusterName) {
@@ -1691,7 +1661,7 @@ class KafkaST extends AbstractST {
         int k = 0;
         for (int i = 0; i < kafkaRepl; i++) {
             for (int j = 0; j < diskCount; j++) {
-                LOGGER.info("Checking volume {} and size of storage {}", volumes.get(k).getMetadata().getName(),
+                LOGGER.info("Checking volume {} and size of testStorage {}", volumes.get(k).getMetadata().getName(),
                         volumes.get(k).getSpec().getResources().getRequests().get("storage"));
                 assertThat(volumes.get(k).getSpec().getResources().getRequests().get("storage"), is(new Quantity(diskSizes[i])));
                 k++;

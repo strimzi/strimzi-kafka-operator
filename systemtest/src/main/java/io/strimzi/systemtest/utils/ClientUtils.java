@@ -61,7 +61,11 @@ public class ClientUtils {
         LOGGER.info("Waiting till producer {} and consumer {} finish", producerName, consumerName);
         TestUtils.waitFor("clients finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
             () -> kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, producerName, 1)
-                && kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, consumerName, 1));
+                && kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, consumerName, 1),
+            () -> {
+                JobUtils.logCurrentJobStatus(producerName, namespace);
+                JobUtils.logCurrentJobStatus(consumerName, namespace);
+            });
 
         if (deleteAfterSuccess) {
             JobUtils.deleteJobsWithWait(namespace, producerName, consumerName);
@@ -78,7 +82,8 @@ public class ClientUtils {
             () -> {
                 LOGGER.debug("Job {} in namespace {}, has status {}", jobName, namespace, kubeClient().namespace(namespace).getJobStatus(jobName));
                 return kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, jobName, 1);
-            });
+            },
+            () -> JobUtils.logCurrentJobStatus(jobName, namespace));
 
         if (deleteAfterSuccess) {
             JobUtils.deleteJobWithWait(namespace, jobName);
@@ -93,12 +98,14 @@ public class ClientUtils {
             if (kubeClient().namespace(namespace).getJobStatus(jobName).getFailed().equals(1)) {
                 LOGGER.debug("Job finished with 1 failed pod (expected - timeout).");
             } else {
+                JobUtils.logCurrentJobStatus(jobName, namespace);
                 throw new UnexpectedException("Job finished (unexpectedly) with 1 successful pod.");
             }
         } catch (WaitException e) {
             if (e.getMessage().contains("Timeout after ")) {
                 LOGGER.info("Client job '{}' finished with expected timeout.", jobName);
             } else {
+                JobUtils.logCurrentJobStatus(jobName, namespace);
                 throw e;
             }
         }

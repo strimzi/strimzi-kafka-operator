@@ -627,6 +627,10 @@ public class KubeClient {
         return client.batch().v1().jobs().inNamespace(getNamespace()).withName(jobName).get();
     }
 
+    public Job getJob(final String namespaceName, String jobName) {
+        return client.batch().v1().jobs().inNamespace(namespaceName).withName(jobName).get();
+    }
+
     public boolean checkSucceededJobStatus(String jobName) {
         return checkSucceededJobStatus(getNamespace(), jobName, 1);
     }
