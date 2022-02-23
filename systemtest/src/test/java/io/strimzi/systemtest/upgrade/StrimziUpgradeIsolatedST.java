@@ -23,11 +23,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.JsonArray;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -65,14 +61,14 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
     private final String strimziReleaseWithOlderKafka = String.format("https://github.com/strimzi/strimzi-kafka-operator/releases/download/%s/strimzi-%s.zip",
             strimziReleaseWithOlderKafkaVersion, strimziReleaseWithOlderKafkaVersion);
 
-    @ParameterizedTest(name = "testUpgradeStrimziVersion->{0}->{1}")
+    @ParameterizedTest(name = "from: {0} (using FG <{2}>) to: {1} (using FG <{3}>)")
     @MethodSource("loadJsonUpgradeData")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testUpgradeStrimziVersion(String fromVersion, String toVersion, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
+    void testUpgradeStrimziVersion(String fromVersion, String toVersion, String fgBefore, String fgAfter, JsonObject parameters, ExtensionContext extensionContext) throws Exception {
         assumeTrue(StUtils.isAllowOnCurrentEnvironment(parameters.getJsonObject("environmentInfo").getString("flakyEnvVariable")));
         assumeTrue(StUtils.isAllowedOnCurrentK8sVersion(parameters.getJsonObject("environmentInfo").getString("maxK8sVersion")));
 
-        LOGGER.debug("Running upgrade test from version {} to {}", fromVersion, toVersion);
+        LOGGER.debug("Running upgrade test from version {} to {} (FG: {} -> {})", fromVersion, toVersion, fgBefore, fgAfter);
         performUpgrade(parameters, extensionContext);
     }
 

@@ -179,7 +179,12 @@ public class AbstractUpgradeST extends AbstractST {
             procedures.put("interBrokerProtocolVersion", testKafkaVersion.protocolVersion());
             data.put("proceduresAfterOperatorUpgrade", procedures);
 
-            parameters.add(Arguments.of(data.getString("fromVersion"), "HEAD", data));
+            parameters.add(Arguments.of(
+                data.getString("fromVersion"),
+                "HEAD",
+                data.getString("strimziFeatureGatesFlagsBefore").isEmpty() ? "None" : data.getString("strimziFeatureGatesFlagsBefore"),
+                data.getString("strimziFeatureGatesFlagsAfter").isEmpty() ? "None" : data.getString("strimziFeatureGatesFlagsAfter"),
+                data));
         });
 
         return parameters.stream();
