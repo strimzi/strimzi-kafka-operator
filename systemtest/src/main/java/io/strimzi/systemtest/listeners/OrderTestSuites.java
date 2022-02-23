@@ -1,6 +1,9 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.systemtest.listeners;
 
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.StUtils;
 import org.junit.jupiter.api.ClassDescriptor;
 import org.junit.jupiter.api.ClassOrderer;
@@ -10,12 +13,25 @@ import java.util.Collections;
 import java.util.Comparator;
 
 /**
- * Provides an order of the test classes using {@code ClassDescriptorComparator}. The {@link io.strimzi.systemtest.annotations.ParallelSuite}
- * has highest priority. On the other hand {@link io.strimzi.systemtest.annotations.IsolatedSuite} has the lowest one.
- * The reason why ordering is beneficial for execution is that many threads, which are spawned by {@link java.util.concurrent.ForkJoinPool}
- * are blocked by {@link io.strimzi.systemtest.annotations.IsolatedSuite}. Completely re-ordering these tests, where first
- * we execute {@link io.strimzi.systemtest.annotations.ParallelSuite} would mean that we eliminate such problem and thus
- * utilize it.
+ * Provides an order of the test classes using {@code ClassDescriptorComparator}. Naturally, the {@link io.strimzi.systemtest.annotations.ParallelSuite}
+ * has the highest priority, and on the other hand, {@link io.strimzi.systemtest.annotations.IsolatedSuite} has the lowest one.
+ * That means that test classes that contain {@link io.strimzi.systemtest.annotations.IsolatedSuite} will be executed last.
+ * The reason why ordering is beneficial for execution is that {@link io.strimzi.systemtest.annotations.IsolatedSuite} may
+ * block many threads, which {@link java.util.concurrent.ForkJoinPool} spawns (using a work-stealing algorithm).
+ * In the scenario where we have the following test plan:
+ *
+ *      1. @ParallelSuite
+ *      2. @ParallelSuite
+ *      3. @IsolatedSuite
+ *      4. @IsolatedSuite
+ *      5. @ParallelSuite
+ *      6. @ParallelSuite
+ *
+ * We configure fixed class-wide parallelism using only three threads. Meaning that the first two threads will run in parallel,
+ * but the third one must way until these two threads complete their execution. If the first {@link io.strimzi.systemtest.annotations.ParallelSuite}
+ * completes its execution, this thread gets assigned the following test class, {@link io.strimzi.systemtest.annotations.IsolatedSuite}
+ * (Thread will be waiting for the second thread to finish its execution). This is not an optimal execution path.
+ * Instead, we re-order such test classes before TestEngine runs them and eliminate blocked threads.
  *
  * For instance here is the run completely re-order of such test run. {@link io.strimzi.systemtest.annotations.IsolatedSuite}
  * are the last one to execute.
@@ -41,13 +57,13 @@ import java.util.Comparator;
  *  -> io.strimzi.systemtest.metrics.JmxIsolatedST
  *
  */
-public class OrderTestClasses implements ClassOrderer {
+public class OrderTestSuites implements ClassOrderer {
 
     private class ClassDescriptorComparator implements Comparator<ClassDescriptor> {
 
         @Override
-        public int compare(ClassDescriptor classDescriptor, ClassDescriptor t1) {
-            return compareTo(classDescriptor, t1);
+        public int compare(ClassDescriptor classDescriptor, ClassDescriptor otherDescriptor) {
+            return compareTo(classDescriptor, otherDescriptor);
         }
 
         /**
