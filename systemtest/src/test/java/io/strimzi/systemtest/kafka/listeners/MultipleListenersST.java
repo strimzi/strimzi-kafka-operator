@@ -52,7 +52,6 @@ public class MultipleListenersST extends AbstractST {
     private Object lock = new Object();
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(MultipleListenersST.class.getSimpleName()).stream().findFirst().get();
-
     // only 4 type of listeners
     private Map<KafkaListenerType, List<GenericKafkaListener>> testCases = new HashMap<>(4);
 
@@ -109,7 +108,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleRoutes(ExtensionContext extensionContext) throws Exception {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.ROUTE), clusterName);
     }
@@ -120,7 +119,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMixtureOfExternalListeners(ExtensionContext extensionContext) throws Exception {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -141,7 +140,7 @@ public class MultipleListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfEveryKindOfListener(ExtensionContext extensionContext) throws Exception {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 

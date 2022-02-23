@@ -51,6 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.common.Util.sha1Prefix;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -594,7 +595,8 @@ public abstract class AbstractST implements TestSeparator {
             }
 
             LOGGER.info("Not first test we are gonna generate cluster name");
-            String clusterName = CLUSTER_NAME_PREFIX + new Random().nextInt(Integer.MAX_VALUE);
+
+            String clusterName = CLUSTER_NAME_PREFIX + sha1Prefix(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
             mapWithClusterNames.put(testName, clusterName);
             mapWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
