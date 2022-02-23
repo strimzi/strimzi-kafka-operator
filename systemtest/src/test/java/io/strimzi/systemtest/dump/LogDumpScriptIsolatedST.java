@@ -10,12 +10,13 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.USER_PATH;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
-import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.test.annotations.IsolatedSuite;
 import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.executor.Exec;
@@ -39,78 +40,71 @@ public class LogDumpScriptIsolatedST extends AbstractST {
     @BeforeAll
     void setUp() {
         clusterOperator.unInstall();
-        clusterOperator = clusterOperator.defaultInstallation().createInstallation().runInstallation();
+        clusterOperator = clusterOperator
+            .defaultInstallation()
+            .createInstallation()
+            .runInstallation();
     }
 
     @IsolatedTest
     void dumpPartitions(ExtensionContext context) {
-        String clusterName = mapWithClusterNames.get(context.getDisplayName());
+        TestStorage storage = new TestStorage(context);
+
         String groupId = "my-group";
         String partitionNumber = "0";
-        String outPath = USER_PATH + "/target/" + clusterName;
+        String outPath = USER_PATH + "/target/" + storage.getClusterName();
         
-        resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(clusterName, 1, 1)
+        resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(storage.getClusterName(), 1, 1)
             .editMetadata()
                 .withNamespace(INFRA_NAMESPACE)
             .endMetadata()
             .build());
-        String clientsPodName = deployAndGetInternalClientsPodName(context);
-        InternalKafkaClient clients = buildInternalClients(context, clientsPodName, groupId, 10);
-        String topicName = mapWithTestTopics.get(context.getDisplayName());
-        
+
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(storage.getTopicName())
+            .withMessageCount(10)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(storage.getClusterName()))
+            .withProducerName(storage.getProducerName())
+            .withConsumerName(storage.getConsumerName())
+            .withNamespaceName(storage.getNamespaceName())
+            .withConsumerGroup(groupId)
+            .build();
+
         // send messages and consume them
-        clients.sendMessagesPlain();
-        clients.receiveMessagesPlain();
+        resourceManager.createResource(context, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        ClientUtils.waitForClientsSuccess(storage.getProducerName(), storage.getConsumerName(), storage.getNamespaceName(), MESSAGE_COUNT);
 
         // dry run
-        LOGGER.info("Print partition segments from cluster {}/{}", INFRA_NAMESPACE, clusterName);
+        LOGGER.info("Print partition segments from cluster {}/{}", INFRA_NAMESPACE, storage.getClusterName());
         String[] printCmd = new String[] {
-            USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", INFRA_NAMESPACE, "--cluster", clusterName, "--topic", topicName, "--partition", partitionNumber, "--dry-run"
+            USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", INFRA_NAMESPACE, "--cluster",
+            storage.getClusterName(), "--topic", storage.getTopicName(), "--partition", partitionNumber, "--dry-run"
         };
         Exec.exec(Level.INFO, printCmd);
         assertThat("Output directory created in dry mode", Files.notExists(Paths.get(outPath)));
         
         // partition dump
-        LOGGER.info("Dump topic partition from cluster {}/{}", INFRA_NAMESPACE, clusterName);
+        LOGGER.info("Dump topic partition from cluster {}/{}", INFRA_NAMESPACE, storage.getClusterName());
         String[] dumpPartCmd = new String[] {
-            USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", INFRA_NAMESPACE, "--cluster", clusterName, "--topic", topicName, "--partition", partitionNumber, "--out-path", outPath
+            USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", INFRA_NAMESPACE, "--cluster",
+            storage.getClusterName(), "--topic", storage.getTopicName(), "--partition", partitionNumber, "--out-path", outPath
         };
         Exec.exec(Level.INFO, dumpPartCmd);
         assertThat("No output directory created", Files.exists(Paths.get(outPath)));
-        String dumpPartFilePath = outPath + "/" + topicName + "/kafka-0-" + topicName + "-" + partitionNumber + "/00000000000000000000.log";
+        String dumpPartFilePath = outPath + "/" + storage.getTopicName() + "/kafka-0-" + storage.getTopicName() + "-" + partitionNumber + "/00000000000000000000.log";
         assertThat("No partition file created", Files.exists(Paths.get(dumpPartFilePath)));
         assertThat("Empty partition file", new File(dumpPartFilePath).length() > 0);
         
         // __consumer_offsets dump
-        LOGGER.info("Dump consumer offsets partition from cluster {}/{}", INFRA_NAMESPACE, clusterName);
+        LOGGER.info("Dump consumer offsets partition from cluster {}/{}", INFRA_NAMESPACE, storage.getClusterName());
         String[] dumpCgCmd = new String[] {
-            USER_PATH + "/../tools/log-dump/run.sh", "cg_offsets", "--namespace", INFRA_NAMESPACE, "--cluster", clusterName, "--group-id", groupId, "--out-path", outPath
+            USER_PATH + "/../tools/log-dump/run.sh", "cg_offsets", "--namespace", INFRA_NAMESPACE, "--cluster",
+            storage.getClusterName(), "--group-id", groupId, "--out-path", outPath
         };
         Exec.exec(Level.INFO, dumpCgCmd);
         assertThat("No output directory created", Files.exists(Paths.get(outPath)));
         String dumpCgFilePath = outPath + "/__consumer_offsets/kafka-0-__consumer_offsets-12/00000000000000000000.log";
         assertThat("No partition file created", Files.exists(Paths.get(dumpCgFilePath)));
         assertThat("Empty partition file", new File(dumpCgFilePath).length() > 0);
-    }
-
-    private String deployAndGetInternalClientsPodName(ExtensionContext context) {
-        final String kafkaClientsName = mapWithKafkaClientNames.get(context.getDisplayName());
-        resourceManager.createResource(context, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, kafkaClientsName).build());
-        return ResourceManager.kubeClient().listPodsByPrefixInName(INFRA_NAMESPACE, kafkaClientsName).get(0).getMetadata().getName();
-    }
-
-    private InternalKafkaClient buildInternalClients(ExtensionContext context, String podName, String groupId, int batchSize) {
-        String clusterName = mapWithClusterNames.get(context.getDisplayName());
-        String topicName = mapWithTestTopics.get(context.getDisplayName());
-        InternalKafkaClient clients = new InternalKafkaClient.Builder()
-                .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-                .withNamespaceName(INFRA_NAMESPACE)
-                .withUsingPodName(podName)
-                .withClusterName(clusterName)
-                .withTopicName(topicName)
-                .withConsumerGroupName(groupId)
-                .withMessageCount(batchSize)
-                .build();
-        return clients;
     }
 }

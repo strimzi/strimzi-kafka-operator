@@ -61,6 +61,14 @@ public interface Constants {
     int GLOBAL_RECONCILIATION_COUNT = (int) ((RECONCILIATION_INTERVAL / GLOBAL_POLL_INTERVAL) + GLOBAL_STABILITY_OFFSET_COUNT);
 
     /**
+     * Scraper pod labels
+     */
+    String SCRAPER_LABEL_KEY = "user-test-app";
+    String SCRAPER_LABEL_VALUE = "scraper";
+
+    String SCRAPER_NAME = "scraper";
+
+    /**
      * Constants for Kafka clients labels
      */
     String KAFKA_CLIENTS_LABEL_KEY = "user-test-app";
@@ -365,8 +373,10 @@ public interface Constants {
     String TOPIC_KEY = "TOPIC_NAME";
     String STREAM_TOPIC_KEY = "STREAM_TOPIC_NAME";
     String KAFKA_CLIENTS_KEY = "KAFKA_CLIENTS_NAME";
+    String SCRAPER_KEY = "SCRAPER_NAME";
     String PRODUCER_KEY = "PRODUCER_NAME";
     String CONSUMER_KEY = "CONSUMER_NAME";
+    String USER_NAME_KEY = "USER_NAME";
     String KAFKA_CLIENTS_POD_KEY = "KAFKA_CLIENTS_POD_NAME";
     String KAFKA_TRACING_CLIENT_KEY = "KAFKA_TRACING_CLIENT";
     String KAFKA_SELECTOR = "KAFKA_SELECTOR";

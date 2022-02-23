@@ -178,7 +178,6 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi());
         // client should succeeded because we set to `clientScope=test` and also Kafka has `scope=test`
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
     }
 
     @IsolatedTest("Modification of shared Kafka cluster")

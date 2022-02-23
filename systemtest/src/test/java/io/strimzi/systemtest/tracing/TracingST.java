@@ -399,7 +399,7 @@ public class TracingST extends AbstractST {
         resourceManager.createResource(extensionContext, ((KafkaTracingClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).producerWithTracing());
         resourceManager.createResource(extensionContext, ((KafkaTracingClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
 
-        ClientUtils.waitTillContinuousClientsFinish(
+        ClientUtils.waitForClientsSuccess(
             storageMap.get(extensionContext).getProducerName(),
             storageMap.get(extensionContext).getConsumerName(),
             storageMap.get(extensionContext).getNamespaceName(), MESSAGE_COUNT);

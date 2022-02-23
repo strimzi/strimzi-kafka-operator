@@ -562,11 +562,8 @@ public class AbstractUpgradeST extends AbstractST {
             // ##############################
             // Validate that continuous clients finished successfully
             // ##############################
-            ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, namespace, continuousClientsMessageCount);
+            ClientUtils.waitForClientsSuccess(producerName, consumerName, namespace, continuousClientsMessageCount);
             // ##############################
-            // Delete jobs to make same names available for next upgrade run during chain upgrade
-            kubeClient().deleteJob(producerName);
-            kubeClient().deleteJob(consumerName);
         }
     }
 

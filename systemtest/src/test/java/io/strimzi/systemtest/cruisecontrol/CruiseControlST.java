@@ -201,7 +201,7 @@ public class CruiseControlST extends AbstractST {
 
         resourceManager.createResource(extensionContext,  KafkaRebalanceTemplates.kafkaRebalance(clusterName)
             .editOrNewSpec()
-            .withExcludedTopics("excluded-.*")
+                .withExcludedTopics("excluded-.*")
             .endSpec()
             .build());
 

@@ -24,7 +24,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NodeUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -117,7 +116,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
             RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector(), replicas, kafkaPod);
         }
 
-        ClientUtils.waitTillContinuousClientsFinish(testStorage.getProducerName(), testStorage.getConsumerName(), Constants.DRAIN_CLEANER_NAMESPACE, 300);
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), Constants.DRAIN_CLEANER_NAMESPACE, 300);
     }
 
     @IsolatedTest
@@ -249,9 +248,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
             RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector(), replicas, kafkaPod);
         });
 
-        producerNames.forEach(producer -> ClientUtils.waitTillContinuousClientsFinish(producer, consumerNames.get(producerNames.indexOf(producer)), Constants.DRAIN_CLEANER_NAMESPACE, 300));
-        producerNames.forEach(producer -> KubeClusterResource.kubeClient().deleteJob(producer));
-        consumerNames.forEach(consumer -> KubeClusterResource.kubeClient().deleteJob(consumer));
+        producerNames.forEach(producer -> ClientUtils.waitForClientsSuccess(producer, consumerNames.get(producerNames.indexOf(producer)), Constants.DRAIN_CLEANER_NAMESPACE, 300));
     }
 
     @AfterEach
