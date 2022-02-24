@@ -1,6 +1,5 @@
 // This assembly is included in:
 //
-// assembly-getting-started.adoc
 // deploying/assembly-deploy-tasks.adoc
 
 [id="deploy-create-cluster_{context}"]

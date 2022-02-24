@@ -5,10 +5,10 @@
 [id='deploy-prereqs-{context}']
 = Deployment prerequisites
 
-To deploy Strimzi, make sure that:
+To deploy Strimzi, you'll need the following:
 
 ifdef::Downloading[]
-* A Kubernetes {KubernetesVersion} cluster is available.
+* A Kubernetes {KubernetesVersion} cluster.
 +
 If you do not have access to a Kubernetes cluster, you can install Strimzi with xref:deploy-kubernetes-{context}[_Minikube_].
 * The `kubectl` command-line tool is installed and configured to connect to the running cluster.
@@ -38,7 +38,7 @@ For example, the `oc` equivalent of `kubectl taint` is `oc adm taint`.
 
 endif::Downloading[]
 ifndef::Downloading[]
-* An OpenShift {OpenShiftVersion} cluster is available.
+* An OpenShift {OpenShiftVersion} cluster.
 +
 Strimzi is based on Strimzi {StrimziVersion}.
 
