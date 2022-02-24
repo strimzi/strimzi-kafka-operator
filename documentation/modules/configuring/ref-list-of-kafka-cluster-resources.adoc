@@ -23,7 +23,7 @@ The following resources are created by the Cluster Operator in the Kubernetes cl
 - Service account used by the ZooKeeper nodes.
 - PodDisruptionBudget configured for the ZooKeeper nodes.
 
-`_cluster-name_-zookeeper-_idx_`:: Pods created by the ZooKeeper StatefulSet.
+`_cluster-name_-zookeeper-_idx_`:: Pods created by the ZooKeeper StatefulSet or StrimziPodSet.
 `_cluster-name_-zookeeper-nodes`:: Headless Service needed to have DNS resolve the ZooKeeper pods IP addresses directly.
 `_cluster-name_-zookeeper-client`:: Service used by Kafka brokers to connect to ZooKeeper nodes as clients.
 `_cluster-name_-zookeeper-config`:: ConfigMap that contains the ZooKeeper ancillary configuration, and is mounted as a volume by the ZooKeeper node pods.
@@ -39,7 +39,7 @@ The following resources are created by the Cluster Operator in the Kubernetes cl
 - Service account used by the Kafka pods.
 - PodDisruptionBudget configured for the Kafka brokers.
 
-`_cluster-name_-kafka-_idx_`:: Pods created by the Kafka StatefulSet.
+`_cluster-name_-kafka-_idx_`:: Pods created by the Kafka StatefulSet or StrimziPodSet.
 `_cluster-name_-kafka-brokers`:: Service needed to have DNS resolve the Kafka broker pods IP addresses directly.
 `_cluster-name_-kafka-bootstrap`:: Service can be used as bootstrap servers for Kafka clients connecting from within the Kubernetes cluster.
 `_cluster-name_-kafka-external-bootstrap`:: Bootstrap service for clients connecting from outside the Kubernetes cluster. This resource is created only when an external listener is enabled. The old service name will be used for backwards compatibility when the listener name is `external` and port is `9094`.
