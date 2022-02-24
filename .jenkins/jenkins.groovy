@@ -1,9 +1,11 @@
 
-def setupKubernetes(String arch) {
-    // set SElinux to permisive mode
-    sh(script: "sudo setenforce 0 || true")
-    // Install conntrack
-    sh(script: "sudo yum install -y conntrack")
+def setupKubernetes(String arch = "amd64") {
+    if (!"${arch}".contains("s390x")) {
+        // set SElinux to permisive mode
+        sh(script: "sudo setenforce 0")
+        // Install conntrack
+        sh(script: "sudo yum install -y conntrack")
+    }
     sh(script: "${workspace}/.azure/scripts/setup-kubernetes.sh ${arch}")
 }
 
@@ -20,7 +22,7 @@ def installHelm(String workspace) {
     sh(script: "${workspace}/.azure/scripts/setup-helm.sh")
 }
 
-def installYq(String workspace, String arch) {
+def installYq(String workspace, String arch = "amd64") {
     sh(script: "${workspace}/.azure/scripts/install_yq.sh ${arch}")
 }
 
@@ -32,18 +34,11 @@ def applys390xpatch(String workspace) {
     sh(script: "${workspace}/.jenkins/scripts/apply_s390x_patch.sh")
 }
 
-def buildStrimziImages(String arch) {
-    if("${arch}" == "s390x" ){
-        sh(script: """
-            eval \$(minikube docker-env)
-            MVN_ARGS='-DskipTests' make all
-        """)
-    }else{
-        sh(script: """
-            eval \$(minikube docker-env)
-            MVN_ARGS='-Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=2' make all
-        """)
-    }
+def buildStrimziImages() {
+    sh(script: """
+        eval \$(minikube docker-env)
+        MVN_ARGS='-Dsurefire.rerunFailingTestsCount=5 -Dfailsafe.rerunFailingTestsCount=2' make all
+    """)
 }
 
 def runSystemTests(String workspace, String testCases, String testProfile, String testGroups, String excludeGroups, String parallelEnabled, String testsInParallel) {
@@ -55,7 +50,6 @@ def runSystemTests(String workspace, String testCases, String testProfile, Strin
             "${groupsTag}" +
             "-DexcludedGroups=${excludeGroups} " +
             "${testcasesTag}" +
-            "-Dmaven.javadoc.skip=true -B -V " +
             "-Djava.net.preferIPv4Stack=true " +
             "-DtrimStackTrace=false " +
             "-Dstyle.color=always " +
