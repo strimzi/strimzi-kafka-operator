@@ -71,7 +71,3 @@ props.put("sasl.mechanism", "PLAIN");
 <1> Here we use `SASL_SSL` for use over TLS connections. Use `SASL_PLAINTEXT` over unencrypted connections for local development only.
 
 . Verify that the Kafka client can access the Kafka brokers.
-
-.What to do next
-
-* xref:proc-oauth-kafka-config-{context}[Configure Kafka components to use OAuth 2.0]

@@ -8,7 +8,12 @@
 [role="_abstract"]
 Strimzi supports TLS for encrypted communication between Kafka and Strimzi components.
 
-Communication between Kafka brokers (interbroker communication), between ZooKeeper nodes (internodal communication), and between those components and the Strimzi operators is always encrypted.
+Communication is always encrypted for communication between the following components:
+
+* Interbroker communication between Kafka brokers
+* Internodal communication between ZooKeeper nodes
+* Strimzi operator communication with Kafka brokers and ZooKeeper nodes
+
 Communication between Kafka clients and Kafka brokers is encrypted according to how the cluster is configured.
 For the Kafka and Strimzi components, TLS certificates are also used for authentication.
 
