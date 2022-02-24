@@ -52,7 +52,7 @@ By default, the Cluster Operator reconciles service accounts and updates them wh
 For example, you can change service account labels and annotations after the operands are already created.
 To disable service account patching, disable the `ServiceAccountPatching` feature gate.
 
-.Disabling the ControlPlaneListener feature gate
+.Disabling the ServiceAccountPatching feature gate
 To disable the `ServiceAccountPatching` feature gate, specify `-ServiceAccountPatching` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 [id='ref-operator-use-strimzi-pod-sets-feature-gate-{context}']
