@@ -5,11 +5,11 @@
 [id='assembly-rolling-updates-{context}']
 = Manually starting rolling updates of Kafka and ZooKeeper clusters
 
-Strimzi supports the use of annotations on `StatefulSet` and `Pod` resources to manually trigger a rolling update of Kafka and ZooKeeper clusters through the Cluster Operator.
+Strimzi supports the use of annotations on resources to manually trigger a rolling update of Kafka and ZooKeeper clusters through the Cluster Operator.
 Rolling updates restart the pods of the resource with new ones.
 
-Manually performing a rolling update on a specific pod or set of pods from the same `StatefulSet` is usually only required in exceptional circumstances.
-However, rather than deleting the pods directly, if you perform the rolling update through the Cluster Operator you ensure that:
+Manually performing a rolling update on a specific pod or set of pods is usually only required in exceptional circumstances.
+However, rather than deleting the pods directly, if you perform the rolling update through the Cluster Operator you ensure the following:
 
 * The manual deletion of the pod does not conflict with simultaneous Cluster Operator operations, such as deleting other pods in parallel.
 * The Cluster Operator logic handles the Kafka configuration specifications, such as the number of in-sync replicas.
