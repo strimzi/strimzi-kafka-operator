@@ -87,7 +87,6 @@
         <spotbugs.version>4.5.3</spotbugs.version>
         <sonatype.nexus.staging>1.6.3</sonatype.nexus.staging>
         <jacoco.version>0.7.9</jacoco.version>
-        <license.maven.version>2.11</license.maven.version>
         <maven-jar-plugin.version>3.1.0</maven-jar-plugin.version>
         <sundrio.version>0.40.1</sundrio.version>
         <fabric8.kubernetes-client.version>5.12.0</fabric8.kubernetes-client.version>
@@ -974,20 +973,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>com.mycila</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <version>${license.maven.version}</version>
-                <configuration>
-                    <aggregate>true</aggregate>
-                    <header>header.txt</header>
-                    <properties>
-                        <owner>Red Hat, Inc.</owner>
-                    </properties>
-                    <excludes>
-                    </excludes>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>com.github.spotbugs</groupId>
