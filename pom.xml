@@ -970,20 +970,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>com.mycila</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <version>${license.maven.version}</version>
-                <configuration>
-                    <aggregate>true</aggregate>
-                    <header>header.txt</header>
-                    <properties>
-                        <owner>Red Hat, Inc.</owner>
-                    </properties>
-                    <excludes>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>com.github.spotbugs</groupId>
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <version>4.5.3.0</version><dependencies>
