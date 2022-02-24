@@ -5,7 +5,7 @@
 [id='deploy-prereqs-{context}']
 = Deployment prerequisites
 
-To deploy Strimzi, you'll need the following:
+To deploy Strimzi, you will need the following:
 
 ifdef::Downloading[]
 * A Kubernetes {KubernetesVersion} cluster.

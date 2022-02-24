@@ -34,13 +34,11 @@ Strimzi supports additional deployment options to monitor your deployment.
 
 == CPU and memory resource limits and requests
 
-By default, the Strimzi deployment does not specify requests and limits for CPU and memory resources.
-It's important for Kafka to have enough of these resources to run properly, but not more than they need if they are sharing resources.
-If you don't set limits, a container could use all the available memory.
+By default, the Strimzi Cluster Operator does not specify requests and limits for CPU and memory resources for any operands it deploys.
 
-The amount of resources to reserve depends on the specific requirements of the deployment.
-The number of producers and consumers has an impact, as does the size of messages.
-You might monitor data throughput and other metrics to get an idea of the resources needed.
+Having sufficient resources is important for applications like Kafka to be stable and deliver good performance.
 
-You can set resource requests and limits for each container in a pod.
-If you want to set requests and limits, you link:{BookURLUsing}#con-common-configuration-resources-reference[add resources configuration to Strimzi custom resources].
+The right amount of resources you should use depends on the specific requirements and use-cases.
+
+You should consider configuring the CPU and memory resources.
+You can set resource requests and limits for each container in the link:{BookURLUsing}#con-common-configuration-resources-reference[Strimzi custom resources].
