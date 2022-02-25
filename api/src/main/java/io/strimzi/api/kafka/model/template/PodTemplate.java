@@ -185,9 +185,9 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
     }
 
     @Pattern(Constants.MEMORY_REGEX)
-    @DefaultValue("1Mi")
+    @DefaultValue("5Mi")
     @Description("Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). " +
-            "Default value is `1Mi`.")
+            "Default value is `5Mi`.")
     public String getTmpDirSizeLimit() {
         return tmpDirSizeLimit;
     }
