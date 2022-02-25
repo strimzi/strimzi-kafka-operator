@@ -36,8 +36,13 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 @Tag(INTERNAL_CLIENTS_USED)
 @IsolatedSuite
 public class ColdBackupScriptIsolatedST extends AbstractST {
-
     private static final Logger LOGGER = LogManager.getLogger(ColdBackupScriptIsolatedST.class);
+
+    @BeforeAll
+    void setUp() {
+        clusterOperator.unInstall();
+        clusterOperator = clusterOperator.defaultInstallation().createInstallation().runInstallation();
+    }
 
     @IsolatedTest
     void backupAndRestore(ExtensionContext context) {
@@ -125,11 +130,5 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
                 .withMessageCount(batchSize)
                 .build();
         return clients;
-    }
-
-    @BeforeAll
-    void setUp() {
-        clusterOperator.unInstall();
-        clusterOperator.defaultInstallation().createInstallation().runInstallation();
     }
 }
