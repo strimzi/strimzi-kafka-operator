@@ -4,18 +4,26 @@
  */
 package io.strimzi.systemtest.operators.topic;
 
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicScalabilityUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
+import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 
@@ -28,27 +36,44 @@ public class TopicScalabilityIsolatedST extends AbstractST {
     private static final int SAMPLE_OFFSET = 50;
     private final String sharedClusterName = "topic-scalability-shared-cluster-name";
 
-    @ParallelTest
+    @IsolatedTest
     void testBigAmountOfTopicsCreatingViaK8s(ExtensionContext extensionContext) {
-        final String topicName = "topic-example";
+        final String topicPrefix = "topic-example";
 
-        LOGGER.info("Creating topics via Kubernetes");
-        for (int i = 0; i < NUMBER_OF_TOPICS; i++) {
-            String currentTopic = topicName + i;
-            LOGGER.debug("Creating {} topic", currentTopic);
-            resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(sharedClusterName, currentTopic, 3, 1, 1, INFRA_NAMESPACE).build());
-        }
+        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix, NUMBER_OF_TOPICS, 3, 1, 1);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
 
-        for (int i = 0; i < NUMBER_OF_TOPICS; i = i + SAMPLE_OFFSET) {
-            String currentTopic = topicName + i;
-            LOGGER.debug("Verifying that {} topic CR has Ready status", currentTopic);
+        LOGGER.info("Verifying that we've created {} topics", NUMBER_OF_TOPICS);
+        assertEquals(NUMBER_OF_TOPICS, KafkaTopicUtils.getAllKafkaTopicsWithPrefix(INFRA_NAMESPACE, topicPrefix).size());
+    }
 
-            KafkaTopicUtils.waitForKafkaTopicReady(INFRA_NAMESPACE, currentTopic);
-        }
+    @IsolatedTest
+    void testModifyBigAmountOfTopics(ExtensionContext extensionContext) {
+        final String topicPrefix = "example-topic";
+        Map<String, Object> modifiedConfig = new HashMap<>();
 
-        LOGGER.info("Verifying that we created {} topics", NUMBER_OF_TOPICS);
+        int defaultPartitionCount = 2;
 
-        KafkaTopicUtils.waitForKafkaTopicsCount(INFRA_NAMESPACE, NUMBER_OF_TOPICS, sharedClusterName);
+        // Create topics
+        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount, 1, 1);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
+
+
+        // Increase ISR over limits expect topics to fail
+        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount - 1, modifiedConfig);
+        KafkaTopicScalabilityUtils.checkTopicsNotReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
+
+
+        // Modify config and expect topics to be in error state
+        modifiedConfig.put("min.insync.replicas", 2);
+        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount, modifiedConfig);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
+
+
+        // Increase ISR over limits expect topics to fail
+        modifiedConfig.put("min.insync.replicas", 6);
+        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount, modifiedConfig);
+        KafkaTopicScalabilityUtils.checkTopicsNotReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
     }
 
     @BeforeAll
