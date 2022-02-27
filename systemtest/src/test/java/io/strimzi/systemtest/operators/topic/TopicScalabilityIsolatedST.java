@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.operators.topic;
 
-import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -15,15 +14,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 
@@ -58,11 +54,11 @@ public class TopicScalabilityIsolatedST extends AbstractST {
         KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
 
         // Decrease partitions and expect not ready status
-        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount - 1);
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount - 1);
         KafkaTopicScalabilityUtils.checkTopicsNotReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
 
         // Set back to default and check if topic becomes ready
-        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount);
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount);
         KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
     }
 
@@ -82,9 +78,9 @@ public class TopicScalabilityIsolatedST extends AbstractST {
         modifiedConfig.put("message.timestamp.type", "LogAppendTime");
         modifiedConfig.put("min.insync.replicas", 6);
 
-        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
         KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
-        KafkaTopicScalabilityUtils.checkTopicConfigContains(sharedClusterName, topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET, modifiedConfig);
+        KafkaTopicScalabilityUtils.checkTopicsContainConfig(sharedClusterName, topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET, modifiedConfig);
 
         // Set time configs
         modifiedConfig.clear();
@@ -94,7 +90,7 @@ public class TopicScalabilityIsolatedST extends AbstractST {
         modifiedConfig.put("segment.ms", 123456);
         modifiedConfig.put("flush.ms", 456123);
 
-        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
         KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
 
         // Set size configs
@@ -104,12 +100,12 @@ public class TopicScalabilityIsolatedST extends AbstractST {
         modifiedConfig.put("max.message.bytes", 654321);
         modifiedConfig.put("flush.messages", 456123);
 
-        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
         KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
 
         // Set back to default state
         modifiedConfig.clear();
-        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
         KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
     }
 

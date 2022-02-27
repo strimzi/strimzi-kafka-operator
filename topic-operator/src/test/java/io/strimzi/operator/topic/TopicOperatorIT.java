@@ -207,8 +207,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     public void testKafkaTopicAddedWithBadData() {
         String topicName = "test-resource-created-with-bad-data";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
-        KafkaTopic kaf
-        kaTopic = TopicSerialization.toTopicResource(topic, labels);
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(topic, labels);
         kafkaTopic.getSpec().setPartitions(-1);
 
         // Create a Topic Resource

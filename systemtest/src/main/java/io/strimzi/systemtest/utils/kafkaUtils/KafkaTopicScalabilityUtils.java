@@ -2,29 +2,23 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.strimzi.api.kafka.Crds;
-import io.strimzi.api.kafka.model.storage.Storage;
+
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.test.WaitException;
-import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -40,7 +34,7 @@ public class KafkaTopicScalabilityUtils {
 
         for (int i = 0; i < numberOfTopics; i++){
             String currentTopicName = topicPrefix + i;
-            LOGGER.debug("Creating {}", currentTopicName);
+            LOGGER.debug("Creating topic {}", currentTopicName);
 
             topics.add(CompletableFuture.runAsync(() ->
                     resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(
@@ -80,7 +74,7 @@ public class KafkaTopicScalabilityUtils {
         KafkaTopicScalabilityUtils.checkTopicsState(topicPrefix, numberOfTopics, sampleOffset, CustomResourceStatus.Ready);
     }
 
-    public static void checkTopicConfigContains(String clusterName, String topicPrefix, int numberOfTopics, int sampleOffset, Map<String, Object> config) {
+    public static void checkTopicsContainConfig(String clusterName, String topicPrefix, int numberOfTopics, int sampleOffset, Map<String, Object> config) {
         LOGGER.info("Verifying that topics contain right config");
         List<CompletableFuture> topics = new ArrayList();
 
@@ -95,7 +89,6 @@ public class KafkaTopicScalabilityUtils {
                 } catch (JsonProcessingException e) {
                     fail(e.getMessage());
                 }
-
             }));
         }
 
@@ -111,7 +104,7 @@ public class KafkaTopicScalabilityUtils {
         } while (!allTopics.isDone());
     }
 
-    public static void modifyTopics(String topicPrefix, int numberOfTopics,int numberOfPartitions, Map<String, Object> config) {
+    public static void modifyBigAmountOfTopics(String topicPrefix, int numberOfTopics, int numberOfPartitions, Map<String, Object> config) {
         LOGGER.info("Modify topics via Kubernetes");
 
         List<CompletableFuture> topics = new ArrayList<CompletableFuture>();
@@ -132,12 +125,12 @@ public class KafkaTopicScalabilityUtils {
         }
     }
 
-    public static void modifyTopics(String topicPrefix, int numberOfTopics, int numberOfPartitions) {
-       KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, numberOfTopics, numberOfPartitions, new HashMap<>());
+    public static void modifyBigAmountOfTopics(String topicPrefix, int numberOfTopics, int numberOfPartitions) {
+       KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, numberOfTopics, numberOfPartitions, new HashMap<>());
     }
 
-    public static void modifyTopics(String topicPrefix, int numberOfTopics, Map<String, Object> config) {
-        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, numberOfTopics,0, config);
+    public static void modifyBigAmountOfTopics(String topicPrefix, int numberOfTopics, Map<String, Object> config) {
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, numberOfTopics,0, config);
     }
 
 }
