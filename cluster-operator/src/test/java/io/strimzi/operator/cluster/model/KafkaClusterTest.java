@@ -538,7 +538,7 @@ public class KafkaClusterTest {
         assertThat(containers.get(0).getPorts().get(1).getProtocol(), is("TCP"));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream()
             .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
+            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
 
         if (cm.getSpec().getKafka().getRack() != null) {
 

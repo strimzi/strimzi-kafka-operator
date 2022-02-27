@@ -947,7 +947,7 @@ include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#HostAlias-v1-core[HostAlias] array
-|tmpDirSizeLimit                1.2+<.<a|Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `1Mi`.
+|tmpDirSizeLimit                1.2+<.<a|Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
 |string
 |enableServiceLinks             1.2+<.<a|Indicates whether information about services should be injected into Pod's environment variables.
 |boolean

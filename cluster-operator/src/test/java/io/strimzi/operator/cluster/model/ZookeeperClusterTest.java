@@ -407,7 +407,7 @@ public class ZookeeperClusterTest {
         assertThat(containers.get(0).getVolumeMounts().get(4).getMountPath(), is(ZookeeperCluster.ZOOKEEPER_CLUSTER_CA_VOLUME_MOUNT));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream()
             .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("1Mi")));
+            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
     }
 
     // TODO test volume claim templates
