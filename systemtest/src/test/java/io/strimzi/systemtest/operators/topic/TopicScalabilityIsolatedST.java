@@ -35,12 +35,14 @@ public class TopicScalabilityIsolatedST extends AbstractST {
     private static final int NUMBER_OF_TOPICS = 1000;
     private static final int SAMPLE_OFFSET = 50;
     private final String sharedClusterName = "topic-scalability-shared-cluster-name";
+    final String topicPrefix = "example-topic";
+    final int defaultPartitionCount = 2;
 
     @IsolatedTest
     void testBigAmountOfTopicsCreatingViaK8s(ExtensionContext extensionContext) {
-        final String topicPrefix = "topic-example";
 
-        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix, NUMBER_OF_TOPICS, 3, 1, 1);
+        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix,
+                NUMBER_OF_TOPICS, 4, 3, 2);
         KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
 
         LOGGER.info("Verifying that we've created {} topics", NUMBER_OF_TOPICS);
@@ -48,32 +50,67 @@ public class TopicScalabilityIsolatedST extends AbstractST {
     }
 
     @IsolatedTest
-    void testModifyBigAmountOfTopics(ExtensionContext extensionContext) {
-        final String topicPrefix = "example-topic";
-        Map<String, Object> modifiedConfig = new HashMap<>();
-
-        int defaultPartitionCount = 2;
+    void testModifyBigAmountOfTopicPartitions(ExtensionContext extensionContext) {
 
         // Create topics
-        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount, 1, 1);
+        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix,
+                NUMBER_OF_TOPICS, defaultPartitionCount, 1, 1);
         KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
 
-
-        // Increase ISR over limits expect topics to fail
-        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount - 1, modifiedConfig);
+        // Decrease partitions and expect not ready status
+        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount - 1);
         KafkaTopicScalabilityUtils.checkTopicsNotReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
 
+        // Set back to default and check if topic becomes ready
+        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
+    }
 
-        // Modify config and expect topics to be in error state
-        modifiedConfig.put("min.insync.replicas", 2);
-        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount, modifiedConfig);
+    @IsolatedTest
+    void testModifyBigAmountOfTopicConfigs(ExtensionContext extensionContext) {
+
+        Map<String, Object> modifiedConfig = new HashMap<>();
+
+        // Create topics
+        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix,
+                NUMBER_OF_TOPICS, defaultPartitionCount, 3, 2);
         KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
 
-
-        // Increase ISR over limits expect topics to fail
+        // Add set of configs and expect topics to have ready status
+        modifiedConfig.put("compression.type", "gzip");
+        modifiedConfig.put("cleanup.policy", "delete");
+        modifiedConfig.put("message.timestamp.type", "LogAppendTime");
         modifiedConfig.put("min.insync.replicas", 6);
-        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount, modifiedConfig);
-        KafkaTopicScalabilityUtils.checkTopicsNotReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
+
+        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
+        KafkaTopicScalabilityUtils.checkTopicConfigContains(sharedClusterName, topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET, modifiedConfig);
+
+        // Set time configs
+        modifiedConfig.clear();
+        modifiedConfig.put("max.compaction.lag.ms", 54321);
+        modifiedConfig.put("min.compaction.lag.ms", 54);
+        modifiedConfig.put("retention.ms", 3690);
+        modifiedConfig.put("segment.ms", 123456);
+        modifiedConfig.put("flush.ms", 456123);
+
+        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
+
+        // Set size configs
+        modifiedConfig.clear();
+        modifiedConfig.put("retention.bytes", 9876543);
+        modifiedConfig.put("segment.bytes", 321654);
+        modifiedConfig.put("max.message.bytes", 654321);
+        modifiedConfig.put("flush.messages", 456123);
+
+        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
+
+        // Set back to default state
+        modifiedConfig.clear();
+        KafkaTopicScalabilityUtils.modifyTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS, SAMPLE_OFFSET);
     }
 
     @BeforeAll
