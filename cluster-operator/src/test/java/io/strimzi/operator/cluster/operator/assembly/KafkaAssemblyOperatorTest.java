@@ -83,7 +83,6 @@ import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -162,7 +161,7 @@ public class KafkaAssemblyOperatorTest {
     private final String differentMetricsCMName = "metrics-cm-2";
     private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName, "metrics-config.yml");
 
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_20;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_21;
 
     private static boolean openShift;
     private static boolean metrics;
@@ -433,7 +432,6 @@ public class KafkaAssemblyOperatorTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         NetworkPolicyOperator mockPolicyOps = supplier.networkPolicyOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         RouteOperator mockRouteOps = supplier.routeOperations;
         IngressOperator mockIngressOps = supplier.ingressOperations;
         NodeOperator mockNodeOps = supplier.nodeOperator;
@@ -472,7 +470,6 @@ public class KafkaAssemblyOperatorTest {
         when(mockStsOps.getAsync(eq(kafkaNamespace), eq(KafkaCluster.kafkaClusterName(kafkaName)))).thenAnswer(i ->
                 Future.succeededFuture(ref.get()));
         when(mockPdbOps.reconcile(any(), anyString(), anyString(), pdbCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
-        when(mockPdbOpsV1Beta1.reconcile(any(), anyString(), anyString(), pdbV1Beta1Captor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget())));
 
         // Service mocks
         Set<Service> createdServices = new HashSet<>();

@@ -32,7 +32,6 @@ import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.test.TestUtils;
@@ -86,7 +85,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
     private final String include = ".*";
     private final String image = "my-image:latest";
 
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_16;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_21;
 
     @BeforeAll
     public static void before() {
@@ -104,7 +103,6 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         CrdOperator mockMirrorOps = supplier.mirrorMakerOperator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        PodDisruptionBudgetV1Beta1Operator mockPdbV1Beta1Ops = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
 
         String kmmName = "foo";
@@ -133,10 +131,6 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
-
-        ArgumentCaptor<io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget> pdbV1Beta1Captor = ArgumentCaptor.forClass(io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget.class);
-        when(mockPdbV1Beta1Ops.reconcile(any(), anyString(), any(), pdbV1Beta1Captor.capture())).thenReturn(Future.succeededFuture());
-
 
         ArgumentCaptor<KafkaMirrorMaker> statusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker.class);
         when(mockMirrorOps.updateStatusAsync(any(), statusCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -236,7 +230,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
-
+        
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
@@ -313,7 +307,6 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
-
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
 
         // Mock CM get
@@ -491,7 +484,6 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
 
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
-
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),

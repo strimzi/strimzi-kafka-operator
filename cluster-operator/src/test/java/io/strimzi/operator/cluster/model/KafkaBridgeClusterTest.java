@@ -683,6 +683,9 @@ public class KafkaBridgeClusterTest {
 
         PodDisruptionBudget pdb = kbc.generatePodDisruptionBudget();
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kbc.generatePodDisruptionBudgetV1Beta1();
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
     }
 
     @ParallelTest
