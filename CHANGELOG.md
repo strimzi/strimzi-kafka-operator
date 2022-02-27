@@ -2,6 +2,7 @@
 
 ## 0.29.0
 
+* Increase the size of the `/tmp` volumes to 5Mi to allow unpacking of compression libraries
 * Use `/healthz` endpoint for Kafka Exporter health checks
 
 ## 0.28.0

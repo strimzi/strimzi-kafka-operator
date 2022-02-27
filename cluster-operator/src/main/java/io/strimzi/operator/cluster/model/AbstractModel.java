@@ -152,6 +152,7 @@ public abstract class AbstractModel {
      */
     /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-tmp";
     /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH = "/tmp";
+    /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE = "5Mi";
 
     /**
      * Annotation on PVCs storing the original configuration
@@ -1801,7 +1802,7 @@ public abstract class AbstractModel {
     }
 
     protected Volume createTempDirVolume(String volumeName) {
-        return VolumeUtils.createEmptyDirVolume(volumeName, templateTmpDirSizeLimit == null ? "1Mi" : templateTmpDirSizeLimit, "Memory");
+        return VolumeUtils.createEmptyDirVolume(volumeName, templateTmpDirSizeLimit == null ? STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE : templateTmpDirSizeLimit, "Memory");
     }
 
     protected VolumeMount createTempDirVolumeMount() {
