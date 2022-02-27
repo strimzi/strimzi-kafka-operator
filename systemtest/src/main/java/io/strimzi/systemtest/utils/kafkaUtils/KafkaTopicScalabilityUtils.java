@@ -1,6 +1,9 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.test.WaitException;
@@ -10,6 +13,7 @@ import org.apache.logging.log4j.LogManager;
 import io.strimzi.systemtest.resources.ResourceManager;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -21,7 +25,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class KafkaTopicScalabilityUtils {
@@ -83,9 +87,13 @@ public class KafkaTopicScalabilityUtils {
         for (int i = 0; i < numberOfTopics; i+=sampleOffset){
             String currentTopic = topicPrefix + i;
             topics.add(CompletableFuture.runAsync(() ->{
-                String crds = cmdKubeClient(kubeClient().getNamespace()).exec("get", "kafkatopic", "currentTopic", "-o", "jsonpath='{.items[*].metadata.name}'").out();
-                for (Map.Entry<String, Object> conf: config.entrySet() ){
-                    assertThat(crds.contains(conf.getKey()));
+                String json = cmdKubeClient(kubeClient().getNamespace()).exec("get", "kafkatopic", currentTopic, "-o", "jsonpath='{.spec.config}'").out();
+
+                try {
+                    Map<String, Object> mapping = new ObjectMapper().readValue(json.replaceAll("'",""), HashMap.class);
+                    assertEquals(mapping, config);
+                } catch (JsonProcessingException e) {
+                    fail(e.getMessage());
                 }
 
             }));
