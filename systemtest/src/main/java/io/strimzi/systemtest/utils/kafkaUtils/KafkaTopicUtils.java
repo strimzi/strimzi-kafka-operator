@@ -147,7 +147,8 @@ public class KafkaTopicUtils {
      * @param state desired state
      */
     public static boolean waitForKafkaTopicStatus(String namespaceName, String topicName, Enum<?> state) {
-        return waitForKafkaTopicStatus(namespaceName,topicName,state,ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND));
+        return ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), KafkaTopic.RESOURCE_KIND,
+                namespaceName, topicName, state, ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND));
     }
 
     public static boolean waitForKafkaTopicReady(String namespaceName, String topicName) {

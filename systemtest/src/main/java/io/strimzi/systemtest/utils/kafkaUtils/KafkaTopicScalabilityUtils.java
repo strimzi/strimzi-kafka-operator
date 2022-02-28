@@ -59,13 +59,7 @@ public class KafkaTopicScalabilityUtils {
         CompletableFuture<Void> allTopics = CompletableFuture.allOf(topics.toArray(new CompletableFuture[0]))
                 .thenRun(() -> LOGGER.info("All topics are in correct state"));
 
-        do {
-            try {
-                allTopics.get();
-            } catch (WaitException | ExecutionException | InterruptedException e){
-                fail(e.getMessage());
-            }
-        } while (!allTopics.isDone());
+        allTopics.join();
     }
 
     public static void checkTopicsNotReady(String topicPrefix, int numberOfTopics) {
@@ -99,13 +93,7 @@ public class KafkaTopicScalabilityUtils {
         CompletableFuture<Void> allTopics = CompletableFuture.allOf(topics.toArray(new CompletableFuture[0]))
                 .thenRun(() -> LOGGER.info("All topics contain right config"));
 
-        do {
-            try {
-                allTopics.get();
-            } catch (WaitException | ExecutionException | InterruptedException e){
-                fail(e.getMessage());
-            }
-        } while (!allTopics.isDone());
+        allTopics.join();
     }
 
     public static void modifyBigAmountOfTopics(String topicPrefix, int numberOfTopics, int numberOfPartitions, Map<String, Object> config) {
@@ -124,7 +112,6 @@ public class KafkaTopicScalabilityUtils {
                 if (!config.isEmpty()){
                     KafkaTopicResource.replaceTopicResource(currentTopicName, kafkaTopic -> kafkaTopic.getSpec().setConfig(config));
                 }
-
             }));
         }
     }
