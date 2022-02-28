@@ -46,13 +46,13 @@ public class KafkaTopicScalabilityUtils {
         }
     }
 
-    public static void checkTopicsState(String topicPrefix, int numberOfTopics, int sampleOffset, Enum<?> state){
+    public static void checkTopicsState(String topicPrefix, int numberOfTopics, Enum<?> state){
         List<CompletableFuture> topics = new ArrayList();
 
-        for (int i = 0; i < numberOfTopics; i+=sampleOffset){
+        for (int i = 0; i < numberOfTopics; i++){
             String currentTopic = topicPrefix + i;
             topics.add(CompletableFuture.runAsync(() ->{
-                    KafkaTopicUtils.waitForKafkaTopicStatus(INFRA_NAMESPACE, currentTopic, state, 600_000);
+                    KafkaTopicUtils.waitForKafkaTopicStatus(INFRA_NAMESPACE, currentTopic, state);
             }));
         }
 
@@ -68,21 +68,21 @@ public class KafkaTopicScalabilityUtils {
         } while (!allTopics.isDone());
     }
 
-    public static void checkTopicsNotReady(String topicPrefix, int numberOfTopics, int sampleOffset) {
+    public static void checkTopicsNotReady(String topicPrefix, int numberOfTopics) {
         LOGGER.info("Verifying that topics are in NotReady state");
-        KafkaTopicScalabilityUtils.checkTopicsState(topicPrefix, numberOfTopics, sampleOffset, CustomResourceStatus.NotReady);
+        KafkaTopicScalabilityUtils.checkTopicsState(topicPrefix, numberOfTopics, CustomResourceStatus.NotReady);
     }
 
-    public static void checkTopicsReady(String topicPrefix, int numberOfTopics, int sampleOffset) {
+    public static void checkTopicsReady(String topicPrefix, int numberOfTopics) {
         LOGGER.info("Verifying that topics are in Ready state");
-        KafkaTopicScalabilityUtils.checkTopicsState(topicPrefix, numberOfTopics, sampleOffset, CustomResourceStatus.Ready);
+        KafkaTopicScalabilityUtils.checkTopicsState(topicPrefix, numberOfTopics, CustomResourceStatus.Ready);
     }
 
-    public static void checkTopicsContainConfig(String clusterName, String topicPrefix, int numberOfTopics, int sampleOffset, Map<String, Object> config) {
+    public static void checkTopicsContainConfig(String topicPrefix, int numberOfTopics, Map<String, Object> config) {
         LOGGER.info("Verifying that topics contain right config");
         List<CompletableFuture> topics = new ArrayList();
 
-        for (int i = 0; i < numberOfTopics; i+=sampleOffset){
+        for (int i = 0; i < numberOfTopics; i++){
             String currentTopic = topicPrefix + i;
             topics.add(CompletableFuture.runAsync(() ->{
                 String json = cmdKubeClient(kubeClient().getNamespace()).exec("get", "kafkatopic", currentTopic, "-o", "jsonpath='{.spec.config}'").out();
