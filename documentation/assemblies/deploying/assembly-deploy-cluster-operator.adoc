@@ -8,9 +8,8 @@
 [role="_abstract"]
 The Cluster Operator is responsible for deploying and managing Apache Kafka clusters within a Kubernetes cluster.
 
-The procedures in this section show:
+The procedures in this section describe how to deploy the Cluster Operator to watch one of the following:
 
-* How to deploy the Cluster Operator to _watch_:
 ** xref:deploying-cluster-operator-{context}[A single namespace]
 ** xref:deploying-cluster-operator-to-watch-multiple-namespaces-{context}[Multiple namespaces]
 ** xref:deploying-cluster-operator-to-watch-whole-cluster-{context}[All namespaces]

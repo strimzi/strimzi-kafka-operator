@@ -7,7 +7,7 @@
 
 Apache Kafka is an open-source distributed publish-subscribe messaging system for fault-tolerant real-time data feeds.
 
-The procedures in this section show:
+The procedures in this section describe the following:
 
 * How to use the Cluster Operator to deploy:
 ** xref:deploying-kafka-cluster-{context}[An _ephemeral_ or _persistent_ Kafka cluster]
