@@ -11,10 +11,8 @@ import kafka.server.KafkaConfig$;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -24,27 +22,26 @@ public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
     protected static StrimziKafkaCluster kafkaCluster;
 
     @BeforeAll
-    public static void beforeAll() throws IOException {
+    public void beforeAll() throws Exception {
         kafkaCluster = new StrimziKafkaCluster(numKafkaBrokers(), numKafkaBrokers(), kafkaClusterConfig());
         kafkaCluster.start();
 
         setupKubeCluster();
+        setup(kafkaCluster);
+        startTopicOperator(kafkaCluster);
     }
 
     @AfterAll
-    public static void afterAll() {
+    public void afterAll() throws InterruptedException, ExecutionException, TimeoutException {
+        teardown(false);
         teardownKubeCluster();
+        adminClient.close();
         kafkaCluster.stop();
-    }
-
-    @BeforeEach
-    public void beforeEach() throws Exception {
-        setup(kafkaCluster);
     }
 
     @AfterEach
     public void afterEach() throws InterruptedException, TimeoutException, ExecutionException {
-        teardown(false);
+        clearKafkaTopics(false);
     }
 
     protected static int numKafkaBrokers() {

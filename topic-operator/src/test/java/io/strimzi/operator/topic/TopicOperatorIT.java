@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.topic;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Locale;
@@ -33,7 +32,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.emptyMap;
@@ -48,27 +46,29 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
     protected static StrimziKafkaCluster kafkaCluster;
 
     @BeforeAll
-    public static void beforeAll() throws IOException {
+    public void beforeAll() throws Exception {
         kafkaCluster = new StrimziKafkaCluster(numKafkaBrokers(), numKafkaBrokers(), kafkaClusterConfig());
         kafkaCluster.start();
 
         setupKubeCluster();
+        setup(kafkaCluster);
+
+        LOGGER.info("Using namespace {}", NAMESPACE);
+        startTopicOperator(kafkaCluster);
     }
 
     @AfterAll
-    public static void afterAll() {
+    public void afterAll() throws InterruptedException, ExecutionException, TimeoutException {
+        teardown(true);
         teardownKubeCluster();
+        adminClient.close();
         kafkaCluster.stop();
     }
 
-    @BeforeEach
-    public void beforeEach() throws Exception {
-        setup(kafkaCluster);
-    }
-
     @AfterEach
-    public void afterEach() throws InterruptedException, TimeoutException, ExecutionException {
-        teardown(true);
+    void afterEach() throws InterruptedException, ExecutionException, TimeoutException {
+        // clean-up KafkaTopic resources in Kubernetes
+        clearKafkaTopics(true);
     }
 
     protected static int numKafkaBrokers() {
@@ -136,7 +136,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         // Now modify Kafka-side to cause another reconciliation: We want the same status.
         alterTopicConfigInKafka(topicName, "compression.type", value -> "snappy".equals(value) ? "lz4" : "snappy");
         // Wait for a periodic reconciliation
-        Thread.sleep(30_000);
+        Thread.sleep(RECONCILIATION_INTERVAL + 10_000);
         assertStatusNotReady(topicName, PartitionDecreaseException.class,
                 "Number of partitions cannot be decreased");
     }
@@ -155,7 +155,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         // Now modify Kafka-side to cause another reconciliation: We want the same status.
         alterTopicConfigInKafka(topicName, "compression.type", value -> "snappy".equals(value) ? "lz4" : "snappy");
         // Wait for a periodic reconciliation
-        Thread.sleep(30_000);
+        Thread.sleep(RECONCILIATION_INTERVAL + 10_000);
         assertStatusNotReady(topicName, InvalidRequestException.class,
                 expectedMessage);
     }

@@ -16,12 +16,10 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,27 +35,27 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
     protected static StrimziKafkaCluster kafkaCluster;
 
     @BeforeAll
-    public static void beforeAll() throws IOException {
+    public void beforeAll() throws Exception {
         kafkaCluster = new StrimziKafkaCluster(numKafkaBrokers(), numKafkaBrokers(), kafkaClusterConfig());
         kafkaCluster.start();
 
         setupKubeCluster();
+        setup(kafkaCluster);
+        startTopicOperator(kafkaCluster);
     }
 
     @AfterAll
-    public static void afterAll() {
+    public void afterAll() throws InterruptedException, ExecutionException, TimeoutException {
+        teardown(true);
         teardownKubeCluster();
+        adminClient.close();
         kafkaCluster.stop();
     }
 
-    @BeforeEach
-    public void beforeEach() throws Exception {
-        setup(kafkaCluster);
-    }
-
     @AfterEach
-    public void afterEach() throws InterruptedException, TimeoutException, ExecutionException {
-        teardown(true);
+    void afterEach() throws InterruptedException, ExecutionException, TimeoutException {
+        // clean-up KafkaTopic resources in Kubernetes
+        clearKafkaTopics(true);
     }
 
     protected static int numKafkaBrokers() {
