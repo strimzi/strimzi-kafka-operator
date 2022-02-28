@@ -31,6 +31,8 @@ RUN wget https://github.com/docker/buildx/releases/download/v0.6.1/buildx-v0.6.1
 RUN wget https://archive.apache.org/dist/maven/maven-3/3.8.4/binaries/apache-maven-3.8.4-bin.tar.gz; \
     tar -zxf apache-maven-3.8.4-bin.tar.gz; \
     mv apache-maven-3.8.4 /opt/; \
-    rm -f apache-maven-3.8.4-bin.tar.gz
+    rm -f apache-maven-3.8.4-bin.tar.gz; \
+    ln -s /opt/apache-maven-3.8.4/bin/mvn /usr/bin/mvn; \
+    ln -s /opt/apache-maven-3.8.4/bin/mvn /usr/local/bin/mvn
 
 VOLUME /var/lib/docker

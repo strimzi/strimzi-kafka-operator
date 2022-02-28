@@ -138,6 +138,8 @@ pipeline {
                 timeout(time: 10, unit: 'MINUTES') {
                     script {
                         sh(script: """
+                            # We're using a separate docker daemon inside the container so that local registries wouldn't affect each other.
+                            # Use -G option when starting docker daemon to ensure the Jenkins user can connect to /var/run/docker.sock .
                             sudo dockerd -G ${ST_USER} &
                             sleep 10
                         """)
@@ -167,8 +169,6 @@ pipeline {
         stage('Build project') {
             steps {
                 script {
-                    sh(script: "sudo ln -s /opt/apache-maven-3.8.4/bin/mvn /usr/bin/mvn")
-                    sh(script: "sudo ln -s /opt/apache-maven-3.8.4/bin/mvn /usr/local/bin/mvn")
                     withMaven(mavenOpts: '-Djansi.force=true') {
                         sh(script: "mvn clean install -DskipTests -Dstyle.color=always --no-transfer-progress")
                         env.BUILD_PROJECT_STATUS = true
