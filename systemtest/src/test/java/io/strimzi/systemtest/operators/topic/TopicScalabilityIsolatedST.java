@@ -6,16 +6,20 @@ package io.strimzi.systemtest.operators.topic;
 
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicScalabilityUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 
@@ -25,30 +29,83 @@ public class TopicScalabilityIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicScalabilityIsolatedST.class);
     private static final int NUMBER_OF_TOPICS = 1000;
-    private static final int SAMPLE_OFFSET = 50;
     private final String sharedClusterName = "topic-scalability-shared-cluster-name";
+    final String topicPrefix = "example-topic";
 
-    @ParallelTest
+
+    @IsolatedTest
     void testBigAmountOfTopicsCreatingViaK8s(ExtensionContext extensionContext) {
-        final String topicName = "topic-example";
 
-        LOGGER.info("Creating topics via Kubernetes");
-        for (int i = 0; i < NUMBER_OF_TOPICS; i++) {
-            String currentTopic = topicName + i;
-            LOGGER.debug("Creating {} topic", currentTopic);
-            resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(sharedClusterName, currentTopic, 3, 1, 1, INFRA_NAMESPACE).build());
-        }
+        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix,
+                NUMBER_OF_TOPICS, 4, 3, 2);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
 
-        for (int i = 0; i < NUMBER_OF_TOPICS; i = i + SAMPLE_OFFSET) {
-            String currentTopic = topicName + i;
-            LOGGER.debug("Verifying that {} topic CR has Ready status", currentTopic);
+        LOGGER.info("Verifying that we've created {} topics", NUMBER_OF_TOPICS);
+        assertEquals(NUMBER_OF_TOPICS, KafkaTopicUtils.getAllKafkaTopicsWithPrefix(INFRA_NAMESPACE, topicPrefix).size());
+    }
 
-            KafkaTopicUtils.waitForKafkaTopicReady(INFRA_NAMESPACE, currentTopic);
-        }
+    @IsolatedTest
+    void testModifyBigAmountOfTopicPartitions(ExtensionContext extensionContext) {
+        final int defaultPartitionCount = 2;
+        // Create topics
+        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix,
+                NUMBER_OF_TOPICS, defaultPartitionCount, 1, 1);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
 
-        LOGGER.info("Verifying that we created {} topics", NUMBER_OF_TOPICS);
+        // Decrease partitions and expect not ready status
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount - 1);
+        KafkaTopicScalabilityUtils.checkTopicsNotReady(topicPrefix, NUMBER_OF_TOPICS);
 
-        KafkaTopicUtils.waitForKafkaTopicsCount(INFRA_NAMESPACE, NUMBER_OF_TOPICS, sharedClusterName);
+        // Set back to default and check if topic becomes ready
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
+    }
+
+    @IsolatedTest
+    void testModifyBigAmountOfTopicConfigs(ExtensionContext extensionContext) {
+
+        Map<String, Object> modifiedConfig = new HashMap<>();
+
+        // Create topics
+        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix,
+                NUMBER_OF_TOPICS, 2, 3, 2);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
+
+        // Add set of configs and expect topics to have ready status
+        modifiedConfig.put("compression.type", "gzip");
+        modifiedConfig.put("cleanup.policy", "delete");
+        modifiedConfig.put("message.timestamp.type", "LogAppendTime");
+        modifiedConfig.put("min.insync.replicas", 6);
+
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
+        KafkaTopicScalabilityUtils.checkTopicsContainConfig(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+
+        // Set time configs
+        modifiedConfig.clear();
+        modifiedConfig.put("max.compaction.lag.ms", 54321);
+        modifiedConfig.put("min.compaction.lag.ms", 54);
+        modifiedConfig.put("retention.ms", 3690);
+        modifiedConfig.put("segment.ms", 123456);
+        modifiedConfig.put("flush.ms", 456123);
+
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
+
+        // Set size configs
+        modifiedConfig.clear();
+        modifiedConfig.put("retention.bytes", 9876543);
+        modifiedConfig.put("segment.bytes", 321654);
+        modifiedConfig.put("max.message.bytes", 654321);
+        modifiedConfig.put("flush.messages", 456123);
+
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
+
+        // Set back to default state
+        modifiedConfig.clear();
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
     }
 
     @BeforeAll
