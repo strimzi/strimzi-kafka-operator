@@ -39,6 +39,7 @@ import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
@@ -76,6 +77,7 @@ public class ResourceOperatorSupplier {
     public final CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator;
     public final NetworkPolicyOperator networkPolicyOperator;
     public final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
+    public final PodDisruptionBudgetV1Beta1Operator podDisruptionBudgetV1Beta1Operator;
     public final PodOperator podOperations;
     public final IngressOperator ingressOperations;
     public final IngressV1Beta1Operator ingressV1Beta1Operations;
@@ -115,6 +117,7 @@ public class ResourceOperatorSupplier {
                 new ClusterRoleBindingOperator(vertx, client),
                 new NetworkPolicyOperator(vertx, client),
                 new PodDisruptionBudgetOperator(vertx, client),
+                new PodDisruptionBudgetV1Beta1Operator(vertx, client),
                 new PodOperator(vertx, client),
                 new IngressOperator(vertx, client),
                 new IngressV1Beta1Operator(vertx, client),
@@ -149,6 +152,7 @@ public class ResourceOperatorSupplier {
                                     ClusterRoleBindingOperator clusterRoleBindingOperator,
                                     NetworkPolicyOperator networkPolicyOperator,
                                     PodDisruptionBudgetOperator podDisruptionBudgetOperator,
+                                    PodDisruptionBudgetV1Beta1Operator podDisruptionBudgetV1Beta1Operator,
                                     PodOperator podOperations,
                                     IngressOperator ingressOperations,
                                     IngressV1Beta1Operator ingressV1Beta1Operations,
@@ -181,6 +185,7 @@ public class ResourceOperatorSupplier {
         this.clusterRoleBindingOperator = clusterRoleBindingOperator;
         this.networkPolicyOperator = networkPolicyOperator;
         this.podDisruptionBudgetOperator = podDisruptionBudgetOperator;
+        this.podDisruptionBudgetV1Beta1Operator = podDisruptionBudgetV1Beta1Operator;
         this.kafkaOperator = kafkaOperator;
         this.podOperations = podOperations;
         this.ingressOperations = ingressOperations;

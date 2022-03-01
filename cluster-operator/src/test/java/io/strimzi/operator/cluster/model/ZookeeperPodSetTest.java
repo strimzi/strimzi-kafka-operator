@@ -21,7 +21,7 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
@@ -84,11 +84,17 @@ public class ZookeeperPodSetTest {
     public void testDefaultPodDisruptionBudget()   {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         PodDisruptionBudget pdb = zc.generateCustomControllerPodDisruptionBudget();
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generateCustomControllerPodDisruptionBudgetV1Beta1();
 
         assertThat(pdb.getMetadata().getName(), is(ZookeeperCluster.zookeeperClusterName(CLUSTER)));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
         assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));
+
+        assertThat(pdbV1Beta1.getMetadata().getName(), is(ZookeeperCluster.zookeeperClusterName(CLUSTER)));
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
+        assertThat(pdbV1Beta1.getSpec().getMinAvailable().getIntVal(), is(2));
+        assertThat(pdbV1Beta1.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));
     }
 
     @ParallelTest
@@ -114,12 +120,19 @@ public class ZookeeperPodSetTest {
 
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         PodDisruptionBudget pdb = zc.generateCustomControllerPodDisruptionBudget();
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generateCustomControllerPodDisruptionBudgetV1Beta1();
 
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnos.entrySet()), is(true));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(1));
         assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));
+
+        assertThat(pdbV1Beta1.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
+        assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnos.entrySet()), is(true));
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
+        assertThat(pdbV1Beta1.getSpec().getMinAvailable().getIntVal(), is(1));
+        assertThat(pdbV1Beta1.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));
     }
 
     @ParallelTest

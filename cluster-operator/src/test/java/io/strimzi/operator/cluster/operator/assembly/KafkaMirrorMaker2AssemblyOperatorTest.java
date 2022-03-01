@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
@@ -37,6 +37,7 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
@@ -87,7 +88,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties(Reconciliation.DUMMY_RECONCILIATION, "kafkaMirrorMaker2DefaultLoggingProperties")
             .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
 
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_16;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_21;
 
     @BeforeAll
     public static void before() {
@@ -176,7 +177,6 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 PodDisruptionBudget pdb = capturedPdb.get(0);
                 assertThat(pdb.getMetadata().getName(), is(mirrorMaker2.getName()));
                 assertThat(pdb, is(mirrorMaker2.generatePodDisruptionBudget()));
-
                 // Verify status
                 KafkaMirrorMaker2Status capturedStatus = mirrorMaker2Captor.getAllValues().get(0).getStatus();
                 assertThat(capturedStatus.getUrl(), is("http://foo-mirrormaker2-api.test.svc:8083"));
@@ -707,7 +707,6 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
-
         ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
         when(mockMirrorMaker2Ops.updateStatusAsync(any(), mirrorMaker2Captor.capture())).thenReturn(Future.succeededFuture());
 
@@ -767,6 +766,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -843,7 +843,6 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                     PodDisruptionBudget pdb = capturedPdb.get(0);
                     assertThat(pdb.getMetadata().getName(), is(mirrorMaker2.getName()));
                     assertThat(pdb, is(mirrorMaker2.generatePodDisruptionBudget()));
-
 
                     // Verify status
                     List<KafkaMirrorMaker2> capturedMirrorMaker2s = mirrorMaker2Captor.getAllValues();
@@ -962,6 +961,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -986,6 +986,9 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget> pdbV1Beta1Captor = ArgumentCaptor.forClass(io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget.class);
+        when(mockPdbOpsV1Beta1.reconcile(any(), anyString(), any(), pdbV1Beta1Captor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
         when(mockMirrorMaker2Ops.updateStatusAsync(any(), mirrorMaker2Captor.capture())).thenReturn(Future.succeededFuture());

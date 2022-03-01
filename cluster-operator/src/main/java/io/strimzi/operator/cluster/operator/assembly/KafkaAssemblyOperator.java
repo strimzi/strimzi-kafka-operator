@@ -290,6 +290,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkAncillaryCm())
                 .compose(state -> state.zkNodesSecret())
                 .compose(state -> state.zkPodDisruptionBudget())
+                .compose(state -> state.zkPodDisruptionBudgetV1Beta1())
                 .compose(state -> state.zkStatefulSet())
                 .compose(state -> state.zkPodSet())
                 .compose(state -> state.zkScalingDown())
@@ -326,6 +327,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaBrokersSecret())
                 .compose(state -> state.kafkaJmxSecret())
                 .compose(state -> state.kafkaPodDisruptionBudget())
+                .compose(state -> state.kafkaPodDisruptionBudgetV1Beta1())
                 .compose(state -> state.kafkaStatefulSet())
                 .compose(state -> state.kafkaPodSet())
                 .compose(state -> state.kafkaRollToAddOrRemoveVolumes())
@@ -1390,10 +1392,26 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkPodDisruptionBudget() {
+            if (!pfa.hasPodDisruptionBudgetV1()) {
+                return Future.succeededFuture(this);
+            }
+
             if (featureGates.useStrimziPodSetsEnabled())   {
                 return withVoid(podDisruptionBudgetOperator.reconcile(reconciliation, namespace, zkCluster.getName(), zkCluster.generateCustomControllerPodDisruptionBudget()));
             } else {
                 return withVoid(podDisruptionBudgetOperator.reconcile(reconciliation, namespace, zkCluster.getName(), zkCluster.generatePodDisruptionBudget()));
+            }
+        }
+
+        Future<ReconciliationState> zkPodDisruptionBudgetV1Beta1() {
+            if (pfa.hasPodDisruptionBudgetV1()) {
+                return Future.succeededFuture(this);
+            }
+            
+            if (featureGates.useStrimziPodSetsEnabled())   {
+                return withVoid(podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, zkCluster.getName(), zkCluster.generateCustomControllerPodDisruptionBudgetV1Beta1()));
+            } else {
+                return withVoid(podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, zkCluster.getName(), zkCluster.generatePodDisruptionBudgetV1Beta1()));
             }
         }
 
@@ -2815,10 +2833,26 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaPodDisruptionBudget() {
+            if (!pfa.hasPodDisruptionBudgetV1()) {
+                return Future.succeededFuture(this);
+            }
+
             if (featureGates.useStrimziPodSetsEnabled())   {
                 return withVoid(podDisruptionBudgetOperator.reconcile(reconciliation, namespace, kafkaCluster.getName(), kafkaCluster.generateCustomControllerPodDisruptionBudget()));
             } else {
                 return withVoid(podDisruptionBudgetOperator.reconcile(reconciliation, namespace, kafkaCluster.getName(), kafkaCluster.generatePodDisruptionBudget()));
+            }
+        }
+
+        Future<ReconciliationState> kafkaPodDisruptionBudgetV1Beta1() {
+            if (pfa.hasPodDisruptionBudgetV1()) {
+                return Future.succeededFuture(this);
+            }
+
+            if (featureGates.useStrimziPodSetsEnabled())   {
+                return withVoid(podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, kafkaCluster.getName(), kafkaCluster.generateCustomControllerPodDisruptionBudgetV1Beta1()));
+            } else {
+                return withVoid(podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, kafkaCluster.getName(), kafkaCluster.generatePodDisruptionBudgetV1Beta1()));
             }
         }
 

@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaConnectorList;
@@ -89,7 +89,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "ClassFanOutComplexity"})
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectAssemblyOperatorTest {
 
@@ -99,7 +99,7 @@ public class KafkaConnectAssemblyOperatorTest {
     private static final String LOGGING_CONFIG = AbstractModel.getOrderedProperties(Reconciliation.DUMMY_RECONCILIATION, "kafkaConnectDefaultLoggingProperties")
             .asPairsWithComment("Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.");
 
-    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_16;
+    private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_21;
 
     @BeforeAll
     public static void before() {
@@ -152,7 +152,6 @@ public class KafkaConnectAssemblyOperatorTest {
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
-
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
         when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
 
@@ -200,7 +199,6 @@ public class KafkaConnectAssemblyOperatorTest {
                 PodDisruptionBudget pdb = capturedPdb.get(0);
                 assertThat(pdb.getMetadata().getName(), is(connect.getName()));
                 assertThat(pdb, is(connect.generatePodDisruptionBudget()));
-
                 // Verify status
                 List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
                 assertThat(capturedConnects, hasSize(1));
@@ -301,8 +299,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
-
+        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());        
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
@@ -339,7 +336,6 @@ public class KafkaConnectAssemblyOperatorTest {
                 PodDisruptionBudget pdb = capturedPdb.get(0);
                 assertThat(pdb.getMetadata().getName(), is(connect.getName()));
                 assertThat(pdb, is(connect.generatePodDisruptionBudget()));
-
                 async.flag();
             })));
     }
@@ -399,8 +395,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
-
+        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());  
         // Mock CM get
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
         ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
@@ -475,7 +470,6 @@ public class KafkaConnectAssemblyOperatorTest {
                 PodDisruptionBudget pdb = capturedPdb.get(0);
                 assertThat(pdb.getMetadata().getName(), is(connect.getName()));
                 assertThat(pdb, is(connect.generatePodDisruptionBudget()));
-
                 // Verify scaleDown / scaleUp were not called
                 assertThat(dcScaleDownNameCaptor.getAllValues(), hasSize(1));
                 assertThat(dcScaleUpNameCaptor.getAllValues(), hasSize(1));
@@ -847,7 +841,6 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockConnectOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaConnect())));
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
-
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));

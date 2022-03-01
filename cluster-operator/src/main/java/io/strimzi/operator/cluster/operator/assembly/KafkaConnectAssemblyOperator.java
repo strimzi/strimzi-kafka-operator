@@ -131,7 +131,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     return configMapOperations.reconcile(reconciliation, namespace, connect.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
-                .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generatePodDisruptionBudget()))
+                .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generatePodDisruptionBudget()) : Future.succeededFuture())
+                .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, connect.getName(), connect.generatePodDisruptionBudgetV1Beta1()) : Future.succeededFuture())
                 .compose(i -> generateAuthHash(namespace, kafkaConnect.getSpec()))
                 .compose(hash -> {
                     annotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
@@ -192,7 +193,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     /**
      * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
      *
-     * @param reconciliation    The Reconciliation identification
+     *∏@param reconciliation    The Reconciliation identification
      * @return                  Future indicating the result of the deletion
      */
     @Override
