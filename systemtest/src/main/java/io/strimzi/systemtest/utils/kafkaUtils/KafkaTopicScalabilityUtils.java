@@ -96,7 +96,6 @@ public class KafkaTopicScalabilityUtils {
 
     public static void modifyBigAmountOfTopics(String topicPrefix, int numberOfTopics, int numberOfPartitions, Map<String, Object> config) {
         LOGGER.info("Modify topics via Kubernetes");
-
         List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++){
