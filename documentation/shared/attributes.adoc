@@ -107,7 +107,6 @@
 :JaegerHome: link:https://www.jaegertracing.io/[Jaeger^]
 :JaegerDocs: link:https://www.jaegertracing.io/docs/[Jaeger documentation^]
 :OPAAuthorizer: link:https://github.com/anderseknert/opa-kafka-plugin[Open Policy Agent plugin for Kafka authorization^]
-:LatestBridgeAPIDocs: link:https://strimzi.io/docs/bridge/latest/[Kafka Bridge API reference^]
 :external-cors-link: https://www.w3.org/TR/cors/
 :HelmCustomResourceDefinitions: link:https://helm.sh/docs/chart_best_practices/custom_resource_definitions/[Custom Resource Definitions for Helm^]
 
@@ -164,6 +163,7 @@
 :BookURLDeploying: ./deploying.html
 :BookURLUsing: ./using.html
 :BookURLOverview: ./overview.html
+:book-bridge: ./bridge.html
 
 // Link to resource on https://github.com/strimzi/strimzi-kafka-operator
 // Default `main`, specific version overriden when building the docs by `make`

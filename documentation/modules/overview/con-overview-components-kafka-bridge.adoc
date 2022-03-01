@@ -5,6 +5,7 @@
 [id="overview-components-kafka-bridge_{context}"]
 = Kafka Bridge interface
 
+[role="_abstract"]
 The Kafka Bridge provides a RESTful interface that allows HTTP-based clients to interact with a Kafka cluster. 
 It offers the advantages of a web API connection to Strimzi, without the need for client applications to interpret the Kafka protocol.
 
@@ -29,5 +30,6 @@ Messages can be sent in JSON or binary formats.
 
 Clients can produce and consume messages without the requirement to use the native Kafka protocol.
 
+[role="_additional-resources"]
 .Additional resources
-* To view the API documentation, including example requests and responses, see the {LatestBridgeAPIDocs}.
+* To view the API documentation, including example requests and responses, see link:{book-bridge}[Using the Strimzi Kafka Bridge^].

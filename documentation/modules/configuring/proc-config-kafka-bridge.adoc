@@ -113,7 +113,7 @@ spec:
 <4> Authentication for the Kafka Bridge cluster, using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism], as shown here, using xref:type-KafkaClientAuthenticationOAuth-reference[OAuth bearer tokens], or a SASL-based xref:type-KafkaClientAuthenticationScramSha256-reference[SCRAM-SHA-256]/xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512] or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN] mechanism.
 By default, the Kafka Bridge connects to Kafka brokers without authentication.
 <5> xref:type-KafkaBridgeHttpConfig-reference[HTTP access] to Kafka brokers.
-<6> xref:type-KafkaBridgeHttpConfig-reference[CORS access] specifying selected resources and access methods. Additional HTTP headers in requests xref:con-requests-kafka-bridge-cors-kafka-bridge-overview[describe the origins that are permitted access to the Kafka cluster].
+<6> xref:type-KafkaBridgeHttpConfig-reference[CORS access] specifying selected resources and access methods. Additional HTTP headers in requests describe the origins that are permitted access to the Kafka cluster.
 <7> xref:type-KafkaBridgeConsumerSpec-reference[Consumer configuration] options.
 <8> xref:type-KafkaBridgeProducerSpec-reference[Producer configuration] options.
 <9> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
@@ -128,3 +128,8 @@ By default, the Kafka Bridge connects to Kafka brokers without authentication.
 +
 [source,shell,subs=+quotes]
 kubectl apply -f _KAFKA-BRIDGE-CONFIG-FILE_
+
+[role="_additional-resources"]
+.Additional resources
+
+* link:{book-bridge}[Using the Strimzi Kafka Bridge^]

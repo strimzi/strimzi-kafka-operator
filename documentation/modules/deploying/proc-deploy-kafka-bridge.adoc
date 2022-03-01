@@ -38,4 +38,5 @@ kubectl get deployments
 [role="_additional-resources"]
 .Additional resources
 
-link:{BookURLUsing}#assembly-config-kafka-bridge-str[Kafka Bridge cluster configuration^]
+* link:{BookURLUsing}#assembly-config-kafka-bridge-str[Kafka Bridge cluster configuration^]
+* link:{book-bridge}[Using the Strimzi Kafka Bridge^]

@@ -24,11 +24,14 @@ from public and private clouds to local deployments intended for development.
 include::modules/con-deploy-options-scope.adoc[leveloffset=+1]
 //Custom resources intro
 include::assembly-deploy-intro-custom-resources.adoc[leveloffset=+1]
+//info on kafka bridge
+include::modules/con-kafka-bridge-concepts.adoc[leveloffset=+1]
 //formatting conventions used in guide
 include::../../shared/ref-document-conventions.adoc[leveloffset=+1]
 
 [role="_additional-resources"]
 == Additional resources
 
-* link:{BookURLOverview}[_Strimzi Overview_^]
-* link:{BookURLUsing}[_Configuring Strimzi_^]
+* link:{BookURLOverview}[Strimzi Overview^]
+* link:{BookURLUsing}[Configuring Strimzi^]
+* link:{book-bridge}[Using the Strimzi Kafka Bridge^]
