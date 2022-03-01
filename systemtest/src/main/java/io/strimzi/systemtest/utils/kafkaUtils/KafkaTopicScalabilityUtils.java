@@ -38,15 +38,13 @@ public class KafkaTopicScalabilityUtils {
                                           int numberOfTopics, int numberOfPartitions, int numberOfReplicas, int minInSyncReplicas) {
         LOGGER.info("Creating topics via Kubernetes");
 
-        ArrayList<CompletableFuture<?>> topics = new ArrayList<>();
-
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopicName = topicPrefix + i;
             LOGGER.debug("Creating topic {}", currentTopicName);
 
-            topics.add(CompletableFuture.runAsync(() ->
+            CompletableFuture.runAsync(() ->
                     resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(
-                            clusterName, currentTopicName, numberOfPartitions, numberOfReplicas, minInSyncReplicas, INFRA_NAMESPACE).build())));
+                            clusterName, currentTopicName, numberOfPartitions, numberOfReplicas, minInSyncReplicas, INFRA_NAMESPACE).build()));
         }
     }
 
