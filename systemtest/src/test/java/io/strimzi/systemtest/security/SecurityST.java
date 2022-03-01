@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.client.Client;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
@@ -28,21 +27,16 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.cluster.model.Ca;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
-import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
@@ -58,7 +52,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -67,9 +60,6 @@ import org.apache.kafka.common.errors.GroupAuthorizationException;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -77,20 +67,13 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -107,7 +90,6 @@ import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
@@ -1821,139 +1803,6 @@ class SecurityST extends AbstractST {
         );
     }
 
-//    @ParallelNamespaceTest
-//    void testRenewingOwnCACertificates(ExtensionContext extensionContext) {
-//        final TestStorage ts = new TestStorage(extensionContext);
-//
-//        // 1. Generate own custom CA certificates
-//        generateAndDeployCustomStrimziCA(ts.getNamespaceName(), ts.getClusterName());
-//        checkCustomCAsCorrectness(ts.getNamespaceName(), ts.getClusterName());
-//
-//        // 2.
-//        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(ts.getClusterName(), 1)
-//            .editOrNewSpec()
-//                .withNewClientsCa()
-//                    .withRenewalDays(5)
-//                    .withValidityDays(20)
-//                    .withGenerateCertificateAuthority(false)
-//                .endClientsCa()
-//            .endSpec()
-//            .build());
-//
-//        https://strimzi.io/docs/operators/in-development/configuring.html#proc-replacing-your-own-private-keys-str
-//
-//
-//
-//    }
-
-    @ParallelNamespaceTest
-    void testReplacingKeyPairUsedByOwnCaClusterCertificates(ExtensionContext extensionContext) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        final TestStorage ts = new TestStorage(extensionContext);
-
-        // 0. Generate root and intermediate certificate authority
-        final SystemTestCertHolder stCertHolder = new SystemTestCertHolder(extensionContext);
-
-        // 1. Prepare correspondent Secrets from generated custom CA certificates
-        stCertHolder.prepareSecretsFromBundles(ts.getNamespaceName(), ts.getClusterName());
-
-        // 2. Create a Kafka cluster without implicit generation of CA
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(ts.getClusterName(), 1)
-            .editOrNewSpec()
-                .withNewClientsCa()
-                    .withRenewalDays(5)
-                    .withValidityDays(20)
-                    .withGenerateCertificateAuthority(false)
-                .endClientsCa()
-            .endSpec()
-            .build());
-
-        // 3. Pause the reconciliation of the Kafka custom resource
-        LOGGER.info("Pause the reconciliation of the Kafka custom resource ({}).", KafkaResources.kafkaStatefulSetName(ts.getClusterName()));
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(ts.getClusterName(), kafka -> {
-            Map<String, String> kafkaAnnotations = kafka.getMetadata().getAnnotations();
-            if (kafkaAnnotations == null) {
-                kafkaAnnotations = new HashMap<>();
-            }
-            // adding pause annotation
-            kafkaAnnotations.put(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true");
-            kafka.getMetadata().setAnnotations(kafkaAnnotations);
-        }, ts.getNamespaceName());
-
-        // 4. Check that the status conditions of the custom resource show a change to ReconciliationPaused
-        KafkaUtils.waitForKafkaStatus(ts.getNamespaceName(), ts.getClusterName(), CustomResourceStatus.ReconciliationPaused);
-
-        // 5. Update the Secret for the CA certificate.
-        //  a) Edit the existing secret to add the new CA certificate and update the certificate generation annotation value.
-        //  b) Rename the current CA certificate to retain it
-        final Secret clusterCaCertificateSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
-        final String oldCaCertName = stCertHolder.retrieveOldCertificateName(clusterCaCertificateSecret, "ca.crt");
-
-        // store the old cert
-        clusterCaCertificateSecret.getData().put(oldCaCertName, clusterCaCertificateSecret.getData().get("ca.crt"));
-
-        //  c) Encode your new CA certificate into base64. (implicit?)
-        LOGGER.info("Generating a new custom 'Cluster certificate authority' for Strimzi and PEM bundles.");
-        stCertHolder
-            .generateNewClusterCa(extensionContext)
-            .generateNewClusterBundle(extensionContext);
-
-        //  d) Update the CA certificate.
-        clusterCaCertificateSecret.getData().put("ca.crt", Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(stCertHolder.getClusterBundle().getCertPath()))));
-
-        //  e) Increase the value of the CA certificate generation annotation.
-        //  f) Save the secret with the new CA certificate and certificate generation annotation value.
-        SystemTestCertHolder.increaseCertGenerationInSecret(clusterCaCertificateSecret, ts, Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION);
-
-        // 6. Update the Secret for the CA key used to sign your new CA certificate.
-        //  a) Edit the existing secret to add the new CA key and update the key generation annotation value.
-        final Secret clusterCaKeySecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clusterCaKeySecretName(ts.getClusterName()));
-
-        //  b) Encode the CA key into base64.
-        //  c) Update the CA key.
-        final File strimziKeyPKCS8 = convertPrivateKeyToPKCS8File(stCertHolder.getSystemTestClusterCa().getPrivateKey());
-        clusterCaKeySecret.getData().put("ca.key", Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(strimziKeyPKCS8.getAbsolutePath()))));
-
-        // d) Increase the value of the CA key generation annotation.
-        // 7. Save the secret with the new CA key and key generation annotation value.
-        SystemTestCertHolder.increaseCertGenerationInSecret(clusterCaKeySecret, ts, Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION);
-
-        // 8. save the current state of the Kafka, ZooKeeper and EntityOperator pods
-        final Map<String, String> kafkaPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getKafkaSelector());
-        final Map<String, String> zkPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getZookeeperSelector());
-        final Map<String, String> eoPod = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(ts.getClusterName()));
-
-        // 9. Resume reconciliation from the pause.
-        LOGGER.info("Resume the reconciliation of the Kafka custom resource ({}).", KafkaResources.kafkaStatefulSetName(ts.getClusterName()));
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(ts.getClusterName(), kafka -> {
-            kafka.getMetadata().getAnnotations().remove(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
-        }, ts.getNamespaceName());
-
-        // 10. On the next reconciliation, the Cluster Operator performs a `rolling update`:
-        //      a) ZooKeeper
-        //      b) Kafka
-        //      c) and other components to trust the new CA certificate. (i.e., EntityOperator)
-        //  When the rolling update is complete, the Cluster Operator
-        //  will start a new one to generate new server certificates signed by the new CA key.
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getZookeeperSelector(), 1, zkPods);
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getKafkaSelector(), 1, kafkaPods);
-        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(ts.getClusterName()), 1, eoPod);
-
-        // 11. Try to produce messages
-        final KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
-            .withProducerName(ts.getProducerName())
-            .withConsumerName(ts.getClusterName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(ts.getClusterName()))
-            .withTopicName(ts.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
-            .withDelayMs(10)
-            .build();
-
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(ts.getNamespaceName(), ts.getClusterName(), ts.getKafkaClientsName()).build());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerTlsStrimzi(ts.getClusterName(), ts.getKafkaClientsName()));
-
-        ClientUtils.waitForClientSuccess(ts.getProducerName(), ts.getNamespaceName(), MESSAGE_COUNT);
-    }
-
     void checkCustomCAsCorrectness(String namespaceName, String clusterName) {
         LOGGER.info("Check ClusterCA and ClientsCA certificates.");
         X509Certificate clientsCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, KafkaResources.clientsCaCertificateSecretName(clusterName)), "ca.crt");
@@ -2018,7 +1867,7 @@ class SecurityST extends AbstractST {
 
             // 4. Annotate the secrets
             SecretUtils.annotateSecret(namespaceName, KafkaResources.clusterCaCertificateSecretName(clusterName), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0");
-            SecretUtils.annotateSecret(namespaceName, KafkaResources.clusterCaCertificateSecretName(clusterName), Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0");
+            SecretUtils.annotateSecret(namespaceName, KafkaResources.clusterCaKeySecretName(clusterName), Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0");
 
             // ----------------- Clients certificates -------------------
             // 1. Replace the CA certificate generated by the Cluster Operator.
@@ -2035,8 +1884,8 @@ class SecurityST extends AbstractST {
             SecretUtils.createSecretFromFile(clientsKeyPKCS8.getAbsolutePath(), "ca.key", KafkaResources.clientsCaKeySecretName(clusterName), namespaceName, secretLabels);
 
             // 4. Annotate the secrets
-            SecretUtils.annotateSecret(namespaceName, KafkaResources.clientsCaKeySecretName(clusterName), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0");
-            SecretUtils.annotateSecret(namespaceName, KafkaResources.clientsCaCertificateSecretName(clusterName), Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0");
+            SecretUtils.annotateSecret(namespaceName, KafkaResources.clientsCaCertificateSecretName(clusterName), Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0");
+            SecretUtils.annotateSecret(namespaceName, KafkaResources.clientsCaKeySecretName(clusterName), Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, "0");
 
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
             e.printStackTrace();

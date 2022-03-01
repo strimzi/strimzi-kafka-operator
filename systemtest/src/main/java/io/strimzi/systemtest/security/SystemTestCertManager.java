@@ -8,7 +8,6 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -123,7 +122,7 @@ public class SystemTestCertManager {
         }
     }
 
-    static File convertPrivateKeyToPKCS8File(PrivateKey privatekey) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+    public static File convertPrivateKeyToPKCS8File(PrivateKey privatekey) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
         byte[] encoded = privatekey.getEncoded();
         final PrivateKeyInfo privateKeyInfo = PrivateKeyInfo.getInstance(encoded);
 
