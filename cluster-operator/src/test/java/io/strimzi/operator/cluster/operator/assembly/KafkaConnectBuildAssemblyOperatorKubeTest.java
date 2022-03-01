@@ -39,6 +39,7 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
@@ -129,6 +130,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -194,6 +196,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOpsV1Beta1.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
@@ -282,6 +285,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -342,6 +346,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOpsV1Beta1.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
@@ -415,6 +420,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -480,6 +486,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOpsV1Beta1.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
@@ -576,6 +583,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -641,6 +649,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOpsV1Beta1.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
@@ -738,6 +747,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -814,6 +824,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOpsV1Beta1.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
@@ -908,6 +919,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -985,6 +997,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOpsV1Beta1.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
@@ -1082,6 +1095,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -1161,6 +1175,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOpsV1Beta1.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
@@ -1242,6 +1257,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -1293,6 +1309,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOpsV1Beta1.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
@@ -1368,6 +1385,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
         CrdOperator mockConnectOps = supplier.connectOperator;
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -1434,6 +1452,7 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
 
         // Mock and capture PDB ops
         when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOpsV1Beta1.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
 
         // Mock and capture KafkaConnect ops for status update
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);

@@ -52,8 +52,8 @@ import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetUpdateStrategyBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudgetBuilder;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
@@ -1595,6 +1595,27 @@ public abstract class AbstractModel {
     }
 
     /**
+     * Creates the PodDisruptionBudgetV1Beta1
+     *
+     * @return The default PodDisruptionBudgetV1Beta1
+     */
+    protected io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget createPodDisruptionBudgetV1Beta1()   {
+        return new io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withLabels(getLabelsWithStrimziName(name, templatePodDisruptionBudgetLabels).toMap())
+                    .withNamespace(namespace)
+                    .withAnnotations(templatePodDisruptionBudgetAnnotations)
+                    .withOwnerReferences(createOwnerReference())
+                .endMetadata()
+                .withNewSpec()
+                    .withNewMaxUnavailable(templatePodDisruptionBudgetMaxUnavailable)
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
+                .endSpec()
+                .build();
+    }
+
+    /**
      * Creates a PodDisruptionBudget for use with custom pod controller (such as StrimziPodSetController). Unlike
      * built-in controllers (Deployments, StatefulSets, Jobs, DaemonSets, ...), custom pod controllers can use only PDBs
      * with minAvailable in absolute numbers (i.e. no percentages).
@@ -1605,6 +1626,31 @@ public abstract class AbstractModel {
      */
     protected PodDisruptionBudget createCustomControllerPodDisruptionBudget()   {
         return new PodDisruptionBudgetBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withLabels(getLabelsWithStrimziName(name, templatePodDisruptionBudgetLabels).toMap())
+                    .withNamespace(namespace)
+                    .withAnnotations(templatePodDisruptionBudgetAnnotations)
+                    .withOwnerReferences(createOwnerReference())
+                .endMetadata()
+                .withNewSpec()
+                    .withMinAvailable(new IntOrString(replicas - templatePodDisruptionBudgetMaxUnavailable))
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
+                .endSpec()
+                .build();
+    }
+
+    /**
+     * Creates a PodDisruptionBudget V1Beta1 for use with custom pod controller (such as StrimziPodSetController). Unlike
+     * built-in controllers (Deployments, StatefulSets, Jobs, DaemonSets, ...), custom pod controllers can use only PDBs
+     * with minAvailable in absolute numbers (i.e. no percentages).
+     * See https://kubernetes.io/docs/tasks/run-application/configure-pdb/#arbitrary-controllers-and-selectors for more
+     * details.
+     *
+     * @return The default PodDisruptionBudget V1Beta1
+     */
+    protected io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget createCustomControllerPodDisruptionBudgetV1Beta1()   {
+        return new io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetBuilder()
                 .withNewMetadata()
                     .withName(name)
                     .withLabels(getLabelsWithStrimziName(name, templatePodDisruptionBudgetLabels).toMap())
