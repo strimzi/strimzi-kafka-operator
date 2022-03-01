@@ -263,6 +263,7 @@ backup() {
     error "Specify namespace, cluster name and target file to backup"
   fi
   if [[ ! -d "$(dirname "$TARGET_FILE")" ]]; then
+    CLEANUP=false
     error "$(dirname "$TARGET_FILE") not found"
   fi
 
@@ -325,11 +326,13 @@ restore() {
     error "Specify namespace, cluster name and source file to restore"
   fi
   if [[ ! -f $SOURCE_FILE ]]; then
+    CLEANUP=false
     error "$SOURCE_FILE file not found"
   fi
   
   check_kube_conn
   if [[ -z $(kubectl get ns "$NAMESPACE" -o name --ignore-not-found) ]]; then
+    CLEANUP=false
     error "Namespace not found"
   fi
 
