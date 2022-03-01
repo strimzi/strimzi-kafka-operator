@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -18,7 +17,6 @@ import io.strimzi.systemtest.enums.CustomResourceStatus;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -26,6 +24,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assertions.*;
 
 
+@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 public class KafkaTopicScalabilityUtils {
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicUtils.class);
     protected static ResourceManager resourceManager = ResourceManager.getInstance();
@@ -34,7 +33,7 @@ public class KafkaTopicScalabilityUtils {
                                           int numberOfTopics, int numberOfPartitions, int numberOfReplicas, int minInSyncReplicas) {
         LOGGER.info("Creating topics via Kubernetes");
 
-        List<CompletableFuture> topics = new ArrayList();
+        ArrayList<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++){
             String currentTopicName = topicPrefix + i;
@@ -47,13 +46,13 @@ public class KafkaTopicScalabilityUtils {
     }
 
     public static void checkTopicsState(String topicPrefix, int numberOfTopics, Enum<?> state){
-        List<CompletableFuture> topics = new ArrayList();
+        List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++){
             String currentTopic = topicPrefix + i;
-            topics.add(CompletableFuture.runAsync(() ->{
-                    KafkaTopicUtils.waitForKafkaTopicStatus(INFRA_NAMESPACE, currentTopic, state);
-            }));
+            topics.add(CompletableFuture.runAsync(() ->
+                    KafkaTopicUtils.waitForKafkaTopicStatus(INFRA_NAMESPACE, currentTopic, state)
+            ));
         }
 
         CompletableFuture<Void> allTopics = CompletableFuture.allOf(topics.toArray(new CompletableFuture[0]))
@@ -74,15 +73,14 @@ public class KafkaTopicScalabilityUtils {
 
     public static void checkTopicsContainConfig(String topicPrefix, int numberOfTopics, Map<String, Object> config) {
         LOGGER.info("Verifying that topics contain right config");
-        List<CompletableFuture> topics = new ArrayList();
+        List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++){
             String currentTopic = topicPrefix + i;
             topics.add(CompletableFuture.runAsync(() ->{
-                String json = cmdKubeClient(kubeClient().getNamespace()).exec("get", "kafkatopic", currentTopic, "-o", "jsonpath='{.spec.config}'").out();
-
                 try {
-                    Map<String, Object> mapping = new ObjectMapper().readValue(json.replaceAll("'",""), HashMap.class);
+                    String json = cmdKubeClient(kubeClient().getNamespace()).exec("get", "kafkatopic", currentTopic, "-o", "jsonpath='{.spec.config}'").out();
+                    HashMap<?,?> mapping = new ObjectMapper().readValue(json.replaceAll("'",""), HashMap.class);
                     assertEquals(mapping, config);
                 } catch (JsonProcessingException e) {
                     fail(e.getMessage());
@@ -99,7 +97,7 @@ public class KafkaTopicScalabilityUtils {
     public static void modifyBigAmountOfTopics(String topicPrefix, int numberOfTopics, int numberOfPartitions, Map<String, Object> config) {
         LOGGER.info("Modify topics via Kubernetes");
 
-        List<CompletableFuture> topics = new ArrayList<CompletableFuture>();
+        List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++){
             String currentTopicName = topicPrefix + i;
