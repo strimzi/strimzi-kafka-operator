@@ -42,6 +42,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
+import io.strimzi.operator.cluster.model.KafkaConnectorConfiguration;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -49,8 +50,8 @@ import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Operator;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -75,7 +76,6 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -197,7 +197,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                         case ADDED:
                         case DELETED:
                         case MODIFIED:
-                            Future<Void> f;
                             if (connectName != null) {
                                 // Check whether a KafkaConnect exists
                                 connectOperator.resourceOperator.getAsync(connectNamespace, connectName)
@@ -473,7 +472,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     /**
      * Try to get the current connector config. If the connector does not exist, or its config differs from the 
      * {@code connectorSpec}'s, then call
-     * {@link #createOrUpdateConnector(Reconciliation, String, KafkaConnectApi, String, KafkaConnectorSpec)}
+     * {@link #createOrUpdateConnector(Reconciliation, String, KafkaConnectApi, String, KafkaConnectorSpec, KafkaConnectorConfiguration)}
      * otherwise, just return the connectors current state.
      * @param reconciliation The reconciliation.
      * @param host The REST API host.
@@ -485,10 +484,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     protected Future<ConnectorStatusAndConditions> maybeCreateOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
                                                                                 String connectorName, KafkaConnectorSpec connectorSpec, CustomResource resource) {
+        KafkaConnectorConfiguration desiredConfig = new KafkaConnectorConfiguration(reconciliation, connectorSpec.getConfig().entrySet());
+
         return apiClient.getConnectorConfig(reconciliation, new BackOff(200L, 2, 6), host, port, connectorName).compose(
-            config -> {
-                if (!needsReconfiguring(reconciliation, connectorName, connectorSpec, config)) {
-                    LOGGER.debugCr(reconciliation, "Connector {} exists and has desired config, {}=={}", connectorName, connectorSpec.getConfig(), config);
+            currentConfig -> {
+                if (!needsReconfiguring(reconciliation, connectorName, connectorSpec, desiredConfig.asOrderedProperties().asMap(), currentConfig)) {
+                    LOGGER.debugCr(reconciliation, "Connector {} exists and has desired config, {}=={}", connectorName, desiredConfig.asOrderedProperties().asMap(), currentConfig);
                     return apiClient.status(reconciliation, host, port, connectorName)
                         .compose(status -> pauseResume(reconciliation, host, apiClient, connectorName, connectorSpec, status))
                         .compose(ignored -> maybeRestartConnector(reconciliation, host, apiClient, connectorName, resource, new ArrayList<>()))
@@ -498,8 +499,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                 .compose(createConnectorStatusAndConditions(conditions)))
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 } else {
-                    LOGGER.debugCr(reconciliation, "Connector {} exists but does not have desired config, {}!={}", connectorName, connectorSpec.getConfig(), config);
-                    return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec)
+                    LOGGER.debugCr(reconciliation, "Connector {} exists but does not have desired config, {}!={}", connectorName, desiredConfig.asOrderedProperties().asMap(), currentConfig);
+                    return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
                         .compose(createConnectorStatusAndConditions())
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 }
@@ -508,7 +509,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 if (error instanceof ConnectRestException
                         && ((ConnectRestException) error).getStatusCode() == 404) {
                     LOGGER.debugCr(reconciliation, "Connector {} does not exist", connectorName);
-                    return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec)
+                    return createOrUpdateConnector(reconciliation, host, apiClient, connectorName, connectorSpec, desiredConfig)
                         .compose(createConnectorStatusAndConditions())
                         .compose(status -> updateConnectorTopics(reconciliation, host, apiClient, connectorName, status));
                 } else {
@@ -519,28 +520,27 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     private boolean needsReconfiguring(Reconciliation reconciliation, String connectorName,
                                        KafkaConnectorSpec connectorSpec,
-                                       Map<String, String> actual) {
-        Map<String, String> desired = new HashMap<>(connectorSpec.getConfig().size());
+                                       Map<String, String> desiredConfig,
+                                       Map<String, String> actualConfig) {
         // The actual which comes from Connect API includes tasks.max, connector.class and name,
         // which connectorSpec.getConfig() does not
         if (connectorSpec.getTasksMax() != null) {
-            desired.put("tasks.max", connectorSpec.getTasksMax().toString());
+            desiredConfig.put("tasks.max", connectorSpec.getTasksMax().toString());
         }
-        desired.put("name", connectorName);
-        desired.put("connector.class", connectorSpec.getClassName());
-        for (Map.Entry<String, Object> entry : connectorSpec.getConfig().entrySet()) {
-            desired.put(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : null);
-        }
+        desiredConfig.put("name", connectorName);
+        desiredConfig.put("connector.class", connectorSpec.getClassName());
+
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debugCr(reconciliation, "Desired: {}", new TreeMap<>(desired));
-            LOGGER.debugCr(reconciliation, "Actual:  {}", new TreeMap<>(actual));
+            LOGGER.debugCr(reconciliation, "Desired configuration for connector {}: {}", connectorName, new TreeMap<>(desiredConfig));
+            LOGGER.debugCr(reconciliation, "Actual configuration for connector {}:  {}", connectorName, new TreeMap<>(actualConfig));
         }
-        return !desired.equals(actual);
+
+        return !desiredConfig.equals(actualConfig);
     }
 
     protected Future<Map<String, Object>> createOrUpdateConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
-                                                                  String connectorName, KafkaConnectorSpec connectorSpec) {
-        return apiClient.createOrUpdatePutRequest(reconciliation, host, port, connectorName, asJson(reconciliation, connectorSpec))
+                                                                  String connectorName, KafkaConnectorSpec connectorSpec, KafkaConnectorConfiguration desiredConfig) {
+        return apiClient.createOrUpdatePutRequest(reconciliation, host, port, connectorName, asJson(connectorSpec, desiredConfig))
             .compose(ignored -> apiClient.statusWithBackOff(reconciliation, new BackOff(200L, 2, 10), host, port,
                     connectorName))
             .compose(status -> pauseResume(reconciliation, host, apiClient, connectorName, connectorSpec, status))
@@ -773,19 +773,11 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
     }
 
-    protected JsonObject asJson(Reconciliation reconciliation, KafkaConnectorSpec spec) {
+    protected JsonObject asJson(KafkaConnectorSpec spec, KafkaConnectorConfiguration desiredConfig) {
         JsonObject connectorConfigJson = new JsonObject();
-        if (spec.getConfig() != null) {
-            for (Map.Entry<String, Object> cf : spec.getConfig().entrySet()) {
-                String name = cf.getKey();
-                if ("connector.class".equals(name)
-                        || "tasks.max".equals(name)) {
-                    // TODO include resource namespace and name in this message
-                    LOGGER.warnCr(reconciliation, "Configuration parameter {} in KafkaConnector.spec.config will be ignored and the value from KafkaConnector.spec will be used instead",
-                            name);
-                }
-                connectorConfigJson.put(name, cf.getValue());
-            }
+
+        for (Map.Entry<String, String> cf : desiredConfig.asOrderedProperties().asMap().entrySet()) {
+            connectorConfigJson.put(cf.getKey(), cf.getValue());
         }
 
         if (spec.getTasksMax() != null) {
