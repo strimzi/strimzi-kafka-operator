@@ -50,7 +50,7 @@ public class KafkaTopicScalabilityUtils {
         }
     }
 
-    public static void checkTopicsState(String topicPrefix, int numberOfTopics, Enum<?> state){
+    public static void checkTopicsState(String topicPrefix, int numberOfTopics, Enum<?> state) {
         List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++) {
@@ -85,7 +85,7 @@ public class KafkaTopicScalabilityUtils {
             topics.add(CompletableFuture.runAsync(() -> {
                 try {
                     String json = cmdKubeClient(kubeClient().getNamespace()).exec("get", "kafkatopic", currentTopic, "-o", "jsonpath='{.spec.config}'").out();
-                    HashMap<?, ?> mapping = new ObjectMapper().readValue(json.replaceAll("'",""), HashMap.class);
+                    HashMap<?, ?> mapping = new ObjectMapper().readValue(json.replaceAll("'", ""), HashMap.class);
                     assertEquals(mapping, config);
                 } catch (JsonProcessingException e) {
                     fail(e.getMessage());
