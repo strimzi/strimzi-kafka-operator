@@ -302,7 +302,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                 .build();                      
 
                         prepareMirrorMaker2ConnectorConfig(reconciliation, mirror, clusterMap.get(sourceClusterAlias), clusterMap.get(targetClusterAlias), connectorSpec, mirrorMaker2Cluster);
-                        LOGGER.debugCr(reconciliation, "creating/updating connector {} config: {}", connectorName, asJson(reconciliation, connectorSpec).toString());
+                        LOGGER.debugCr(reconciliation, "creating/updating connector {} config: {}", connectorName, connectorSpec.getConfig());
                         return reconcileMirrorMaker2Connector(reconciliation, mirrorMaker2, apiClient, host, connectorName, connectorSpec, mirrorMaker2Status);
                     })
                     .collect(Collectors.toList()))
