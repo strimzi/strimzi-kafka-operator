@@ -1834,7 +1834,6 @@ class SecurityST extends AbstractST {
      * @param clusterName name of the Kafka cluster
      */
     void generateAndDeployCustomStrimziCA(String namespaceName, String clusterName) {
-        // 10.1.2. Installing your own CA certificates
         LOGGER.info("Generating custom RootCA, IntermediateCA, and ClusterCA, ClientsCA for Strimzi and PEM bundles.");
         SystemTestCertAndKey strimziRootCA = SystemTestCertManager.generateRootCaCertAndKey();
         SystemTestCertAndKey intermediateCA = SystemTestCertManager.generateIntermediateCaCertAndKey(strimziRootCA);
