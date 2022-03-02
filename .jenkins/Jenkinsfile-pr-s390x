@@ -10,9 +10,8 @@ pipeline {
             filename 'Dockerfile_base_s390x'
             dir '.jenkins/scripts'
             label 'strimzi-pr-s390x'
-            // env.ST_USER is the Jenkins user on worker node
-            additionalBuildArgs "--build-arg user=${env.ST_USER}"
-            args "--privileged -v /home/${env.ST_USER}/workspace/:/home/${env.ST_USER}/workspace/ -v /home/${env.ST_USER}/s390x-image-tarballs:/home/${env.ST_USER}/s390x-image-tarballs -v /home/${env.ST_USER}/.m2:/home/${env.ST_USER}/.m2"
+            additionalBuildArgs '--build-arg user=$USER --build-arg uid=$(id -u) --build-arg gid=$(id -g)'
+            args '--privileged -v /home/$USER/workspace/:/home/$USER/workspace/ -v /home/$USER/s390x-image-tarballs:/home/$USER/s390x-image-tarballs -v /home/$USER/.m2:/home/$USER/.m2'
         }
     }
     parameters {
@@ -140,7 +139,7 @@ pipeline {
                         sh(script: """
                             # We're using a separate docker daemon inside the container so that local registries wouldn't affect each other.
                             # Use -G option when starting docker daemon to ensure the Jenkins user can connect to /var/run/docker.sock .
-                            sudo dockerd -G ${ST_USER} &
+                            sudo dockerd -G \$(id -gn) &
                             sleep 10
                         """)
                         lib.setupKubernetes('s390x')

@@ -2,12 +2,12 @@ FROM s390x/ubuntu:focal
 
 ARG user
 ARG group=${user}
-ARG uid=1001
-ARG gid=1002
+ARG uid
+ARG gid
 
 ENV JENKINS_HOME /home/${user}
 
-# Jenkins is run with user `jenkins`, uid = 1001
+# Make sure the uid/gid of the container user matches the host user
 RUN groupadd -g ${gid} ${group} \
     && useradd -d "$JENKINS_HOME" -u ${uid} -g ${gid} -m -s /bin/bash ${user}
 RUN chown -R ${user}:${user} /home/${user}
@@ -20,7 +20,7 @@ RUN apt-get update ; \
     apt-get clean
 
 # Add the jenkins user to sudoers
-RUN echo "${user}    ALL=(ALL)    NOPASSWD:ALL" >> etc/sudoers
+RUN echo "${user}    ALL=(ALL)    NOPASSWD:ALL" >> /etc/sudoers
 
 RUN wget https://github.com/docker/buildx/releases/download/v0.6.1/buildx-v0.6.1.linux-s390x; \
     mkdir -p /home/${user}/.docker/cli-plugins; \
