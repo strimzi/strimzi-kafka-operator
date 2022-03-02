@@ -57,6 +57,29 @@ public class SystemTestCertHolder {
         this.caKeySecretName = caKeySecretName;
     }
 
+    public SystemTestCertHolder generateNewCaWithBundle(ExtensionContext extensionContext) {
+        this.generateNewCa(extensionContext)
+            .generateNewBundle(extensionContext);
+
+        return this;
+    }
+
+    private SystemTestCertHolder generateNewCa(final ExtensionContext extensionContext) {
+        final String testSuiteName = extensionContext.getRequiredTestClass().getSimpleName();
+        final String clusterCa = "C=CZ, L=Prague, O=StrimziTest, CN=" + testSuiteName + "ClusterCA";
+
+        this.systemTestCa = SystemTestCertManager.generateStrimziCaCertAndKey(this.intermediateCa, clusterCa);
+
+        return this;
+    }
+
+    private SystemTestCertHolder generateNewBundle(final ExtensionContext extensionContext) {
+        this.bundle = SystemTestCertManager.exportToPemFiles(this.systemTestCa, this.intermediateCa, this.strimziRootCa);
+
+        return this;
+    }
+
+
     /**
      * Prepares custom Cluster and Clients key-pair and creates related Secrets with initialization of annotation
      * {@code Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION} and {@code Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION}.
