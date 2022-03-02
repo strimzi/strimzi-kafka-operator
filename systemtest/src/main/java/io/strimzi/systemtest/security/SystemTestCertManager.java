@@ -155,7 +155,7 @@ public class SystemTestCertManager {
         return certFile;
     }
 
-    static boolean containsAllDN(String principal1, String principal2) {
+    public static boolean containsAllDN(String principal1, String principal2) {
         try {
             return new LdapName(principal1).getRdns().containsAll(new LdapName(principal2).getRdns());
         } catch (InvalidNameException e) {

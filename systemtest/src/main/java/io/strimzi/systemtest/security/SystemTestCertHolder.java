@@ -38,6 +38,7 @@ public class SystemTestCertHolder {
 
     private final String caCertSecretName;
     private final String caKeySecretName;
+    private final String subjectDn;
 
     private SystemTestCertAndKey strimziRootCa;
     private SystemTestCertAndKey intermediateCa;
@@ -48,7 +49,9 @@ public class SystemTestCertHolder {
                                 final String caCertSecretName, final String caKeySecretName) {
         this.strimziRootCa = SystemTestCertManager.generateRootCaCertAndKey();
         this.intermediateCa = SystemTestCertManager.generateIntermediateCaCertAndKey(this.strimziRootCa);
-        this.systemTestCa = SystemTestCertManager.generateStrimziCaCertAndKey(this.intermediateCa, "C=CZ, L=Prague, O=StrimziTest, " + cnName);
+        this.subjectDn = "C=CZ, L=Prague, O=StrimziTest, " + cnName;
+
+        this.systemTestCa = SystemTestCertManager.generateStrimziCaCertAndKey(this.intermediateCa, this.subjectDn);
 
         // Create PEM bundles (strimzi root CA, intermediate CA, cluster|clients CA cert+key) for ClusterCA and ClientsCA
         this.bundle = SystemTestCertManager.exportToPemFiles(this.systemTestCa, this.intermediateCa, this.strimziRootCa);
@@ -154,5 +157,9 @@ public class SystemTestCertHolder {
     }
     public String getCaKeySecretName() {
         return caKeySecretName;
+    }
+
+    public String getSubjectDn() {
+        return subjectDn;
     }
 }
