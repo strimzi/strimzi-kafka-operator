@@ -68,12 +68,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class CustomCaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CustomCaST.class);
+    private static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(CustomCaST.class.getSimpleName()).stream().findFirst().get();
-
-    private static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
-    private static final String STRIMZI_TEST_CLUSTER_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClusterCA";
-    private static final String STRIMZI_TEST_CLIENTS_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClientsCA";
 
     @ParallelNamespaceTest
     void testReplacingCustomClusterKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
