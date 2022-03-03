@@ -44,6 +44,7 @@ import java.util.Map;
     }
     ))
 @OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("either")), @OneOf.Alternative(@OneOf.Alternative.Property("or"))})
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource {
 
     private String ignored;

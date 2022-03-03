@@ -1,543 +1,543 @@
-apiVersion: "apiextensions.k8s.io/v1beta1"
-kind: "CustomResourceDefinition"
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
 metadata:
-  name: "examples.crdgenerator.strimzi.io"
+  name: examples.crdgenerator.strimzi.io
 spec:
-  group: "crdgenerator.strimzi.io"
+  group: crdgenerator.strimzi.io
   names:
-    kind: "Example"
-    listKind: "ExampleList"
-    singular: "example"
-    plural: "examples"
+    kind: Example
+    listKind: ExampleList
+    singular: example
+    plural: examples
     categories:
-    - "strimzi"
-  scope: "Namespaced"
+    - strimzi
+  scope: Namespaced
   additionalPrinterColumns:
-  - name: "Foo"
-    description: "The foo"
-    JSONPath: "..."
-    type: "integer"
+  - name: Foo
+    description: The foo
+    JSONPath: '...'
+    type: integer
   conversion:
-    strategy: "None"
+    strategy: None
   versions:
-  - name: "v1alpha1"
+  - name: v1alpha1
     served: true
     storage: true
-  - name: "v1beta1"
+  - name: v1beta1
     served: true
     storage: false
-  version: "v1alpha1"
+  version: v1alpha1
   validation:
     openAPIV3Schema:
       properties:
         affinity:
-          type: "object"
+          type: object
           properties:
             nodeAffinity:
-              type: "object"
+              type: object
               properties:
                 preferredDuringSchedulingIgnoredDuringExecution:
-                  type: "array"
+                  type: array
                   items:
-                    type: "object"
+                    type: object
                     properties:
                       preference:
-                        type: "object"
+                        type: object
                         properties:
                           matchExpressions:
-                            type: "array"
+                            type: array
                             items:
-                              type: "object"
+                              type: object
                               properties:
                                 key:
-                                  type: "string"
+                                  type: string
                                 operator:
-                                  type: "string"
+                                  type: string
                                 values:
-                                  type: "array"
+                                  type: array
                                   items:
-                                    type: "string"
+                                    type: string
                           matchFields:
-                            type: "array"
+                            type: array
                             items:
-                              type: "object"
+                              type: object
                               properties:
                                 key:
-                                  type: "string"
+                                  type: string
                                 operator:
-                                  type: "string"
+                                  type: string
                                 values:
-                                  type: "array"
+                                  type: array
                                   items:
-                                    type: "string"
+                                    type: string
                       weight:
-                        type: "integer"
+                        type: integer
                 requiredDuringSchedulingIgnoredDuringExecution:
-                  type: "object"
+                  type: object
                   properties:
                     nodeSelectorTerms:
-                      type: "array"
+                      type: array
                       items:
-                        type: "object"
+                        type: object
                         properties:
                           matchExpressions:
-                            type: "array"
+                            type: array
                             items:
-                              type: "object"
+                              type: object
                               properties:
                                 key:
-                                  type: "string"
+                                  type: string
                                 operator:
-                                  type: "string"
+                                  type: string
                                 values:
-                                  type: "array"
+                                  type: array
                                   items:
-                                    type: "string"
+                                    type: string
                           matchFields:
-                            type: "array"
+                            type: array
                             items:
-                              type: "object"
+                              type: object
                               properties:
                                 key:
-                                  type: "string"
+                                  type: string
                                 operator:
-                                  type: "string"
+                                  type: string
                                 values:
-                                  type: "array"
+                                  type: array
                                   items:
-                                    type: "string"
+                                    type: string
             podAffinity:
-              type: "object"
+              type: object
               properties:
                 preferredDuringSchedulingIgnoredDuringExecution:
-                  type: "array"
+                  type: array
                   items:
-                    type: "object"
+                    type: object
                     properties:
                       podAffinityTerm:
-                        type: "object"
+                        type: object
                         properties:
                           labelSelector:
-                            type: "object"
+                            type: object
                             properties:
                               matchExpressions:
-                                type: "array"
+                                type: array
                                 items:
-                                  type: "object"
+                                  type: object
                                   properties:
                                     key:
-                                      type: "string"
+                                      type: string
                                     operator:
-                                      type: "string"
+                                      type: string
                                     values:
-                                      type: "array"
+                                      type: array
                                       items:
-                                        type: "string"
+                                        type: string
                               matchLabels:
-                                type: "object"
+                                type: object
                           namespaceSelector:
-                            type: "object"
+                            type: object
                             properties:
                               matchExpressions:
-                                type: "array"
+                                type: array
                                 items:
-                                  type: "object"
+                                  type: object
                                   properties:
                                     key:
-                                      type: "string"
+                                      type: string
                                     operator:
-                                      type: "string"
+                                      type: string
                                     values:
-                                      type: "array"
+                                      type: array
                                       items:
-                                        type: "string"
+                                        type: string
                               matchLabels:
-                                type: "object"
+                                type: object
                           namespaces:
-                            type: "array"
+                            type: array
                             items:
-                              type: "string"
+                              type: string
                           topologyKey:
-                            type: "string"
+                            type: string
                       weight:
-                        type: "integer"
+                        type: integer
                 requiredDuringSchedulingIgnoredDuringExecution:
-                  type: "array"
+                  type: array
                   items:
-                    type: "object"
+                    type: object
                     properties:
                       labelSelector:
-                        type: "object"
+                        type: object
                         properties:
                           matchExpressions:
-                            type: "array"
+                            type: array
                             items:
-                              type: "object"
+                              type: object
                               properties:
                                 key:
-                                  type: "string"
+                                  type: string
                                 operator:
-                                  type: "string"
+                                  type: string
                                 values:
-                                  type: "array"
+                                  type: array
                                   items:
-                                    type: "string"
+                                    type: string
                           matchLabels:
-                            type: "object"
+                            type: object
                       namespaceSelector:
-                        type: "object"
+                        type: object
                         properties:
                           matchExpressions:
-                            type: "array"
+                            type: array
                             items:
-                              type: "object"
+                              type: object
                               properties:
                                 key:
-                                  type: "string"
+                                  type: string
                                 operator:
-                                  type: "string"
+                                  type: string
                                 values:
-                                  type: "array"
+                                  type: array
                                   items:
-                                    type: "string"
+                                    type: string
                           matchLabels:
-                            type: "object"
+                            type: object
                       namespaces:
-                        type: "array"
+                        type: array
                         items:
-                          type: "string"
+                          type: string
                       topologyKey:
-                        type: "string"
+                        type: string
             podAntiAffinity:
-              type: "object"
+              type: object
               properties:
                 preferredDuringSchedulingIgnoredDuringExecution:
-                  type: "array"
+                  type: array
                   items:
-                    type: "object"
+                    type: object
                     properties:
                       podAffinityTerm:
-                        type: "object"
+                        type: object
                         properties:
                           labelSelector:
-                            type: "object"
+                            type: object
                             properties:
                               matchExpressions:
-                                type: "array"
+                                type: array
                                 items:
-                                  type: "object"
+                                  type: object
                                   properties:
                                     key:
-                                      type: "string"
+                                      type: string
                                     operator:
-                                      type: "string"
+                                      type: string
                                     values:
-                                      type: "array"
+                                      type: array
                                       items:
-                                        type: "string"
+                                        type: string
                               matchLabels:
-                                type: "object"
+                                type: object
                           namespaceSelector:
-                            type: "object"
+                            type: object
                             properties:
                               matchExpressions:
-                                type: "array"
+                                type: array
                                 items:
-                                  type: "object"
+                                  type: object
                                   properties:
                                     key:
-                                      type: "string"
+                                      type: string
                                     operator:
-                                      type: "string"
+                                      type: string
                                     values:
-                                      type: "array"
+                                      type: array
                                       items:
-                                        type: "string"
+                                        type: string
                               matchLabels:
-                                type: "object"
+                                type: object
                           namespaces:
-                            type: "array"
+                            type: array
                             items:
-                              type: "string"
+                              type: string
                           topologyKey:
-                            type: "string"
+                            type: string
                       weight:
-                        type: "integer"
+                        type: integer
                 requiredDuringSchedulingIgnoredDuringExecution:
-                  type: "array"
+                  type: array
                   items:
-                    type: "object"
+                    type: object
                     properties:
                       labelSelector:
-                        type: "object"
+                        type: object
                         properties:
                           matchExpressions:
-                            type: "array"
+                            type: array
                             items:
-                              type: "object"
+                              type: object
                               properties:
                                 key:
-                                  type: "string"
+                                  type: string
                                 operator:
-                                  type: "string"
+                                  type: string
                                 values:
-                                  type: "array"
+                                  type: array
                                   items:
-                                    type: "string"
+                                    type: string
                           matchLabels:
-                            type: "object"
+                            type: object
                       namespaceSelector:
-                        type: "object"
+                        type: object
                         properties:
                           matchExpressions:
-                            type: "array"
+                            type: array
                             items:
-                              type: "object"
+                              type: object
                               properties:
                                 key:
-                                  type: "string"
+                                  type: string
                                 operator:
-                                  type: "string"
+                                  type: string
                                 values:
-                                  type: "array"
+                                  type: array
                                   items:
-                                    type: "string"
+                                    type: string
                           matchLabels:
-                            type: "object"
+                            type: object
                       namespaces:
-                        type: "array"
+                        type: array
                         items:
-                          type: "string"
+                          type: string
                       topologyKey:
-                        type: "string"
+                        type: string
         alternatives:
           oneOf:
-          - type: "array"
+          - type: array
             items:
-              type: "string"
-          - type: "object"
+              type: string
+          - type: object
         arrayOfBoundTypeVar:
-          type: "array"
+          type: array
           items:
-            type: "object"
+            type: object
             properties: {}
         arrayOfBoundTypeVar2:
-          type: "array"
+          type: array
           items:
-            type: "object"
+            type: object
             properties: {}
         arrayOfList:
-          type: "array"
+          type: array
           items:
-            type: "array"
+            type: array
             items:
-              type: "string"
+              type: string
         arrayOfRawList:
-          type: "array"
+          type: array
           items:
-            type: "array"
+            type: array
             items:
-              type: "object"
+              type: object
               properties: {}
         arrayOfTypeVar:
-          type: "array"
+          type: array
           items:
-            type: "object"
+            type: object
             properties: {}
         arrayProperty:
-          type: "array"
+          type: array
           minItems: 1
           items:
-            type: "string"
+            type: string
         arrayProperty2:
-          type: "array"
+          type: array
           items:
-            type: "array"
+            type: array
             items:
-              type: "string"
+              type: string
         booleanProperty:
-          type: "boolean"
+          type: boolean
         customisedEnum:
-          type: "string"
+          type: string
           enum:
-          - "one"
-          - "two"
+          - one
+          - two
         fieldProperty:
-          type: "string"
+          type: string
         intProperty:
-          type: "integer"
-          example: "42"
+          type: integer
+          example: 42
           minimum: 42
         listOfArray:
-          type: "array"
+          type: array
           items:
-            type: "array"
+            type: array
             items:
-              type: "string"
+              type: string
         listOfBoundTypeVar:
-          type: "array"
+          type: array
           items:
-            type: "object"
+            type: object
             properties: {}
         listOfBoundTypeVar2:
-          type: "array"
+          type: array
           items:
-            type: "object"
+            type: object
             properties: {}
         listOfCustomizedEnum:
-          type: "array"
+          type: array
           items:
-            type: "string"
+            type: string
             enum:
-            - "one"
-            - "two"
+            - one
+            - two
         listOfInts:
-          type: "array"
+          type: array
           items:
-            type: "integer"
+            type: integer
         listOfInts2:
-          type: "array"
+          type: array
           items:
-            type: "array"
+            type: array
             items:
-              type: "integer"
+              type: integer
         listOfMaps:
-          type: "array"
+          type: array
           items:
-            type: "object"
+            type: object
         listOfNormalEnum:
-          type: "array"
+          type: array
           items:
-            type: "string"
+            type: string
             enum:
-            - "FOO"
-            - "BAR"
+            - FOO
+            - BAR
         listOfObjects:
-          type: "array"
+          type: array
           items:
-            type: "object"
+            type: object
             properties:
               bar:
-                type: "string"
+                type: string
               foo:
-                type: "string"
+                type: string
         listOfPolymorphic:
-          type: "array"
+          type: array
           items:
-            type: "object"
+            type: object
             properties:
               commonProperty:
-                type: "string"
+                type: string
               discrim:
-                type: "string"
+                type: string
                 enum:
-                - "left"
-                - "right"
+                - left
+                - right
               leftProperty:
-                type: "string"
+                type: string
               rightProperty:
-                type: "string"
+                type: string
             required:
-            - "discrim"
+            - discrim
         listOfRawList:
-          type: "array"
+          type: array
           items:
-            type: "array"
+            type: array
             items:
-              type: "object"
+              type: object
               properties: {}
         listOfTypeVar:
-          type: "array"
+          type: array
           items:
-            type: "object"
+            type: object
             properties: {}
         listOfWildcardTypeVar1:
-          type: "array"
+          type: array
           items:
-            type: "string"
+            type: string
         listOfWildcardTypeVar2:
-          type: "array"
+          type: array
           items:
-            type: "object"
+            type: object
             properties: {}
         listOfWildcardTypeVar3:
-          type: "array"
+          type: array
           items:
-            type: "object"
+            type: object
             properties: {}
         listOfWildcardTypeVar4:
-          type: "array"
+          type: array
           items:
-            type: "array"
+            type: array
             items:
-              type: "object"
+              type: object
               properties: {}
         longProperty:
-          type: "integer"
-          example: "42"
+          type: integer
+          example: 42
           minimum: 42
         mapProperty:
-          type: "object"
+          type: object
         normalEnum:
-          type: "string"
+          type: string
           enum:
-          - "FOO"
-          - "BAR"
+          - FOO
+          - BAR
         objectProperty:
-          type: "object"
+          type: object
           properties:
             bar:
-              type: "string"
+              type: string
             foo:
-              type: "string"
+              type: string
         polymorphicProperty:
-          type: "object"
+          type: object
           properties:
             commonProperty:
-              type: "string"
+              type: string
             discrim:
-              type: "string"
+              type: string
               enum:
-              - "left"
-              - "right"
+              - left
+              - right
             leftProperty:
-              type: "string"
+              type: string
             rightProperty:
-              type: "string"
+              type: string
           required:
-          - "discrim"
+          - discrim
         rawList:
-          type: "array"
+          type: array
           items:
-            type: "object"
+            type: object
             properties: {}
         spec:
-          type: "object"
+          type: object
           properties: {}
         status:
-          type: "object"
+          type: object
           properties: {}
         stringProperty:
-          type: "string"
-          pattern: ".*"
+          type: string
+          pattern: .*
         typedAlternatives:
           oneOf:
-          - type: "object"
+          - type: object
             properties:
               key2:
-                type: "string"
-          - type: "object"
+                type: string
+          - type: object
             properties:
               key1:
-                type: "string"
+                type: string
       oneOf:
       - properties:
           either: {}
         required:
-        - "either"
+        - either
       - properties:
           or: {}
         required:
-        - "or"
+        - or
       required:
-      - "stringProperty"
+      - stringProperty
