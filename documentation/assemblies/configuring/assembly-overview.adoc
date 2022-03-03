@@ -24,5 +24,6 @@ include::../../shared/ref-document-conventions.adoc[leveloffset=+1]
 [role="_additional-resources"]
 == Additional resources
 
-* link:{BookURLOverview}[_Strimzi Overview_^]
-* link:{BookURLDeploying}[_Deploying and Upgrading Strimzi_^]
+* link:{BookURLOverview}[Strimzi Overview^]
+* link:{BookURLDeploying}[Deploying and Upgrading Strimzi^]
+* link:{BookURLBridge}[Using the Strimzi Kafka Bridge^]
