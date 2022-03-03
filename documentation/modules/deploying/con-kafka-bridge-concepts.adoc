@@ -14,4 +14,4 @@ You can then use the Kafka Bridge to produce and consume messages from the clust
 [role="_additional-resources"]
 .Additional resources
 
-* For information on installing and using the Kafka Bridge, see link:{book-bridge}[Using the Strimzi Kafka Bridge^].
+* For information on installing and using the Kafka Bridge, see link:{BookURLBridge}[Using the Strimzi Kafka Bridge^].

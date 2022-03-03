@@ -26,4 +26,4 @@ include::../../shared/ref-document-conventions.adoc[leveloffset=+1]
 
 * link:{BookURLOverview}[Strimzi Overview^]
 * link:{BookURLDeploying}[Deploying and Upgrading Strimzi^]
-* link:{book-bridge}[Using the Strimzi Kafka Bridge^]
+* link:{BookURLBridge}[Using the Strimzi Kafka Bridge^]

@@ -32,4 +32,4 @@ Clients can produce and consume messages without the requirement to use the nati
 
 [role="_additional-resources"]
 .Additional resources
-* To view the API documentation, including example requests and responses, see link:{book-bridge}[Using the Strimzi Kafka Bridge^].
+* To view the API documentation, including example requests and responses, see link:{BookURLBridge}[Using the Strimzi Kafka Bridge^].
