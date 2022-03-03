@@ -115,7 +115,7 @@ Mandatory only if SASL is enabled through `STRIMZI_SASL_ENABLED`.
 Mandatory only if SASL is enabled through `STRIMZI_SASL_ENABLED`.
 <17> (Optional) The SASL mechanism for client authentication.
 Mandatory only if SASL is enabled through `STRIMZI_SASL_ENABLED`.
-You can set the value to `plain`, `scram-sha-256`, or `scram-sha-512`.
+You can set the value to `plain`, `scram-sha-256`, `scram-sha-512`, or `aws-msk-iam`.
 <18> (Optional) The security protocol used for communication with Kafka brokers.
 The default value is "PLAINTEXT".
 You can set the value to `PLAINTEXT`, `SSL`, `SASL_PLAINTEXT`, or `SASL_SSL`.
