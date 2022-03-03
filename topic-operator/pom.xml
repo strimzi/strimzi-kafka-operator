@@ -173,6 +173,10 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-micrometer-metrics</artifactId>
         </dependency>
+        <dependency>
+            <groupId>software.amazon.msk</groupId>
+            <artifactId>aws-msk-iam-auth</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

@@ -43,6 +43,7 @@ public class Session extends AbstractVerticle {
     private final static String SASL_TYPE_PLAIN = "plain";
     private final static String SASL_TYPE_SCRAM_SHA_256 = "scram-sha-256";
     private final static String SASL_TYPE_SCRAM_SHA_512 = "scram-sha-512";
+    private final static String SASL_TYPE_AWS_MSK_IAM = "aws-msk-iam";
 
     private static final int HEALTH_SERVER_PORT = 8080;
 
@@ -266,6 +267,7 @@ public class Session extends AbstractVerticle {
     private void setSaslConfigs(Properties kafkaClientProps) {
         String saslMechanism = null;
         String jaasConfig = null;
+        String callbackHandlerClass = null;
         String username = config.get(Config.SASL_USERNAME);
         String password = config.get(Config.SASL_PASSWORD);
         String configSaslMechanism = config.get(Config.SASL_MECHANISM);
@@ -285,6 +287,10 @@ public class Session extends AbstractVerticle {
             } else if (SASL_TYPE_SCRAM_SHA_512.equals(configSaslMechanism)) {
                 saslMechanism = "SCRAM-SHA-512";
             }
+        } else if (SASL_TYPE_AWS_MSK_IAM.equals(configSaslMechanism)){
+            saslMechanism = "AWS_MSK_IAM";
+            jaasConfig = "software.amazon.msk.auth.iam.IAMLoginModule required;";
+            callbackHandlerClass = "software.amazon.msk.auth.iam.IAMClientCallbackHandler";
         } else {
             throw new IllegalArgumentException("Invalid SASL_MECHANISM type: " + config.get(config.SASL_MECHANISM));
         }
@@ -295,6 +301,10 @@ public class Session extends AbstractVerticle {
         if (jaasConfig != null) {
             kafkaClientProps.setProperty(SaslConfigs.SASL_JAAS_CONFIG, jaasConfig);
         }
+        if (callbackHandlerClass != null) {
+            kafkaClientProps.setProperty(SaslConfigs.SASL_CLIENT_CALLBACK_HANDLER_CLASS, callbackHandlerClass);
+        }
+
     }
 
     Properties adminClientProperties() {
@@ -303,6 +313,7 @@ public class Session extends AbstractVerticle {
         kafkaClientProps.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, config.get(Config.APPLICATION_ID));
 
         String securityProtocol = config.get(Config.SECURITY_PROTOCOL);
+
         boolean tlsEnabled = Boolean.parseBoolean(config.get(Config.TLS_ENABLED));
 
         if (tlsEnabled && !securityProtocol.isEmpty()) {
