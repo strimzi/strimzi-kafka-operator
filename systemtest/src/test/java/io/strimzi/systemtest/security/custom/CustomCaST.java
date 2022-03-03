@@ -71,7 +71,7 @@ public class CustomCaST extends AbstractST {
     @ParallelNamespaceTest
     void testReplacingCustomClusterKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         final TestStorage ts = new TestStorage(extensionContext);
-        // 0. Generate root and intermediate certificate authority with clients CA
+        // 0. Generate root and intermediate certificate authority with cluster CA
         SystemTestCertHolder clusterCa =  new SystemTestCertHolder(extensionContext,
             "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClusterCA",
             KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()),
