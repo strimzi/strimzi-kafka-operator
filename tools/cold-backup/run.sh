@@ -201,17 +201,20 @@ rsync() {
     local patch && patch=$(sed "s@\$name@$source@g" "$BASE/templates/patch.json")
     kubectl -n "$NAMESPACE" run "$RSYNC_POD_NAME" --image "dummy" --restart "Never" --overrides "$patch"
     wait_for "condition=Ready" "pod -l run=$RSYNC_POD_NAME"
-    # ignore the sporadic file changed error
-    kubectl -n "$NAMESPACE" exec -i "$RSYNC_POD_NAME" -- bash -c "tar $flags -C /data -c ." \
-      | bash -c "tar $flags -C $target -xv -f - && if [[ $? == 1 ]]; then exit 0; fi"
+    # double quotes breaks tar commands
+    # shellcheck disable=SC2086
+    kubectl -n "$NAMESPACE" exec -i "$RSYNC_POD_NAME" -- tar $flags -C /data -c . \
+      | tar $flags -C $target -xv -f - && if [[ $? == 1 ]]; then exit 0; fi
     kubectl -n "$NAMESPACE" delete pod "$RSYNC_POD_NAME"
   else
     # upload from local to pod (restore)
     local patch && patch=$(sed "s@\$name@$target@g" "$BASE/templates/patch.json")
     kubectl -n "$NAMESPACE" run "$RSYNC_POD_NAME" --image "dummy" --restart "Never" --overrides "$patch"
     wait_for "condition=ready" "pod -l run=$RSYNC_POD_NAME"
-    bash -c "tar $flags -C $source -c ." \
-      | kubectl -n "$NAMESPACE" exec -i "$RSYNC_POD_NAME" -- bash -c "tar $flags -C /data -xv -f -"
+    # double quotes breaks tar commands
+    # shellcheck disable=SC2086
+    tar $flags -C $source -c . \
+      | kubectl -n "$NAMESPACE" exec -i "$RSYNC_POD_NAME" -- tar $flags -C /data -xv -f -
     kubectl -n "$NAMESPACE" delete pod "$RSYNC_POD_NAME"
   fi
 }
