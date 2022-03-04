@@ -539,40 +539,40 @@ public class TracingST extends AbstractST {
 
     @BeforeEach
     void createTestResources(ExtensionContext extensionContext) {
-//        TestStorage testStorage = new TestStorage(extensionContext, namespace);
-//
-//        storageMap.put(extensionContext, testStorage);
-//
-//        deployJaegerInstance(extensionContext, storageMap.get(extensionContext).getNamespaceName());
-//
-//        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(storageMap.get(extensionContext).getNamespaceName(), false, storageMap.get(extensionContext).getKafkaClientsName()).build());
-//
-//        testStorage.addToTestStorage(Constants.KAFKA_CLIENTS_POD_KEY, kubeClient(storageMap.get(extensionContext).getNamespaceName()).listPodsByPrefixInName(storageMap.get(extensionContext).getKafkaClientsName()).get(0).getMetadata().getName());
-//
-//        storageMap.put(extensionContext, testStorage);
-//
-//        final KafkaTracingClients kafkaTracingClient = new KafkaTracingClientsBuilder()
-//            .withNamespaceName(storageMap.get(extensionContext).getNamespaceName())
-//            .withProducerName(storageMap.get(extensionContext).getProducerName())
-//            .withConsumerName(storageMap.get(extensionContext).getConsumerName())
-//            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(storageMap.get(extensionContext).getClusterName()))
-//            .withTopicName(storageMap.get(extensionContext).getTopicName())
-//            .withStreamsTopicTargetName(storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString())
-//            .withMessageCount(MESSAGE_COUNT)
-//            .withJaegerServiceProducerName(JAEGER_PRODUCER_SERVICE)
-//            .withJaegerServiceConsumerName(JAEGER_CONSUMER_SERVICE)
-//            .withJaegerServiceStreamsName(JAEGER_KAFKA_STREAMS_SERVICE)
-//            .withJaegerServerAgentName(JAEGER_AGENT_NAME)
-//            .build();
-//
-//        testStorage.addToTestStorage(Constants.KAFKA_TRACING_CLIENT_KEY, kafkaTracingClient);
-//
-//        storageMap.put(extensionContext, testStorage);
+        TestStorage testStorage = new TestStorage(extensionContext, namespace);
+
+        storageMap.put(extensionContext, testStorage);
+
+        deployJaegerInstance(extensionContext, storageMap.get(extensionContext).getNamespaceName());
+
+        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(storageMap.get(extensionContext).getNamespaceName(), false, storageMap.get(extensionContext).getKafkaClientsName()).build());
+
+        testStorage.addToTestStorage(Constants.KAFKA_CLIENTS_POD_KEY, kubeClient(storageMap.get(extensionContext).getNamespaceName()).listPodsByPrefixInName(storageMap.get(extensionContext).getKafkaClientsName()).get(0).getMetadata().getName());
+
+        storageMap.put(extensionContext, testStorage);
+
+        final KafkaTracingClients kafkaTracingClient = new KafkaTracingClientsBuilder()
+            .withNamespaceName(storageMap.get(extensionContext).getNamespaceName())
+            .withProducerName(storageMap.get(extensionContext).getProducerName())
+            .withConsumerName(storageMap.get(extensionContext).getConsumerName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(storageMap.get(extensionContext).getClusterName()))
+            .withTopicName(storageMap.get(extensionContext).getTopicName())
+            .withStreamsTopicTargetName(storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString())
+            .withMessageCount(MESSAGE_COUNT)
+            .withJaegerServiceProducerName(JAEGER_PRODUCER_SERVICE)
+            .withJaegerServiceConsumerName(JAEGER_CONSUMER_SERVICE)
+            .withJaegerServiceStreamsName(JAEGER_KAFKA_STREAMS_SERVICE)
+            .withJaegerServerAgentName(JAEGER_AGENT_NAME)
+            .build();
+
+        testStorage.addToTestStorage(Constants.KAFKA_TRACING_CLIENT_KEY, kafkaTracingClient);
+
+        storageMap.put(extensionContext, testStorage);
     }
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) throws IOException {
-//        // deployment of the jaeger
-//        deployJaegerOperator(extensionContext);
+        // deployment of the jaeger
+        deployJaegerOperator(extensionContext);
     }
 }

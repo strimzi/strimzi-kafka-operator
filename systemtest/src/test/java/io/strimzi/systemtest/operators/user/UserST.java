@@ -115,46 +115,46 @@ class UserST extends AbstractST {
     @ParallelTest
     @Tag(ACCEPTANCE)
     void testUpdateUser(ExtensionContext extensionContext) {
-//        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-//
-//        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespace, userClusterName, userName).build());
-//
-//        String kafkaUserSecret = TestUtils.toJsonString(kubeClient(namespace).getSecret(userName));
-//        assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
-//        assertThat(kafkaUserSecret, hasJsonPath("$.data['user.crt']", notNullValue()));
-//        assertThat(kafkaUserSecret, hasJsonPath("$.data['user.key']", notNullValue()));
-//        assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(userName)));
-//        assertThat(kafkaUserSecret, hasJsonPath("$.metadata.namespace", equalTo(namespace)));
-//
-//        KafkaUser kUser = KafkaUserResource.kafkaUserClient().inNamespace(namespace).withName(userName).get();
-//        String kafkaUserAsJson = TestUtils.toJsonString(kUser);
-//
-//        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(userName)));
-//        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(namespace)));
-//        assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo(Constants.TLS_LISTENER_DEFAULT_NAME)));
-//
-//        long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(namespace).withName(userName).get().getStatus().getObservedGeneration();
-//
-//        KafkaUserResource.replaceUserResourceInSpecificNamespace(userName, ku -> {
-//            ku.getMetadata().setResourceVersion(null);
-//            ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
-//        }, namespace);
-//
-//        KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(namespace, observedGeneration, userName);
-//        KafkaUserUtils.waitForKafkaUserCreation(namespace, userName);
-//
-//        String anotherKafkaUserSecret = TestUtils.toJsonString(kubeClient(namespace).getSecret(namespace, userName));
-//
-//        assertThat(anotherKafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
-//
-//        kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(namespace).withName(userName).get();
-//        kafkaUserAsJson = TestUtils.toJsonString(kUser);
-//        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(userName)));
-//        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(namespace)));
-//        assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
-//
-//        Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(namespace).delete(kUser);
-//        KafkaUserUtils.waitForKafkaUserDeletion(userName);
+        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespace, userClusterName, userName).build());
+
+        String kafkaUserSecret = TestUtils.toJsonString(kubeClient(namespace).getSecret(userName));
+        assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
+        assertThat(kafkaUserSecret, hasJsonPath("$.data['user.crt']", notNullValue()));
+        assertThat(kafkaUserSecret, hasJsonPath("$.data['user.key']", notNullValue()));
+        assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(userName)));
+        assertThat(kafkaUserSecret, hasJsonPath("$.metadata.namespace", equalTo(namespace)));
+
+        KafkaUser kUser = KafkaUserResource.kafkaUserClient().inNamespace(namespace).withName(userName).get();
+        String kafkaUserAsJson = TestUtils.toJsonString(kUser);
+
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(userName)));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(namespace)));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo(Constants.TLS_LISTENER_DEFAULT_NAME)));
+
+        long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(namespace).withName(userName).get().getStatus().getObservedGeneration();
+
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(userName, ku -> {
+            ku.getMetadata().setResourceVersion(null);
+            ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
+        }, namespace);
+
+        KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(namespace, observedGeneration, userName);
+        KafkaUserUtils.waitForKafkaUserCreation(namespace, userName);
+
+        String anotherKafkaUserSecret = TestUtils.toJsonString(kubeClient(namespace).getSecret(namespace, userName));
+
+        assertThat(anotherKafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
+
+        kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(namespace).withName(userName).get();
+        kafkaUserAsJson = TestUtils.toJsonString(kUser);
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(userName)));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(namespace)));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
+
+        Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(namespace).delete(kUser);
+        KafkaUserUtils.waitForKafkaUserDeletion(userName);
     }
 
     @Tag(SCALABILITY)
@@ -549,10 +549,10 @@ class UserST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-//        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(userClusterName, 1, 1)
-//            .editMetadata()
-//                .withNamespace(namespace)
-//            .endMetadata()
-//            .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(userClusterName, 1, 1)
+            .editMetadata()
+                .withNamespace(namespace)
+            .endMetadata()
+            .build());
     }
 }

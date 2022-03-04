@@ -13,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -122,7 +121,7 @@ public class SuiteThreadController {
     }
 
     @SuppressFBWarnings(value = "SWL_SLEEP_WITH_LOCK_HELD")
-    public void waitUntilEntryIsOpen(ExtensionContext extensionContext) {
+    public synchronized void waitUntilEntryIsOpen(ExtensionContext extensionContext) {
         // other threads must wait until is open
         while (this.isOpen.get()) {
             LOGGER.debug("Suite {} is waiting to lock to be released.", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()));
