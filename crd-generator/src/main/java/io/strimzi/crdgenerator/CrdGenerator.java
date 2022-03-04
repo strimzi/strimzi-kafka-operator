@@ -166,6 +166,9 @@ import static java.util.Collections.emptyMap;
 @SuppressWarnings("ClassFanOutComplexity")
 public class CrdGenerator {
     public static final YAMLMapper YAML_MAPPER = new YAMLMapper()
+            .configure(YAMLGenerator.Feature.MINIMIZE_QUOTES, true)
+            .configure(YAMLGenerator.Feature.SPLIT_LINES, false)
+            .configure(YAMLGenerator.Feature.LITERAL_BLOCK_STYLE, true)
             .configure(YAMLGenerator.Feature.WRITE_DOC_START_MARKER, false);
     public static final ObjectMapper JSON_MATTER = new ObjectMapper();
     private final ApiVersion crdApiVersion;

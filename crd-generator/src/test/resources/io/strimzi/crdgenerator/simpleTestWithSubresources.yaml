@@ -1,46 +1,46 @@
-apiVersion: "apiextensions.k8s.io/v1beta1"
-kind: "CustomResourceDefinition"
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
 metadata:
-  name: "exampleswithsubresources.crdgenerator.strimzi.io"
+  name: exampleswithsubresources.crdgenerator.strimzi.io
 spec:
-  group: "crdgenerator.strimzi.io"
+  group: crdgenerator.strimzi.io
   names:
-    kind: "ExampleWithSubresources"
-    listKind: "ExampleWithSubresourcesList"
-    singular: "examplewithsubresources"
-    plural: "exampleswithsubresources"
+    kind: ExampleWithSubresources
+    listKind: ExampleWithSubresourcesList
+    singular: examplewithsubresources
+    plural: exampleswithsubresources
     categories:
-    - "strimzi"
-  scope: "Namespaced"
+    - strimzi
+  scope: Namespaced
   additionalPrinterColumns:
-  - name: "Foo"
-    description: "The foo"
-    JSONPath: "..."
-    type: "integer"
+  - name: Foo
+    description: The foo
+    JSONPath: '...'
+    type: integer
   subresources:
     status: {}
     scale:
-      specReplicasPath: ".spec.replicas"
-      statusReplicasPath: ".status.replicas"
-      labelSelectorPath: ".status.selector"
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
+      labelSelectorPath: .status.selector
   conversion:
-    strategy: "None"
+    strategy: None
   versions:
-  - name: "v1alpha1"
+  - name: v1alpha1
     served: true
     storage: true
-  - name: "v1beta1"
+  - name: v1beta1
     served: true
     storage: false
-  version: "v1alpha1"
+  version: v1alpha1
   validation:
     openAPIV3Schema:
       properties:
         replicas:
-          type: "string"
+          type: string
         spec:
-          type: "object"
+          type: object
           properties: {}
         status:
-          type: "object"
+          type: object
           properties: {}

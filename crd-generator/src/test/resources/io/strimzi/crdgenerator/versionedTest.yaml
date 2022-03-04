@@ -1,111 +1,111 @@
-apiVersion: "apiextensions.k8s.io/v1beta1"
-kind: "CustomResourceDefinition"
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
 metadata:
-  name: "examples.crdgenerator.strimzi.io"
+  name: examples.crdgenerator.strimzi.io
 spec:
-  group: "crdgenerator.strimzi.io"
+  group: crdgenerator.strimzi.io
   names:
-    kind: "Example"
-    listKind: "ExampleList"
-    singular: "example"
-    plural: "examples"
+    kind: Example
+    listKind: ExampleList
+    singular: example
+    plural: examples
     categories:
-    - "strimzi"
-  scope: "Namespaced"
+    - strimzi
+  scope: Namespaced
   conversion:
-    strategy: "None"
+    strategy: None
   versions:
-  - name: "v1"
+  - name: v1
     served: true
     storage: true
     subresources:
       status: {}
       scale:
-        specReplicasPath: "v1.dcsdvsv"
-        statusReplicasPath: "v1.sdvsdvs"
-        labelSelectorPath: "v1.dsdvc"
+        specReplicasPath: v1.dcsdvsv
+        statusReplicasPath: v1.sdvsdvs
+        labelSelectorPath: v1.dsdvc
     additionalPrinterColumns:
-    - name: "V1 column"
-      description: "The foo"
-      JSONPath: "..."
-      type: "integer"
+    - name: V1 column
+      description: The foo
+      JSONPath: '...'
+      type: integer
     schema:
       openAPIV3Schema:
-        type: "object"
+        type: object
         properties:
           spec:
-            type: "object"
+            type: object
             properties: {}
           status:
-            type: "object"
+            type: object
             properties: {}
           ignored:
-            type: "string"
-            pattern: "v1Pattern"
-            description: "V1 description."
+            type: string
+            pattern: v1Pattern
+            description: V1 description.
           listWithMinimum:
-            type: "array"
+            type: array
             items:
-              type: "string"
+              type: string
           removed:
-            type: "string"
+            type: string
           someInt:
-            type: "integer"
+            type: integer
             minimum: 0
             maximum: 10
           someOtherInt:
-            type: "integer"
+            type: integer
             maximum: 10
           typeChange:
             oneOf:
-            - type: "array"
+            - type: array
               items:
-                type: "string"
-            - type: "object"
-  - name: "v2"
+                type: string
+            - type: object
+  - name: v2
     served: true
     storage: false
     subresources:
       status: {}
       scale:
-        specReplicasPath: "v2.dcsdvsv"
-        statusReplicasPath: "v2.sdvsdvs"
-        labelSelectorPath: "v2.ssdv"
+        specReplicasPath: v2.dcsdvsv
+        statusReplicasPath: v2.sdvsdvs
+        labelSelectorPath: v2.ssdv
     additionalPrinterColumns:
-    - name: "V2 column"
-      description: "The bar"
-      JSONPath: "..."
-      type: "integer"
+    - name: V2 column
+      description: The bar
+      JSONPath: '...'
+      type: integer
     schema:
       openAPIV3Schema:
-        type: "object"
+        type: object
         properties:
           spec:
-            type: "object"
+            type: object
             properties: {}
           status:
-            type: "object"
+            type: object
             properties: {}
           added:
-            type: "string"
+            type: string
           ignored:
-            type: "string"
-            pattern: "v2Pattern"
-            description: "V2 description."
+            type: string
+            pattern: v2Pattern
+            description: V2 description.
           listWithMinimum:
-            type: "array"
+            type: array
             minItems: 2
             items:
-              type: "string"
+              type: string
           someInt:
-            type: "integer"
+            type: integer
             minimum: 4
             maximum: 12
           someOtherInt:
-            type: "integer"
+            type: integer
             minimum: 4
             maximum: 10
           typeChange:
-            type: "array"
+            type: array
             items:
-              type: "string"
+              type: string

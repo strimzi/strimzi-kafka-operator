@@ -36,7 +36,7 @@ spec:
       type: integer
     - name: Ready
       description: The state of the custom resource
-      jsonPath: .status.conditions[?(@.type=="Ready")].status
+      jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
       type: string
     schema:
       openAPIV3Schema:
@@ -47,9 +47,7 @@ spec:
             properties:
               version:
                 type: string
-                description: The Kafka Connect version. Defaults to {DefaultKafkaVersion}.
-                  Consult the user documentation to understand the process required
-                  to upgrade or downgrade the version.
+                description: "The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version."
               replicas:
                 type: integer
                 description: The number of pods in the Kafka Connect group.
@@ -58,8 +56,7 @@ spec:
                 description: The docker image for the pods.
               bootstrapServers:
                 type: string
-                description: Bootstrap servers to connect to. This should be given
-                  as a comma separated list of _<hostname>_:_<port>_ pairs.
+                description: Bootstrap servers to connect to. This should be given as a comma separated list of _<hostname>_:_<port>_ pairs.
               tls:
                 type: object
                 properties:
@@ -87,29 +84,20 @@ spec:
                     properties:
                       key:
                         type: string
-                        description: The key under which the secret value is stored
-                          in the Kubernetes Secret.
+                        description: The key under which the secret value is stored in the Kubernetes Secret.
                       secretName:
                         type: string
-                        description: The name of the Kubernetes Secret containing
-                          the secret value.
+                        description: The name of the Kubernetes Secret containing the secret value.
                     required:
                     - key
                     - secretName
-                    description: Link to Kubernetes Secret containing the access token
-                      which was obtained from the authorization server.
+                    description: Link to Kubernetes Secret containing the access token which was obtained from the authorization server.
                   accessTokenIsJwt:
                     type: boolean
-                    description: Configure whether access token should be treated
-                      as JWT. This should be set to `false` if the authorization server
-                      returns opaque tokens. Defaults to `true`.
+                    description: Configure whether access token should be treated as JWT. This should be set to `false` if the authorization server returns opaque tokens. Defaults to `true`.
                   audience:
                     type: string
-                    description: OAuth audience to use when authenticating against
-                      the authorization server. Some authorization servers require
-                      the audience to be explicitly set. The possible values depend
-                      on how the authorization server is configured. By default, `audience`
-                      is not specified when performing the token endpoint request.
+                    description: "OAuth audience to use when authenticating against the authorization server. Some authorization servers require the audience to be explicitly set. The possible values depend on how the authorization server is configured. By default, `audience` is not specified when performing the token endpoint request."
                   certificateAndKey:
                     type: object
                     properties:
@@ -126,51 +114,38 @@ spec:
                     - certificate
                     - key
                     - secretName
-                    description: Reference to the `Secret` which holds the certificate
-                      and private key pair.
+                    description: Reference to the `Secret` which holds the certificate and private key pair.
                   clientId:
                     type: string
-                    description: OAuth Client ID which the Kafka client can use to
-                      authenticate against the OAuth server and use the token endpoint
-                      URI.
+                    description: OAuth Client ID which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
                   clientSecret:
                     type: object
                     properties:
                       key:
                         type: string
-                        description: The key under which the secret value is stored
-                          in the Kubernetes Secret.
+                        description: The key under which the secret value is stored in the Kubernetes Secret.
                       secretName:
                         type: string
-                        description: The name of the Kubernetes Secret containing
-                          the secret value.
+                        description: The name of the Kubernetes Secret containing the secret value.
                     required:
                     - key
                     - secretName
-                    description: Link to Kubernetes Secret containing the OAuth client
-                      secret which the Kafka client can use to authenticate against
-                      the OAuth server and use the token endpoint URI.
+                    description: Link to Kubernetes Secret containing the OAuth client secret which the Kafka client can use to authenticate against the OAuth server and use the token endpoint URI.
                   connectTimeoutSeconds:
                     type: integer
-                    description: The connect timeout in seconds when connecting to
-                      authorization server. If not set, the effective connect timeout
-                      is 60 seconds.
+                    description: "The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds."
                   disableTlsHostnameVerification:
                     type: boolean
-                    description: Enable or disable TLS hostname verification. Default
-                      value is `false`.
+                    description: Enable or disable TLS hostname verification. Default value is `false`.
                   maxTokenExpirySeconds:
                     type: integer
-                    description: Set or limit time-to-live of the access tokens to
-                      the specified number of seconds. This should be set if the authorization
-                      server returns opaque tokens.
+                    description: Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
                   passwordSecret:
                     type: object
                     properties:
                       password:
                         type: string
-                        description: The name of the key in the Secret under which
-                          the password is stored.
+                        description: The name of the key in the Secret under which the password is stored.
                       secretName:
                         type: string
                         description: The name of the Secret containing the password.
@@ -180,32 +155,23 @@ spec:
                     description: Reference to the `Secret` which holds the password.
                   readTimeoutSeconds:
                     type: integer
-                    description: The read timeout in seconds when connecting to authorization
-                      server. If not set, the effective read timeout is 60 seconds.
+                    description: "The read timeout in seconds when connecting to authorization server. If not set, the effective read timeout is 60 seconds."
                   refreshToken:
                     type: object
                     properties:
                       key:
                         type: string
-                        description: The key under which the secret value is stored
-                          in the Kubernetes Secret.
+                        description: The key under which the secret value is stored in the Kubernetes Secret.
                       secretName:
                         type: string
-                        description: The name of the Kubernetes Secret containing
-                          the secret value.
+                        description: The name of the Kubernetes Secret containing the secret value.
                     required:
                     - key
                     - secretName
-                    description: Link to Kubernetes Secret containing the refresh
-                      token which can be used to obtain access token from the authorization
-                      server.
+                    description: Link to Kubernetes Secret containing the refresh token which can be used to obtain access token from the authorization server.
                   scope:
                     type: string
-                    description: OAuth scope to use when authenticating against the
-                      authorization server. Some authorization servers require this
-                      to be set. The possible values depend on how authorization server
-                      is configured. By default `scope` is not specified when doing
-                      the token endpoint request.
+                    description: OAuth scope to use when authenticating against the authorization server. Some authorization servers require this to be set. The possible values depend on how authorization server is configured. By default `scope` is not specified when doing the token endpoint request.
                   tlsTrustedCertificates:
                     type: array
                     items:
@@ -220,8 +186,7 @@ spec:
                       required:
                       - certificate
                       - secretName
-                    description: Trusted certificates for TLS connection to the OAuth
-                      server.
+                    description: Trusted certificates for TLS connection to the OAuth server.
                   tokenEndpointUri:
                     type: string
                     description: Authorization server token endpoint URI.
@@ -233,13 +198,7 @@ spec:
                     - scram-sha-512
                     - plain
                     - oauth
-                    description: Authentication type. Currently the only supported
-                      types are `tls`, `scram-sha-256`, `scram-sha-512`, and `plain`.
-                      `scram-sha-256` and `scram-sha-512` types use SASL SCRAM-SHA-256
-                      and SASL SCRAM-SHA-512 Authentication, respectively. `plain`
-                      type uses SASL PLAIN Authentication. `oauth` type uses SASL
-                      OAUTHBEARER Authentication. The `tls` type uses TLS Client Authentication.
-                      The `tls` type is supported only over TLS connections.
+                    description: "Authentication type. Currently the only supported types are `tls`, `scram-sha-256`, `scram-sha-512`, and `plain`. `scram-sha-256` and `scram-sha-512` types use SASL SCRAM-SHA-256 and SASL SCRAM-SHA-512 Authentication, respectively. `plain` type uses SASL PLAIN Authentication. `oauth` type uses SASL OAUTHBEARER Authentication. The `tls` type uses TLS Client Authentication. The `tls` type is supported only over TLS connections."
                   username:
                     type: string
                     description: Username used for the authentication.
@@ -249,11 +208,7 @@ spec:
               config:
                 x-kubernetes-preserve-unknown-fields: true
                 type: object
-                description: 'The Kafka Connect configuration. Properties with the
-                  following prefixes cannot be set: ssl., sasl., security., listeners,
-                  plugin.path, rest., bootstrap.servers, consumer.interceptor.classes,
-                  producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm,
-                  ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols).'
+                description: "The Kafka Connect configuration. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols)."
               resources:
                 type: object
                 properties:
@@ -263,38 +218,30 @@ spec:
                   requests:
                     x-kubernetes-preserve-unknown-fields: true
                     type: object
-                description: The maximum limits for CPU and memory resources and the
-                  requested initial resources.
+                description: The maximum limits for CPU and memory resources and the requested initial resources.
               livenessProbe:
                 type: object
                 properties:
                   failureThreshold:
                     type: integer
                     minimum: 1
-                    description: Minimum consecutive failures for the probe to be
-                      considered failed after having succeeded. Defaults to 3. Minimum
-                      value is 1.
+                    description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                   initialDelaySeconds:
                     type: integer
                     minimum: 0
-                    description: The initial delay before first the health is first
-                      checked. Default to 15 seconds. Minimum value is 0.
+                    description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                   periodSeconds:
                     type: integer
                     minimum: 1
-                    description: How often (in seconds) to perform the probe. Default
-                      to 10 seconds. Minimum value is 1.
+                    description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                   successThreshold:
                     type: integer
                     minimum: 1
-                    description: Minimum consecutive successes for the probe to be
-                      considered successful after having failed. Defaults to 1. Must
-                      be 1 for liveness. Minimum value is 1.
+                    description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                   timeoutSeconds:
                     type: integer
                     minimum: 1
-                    description: The timeout for each attempted health check. Default
-                      to 5 seconds. Minimum value is 1.
+                    description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                 description: Pod liveness checking.
               readinessProbe:
                 type: object
@@ -302,30 +249,23 @@ spec:
                   failureThreshold:
                     type: integer
                     minimum: 1
-                    description: Minimum consecutive failures for the probe to be
-                      considered failed after having succeeded. Defaults to 3. Minimum
-                      value is 1.
+                    description: Minimum consecutive failures for the probe to be considered failed after having succeeded. Defaults to 3. Minimum value is 1.
                   initialDelaySeconds:
                     type: integer
                     minimum: 0
-                    description: The initial delay before first the health is first
-                      checked. Default to 15 seconds. Minimum value is 0.
+                    description: The initial delay before first the health is first checked. Default to 15 seconds. Minimum value is 0.
                   periodSeconds:
                     type: integer
                     minimum: 1
-                    description: How often (in seconds) to perform the probe. Default
-                      to 10 seconds. Minimum value is 1.
+                    description: How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
                   successThreshold:
                     type: integer
                     minimum: 1
-                    description: Minimum consecutive successes for the probe to be
-                      considered successful after having failed. Defaults to 1. Must
-                      be 1 for liveness. Minimum value is 1.
+                    description: Minimum consecutive successes for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness. Minimum value is 1.
                   timeoutSeconds:
                     type: integer
                     minimum: 1
-                    description: The timeout for each attempted health check. Default
-                      to 5 seconds. Minimum value is 1.
+                    description: The timeout for each attempted health check. Default to 5 seconds. Minimum value is 1.
                 description: Pod readiness checking.
               jvmOptions:
                 type: object
@@ -336,16 +276,15 @@ spec:
                     description: A map of -XX options to the JVM.
                   "-Xms":
                     type: string
-                    pattern: ^[0-9]+[mMgG]?$
+                    pattern: "^[0-9]+[mMgG]?$"
                     description: -Xms option to to the JVM.
                   "-Xmx":
                     type: string
-                    pattern: ^[0-9]+[mMgG]?$
+                    pattern: "^[0-9]+[mMgG]?$"
                     description: -Xmx option to to the JVM.
                   gcLoggingEnabled:
                     type: boolean
-                    description: Specifies whether the Garbage Collection logging
-                      is enabled. The default is false.
+                    description: Specifies whether the Garbage Collection logging is enabled. The default is false.
                   javaSystemProperties:
                     type: array
                     items:
@@ -357,8 +296,7 @@ spec:
                         value:
                           type: string
                           description: The system property value.
-                    description: A map of additional system properties which will
-                      be passed using the `-D` option to the JVM.
+                    description: A map of additional system properties which will be passed using the `-D` option to the JVM.
                 description: JVM Options for pods.
               jmxOptions:
                 type: object
@@ -370,13 +308,10 @@ spec:
                         type: string
                         enum:
                         - password
-                        description: Authentication type. Currently the only supported
-                          types are `password`.`password` type creates a username
-                          and protected port with no TLS.
+                        description: Authentication type. Currently the only supported types are `password`.`password` type creates a username and protected port with no TLS.
                     required:
                     - type
-                    description: Authentication configuration for connecting to the
-                      JMX port.
+                    description: Authentication configuration for connecting to the JMX port.
                 description: JMX Options.
               logging:
                 type: object
@@ -390,7 +325,7 @@ spec:
                     enum:
                     - inline
                     - external
-                    description: Logging type, must be either 'inline' or 'external'.
+                    description: "Logging type, must be either 'inline' or 'external'."
                   valueFrom:
                     type: object
                     properties:
@@ -403,10 +338,8 @@ spec:
                             type: string
                           optional:
                             type: boolean
-                        description: Reference to the key in the ConfigMap containing
-                          the configuration.
-                    description: '`ConfigMap` entry where the logging configuration
-                      is stored. '
+                        description: Reference to the key in the ConfigMap containing the configuration.
+                    description: '`ConfigMap` entry where the logging configuration is stored. '
                 required:
                 - type
                 description: Logging configuration for Kafka Connect.
@@ -417,8 +350,7 @@ spec:
                     type: string
                     enum:
                     - jaeger
-                    description: Type of the tracing used. Currently the only supported
-                      type is `jaeger` for Jaeger tracing.
+                    description: Type of the tracing used. Currently the only supported type is `jaeger` for Jaeger tracing.
                 required:
                 - type
                 description: The configuration of tracing in Kafka Connect.
@@ -434,24 +366,18 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                       deploymentStrategy:
                         type: string
                         enum:
                         - RollingUpdate
                         - Recreate
-                        description: DeploymentStrategy which will be used for this
-                          Deployment. Valid values are `RollingUpdate` and `Recreate`.
-                          Defaults to `RollingUpdate`.
+                        description: DeploymentStrategy which will be used for this Deployment. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
                     description: Template for Kafka Connect `Deployment`.
                   pod:
                     type: object
@@ -462,15 +388,11 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                       imagePullSecrets:
                         type: array
@@ -479,12 +401,7 @@ spec:
                           properties:
                             name:
                               type: string
-                        description: List of references to secrets in the same namespace
-                          to use for pulling any of the images used by this Pod. When
-                          the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in
-                          Cluster Operator and the `imagePullSecrets` option are specified,
-                          only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS`
-                          variable is ignored.
+                        description: "List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Operator and the `imagePullSecrets` option are specified, only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is ignored."
                       securityContext:
                         type: object
                         properties:
@@ -540,21 +457,11 @@ spec:
                                 type: boolean
                               runAsUserName:
                                 type: string
-                        description: Configures pod-level security attributes and
-                          common container settings.
+                        description: Configures pod-level security attributes and common container settings.
                       terminationGracePeriodSeconds:
                         type: integer
                         minimum: 0
-                        description: The grace period is the duration in seconds after
-                          the processes running in the pod are sent a termination
-                          signal, and the time when the processes are forcibly halted
-                          with a kill signal. Set this value to longer than the expected
-                          cleanup time for your process. Value must be a non-negative
-                          integer. A zero value indicates delete immediately. You
-                          might need to increase the grace period for very large Kafka
-                          clusters, so that the Kafka brokers have enough time to
-                          transfer their work to another broker before they are terminated.
-                          Defaults to 30 seconds.
+                        description: "The grace period is the duration in seconds after the processes running in the pod are sent a termination signal, and the time when the processes are forcibly halted with a kill signal. Set this value to longer than the expected cleanup time for your process. Value must be a non-negative integer. A zero value indicates delete immediately. You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. Defaults to 30 seconds."
                       affinity:
                         type: object
                         properties:
@@ -862,13 +769,10 @@ spec:
                         description: The pod's tolerations.
                       priorityClassName:
                         type: string
-                        description: The name of the priority class used to assign
-                          priority to the pods. For more information about priority
-                          classes, see {K8sPriorityClass}.
+                        description: "The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}."
                       schedulerName:
                         type: string
-                        description: The name of the scheduler used to dispatch this
-                          `Pod`. If not specified, the default scheduler will be used.
+                        description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
                       hostAliases:
                         type: array
                         items:
@@ -880,19 +784,14 @@ spec:
                                 type: string
                             ip:
                               type: string
-                        description: The pod's HostAliases. HostAliases is an optional
-                          list of hosts and IPs that will be injected into the Pod's
-                          hosts file if specified.
+                        description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
                       tmpDirSizeLimit:
                         type: string
-                        pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
-                        description: Defines the total amount (for example `1Gi`)
-                          of local storage required for temporary EmptyDir volume
-                          (`/tmp`). Default value is `5Mi`.
+                        pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                        description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
                       enableServiceLinks:
                         type: boolean
-                        description: Indicates whether information about services
-                          should be injected into Pod's environment variables.
+                        description: Indicates whether information about services should be injected into Pod's environment variables.
                       topologySpreadConstraints:
                         type: array
                         items:
@@ -934,15 +833,11 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                       ipFamilyPolicy:
                         type: string
@@ -950,15 +845,7 @@ spec:
                         - SingleStack
                         - PreferDualStack
                         - RequireDualStack
-                        description: Specifies the IP Family Policy used by the service.
-                          Available options are `SingleStack`, `PreferDualStack` and
-                          `RequireDualStack`. `SingleStack` is for a single IP family.
-                          `PreferDualStack` is for two IP families on dual-stack configured
-                          clusters or a single IP family on single-stack clusters.
-                          `RequireDualStack` fails unless there are two IP families
-                          on dual-stack configured clusters. If unspecified, Kubernetes
-                          will choose the default value based on the service type.
-                          Available on Kubernetes 1.20 and newer.
+                        description: "Specifies the IP Family Policy used by the service. Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`. `SingleStack` is for a single IP family. `PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. `RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. If unspecified, Kubernetes will choose the default value based on the service type. Available on Kubernetes 1.20 and newer."
                       ipFamilies:
                         type: array
                         items:
@@ -966,10 +853,7 @@ spec:
                           enum:
                           - IPv4
                           - IPv6
-                        description: Specifies the IP Families used by the service.
-                          Available options are `IPv4` and `IPv6. If unspecified,
-                          Kubernetes will choose the default value based on the `ipFamilyPolicy`
-                          setting. Available on Kubernetes 1.20 and newer.
+                        description: "Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. Available on Kubernetes 1.20 and newer."
                     description: Template for Kafka Connect API `Service`.
                   connectContainer:
                     type: object
@@ -985,8 +869,7 @@ spec:
                             value:
                               type: string
                               description: The environment variable value.
-                        description: Environment variables which should be applied
-                          to the container.
+                        description: Environment variables which should be applied to the container.
                       securityContext:
                         type: object
                         properties:
@@ -1060,8 +943,7 @@ spec:
                             value:
                               type: string
                               description: The environment variable value.
-                        description: Environment variables which should be applied
-                          to the container.
+                        description: Environment variables which should be applied to the container.
                       securityContext:
                         type: object
                         properties:
@@ -1130,25 +1012,16 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
-                        description: Metadata to apply to the `PodDisruptionBudgetTemplate`
-                          resource.
+                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                        description: Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
                       maxUnavailable:
                         type: integer
                         minimum: 0
-                        description: Maximum number of unavailable pods to allow automatic
-                          Pod eviction. A Pod eviction is allowed when the `maxUnavailable`
-                          number of pods or fewer are unavailable after the eviction.
-                          Setting this value to 0 prevents all voluntary evictions,
-                          so the pods must be evicted manually. Defaults to 1.
+                        description: "Maximum number of unavailable pods to allow automatic Pod eviction. A Pod eviction is allowed when the `maxUnavailable` number of pods or fewer are unavailable after the eviction. Setting this value to 0 prevents all voluntary evictions, so the pods must be evicted manually. Defaults to 1."
                     description: Template for Kafka Connect `PodDisruptionBudget`.
                   serviceAccount:
                     type: object
@@ -1159,15 +1032,11 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                     description: Template for the Kafka Connect service account.
                   clusterRoleBinding:
@@ -1179,15 +1048,11 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                     description: Template for the Kafka Connect ClusterRoleBinding.
                   buildPod:
@@ -1199,15 +1064,11 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                       imagePullSecrets:
                         type: array
@@ -1216,12 +1077,7 @@ spec:
                           properties:
                             name:
                               type: string
-                        description: List of references to secrets in the same namespace
-                          to use for pulling any of the images used by this Pod. When
-                          the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in
-                          Cluster Operator and the `imagePullSecrets` option are specified,
-                          only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS`
-                          variable is ignored.
+                        description: "List of references to secrets in the same namespace to use for pulling any of the images used by this Pod. When the `STRIMZI_IMAGE_PULL_SECRETS` environment variable in Cluster Operator and the `imagePullSecrets` option are specified, only the `imagePullSecrets` variable is used and the `STRIMZI_IMAGE_PULL_SECRETS` variable is ignored."
                       securityContext:
                         type: object
                         properties:
@@ -1277,21 +1133,11 @@ spec:
                                 type: boolean
                               runAsUserName:
                                 type: string
-                        description: Configures pod-level security attributes and
-                          common container settings.
+                        description: Configures pod-level security attributes and common container settings.
                       terminationGracePeriodSeconds:
                         type: integer
                         minimum: 0
-                        description: The grace period is the duration in seconds after
-                          the processes running in the pod are sent a termination
-                          signal, and the time when the processes are forcibly halted
-                          with a kill signal. Set this value to longer than the expected
-                          cleanup time for your process. Value must be a non-negative
-                          integer. A zero value indicates delete immediately. You
-                          might need to increase the grace period for very large Kafka
-                          clusters, so that the Kafka brokers have enough time to
-                          transfer their work to another broker before they are terminated.
-                          Defaults to 30 seconds.
+                        description: "The grace period is the duration in seconds after the processes running in the pod are sent a termination signal, and the time when the processes are forcibly halted with a kill signal. Set this value to longer than the expected cleanup time for your process. Value must be a non-negative integer. A zero value indicates delete immediately. You might need to increase the grace period for very large Kafka clusters, so that the Kafka brokers have enough time to transfer their work to another broker before they are terminated. Defaults to 30 seconds."
                       affinity:
                         type: object
                         properties:
@@ -1599,13 +1445,10 @@ spec:
                         description: The pod's tolerations.
                       priorityClassName:
                         type: string
-                        description: The name of the priority class used to assign
-                          priority to the pods. For more information about priority
-                          classes, see {K8sPriorityClass}.
+                        description: "The name of the priority class used to assign priority to the pods. For more information about priority classes, see {K8sPriorityClass}."
                       schedulerName:
                         type: string
-                        description: The name of the scheduler used to dispatch this
-                          `Pod`. If not specified, the default scheduler will be used.
+                        description: "The name of the scheduler used to dispatch this `Pod`. If not specified, the default scheduler will be used."
                       hostAliases:
                         type: array
                         items:
@@ -1617,19 +1460,14 @@ spec:
                                 type: string
                             ip:
                               type: string
-                        description: The pod's HostAliases. HostAliases is an optional
-                          list of hosts and IPs that will be injected into the Pod's
-                          hosts file if specified.
+                        description: The pod's HostAliases. HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.
                       tmpDirSizeLimit:
                         type: string
-                        pattern: ^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$
-                        description: Defines the total amount (for example `1Gi`)
-                          of local storage required for temporary EmptyDir volume
-                          (`/tmp`). Default value is `5Mi`.
+                        pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
+                        description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
                       enableServiceLinks:
                         type: boolean
-                        description: Indicates whether information about services
-                          should be injected into Pod's environment variables.
+                        description: Indicates whether information about services should be injected into Pod's environment variables.
                       topologySpreadConstraints:
                         type: array
                         items:
@@ -1661,8 +1499,7 @@ spec:
                             whenUnsatisfiable:
                               type: string
                         description: The pod's topology spread constraints.
-                    description: Template for Kafka Connect Build `Pods`. The build
-                      pod is used only on Kubernetes.
+                    description: Template for Kafka Connect Build `Pods`. The build pod is used only on Kubernetes.
                   buildContainer:
                     type: object
                     properties:
@@ -1677,8 +1514,7 @@ spec:
                             value:
                               type: string
                               description: The environment variable value.
-                        description: Environment variables which should be applied
-                          to the container.
+                        description: Environment variables which should be applied to the container.
                       securityContext:
                         type: object
                         properties:
@@ -1737,8 +1573,7 @@ spec:
                               runAsUserName:
                                 type: string
                         description: Security context for the container.
-                    description: Template for the Kafka Connect Build container. The
-                      build container is used only on Kubernetes.
+                    description: Template for the Kafka Connect Build container. The build container is used only on Kubernetes.
                   buildConfig:
                     type: object
                     properties:
@@ -1748,24 +1583,16 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
-                        description: Metadata to apply to the `PodDisruptionBudgetTemplate`
-                          resource.
+                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                        description: Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
                       pullSecret:
                         type: string
-                        description: Container Registry Secret with the credentials
-                          for pulling the base image.
-                    description: Template for the Kafka Connect BuildConfig used to
-                      build new container images. The BuildConfig is used only on
-                      OpenShift.
+                        description: Container Registry Secret with the credentials for pulling the base image.
+                    description: Template for the Kafka Connect BuildConfig used to build new container images. The BuildConfig is used only on OpenShift.
                   buildServiceAccount:
                     type: object
                     properties:
@@ -1775,15 +1602,11 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
                     description: Template for the Kafka Connect Build service account.
                   jmxSecret:
@@ -1795,21 +1618,14 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Labels added to the resource template. Can
-                              be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: Annotations added to the resource template.
-                              Can be applied to different resources such as `StatefulSets`,
-                              `Deployments`, `Pods`, and `Services`.
+                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
                         description: Metadata applied to the resource.
-                    description: Template for Secret of the Kafka Connect Cluster
-                      JMX authentication.
-                description: Template for Kafka Connect and Kafka Mirror Maker 2 resources.
-                  The template allows users to specify how the `Deployment`, `Pods`
-                  and `Service` are generated.
+                    description: Template for Secret of the Kafka Connect Cluster JMX authentication.
+                description: "Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated."
               externalConfiguration:
                 type: object
                 properties:
@@ -1820,9 +1636,7 @@ spec:
                       properties:
                         name:
                           type: string
-                          description: Name of the environment variable which will
-                            be passed to the Kafka Connect pods. The name of the environment
-                            variable cannot start with `KAFKA_` or `STRIMZI_`.
+                          description: Name of the environment variable which will be passed to the Kafka Connect pods. The name of the environment variable cannot start with `KAFKA_` or `STRIMZI_`.
                         valueFrom:
                           type: object
                           properties:
@@ -1846,15 +1660,11 @@ spec:
                                 optional:
                                   type: boolean
                               description: Reference to a key in a Secret.
-                          description: Value of the environment variable which will
-                            be passed to the Kafka Connect pods. It can be passed
-                            either as a reference to Secret or ConfigMap field. The
-                            field has to specify exactly one Secret or ConfigMap.
+                          description: Value of the environment variable which will be passed to the Kafka Connect pods. It can be passed either as a reference to Secret or ConfigMap field. The field has to specify exactly one Secret or ConfigMap.
                       required:
                       - name
                       - valueFrom
-                    description: Makes data from a Secret or ConfigMap available in
-                      the Kafka Connect pods as environment variables.
+                    description: Makes data from a Secret or ConfigMap available in the Kafka Connect pods as environment variables.
                   volumes:
                     type: array
                     items:
@@ -1880,12 +1690,10 @@ spec:
                               type: string
                             optional:
                               type: boolean
-                          description: Reference to a key in a ConfigMap. Exactly
-                            one Secret or ConfigMap has to be specified.
+                          description: Reference to a key in a ConfigMap. Exactly one Secret or ConfigMap has to be specified.
                         name:
                           type: string
-                          description: Name of the volume which will be added to the
-                            Kafka Connect pods.
+                          description: Name of the volume which will be added to the Kafka Connect pods.
                         secret:
                           type: object
                           properties:
@@ -1906,14 +1714,11 @@ spec:
                               type: boolean
                             secretName:
                               type: string
-                          description: Reference to a key in a Secret. Exactly one
-                            Secret or ConfigMap has to be specified.
+                          description: Reference to a key in a Secret. Exactly one Secret or ConfigMap has to be specified.
                       required:
                       - name
-                    description: Makes data from a Secret or ConfigMap available in
-                      the Kafka Connect pods as volumes.
-                description: Pass data from Secrets or ConfigMaps to the Kafka Connect
-                  pods and use them to configure connectors.
+                    description: Makes data from a Secret or ConfigMap available in the Kafka Connect pods as volumes.
+                description: Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
               build:
                 type: object
                 properties:
@@ -1924,38 +1729,23 @@ spec:
                         type: array
                         items:
                           type: string
-                        description: 'Configures additional options which will be
-                          passed to the Kaniko executor when building the new Connect
-                          image. Allowed options are: --customPlatform, --insecure,
-                          --insecure-pull, --insecure-registry, --log-format, --log-timestamp,
-                          --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify,
-                          --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity,
-                          --snapshotMode, --use-new-run. These options will be used
-                          only on Kubernetes where the Kaniko executor is used. They
-                          will be ignored on OpenShift. The options are described
-                          in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko
-                          GitHub repository^]. Changing this field does not trigger
-                          new build of the Kafka Connect image.'
+                        description: "Configures additional options which will be passed to the Kaniko executor when building the new Connect image. Allowed options are: --customPlatform, --insecure, --insecure-pull, --insecure-registry, --log-format, --log-timestamp, --registry-mirror, --reproducible, --single-snapshot, --skip-tls-verify, --skip-tls-verify-pull, --skip-tls-verify-registry, --verbosity, --snapshotMode, --use-new-run. These options will be used only on Kubernetes where the Kaniko executor is used. They will be ignored on OpenShift. The options are described in the link:https://github.com/GoogleContainerTools/kaniko[Kaniko GitHub repository^]. Changing this field does not trigger new build of the Kafka Connect image."
                       image:
                         type: string
                         description: The name of the image which will be built. Required.
                       pushSecret:
                         type: string
-                        description: Container Registry Secret with the credentials
-                          for pushing the newly built image.
+                        description: Container Registry Secret with the credentials for pushing the newly built image.
                       type:
                         type: string
                         enum:
                         - docker
                         - imagestream
-                        description: Output type. Must be either `docker` for pushing
-                          the newly build image to Docker compatible registry or `imagestream`
-                          for pushing the image to OpenShift ImageStream. Required.
+                        description: Output type. Must be either `docker` for pushing the newly build image to Docker compatible registry or `imagestream` for pushing the image to OpenShift ImageStream. Required.
                     required:
                     - image
                     - type
-                    description: Configures where should the newly built image be
-                      stored. Required.
+                    description: Configures where should the newly built image be stored. Required.
                   resources:
                     type: object
                     properties:
@@ -1973,12 +1763,8 @@ spec:
                       properties:
                         name:
                           type: string
-                          pattern: ^[a-z0-9][-_a-z0-9]*[a-z0-9]$
-                          description: 'The unique name of the connector plugin. Will
-                            be used to generate the path where the connector artifacts
-                            will be stored. The name has to be unique within the KafkaConnect
-                            resource. The name has to follow the following pattern:
-                            `^[a-z][-_a-z0-9]*[a-z]$`. Required.'
+                          pattern: "^[a-z0-9][-_a-z0-9]*[a-z0-9]$"
+                          description: "The unique name of the connector plugin. Will be used to generate the path where the connector artifacts will be stored. The name has to be unique within the KafkaConnect resource. The name has to follow the following pattern: `^[a-z][-_a-z0-9]*[a-z]$`. Required."
                         artifacts:
                           type: array
                           items:
@@ -1986,35 +1772,22 @@ spec:
                             properties:
                               artifact:
                                 type: string
-                                description: Maven artifact id. Applicable to the
-                                  `maven` artifact type only.
+                                description: Maven artifact id. Applicable to the `maven` artifact type only.
                               fileName:
                                 type: string
-                                description: Name under which the artifact will be
-                                  stored.
+                                description: Name under which the artifact will be stored.
                               group:
                                 type: string
-                                description: Maven group id. Applicable to the `maven`
-                                  artifact type only.
+                                description: Maven group id. Applicable to the `maven` artifact type only.
                               insecure:
                                 type: boolean
-                                description: By default, connections using TLS are
-                                  verified to check they are secure. The server certificate
-                                  used must be valid, trusted, and contain the server
-                                  name. By setting this option to `true`, all TLS
-                                  verification is disabled and the artifact will be
-                                  downloaded, even when the server is considered insecure.
+                                description: "By default, connections using TLS are verified to check they are secure. The server certificate used must be valid, trusted, and contain the server name. By setting this option to `true`, all TLS verification is disabled and the artifact will be downloaded, even when the server is considered insecure."
                               repository:
                                 type: string
-                                description: Maven repository to download the artifact
-                                  from. Applicable to the `maven` artifact type only.
+                                description: Maven repository to download the artifact from. Applicable to the `maven` artifact type only.
                               sha512sum:
                                 type: string
-                                description: 'SHA512 checksum of the artifact. Optional.
-                                  If specified, the checksum will be verified while
-                                  building the new container. If not specified, the
-                                  downloaded artifact will not be verified. Not applicable
-                                  to the `maven` artifact type. '
+                                description: "SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable to the `maven` artifact type. "
                               type:
                                 type: string
                                 enum:
@@ -2023,42 +1796,28 @@ spec:
                                 - zip
                                 - maven
                                 - other
-                                description: Artifact type. Currently, the supported
-                                  artifact types are `tgz`, `jar`, `zip`, `other`
-                                  and `maven`.
+                                description: "Artifact type. Currently, the supported artifact types are `tgz`, `jar`, `zip`, `other` and `maven`."
                               url:
                                 type: string
-                                pattern: ^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]$
-                                description: URL of the artifact which will be downloaded.
-                                  Strimzi does not do any security scanning of the
-                                  downloaded artifacts. For security reasons, you
-                                  should first verify the artifacts manually and configure
-                                  the checksum verification to make sure the same
-                                  artifact is used in the automated build. Required
-                                  for `jar`, `zip`, `tgz` and `other` artifacts. Not
-                                  applicable to the `maven` artifact type.
+                                pattern: "^(https?|ftp)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]$"
+                                description: "URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required for `jar`, `zip`, `tgz` and `other` artifacts. Not applicable to the `maven` artifact type."
                               version:
                                 type: string
-                                description: Maven version number. Applicable to the
-                                  `maven` artifact type only.
+                                description: Maven version number. Applicable to the `maven` artifact type only.
                             required:
                             - type
-                          description: List of artifacts which belong to this connector
-                            plugin. Required.
+                          description: List of artifacts which belong to this connector plugin. Required.
                       required:
                       - name
                       - artifacts
-                    description: List of connector plugins which should be added to
-                      the Kafka Connect. Required.
+                    description: List of connector plugins which should be added to the Kafka Connect. Required.
                 required:
                 - output
                 - plugins
-                description: Configures how the Connect container image should be
-                  built. Optional.
+                description: Configures how the Connect container image should be built. Optional.
               clientRackInitImage:
                 type: string
-                description: The image of the init container used for initializing
-                  the `client.rack`.
+                description: The image of the init container used for initializing the `client.rack`.
               metricsConfig:
                 type: object
                 properties:
@@ -2066,8 +1825,7 @@ spec:
                     type: string
                     enum:
                     - jmxPrometheusExporter
-                    description: Metrics type. Only 'jmxPrometheusExporter' supported
-                      currently.
+                    description: Metrics type. Only 'jmxPrometheusExporter' supported currently.
                   valueFrom:
                     type: object
                     properties:
@@ -2080,11 +1838,8 @@ spec:
                             type: string
                           optional:
                             type: boolean
-                        description: Reference to the key in the ConfigMap containing
-                          the configuration.
-                    description: ConfigMap entry where the Prometheus JMX Exporter
-                      configuration is stored. For details of the structure of this
-                      configuration, see the {JMXExporter}.
+                        description: Reference to the key in the ConfigMap containing the configuration.
+                    description: "ConfigMap entry where the Prometheus JMX Exporter configuration is stored. For details of the structure of this configuration, see the {JMXExporter}."
                 required:
                 - type
                 - valueFrom
@@ -2095,13 +1850,10 @@ spec:
                   topologyKey:
                     type: string
                     example: topology.kubernetes.io/zone
-                    description: A key that matches labels assigned to the Kubernetes
-                      cluster nodes. The value of the label is used to set the broker's
-                      `broker.rack` config and `client.rack` in Kafka Connect.
+                    description: A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config and `client.rack` in Kafka Connect.
                 required:
                 - topologyKey
-                description: Configuration of the node label which will be used as
-                  the client.rack consumer configuration.
+                description: Configuration of the node label which will be used as the client.rack consumer configuration.
             required:
             - bootstrapServers
             description: The specification of the Kafka Connect cluster.
@@ -2115,34 +1867,26 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: The unique identifier of a condition, used to distinguish
-                        between other conditions in the resource.
+                      description: "The unique identifier of a condition, used to distinguish between other conditions in the resource."
                     status:
                       type: string
-                      description: The status of the condition, either True, False
-                        or Unknown.
+                      description: "The status of the condition, either True, False or Unknown."
                     lastTransitionTime:
                       type: string
-                      description: Last time the condition of a type changed from
-                        one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
-                        in the UTC time zone.
+                      description: "Last time the condition of a type changed from one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone."
                     reason:
                       type: string
-                      description: The reason for the condition's last transition
-                        (a single word in CamelCase).
+                      description: The reason for the condition's last transition (a single word in CamelCase).
                     message:
                       type: string
-                      description: Human-readable message indicating details about
-                        the condition's last transition.
+                      description: Human-readable message indicating details about the condition's last transition.
                 description: List of status conditions.
               observedGeneration:
                 type: integer
-                description: The generation of the CRD that was last reconciled by
-                  the operator.
+                description: The generation of the CRD that was last reconciled by the operator.
               url:
                 type: string
-                description: The URL of the REST API endpoint for managing and monitoring
-                  Kafka Connect connectors.
+                description: The URL of the REST API endpoint for managing and monitoring Kafka Connect connectors.
               connectorPlugins:
                 type: array
                 items:
@@ -2150,21 +1894,18 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: The type of the connector plugin. The available
-                        types are `sink` and `source`.
+                      description: The type of the connector plugin. The available types are `sink` and `source`.
                     version:
                       type: string
                       description: The version of the connector plugin.
                     class:
                       type: string
                       description: The class of the connector plugin.
-                description: The list of connector plugins available in this Kafka
-                  Connect deployment.
+                description: The list of connector plugins available in this Kafka Connect deployment.
               labelSelector:
                 type: string
                 description: Label selector for pods providing this resource.
               replicas:
                 type: integer
-                description: The current number of pods being used to provide this
-                  resource.
+                description: The current number of pods being used to provide this resource.
             description: The status of the Kafka Connect cluster.
