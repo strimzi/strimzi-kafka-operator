@@ -100,51 +100,51 @@ public class TracingST extends AbstractST {
     @Tag(ACCEPTANCE)
     void testProducerConsumerStreamsService(ExtensionContext extensionContext) {
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
-//        assumeFalse(Environment.isNamespaceRbacScope());
-//
-//        resourceManager.createResource(extensionContext,
-//            KafkaTemplates.kafkaEphemeral(
-//                storageMap.get(extensionContext).getClusterName(), 3, 1).build());
-//
-//        resourceManager.createResource(extensionContext,
-//            KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
-//                storageMap.get(extensionContext).getTopicName())
-//            .editSpec()
-//                .withReplicas(3)
-//                .withPartitions(12)
-//            .endSpec()
-//            .build());
-//
-//        resourceManager.createResource(extensionContext,
-//            KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
-//                storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString())
-//            .editSpec()
-//                .withReplicas(3)
-//                .withPartitions(12)
-//            .endSpec()
-//            .build());
-//
-//        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).producerWithTracing());
-//
-//        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
-//            JAEGER_PRODUCER_SERVICE,
-//            storageMap.get(extensionContext).retrieveFromTestStorage(Constants.KAFKA_CLIENTS_POD_KEY).toString(),
-//            JAEGER_QUERY_SERVICE);
-//
-//        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
-//
-//        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
-//            JAEGER_CONSUMER_SERVICE,
-//            storageMap.get(extensionContext).retrieveFromTestStorage(Constants.KAFKA_CLIENTS_POD_KEY).toString(),
-//            JAEGER_QUERY_SERVICE);
-//
-//        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing());
+        assumeFalse(Environment.isNamespaceRbacScope());
 
-//        TODO: Disabled because of issue with Streams API and tracing. Uncomment this after fix. https://github.com/strimzi/strimzi-kafka-operator/issues/5680
-//        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
-//            JAEGER_KAFKA_STREAMS_SERVICE,
-//            storageMap.get(extensionContext).retrieveFromTestStorage(Constants.KAFKA_CLIENTS_POD_KEY).toString(),
-//            JAEGER_QUERY_SERVICE);
+        resourceManager.createResource(extensionContext,
+            KafkaTemplates.kafkaEphemeral(
+                storageMap.get(extensionContext).getClusterName(), 3, 1).build());
+
+        resourceManager.createResource(extensionContext,
+            KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
+                storageMap.get(extensionContext).getTopicName())
+            .editSpec()
+                .withReplicas(3)
+                .withPartitions(12)
+            .endSpec()
+            .build());
+
+        resourceManager.createResource(extensionContext,
+            KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
+                storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString())
+            .editSpec()
+                .withReplicas(3)
+                .withPartitions(12)
+            .endSpec()
+            .build());
+
+        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).producerWithTracing());
+
+        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
+            JAEGER_PRODUCER_SERVICE,
+            storageMap.get(extensionContext).retrieveFromTestStorage(Constants.KAFKA_CLIENTS_POD_KEY).toString(),
+            JAEGER_QUERY_SERVICE);
+
+        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
+
+        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
+            JAEGER_CONSUMER_SERVICE,
+            storageMap.get(extensionContext).retrieveFromTestStorage(Constants.KAFKA_CLIENTS_POD_KEY).toString(),
+            JAEGER_QUERY_SERVICE);
+
+        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing());
+
+        TODO: Disabled because of issue with Streams API and tracing. Uncomment this after fix. https://github.com/strimzi/strimzi-kafka-operator/issues/5680
+        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
+            JAEGER_KAFKA_STREAMS_SERVICE,
+            storageMap.get(extensionContext).retrieveFromTestStorage(Constants.KAFKA_CLIENTS_POD_KEY).toString(),
+            JAEGER_QUERY_SERVICE);
     }
 
     @ParallelNamespaceTest
