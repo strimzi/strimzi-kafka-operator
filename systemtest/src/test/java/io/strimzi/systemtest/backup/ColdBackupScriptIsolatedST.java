@@ -51,7 +51,7 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
         String clusterName = mapWithClusterNames.get(context.getDisplayName());
         String groupId = "my-group", newGroupId = "new-group";
         int firstBatchSize = 100, secondBatchSize = 10;
-        String backupFilePath = USER_PATH + "/target/" + clusterName + ".zip";
+        String backupFilePath = USER_PATH + "/target/" + clusterName + ".tgz";
 
         resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(clusterName, 1, 1)
                 .editMetadata()

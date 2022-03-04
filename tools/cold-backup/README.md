@@ -49,7 +49,7 @@ kubectl run producer-perf -it --image="$CLIENT_IMAGE" --rm="true" --restart="Nev
     --throughput -1 --producer-props acks=1 bootstrap.servers="my-cluster-kafka-bootstrap:9092"
 
 # run backup procedure
-./tools/cold-backup/run.sh backup -n myproject -c my-cluster -t /tmp/my-cluster.zip
+./tools/cold-backup/run.sh backup -n myproject -c my-cluster -t /tmp/my-cluster.tgz
 
 # recreate the namespace and deploy the operator
 kubectl delete ns myproject
@@ -57,7 +57,7 @@ kubectl create ns myproject
 kubectl create -f ./install/cluster-operator
 
 # run restore procedure and wait for provisioning
-./tools/cold-backup/run.sh restore -n myproject -c my-cluster -s /tmp/my-cluster.zip
+./tools/cold-backup/run.sh restore -n myproject -c my-cluster -s /tmp/my-cluster.tgz
 
 # check consumer group offsets (expected: current-offset match)
 kubectl run consumer-groups -it --image="$CLIENT_IMAGE" --rm="true" --restart="Never" -- \

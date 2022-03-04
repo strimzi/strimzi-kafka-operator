@@ -7,7 +7,7 @@ if [[ $(uname -s) == "Darwin" ]]; then
 fi
 BASE="" && pushd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" >/dev/null \
   && { BASE=$PWD; popd >/dev/null; } && readonly BASE
-trap cleanup EXIT
+trap 'failure "$LINENO" "$BASH_COMMAND"' ERR
 
 readonly RSYNC_POD_NAME="cold-backup"
 ZK_REPLICAS=0
@@ -25,46 +25,41 @@ NAMESPACE=""
 CLUSTER_NAME=""
 TARGET_FILE=""
 SOURCE_FILE=""
-BACKUP_PATH=""
-BACKUP_NAME=""
+FILE_PATH=""
+FILE_NAME=""
 CUSTOM_CM=""
 CUSTOM_SE=""
 
 start_cluster() {
   if [[ -n $NAMESPACE && -n $CLUSTER_NAME ]]; then
     echo "Starting cluster $CLUSTER_NAME"
-    if [[ $COMMAND == "backup" && -n $ZK_REPLICAS && -n $KAFKA_REPLICAS ]]; then
-      local zoo_ss && zoo_ss="$(kubectl -n "$NAMESPACE" get sts "$CLUSTER_NAME"-zookeeper -o name --ignore-not-found)"
-      if [[ -n $zoo_ss ]]; then
-        kubectl -n "$NAMESPACE" scale "$zoo_ss" --replicas "$ZK_REPLICAS"
-        wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-zookeeper"
-      fi
-      local kafka_ss && kafka_ss="$(kubectl -n "$NAMESPACE" get sts "$CLUSTER_NAME"-kafka -o name --ignore-not-found)"
-      if [[ -n $kafka_ss ]]; then
-        kubectl -n "$NAMESPACE" scale "$kafka_ss" --replicas "$KAFKA_REPLICAS"
-        wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka"
-      fi
-      local eo_deploy && eo_deploy="$(kubectl -n "$NAMESPACE" get deploy "$CLUSTER_NAME"-entity-operator -o name --ignore-not-found)"
-      if [[ -n $eo_deploy ]]; then
-        kubectl -n "$NAMESPACE" scale "$eo_deploy" --replicas 1
-        wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-entity-operator"
-      fi
-      local ke_deploy && ke_deploy="$(kubectl -n "$NAMESPACE" get deploy "$CLUSTER_NAME"-kafka-exporter -o name --ignore-not-found)"
-      if [[ -n $ke_deploy ]]; then
-        kubectl -n "$NAMESPACE" scale "$ke_deploy" --replicas 1
-        wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka-exporter"
-      fi
+    CLEANUP=false
+    local zoo_ss && zoo_ss="$(kubectl -n "$NAMESPACE" get sts "$CLUSTER_NAME"-zookeeper -o name --ignore-not-found)"
+    if [[ -n $zoo_ss ]]; then
+      kubectl -n "$NAMESPACE" scale "$zoo_ss" --replicas "$ZK_REPLICAS"
+      wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-zookeeper"
     fi
-    if [[ $COMMAND == "backup" || $COMMAND == "restore" ]]; then
-      local co_deploy && co_deploy="$(kubectl -n "$NAMESPACE" get deploy strimzi-cluster-operator -o name --ignore-not-found)"
-      if [[ -n $co_deploy ]]; then
-        kubectl -n "$NAMESPACE" scale "$co_deploy" --replicas 1
-        wait_for "condition=Ready" "pod -l strimzi.io/kind=cluster-operator"
-      fi
-      if [[ $COMMAND == "restore" ]]; then
-        wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka"
-      fi
+    local kafka_ss && kafka_ss="$(kubectl -n "$NAMESPACE" get sts "$CLUSTER_NAME"-kafka -o name --ignore-not-found)"
+    if [[ -n $kafka_ss ]]; then
+      kubectl -n "$NAMESPACE" scale "$kafka_ss" --replicas "$KAFKA_REPLICAS"
+      wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka"
     fi
+    local eo_deploy && eo_deploy="$(kubectl -n "$NAMESPACE" get deploy "$CLUSTER_NAME"-entity-operator -o name --ignore-not-found)"
+    if [[ -n $eo_deploy ]]; then
+      kubectl -n "$NAMESPACE" scale "$eo_deploy" --replicas 1
+      wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-entity-operator"
+    fi
+    local ke_deploy && ke_deploy="$(kubectl -n "$NAMESPACE" get deploy "$CLUSTER_NAME"-kafka-exporter -o name --ignore-not-found)"
+    if [[ -n $ke_deploy ]]; then
+      kubectl -n "$NAMESPACE" scale "$ke_deploy" --replicas 1
+      wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka-exporter"
+    fi    
+    local co_deploy && co_deploy="$(kubectl -n "$NAMESPACE" get deploy strimzi-cluster-operator -o name --ignore-not-found)"
+    if [[ -n $co_deploy ]]; then
+      kubectl -n "$NAMESPACE" scale "$co_deploy" --replicas 1
+      wait_for "condition=Ready" "pod -l strimzi.io/kind=cluster-operator"
+    fi
+    wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka"
   fi
 }
 
@@ -79,34 +74,38 @@ stop_cluster() {
       echo "No local operator found, make sure no cluster-wide operator is watching this namespace"
       confirm
     fi
-    local eo_deploy && eo_deploy="$(kubectl -n "$NAMESPACE" get deploy "$CLUSTER_NAME"-entity-operator -o name --ignore-not-found)"
-    if [[ -n $eo_deploy ]]; then
-      kubectl -n "$NAMESPACE" scale "$eo_deploy" --replicas 0
-      wait_for "delete" "pod -l strimzi.io/name=$CLUSTER_NAME-entity-operator"
-    fi
     local ke_deploy && ke_deploy="$(kubectl -n "$NAMESPACE" get deploy "$CLUSTER_NAME"-kafka-exporter -o name --ignore-not-found)"
     if [[ -n $ke_deploy ]]; then
       kubectl -n "$NAMESPACE" scale "$ke_deploy" --replicas 0
       wait_for "delete" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka-exporter"
     fi
-    local kafka_ss && kafka_ss="$(kubectl -n "$NAMESPACE" get statefulset "$CLUSTER_NAME"-kafka -o name --ignore-not-found)"
+    local eo_deploy && eo_deploy="$(kubectl -n "$NAMESPACE" get deploy "$CLUSTER_NAME"-entity-operator -o name --ignore-not-found)"
+    if [[ -n $eo_deploy ]]; then
+      kubectl -n "$NAMESPACE" scale "$eo_deploy" --replicas 0
+      wait_for "delete" "pod -l strimzi.io/name=$CLUSTER_NAME-entity-operator"
+    fi    
+    local kafka_ss && kafka_ss="$(kubectl -n "$NAMESPACE" get sts "$CLUSTER_NAME"-kafka -o name --ignore-not-found)"
     if [[ -n $kafka_ss ]]; then
       kubectl -n "$NAMESPACE" scale "$kafka_ss" --replicas 0
       wait_for "delete" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka"
     fi
-    local zoo_ss && zoo_ss="$(kubectl -n "$NAMESPACE" get statefulset "$CLUSTER_NAME"-zookeeper -o name --ignore-not-found)"
+    local zoo_ss && zoo_ss="$(kubectl -n "$NAMESPACE" get sts "$CLUSTER_NAME"-zookeeper -o name --ignore-not-found)"
     if [[ -n $zoo_ss ]]; then
       kubectl -n "$NAMESPACE" scale "$zoo_ss" --replicas 0
       wait_for "delete" "pod -l strimzi.io/name=$CLUSTER_NAME-zookeeper"
     fi
+    kubectl delete po -l app.kubernetes.io/instance="$CLUSTER_NAME" --ignore-not-found
   fi
 }
 
-cleanup() {
+failure() {
+  local ln="$1"
+  local cmd="$2"
   if [[ -n $COMMAND && $CLEANUP == true ]]; then
     kubectl -n "$NAMESPACE" delete pod "$RSYNC_POD_NAME" 2>/dev/null ||true
     start_cluster
   fi
+  echo "$COMMAND failed at $ln: $cmd"
 }
 
 error() {
@@ -195,7 +194,7 @@ rsync() {
   fi
   echo "Rsync from $source to $target"
   local flags="--no-check-device --no-acls --no-xattrs --no-same-owner --warning=no-file-changed"
-  if [[ $source != "$BACKUP_PATH/"* ]]; then
+  if [[ $source != "$FILE_PATH/"* ]]; then
     # download from pod to local (backup)
     flags="$flags --exclude=data/version-2/{currentEpoch,acceptedEpoch}"
     local patch && patch=$(sed "s@\$name@$source@g" "$BASE/templates/patch.json")
@@ -240,12 +239,8 @@ compress() {
   if [[ -z $source_dir || -z $target_file ]]; then
     error "Missing parameters"
   fi
-  local current_dir && current_dir=$(pwd)
-  cd "$source_dir"
   echo "Compressing $source_dir to $target_file"
-  zip -FSqr "$BACKUP_NAME" .
-  mv "$BACKUP_NAME" "$BACKUP_PATH"
-  cd "$current_dir"
+  tar -czf "$target_file" -C "$source_dir" .
 }
 
 uncompress() {
@@ -256,7 +251,7 @@ uncompress() {
   fi
   echo "Uncompressing $source_file to $target_dir"
   mkdir -p "$target_dir"
-  unzip -qo "$source_file" -d "$target_dir"
+  tar -xzf "$source_file" -C "$target_dir"
   chmod -R ugo+rwx "$target_dir"
 }
 
@@ -270,7 +265,7 @@ backup() {
     error "$(dirname "$TARGET_FILE") not found"
   fi
 
-  local tmp="$BACKUP_PATH/$NAMESPACE/$CLUSTER_NAME"
+  local tmp="$FILE_PATH/$NAMESPACE/$CLUSTER_NAME"
   if [[ -n "$(ls -A $tmp 2>/dev/null ||true)" ]]; then
     CLEANUP=false
     error "Non empty directory: $tmp"
@@ -321,6 +316,8 @@ backup() {
 
   # create the archive
   compress "$tmp" "$TARGET_FILE"
+  start_cluster
+  echo "$COMMAND completed successfully"
 }
 
 restore() {
@@ -344,7 +341,7 @@ restore() {
     confirm
   fi
   
-  local tmp="$BACKUP_PATH/$NAMESPACE/$CLUSTER_NAME"
+  local tmp="$FILE_PATH/$NAMESPACE/$CLUSTER_NAME"
   uncompress "$SOURCE_FILE" "$tmp"
   # do not access external source file
   # shellcheck source=/dev/null 
@@ -365,6 +362,8 @@ restore() {
   # KafkaTopic resources must be created *before*
   # deploying the Topic Operator or it will delete them
   kubectl -n "$NAMESPACE" apply -f "$tmp"/resources
+  start_cluster
+  echo "$COMMAND completed successfully"
 }
 
 readonly USAGE="
@@ -378,8 +377,8 @@ Options:
   -y  Skip confirmation step
   -n  Cluster namespace
   -c  Cluster name
-  -t  Target file path
-  -s  Source file path
+  -t  Target file path (tgz)
+  -s  Source file path (tgz)
   -m  Custom config maps (-m cm0,cm1,cm2)
   -x  Custom secrets (-x se0,se1,se2)
 "
@@ -398,13 +397,13 @@ i=0; for param in "${PARAMS[@]}"; do
       ;;
     -t)
       TARGET_FILE=${PARAMS[i]} && readonly TARGET_FILE && export TARGET_FILE
-      BACKUP_PATH=$(dirname "$TARGET_FILE") && readonly BACKUP_PATH && export BACKUP_PATH
-      BACKUP_NAME=$(basename "$TARGET_FILE") && readonly BACKUP_NAME && export BACKUP_NAME
+      FILE_PATH=$(dirname "$TARGET_FILE") && readonly FILE_PATH && export FILE_PATH
+      FILE_NAME=$(basename "$TARGET_FILE") && readonly FILE_NAME && export FILE_NAME
       ;;
     -s)
       SOURCE_FILE=${PARAMS[i]} && readonly SOURCE_FILE && export SOURCE_FILE
-      BACKUP_PATH=$(dirname "$SOURCE_FILE") && readonly BACKUP_PATH && export BACKUP_PATH
-      BACKUP_NAME=$(basename "$SOURCE_FILE") && readonly BACKUP_NAME && export BACKUP_NAME
+      FILE_PATH=$(dirname "$SOURCE_FILE") && readonly FILE_PATH && export FILE_PATH
+      FILE_NAME=$(basename "$SOURCE_FILE") && readonly FILE_NAME && export FILE_NAME
       ;;
     -m)
       CUSTOM_CM=${PARAMS[i]} && readonly CUSTOM_CM && export CUSTOM_CM
