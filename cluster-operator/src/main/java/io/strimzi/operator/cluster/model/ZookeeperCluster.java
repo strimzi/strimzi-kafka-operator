@@ -550,7 +550,7 @@ public class ZookeeperCluster extends AbstractModel {
         return createPodSet(
             replicas,
             Collections.singletonMap(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
-            podAnnotations,
+            (brokerId) -> podAnnotations,
             podName -> getPodSetVolumes(podName, isOpenShift),
             getMergedAffinity(),
             getInitContainers(imagePullPolicy),

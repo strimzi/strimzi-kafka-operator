@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Node;
@@ -132,13 +133,13 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.function.Function;
-import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -323,7 +324,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaIngressesV1Beta1Ready())
                 .compose(state -> state.kafkaGenerateCertificates(this::dateSupplier))
                 .compose(state -> state.customListenerCertificates())
-                .compose(state -> state.kafkaAncillaryCm())
+                .compose(state -> state.kafkaConfigurationConfigMaps())
                 .compose(state -> state.kafkaBrokersSecret())
                 .compose(state -> state.kafkaJmxSecret())
                 .compose(state -> state.kafkaPodDisruptionBudget())
@@ -338,6 +339,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaHeadlessServiceEndpointReady())
                 .compose(state -> state.kafkaGetClusterId())
                 .compose(state -> state.kafkaPersistentClaimDeletion())
+                .compose(state -> state.kafkaConfigurationConfigMapsCleanup())
                 // This has to run after all possible rolling updates which might move the pods to different nodes
                 .compose(state -> state.kafkaNodePortExternalListenerStatus())
                 .compose(state -> state.kafkaCustomCertificatesToStatus())
@@ -421,15 +423,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ReconcileResult<StatefulSet> kafkaStsDiffs;
         private ReconcileResult<StrimziPodSet> kafkaPodSetDiffs;
         private final Set<String> kafkaBootstrapDnsName = new HashSet<>();
-        private final Set<String> kafkaAdvertisedHostnames = new TreeSet<>();
-        private final Set<String> kafkaAdvertisedPorts = new TreeSet<>();
+        /* test */ final Map<Integer, Map<String, String>> kafkaAdvertisedHostnames = new HashMap<>();
+        /* test */ final Map<Integer, Map<String, String>> kafkaAdvertisedPorts = new HashMap<>();
         private final Map<Integer, Set<String>> kafkaBrokerDnsNames = new HashMap<>();
         /* test */ final Map<String, Integer> kafkaBootstrapNodePorts = new HashMap<>();
 
         private String zkLoggingHash = "";
         private String kafkaLogging = "";
         private String kafkaLoggingAppendersHash = "";
-        private String kafkaBrokerConfigurationHash = "";
+        private Map<Integer, String> kafkaBrokerConfigurationHash = new HashMap<>();
+        @SuppressFBWarnings(value = "SS_SHOULD_BE_STATIC", justification = "Field cannot be static in inner class in Java 11")
+        private final int sharedConfigurationId = -1; // "Fake" broker ID used to indicate hash stored for all brokers when shared configuration is used
 
         /* test */ EntityOperator entityOperator;
         /* test */ Deployment eoDeployment = null;
@@ -780,10 +784,23 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         });
                             }
                         })
-                        .compose(replicas -> new KafkaRoller(reconciliation, vertx, podOperations, 1_000, operationTimeoutMs,
-                            () -> new BackOff(250, 2, 10), replicas, clusterCa.caCertSecret(), oldCoSecret, adminClientProvider,
-                            kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion(), true)
-                            .rollingRestart(rollPodAndLogReason))
+                        .compose(replicas ->
+                                new KafkaRoller(
+                                        reconciliation,
+                                        vertx,
+                                        podOperations,
+                                        1_000,
+                                        operationTimeoutMs,
+                                        () -> new BackOff(250, 2, 10),
+                                        replicas,
+                                        clusterCa.caCertSecret(),
+                                        oldCoSecret,
+                                        adminClientProvider,
+                                        brokerId -> null,
+                                        null,
+                                        kafkaCluster.getKafkaVersion(),
+                                        true
+                                ).rollingRestart(rollPodAndLogReason))
                         .compose(i -> {
                             if (this.clusterCa.keyReplaced()) {
                                 // EO, KE and CC need to be rolled only for new Cluster CA key.
@@ -1177,10 +1194,29 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<Void> maybeRollKafka(int replicas, Function<Pod, List<String>> podNeedsRestart, boolean allowReconfiguration) {
             return adminClientSecrets()
-                .compose(compositeFuture -> new KafkaRoller(reconciliation, vertx, podOperations, 1_000, operationTimeoutMs,
-                    () -> new BackOff(250, 2, 10), replicas, compositeFuture.resultAt(0), compositeFuture.resultAt(1), adminClientProvider,
-                        kafkaCluster.getBrokersConfiguration(), kafkaLogging, kafkaCluster.getKafkaVersion(), allowReconfiguration)
-                    .rollingRestart(podNeedsRestart));
+                .compose(compositeFuture ->
+                        new KafkaRoller(
+                                reconciliation,
+                                vertx,
+                                podOperations,
+                                1_000,
+                                operationTimeoutMs,
+                                () -> new BackOff(250, 2, 10),
+                                replicas,
+                                compositeFuture.resultAt(0),
+                                compositeFuture.resultAt(1),
+                                adminClientProvider,
+                                brokerId -> {
+                                    if (featureGates.useStrimziPodSetsEnabled()) {
+                                        return kafkaCluster.generatePerBrokerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts, featureGates.controlPlaneListenerEnabled());
+                                    } else {
+                                        return kafkaCluster.generateSharedBrokerConfiguration(featureGates.controlPlaneListenerEnabled());
+                                    }
+                                },
+                                kafkaLogging,
+                                kafkaCluster.getKafkaVersion(),
+                                allowReconfiguration
+                        ).rollingRestart(podNeedsRestart));
         }
 
         /**
@@ -1455,10 +1491,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> zkPodSet(int replicas) {
             if (featureGates.useStrimziPodSetsEnabled())   {
-                Map<String, String> podAnnotations = Map.of(
-                        Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)),
-                        Annotations.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash
-                );
+                Map<String, String> podAnnotations = new LinkedHashMap<>(2);
+                podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
+                podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, zkLoggingHash);
 
                 StrimziPodSet zkPodSet = zkCluster.generatePodSet(replicas, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, podAnnotations);
                 return withZkPodSetDiff(strimziPodSetOperator.reconcile(reconciliation, namespace, zkCluster.getName(), zkPodSet));
@@ -2132,7 +2167,37 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     return resultPromise.future();
                 });
         }
-        
+
+        /**
+         * Utility method which helps to register the advertised hostnames for a specific listener of a specific broker.
+         * The broker hostname passed to this method is based on the infrastructure (Service, Load Balancer, etc.).
+         * This method in addition checks for any overrides and uses them if configured.
+         *
+         * @param brokerId          ID of the broker to which this hostname belongs
+         * @param listener          The Listener for which is this hostname used
+         * @param brokerHostname    The hostname which might be used for the broker when no overrides are configured
+         */
+        void registerAdvertisedHostname(int brokerId, GenericKafkaListener listener, String brokerHostname)   {
+            kafkaAdvertisedHostnames
+                    .computeIfAbsent(brokerId, id -> new HashMap<>())
+                    .put(ListenersUtils.envVarIdentifier(listener), kafkaCluster.getAdvertisedHostname(listener, brokerId, brokerHostname));
+        }
+
+        /**
+         * Utility method which helps to register the advertised port for a specific listener of a specific broker.
+         * The broker port passed to this method is based on the infrastructure (Service, Load Balancer, etc.).
+         * This method in addition checks for any overrides and uses them if configured.
+         *
+         * @param brokerId      ID of the broker to which this port belongs
+         * @param listener      The Listener for which is this port used
+         * @param brokerPort    The port which might be used for the broker when no overrides are configured
+         */
+        void registerAdvertisedPort(int brokerId, GenericKafkaListener listener, int brokerPort)   {
+            kafkaAdvertisedPorts
+                    .computeIfAbsent(brokerId, id -> new HashMap<>())
+                    .put(ListenersUtils.envVarIdentifier(listener), kafkaCluster.getAdvertisedPort(listener, brokerId, brokerPort));
+        }
+
         Future<ReconciliationState> kafkaInternalServicesReady()   {
             for (GenericKafkaListener listener : ListenersUtils.internalListeners(kafkaCluster.getListeners())) {
                 boolean useServiceDnsDomain = (listener.getConfiguration() != null && listener.getConfiguration().getUseServiceDnsDomain() != null)
@@ -2152,23 +2217,23 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 addListenerStatus(ls);
 
                 // Set advertised hostnames and ports
-                for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++) {
+                for (int brokerId = 0; brokerId < kafkaCluster.getReplicas(); brokerId++) {
                     String brokerAddress;
 
                     if (useServiceDnsDomain) {
-                        brokerAddress = DnsNameGenerator.podDnsNameWithClusterDomain(namespace, KafkaResources.brokersServiceName(name), KafkaResources.kafkaStatefulSetName(name) + "-" + pod);
+                        brokerAddress = DnsNameGenerator.podDnsNameWithClusterDomain(namespace, KafkaResources.brokersServiceName(name), KafkaResources.kafkaStatefulSetName(name) + "-" + brokerId);
                     } else {
-                        brokerAddress = DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(name), KafkaResources.kafkaStatefulSetName(name) + "-" + pod);
+                        brokerAddress = DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(name), KafkaResources.kafkaStatefulSetName(name) + "-" + brokerId);
                     }
 
-                    String userConfiguredAdvertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, pod);
+                    String userConfiguredAdvertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, brokerId);
                     if (userConfiguredAdvertisedHostname != null && listener.isTls()) {
                         // If user configured a custom advertised hostname, add it to the SAN names used in the certificate
-                        kafkaBrokerDnsNames.computeIfAbsent(pod, k -> new HashSet<>(1)).add(userConfiguredAdvertisedHostname);
+                        kafkaBrokerDnsNames.computeIfAbsent(brokerId, k -> new HashSet<>(1)).add(userConfiguredAdvertisedHostname);
                     }
 
-                    kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, pod, brokerAddress));
-                    kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, pod, listener.getPort()));
+                    registerAdvertisedHostname(brokerId, listener, brokerAddress);
+                    registerAdvertisedPort(brokerId, listener, listener.getPort());
                 }
             }
 
@@ -2229,9 +2294,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }).compose(res -> {
                     List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
 
-                    for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
-                        final int podNumber = pod;
-                        Future<Void> perBrokerFut = serviceOperations.getAsync(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener))
+                    for (int brokerId = 0; brokerId < kafkaCluster.getReplicas(); brokerId++)  {
+                        final int finalBrokerId = brokerId;
+                        Future<Void> perBrokerFut = serviceOperations.getAsync(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, brokerId, listener))
                             .compose(svc -> {
                                 String brokerAddress;
 
@@ -2245,15 +2310,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 if (ListenersUtils.skipCreateBootstrapService(listener)) {
                                     bootstrapListenerAddressList.add(brokerAddress);
                                 }
-                                kafkaBrokerDnsNames.computeIfAbsent(podNumber, k -> new HashSet<>(2)).add(brokerAddress);
+                                kafkaBrokerDnsNames.computeIfAbsent(finalBrokerId, k -> new HashSet<>(2)).add(brokerAddress);
 
-                                String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
+                                String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, finalBrokerId);
                                 if (advertisedHostname != null) {
-                                    kafkaBrokerDnsNames.get(podNumber).add(ListenersUtils.brokerAdvertisedHost(listener, podNumber));
+                                    kafkaBrokerDnsNames.get(finalBrokerId).add(ListenersUtils.brokerAdvertisedHost(listener, finalBrokerId));
                                 }
 
-                                kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, podNumber, brokerAddress));
-                                kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, podNumber, listener.getPort()));
+                                registerAdvertisedHostname(finalBrokerId, listener, brokerAddress);
+                                registerAdvertisedPort(finalBrokerId, listener, listener.getPort());
 
                                 return Future.succeededFuture();
                             });
@@ -2322,22 +2387,22 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(res -> {
                             List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
 
-                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
-                                final int podNumber = pod;
-                                Future<Void> perBrokerFut = serviceOperations.getAsync(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener))
+                            for (int brokerId = 0; brokerId < kafkaCluster.getReplicas(); brokerId++)  {
+                                final int finalBrokerId = brokerId;
+                                Future<Void> perBrokerFut = serviceOperations.getAsync(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, brokerId, listener))
                                         .compose(svc -> {
                                             Integer externalBrokerNodePort = svc.getSpec().getPorts().get(0).getNodePort();
                                             LOGGER.debugCr(reconciliation, "Found node port {} for Service {}", externalBrokerNodePort, svc.getMetadata().getName());
 
-                                            kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, podNumber, externalBrokerNodePort));
+                                            registerAdvertisedPort(finalBrokerId, listener, externalBrokerNodePort);
 
-                                            String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
+                                            String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, finalBrokerId);
 
                                             if (advertisedHostname != null) {
-                                                kafkaBrokerDnsNames.computeIfAbsent(podNumber, k -> new HashSet<>(1)).add(advertisedHostname);
+                                                kafkaBrokerDnsNames.computeIfAbsent(finalBrokerId, k -> new HashSet<>(1)).add(advertisedHostname);
                                             }
 
-                                            kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, podNumber, nodePortAddressEnvVar(listener)));
+                                            registerAdvertisedHostname(finalBrokerId, listener, nodePortAddressEnvVar(listener));
 
                                             return Future.succeededFuture();
                                         });
@@ -2493,22 +2558,22 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(res -> {
                             List<Future> perPodFutures = new ArrayList<>(kafkaCluster.getReplicas());
 
-                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
-                                final int podNumber = pod;
-                                Future<Void> perBrokerFut = routeOperations.getAsync(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener))
+                            for (int brokerId = 0; brokerId < kafkaCluster.getReplicas(); brokerId++)  {
+                                final int finalBrokerId = brokerId;
+                                Future<Void> perBrokerFut = routeOperations.getAsync(namespace, ListenersUtils.backwardsCompatibleBrokerServiceName(name, brokerId, listener))
                                         .compose(route -> {
                                             String brokerAddress = route.getStatus().getIngress().get(0).getHost();
                                             LOGGER.debugCr(reconciliation, "Found address {} for Route {}", brokerAddress, route.getMetadata().getName());
 
-                                            kafkaBrokerDnsNames.computeIfAbsent(podNumber, k -> new HashSet<>(2)).add(brokerAddress);
+                                            kafkaBrokerDnsNames.computeIfAbsent(finalBrokerId, k -> new HashSet<>(2)).add(brokerAddress);
 
-                                            String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
+                                            String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, finalBrokerId);
                                             if (advertisedHostname != null) {
-                                                kafkaBrokerDnsNames.get(podNumber).add(ListenersUtils.brokerAdvertisedHost(listener, podNumber));
+                                                kafkaBrokerDnsNames.get(finalBrokerId).add(ListenersUtils.brokerAdvertisedHost(listener, finalBrokerId));
                                             }
 
-                                            kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, podNumber, brokerAddress));
-                                            kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, podNumber, kafkaCluster.getRoutePort()));
+                                            registerAdvertisedHostname(finalBrokerId, listener, brokerAddress);
+                                            registerAdvertisedPort(finalBrokerId, listener, kafkaCluster.getRoutePort());
 
                                             return Future.succeededFuture();
                                         });
@@ -2574,24 +2639,24 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return CompositeFuture.join(perPodFutures);
                         })
                         .compose(res -> {
-                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
-                                final int podNumber = pod;
+                            for (int brokerId = 0; brokerId < kafkaCluster.getReplicas(); brokerId++)  {
+                                final int finalBrokerId = brokerId;
                                 String brokerAddress = listener.getConfiguration().getBrokers().stream()
-                                        .filter(broker -> broker.getBroker() == podNumber)
+                                        .filter(broker -> broker.getBroker() == finalBrokerId)
                                         .map(GenericKafkaListenerConfigurationBroker::getHost)
                                         .findAny()
                                         .orElse(null);
-                                LOGGER.debugCr(reconciliation, "Using address {} for Ingress {}", brokerAddress, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener));
+                                LOGGER.debugCr(reconciliation, "Using address {} for Ingress {}", brokerAddress, ListenersUtils.backwardsCompatibleBrokerServiceName(name, brokerId, listener));
 
-                                kafkaBrokerDnsNames.computeIfAbsent(pod, k -> new HashSet<>(2)).add(brokerAddress);
+                                kafkaBrokerDnsNames.computeIfAbsent(brokerId, k -> new HashSet<>(2)).add(brokerAddress);
 
-                                String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
+                                String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, finalBrokerId);
                                 if (advertisedHostname != null) {
-                                    kafkaBrokerDnsNames.get(podNumber).add(ListenersUtils.brokerAdvertisedHost(listener, podNumber));
+                                    kafkaBrokerDnsNames.get(finalBrokerId).add(ListenersUtils.brokerAdvertisedHost(listener, finalBrokerId));
                                 }
 
-                                kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, pod, brokerAddress));
-                                kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, pod, kafkaCluster.getIngressPort()));
+                                registerAdvertisedHostname(finalBrokerId, listener, brokerAddress);
+                                registerAdvertisedPort(finalBrokerId, listener, kafkaCluster.getIngressPort());
                             }
 
                             return Future.succeededFuture();
@@ -2652,24 +2717,24 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return CompositeFuture.join(perPodFutures);
                         })
                         .compose(res -> {
-                            for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
-                                final int podNumber = pod;
+                            for (int brokerId = 0; brokerId < kafkaCluster.getReplicas(); brokerId++)  {
+                                final int finalBrokerId = brokerId;
                                 String brokerAddress = listener.getConfiguration().getBrokers().stream()
-                                        .filter(broker -> broker.getBroker() == podNumber)
+                                        .filter(broker -> broker.getBroker() == finalBrokerId)
                                         .map(GenericKafkaListenerConfigurationBroker::getHost)
                                         .findAny()
                                         .orElse(null);
-                                LOGGER.debugCr(reconciliation, "Using address {} for v1beta1 Ingress {}", brokerAddress, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener));
+                                LOGGER.debugCr(reconciliation, "Using address {} for v1beta1 Ingress {}", brokerAddress, ListenersUtils.backwardsCompatibleBrokerServiceName(name, brokerId, listener));
 
-                                kafkaBrokerDnsNames.computeIfAbsent(pod, k -> new HashSet<>(2)).add(brokerAddress);
+                                kafkaBrokerDnsNames.computeIfAbsent(brokerId, k -> new HashSet<>(2)).add(brokerAddress);
 
-                                String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
+                                String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, finalBrokerId);
                                 if (advertisedHostname != null) {
-                                    kafkaBrokerDnsNames.get(podNumber).add(ListenersUtils.brokerAdvertisedHost(listener, podNumber));
+                                    kafkaBrokerDnsNames.get(finalBrokerId).add(ListenersUtils.brokerAdvertisedHost(listener, finalBrokerId));
                                 }
 
-                                kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, pod, brokerAddress));
-                                kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, pod, kafkaCluster.getIngressPort()));
+                                registerAdvertisedHostname(finalBrokerId, listener, brokerAddress);
+                                registerAdvertisedPort(finalBrokerId, listener, kafkaCluster.getIngressPort());
                             }
 
                             return Future.succeededFuture();
@@ -2775,30 +2840,175 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
         }
 
-        Future<ConfigMap> getKafkaAncillaryCm() {
-            return Util.metricsAndLogging(reconciliation, configMapOperations, namespace, kafkaCluster.getLogging(), kafkaCluster.getMetricsConfigInCm())
-                .compose(metricsAndLoggingCm -> {
-                    ConfigMap brokerCm = kafkaCluster.generateAncillaryConfigMap(metricsAndLoggingCm, kafkaAdvertisedHostnames, kafkaAdvertisedPorts, featureGates.controlPlaneListenerEnabled());
-                    KafkaConfiguration kc = KafkaConfiguration.unvalidated(reconciliation, kafkaCluster.getBrokersConfiguration()); // has to be after generateAncillaryConfigMap() which generates the configuration
+        /**
+         * Generates and creates the ConfigMap with shared configuration for Kafka brokers used in StatefulSets.
+         *
+         * @param metricsAndLogging     Metrics and Logging configuration
+         *
+         * @return
+         */
+        Future<ReconcileResult<ConfigMap>> sharedKafkaConfiguration(MetricsAndLogging metricsAndLogging) {
+            ConfigMap sharedCm = kafkaCluster.generateSharedConfigurationConfigMap(metricsAndLogging, kafkaAdvertisedHostnames, kafkaAdvertisedPorts, featureGates.controlPlaneListenerEnabled());
 
-                    // if BROKER_ADVERTISED_HOSTNAMES_FILENAME or BROKER_ADVERTISED_PORTS_FILENAME changes, compute a hash and put it into annotation
-                    String brokerConfiguration = brokerCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_HOSTNAMES_FILENAME, "");
-                    brokerConfiguration += brokerCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_PORTS_FILENAME, "");
-                    brokerConfiguration += brokerCm.getData().getOrDefault(KafkaCluster.BROKER_LISTENERS_FILENAME, "");
+            // BROKER_ADVERTISED_HOSTNAMES_FILENAME or BROKER_ADVERTISED_PORTS_FILENAME have the advertised addresses.
+            // If they change, we need to roll the pods. Here we collect their hash to trigger the rolling update.
+            String brokerConfiguration = sharedCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_HOSTNAMES_FILENAME, "");
+            brokerConfiguration += sharedCm.getData().getOrDefault(KafkaCluster.BROKER_ADVERTISED_PORTS_FILENAME, "");
+            brokerConfiguration += sharedCm.getData().getOrDefault(KafkaCluster.BROKER_LISTENERS_FILENAME, "");
 
-                    this.kafkaBrokerConfigurationHash = Util.stringHash(brokerConfiguration);
-                    this.kafkaBrokerConfigurationHash += Util.stringHash(kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString());
+            // Changes to regular Kafka configuration are handled through the KafkaRoller which decides whether to roll the pod or not
+            // In addition to that, we have to handle changes to configuration unknown to Kafka -> different plugins (Authorization, Quotas etc.)
+            // This is captured here with the unknown configurations and the hash is used to roll the pod when it changes
+            KafkaConfiguration kc = KafkaConfiguration.unvalidated(reconciliation, sharedCm.getData().getOrDefault(KafkaCluster.BROKER_CONFIGURATION_FILENAME, ""));
 
-                    String loggingConfiguration = brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
-                    this.kafkaLogging = loggingConfiguration;
-                    this.kafkaLoggingAppendersHash = Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(loggingConfiguration));
+            // We store hash of the broker configurations for later use in StatefulSet / PodSet and in rolling updates
+            this.kafkaBrokerConfigurationHash.put(sharedConfigurationId, Util.stringHash(brokerConfiguration + kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString()));
 
-                    return Future.succeededFuture(brokerCm);
-                });
+            // This is used during Kafka rolling updates -> we have to store it for later
+            this.kafkaLogging = sharedCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
+            this.kafkaLoggingAppendersHash = Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(this.kafkaLogging));
+
+            return configMapOperations.reconcile(reconciliation, namespace, kafkaCluster.getAncillaryConfigMapName(), sharedCm);
         }
 
-        Future<ReconciliationState> kafkaAncillaryCm() {
-            return withVoid(getKafkaAncillaryCm().compose(cm -> configMapOperations.reconcile(reconciliation, namespace, kafkaCluster.getAncillaryConfigMapName(), cm)));
+        /**
+         * Generates and creates the ConfigMaps with per-broker configuration for Kafka brokers used in PodSets. It will
+         * also delete the ConfigMaps for any scaled-down brokers (scale down is done before this is called in the
+         * reconciliation)
+         *
+         * @param metricsAndLogging     Metrics and Logging configuration
+         *
+         * @return
+         */
+        Future<CompositeFuture> perBrokerKafkaConfiguration(MetricsAndLogging metricsAndLogging) {
+            return configMapOperations.listAsync(namespace, kafkaCluster.getSelectorLabels())
+                    .compose(existingConfigMaps -> {
+                        // This is used during Kafka rolling updates -> we have to store it for later
+                        this.kafkaLogging = kafkaCluster.loggingConfiguration(kafkaCluster.getLogging(), metricsAndLogging.getLoggingCm());
+                        this.kafkaLoggingAppendersHash = Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(this.kafkaLogging));
+
+                        List<ConfigMap> desiredConfigMaps = kafkaCluster.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, kafkaAdvertisedHostnames, kafkaAdvertisedPorts, featureGates.controlPlaneListenerEnabled());
+                        List<Future> ops = new ArrayList<>(existingConfigMaps.size() + kafkaCluster.getReplicas());
+
+                        // Delete all existing ConfigMaps which are not desired and are not the shared config map
+                        List<String> desiredNames = new ArrayList<>(desiredConfigMaps.size() + 1);
+                        desiredNames.add(kafkaCluster.getAncillaryConfigMapName()); // We do not want to delete the shared ConfigMap, so we add it here
+                        desiredNames.addAll(desiredConfigMaps.stream().map(cm -> cm.getMetadata().getName()).collect(Collectors.toList()));
+
+                        for (ConfigMap cm : existingConfigMaps) {
+                            // We delete the cms not on the desired names list
+                            if (!desiredNames.contains(cm.getMetadata().getName())) {
+                                ops.add(configMapOperations.deleteAsync(reconciliation, namespace, cm.getMetadata().getName(), true));
+                            }
+                        }
+
+                        // Create / update the desired config maps
+                        for (ConfigMap cm : desiredConfigMaps) {
+                            String cmName = cm.getMetadata().getName();
+                            int brokerId = getPodIndexFromPodName(cmName);
+
+                            // The advertised hostname and port might change. If they change, we need to roll the pods.
+                            // Here we collect their hash to trigger the rolling update. For per-broker configuration,
+                            // we need just the advertised hostnames / ports for given broker.
+                            String brokerConfiguration = kafkaAdvertisedHostnames
+                                    .get(brokerId)
+                                    .entrySet()
+                                    .stream()
+                                    .map(kv -> kv.getKey() + "://" + kv.getValue())
+                                    .sorted()
+                                    .collect(Collectors.joining(" "));
+                            brokerConfiguration += kafkaAdvertisedPorts
+                                    .get(brokerId)
+                                    .entrySet()
+                                    .stream()
+                                    .map(kv -> kv.getKey() + "://" + kv.getValue())
+                                    .sorted()
+                                    .collect(Collectors.joining(" "));
+                            brokerConfiguration += cm.getData().getOrDefault(KafkaCluster.BROKER_LISTENERS_FILENAME, "");
+
+                            // Changes to regular Kafka configuration are handled through the KafkaRoller which decides whether to roll the pod or not
+                            // In addition to that, we have to handle changes to configuration unknown to Kafka -> different plugins (Authorization, Quotas etc.)
+                            // This is captured here with the unknown configurations and the hash is used to roll the pod when it changes
+                            KafkaConfiguration kc = KafkaConfiguration.unvalidated(reconciliation, cm.getData().getOrDefault(KafkaCluster.BROKER_CONFIGURATION_FILENAME, ""));
+
+                            // We store hash of the broker configurations for later use in Pod and in rolling updates
+                            this.kafkaBrokerConfigurationHash.put(brokerId, Util.stringHash(brokerConfiguration + kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString()));
+
+                            ops.add(configMapOperations.reconcile(reconciliation, namespace, cmName, cm));
+                        }
+
+                        return CompositeFuture.join(ops);
+                    });
+        }
+
+        /**
+         * This method is used to create or update the config maps required by the brokers. It is able to handle both
+         * shared configuration and per-broker configuration.
+         *
+         * It does not do the cleanup when switching between the modes. That is done only at the end of the
+         * reconciliation. However, when the per-broker configuration mode is used, it would delete the config maps of
+         * the scaled-down brokers since scale-down happens before this is called.
+         *
+         * @return
+         */
+        Future<ReconciliationState> kafkaConfigurationConfigMaps() {
+            return Util.metricsAndLogging(reconciliation, configMapOperations, namespace, kafkaCluster.getLogging(), kafkaCluster.getMetricsConfigInCm())
+                    .compose(metricsAndLoggingCm -> {
+                        if (featureGates.useStrimziPodSetsEnabled())    {
+                            return withVoid(perBrokerKafkaConfiguration(metricsAndLoggingCm));
+                        } else {
+                            return withVoid(sharedKafkaConfiguration(metricsAndLoggingCm));
+                        }
+                    });
+        }
+
+        /**
+         * This method is used to clean-up the configuration Config Maps. This might be needed when switching between
+         * StatefulSets / shared configuration and PodSets / per-broker configuration. This is done in a separate step
+         * at the end of the reconciliation to avoid problems if the reconciliation fails (the deleted config map would
+         * not allow pods to be restarted etc.)
+         *
+         * @return
+         */
+        Future<ReconciliationState> kafkaConfigurationConfigMapsCleanup() {
+            if (featureGates.useStrimziPodSetsEnabled())    {
+                return withVoid(sharedKafkaConfigurationCleanup());
+            } else {
+                return withVoid(perBrokerKafkaConfigurationCleanup());
+            }
+        }
+
+        /**
+         * Deletes the ConfigMap with shared Kafka configuration. This needs to be done when switching to per-broker
+         * configuration / PodSets.
+         *
+         * @return
+         */
+        Future<Void> sharedKafkaConfigurationCleanup() {
+            return configMapOperations.deleteAsync(reconciliation, namespace, kafkaCluster.getAncillaryConfigMapName(), true);
+        }
+
+        /**
+         * Deletes all ConfigMaps with per-broker Kafka configuration. This needs to be done when switching to the
+         * shared configuration / StatefulSets
+         *
+         * @return
+         */
+        Future<CompositeFuture> perBrokerKafkaConfigurationCleanup() {
+            return configMapOperations.listAsync(namespace, kafkaCluster.getSelectorLabels())
+                    .compose(existingConfigMaps -> {
+                        List<Future> ops = new ArrayList<>(existingConfigMaps.size()); // We will need at most the deletion of existing configmaps + update of new one => hence the + 1
+
+                        // Delete all existing apart from the shared one
+                        for (ConfigMap cm : existingConfigMaps) {
+                            // We delete the cm if it is not getAncillaryConfigMapName
+                            if (!kafkaCluster.getAncillaryConfigMapName().equals(cm.getMetadata().getName())) {
+                                ops.add(configMapOperations.deleteAsync(reconciliation, namespace, cm.getMetadata().getName(), true));
+                            }
+                        }
+
+                        return CompositeFuture.join(ops);
+                    });
         }
 
         Future<ReconciliationState> kafkaBrokersSecret() {
@@ -3112,16 +3322,24 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          *
          * @return  Map with Pod annotations
          */
-        Map<String, String> kafkaPodAnnotations()    {
-            Map<String, String> podAnnotations = new HashMap<>(5);
+        Map<String, String> kafkaPodAnnotations(int brokerId, boolean storageAnnotation)    {
+            Map<String, String> podAnnotations = new LinkedHashMap<>(9);
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clusterCa)));
             podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, String.valueOf(getCaCertGeneration(this.clientsCa)));
             podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, kafkaLoggingAppendersHash);
-            podAnnotations.put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, kafkaBrokerConfigurationHash);
+            podAnnotations.put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, kafkaBrokerConfigurationHash.get(brokerId));
+            podAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaCluster.getKafkaVersion().version());
+            podAnnotations.put(KafkaCluster.ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION, kafkaCluster.getLogMessageFormatVersion());
+            podAnnotations.put(KafkaCluster.ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION, kafkaCluster.getInterBrokerProtocolVersion());
 
             // Annotations with custom cert thumbprints to help with rolling updates when they change
             if (!customListenerCertificateThumbprints.isEmpty()) {
                 podAnnotations.put(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, customListenerCertificateThumbprints.toString());
+            }
+
+            // Storage annotation on Pods is used only for StatefulSets
+            if (storageAnnotation) {
+                podAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(kafkaCluster.getStorage()));
             }
 
             return podAnnotations;
@@ -3130,7 +3348,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaStatefulSet() {
             if (!featureGates.useStrimziPodSetsEnabled()) {
                 // StatefulSets are enabled => make sure the StatefulSet exists with the right settings
-                StatefulSet kafkaSts = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, kafkaPodAnnotations());
+                StatefulSet kafkaSts = kafkaCluster.generateStatefulSet(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, kafkaPodAnnotations(sharedConfigurationId, true));
                 return withKafkaStsDiff(stsOperations.reconcile(reconciliation, namespace, kafkaCluster.getName(), kafkaSts));
             } else {
                 // StatefulSets are disabled => delete the StatefulSet if it exists
@@ -3163,8 +3381,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     replicas = kafkaCluster.getReplicas();
                 }
 
-                StrimziPodSet zkPodSet = kafkaCluster.generatePodSet(replicas, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, kafkaPodAnnotations());
-                return withKafkaPodSetDiff(strimziPodSetOperator.reconcile(reconciliation, namespace, KafkaCluster.kafkaClusterName(name), zkPodSet));
+                StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(replicas, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, brokerId -> kafkaPodAnnotations(brokerId, false));
+                return withKafkaPodSetDiff(strimziPodSetOperator.reconcile(reconciliation, namespace, KafkaCluster.kafkaClusterName(name), kafkaPodSet));
             } else {
                 // PodSets are disabled => delete the StrimziPodSet for Kafka
                 return strimziPodSetOperator.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
@@ -3197,8 +3415,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 LOGGER.infoCr(reconciliation, "Scaling Kafka up from {} to {} replicas", kafkaCurrentReplicas, kafkaCluster.getReplicas());
                 
                 if (featureGates.useStrimziPodSetsEnabled())   {
-                    StrimziPodSet zkPodSet = kafkaCluster.generatePodSet(kafkaCluster.getReplicas(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, kafkaPodAnnotations());
-                    return withVoid(strimziPodSetOperator.reconcile(reconciliation, namespace, kafkaCluster.getName(), zkPodSet));
+                    StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(kafkaCluster.getReplicas(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, brokerId -> kafkaPodAnnotations(brokerId, false));
+                    return withVoid(strimziPodSetOperator.reconcile(reconciliation, namespace, kafkaCluster.getName(), kafkaPodSet));
                 } else {
                     return withVoid(stsOperations.scaleUp(reconciliation, namespace, kafkaCluster.getName(), kafkaCluster.getReplicas()));
                 }

@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.BackOff;
+import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -583,9 +584,23 @@ public class KafkaRollerTest {
                                    Function<Integer, ForceableProblem> getConfigsException,
                                    Function<Integer, Future<Boolean>> canRollFn,
                                   int... controllers) {
-            super(new Reconciliation("test", "Kafka", stsNamespace(), clusterName()), KafkaRollerTest.vertx, podOps, 500, 1000,
-                () -> new BackOff(10L, 2, 4),
-                    sts.getSpec().getReplicas(), clusterCaCertSecret, coKeySecret, "", "", KafkaVersionTestUtils.getLatestVersion(), true);
+            super(
+                    new Reconciliation("test", "Kafka", stsNamespace(), clusterName()),
+                    KafkaRollerTest.vertx,
+                    podOps,
+                    500,
+                    1000,
+                    () -> new BackOff(10L, 2, 4),
+                    sts.getSpec().getReplicas(),
+                    clusterCaCertSecret,
+                    coKeySecret,
+                    new DefaultAdminClientProvider(),
+                    brokerId -> "",
+                    "",
+                    KafkaVersionTestUtils.getLatestVersion(),
+                    true
+            );
+
             this.controllers = controllers;
             this.controllerCall = 0;
             Objects.requireNonNull(acOpenException);
