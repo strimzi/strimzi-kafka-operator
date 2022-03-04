@@ -140,11 +140,11 @@ public class TracingST extends AbstractST {
 
         resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing());
 
-        TODO: Disabled because of issue with Streams API and tracing. Uncomment this after fix. https://github.com/strimzi/strimzi-kafka-operator/issues/5680
-        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
-            JAEGER_KAFKA_STREAMS_SERVICE,
-            storageMap.get(extensionContext).retrieveFromTestStorage(Constants.KAFKA_CLIENTS_POD_KEY).toString(),
-            JAEGER_QUERY_SERVICE);
+//        TODO: Disabled because of issue with Streams API and tracing. Uncomment this after fix. https://github.com/strimzi/strimzi-kafka-operator/issues/5680
+//        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
+//            JAEGER_KAFKA_STREAMS_SERVICE,
+//            storageMap.get(extensionContext).retrieveFromTestStorage(Constants.KAFKA_CLIENTS_POD_KEY).toString(),
+//            JAEGER_QUERY_SERVICE);
     }
 
     @ParallelNamespaceTest
