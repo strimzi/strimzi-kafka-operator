@@ -23,6 +23,14 @@ spec:
     description: The foo
     JSONPath: '...'
     type: integer
+  - name: configYaml
+    description: |-
+      nest: This is a nested yaml
+      lines:
+        - 2nd
+        - 3rd
+    JSONPath: '...'
+    type: string
   conversion:
     strategy: None
   versions:
