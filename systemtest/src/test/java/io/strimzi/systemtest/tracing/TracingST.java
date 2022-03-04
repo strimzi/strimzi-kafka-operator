@@ -100,45 +100,45 @@ public class TracingST extends AbstractST {
     @Tag(ACCEPTANCE)
     void testProducerConsumerStreamsService(ExtensionContext extensionContext) {
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
-        assumeFalse(Environment.isNamespaceRbacScope());
-
-        resourceManager.createResource(extensionContext,
-            KafkaTemplates.kafkaEphemeral(
-                storageMap.get(extensionContext).getClusterName(), 3, 1).build());
-
-        resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
-                storageMap.get(extensionContext).getTopicName())
-            .editSpec()
-                .withReplicas(3)
-                .withPartitions(12)
-            .endSpec()
-            .build());
-
-        resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
-                storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString())
-            .editSpec()
-                .withReplicas(3)
-                .withPartitions(12)
-            .endSpec()
-            .build());
-
-        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).producerWithTracing());
-
-        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
-            JAEGER_PRODUCER_SERVICE,
-            storageMap.get(extensionContext).retrieveFromTestStorage(Constants.KAFKA_CLIENTS_POD_KEY).toString(),
-            JAEGER_QUERY_SERVICE);
-
-        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
-
-        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
-            JAEGER_CONSUMER_SERVICE,
-            storageMap.get(extensionContext).retrieveFromTestStorage(Constants.KAFKA_CLIENTS_POD_KEY).toString(),
-            JAEGER_QUERY_SERVICE);
-
-        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing());
+//        assumeFalse(Environment.isNamespaceRbacScope());
+//
+//        resourceManager.createResource(extensionContext,
+//            KafkaTemplates.kafkaEphemeral(
+//                storageMap.get(extensionContext).getClusterName(), 3, 1).build());
+//
+//        resourceManager.createResource(extensionContext,
+//            KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
+//                storageMap.get(extensionContext).getTopicName())
+//            .editSpec()
+//                .withReplicas(3)
+//                .withPartitions(12)
+//            .endSpec()
+//            .build());
+//
+//        resourceManager.createResource(extensionContext,
+//            KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
+//                storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString())
+//            .editSpec()
+//                .withReplicas(3)
+//                .withPartitions(12)
+//            .endSpec()
+//            .build());
+//
+//        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).producerWithTracing());
+//
+//        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
+//            JAEGER_PRODUCER_SERVICE,
+//            storageMap.get(extensionContext).retrieveFromTestStorage(Constants.KAFKA_CLIENTS_POD_KEY).toString(),
+//            JAEGER_QUERY_SERVICE);
+//
+//        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
+//
+//        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
+//            JAEGER_CONSUMER_SERVICE,
+//            storageMap.get(extensionContext).retrieveFromTestStorage(Constants.KAFKA_CLIENTS_POD_KEY).toString(),
+//            JAEGER_QUERY_SERVICE);
+//
+//        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing());
 
 //        TODO: Disabled because of issue with Streams API and tracing. Uncomment this after fix. https://github.com/strimzi/strimzi-kafka-operator/issues/5680
 //        TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
@@ -539,40 +539,40 @@ public class TracingST extends AbstractST {
 
     @BeforeEach
     void createTestResources(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, namespace);
-
-        storageMap.put(extensionContext, testStorage);
-
-        deployJaegerInstance(extensionContext, storageMap.get(extensionContext).getNamespaceName());
-
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(storageMap.get(extensionContext).getNamespaceName(), false, storageMap.get(extensionContext).getKafkaClientsName()).build());
-
-        testStorage.addToTestStorage(Constants.KAFKA_CLIENTS_POD_KEY, kubeClient(storageMap.get(extensionContext).getNamespaceName()).listPodsByPrefixInName(storageMap.get(extensionContext).getKafkaClientsName()).get(0).getMetadata().getName());
-
-        storageMap.put(extensionContext, testStorage);
-
-        final KafkaTracingClients kafkaTracingClient = new KafkaTracingClientsBuilder()
-            .withNamespaceName(storageMap.get(extensionContext).getNamespaceName())
-            .withProducerName(storageMap.get(extensionContext).getProducerName())
-            .withConsumerName(storageMap.get(extensionContext).getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(storageMap.get(extensionContext).getClusterName()))
-            .withTopicName(storageMap.get(extensionContext).getTopicName())
-            .withStreamsTopicTargetName(storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString())
-            .withMessageCount(MESSAGE_COUNT)
-            .withJaegerServiceProducerName(JAEGER_PRODUCER_SERVICE)
-            .withJaegerServiceConsumerName(JAEGER_CONSUMER_SERVICE)
-            .withJaegerServiceStreamsName(JAEGER_KAFKA_STREAMS_SERVICE)
-            .withJaegerServerAgentName(JAEGER_AGENT_NAME)
-            .build();
-
-        testStorage.addToTestStorage(Constants.KAFKA_TRACING_CLIENT_KEY, kafkaTracingClient);
-
-        storageMap.put(extensionContext, testStorage);
+//        TestStorage testStorage = new TestStorage(extensionContext, namespace);
+//
+//        storageMap.put(extensionContext, testStorage);
+//
+//        deployJaegerInstance(extensionContext, storageMap.get(extensionContext).getNamespaceName());
+//
+//        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(storageMap.get(extensionContext).getNamespaceName(), false, storageMap.get(extensionContext).getKafkaClientsName()).build());
+//
+//        testStorage.addToTestStorage(Constants.KAFKA_CLIENTS_POD_KEY, kubeClient(storageMap.get(extensionContext).getNamespaceName()).listPodsByPrefixInName(storageMap.get(extensionContext).getKafkaClientsName()).get(0).getMetadata().getName());
+//
+//        storageMap.put(extensionContext, testStorage);
+//
+//        final KafkaTracingClients kafkaTracingClient = new KafkaTracingClientsBuilder()
+//            .withNamespaceName(storageMap.get(extensionContext).getNamespaceName())
+//            .withProducerName(storageMap.get(extensionContext).getProducerName())
+//            .withConsumerName(storageMap.get(extensionContext).getConsumerName())
+//            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(storageMap.get(extensionContext).getClusterName()))
+//            .withTopicName(storageMap.get(extensionContext).getTopicName())
+//            .withStreamsTopicTargetName(storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString())
+//            .withMessageCount(MESSAGE_COUNT)
+//            .withJaegerServiceProducerName(JAEGER_PRODUCER_SERVICE)
+//            .withJaegerServiceConsumerName(JAEGER_CONSUMER_SERVICE)
+//            .withJaegerServiceStreamsName(JAEGER_KAFKA_STREAMS_SERVICE)
+//            .withJaegerServerAgentName(JAEGER_AGENT_NAME)
+//            .build();
+//
+//        testStorage.addToTestStorage(Constants.KAFKA_TRACING_CLIENT_KEY, kafkaTracingClient);
+//
+//        storageMap.put(extensionContext, testStorage);
     }
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) throws IOException {
-        // deployment of the jaeger
-        deployJaegerOperator(extensionContext);
+//        // deployment of the jaeger
+//        deployJaegerOperator(extensionContext);
     }
 }

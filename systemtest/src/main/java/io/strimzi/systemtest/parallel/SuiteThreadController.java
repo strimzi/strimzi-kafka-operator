@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.parallel;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -70,7 +70,6 @@ public class SuiteThreadController {
         LOGGER.debug("[{}] - Adding parallel suite: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
 
         runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.incrementAndGet());
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, runningTestSuitesInParallelCount.get());
 
         LOGGER.debug("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
     }
@@ -84,13 +83,9 @@ public class SuiteThreadController {
     }
 
     public synchronized void removeParallelSuite(ExtensionContext extensionContext) {
-        if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PARALLEL_CLASS_COUNT) == null) {
-            throw new RuntimeException("There is no parallel suite running.");
-        } else {
-            LOGGER.debug("[{}] - Removing parallel suite: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
-            runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.decrementAndGet());
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, runningTestSuitesInParallelCount.get());
-        }
+        LOGGER.debug("[{}] - Removing parallel suite: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
+
+        runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.decrementAndGet());
 
         LOGGER.debug("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
     }
@@ -112,7 +107,7 @@ public class SuiteThreadController {
         while (preCondition) {
             LOGGER.trace("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
             try {
-                Thread.sleep(STARTING_DELAY);
+                Thread.currentThread().sleep(STARTING_DELAY);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -127,7 +122,7 @@ public class SuiteThreadController {
     }
 
     @SuppressFBWarnings(value = "SWL_SLEEP_WITH_LOCK_HELD")
-    public synchronized void waitUntilEntryIsOpen(ExtensionContext extensionContext) {
+    public void waitUntilEntryIsOpen(ExtensionContext extensionContext) {
         // other threads must wait until is open
         while (this.isOpen.get()) {
             LOGGER.debug("Suite {} is waiting to lock to be released.", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()));

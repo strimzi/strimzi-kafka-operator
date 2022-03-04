@@ -17,7 +17,7 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.OlmUtils;
-import io.strimzi.test.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;

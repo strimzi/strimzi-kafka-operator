@@ -173,7 +173,7 @@ public class SetupClusterOperator {
             clusterOperatorBuilder = clusterOperatorBuilder.withNamespace(Constants.INFRA_NAMESPACE);
             return clusterOperatorBuilder;
         // OLM cluster wide must use KubeClusterResource.getInstance().getDefaultOlmNamespace() namespace
-        } else if (Environment.isOlmInstall() && IS_OLM_CLUSTER_WIDE.test(this.namespaceInstallTo)) {
+        } else if (Environment.isOlmInstall() && IS_OLM_CLUSTER_WIDE.test(this.namespaceToWatch)) {
             clusterOperatorBuilder = clusterOperatorBuilder
                 .withNamespace(cluster.getDefaultOlmNamespace())
                 .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES);
@@ -213,6 +213,7 @@ public class SetupClusterOperator {
                         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
                     }
                     createClusterRoleBindings();
+                    bindingsNamespaces = namespaceInstallTo.equals(Constants.INFRA_NAMESPACE) ? Collections.singletonList(cluster.getDefaultOlmNamespace()) : bindingsNamespaces;
                     namespaceInstallTo = cluster.getDefaultOlmNamespace();
                     olmResource = new OlmResource(namespaceInstallTo);
                     olmResource.create(extensionContext, operationTimeout, reconciliationInterval);

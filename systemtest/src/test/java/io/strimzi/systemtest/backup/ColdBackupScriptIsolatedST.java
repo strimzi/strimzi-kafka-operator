@@ -16,9 +16,9 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
-import io.strimzi.test.annotations.IsolatedSuite;
 import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
