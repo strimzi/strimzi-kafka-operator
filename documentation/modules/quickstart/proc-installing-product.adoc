@@ -61,6 +61,7 @@ env:
   value: my-kafka-project
 # ...
 ----
+
 . Give permission to the Cluster Operator to watch the `my-kafka-project` namespace.
 +
 --
@@ -75,6 +76,7 @@ kubectl create -f install/cluster-operator/031-RoleBinding-strimzi-cluster-opera
 --
 +
 The commands create role bindings that grant permission for the Cluster Operator to access the Kafka cluster.
+
 . Deploy the CRDs and role-based access control (RBAC) resources to manage the CRDs.
 +
 [source, shell, subs=+quotes ]
