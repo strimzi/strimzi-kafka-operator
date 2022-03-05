@@ -278,7 +278,7 @@ public class OlmResource implements SpecificResourceType {
         ResourceManager.cmdKubeClient().exec("delete", "subscriptions", "-l", "app=strimzi", "-n", namespace);
         ResourceManager.cmdKubeClient().exec("delete", "operatorgroups", "-l", "app=strimzi", "-n", namespace);
         ResourceManager.cmdKubeClient().exec(false, "delete", "csv", csvName, "-n", namespace);
-        DeploymentUtils.waitForDeploymentDeletion(deploymentName);
+        DeploymentUtils.waitForDeploymentDeletion(namespace, deploymentName);
     }
 
     private static void waitFor(String deploymentName, String namespace, int replicas) {

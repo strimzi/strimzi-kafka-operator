@@ -65,34 +65,34 @@ public class SuiteThreadController {
         waitingTestCases = new ArrayList<>();
     }
 
-    public synchronized void addParallelSuite(ExtensionContext extensionContext) {
+    public void addParallelSuite(ExtensionContext extensionContext) {
         LOGGER.debug("[{}] - Adding parallel suite: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
 
-        runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.incrementAndGet());
+        runningTestSuitesInParallelCount.incrementAndGet();
 
         LOGGER.debug("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
     }
 
-    public synchronized void addParallelTest(ExtensionContext extensionContext) {
+    public void addParallelTest(ExtensionContext extensionContext) {
         LOGGER.debug("[{}] - Adding parallel test: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
 
-        runningTestCasesInParallelCount.set(runningTestCasesInParallelCount.incrementAndGet());
+        runningTestCasesInParallelCount.incrementAndGet();
 
         LOGGER.debug("[{}] - Parallel test count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestCasesInParallelCount.get());
     }
 
-    public synchronized void removeParallelSuite(ExtensionContext extensionContext) {
+    public void removeParallelSuite(ExtensionContext extensionContext) {
         LOGGER.debug("[{}] - Removing parallel suite: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
 
-        runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.decrementAndGet());
+        runningTestSuitesInParallelCount.decrementAndGet();
 
         LOGGER.debug("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
     }
 
-    public synchronized void removeParallelTest(ExtensionContext extensionContext) {
+    public void removeParallelTest(ExtensionContext extensionContext) {
         LOGGER.debug("[{}] - Removing parallel test: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
 
-        runningTestCasesInParallelCount.set(runningTestCasesInParallelCount.decrementAndGet());
+        runningTestCasesInParallelCount.decrementAndGet();
 
         LOGGER.debug("[{}] - Parallel test count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestCasesInParallelCount.get());
     }
@@ -201,11 +201,16 @@ public class SuiteThreadController {
         final String testCaseToWait = extensionContext.getDisplayName();
         waitingTestCases.add(testCaseToWait);
 
+        LOGGER.info("Here before? :D ");
+
         if (runningTestCasesInParallelCount.get() > maxTestSuitesInParallel) {
             LOGGER.debug("[{}] moved to the WaitZone, because current thread exceed maximum of allowed " +
                     "test cases in parallel. ({}/{})", testCaseToWait, runningTestCasesInParallelCount.get(),
                 maxTestSuitesInParallel);
         }
+
+        LOGGER.info("Here afer? :D ");
+
         while (!isRunningAllowedNumberTestInParallel()) {
             LOGGER.trace("{} is waiting to proceed with execution but current thread exceed maximum " +
                     "of allowed test cases in parallel. ({}/{})",

@@ -173,7 +173,7 @@ public class SetupClusterOperator {
             clusterOperatorBuilder = clusterOperatorBuilder.withNamespace(Constants.INFRA_NAMESPACE);
             return clusterOperatorBuilder;
         // OLM cluster wide must use KubeClusterResource.getInstance().getDefaultOlmNamespace() namespace
-        } else if (Environment.isOlmInstall() && IS_OLM_CLUSTER_WIDE.test(this.namespaceToWatch)) {
+        } else if (Environment.isOlmInstall() && !Environment.isNamespaceRbacScope()) {
             clusterOperatorBuilder = clusterOperatorBuilder
                 .withNamespace(cluster.getDefaultOlmNamespace())
                 .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES);
