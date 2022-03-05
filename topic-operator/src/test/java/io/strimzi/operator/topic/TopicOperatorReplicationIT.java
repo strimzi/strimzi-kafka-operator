@@ -36,7 +36,7 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
 
     @BeforeAll
     public void beforeAll() throws Exception {
-        kafkaCluster = new StrimziKafkaCluster(numKafkaBrokers(), numKafkaBrokers(), kafkaClusterConfig());
+        kafkaCluster = new StrimziKafkaCluster(numKafkaBrokers());
         kafkaCluster.start();
 
         setupKubeCluster();
@@ -53,7 +53,7 @@ public class TopicOperatorReplicationIT extends TopicOperatorBaseIT {
     }
 
     @AfterEach
-    void afterEach() throws InterruptedException, ExecutionException, TimeoutException {
+    void afterEach() throws InterruptedException, TimeoutException {
         // clean-up KafkaTopic resources in Kubernetes
         clearKafkaTopics(true);
     }

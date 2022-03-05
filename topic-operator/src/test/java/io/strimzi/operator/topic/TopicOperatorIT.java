@@ -47,14 +47,15 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
 
     @BeforeAll
     public void beforeAll() throws Exception {
-        kafkaCluster = new StrimziKafkaCluster(numKafkaBrokers(), numKafkaBrokers(), kafkaClusterConfig());
-        kafkaCluster.start();
+        kafkaContainer = new StrimziKafkaContainer()
+            .withKafkaConfigurationMap(Map.of(KafkaConfig$.MODULE$.AutoCreateTopicsEnableProp(), "false"));
+        kafkaContainer.start();
 
         setupKubeCluster();
-        setup(kafkaCluster);
+        setup(kafkaContainer);
 
         LOGGER.info("Using namespace {}", NAMESPACE);
-        startTopicOperator(kafkaCluster);
+        startTopicOperator(kafkaContainer);
     }
 
     @AfterAll
@@ -62,7 +63,7 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         teardown(true);
         teardownKubeCluster();
         adminClient.close();
-        kafkaCluster.stop();
+        kafkaContainer.stop();
     }
 
     @AfterEach

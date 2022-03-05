@@ -13,7 +13,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -23,12 +22,13 @@ public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
 
     @BeforeAll
     public void beforeAll() throws Exception {
-        kafkaCluster = new StrimziKafkaCluster(numKafkaBrokers(), numKafkaBrokers(), kafkaClusterConfig());
-        kafkaCluster.start();
+        kafkaContainer = new StrimziKafkaContainer()
+            .withKafkaConfigurationMap(Map.of(KafkaConfig$.MODULE$.DeleteTopicEnableProp(), "false"));
+        kafkaContainer.start();
 
         setupKubeCluster();
-        setup(kafkaCluster);
-        startTopicOperator(kafkaCluster);
+        setup(kafkaContainer);
+        startTopicOperator(kafkaContainer);
     }
 
     @AfterAll
@@ -36,7 +36,7 @@ public class TopicOperatorTopicDeletionDisabledIT extends TopicOperatorBaseIT {
         teardown(false);
         teardownKubeCluster();
         adminClient.close();
-        kafkaCluster.stop();
+        kafkaContainer.stop();
     }
 
     @AfterEach
