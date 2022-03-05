@@ -201,16 +201,11 @@ public class SuiteThreadController {
         final String testCaseToWait = extensionContext.getDisplayName();
         waitingTestCases.add(testCaseToWait);
 
-        LOGGER.info("Here before? :D ");
-
         if (runningTestCasesInParallelCount.get() > maxTestSuitesInParallel) {
             LOGGER.debug("[{}] moved to the WaitZone, because current thread exceed maximum of allowed " +
                     "test cases in parallel. ({}/{})", testCaseToWait, runningTestCasesInParallelCount.get(),
                 maxTestSuitesInParallel);
         }
-
-        LOGGER.info("Here afer? :D ");
-
         while (!isRunningAllowedNumberTestInParallel()) {
             LOGGER.trace("{} is waiting to proceed with execution but current thread exceed maximum " +
                     "of allowed test cases in parallel. ({}/{})",
