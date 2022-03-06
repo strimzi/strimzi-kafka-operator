@@ -4,9 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
+import io.strimzi.api.kafka.model.KafkaTopicSpec;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import org.apache.logging.log4j.Logger;
@@ -48,7 +46,7 @@ public class KafkaTopicScalabilityUtils {
         }
     }
 
-    public static void checkTopicsState(String topicPrefix, int numberOfTopics, Enum<?> state) {
+    public static void waitForTopicStatus(String topicPrefix, int numberOfTopics, Enum<?> state) {
         List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++) {
@@ -64,30 +62,25 @@ public class KafkaTopicScalabilityUtils {
         allTopics.join();
     }
 
-    public static void checkTopicsNotReady(String topicPrefix, int numberOfTopics) {
+    public static void waitForTopicsNotReady(String topicPrefix, int numberOfTopics) {
         LOGGER.info("Verifying that topics are in NotReady state");
-        KafkaTopicScalabilityUtils.checkTopicsState(topicPrefix, numberOfTopics, CustomResourceStatus.NotReady);
+        KafkaTopicScalabilityUtils.waitForTopicStatus(topicPrefix, numberOfTopics, CustomResourceStatus.NotReady);
     }
 
-    public static void checkTopicsReady(String topicPrefix, int numberOfTopics) {
+    public static void waitForTopicsReady(String topicPrefix, int numberOfTopics) {
         LOGGER.info("Verifying that topics are in Ready state");
-        KafkaTopicScalabilityUtils.checkTopicsState(topicPrefix, numberOfTopics, CustomResourceStatus.Ready);
+        KafkaTopicScalabilityUtils.waitForTopicStatus(topicPrefix, numberOfTopics, CustomResourceStatus.Ready);
     }
 
-    public static void checkTopicsContainConfig(String topicPrefix, int numberOfTopics, Map<String, Object> config) {
+    public static void waitForTopicsContainConfig(String topicPrefix, int numberOfTopics, Map<String, Object> config) {
         LOGGER.info("Verifying that topics contain right config");
         List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopic = topicPrefix + i;
             topics.add(CompletableFuture.runAsync(() -> {
-                try {
-                    String json = cmdKubeClient(kubeClient().getNamespace()).exec("get", "kafkatopic", currentTopic, "-o", "jsonpath='{.spec.config}'").out();
-                    HashMap<?, ?> mapping = new ObjectMapper().readValue(json.replaceAll("'", ""), HashMap.class);
-                    assertEquals(mapping, config);
-                } catch (JsonProcessingException e) {
-                    fail(e.getMessage());
-                }
+                LOGGER.info("Verifying topic " + currentTopic);
+                KafkaTopicUtils.waitForTopicConfigContains(currentTopic, INFRA_NAMESPACE, config);
             }));
         }
 
@@ -97,7 +90,7 @@ public class KafkaTopicScalabilityUtils {
         allTopics.join();
     }
 
-    public static void modifyBigAmountOfTopics(String topicPrefix, int numberOfTopics, int numberOfPartitions, Map<String, Object> config) {
+    public static void modifyBigAmountOfTopics(String topicPrefix, int numberOfTopics, KafkaTopicSpec topicSpec) {
         LOGGER.info("Modify topics via Kubernetes");
         List<CompletableFuture<?>> topics = new ArrayList<>();
 
@@ -106,22 +99,9 @@ public class KafkaTopicScalabilityUtils {
             LOGGER.info("Modify topic {}", currentTopicName);
 
             topics.add(CompletableFuture.runAsync(() -> {
-                if (numberOfPartitions != 0) {
-                    KafkaTopicResource.replaceTopicResource(currentTopicName, kafkaTopic -> kafkaTopic.getSpec().setPartitions(numberOfPartitions));
-                }
-                if (!config.isEmpty()) {
-                    KafkaTopicResource.replaceTopicResource(currentTopicName, kafkaTopic -> kafkaTopic.getSpec().setConfig(config));
-                }
+                KafkaTopicResource.replaceTopicResource(currentTopicName, kafkaTopic -> kafkaTopic.setSpec(topicSpec));
             }));
         }
-    }
-
-    public static void modifyBigAmountOfTopics(String topicPrefix, int numberOfTopics, int numberOfPartitions) {
-        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, numberOfTopics, numberOfPartitions, new HashMap<>());
-    }
-
-    public static void modifyBigAmountOfTopics(String topicPrefix, int numberOfTopics, Map<String, Object> config) {
-        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, numberOfTopics, 0, config);
     }
 
 }

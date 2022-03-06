@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -165,6 +166,22 @@ public class KafkaTopicUtils {
 
     public static boolean waitForKafkaTopicNotReady(String topicName) {
         return waitForKafkaTopicStatus(kubeClient().getNamespace(), topicName, NotReady);
+    }
+
+    public static void waitForTopicConfigContains(String topicName, String namespaceName, Map<String, Object> config ){
+        LOGGER.info("Wait until topic {} contains correct config", topicName);
+        TestUtils.waitFor("Wait for correct config",
+                Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+                () -> KafkaTopicUtils.configsAreEqual(KafkaTopicResource.kafkaTopicClient()
+                        .inNamespace(namespaceName).withName(topicName).get().getSpec().getConfig(), config)
+        );
+        LOGGER.info("Topic {} contains correct config", topicName);
+    }
+
+    public static boolean configsAreEqual(Map<String, Object> actualConf, Map<String, Object> expectedConf){
+        if (expectedConf.size() != actualConf.size()) return false;
+        return expectedConf.entrySet().stream()
+                .allMatch(expected -> expected.getValue().toString().equals(actualConf.get(expected.getKey()).toString()));
     }
 
     public static void waitForKafkaTopicsCount(final String namespaceName, int topicCount, String clusterName) {

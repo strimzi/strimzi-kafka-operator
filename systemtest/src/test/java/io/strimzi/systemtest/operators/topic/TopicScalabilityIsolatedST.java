@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.operators.topic;
 
+import io.strimzi.api.kafka.model.KafkaTopicSpecBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,7 +40,7 @@ public class TopicScalabilityIsolatedST extends AbstractST {
 
         KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix,
                 NUMBER_OF_TOPICS, 4, 3, 2);
-        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
+        KafkaTopicScalabilityUtils.waitForTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
 
         LOGGER.info("Verifying that we've created {} topics", NUMBER_OF_TOPICS);
         assertEquals(NUMBER_OF_TOPICS, KafkaTopicUtils.getAllKafkaTopicsWithPrefix(INFRA_NAMESPACE, topicPrefix).size());
@@ -50,26 +52,28 @@ public class TopicScalabilityIsolatedST extends AbstractST {
         // Create topics
         KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix,
                 NUMBER_OF_TOPICS, defaultPartitionCount, 1, 1);
-        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
+        KafkaTopicScalabilityUtils.waitForTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
 
         // Decrease partitions and expect not ready status
-        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount - 1);
-        KafkaTopicScalabilityUtils.checkTopicsNotReady(topicPrefix, NUMBER_OF_TOPICS);
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS,
+                new KafkaTopicSpecBuilder().withPartitions(defaultPartitionCount - 1).build());
+        KafkaTopicScalabilityUtils.waitForTopicsNotReady(topicPrefix, NUMBER_OF_TOPICS);
 
         // Set back to default and check if topic becomes ready
-        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, defaultPartitionCount);
-        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS,
+                new KafkaTopicSpecBuilder().withPartitions(defaultPartitionCount).build());
+        KafkaTopicScalabilityUtils.waitForTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
     }
 
     @IsolatedTest
     void testModifyBigAmountOfTopicConfigs(ExtensionContext extensionContext) {
 
-        Map<String, Object> modifiedConfig = new HashMap<>();
+        Map<String, Object> modifiedConfig = new LinkedHashMap<>();
 
         // Create topics
         KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix,
                 NUMBER_OF_TOPICS, 2, 3, 2);
-        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
+        KafkaTopicScalabilityUtils.waitForTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
 
         // Add set of configs and expect topics to have ready status
         modifiedConfig.put("compression.type", "gzip");
@@ -77,9 +81,9 @@ public class TopicScalabilityIsolatedST extends AbstractST {
         modifiedConfig.put("message.timestamp.type", "LogAppendTime");
         modifiedConfig.put("min.insync.replicas", 6);
 
-        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
-        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
-        KafkaTopicScalabilityUtils.checkTopicsContainConfig(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS,
+                new KafkaTopicSpecBuilder().withConfig(modifiedConfig).build());
+        KafkaTopicScalabilityUtils.waitForTopicsContainConfig(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
 
         // Set time configs
         modifiedConfig.clear();
@@ -89,8 +93,10 @@ public class TopicScalabilityIsolatedST extends AbstractST {
         modifiedConfig.put("segment.ms", 123456);
         modifiedConfig.put("flush.ms", 456123);
 
-        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
-        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS,
+                new KafkaTopicSpecBuilder().withConfig(modifiedConfig).build());
+        KafkaTopicScalabilityUtils.waitForTopicsContainConfig(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+
 
         // Set size configs
         modifiedConfig.clear();
@@ -99,13 +105,16 @@ public class TopicScalabilityIsolatedST extends AbstractST {
         modifiedConfig.put("max.message.bytes", 654321);
         modifiedConfig.put("flush.messages", 456123);
 
-        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
-        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS,
+                new KafkaTopicSpecBuilder().withConfig(modifiedConfig).build());
+        KafkaTopicScalabilityUtils.waitForTopicsContainConfig(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
+
 
         // Set back to default state
         modifiedConfig.clear();
-        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
-        KafkaTopicScalabilityUtils.checkTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(topicPrefix, NUMBER_OF_TOPICS,
+                new KafkaTopicSpecBuilder().withConfig(modifiedConfig).build());
+        KafkaTopicScalabilityUtils.waitForTopicsReady(topicPrefix, NUMBER_OF_TOPICS);
     }
 
     @BeforeAll
