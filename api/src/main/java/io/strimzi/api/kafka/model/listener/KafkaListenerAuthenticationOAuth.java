@@ -67,6 +67,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private Integer readTimeoutSeconds;
     private String clientScope = null;
     private String clientAudience = null;
+    private boolean enableMetrics = false;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -416,4 +417,13 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
         this.tokenEndpointUri = tokenEndpointUri;
     }
 
+    @Description("Enable or disable OAuth metrics. Default value is `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isEnableMetrics() {
+        return enableMetrics;
+    }
+
+    public void setEnableMetrics(boolean enableMetrics) {
+        this.enableMetrics = enableMetrics;
+    }
 }

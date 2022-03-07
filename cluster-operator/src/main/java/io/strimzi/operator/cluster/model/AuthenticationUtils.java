@@ -292,6 +292,7 @@ public class AuthenticationUtils {
                 if (oauth.getMaxTokenExpirySeconds() > 0) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, oauth.getMaxTokenExpirySeconds()));
                 if (oauth.getConnectTimeoutSeconds() != null && oauth.getConnectTimeoutSeconds() > 0) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, oauth.getConnectTimeoutSeconds()));
                 if (oauth.getReadTimeoutSeconds() != null && oauth.getReadTimeoutSeconds() > 0)  options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, oauth.getReadTimeoutSeconds()));
+                if (oauth.isEnableMetrics()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ENABLE_METRICS, true));
 
                 properties.put(OAUTH_CONFIG, String.join(" ", options));
             }

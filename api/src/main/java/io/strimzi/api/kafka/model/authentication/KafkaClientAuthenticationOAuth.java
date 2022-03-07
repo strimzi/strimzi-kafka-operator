@@ -43,6 +43,7 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     private boolean disableTlsHostnameVerification = false;
     private int maxTokenExpirySeconds = 0;
     private boolean accessTokenIsJwt = true;
+    private boolean enableMetrics = false;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -185,5 +186,15 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setAccessTokenIsJwt(boolean accessTokenIsJwt) {
         this.accessTokenIsJwt = accessTokenIsJwt;
+    }
+
+    @Description("Enable or disable OAuth metrics. Default value is `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isEnableMetrics() {
+        return enableMetrics;
+    }
+
+    public void setEnableMetrics(boolean enableMetrics) {
+        this.enableMetrics = enableMetrics;
     }
 }
