@@ -34,7 +34,7 @@ public class StrimziPodSetSpec extends Spec {
     @Description("Selector is a label query which matches all the pods managed by this `StrimziPodSet`. " +
             "Only `matchLabels` is supported. " +
             "If `matchExpressions` is set, it will be ignored.")
-    @KubeLink(group = "meta", version = "v1", kind = "LabelSelector")
+    @KubeLink(group = "meta", version = "v1", kind = "labelselector")
     @JsonProperty(required = true)
     public LabelSelector getSelector() {
         return selector;
