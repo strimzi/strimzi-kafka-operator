@@ -287,7 +287,7 @@ public class Session extends AbstractVerticle {
             } else if (SASL_TYPE_SCRAM_SHA_512.equals(configSaslMechanism)) {
                 saslMechanism = "SCRAM-SHA-512";
             }
-        } else if (SASL_TYPE_AWS_MSK_IAM.equals(configSaslMechanism)){
+        } else if (SASL_TYPE_AWS_MSK_IAM.equals(configSaslMechanism)) {
             saslMechanism = "AWS_MSK_IAM";
             jaasConfig = "software.amazon.msk.auth.iam.IAMLoginModule required;";
             callbackHandlerClass = "software.amazon.msk.auth.iam.IAMClientCallbackHandler";
