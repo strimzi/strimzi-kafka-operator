@@ -33,7 +33,7 @@ CUSTOM_SE=""
 start_cluster() {
   if [[ -n $NAMESPACE && -n $CLUSTER_NAME ]]; then
     echo "Starting cluster $CLUSTER_NAME"
-    CLEANUP=false
+    CLEANUP=false 
     local zoo_ss && zoo_ss="$(kubectl -n "$NAMESPACE" get sts "$CLUSTER_NAME"-zookeeper -o name --ignore-not-found)"
     if [[ -n $zoo_ss ]]; then
       kubectl -n "$NAMESPACE" scale "$zoo_ss" --replicas "$ZK_REPLICAS"
@@ -44,16 +44,6 @@ start_cluster() {
       kubectl -n "$NAMESPACE" scale "$kafka_ss" --replicas "$KAFKA_REPLICAS"
       wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka"
     fi
-    local eo_deploy && eo_deploy="$(kubectl -n "$NAMESPACE" get deploy "$CLUSTER_NAME"-entity-operator -o name --ignore-not-found)"
-    if [[ -n $eo_deploy ]]; then
-      kubectl -n "$NAMESPACE" scale "$eo_deploy" --replicas 1
-      wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-entity-operator"
-    fi
-    local ke_deploy && ke_deploy="$(kubectl -n "$NAMESPACE" get deploy "$CLUSTER_NAME"-kafka-exporter -o name --ignore-not-found)"
-    if [[ -n $ke_deploy ]]; then
-      kubectl -n "$NAMESPACE" scale "$ke_deploy" --replicas 1
-      wait_for "condition=Ready" "pod -l strimzi.io/name=$CLUSTER_NAME-kafka-exporter"
-    fi    
     local co_deploy && co_deploy="$(kubectl -n "$NAMESPACE" get deploy strimzi-cluster-operator -o name --ignore-not-found)"
     if [[ -n $co_deploy ]]; then
       kubectl -n "$NAMESPACE" scale "$co_deploy" --replicas 1
@@ -94,7 +84,8 @@ stop_cluster() {
       kubectl -n "$NAMESPACE" scale "$zoo_ss" --replicas 0
       wait_for "delete" "pod -l strimzi.io/name=$CLUSTER_NAME-zookeeper"
     fi
-    kubectl delete po -l app.kubernetes.io/instance="$CLUSTER_NAME" --ignore-not-found
+    kubectl delete po -l "strimzi.io/name=$CLUSTER_NAME-kafka" --ignore-not-found
+    kubectl delete po -l "strimzi.io/name=$CLUSTER_NAME-zookeeper" --ignore-not-found
   fi
 }
 
@@ -136,7 +127,7 @@ wait_for() {
   echo "Waiting for \"$condition\" on \"$resource\" in namespace \"$namespace\""
   local res_cmd="kubectl -n $namespace get $resource -o name --ignore-not-found"
   local con_cmd="kubectl -n $namespace wait --for=$condition $resource --timeout=${timeout_sec}s"
-  # waiting for resource
+  # waiting for resource creation
   local i=0; while [[ ! $($res_cmd) && $i -lt $timeout_sec ]]; do
     i=$((i+1)) && sleep 1
   done
