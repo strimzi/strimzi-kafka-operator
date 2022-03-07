@@ -673,8 +673,15 @@ public abstract class AbstractST implements TestSeparator {
     void tearDownTestCase(ExtensionContext extensionContext) throws Exception {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("[{} - After Each] - Clean up after test", StUtils.removePackageName(this.getClass().getName()));
-        afterEachMayOverride(extensionContext);
-        afterEachMustExecute(extensionContext);
+        // try with finally is needed because in worst case possible if the Cluster is unable to delete namespaces, which
+        // results in `Timeout after 480000 ms waiting for Namespace namespace-136 removal` it throws WaitException and
+        // does not proceed with the next method (i.e., afterEachMustExecute()). This ensures that if such problem happen
+        // it will always execute the second method.
+        try {
+            afterEachMayOverride(extensionContext);
+        } finally {
+            afterEachMustExecute(extensionContext);
+        }
     }
 
     @AfterAll
