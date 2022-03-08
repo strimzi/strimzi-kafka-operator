@@ -1,0 +1,130 @@
+#!/usr/bin/env groovy
+
+def lib
+// Currently the loadbalancer service is not working on minikube, same for network policies
+def DEFAULT_EXCLUDED_GROUPS = "loadbalancer,networkpolicies"
+
+pipeline {
+    agent {
+        node {
+            label "slave"
+        }
+    }
+    parameters {
+        string(name: 'TEST_CASE', defaultValue: '*ST', description: 'maven parameter for executing specific tests')
+        string(name: 'TEST_PROFILE', defaultValue: 'all', description: 'maven parameter for executing specific test profile')
+        string(name: 'TEST_GROUPS', defaultValue: 'integration,acceptance,regression', description: 'maven parameter for executing specific test groups')
+        string(name: 'EXCLUDE', defaultValue: "${DEFAULT_EXCLUDED_GROUPS}", description: 'maven parameter for exclude specific test tag')
+        string(name: 'ENV_VARS', defaultValue: "", description: 'maven parameter for setting values of environment variables used in STs')
+        string(name: 'STRIMZI_MAILING_LIST', defaultValue: "laurent_gattoni@carrefour.com", description: 'mailing list for Phenix report')
+    }
+    options {
+        timeout(time: 24, unit: 'HOURS')
+        ansiColor('xterm')
+    }
+    environment {
+        ARTIFACTS_DIR = 'systemtest/target/logs'
+        JOB_NAME_SUB = "${String.format("%.15s", JOB_NAME).toLowerCase()}"
+        ORIGIN_BASE_DIR = "${env.WORKSPACE}/origin/"
+        KUBE_CONFIG_PATH = "${env.WORKSPACE}/origin/kube-apiserver/admin.kubeconfig"
+        OPERATOR_IMAGE_PULL_POLICY = "IfNotPresent"
+        COMPONENTS_IMAGE_PULL_POLICY = "IfNotPresent"
+        JAVA_VERSION = "11"
+        TEST_HELM2_VERSION = "v2.17.0"
+        TEST_HELM3_VERSION = "v3.4.2"
+        TEST_CLUSTER = "minikube"
+        COPY_DOCKER_LOGIN = "true"
+        TEST_ONLY = "true"
+    }
+    stages {
+        stage('Clean WS') {
+            steps {
+                cleanWs()
+                  }
+            }
+        stage('Checkout Strimzi') {
+            steps {
+                checkout scm
+                   }
+            }
+        stage('Parse parameters from comment') {
+            steps {
+                script {
+                    lib = evaluate readFile('./.jenkins/jenkins.groovy')
+                    env.TEST_CASE = params.TEST_CASE
+                    env.TEST_PROFILE = params.TEST_PROFILE
+                    env.TEST_GROUPS = params.TEST_GROUPS
+                    env.ENV_VARS = params.ENV_VARS
+                    env.EXCLUDE_GROUPS = DEFAULT_EXCLUDED_GROUPS
+                    env.STRIMZI_MAILING_LIST = params.STRIMZI_MAILING_LIST
+                    println("TEST_CASE: ${env.TEST_CASE}")
+                    println("TEST_GROUPS: ${env.TEST_GROUPS}")
+
+                    println("TEST_PROFILE: ${env.TEST_PROFILE}")
+
+                    println("EXCLUDE_GROUPS: ${env.EXCLUDE_GROUPS}")
+
+                    env.DOCKER_TAG="latest"
+                    env.DOCKER_ORG="phenixcorps"
+                    env.DOCKER_REGISTRY = "eu.gcr.io/vg1np-pf-phenix-caas-1a/3rdparty/strimzi-operator"
+                    env.TEST_CLUSTER="minikube"
+                    env.KUBE_VERSION = "stable"
+
+
+
+                    env.TEST_COUNT_RUNNING_IN_PARALLEL = "3"
+
+
+                    println("ENV_VARS: ${env.ENV_VARS}")
+                    env.BUILD_PROJECT_STATUS = false
+                    env.BUILD_DOCKER_IMAGE_STATUS = false
+                    println("TEST_ONLY: ${env.TEST_ONLY}")
+                    println("DOCKER_REGISTRY: ${env.DOCKER_REGISTRY}")
+                    println("DOCKER_ORG: ${env.DOCKER_ORG}")
+                    println("DOCKER_TAG: ${env.DOCKER_TAG}")
+                    println("CLUSTER_OPERATOR_INSTALL_TYPE: ${env.CLUSTER_OPERATOR_INSTALL_TYPE}")
+                    println("KUBE_VERSION: ${env.KUBE_VERSION}")
+                    println("TEST_COUNT_RUNNING_IN_PARALLEL: ${env.TEST_COUNT_RUNNING_IN_PARALLEL}")
+                }
+            }
+        }
+        stage('Start Minikube') {
+            steps {
+                timeout(time: 4, unit: 'MINUTES') {
+                    script {
+                        sh(script: "CHANGE_MINIKUBE_NONE_USER=true; minikube start")
+                    }
+                }
+            }
+        }
+        stage('Build Test and image project') {
+            steps {
+                script {
+                        sh '''#!/bin/bash
+                               export PATH=/usr/local/jdk-11.0.2/bin:$PATH
+                               export TEST_CLUSTER=$TEST_CLUSTER
+                               export DOCKER_ORG=$DOCKER_ORG
+                               export DOCKER_REGISTRY=$DOCKER_REGISTRY
+                               make MVN_ARGS="-Dgroups=$TEST_GROUPS" all
+                           '''
+
+                }
+            }
+        }
+
+    }
+    post {
+        always {
+            script {
+                sh(script: "sudo ./systemtest/scripts/results_info.sh ./systemtest/target/failsafe-reports/ ${env.TEST_CASE} ${env.TEST_PROFILE} ${env.BUILD_NUMBER} ${env.KUBE_VERSION} ${env.TEST_ONLY} ${env.TEST_COUNT_RUNNING_IN_PARALLEL} ${env.EXCLUDE_GROUPS} ${env.ENV_VARS}")
+                lib.postAction(env.ARTIFACTS_DIR, env.ghprbPullId, env.ghprbActualCommitAuthor, env.ghprbPullTitle, env.ghprbPullLink, env.BUILD_URL, env.WORKSPACE, env.STRIMZI_MAILING_LIST)
+            }
+        }
+        failure {
+            println("Build failed")
+            script {
+                lib.sendMail(env.STRIMZI_MAILING_LIST, "failed", env.ghprbPullId, env.ghprbActualCommitAuthor, env.ghprbPullTitle, env.ghprbPullLink, env.BUILD_URL)
+            }
+        }
+    }
+}
