@@ -123,9 +123,10 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 * `route` type uses OpenShift Routes to expose Kafka.
 * `loadbalancer` type uses LoadBalancer type services to expose Kafka.
 * `nodeport` type uses NodePort type services to expose Kafka.
-* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka.
+* `ingress` type uses Kubernetes Nginx Ingress to expose Kafka, with passthrought.
+* `ingress-tcp` type uses Kubernetes Nginx Ingress to expose Kafka, with tcp port config.
 
-|string (one of [ingress, internal, route, loadbalancer, nodeport])
+|string (one of [ingress, ingress-tcp, internal, route, loadbalancer, nodeport])
 |tls                 1.2+<.<a|Enables TLS encryption on the listener. This is a required property.
 |boolean
 |authentication      1.2+<.<a|Authentication configuration for this listener. The type depends on the value of the `authentication.type` property within the given object, which must be one of [tls, scram-sha-512, oauth].

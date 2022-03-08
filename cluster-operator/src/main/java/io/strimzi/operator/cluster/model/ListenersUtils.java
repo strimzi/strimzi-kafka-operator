@@ -123,6 +123,16 @@ public class ListenersUtils {
     }
 
     /**
+     * Returns list of all Ingress TCP type listeners
+     *
+     * @param listeners List of all listeners
+     * @return          List of ingress listeners
+     */
+    public static List<GenericKafkaListener> ingressTCPListeners(List<GenericKafkaListener> listeners)    {
+        return listenersByType(listeners, KafkaListenerType.INGRESS_TCP);
+    }
+
+    /**
      * Returns true if the list has a listener of given type and false otherwise.
      *
      * @param listeners List of all listeners
@@ -187,6 +197,17 @@ public class ListenersUtils {
      */
     public static boolean hasIngressListener(List<GenericKafkaListener> listeners)    {
         return hasListenerOfType(listeners, KafkaListenerType.INGRESS);
+    }
+
+
+    /**
+     * Checks whether we have at least one Ingress TCP listener
+     *
+     * @param listeners List of all listeners
+     * @return          True if at least one Ingress listener exists. False otherwise.
+     */
+    public static boolean hasIngressTCPListener(List<GenericKafkaListener> listeners)    {
+        return hasListenerOfType(listeners, KafkaListenerType.INGRESS_TCP);
     }
 
     /**

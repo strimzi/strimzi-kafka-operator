@@ -12,7 +12,8 @@ public enum KafkaListenerType {
     ROUTE,
     LOADBALANCER,
     NODEPORT,
-    INGRESS;
+    INGRESS,
+    INGRESS_TCP;
 
     @JsonCreator
     public static KafkaListenerType forValue(String value) {
@@ -27,6 +28,8 @@ public enum KafkaListenerType {
                 return NODEPORT;
             case "ingress":
                 return INGRESS;
+            case "ingress-tcp":
+                return INGRESS_TCP;
             default:
                 return null;
         }
@@ -45,6 +48,8 @@ public enum KafkaListenerType {
                 return "nodeport";
             case INGRESS:
                 return "ingress";
+            case INGRESS_TCP:
+                return "ingress-tcp";
             default:
                 return null;
         }

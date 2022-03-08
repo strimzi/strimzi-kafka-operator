@@ -97,6 +97,7 @@ spec:
                           - loadbalancer
                           - nodeport
                           - ingress
+                          - ingress-tcp
                           description: "Type of the listener. Currently the supported\
                             \ types are `internal`, `route`, `loadbalancer`, `nodeport`\
                             \ and `ingress`. \n\n* `internal` type exposes Kafka internally\
@@ -105,7 +106,9 @@ spec:
                             \ type uses LoadBalancer type services to expose Kafka.\n\
                             * `nodeport` type uses NodePort type services to expose\
                             \ Kafka.\n* `ingress` type uses Kubernetes Nginx Ingress\
-                            \ to expose Kafka.\n"
+                            \ to expose Kafka, with passthrought.\n* `ingress-tcp`\
+                            \ type uses Kubernetes Nginx Ingress to expose Kafka,\
+                            \ with tcp port config.\n"
                         tls:
                           type: boolean
                           description: Enables TLS encryption on the listener. This
@@ -6711,6 +6714,7 @@ spec:
                             - loadbalancer
                             - nodeport
                             - ingress
+                            - ingress-tcp
                             description: "Type of the listener. Currently the supported\
                               \ types are `internal`, `route`, `loadbalancer`, `nodeport`\
                               \ and `ingress`. \n\n* `internal` type exposes Kafka\
@@ -6719,7 +6723,9 @@ spec:
                               * `loadbalancer` type uses LoadBalancer type services\
                               \ to expose Kafka.\n* `nodeport` type uses NodePort\
                               \ type services to expose Kafka.\n* `ingress` type uses\
-                              \ Kubernetes Nginx Ingress to expose Kafka.\n"
+                              \ Kubernetes Nginx Ingress to expose Kafka, with passthrought.\n\
+                              * `ingress-tcp` type uses Kubernetes Nginx Ingress to\
+                              \ expose Kafka, with tcp port config.\n"
                           tls:
                             type: boolean
                             description: Enables TLS encryption on the listener. This
@@ -16033,6 +16039,7 @@ spec:
                             - loadbalancer
                             - nodeport
                             - ingress
+                            - ingress-tcp
                             description: "Type of the listener. Currently the supported\
                               \ types are `internal`, `route`, `loadbalancer`, `nodeport`\
                               \ and `ingress`. \n\n* `internal` type exposes Kafka\
@@ -16041,7 +16048,9 @@ spec:
                               * `loadbalancer` type uses LoadBalancer type services\
                               \ to expose Kafka.\n* `nodeport` type uses NodePort\
                               \ type services to expose Kafka.\n* `ingress` type uses\
-                              \ Kubernetes Nginx Ingress to expose Kafka.\n"
+                              \ Kubernetes Nginx Ingress to expose Kafka, with passthrought.\n\
+                              * `ingress-tcp` type uses Kubernetes Nginx Ingress to\
+                              \ expose Kafka, with tcp port config.\n"
                           tls:
                             type: boolean
                             description: Enables TLS encryption on the listener. This

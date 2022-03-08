@@ -305,6 +305,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaNodePortServicesReady())
                 .compose(state -> state.kafkaRoutesReady())
                 .compose(state -> state.kafkaIngressesReady())
+                .compose(state -> state.kafkaIngressesTCP())
                 .compose(state -> state.kafkaIngressesV1Beta1Ready())
                 .compose(state -> state.kafkaGenerateCertificates(this::dateSupplier))
                 .compose(state -> state.customListenerCertificates())
@@ -2236,6 +2237,60 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
 
             return withVoid(CompositeFuture.join(listenerFutures));
+        }
+
+        /**
+         * Makes sure all ingresses are ready and collects ingresses addresses for Statuses,
+         * certificates and advertised addresses. This method for all ingresses:
+         *      1) Collects the relevant addresses and stores them for use in certificates and in CR status
+         *      2) Collects the route addresses for certificates and advertised hostnames
+         *
+         * @return
+         */
+        Future<ReconciliationState> kafkaIngressesTCP() {
+
+            List<GenericKafkaListener> ingressListeners = ListenersUtils.ingressTCPListeners(kafkaCluster.getListeners());
+
+            for (GenericKafkaListener listener : ingressListeners) {
+                String bootstrapIngressName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(name, listener);
+
+                String bootstrapAddress = listener.getConfiguration().getBootstrap().getHost();
+                LOGGER.debugCr(reconciliation, "Using address {} for Ingress {}", bootstrapAddress, bootstrapIngressName);
+
+                kafkaBootstrapDnsName.add(bootstrapAddress);
+
+                ListenerStatus ls = new ListenerStatusBuilder()
+                        .withType(listener.getName())
+                        .withAddresses(new ListenerAddressBuilder()
+                                .withHost(bootstrapAddress)
+                                .withPort(kafkaCluster.getRoutePort())
+                                .build())
+                        .build();
+                addListenerStatus(ls);
+
+                for (int pod = 0; pod < kafkaCluster.getReplicas(); pod++)  {
+                    final int podNumber = pod;
+                    String brokerAddress = listener.getConfiguration().getBrokers().stream()
+                            .filter(broker -> broker.getBroker() == podNumber)
+                            .map(GenericKafkaListenerConfigurationBroker::getHost)
+                            .findAny()
+                            .orElse(null);
+                    LOGGER.debugCr(reconciliation, "Using address {} for Ingress {}", brokerAddress, ListenersUtils.backwardsCompatibleBrokerServiceName(name, pod, listener));
+
+                    kafkaBrokerDnsNames.computeIfAbsent(pod, k -> new HashSet<>(2)).add(brokerAddress);
+
+                    String advertisedHostname = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
+                    if (advertisedHostname != null) {
+                        kafkaBrokerDnsNames.get(podNumber).add(ListenersUtils.brokerAdvertisedHost(listener, podNumber));
+                    }
+
+                    kafkaAdvertisedHostnames.add(kafkaCluster.getAdvertisedHostname(listener, pod, brokerAddress));
+                    kafkaAdvertisedPorts.add(kafkaCluster.getAdvertisedPort(listener, pod, kafkaCluster.getIngressPort()));
+                }
+
+            }
+
+            return Future.succeededFuture(this);
         }
 
         /**
