@@ -620,16 +620,15 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     private final void beforeAllMustExecute(ExtensionContext extensionContext) {
+        if (StUtils.isParallelSuite(extensionContext)) {
+            parallelSuiteController.addParallelSuite(extensionContext);
+            parallelSuiteController.waitUntilAllowedNumberTestSuitesInParallel(extensionContext);
+        }
         try {
-            clusterOperator = SetupClusterOperator.getInstanceHolder();
-        } finally {
-            if (StUtils.isParallelSuite(extensionContext)) {
-                parallelSuiteController.addParallelSuite(extensionContext);
-                parallelSuiteController.waitUntilAllowedNumberTestSuitesInParallel(extensionContext);
-            }
             // (optional) create additional namespace/namespaces for test suites if needed
+            // in case `Terminating` issue with namespace we have to execute finally block
             testSuiteNamespaceManager.createAdditionalNamespaces(extensionContext);
-
+        } finally {
             if (StUtils.isIsolatedSuite(extensionContext)) {
                 cluster.setNamespace(Constants.INFRA_NAMESPACE);
                 // wait for parallel suites are done
@@ -639,6 +638,7 @@ public abstract class AbstractST implements TestSeparator {
             } else if (StUtils.isParallelSuite(extensionContext) && Environment.isNamespaceRbacScope()) {
                 cluster.setNamespace(Constants.INFRA_NAMESPACE);
             }
+            clusterOperator = SetupClusterOperator.getInstanceHolder();
         }
     }
 

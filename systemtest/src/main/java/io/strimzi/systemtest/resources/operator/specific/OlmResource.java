@@ -275,10 +275,14 @@ public class OlmResource implements SpecificResourceType {
     }
 
     private static void deleteOlm(String deploymentName, String namespace, String csvName) {
-        ResourceManager.cmdKubeClient().exec("delete", "subscriptions", "-l", "app=strimzi", "-n", namespace);
-        ResourceManager.cmdKubeClient().exec("delete", "operatorgroups", "-l", "app=strimzi", "-n", namespace);
-        ResourceManager.cmdKubeClient().exec(false, "delete", "csv", csvName, "-n", namespace);
-        DeploymentUtils.waitForDeploymentDeletion(namespace, deploymentName);
+        if (ResourceManager.kubeClient().getDeployment(namespace, deploymentName) != null) {
+            ResourceManager.cmdKubeClient().exec("delete", "subscriptions", "-l", "app=strimzi", "-n", namespace);
+            ResourceManager.cmdKubeClient().exec("delete", "operatorgroups", "-l", "app=strimzi", "-n", namespace);
+            ResourceManager.cmdKubeClient().exec(false, "delete", "csv", csvName, "-n", namespace);
+            DeploymentUtils.waitForDeploymentDeletion(namespace, deploymentName);
+        } else {
+            LOGGER.info("Cluster Operator: {} is already deleted in namespace: {}", deploymentName, namespace);
+        }
     }
 
     private static void waitFor(String deploymentName, String namespace, int replicas) {
