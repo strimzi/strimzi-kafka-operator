@@ -349,6 +349,7 @@ public class ResourceUtils {
                 .build();
     }
 
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
     public static Kafka createKafka(String namespace, String name, int replicas,
                                     String image, int healthDelay, int healthTimeout,
                                     MetricsConfig metricsConfig,

@@ -237,7 +237,7 @@ public class ZookeeperCluster extends AbstractModel {
         return fromCrd(reconciliation, kafkaAssembly, versions, null, 0);
     }
 
-    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
         ZookeeperCluster zk = new ZookeeperCluster(reconciliation, kafkaAssembly);
         zk.setOwnerReference(kafkaAssembly);

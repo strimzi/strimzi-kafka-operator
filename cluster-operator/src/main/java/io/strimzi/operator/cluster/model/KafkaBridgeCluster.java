@@ -155,6 +155,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         this.logAndMetricsConfigMountPath = "/opt/strimzi/custom-config/";
     }
 
+    @SuppressWarnings({"checkstyle:NPathComplexity"})
     public static KafkaBridgeCluster fromCrd(Reconciliation reconciliation, KafkaBridge kafkaBridge, KafkaVersion.Lookup versions) {
 
         KafkaBridgeCluster kafkaBridgeCluster = new KafkaBridgeCluster(reconciliation, kafkaBridge);

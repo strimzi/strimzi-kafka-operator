@@ -598,6 +598,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * Within both the secrets the current certificate is stored under the key {@code ca.crt}
          * and the current key is stored under the key {@code ca.key}.
          */
+        @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
         Future<ReconciliationState> reconcileCas(Supplier<Date> dateSupplier) {
             Labels selectorLabels = Labels.EMPTY.withStrimziKind(reconciliation.kind()).withStrimziCluster(reconciliation.name());
             Labels caLabels = Labels.generateDefaultLabels(kafkaAssembly, Labels.APPLICATION_NAME, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
@@ -999,6 +1000,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          *
          * @return
          */
+        @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
         Future<ReconciliationState> prepareVersionChange() {
             if (versionChange.isNoop()) {
                 LOGGER.debugCr(reconciliation, "{}: No Kafka version change", reconciliation);

@@ -141,6 +141,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
+@SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public class KafkaAssemblyOperatorTest {
 
     public static final Map<String, Object> METRICS_CONFIG = new HashMap<>();
@@ -414,6 +415,7 @@ public class KafkaAssemblyOperatorTest {
         return pvcs;
     }
 
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "checkstyle:JavaNCSS", "checkstyle:MethodLength"})
     private void createCluster(VertxTestContext context, Kafka kafka, List<Secret> secrets) {
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         ZookeeperCluster zookeeperCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
@@ -880,6 +882,7 @@ public class KafkaAssemblyOperatorTest {
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
+    @SuppressWarnings({"checkstyle:NPathComplexity", "checkstyle:JavaNCSS", "checkstyle:MethodLength"})
     private void updateCluster(VertxTestContext context, Kafka originalAssembly, Kafka updatedAssembly) {
         KafkaCluster originalKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, originalAssembly, VERSIONS);
         KafkaCluster updatedKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, updatedAssembly, VERSIONS);
