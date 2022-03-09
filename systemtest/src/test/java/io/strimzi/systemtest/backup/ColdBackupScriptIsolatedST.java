@@ -13,7 +13,6 @@ import static org.hamcrest.CoreMatchers.is;
 
 import java.util.Map;
 
-import io.strimzi.systemtest.annotations.StatefulSetTest;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -35,7 +34,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-@StatefulSetTest
 @IsolatedSuite
 public class ColdBackupScriptIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ColdBackupScriptIsolatedST.class);
@@ -51,7 +49,7 @@ public class ColdBackupScriptIsolatedST extends AbstractST {
         String clusterName = mapWithClusterNames.get(context.getDisplayName());
         String groupId = "my-group", newGroupId = "new-group";
         int firstBatchSize = 100, secondBatchSize = 10;
-        String backupFilePath = USER_PATH + "/target/" + clusterName + ".zip";
+        String backupFilePath = USER_PATH + "/target/" + clusterName + ".tgz";
 
         resourceManager.createResource(context, KafkaTemplates.kafkaPersistent(clusterName, 1, 1)
                 .editMetadata()
