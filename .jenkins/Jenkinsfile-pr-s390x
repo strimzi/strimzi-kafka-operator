@@ -6,8 +6,12 @@ def DEFAULT_EXCLUDED_GROUPS = "loadbalancer,networkpolicies"
 
 pipeline {
     agent {
-        node {
-            label "strimzi-pr"
+        dockerfile {
+            filename 'Dockerfile_base_s390x'
+            dir '.jenkins/scripts'
+            label 'strimzi-pr-s390x'
+            additionalBuildArgs '--build-arg user=$USER --build-arg uid=$(id -u) --build-arg gid=$(id -g)'
+            args '--privileged -v /home/$USER/workspace/:/home/$USER/workspace/ -v /home/$USER/s390x-image-tarballs:/home/$USER/s390x-image-tarballs -v /home/$USER/.m2:/home/$USER/.m2'
         }
     }
     parameters {
@@ -29,10 +33,12 @@ pipeline {
         OPERATOR_IMAGE_PULL_POLICY = "IfNotPresent"
         COMPONENTS_IMAGE_PULL_POLICY = "IfNotPresent"
         JAVA_VERSION = "11"
-        TEST_HELM2_VERSION = "v2.17.0"
         TEST_HELM3_VERSION = "v3.4.2"
         TEST_CLUSTER = "minikube"
         COPY_DOCKER_LOGIN = "true"
+        DOCKER_BUILDX = "buildx"
+        DOCKER_BUILD_ARGS = "--platform linux/s390x --load"
+        S390X_IMAGE_TARBALL_DIR = "s390x-image-tarballs"
     }
     stages {
         stage('Clean WS') {
@@ -110,7 +116,7 @@ pipeline {
                     if (env.ghprbCommentBody.contains('test_count_running_in_parallel=')) {
                         env.TEST_COUNT_RUNNING_IN_PARALLEL = env.ghprbCommentBody.split('test_count_running_in_parallel=')[1].split(/\s/)[0]
                     } else {
-                        env.TEST_COUNT_RUNNING_IN_PARALLEL = "3"
+                        env.TEST_COUNT_RUNNING_IN_PARALLEL = "1"
                     }
 
                     println("ENV_VARS: ${env.ENV_VARS}")
@@ -130,7 +136,13 @@ pipeline {
             steps {
                 timeout(time: 10, unit: 'MINUTES') {
                     script {
-                        lib.setupKubernetes()
+                        sh(script: """
+                            # We're using a separate docker daemon inside the container so that local registries wouldn't affect each other.
+                            # Use -G option when starting docker daemon to ensure the Jenkins user can connect to /var/run/docker.sock .
+                            sudo dockerd -G \$(id -gn) &
+                            sleep 10
+                        """)
+                        lib.setupKubernetes('s390x')
                     }
                 }
             }
@@ -148,7 +160,7 @@ pipeline {
             steps {
                 timeout(time: 5, unit: 'MINUTES') {
                     script {
-                        lib.installYq(env.WORKSPACE)
+                        lib.installYq(env.WORKSPACE, 's390x')
                     }
                 }
             }
@@ -169,7 +181,9 @@ pipeline {
             }
             steps {
                 script {
-                    lib.setupShellheck()
+                    //The following 2 steps are temporary
+                    lib.buildKeycloakAndOpa_s390x(env.WORKSPACE)
+                    lib.applys390xpatch(env.WORKSPACE)
                     lib.buildStrimziImages()
                     env.BUILD_DOCKER_IMAGE_STATUS = true
                     env.DOCKER_REGISTRY = sh(script: "kubectl get service registry -n kube-system -o=jsonpath='{.spec.clusterIP}'", returnStdout: true).trim() + ":80"
@@ -185,7 +199,7 @@ pipeline {
                         if ("${env.TEST_PROFILE}".contains("upgrade")) {
                             lib.prepareUpgradeSTs(env.WORKSPACE, env.DOCKER_REGISTRY, env.DOCKER_TAG)
                         }
-                        lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.TEST_GROUPS, env.EXCLUDE_GROUPS, "true", env.TEST_COUNT_RUNNING_IN_PARALLEL)
+                        lib.runSystemTests(env.WORKSPACE, env.TEST_CASE, env.TEST_PROFILE, env.TEST_GROUPS, env.EXCLUDE_GROUPS, "false", env.TEST_COUNT_RUNNING_IN_PARALLEL)
                     }
                 }
             }
@@ -195,7 +209,9 @@ pipeline {
         always {
             script {
                 sh(script: "sudo ./systemtest/scripts/results_info.sh ./systemtest/target/failsafe-reports/ ${env.TEST_CASE} ${env.TEST_PROFILE} ${env.BUILD_NUMBER} ${env.KUBE_VERSION} ${env.TEST_ONLY} ${env.TEST_COUNT_RUNNING_IN_PARALLEL} ${env.EXCLUDE_GROUPS} ${env.ENV_VARS}")
-                lib.postGithubPrComment("results.json")
+                if (!env.ghprbCommentBody.contains('nightly builds')) {
+                    lib.postGithubPrComment("results.json")
+                }
                 lib.postAction(env.ARTIFACTS_DIR, env.ghprbPullId, env.ghprbActualCommitAuthor, env.ghprbPullTitle, env.ghprbPullLink, env.BUILD_URL, env.WORKSPACE, env.STRIMZI_MAILING_LIST)
             }
         }

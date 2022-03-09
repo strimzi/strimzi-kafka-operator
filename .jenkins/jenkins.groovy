@@ -1,10 +1,12 @@
 
-def setupKubernetes() {
-    // set SElinux to permisive mode
-    sh(script: "sudo setenforce 0")
-    // Install conntrack
-    sh(script: "sudo yum install -y conntrack")
-    sh(script: "${workspace}/.azure/scripts/setup-kubernetes.sh")
+def setupKubernetes(String arch = "amd64") {
+    if (!"${arch}".contains("s390x")) {
+        // set SElinux to permisive mode
+        sh(script: "sudo setenforce 0")
+        // Install conntrack
+        sh(script: "sudo yum install -y conntrack")
+    }
+    sh(script: "${workspace}/.azure/scripts/setup-kubernetes.sh ${arch}")
 }
 
 def setupShellheck() {
@@ -20,8 +22,16 @@ def installHelm(String workspace) {
     sh(script: "${workspace}/.azure/scripts/setup-helm.sh")
 }
 
-def installYq(String workspace) {
-    sh(script: "${workspace}/.azure/scripts/install_yq.sh")
+def installYq(String workspace, String arch = "amd64") {
+    sh(script: "${workspace}/.azure/scripts/install_yq.sh ${arch}")
+}
+
+def buildKeycloakAndOpa_s390x(String workspace) {
+    sh(script: "${workspace}/.jenkins/scripts/build_keycloak_opa-s390x.sh")
+}
+
+def applys390xpatch(String workspace) {
+    sh(script: "${workspace}/.jenkins/scripts/apply_s390x_patch.sh")
 }
 
 def buildStrimziImages() {
@@ -31,20 +41,33 @@ def buildStrimziImages() {
     """)
 }
 
-def runSystemTests(String workspace, String testCases, String testProfile, String testGroups, String excludeGroups, String testsInParallel) {
+def prepareUpgradeSTs(String workspace, String dockerRegistry, String dockerTag) {
+    println("[INFO] Update files for upgrade procedure")
+    sh(script: """
+        sed -i 's#:latest#:${dockerTag}#g' ${workspace}/systemtest/src/test/resources/upgrade/StrimziUpgradeST.json ${workspace}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
+        sed -i 's#quay.io/strimzi/test-client:${dockerTag}#${dockerRegistry}/strimzi/test-client:${dockerTag}#g' ${workspace}/systemtest/src/test/resources/upgrade/StrimziUpgradeST.json
+        sed -i 's#quay.io/strimzi/#${dockerRegistry}/strimzi/#g' ${workspace}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
+        sed -i 's#/opt/${dockerRegistry}#/opt#g' ${workspace}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml
+    """)
+    sh(script: "cat ${workspace}/systemtest/src/test/resources/upgrade/StrimziUpgradeST.json")
+    sh(script: "cat ${workspace}/install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml")
+}
+
+def runSystemTests(String workspace, String testCases, String testProfile, String testGroups, String excludeGroups, String parallelEnabled, String testsInParallel) {
     def groupsTag = testGroups.isEmpty() ? "" : "-Dgroups=${testGroups} "
+    def testcasesTag = testCases.isEmpty() ? "" : "-Dit.test=${testCases} "
     withMaven(mavenOpts: '-Djansi.force=true') {
         sh(script: "mvn -f ${workspace}/systemtest/pom.xml verify " +
             "-P${testProfile} " +
             "${groupsTag}" +
             "-DexcludedGroups=${excludeGroups} " +
-            "-Dit.test=${testCases} " +
+            "${testcasesTag}" +
             "-Djava.net.preferIPv4Stack=true " +
             "-DtrimStackTrace=false " +
             "-Dstyle.color=always " +
             "--no-transfer-progress " +
             "-Dfailsafe.rerunFailingTestsCount=2 " +
-            "-Djunit.jupiter.execution.parallel.enabled=true " +
+            "-Djunit.jupiter.execution.parallel.enabled=${parallelEnabled} " +
             // sequence mode with testInParallel=1 otherwise parallel (default method-wide parallelism)
             "-Djunit.jupiter.execution.parallel.config.fixed.parallelism=${testsInParallel}")
     }
