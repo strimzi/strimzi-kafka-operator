@@ -168,7 +168,7 @@ public class KafkaTopicUtils {
         return waitForKafkaTopicStatus(kubeClient().getNamespace(), topicName, NotReady);
     }
 
-    public static void waitForTopicConfigContains(String topicName, String namespaceName, Map<String, Object> config ) {
+    public static void waitForTopicConfigContains(String topicName, String namespaceName, Map<String, Object> config) {
         LOGGER.info("Wait until topic {} contains correct config", topicName);
         TestUtils.waitFor("Wait for correct config",
                 Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
