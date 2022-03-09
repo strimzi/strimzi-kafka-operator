@@ -20,8 +20,6 @@ Consumer group offsets are included, but not Kafka Connect, MirrorMaker and Kafk
 - tar 1.33+ (GNU)
 - kubectl 1.16+ (K8s CLI)
 - yq 4.6+ (YAML processor)
-- zip 3+ (Info-ZIP)
-- unzip 6+ (Info-ZIP)
 - enough disk space
 
 ## Usage example
