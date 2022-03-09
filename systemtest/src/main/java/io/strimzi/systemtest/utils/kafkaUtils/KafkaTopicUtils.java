@@ -168,7 +168,7 @@ public class KafkaTopicUtils {
         return waitForKafkaTopicStatus(kubeClient().getNamespace(), topicName, NotReady);
     }
 
-    public static void waitForTopicConfigContains(String topicName, String namespaceName, Map<String, Object> config ){
+    public static void waitForTopicConfigContains(String topicName, String namespaceName, Map<String, Object> config ) {
         LOGGER.info("Wait until topic {} contains correct config", topicName);
         TestUtils.waitFor("Wait for correct config",
                 Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
@@ -178,7 +178,7 @@ public class KafkaTopicUtils {
         LOGGER.info("Topic {} contains correct config", topicName);
     }
 
-    public static boolean configsAreEqual(Map<String, Object> actualConf, Map<String, Object> expectedConf){
+    public static boolean configsAreEqual(Map<String, Object> actualConf, Map<String, Object> expectedConf) {
         if (expectedConf.size() != actualConf.size()) return false;
         return expectedConf.entrySet().stream()
                 .allMatch(expected -> expected.getValue().toString().equals(actualConf.get(expected.getKey()).toString()));

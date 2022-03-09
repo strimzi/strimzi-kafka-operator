@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -68,7 +67,7 @@ public class TopicScalabilityIsolatedST extends AbstractST {
     @IsolatedTest
     void testModifyBigAmountOfTopicConfigs(ExtensionContext extensionContext) {
 
-        Map<String, Object> modifiedConfig = new LinkedHashMap<>();
+        Map<String, Object> modifiedConfig = new HashMap<>();
 
         // Create topics
         KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, sharedClusterName, topicPrefix,
