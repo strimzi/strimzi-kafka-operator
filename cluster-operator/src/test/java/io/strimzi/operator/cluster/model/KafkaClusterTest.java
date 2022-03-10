@@ -83,8 +83,8 @@ import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -92,6 +92,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
+import org.hamcrest.CoreMatchers;
 
 import java.io.IOException;
 import java.security.cert.CertificateParsingException;
@@ -121,8 +122,8 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -377,11 +378,64 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
+    public void testPerBrokerConfiguration() {
+        String config = kc.generateSharedBrokerConfiguration(true);
+
+        assertThat(config, CoreMatchers.containsString("broker.id=${STRIMZI_BROKER_ID}"));
+        assertThat(config, CoreMatchers.containsString("node.id=${STRIMZI_BROKER_ID}"));
+        assertThat(config, CoreMatchers.containsString("log.dirs=/var/lib/kafka/data/kafka-log${STRIMZI_BROKER_ID}"));
+        assertThat(config, CoreMatchers.containsString("advertised.listeners=CONTROLPLANE-9090://foo-kafka-${STRIMZI_BROKER_ID}.foo-kafka-brokers.test.svc:9090,REPLICATION-9091://foo-kafka-${STRIMZI_BROKER_ID}.foo-kafka-brokers.test.svc:9091,PLAIN-9092://${STRIMZI_PLAIN_9092_ADVERTISED_HOSTNAME}:${STRIMZI_PLAIN_9092_ADVERTISED_PORT},TLS-9093://${STRIMZI_TLS_9093_ADVERTISED_HOSTNAME}:${STRIMZI_TLS_9093_ADVERTISED_PORT}\n"));
+    }
+
+    @ParallelTest
+    public void testPerBrokerConfigMaps() {
+        MetricsAndLogging metricsAndLogging = new MetricsAndLogging(metricsCM, null);
+        Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
+                0, Map.of("PLAIN_9092", "broker-0", "TLS_9093", "broker-0"),
+                1, Map.of("PLAIN_9092", "broker-1", "TLS_9093", "broker-1"),
+                2, Map.of("PLAIN_9092", "broker-2", "TLS_9093", "broker-2")
+        );
+        Map<Integer, Map<String, String>> advertisedPorts = Map.of(
+                0, Map.of("PLAIN_9092", "10000", "TLS_9093", "20000"),
+                1, Map.of("PLAIN_9092", "10001", "TLS_9093", "20001"),
+                2, Map.of("PLAIN_9092", "10002", "TLS_9093", "20002")
+        );
+
+        ConfigMap cm = kc.generateSharedConfigurationConfigMap(metricsAndLogging, advertisedHostnames, advertisedPorts, true);
+
+        assertThat(cm.getData().size(), is(6));
+        assertThat(cm.getMetadata().getName(), is("foo-kafka-config"));
+        assertThat(cm.getData().get("metrics-config.json"), is(notNullValue()));
+        assertThat(cm.getData().get("log4j.properties"), is(notNullValue()));
+        assertThat(cm.getData().get("server.config"), is(notNullValue()));
+        assertThat(cm.getData().get("listeners.config"), is("PLAIN_9092 TLS_9093"));
+        assertThat(cm.getData().get("advertised-hostnames.config"), is("PLAIN_9092_0://broker-0 TLS_9093_0://broker-0 PLAIN_9092_1://broker-1 TLS_9093_1://broker-1 PLAIN_9092_2://broker-2 TLS_9093_2://broker-2"));
+        assertThat(cm.getData().get("advertised-ports.config"), is("PLAIN_9092_0://10000 TLS_9093_0://20000 PLAIN_9092_1://10001 TLS_9093_1://20001 PLAIN_9092_2://10002 TLS_9093_2://20002"));
+    }
+
+    @ParallelTest
     public void testGenerateStatefulSet() {
         // We expect a single statefulSet ...
         StatefulSet sts = kc.generateStatefulSet(true, null, null, null);
         checkStatefulSet(sts, kafkaAssembly, true);
         checkOwnerReference(kc.createOwnerReference(), sts);
+
+        // Check Volumes
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().size(), is(7));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getName(), is("data"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(0).getEmptyDir(), is(notNullValue()));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(1).getName(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is(KafkaCluster.CLUSTER_CA_CERTS_VOLUME));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(2).getSecret().getSecretName(), is("foo-cluster-ca-cert"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(3).getName(), is(KafkaCluster.BROKER_CERTS_VOLUME));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(3).getSecret().getSecretName(), is("foo-kafka-brokers"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(4).getName(), is(KafkaCluster.CLIENT_CA_CERTS_VOLUME));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(4).getSecret().getSecretName(), is("foo-clients-ca-cert"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(5).getName(), is("kafka-metrics-and-logging"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(5).getConfigMap().getName(), is("foo-kafka-config"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(6).getName(), is("ready-files"));
+        assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().get(6).getEmptyDir(), is(notNullValue()));
     }
 
     @ParallelTest
@@ -2296,15 +2350,15 @@ public class KafkaClusterTest {
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 0, "some-host.com"), is("EXTERNAL_9094_0://my-host-0.cz"));
-        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 0, ""), is("EXTERNAL_9094_0://my-host-0.cz"));
-        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 1, "some-host.com"), is("EXTERNAL_9094_1://some-host.com"));
-        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 1, ""), is("EXTERNAL_9094_1://"));
+        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 0, "some-host.com"), is("my-host-0.cz"));
+        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 0, ""), is("my-host-0.cz"));
+        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 1, "some-host.com"), is("some-host.com"));
+        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 1, ""), is(""));
 
-        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 0, 12345), is("EXTERNAL_9094_0://10000"));
-        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 0, 12345), is("EXTERNAL_9094_0://10000"));
-        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 1, 12345), is("EXTERNAL_9094_1://12345"));
-        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 1, 12345), is("EXTERNAL_9094_1://12345"));
+        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 0, 12345), is("10000"));
+        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 0, 12345), is("10000"));
+        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 1, 12345), is("12345"));
+        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 1, 12345), is("12345"));
     }
 
     @ParallelTest
@@ -2325,11 +2379,11 @@ public class KafkaClusterTest {
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 0, "some-host.com"), is("EXTERNAL_9094_0://some-host.com"));
-        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 0, ""), is("EXTERNAL_9094_0://"));
+        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 0, "some-host.com"), is("some-host.com"));
+        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 0, ""), is(""));
 
-        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 0, 12345), is("EXTERNAL_9094_0://12345"));
-        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 0, 12345), is("EXTERNAL_9094_0://12345"));
+        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 0, 12345), is("12345"));
+        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 0, 12345), is("12345"));
     }
 
     @ParallelTest

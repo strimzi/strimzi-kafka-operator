@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
@@ -629,5 +630,28 @@ public class StUtils {
 
     public static Map<String, String> getStrimziPodSetOrStatefulSetMatchLabels(String resourceName, boolean isSpsEnabled) {
         return getStrimziPodSetOrStatefulSetMatchLabels(kubeClient().getNamespace(), resourceName, isSpsEnabled);
+    }
+
+    /**
+     * Returns a list of names of ConfigMaps with broker configuration files. For StatefulSets, the list has only one
+     * item with the shared ConfigMap. For StrimziPodSets, it should be a ConfigMap per broker.
+     *
+     * @param kafkaClusterName  Name of the Kafka cluster
+     * @param replicas          Number of Kafka replicas
+     *
+     * @return                  List with ConfigMaps containing the configuration
+     */
+    public static List<String> getKafkaConfigurationConfigMaps(String kafkaClusterName, int replicas)    {
+        List<String> cmNames = new ArrayList<>(replicas);
+
+        if (Environment.isStrimziPodSetEnabled())   {
+            for (int i = 0; i < replicas; i++)  {
+                cmNames.add(KafkaResources.kafkaPodName(kafkaClusterName, i));
+            }
+        } else {
+            cmNames.add(KafkaResources.kafkaMetricsAndLogConfigMapName(kafkaClusterName));
+        }
+
+        return cmNames;
     }
 }

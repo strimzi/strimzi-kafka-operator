@@ -89,6 +89,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithCustomAuth;
@@ -192,7 +193,6 @@ public class KafkaCluster extends AbstractModel {
     private String ccMinInSyncReplicas = null;
     private boolean isJmxEnabled;
     private boolean isJmxAuthenticated;
-    private String brokersConfiguration;
 
     // Templates
     protected Map<String, String> templateExternalBootstrapServiceLabels;
@@ -1263,37 +1263,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Internal method which prepares annotations which will be used for Kafka pods. It does so by combining the
-     * annotations passed from KafkaAssemblyOperator with additional annotations.
-     *
-     * @param existingPodAnnotations    Annotations requested from higher level classes
-     * @param storageAnnotation         Indicates whether the storage annotation should be added or not
-     *
-     * @return                          Map with all pod annotations required by Strimzi
-     */
-    private Map<String, String> preparePodAnnotations(Map<String, String> existingPodAnnotations, boolean storageAnnotation)   {
-        Map<String, String> podAnnotations;
-
-        if (existingPodAnnotations != null) {
-            podAnnotations = new HashMap<>(existingPodAnnotations.size() + 4);
-            podAnnotations.putAll(existingPodAnnotations);
-        } else {
-            podAnnotations = new HashMap<>(4);
-        }
-
-        if (storageAnnotation) {
-            podAnnotations.put(ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
-        }
-
-        podAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
-        podAnnotations.put(ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION, getLogMessageFormatVersion());
-        podAnnotations.put(ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION, getInterBrokerProtocolVersion());
-
-        return podAnnotations;
-    }
-
-    /**
-     * Prepares annotations for the controller resource such as StatfulSet or KafkaPodSet.
+     * Prepares annotations for the controller resource such as StatefulSet or KafkaPodSet.
      *
      * @return  Map with all annotations which should be used for thr controller resource
      */
@@ -1321,7 +1291,7 @@ public class KafkaCluster extends AbstractModel {
                                            Map<String, String> podAnnotations) {
         return createStatefulSet(
                 prepareControllerAnnotations(),
-                preparePodAnnotations(podAnnotations, true),
+                podAnnotations,
                 getStatefulSetVolumes(isOpenShift),
                 getPersistentVolumeClaimTemplates(),
                 getMergedAffinity(),
@@ -1335,24 +1305,27 @@ public class KafkaCluster extends AbstractModel {
      * Generates the StrimziPodSet for the Kafka cluster. This is used when the UseStrimziPodSets feature gate is
      * enabled.
      *
-     * @param replicas          Number of replicas the StrimziPodSet should have. During scale-ups or scale-downs, node
-     *                          sets with different numbers of pods are generated.
-     * @param isOpenShift       Flags whether we are on OpenShift or not
-     * @param imagePullPolicy   Image pull policy which will be used by the pods
-     * @param imagePullSecrets  List of image pull secrets
-     * @param podAnnotations    List of custom pod annotations
+     * @param replicas                  Number of replicas the StrimziPodSet should have. During scale-ups or scale-downs, node
+     *                                  sets with different numbers of pods are generated.
+     * @param isOpenShift               Flags whether we are on OpenShift or not
+     * @param imagePullPolicy           Image pull policy which will be used by the pods
+     * @param imagePullSecrets          List of image pull secrets
+     * @param podAnnotationsProvider    Function which provides annotations for given pod based on its broker ID. The
+     *                                  annotations for each pod are different due to the individual configurations.
+     *                                  So they need to be dynamically generated though this function instead of just
+     *                                  passed as Map.
      *
-     * @return                  Generated StrimziPodSet with Kafka pods
+     * @return                          Generated StrimziPodSet with Kafka pods
      */
     public StrimziPodSet generatePodSet(int replicas,
                                         boolean isOpenShift,
                                         ImagePullPolicy imagePullPolicy,
                                         List<LocalObjectReference> imagePullSecrets,
-                                        Map<String, String> podAnnotations) {
+                                        Function<Integer, Map<String, String>> podAnnotationsProvider) {
         return createPodSet(
                 replicas,
                 prepareControllerAnnotations(),
-                preparePodAnnotations(podAnnotations, false),
+                podAnnotationsProvider,
                 podName -> getPodSetVolumes(podName, isOpenShift),
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
@@ -1449,11 +1422,17 @@ public class KafkaCluster extends AbstractModel {
      * Generates list of non-data volumes used by Kafka Pods. This includes tmp volumes, mounted secrets and config
      * maps.
      *
-     * @param isOpenShift   Indicates whether we are on OpenShift or not
+     * @param isOpenShift               Indicates whether we are on OpenShift or not
+     * @param perBrokerConfiguration    Indicates whether the shared configuration ConfigMap or the per-broker ConfigMap
+     *                                  should be mounted.
+     * @param podName                   The name of the Pod for which are these volumes generated. The Pod name
+     *                                  identifies which ConfigMap should be used when perBrokerConfiguration is set to
+     *                                  true. When perBrokerConfiguration is set to false, the Pod name is not used and
+     *                                  can be set to null.
      *
-     * @return              List of nondata volumes used by the ZooKeeper pods
+     * @return                          List of non-data volumes used by the ZooKeeper pods
      */
-    private List<Volume> getNonDataVolumes(boolean isOpenShift) {
+    private List<Volume> getNonDataVolumes(boolean isOpenShift, boolean perBrokerConfiguration, String podName) {
         List<Volume> volumeList = new ArrayList<>();
 
         if (rack != null || isExposedWithNodePort()) {
@@ -1464,7 +1443,13 @@ public class KafkaCluster extends AbstractModel {
         volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+
+        if (perBrokerConfiguration) {
+            volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, podName));
+        } else {
+            volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        }
+
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
 
         for (GenericKafkaListener listener : listeners) {
@@ -1518,7 +1503,7 @@ public class KafkaCluster extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>();
 
         volumeList.addAll(VolumeUtils.createStatefulSetVolumes(storage, false));
-        volumeList.addAll(getNonDataVolumes(isOpenShift));
+        volumeList.addAll(getNonDataVolumes(isOpenShift, false, null));
 
         return volumeList;
     }
@@ -1536,7 +1521,7 @@ public class KafkaCluster extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>();
 
         volumeList.addAll(VolumeUtils.createPodSetVolumes(podName, storage, false));
-        volumeList.addAll(getNonDataVolumes(isOpenShift));
+        volumeList.addAll(getNonDataVolumes(isOpenShift, true, podName));
 
         return volumeList;
     }
@@ -2018,44 +2003,39 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Returns the advertised URL for given pod.
+     * Returns the advertised URL for given broker.
      * It will take into account the overrides specified by the user.
-     * If some segment is not know - e.g. the hostname for the NodePort access, it should be left empty
      *
      * @param listener Listener where the configuration should be found
-     * @param podNumber Pod index
-     * @param address   The advertised hostname
-     * @return The advertised hostname in format listenerIdentifier_podNumber://address (e.g. LB_9094_1://my-broker-1)
+     * @param brokerId Broker ID
+     * @param address  The advertised hostname
+     *
+     * @return The advertised hostname
      */
-    public String getAdvertisedHostname(GenericKafkaListener listener, int podNumber, String address) {
-        String advertisedHost = ListenersUtils.brokerAdvertisedHost(listener, podNumber);
+    public String getAdvertisedHostname(GenericKafkaListener listener, int brokerId, String address) {
+        String advertisedHost = ListenersUtils.brokerAdvertisedHost(listener, brokerId);
 
         if (advertisedHost == null && address == null)  {
             return null;
         }
 
-        return ListenersUtils.envVarIdentifier(listener)
-                + "_" + podNumber
-                + "://"
-                + (advertisedHost != null ? advertisedHost : address);
+        return advertisedHost != null ? advertisedHost : address;
     }
 
     /**
-     * Returns the advertised port for given pod.
+     * Returns the advertised port for given broker.
      * It will take into account the overrides specified by the user.
      *
      * @param listener Listener where the configuration should be found
-     * @param podNumber Pod index
-     * @param port      The advertised port
-     * @return The advertised port in format listenerIdentifier_podNumber://port (e.g. LB_9094_1://9094)
+     * @param brokerId Broker ID
+     * @param port     The advertised port
+     *
+     * @return The advertised port as String
      */
-    public String getAdvertisedPort(GenericKafkaListener listener, int podNumber, Integer port) {
-        Integer advertisedPort = ListenersUtils.brokerAdvertisedPort(listener, podNumber);
+    public String getAdvertisedPort(GenericKafkaListener listener, int brokerId, Integer port) {
+        Integer advertisedPort = ListenersUtils.brokerAdvertisedPort(listener, brokerId);
 
-        return ListenersUtils.envVarIdentifier(listener)
-                + "_" + podNumber
-                + "://"
-                + (advertisedPort != null ? advertisedPort : port);
+        return String.valueOf(advertisedPort != null ? advertisedPort : port);
     }
 
     @Override
@@ -2071,7 +2051,18 @@ public class KafkaCluster extends AbstractModel {
         isJmxAuthenticated = jmxAuthenticated;
     }
 
-    private String generateBrokerConfiguration(boolean controlPlaneListener)   {
+    /**
+     * Generates the shared Kafka broker configuration. Shared configuration is using placeholders for most of the
+     * values which might be different for each broker such as advertised hostnames or ports or the broker ID. These
+     * placeholders are replaced with the actual value only in the Kafka container when it starts. This method is
+     * normally used with StatefulSets.
+     *
+     * @param controlPlaneListener  Indicates whether the Control Plane Listener feature gate is enabled or not and
+     *                              whether a separate control plan and replication listeners should be used.
+     *
+     * @return                      The Kafka broker configuration as a String
+     */
+    public String generateSharedBrokerConfiguration(boolean controlPlaneListener)   {
         return new KafkaBrokerConfigurationBuilder(reconciliation)
                 .withBrokerId()
                 .withRackId(rack)
@@ -2084,22 +2075,134 @@ public class KafkaCluster extends AbstractModel {
                 .build().trim();
     }
 
-    public String getBrokersConfiguration() {
-        return this.brokersConfiguration;
-    }
+    /**
+     * Generates a shared configuration ConfigMap with shared configuration. This ConfigMap is used by all brokers in a
+     * Kafka StatefulSet.
+     *
+     * @param metricsAndLogging     Object with logging and metrics configuration collected from external user-provided config maps
+     * @param advertisedHostnames   Map with advertised hostnames for different brokers and listeners
+     * @param advertisedPorts       Map with advertised ports for different brokers and listeners
+     * @param controlPlaneListener  Indicates whether the Control Plane Listener feature gate is enabled or not and
+     *                              whether a separate control plan and replication listeners should be used.
+     *
+     * @return                      ConfigMap with the shared configuration.
+     */
+    public ConfigMap generateSharedConfigurationConfigMap(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts, boolean controlPlaneListener)   {
+        Map<String, String> data = new HashMap<>(6);
 
-    public ConfigMap generateAncillaryConfigMap(MetricsAndLogging metricsAndLogging, Set<String> advertisedHostnames, Set<String> advertisedPorts, boolean controlPlaneListener)   {
-        ConfigMap cm = generateMetricsAndLogConfigMap(metricsAndLogging);
+        String parsedMetrics = metricsConfiguration(metricsAndLogging.getMetricsCm());
+        if (parsedMetrics != null) {
+            data.put(ANCILLARY_CM_KEY_METRICS, parsedMetrics);
+        }
 
-        this.brokersConfiguration = generateBrokerConfiguration(controlPlaneListener);
-
-        cm.getData().put(BROKER_CONFIGURATION_FILENAME, this.brokersConfiguration);
-        cm.getData().put(BROKER_ADVERTISED_HOSTNAMES_FILENAME, String.join(" ", advertisedHostnames));
-        cm.getData().put(BROKER_ADVERTISED_PORTS_FILENAME, String.join(" ", advertisedPorts));
-        cm.getData().put(BROKER_LISTENERS_FILENAME,
+        // Logging configuration
+        data.put(ANCILLARY_CM_KEY_LOG_CONFIG, loggingConfiguration(getLogging(), metricsAndLogging.getLoggingCm()));
+        // Broker configuration
+        data.put(BROKER_CONFIGURATION_FILENAME, generateSharedBrokerConfiguration(controlPlaneListener));
+        // Array with advertised hostnames used for replacement inside the pod
+        data.put(BROKER_ADVERTISED_HOSTNAMES_FILENAME,
+                advertisedHostnames
+                        .entrySet()
+                        .stream()
+                        .map(brokerIdMap -> brokerIdMap
+                                        .getValue()
+                                        .entrySet()
+                                        .stream()
+                                        .map(listenerAddress -> listenerAddress.getKey() + "_" + brokerIdMap.getKey() + "://" + listenerAddress.getValue())
+                                        .sorted()
+                                        .collect(Collectors.joining(" "))
+                        )
+                        .sorted()
+                        .collect(Collectors.joining(" ")));
+        // Array with advertised ports used for replacement inside the pod
+        data.put(BROKER_ADVERTISED_PORTS_FILENAME,
+                advertisedPorts
+                        .entrySet()
+                        .stream()
+                        .map(brokerIdMap -> brokerIdMap
+                                .getValue()
+                                .entrySet()
+                                .stream()
+                                .map(listenerAddress -> listenerAddress.getKey() + "_" + brokerIdMap.getKey() + "://" + listenerAddress.getValue())
+                                .sorted()
+                                .collect(Collectors.joining(" "))
+                        )
+                        .sorted()
+                        .collect(Collectors.joining(" ")));
+        // List of configured listeners
+        data.put(BROKER_LISTENERS_FILENAME,
                 listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")));
 
-        return cm;
+        return createConfigMap(ancillaryConfigMapName, getLabelsWithStrimziName(name, Map.of()).toMap(), data);
+    }
+
+    /**
+     * Generates the individual Kafka broker configuration. This configuration uses only minimum of placeholders - for
+     * values which are known only inside the pod such as secret values (e.g. OAuth client secrets), NodePort addresses
+     * or Rack IDs. All other values such as broker IDs, advertised ports or hostnames are already prefilled in the
+     * configuration. This method is normally used with StrimziPodSets.
+     *
+     * @param brokerId              ID of the broker for which is this configuration generated
+     * @param advertisedHostnames   Map with advertised hostnames for different listeners
+     * @param advertisedPorts       Map with advertised ports for different listeners
+     * @param controlPlaneListener  Indicates whether the Control Plane Listener feature gate is enabled or not and
+     *                              whether a separate control plan and replication listeners should be used.
+     *
+     * @return                      The Kafka broker configuration as a String
+     */
+    public String generatePerBrokerBrokerConfiguration(int brokerId, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts, boolean controlPlaneListener)   {
+        return new KafkaBrokerConfigurationBuilder(reconciliation)
+                .withBrokerId(String.valueOf(brokerId))
+                .withRackId(rack)
+                .withZookeeper(cluster)
+                .withLogDirs(VolumeUtils.createVolumeMounts(storage, mountPath, false))
+                .withListeners(cluster,
+                        namespace,
+                        listeners,
+                        () -> getPodName(brokerId),
+                        listenerId -> advertisedHostnames.get(brokerId).get(listenerId),
+                        listenerId -> advertisedPorts.get(brokerId).get(listenerId),
+                        controlPlaneListener)
+                .withAuthorization(cluster, authorization)
+                .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
+                .withUserConfiguration(configuration)
+                .build().trim();
+    }
+
+    /**
+     * Generates a list of configuration ConfigMaps - one for each broker in the cluster. The ConfigMaps contain the
+     * configurations which should be used by given broker. This is used with StrimziPodSets.
+     *
+     * @param metricsAndLogging     Object with logging and metrics configuration collected from external user-provided config maps
+     * @param advertisedHostnames   Map with advertised hostnames for different brokers and listeners
+     * @param advertisedPorts       Map with advertised ports for different brokers and listeners
+     * @param controlPlaneListener  Indicates whether the Control Plane Listener feature gate is enabled or not and
+     *                              whether a separate control plan and replication listeners should be used.
+     *
+     * @return                      ConfigMap with the shared configuration.
+     */
+    public List<ConfigMap> generatePerBrokerConfigurationConfigMaps(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts, boolean controlPlaneListener)   {
+        String parsedMetrics = metricsConfiguration(metricsAndLogging.getMetricsCm());
+        String parsedLogging = loggingConfiguration(getLogging(), metricsAndLogging.getLoggingCm());
+        List<ConfigMap> configMaps = new ArrayList<>(replicas);
+
+        for (int brokerId = 0; brokerId < replicas; brokerId++) {
+            Map<String, String> data = new HashMap<>(4);
+
+            if (parsedMetrics != null) {
+                data.put(ANCILLARY_CM_KEY_METRICS, parsedMetrics);
+            }
+
+            data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parsedLogging);
+            data.put(BROKER_CONFIGURATION_FILENAME, generatePerBrokerBrokerConfiguration(brokerId, advertisedHostnames, advertisedPorts, controlPlaneListener));
+            // List of configured listeners => StrimziPodSets still need this because of OAUTH and how the OAUTH secret
+            // environment variables are parsed in the container bash scripts
+            data.put(BROKER_LISTENERS_FILENAME, listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")));
+
+            configMaps.add(createConfigMap(getPodName(brokerId), getLabelsWithStrimziNameAndPodName(name, getPodName(brokerId), Map.of()).toMap(), data));
+        }
+
+        return configMaps;
     }
 
     public KafkaVersion getKafkaVersion() {

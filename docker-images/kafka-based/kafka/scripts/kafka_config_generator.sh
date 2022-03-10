@@ -24,7 +24,7 @@ fi
 
 # List for keeping track of env vars which should be substituted in the configuration
 # shellcheck disable=SC2016
-SUBSTITUTIONS='${STRIMZI_BROKER_ID},${STRIMZI_RACK_ID},${CERTS_STORE_PASSWORD}'
+SUBSTITUTIONS='${STRIMZI_BROKER_ID},${STRIMZI_RACK_ID},${CERTS_STORE_PASSWORD},${STRIMZI_NODEPORT_DEFAULT_ADDRESS},${STRIMZI_NODEPORT_EXTERNALIP_ADDRESS},${STRIMZI_NODEPORT_EXTERNALDNS_ADDRESS},${STRIMZI_NODEPORT_INTERNALIP_ADDRESS},${STRIMZI_NODEPORT_INTERNALDNS_ADDRESS},${STRIMZI_NODEPORT_HOSTNAME_ADDRESS}'
 
 # If there are any node port listeners, the file $KAFKA_HOME/init/external.address will contain definitions of env vars
 # with their address for the substitution
@@ -35,33 +35,46 @@ if [ -e "$NODE_PORT_CONFIG_FILE" ]; then
   source "${NODE_PORT_CONFIG_FILE}"
 fi
 
-ADVERTISED_HOSTNAMES_LIST="$(cat "$KAFKA_HOME/custom-config/advertised-hostnames.config")"
-ADVERTISED_PORT_LIST="$(cat "$KAFKA_HOME/custom-config/advertised-ports.config")"
+ADVERTISED_HOSTNAME_FILE="$KAFKA_HOME/custom-config/advertised-hostnames.config"
+ADVERTISED_PORT_FILE="$KAFKA_HOME/custom-config/advertised-ports.config"
+LISTENERS_FILE="$KAFKA_HOME/custom-config/listeners.config"
 
-# Get through all listeners and set the required environment variables for them
-LISTENERS=$(cat "$KAFKA_HOME/custom-config/listeners.config")
+# When StatefulSets and shared configuration is used, we need to mark all the advertised listeners and ports for substitution.
+# This is not needed for the StrimziPodSets and can be removed once StrimziPodSets are removed
+if [ -e "$ADVERTISED_HOSTNAME_FILE" ] && [ -e "$ADVERTISED_PORT_FILE" ]; then
+  ADVERTISED_HOSTNAMES_LIST="$(cat "$ADVERTISED_HOSTNAME_FILE")"
+  ADVERTISED_PORT_LIST="$(cat "$ADVERTISED_PORT_FILE")"
+
+  # Get through all listeners and set the required environment variables for them
+  LISTENERS=$(cat "$LISTENERS_FILE")
+  for LISTENER in $LISTENERS ; do
+    # Find the advertised hostname for this broker passed by the operator
+    VAR_NAME="STRIMZI_${LISTENER}_ADVERTISED_HOSTNAME"
+    ADVERTISED_HOSTNAME="$(get_option_for_broker "$LISTENER" "$STRIMZI_BROKER_ID" "$ADVERTISED_HOSTNAMES_LIST")"
+
+    # shellcheck disable=SC2076
+    if [[ "${ADVERTISED_HOSTNAME}" =~ "\$${*}" ]]; then
+      ADVERTISED_HOSTNAME="${ADVERTISED_HOSTNAME:2:-1}"
+      declare "$VAR_NAME"="${!ADVERTISED_HOSTNAME}"
+    else
+      declare "$VAR_NAME"="${ADVERTISED_HOSTNAME}"
+    fi
+
+    export "${VAR_NAME?}"
+    SUBSTITUTIONS="$SUBSTITUTIONS,\${STRIMZI_${LISTENER}_ADVERTISED_HOSTNAME}"
+
+    # Find the external port for this broker
+    VAR_NAME="STRIMZI_${LISTENER}_ADVERTISED_PORT"
+    declare "$VAR_NAME"="$(get_option_for_broker "$LISTENER" "$STRIMZI_BROKER_ID" "$ADVERTISED_PORT_LIST")"
+    export "${VAR_NAME?}"
+    SUBSTITUTIONS="$SUBSTITUTIONS,\${STRIMZI_${LISTENER}_ADVERTISED_PORT}"
+  done
+fi
+
+# Get through all listeners and check if they have any OAuth secret variables set
+# If they do, we mark them for substitution
+LISTENERS=$(cat "$LISTENERS_FILE")
 for LISTENER in $LISTENERS ; do
-  # Find the advertised hostname for this broker passed by the operator
-  VAR_NAME="STRIMZI_${LISTENER}_ADVERTISED_HOSTNAME"
-  ADVERTISED_HOSTNAME="$(get_option_for_broker "$LISTENER" "$STRIMZI_BROKER_ID" "$ADVERTISED_HOSTNAMES_LIST")"
-
-  # shellcheck disable=SC2076
-  if [[ "${ADVERTISED_HOSTNAME}" =~ "\$${*}" ]]; then
-    ADVERTISED_HOSTNAME="${ADVERTISED_HOSTNAME:2:-1}"
-    declare "$VAR_NAME"="${!ADVERTISED_HOSTNAME}"
-  else
-    declare "$VAR_NAME"="${ADVERTISED_HOSTNAME}"
-  fi
-
-  export "${VAR_NAME?}"
-  SUBSTITUTIONS="$SUBSTITUTIONS,\${STRIMZI_${LISTENER}_ADVERTISED_HOSTNAME}"
-
-  # Find the external port for this broker
-  VAR_NAME="STRIMZI_${LISTENER}_ADVERTISED_PORT"
-  declare "$VAR_NAME"="$(get_option_for_broker "$LISTENER" "$STRIMZI_BROKER_ID" "$ADVERTISED_PORT_LIST")"
-  export "${VAR_NAME?}"
-  SUBSTITUTIONS="$SUBSTITUTIONS,\${STRIMZI_${LISTENER}_ADVERTISED_PORT}"
-
   # If OAuth is used, add the environment variables to the list for the envsubst command
   VAR_NAME="STRIMZI_${LISTENER}_OAUTH_CLIENT_SECRET"
   if [ -n "${!VAR_NAME}" ]; then

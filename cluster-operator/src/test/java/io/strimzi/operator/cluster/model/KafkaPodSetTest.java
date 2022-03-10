@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HostAlias;
 import io.fabric8.kubernetes.api.model.HostAliasBuilder;
@@ -33,25 +34,30 @@ import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
@@ -139,7 +145,7 @@ public class KafkaPodSetTest {
     @ParallelTest
     public void testPodSet()   {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        StrimziPodSet ps = kc.generatePodSet(3, true, null, null, Map.of());
+        StrimziPodSet ps = kc.generatePodSet(3, true, null, null, brokerId -> Map.of("test-anno", kc.getPodName(brokerId)));
 
         assertThat(ps.getMetadata().getName(), is(KafkaCluster.kafkaClusterName(CLUSTER)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(kc.getLabelsWithStrimziName(kc.getName(), null).toMap().entrySet()), is(true));
@@ -153,11 +159,9 @@ public class KafkaPodSetTest {
         List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods)  {
             assertThat(pod.getMetadata().getLabels().entrySet().containsAll(kc.getLabelsWithStrimziNameAndPodName(kc.getName(), pod.getMetadata().getName(), null).withStatefulSetPod(pod.getMetadata().getName()).withStrimziPodSetController(kc.getName()).toMap().entrySet()), is(true));
-            assertThat(pod.getMetadata().getAnnotations().size(), is(4));
+            assertThat(pod.getMetadata().getAnnotations().size(), is(2));
             assertThat(pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION), is(notNullValue()));
-            assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION), is(notNullValue()));
-            assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION), is(notNullValue()));
-            assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION), is(notNullValue()));
+            assertThat(pod.getMetadata().getAnnotations().get("test-anno"), is(pod.getMetadata().getName()));
 
             assertThat(pod.getSpec().getHostname(), is(pod.getMetadata().getName()));
             assertThat(pod.getSpec().getSubdomain(), is(kc.getHeadlessServiceName()));
@@ -187,6 +191,73 @@ public class KafkaPodSetTest {
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(5).getMountPath(), is("/opt/kafka/custom-config/"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(6).getName(), is("ready-files"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(6).getMountPath(), is("/var/opt/kafka"));
+
+            assertThat(pod.getSpec().getVolumes().size(), is(7));
+            assertThat(pod.getSpec().getVolumes().get(0).getName(), is("data-0"));
+            assertThat(pod.getSpec().getVolumes().get(0).getPersistentVolumeClaim(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(1).getName(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
+            assertThat(pod.getSpec().getVolumes().get(1).getEmptyDir(), is(notNullValue()));
+            assertThat(pod.getSpec().getVolumes().get(2).getName(), is(KafkaCluster.CLUSTER_CA_CERTS_VOLUME));
+            assertThat(pod.getSpec().getVolumes().get(2).getSecret().getSecretName(), is("my-cluster-cluster-ca-cert"));
+            assertThat(pod.getSpec().getVolumes().get(3).getName(), is(KafkaCluster.BROKER_CERTS_VOLUME));
+            assertThat(pod.getSpec().getVolumes().get(3).getSecret().getSecretName(), is("my-cluster-kafka-brokers"));
+            assertThat(pod.getSpec().getVolumes().get(4).getName(), is(KafkaCluster.CLIENT_CA_CERTS_VOLUME));
+            assertThat(pod.getSpec().getVolumes().get(4).getSecret().getSecretName(), is("my-cluster-clients-ca-cert"));
+            assertThat(pod.getSpec().getVolumes().get(5).getName(), is("kafka-metrics-and-logging"));
+            assertThat(pod.getSpec().getVolumes().get(5).getConfigMap().getName(), is(pod.getMetadata().getName()));
+            assertThat(pod.getSpec().getVolumes().get(6).getName(), is("ready-files"));
+            assertThat(pod.getSpec().getVolumes().get(6).getEmptyDir(), is(notNullValue()));
+        }
+    }
+
+    @ParallelTest
+    public void testPerBrokerConfiguration() {
+        Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
+                0, Map.of("PLAIN_9092", "broker-0"),
+                1, Map.of("PLAIN_9092", "broker-1"),
+                2, Map.of("PLAIN_9092", "broker-2")
+        );
+        Map<Integer, Map<String, String>> advertisedPorts = Map.of(
+                0, Map.of("PLAIN_9092", "10000"),
+                1, Map.of("PLAIN_9092", "10001"),
+                2, Map.of("PLAIN_9092", "10002")
+        );
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
+        String config = kc.generatePerBrokerBrokerConfiguration(2, advertisedHostnames, advertisedPorts, true);
+
+        assertThat(config, containsString("broker.id=2"));
+        assertThat(config, containsString("node.id=2"));
+        assertThat(config, containsString("log.dirs=/var/lib/kafka/data-0/kafka-log2"));
+        assertThat(config, containsString("advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://broker-2:10002"));
+    }
+
+    @ParallelTest
+    public void testPerBrokerConfigMaps() {
+        MetricsAndLogging metricsAndLogging = new MetricsAndLogging(null, null);
+        Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
+                0, Map.of("PLAIN_9092", "broker-0"),
+                1, Map.of("PLAIN_9092", "broker-1"),
+                2, Map.of("PLAIN_9092", "broker-2")
+        );
+        Map<Integer, Map<String, String>> advertisedPorts = Map.of(
+                0, Map.of("PLAIN_9092", "9092"),
+                1, Map.of("PLAIN_9092", "9092"),
+                2, Map.of("PLAIN_9092", "9092")
+        );
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
+        List<ConfigMap> cms = kc.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, advertisedHostnames, advertisedPorts, true);
+
+        assertThat(cms.size(), is(3));
+
+        for (ConfigMap cm : cms)    {
+            assertThat(cm.getData().size(), is(3));
+            assertThat(cm.getMetadata().getName(), startsWith("my-cluster-kafka-"));
+            kc.getSelectorLabels().toMap().entrySet().forEach(label -> assertThat(cm.getMetadata().getLabels(), hasEntry(label.getKey(), label.getValue())));
+            assertThat(cm.getData().get("log4j.properties"), is(notNullValue()));
+            assertThat(cm.getData().get("server.config"), is(notNullValue()));
+            assertThat(cm.getData().get("listeners.config"), is("PLAIN_9092"));
         }
     }
 
@@ -331,7 +402,7 @@ public class KafkaPodSetTest {
 
         // Test the resources
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        StrimziPodSet ps = kc.generatePodSet(3, true, null, null, Map.of("special", "annotation"));
+        StrimziPodSet ps = kc.generatePodSet(3, true, null, null, brokerId -> Map.of("special", "annotation"));
 
         assertThat(ps.getMetadata().getName(), is(KafkaCluster.kafkaClusterName(CLUSTER)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(spsLabels.entrySet()), is(true));
@@ -415,7 +486,7 @@ public class KafkaPodSetTest {
         secrets.add(secret2);
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        StrimziPodSet ps = kc.generatePodSet(3, true, null, secrets, Map.of());
+        StrimziPodSet ps = kc.generatePodSet(3, true, null, secrets, brokerId -> new HashMap<>());
 
         // We need to loop through the pods to make sure they have the right values
         List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
@@ -445,7 +516,7 @@ public class KafkaPodSetTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        StrimziPodSet ps = kc.generatePodSet(3, true, null, List.of(secret1), Map.of());
+        StrimziPodSet ps = kc.generatePodSet(3, true, null, List.of(secret1), brokerId -> new HashMap<>());
 
         // We need to loop through the pods to make sure they have the right values
         List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
@@ -461,7 +532,7 @@ public class KafkaPodSetTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
 
         // Test ALWAYS policy
-        StrimziPodSet ps = kc.generatePodSet(3, true, ImagePullPolicy.ALWAYS, null, Map.of());
+        StrimziPodSet ps = kc.generatePodSet(3, true, ImagePullPolicy.ALWAYS, null, brokerId -> new HashMap<>());
 
         // We need to loop through the pods to make sure they have the right values
         List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
@@ -470,7 +541,7 @@ public class KafkaPodSetTest {
         }
 
         // Test IFNOTPRESENT policy
-        ps = kc.generatePodSet(3, true, ImagePullPolicy.IFNOTPRESENT, null, Map.of());
+        ps = kc.generatePodSet(3, true, ImagePullPolicy.IFNOTPRESENT, null, brokerId -> new HashMap<>());
 
         // We need to loop through the pods to make sure they have the right values
         pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
