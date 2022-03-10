@@ -35,7 +35,7 @@ Attach or copy and paste also the relevant logs.
 
 *To easily collect all YAMLs and logs, you can use our [report script](https://github.com/strimzi/strimzi-kafka-operator/blob/main/tools/report.sh) which will automatically collect all files and prepare a ZIP archive which can be easily attached to this issue.
 The usage of this script is:
-`./report.sh [--namespace <string>] [--cluster <string>]`*
+`./report.sh --namespace <string> --cluster <string> [--bridge <string>] [--connect <string>] [--mm2 <string>]`*
 
 **Additional context**
 Add any other context about the problem here.
