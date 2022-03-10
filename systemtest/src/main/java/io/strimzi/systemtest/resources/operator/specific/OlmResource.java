@@ -60,8 +60,9 @@ public class OlmResource implements SpecificResourceType {
         this.clusterOperator(this.namespace, operationTimeout, reconciliationInterval);
     }
 
-    public void create(OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
-        this.clusterOperator(this.namespace, olmInstallationStrategy, fromVersion);
+    public void create(final String namespaceName, OlmInstallationStrategy olmInstallationStrategy, String fromVersion) {
+        this.namespace = namespaceName;
+        this.clusterOperator(namespaceName, olmInstallationStrategy, fromVersion);
     }
 
     @Override
