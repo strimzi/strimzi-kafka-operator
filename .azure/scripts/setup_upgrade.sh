@@ -4,6 +4,8 @@ sed -i "s#quay.io/strimzi/test-client:latest#${DOCKER_REGISTRY}/${DOCKER_ORG}/te
 
 sed -i "s#:latest#:${DOCKER_TAG}#g" packaging/install/cluster-operator/*-Deployment-strimzi-cluster-operator.yaml
 sed -i "s#/opt/${DOCKER_REGISTRY}#/opt#g" packaging/install/cluster-operator/*-Deployment-strimzi-cluster-operator.yaml
+# Change tag in format [0-9].[0-9].[0-9] to tag specified by release version (affects only release runs)
+sed -i "s#:[0-9]+\.[0-9]+\.[0-9]+#${DOCKER_TAG}/kafka#g" packaging/install/cluster-operator/*-Deployment-strimzi-cluster-operator.yaml
 sed -i "s#quay.io/strimzi/kafka#${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka#g" packaging/install/cluster-operator/*-Deployment-strimzi-cluster-operator.yaml
 sed -i "s#quay.io/strimzi/operator#${DOCKER_REGISTRY}/${DOCKER_ORG}/operator#g" packaging/install/cluster-operator/*-Deployment-strimzi-cluster-operator.yaml
 sed -i "s#quay.io/strimzi/jmxtrans#${DOCKER_REGISTRY}/${DOCKER_ORG}/jmxtrans#g" packaging/install/cluster-operator/*-Deployment-strimzi-cluster-operator.yaml
