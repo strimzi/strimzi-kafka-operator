@@ -334,8 +334,6 @@ public class StUtils {
             JsonNode node = mapper.readTree(deploymentFile);
             // Change the docker org of the images in the 060-deployment.yaml
             ObjectNode containerNode = (ObjectNode) node.at("/spec/template/spec/containers").get(0);
-            containerNode.put("image", StUtils.changeOrgAndTag(containerNode.get("image").textValue()));
-
             for (JsonNode envVar : containerNode.get("env")) {
                 String varName = envVar.get("name").textValue();
                 if (varName.matches("STRIMZI_NAMESPACE")) {
@@ -349,11 +347,11 @@ public class StUtils {
 
                 // Replace all the default images with ones from the $DOCKER_ORG org and with the $DOCKER_TAG tag
                 // This is needed for release upgrade tests
-                if (varName.contains("KAFKA_BRIDGE_IMAGE")) {
+                if (varName.matches("KAFKA_BRIDGE_IMAGE")) {
                     ((ObjectNode) envVar).put("value", Environment.useLatestReleasedBridge() ? envVar.get("value").textValue() : Environment.BRIDGE_IMAGE);
-                } else if (varName.contains("STRIMZI_DEFAULT")) {
+                } else if (varName.matches("STRIMZI_DEFAULT")) {
                     ((ObjectNode) envVar).put("value", StUtils.changeOrgAndTag(envVar.get("value").textValue()));
-                } else if (varName.contains("IMAGES")) {
+                } else if (varName.matches("IMAGES")) {
                     ((ObjectNode) envVar).put("value", StUtils.changeOrgAndTagInImageMap(envVar.get("value").textValue()));
                 }
             }
