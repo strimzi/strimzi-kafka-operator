@@ -28,13 +28,11 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.kubernetes.ServiceResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
@@ -183,10 +181,6 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
                 .build());
         }
 
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespace, true, kafkaClientsName).build());
-
         // Deploy http bridge
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(clusterName, KafkaResources.tlsBootstrapAddress(clusterName), 1)
                 .editMetadata()
@@ -220,20 +214,18 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .withNamespaceName(namespace)
             .withTopicName(topicName)
             .withMessageCount(100)
+            .withUserName(weirdUserName)
             .build();
 
         if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
             // tls producer
-            resourceManager.createResource(extensionContext, externalKafkaProducer.producerTlsStrimzi(clusterName, weirdUserName));
+            resourceManager.createResource(extensionContext, externalKafkaProducer.producerTlsStrimzi(clusterName));
         } else {
             // scram-sha producer
-            resourceManager.createResource(extensionContext, externalKafkaProducer.producerScramShaStrimzi(clusterName, weirdUserName));
+            resourceManager.createResource(extensionContext, externalKafkaProducer.producerScramShaTlsStrimzi(clusterName));
         }
 
         ClientUtils.waitForClientSuccess(kafkaProducerExternalName, namespace, MESSAGE_COUNT);
-
-        // delete kafka producer job
-        JobUtils.deleteJobWithWait(namespace, kafkaProducerExternalName);
 
         ClientUtils.waitForClientSuccess(clusterName + "-" + consumerName, namespace, MESSAGE_COUNT);
     }

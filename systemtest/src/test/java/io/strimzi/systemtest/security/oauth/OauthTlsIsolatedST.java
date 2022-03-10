@@ -36,7 +36,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -130,11 +129,9 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
 
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, oauthClusterName + "-" + Constants.KAFKA_CLIENTS).build());
 
@@ -207,11 +204,9 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
 
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, true, kafkaClientsName).build());
 
@@ -257,7 +252,6 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge());
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
     }
 
     @Description("As a oauth mirror maker, I am able to replicate topic data using using encrypted communication")
@@ -289,11 +283,9 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, oauthExampleClients.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, producerName);
 
         resourceManager.createResource(extensionContext, oauthExampleClients.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
 
         String targetKafkaCluster = oauthClusterName + "-target";
 
@@ -414,7 +406,6 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, kafkaOauthClientJob.consumerStrimziOauthTls(targetKafkaCluster));
 
         ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, consumerName);
     }
 
     @ParallelTest

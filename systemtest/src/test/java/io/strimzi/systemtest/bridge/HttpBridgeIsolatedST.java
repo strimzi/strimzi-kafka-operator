@@ -18,9 +18,10 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -69,8 +70,6 @@ class HttpBridgeIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeIsolatedST.class);
 
     private final String httpBridgeClusterName = "http-bridge-cluster-name";
-    private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
-    private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
     private String kafkaClientsPodName;
 
@@ -78,6 +77,7 @@ class HttpBridgeIsolatedST extends AbstractST {
     void testSendSimpleMessage(ExtensionContext extensionContext) {
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
         final BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withProducerName(producerName)
@@ -96,21 +96,22 @@ class HttpBridgeIsolatedST extends AbstractST {
                 .withNamespace(INFRA_NAMESPACE)
             .endMetadata()
             .build());
+
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge());
 
         ClientUtils.waitForClientSuccess(producerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(topicName)
-            .withNamespaceName(INFRA_NAMESPACE)
-            .withClusterName(httpBridgeClusterName)
             .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(USER_NAME)
-            .withUsingPodName(kafkaClientsPodName)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(httpBridgeClusterName))
+            .withConsumerName(consumerName)
+            .withNamespaceName(INFRA_NAMESPACE)
             .build();
 
-        assertThat(internalKafkaClient.receiveMessagesPlain(), is(MESSAGE_COUNT));
+        resourceManager.createResource(extensionContext, kafkaClients.consumerStrimzi());
+
+        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
 
         // Checking labels for Kafka Bridge
         verifyLabelsOnPods(INFRA_NAMESPACE, httpBridgeClusterName, "my-bridge", "KafkaBridge");
@@ -120,6 +121,7 @@ class HttpBridgeIsolatedST extends AbstractST {
     @ParallelTest
     void testReceiveSimpleMessage(ExtensionContext extensionContext) {
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, topicName)
@@ -142,19 +144,17 @@ class HttpBridgeIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge());
 
         // Send messages to Kafka
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(topicName)
-            .withNamespaceName(INFRA_NAMESPACE)
-            .withClusterName(httpBridgeClusterName)
             .withMessageCount(MESSAGE_COUNT)
-            .withKafkaUsername(USER_NAME)
-            .withUsingPodName(kafkaClientsPodName)
-            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(httpBridgeClusterName))
+            .withProducerName(producerName)
+            .withNamespaceName(INFRA_NAMESPACE)
             .build();
 
-        assertThat(internalKafkaClient.sendMessagesPlain(), is(MESSAGE_COUNT));
+        resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi());
 
-        ClientUtils.waitForClientSuccess(consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 
     @ParallelTest
@@ -408,7 +408,7 @@ class HttpBridgeIsolatedST extends AbstractST {
     }
 
     @BeforeAll
-    void createClassResources(ExtensionContext extensionContext) throws InterruptedException {
+    void createClassResources(ExtensionContext extensionContext) {
         final String namespaceToWatch = Environment.isNamespaceRbacScope() ? INFRA_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
         // un-install old cluster operator
         clusterOperator.unInstall();

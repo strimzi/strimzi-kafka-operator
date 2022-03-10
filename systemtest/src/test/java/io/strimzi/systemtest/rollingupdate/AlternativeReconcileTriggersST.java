@@ -205,7 +205,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, namespaceName, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, namespaceName, continuousClientsMessageCount);
         // ##############################
     }
 
@@ -429,7 +429,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, namespaceName, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, namespaceName, continuousClientsMessageCount);
         // ##############################
     }
 }

@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.util.List;
 
 import static io.strimzi.systemtest.Constants.OLM_UPGRADE;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -151,10 +150,6 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
 
         ClientUtils.waitForClientSuccess(producerName, namespace, messageUpgradeCount);
         ClientUtils.waitForClientSuccess(consumerName, namespace, messageUpgradeCount);
-
-        // Delete jobs to make same names available for next upgrade
-        kubeClient().deleteJob(producerName);
-        kubeClient().deleteJob(consumerName);
 
         // Check errors in CO log
         assertNoCoErrorsLogged(0);

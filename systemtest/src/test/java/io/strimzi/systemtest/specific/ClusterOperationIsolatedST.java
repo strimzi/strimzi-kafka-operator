@@ -90,9 +90,7 @@ public class ClusterOperationIsolatedST extends AbstractST {
             NodeUtils.cordonNode(node.getMetadata().getName(), true);
         });
 
-        producerNames.forEach(producerName -> ClientUtils.waitTillContinuousClientsFinish(producerName, consumerNames.get(producerName.indexOf(producerName)), NAMESPACE, continuousClientsMessageCount));
-        producerNames.forEach(producerName -> kubeClient().deleteJob(producerName));
-        consumerNames.forEach(consumerName -> kubeClient().deleteJob(consumerName));
+        producerNames.forEach(producerName -> ClientUtils.waitForClientsSuccess(producerName, consumerNames.get(producerName.indexOf(producerName)), NAMESPACE, continuousClientsMessageCount));
     }
 
     @BeforeAll

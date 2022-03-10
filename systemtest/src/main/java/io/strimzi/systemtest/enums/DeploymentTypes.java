@@ -11,4 +11,5 @@ public enum DeploymentTypes {
     OlmClusterOperator,
     KafkaClients,
     DrainCleaner,
+    Scraper,
 }

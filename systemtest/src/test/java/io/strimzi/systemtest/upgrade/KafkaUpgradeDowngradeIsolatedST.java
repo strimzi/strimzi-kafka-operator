@@ -69,7 +69,7 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, INFRA_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
@@ -94,7 +94,7 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, INFRA_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
@@ -119,7 +119,7 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, INFRA_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
@@ -140,7 +140,7 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
         // ##############################
         // Validate that continuous clients finished successfully
         // ##############################
-        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, INFRA_NAMESPACE, continuousClientsMessageCount);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, continuousClientsMessageCount);
         // ##############################
     }
 
