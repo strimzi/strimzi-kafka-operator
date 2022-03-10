@@ -769,7 +769,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                             if (podSet != null) {
                                                 return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), podSet.getSpec().getPods().size()));
                                             } else {
-                                                return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), 0));
+                                                return Future.succeededFuture(new ArrayList<String>());
                                             }
                                         });
                             } else {
@@ -778,7 +778,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                             if (sts != null)    {
                                                 return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), sts.getSpec().getReplicas()));
                                             } else {
-                                                return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), 0));
+                                                return Future.succeededFuture(new ArrayList<String>());
                                             }
                                         });
                             }

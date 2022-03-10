@@ -58,7 +58,7 @@ class KafkaAvailability {
      * Determine whether the given broker can be rolled without affecting
      * producers with acks=all publishing to topics with a {@code min.in.sync.replicas}.
      */
-    Future<Boolean> canRoll(int  podId) {
+    Future<Boolean> canRoll(int podId) {
         LOGGER.debugCr(reconciliation, "Determining whether broker {} can be rolled", podId);
         return canRollBroker(descriptions, podId);
     }
