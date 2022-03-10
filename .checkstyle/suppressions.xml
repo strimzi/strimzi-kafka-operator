@@ -8,7 +8,11 @@
 
     <!-- Note that [/\\] must be used as the path separator for cross-platform support -->
 
-    <!-- cluster-operator -->
+    <!-- Use this file to suppress warnings only when absolutely needed:
+               * To suppress a bunch of class (for example generated code)
+               * To suppress warning we do not want for the whole project
+               * To suppress file-level warnings
+         In all other cases, you should use the annotations on the methods or classes affected by it. -->
 
     <!-- KafkaAssemblyOperator is relatively big at this point because lot of methods have copies for StatefulSets and
          for StrimziPodSets. Once StatefulSet support is dropped, a lot of the logic will be removed again and the file
@@ -18,56 +22,14 @@
     <suppress checks="JavaNCSS"
               files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperator.java"/>
 
-    <suppress checks="ParameterNumber"
-              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]ResourceUtils.java"/>
-
-    <suppress checks="ParameterNumber"
-              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]resource[/\\]ResourceOperatorSupplier.java"/>
-
-    <suppress checks="MethodLength|NPathComplexity|CyclomaticComplexity|ClassDataAbstractionCoupling"
-              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperatorTest.java"/>
-
-    <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling"
-              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]AbstractModel.java"/>
-
-    <suppress checks="ClassFanOutComplexity|JavaNCSS"
-              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperatorTest.java"/>
-
-    <suppress checks="ClassFanOutComplexity|NPathComplexity|CyclomaticComplexity"
-              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]KafkaCluster.java"/>
-
-    <suppress checks="NPathComplexity|CyclomaticComplexity"
-              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperator.java"/>
-
-    <suppress checks="NPathComplexity"
-              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]ZookeeperCluster.java"/>
-
-    <suppress checks="NPathComplexity|CyclomaticComplexity"
-              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]KafkaConnectCluster.java"/>
-
-    <suppress checks="NPathComplexity|CyclomaticComplexity"
-              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]model[/\\]KafkaBridgeCluster.java"/>
-
-    <!-- topic operator -->
-    <suppress checks="NPathComplexity|CyclomaticComplexity"
-              files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]TopicOperator.java"/>
-    
-    <suppress checks="NPathComplexity|CyclomaticComplexity"
-              files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]TopicName.java"/>
-
-    <suppress checks="ClassFanOutComplexity"
-              files="io[/\\]strimzi[/\\]operator[/\\]topic[/\\]MockAdminClient.java"/>
-
-    <suppress checks="ClassDataAbstractionCoupling"
-              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]Main.java"/>
-
+    <!-- Generated classes which we do not edit -->
     <suppress checks=".*"
               files="io[/\\]strimzi[/\\]api[/\\]kafka[/\\]model[/\\].*(Builder|Fluent|FluentImpl)\.java"/>
-
-    <suppress checks="UnnecessaryParentheses"
-              files="io[/\\]strimzi[/\\].*"/>
-
     <suppress checks=".*"
               files="io[/\\]strimzi[/\\]systemtest[/\\]kafkaclients[/\\]internalClients[/\\].*(Builder|Fluent|FluentImpl)\.java"/>
+
+    <!-- Unnecessary parentheses sometimes make the code more readable -->
+    <suppress checks="UnnecessaryParentheses"
+              files="io[/\\]strimzi[/\\].*"/>
 
 </suppressions>

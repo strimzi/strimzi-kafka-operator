@@ -195,6 +195,7 @@ public class KafkaConnectCluster extends AbstractModel {
      * from the instantiation of the (subclass of) KafkaConnectCluster,
      * thus permitting reuse of the setter-calling code for subclasses.
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     protected static <C extends KafkaConnectCluster> C fromSpec(Reconciliation reconciliation,
                                                                 KafkaConnectSpec spec,
                                                                 KafkaVersion.Lookup versions,

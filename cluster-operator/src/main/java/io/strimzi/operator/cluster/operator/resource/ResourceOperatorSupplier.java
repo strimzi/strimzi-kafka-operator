@@ -139,6 +139,7 @@ public class ResourceOperatorSupplier {
                 zlf);
     }
 
+    @SuppressWarnings({"checkstyle:ParameterNumber"})
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
                                     RouteOperator routeOperations,
                                     StatefulSetOperator stsOperations,

@@ -112,6 +112,7 @@ import static java.util.Collections.emptyMap;
 /**
  * AbstractModel an abstract base model for all components of the {@code Kafka} custom resource
  */
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 public abstract class AbstractModel {
 
     public static final String STRIMZI_CLUSTER_OPERATOR_NAME = "strimzi-cluster-operator";
