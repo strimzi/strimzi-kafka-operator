@@ -123,7 +123,6 @@ import static io.strimzi.test.TestUtils.set;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -656,16 +655,16 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<String> logNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(any(), anyString(), logNameCaptor.capture(), logCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
 
-        ConfigMap metricsCm = kafkaCluster.generateAncillaryConfigMap(new MetricsAndLogging(metricsCM, null), emptySet(), emptySet(), false);
+        ConfigMap metricsCm = kafkaCluster.generateSharedConfigurationConfigMap(new MetricsAndLogging(metricsCM, null), Map.of(), Map.of(), false);
         when(mockCmOps.getAsync(kafkaNamespace, KafkaCluster.metricAndLogConfigsName(kafkaName))).thenReturn(Future.succeededFuture(metricsCm));
         when(mockCmOps.getAsync(kafkaNamespace, metricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
         when(mockCmOps.getAsync(kafkaNamespace, differentMetricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
-
         when(mockCmOps.getAsync(anyString(), eq(JmxTrans.jmxTransConfigName(kafkaName)))).thenReturn(
             Future.succeededFuture(new ConfigMapBuilder()
                     .withNewMetadata().withResourceVersion("123").endMetadata()
                     .build())
         );
+        when(mockCmOps.listAsync(kafkaNamespace, kafkaCluster.getSelectorLabels())).thenReturn(Future.succeededFuture(List.of()));
 
         ArgumentCaptor<Route> routeCaptor = ArgumentCaptor.forClass(Route.class);
         ArgumentCaptor<String> routeNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -978,7 +977,7 @@ public class KafkaAssemblyOperatorTest {
                 .endMetadata()
                 .withData(singletonMap("metrics-config.yml", ""))
                 .build();
-        ConfigMap metricsAndLoggingCm = originalKafkaCluster.generateAncillaryConfigMap(new MetricsAndLogging(metricsCm, null), emptySet(), emptySet(), false);
+        ConfigMap metricsAndLoggingCm = originalKafkaCluster.generateSharedConfigurationConfigMap(new MetricsAndLogging(metricsCm, null), Map.of(), Map.of(), false);
         when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(metricsAndLoggingCm);
         when(mockCmOps.getAsync(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(Future.succeededFuture(metricsAndLoggingCm));
 
@@ -995,7 +994,7 @@ public class KafkaAssemblyOperatorTest {
                 .withNamespace(clusterNamespace)
                 .endMetadata()
                 .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG,
-                        updatedKafkaCluster.parseLogging(LOG_KAFKA_CONFIG, null)))
+                        updatedKafkaCluster.loggingConfiguration(LOG_KAFKA_CONFIG, null)))
                 .build();
         when(mockCmOps.get(clusterNamespace, KafkaCluster.metricAndLogConfigsName(clusterName))).thenReturn(logCm);
 
@@ -1004,11 +1003,12 @@ public class KafkaAssemblyOperatorTest {
                 .withNamespace(clusterNamespace)
                 .endMetadata()
                 .withData(singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG,
-                        updatedZookeeperCluster.parseLogging(LOG_ZOOKEEPER_CONFIG, null)))
+                        updatedZookeeperCluster.loggingConfiguration(LOG_ZOOKEEPER_CONFIG, null)))
                 .build();
         when(mockCmOps.get(clusterNamespace, ZookeeperCluster.zookeeperMetricAndLogConfigsName(clusterName))).thenReturn(zklogsCm);
         when(mockCmOps.getAsync(clusterNamespace, metricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
         when(mockCmOps.getAsync(clusterNamespace, differentMetricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
+        when(mockCmOps.listAsync(clusterNamespace, updatedKafkaCluster.getSelectorLabels())).thenReturn(Future.succeededFuture(List.of()));
 
         // Mock pod ops
         when(mockPodOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());

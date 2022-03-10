@@ -294,10 +294,12 @@ class KafkaST extends AbstractST {
         checkKafkaConfiguration(namespaceName, kafkaStatefulSetName(clusterName), kafkaConfig, clusterName);
         checkSpecificVariablesInContainer(namespaceName, kafkaStatefulSetName(clusterName), "kafka", envVarGeneral);
 
-        String kafkaConfiguration = kubeClient().getConfigMap(namespaceName, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config");
-        assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
-        assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
-        assertThat(kafkaConfiguration, containsString("default.replication.factor=1"));
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 2)) {
+            String kafkaConfiguration = kubeClient().getConfigMap(namespaceName, cmName).getData().get("server.config");
+            assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
+            assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
+            assertThat(kafkaConfiguration, containsString("default.replication.factor=1"));
+        }
 
         String kafkaConfigurationFromPod = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "cat", "/tmp/strimzi.properties").out();
         assertThat(kafkaConfigurationFromPod, containsString("offsets.topic.replication.factor=1"));
@@ -388,10 +390,12 @@ class KafkaST extends AbstractST {
         checkKafkaConfiguration(namespaceName, kafkaStatefulSetName(clusterName), updatedKafkaConfig, clusterName);
         checkSpecificVariablesInContainer(namespaceName, kafkaStatefulSetName(clusterName), "kafka", envVarUpdated);
 
-        kafkaConfiguration = kubeClient(namespaceName).getConfigMap(namespaceName, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config");
-        assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=2"));
-        assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=2"));
-        assertThat(kafkaConfiguration, containsString("default.replication.factor=2"));
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 2)) {
+            String kafkaConfiguration = kubeClient(namespaceName).getConfigMap(namespaceName, cmName).getData().get("server.config");
+            assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=2"));
+            assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=2"));
+            assertThat(kafkaConfiguration, containsString("default.replication.factor=2"));
+        }
 
         kafkaConfigurationFromPod = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "cat", "/tmp/strimzi.properties").out();
         assertThat(kafkaConfigurationFromPod, containsString("offsets.topic.replication.factor=2"));
@@ -1040,6 +1044,7 @@ class KafkaST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final int kafkaReplicas = 3;
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         Map<String, String> labels = new HashMap<>();
@@ -1049,7 +1054,7 @@ class KafkaST extends AbstractST {
         labels.put(labelKeys[0], labelValues[0]);
         labels.put(labelKeys[1], labelValues[1]);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas, 1)
             .editMetadata()
                 .withLabels(labels)
             .endMetadata()
@@ -1110,13 +1115,15 @@ class KafkaST extends AbstractST {
 
         verifyPresentLabels(labels, service.getMetadata().getLabels());
 
-        LOGGER.info("Waiting for kafka config map labels changed {}", labels);
-        ConfigMapUtils.waitForConfigMapLabelsChange(namespaceName, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName), labels);
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, kafkaReplicas)) {
+            LOGGER.info("Waiting for Kafka ConfigMap {} in namespace {} to have new labels: {}", cmName, namespaceName, labels);
+            ConfigMapUtils.waitForConfigMapLabelsChange(namespaceName, cmName, labels);
 
-        LOGGER.info("Verifying kafka labels via config maps");
-        ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName));
+            LOGGER.info("Verifying Kafka labels on ConfigMap {} in namespace {}", cmName, namespaceName);
+            ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, cmName);
 
-        verifyPresentLabels(labels, configMap.getMetadata().getLabels());
+            verifyPresentLabels(labels, configMap.getMetadata().getLabels());
+        }
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
         StUtils.waitForStatefulSetOrStrimziPodSetLabelsChange(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), labels);
@@ -1154,12 +1161,15 @@ class KafkaST extends AbstractST {
 
         verifyNullLabels(labelKeys, service);
 
-        LOGGER.info("Verifying kafka labels via config maps");
-        ConfigMapUtils.waitForConfigMapLabelsDeletion(namespaceName, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName), labelKeys[0], labelKeys[1], labelKeys[2]);
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, kafkaReplicas)) {
+            LOGGER.info("Waiting for Kafka ConfigMap {} in namespace {} to have labels removed: {}", cmName, namespaceName, labelKeys);
+            ConfigMapUtils.waitForConfigMapLabelsDeletion(namespaceName, cmName, labelKeys[0], labelKeys[1], labelKeys[2]);
 
-        configMap = kubeClient(namespaceName).getConfigMap(namespaceName, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName));
+            LOGGER.info("Verifying Kafka labels on ConfigMap {} in namespace {}", cmName, namespaceName);
+            ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, cmName);
 
-        verifyNullLabels(labelKeys, configMap);
+            verifyNullLabels(labelKeys, configMap);
+        }
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
         StUtils.waitForStatefulSetOrStrimziPodSetLabelsDeletion(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), labelKeys[0], labelKeys[1], labelKeys[2]);
@@ -1652,14 +1662,16 @@ class KafkaST extends AbstractST {
         LOGGER.info("Checking kafka configuration");
         List<Pod> pods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, podNamePrefix);
 
-        Properties properties = configMap2Properties(kubeClient(namespaceName).getConfigMap(namespaceName, clusterName + "-kafka-config"));
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, pods.size())) {
+            Properties properties = configMap2Properties(kubeClient(namespaceName).getConfigMap(namespaceName, cmName));
 
-        for (Map.Entry<String, Object> property : config.entrySet()) {
-            String key = property.getKey();
-            Object val = property.getValue();
+            for (Map.Entry<String, Object> property : config.entrySet()) {
+                String key = property.getKey();
+                Object val = property.getValue();
 
-            assertThat(properties.keySet().contains(key), is(true));
-            assertThat(properties.getProperty(key), is(val));
+                assertThat(properties.keySet().contains(key), is(true));
+                assertThat(properties.getProperty(key), is(val));
+            }
         }
 
         for (Pod pod: pods) {

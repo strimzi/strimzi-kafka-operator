@@ -39,7 +39,11 @@ The following resources are created by the Cluster Operator in the Kubernetes cl
 - Service account used by the Kafka pods.
 - PodDisruptionBudget configured for the Kafka brokers.
 
-`_cluster-name_-kafka-_idx_`:: Pods created by the Kafka StatefulSet or StrimziPodSet.
+`_cluster-name_-kafka-_idx_`:: Name given to the following Kafka resources:
++
+- Pods created by the Kafka StatefulSet or StrimziPodSet.
+- ConfigMap with Kafka broker configuration (if the xref:ref-operator-use-strimzi-pod-sets-feature-gate-{context}[UseStrimziPodSets feature gate] is enabled).
+
 `_cluster-name_-kafka-brokers`:: Service needed to have DNS resolve the Kafka broker pods IP addresses directly.
 `_cluster-name_-kafka-bootstrap`:: Service can be used as bootstrap servers for Kafka clients connecting from within the Kubernetes cluster.
 `_cluster-name_-kafka-external-bootstrap`:: Bootstrap service for clients connecting from outside the Kubernetes cluster. This resource is created only when an external listener is enabled. The old service name will be used for backwards compatibility when the listener name is `external` and port is `9094`.

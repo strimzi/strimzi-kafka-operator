@@ -14,6 +14,14 @@
                * To suppress file-level warnings
          In all other cases, you should use the annotations on the methods or classes affected by it. -->
 
+    <!-- KafkaAssemblyOperator is relatively big at this point because lot of methods have copies for StatefulSets and
+         for StrimziPodSets. Once StatefulSet support is dropped, a lot of the logic will be removed again and the file
+         should be smaller again. Then we should be able to remove this suppression.
+         (This suppresses the File level warning which cannot be suppressed using annotation inside the class)
+         -->
+    <suppress checks="JavaNCSS"
+              files="io[/\\]strimzi[/\\]operator[/\\]cluster[/\\]operator[/\\]assembly[/\\]KafkaAssemblyOperator.java"/>
+
     <!-- Generated classes which we do not edit -->
     <suppress checks=".*"
               files="io[/\\]strimzi[/\\]api[/\\]kafka[/\\]model[/\\].*(Builder|Fluent|FluentImpl)\.java"/>

@@ -498,11 +498,16 @@ public abstract class AbstractModel {
     }
 
     /**
-     * @param logging The Logging to parse.
-     * @param externalCm The external ConfigMap, used if Logging is an instance of ExternalLogging
-     * @return The logging properties as a String in log4j/2 properties file format.
+     * Generates the logging configuration as a String. The configuration is generated based on the default logging
+     * configuration files from resources, the (optional) inline logging configuration from the custom resource
+     * and the (optional) external logging configuration in a user-provided ConfigMap.
+     *
+     * @param logging       The logging configuration from the custom resource
+     * @param externalCm    The user-provided ConfigMap with custom Log4j / Log4j2 file
+     *
+     * @return              String with the Log4j / Log4j2 properties used for configuration
      */
-    public String parseLogging(Logging logging, ConfigMap externalCm) {
+    public String loggingConfiguration(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
             InlineLogging inlineLogging = (InlineLogging) logging;
             OrderedProperties newSettings = getDefaultLogConfig();
@@ -584,16 +589,18 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Generates a metrics and logging ConfigMap according to configured defaults.
+     * Generates a metrics and logging ConfigMap according to configured defaults. This is used with most operands, but
+     * not all of them. Kafka brokers have own methods in the KafkaCluster class. So does the Bridge. And Kafka Exporter
+     * has no metrics or logging ConfigMap at all.
      *
      * @param metricsAndLogging The external CMs
      * @return The generated ConfigMap.
      */
     public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
         Map<String, String> data = new HashMap<>(2);
-        data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), metricsAndLogging.getLoggingCm()));
+        data.put(getAncillaryConfigMapKeyLogConfig(), loggingConfiguration(getLogging(), metricsAndLogging.getLoggingCm()));
         if (getMetricsConfigInCm() != null) {
-            String parseResult = parseMetrics(metricsAndLogging.getMetricsCm());
+            String parseResult = metricsConfiguration(metricsAndLogging.getMetricsCm());
             if (parseResult != null) {
                 this.setMetricsEnabled(true);
                 data.put(ANCILLARY_CM_KEY_METRICS, parseResult);
@@ -602,7 +609,14 @@ public abstract class AbstractModel {
         return createConfigMap(ancillaryConfigMapName, data);
     }
 
-    protected String parseMetrics(ConfigMap externalCm) {
+    /**
+     * Generates Prometheus metrics configuration based on the JMXExporter configuration from the user-provided ConfigMap.
+     *
+     * @param externalCm    ConfigMap with the JMX Prometheus configuration YAML
+     *
+     * @return              String with JSON formatted metrics configuration
+     */
+    public String metricsConfiguration(ConfigMap externalCm) {
         if (getMetricsConfigInCm() != null) {
             if (getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
                 if (externalCm == null) {
@@ -612,7 +626,7 @@ public abstract class AbstractModel {
                 } else {
                     String data = externalCm.getData().get(((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey());
                     if (data == null) {
-                        LOGGER.warnCr(reconciliation, "ConfigMap {} does not contain specified key {}. Metrics disabled.", ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName(),
+                        LOGGER.warnCr(reconciliation, "ConfigMap {} does not contain specified key {}.", ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName(),
                                 ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey());
                         throw new InvalidResourceException("ConfigMap " + ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName()
                                 + " does not contain specified key " + ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey() + ".");
@@ -971,11 +985,15 @@ public abstract class AbstractModel {
     }
 
     protected ConfigMap createConfigMap(String name, Map<String, String> data) {
+        return createConfigMap(name, labels.toMap(), data);
+    }
+
+    protected ConfigMap createConfigMap(String name, Map<String, String> labels, Map<String, String> data) {
         return new ConfigMapBuilder()
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
-                    .withLabels(labels.toMap())
+                    .withLabels(labels)
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withData(data)
@@ -1137,22 +1155,24 @@ public abstract class AbstractModel {
     /**
      * Creates the StrimziPodSet with the Pods which currently correspond to the existing StatefulSet pods.
      *
-     * @param replicas          Defines how many pods should be generated and stored in this StrimziPodSet
-     * @param setAnnotations    Map with annotations which should be set on the StrimziPodSet
-     * @param podAnnotations    Map with annotation which should be set on the Pods
-     * @param volumes           Function which returns a list of volumes which should be used by the Pod and its containers
-     * @param affinity          Affinity rules for the pods
-     * @param initContainers    List of init containers which should be used in the pods
-     * @param containers        List of containers which should be used in the pods
-     * @param imagePullSecrets  List of image pull secrets with container registry credentials
-     * @param isOpenShift       Flag to specify whether we are on OpenShift or not
+     * @param replicas                  Defines how many pods should be generated and stored in this StrimziPodSet
+     * @param setAnnotations            Map with annotations which should be set on the StrimziPodSet
+     * @param podAnnotationsProvider    Function which provides annotation map for a specific Pod. A function is used
+     *                                  instead of providing a map because in some cases, each pod might have different
+     *                                  annotations. So they need to be generated per-pod.
+     * @param volumes                   Function which returns a list of volumes which should be used by the Pod and its containers
+     * @param affinity                  Affinity rules for the pods
+     * @param initContainers            List of init containers which should be used in the pods
+     * @param containers                List of containers which should be used in the pods
+     * @param imagePullSecrets          List of image pull secrets with container registry credentials
+     * @param isOpenShift               Flag to specify whether we are on OpenShift or not
      *
-     * @return                  Generated StrimziPodSet with all pods
+     * @return                          Generated StrimziPodSet with all pods
      */
     protected StrimziPodSet createPodSet(
             int replicas,
             Map<String, String> setAnnotations,
-            Map<String, String> podAnnotations,
+            Function<Integer, Map<String, String>> podAnnotationsProvider,
             Function<String, List<Volume>> volumes,
             Affinity affinity,
             List<Container> initContainers,
@@ -1166,7 +1186,7 @@ public abstract class AbstractModel {
             Pod pod = createStatefulPod(
                     name,
                     podName,
-                    podAnnotations,
+                    podAnnotationsProvider.apply(i),
                     volumes.apply(podName),
                     affinity,
                     initContainers,

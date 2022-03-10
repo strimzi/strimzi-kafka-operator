@@ -12,14 +12,15 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
-import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -43,8 +44,8 @@ import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -81,10 +82,12 @@ public class DynamicConfST extends AbstractST {
             .endSpec()
             .build());
 
-        String kafkaConfiguration = kubeClient().getConfigMap(namespace, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config");
-        assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
-        assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
-        assertThat(kafkaConfiguration, containsString("log.message.format.version=" + TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).messageVersion()));
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, KAFKA_REPLICAS)) {
+            String kafkaConfiguration = kubeClient().getConfigMap(namespace, cmName).getData().get("server.config");
+            assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
+            assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
+            assertThat(kafkaConfiguration, containsString("log.message.format.version=" + TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).messageVersion()));
+        }
 
         String kafkaConfigurationFromPod = cmdKubeClient().namespace(namespace).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "/bin/bash", "-c", "bin/kafka-configs.sh --bootstrap-server localhost:9092 --entity-type brokers --entity-name 0 --describe").out();
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
@@ -97,11 +100,14 @@ public class DynamicConfST extends AbstractST {
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + true));
 
         LOGGER.info("Verify values after update");
-        kafkaConfiguration = kubeClient().getConfigMap(namespace, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config");
-        assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
-        assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
-        assertThat(kafkaConfiguration, containsString("log.message.format.version=" + TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).messageVersion()));
-        assertThat(kafkaConfiguration, containsString("unclean.leader.election.enable=true"));
+
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, KAFKA_REPLICAS)) {
+            String kafkaConfiguration = kubeClient().getConfigMap(namespace, cmName).getData().get("server.config");
+            assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
+            assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
+            assertThat(kafkaConfiguration, containsString("log.message.format.version=" + TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).messageVersion()));
+            assertThat(kafkaConfiguration, containsString("unclean.leader.election.enable=true"));
+        }
     }
 
     @Tag(NODEPORT_SUPPORTED)

@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -142,12 +143,18 @@ public class CruiseControlUtils {
     }
 
     public static Properties getKafkaCruiseControlMetricsReporterConfiguration(String namespaceName, String clusterName) throws IOException {
-        InputStream configurationFileStream = new ByteArrayInputStream(kubeClient(namespaceName).getConfigMap(namespaceName,
-            KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).getData().get("server.config").getBytes(StandardCharsets.UTF_8));
+        String cmName;
+        if (Environment.isStrimziPodSetEnabled())   {
+            cmName = KafkaResources.kafkaPodName(clusterName, 0);
+        } else {
+            cmName = KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName);
+        }
+
+        InputStream configurationFileStream = new ByteArrayInputStream(kubeClient(namespaceName).getConfigMap(namespaceName, cmName)
+                .getData().get("server.config").getBytes(StandardCharsets.UTF_8));
 
         Properties configurationOfKafka = new Properties();
         configurationOfKafka.load(configurationFileStream);
-        LOGGER.info("Verifying that in {} is not present configuration related to metrics reporter", KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName));
 
         Properties cruiseControlProperties = new Properties();
 

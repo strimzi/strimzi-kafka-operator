@@ -39,7 +39,6 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
-import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -116,7 +115,7 @@ public class KafkaRoller {
     private final Supplier<BackOff> backoffSupplier;
     protected String namespace;
     private final AdminClientProvider adminClientProvider;
-    private final String kafkaConfig;
+    private final Function<Integer, String> kafkaConfigProvider;
     private final String kafkaLogging;
     private final KafkaVersion kafkaVersion;
     private final Reconciliation reconciliation;
@@ -126,16 +125,8 @@ public class KafkaRoller {
     public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
                        int replicas, Secret clusterCaCertSecret, Secret coKeySecret,
-                       String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
-        this(reconciliation, vertx, podOperations, pollingIntervalMs, operationTimeoutMs, backOffSupplier,
-                replicas, clusterCaCertSecret, coKeySecret, new DefaultAdminClientProvider(), kafkaConfig, kafkaLogging, kafkaVersion, allowReconfiguration);
-    }
-
-    public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
-                       long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier,
-                       int replicas, Secret clusterCaCertSecret, Secret coKeySecret,
                        AdminClientProvider adminClientProvider,
-                       String kafkaConfig, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
+                       Function<Integer, String> kafkaConfigProvider, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration) {
         this.namespace = reconciliation.namespace();
         this.cluster = reconciliation.name();
         this.numPods = replicas;
@@ -147,7 +138,7 @@ public class KafkaRoller {
         this.podOperations = podOperations;
         this.pollingIntervalMs = pollingIntervalMs;
         this.adminClientProvider = adminClientProvider;
-        this.kafkaConfig = kafkaConfig;
+        this.kafkaConfigProvider = kafkaConfigProvider;
         this.kafkaLogging = kafkaLogging;
         this.kafkaVersion = kafkaVersion;
         this.reconciliation = reconciliation;
@@ -487,7 +478,7 @@ public class KafkaRoller {
 
         if (!needsRestart && allowReconfiguration) {
             LOGGER.traceCr(reconciliation, "Broker {}: description {}", podId, brokerConfig);
-            diff = new KafkaBrokerConfigurationDiff(reconciliation, brokerConfig, kafkaConfig, kafkaVersion, podId);
+            diff = new KafkaBrokerConfigurationDiff(reconciliation, brokerConfig, kafkaConfigProvider.apply(podId), kafkaVersion, podId);
             loggingDiff = logging(podId);
             if (diff.getDiffSize() > 0) {
                 if (diff.canBeUpdatedDynamically()) {
