@@ -40,7 +40,7 @@ Use topic names that reflect the nature of the topic, and remember that names ca
 If creating a topic in Kafka, use a name that is a valid Kubernetes resource name,
 otherwise the Topic Operator will need to create the corresponding `KafkaTopic` with a name that conforms to the Kubernetes rules.
 
-NOTE: Requirements for identifiers and names in Kubernetes are outlined in link:https://kubernetes.io/docs/concepts/overview/working-with-objects/names[Object Names and IDs^] document.
+NOTE: For information on the requirements for identifiers and names in Kubernetes, refer to link:https://kubernetes.io/docs/concepts/overview/working-with-objects/names[Object Names and IDs^].
 
 == Kafka topic naming conventions
 
