@@ -64,7 +64,12 @@ The cluster CA certificate to verify the identity of the kafka brokers is also c
 . Retrieve the address of the bootstrap service you can use to access the Kafka cluster from the status of the `Kafka` resource.
 +
 [source,shell,subs=+quotes]
-kubectl get kafka _KAFKA-CLUSTER-NAME_ -o=jsonpath='{.status.listeners[?(@.type=="external")].bootstrapServers}{"\n"}'
+kubectl get kafka _KAFKA-CLUSTER-NAME_ -o=jsonpath='{.status.listeners[?(@.name=="_LISTENER-NAME_")].bootstrapServers}{"\n"}'
++
+For example:
++
+[source,shell,subs=+quotes]
+kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.name=="listener1")].bootstrapServers}{"\n"}'
 
 . Extract the public certificate of the broker certification authority.
 +
