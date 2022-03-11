@@ -139,7 +139,7 @@ NOTE: If you scale your Kafka cluster while using external listeners, it might t
 . Find the bootstrap address and port from the status of the `Kafka` resource.
 +
 [source,shell, subs=+quotes]
-kubectl get kafka _KAFKA-CLUSTER-NAME_ -o jsonpath='{.status.listeners[?(@.type=="external")].bootstrapServers}'
+kubectl get kafka _KAFKA-CLUSTER-NAME_ -o jsonpath='{.status.listeners[?(@.name=="external")].bootstrapServers}'
 +
 Use the bootstrap address in your Kafka client to connect to the Kafka cluster.
 

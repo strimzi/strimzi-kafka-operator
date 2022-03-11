@@ -230,9 +230,9 @@ You can retrieve this from the status of the `Kafka` resource.
 
 .Example command to retrieve the address and port for client connection
 [source,shell,subs=+quotes]
-kubectl get kafka _KAFKA-CLUSTER-NAME_ -o=jsonpath='{.status.listeners[?(@.type=="external")].bootstrapServers}{"\n"}'
+kubectl get kafka _<kafka_cluster_name>_ -o=jsonpath='{.status.listeners[?(@.name=="_<listener_name>_")].bootstrapServers}{"\n"}'
 
-NOTE: Listeners cannot be configured to use the ports set aside for interbroker communication (9091) and metrics (9404).
+NOTE: Listeners cannot be configured to use the ports set aside for interbroker communication (9090 and 9091) and metrics (9404).
 
 [id='property-listener-tls-{context}']
 === `tls`
