@@ -30,10 +30,6 @@ def buildKeycloakAndOpa_s390x(String workspace) {
     sh(script: "${workspace}/.jenkins/scripts/build_keycloak_opa-s390x.sh")
 }
 
-def applys390xpatch(String workspace) {
-    sh(script: "${workspace}/.jenkins/scripts/apply_s390x_patch.sh")
-}
-
 def buildStrimziImages() {
     sh(script: """
         eval \$(minikube docker-env)
