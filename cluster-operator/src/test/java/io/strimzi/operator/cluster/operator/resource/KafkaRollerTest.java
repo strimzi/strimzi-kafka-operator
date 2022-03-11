@@ -218,6 +218,34 @@ public class KafkaRollerTest {
         return podNames;
     }
 
+    public List<String> addDisconnectedPodNames(int replicas) {
+        ArrayList<String> podNames = new ArrayList<>(replicas);
+
+        podNames.add(KafkaCluster.kafkaPodName(clusterName(), 10));
+        podNames.add(KafkaCluster.kafkaPodName(clusterName(), 200));
+        podNames.add(KafkaCluster.kafkaPodName(clusterName(), 30));
+        podNames.add(KafkaCluster.kafkaPodName(clusterName(), 400));
+        podNames.add(KafkaCluster.kafkaPodName(clusterName(), 500));
+        return podNames;
+    }
+
+    @Test
+    public void testRollWithDisconnectedPodNames(VertxTestContext testContext) {
+        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        StatefulSet sts = buildStatefulSet();
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(sts, null, null, addDisconnectedPodNames(sts.getSpec().getReplicas()), podOps,
+                bootstrapBrokers -> bootstrapBrokers != null && bootstrapBrokers.equals(singletonList(1)) ? new RuntimeException("Test Exception") : null,
+                null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(true),
+                30);
+        // The algorithm should carry on rolling the pods (errors are logged),
+        // because we never find the controller we get ascending order
+        doSuccessfulRollingRestart(testContext, kafkaRoller,
+                asList(10, 200, 30, 400, 500),
+                asList(10, 200, 400, 500, 30));
+    }
+
+
     @Test
     public void testRollHandlesErrorWhenOpeningAdminClient(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
@@ -602,7 +630,7 @@ public class KafkaRollerTest {
                     500,
                     1000,
                     () -> new BackOff(10L, 2, 4),
-                    sts.getSpec().getReplicas(),
+                    podList,
                     clusterCaCertSecret,
                     coKeySecret,
                     new DefaultAdminClientProvider(),
@@ -666,10 +694,10 @@ public class KafkaRollerTest {
         }
 
         @Override
-        int controller(String podName, long timeout, TimeUnit unit, RestartContext restartContext) throws ForceableProblem {
-            Throwable throwable = controllerException.apply(getPodIndexFromPodName(podName));
+        int controller(PodRef podRef, long timeout, TimeUnit unit, RestartContext restartContext) throws ForceableProblem {
+            Throwable throwable = controllerException.apply(podRef.getPodId());
             if (throwable != null) {
-                throw new ForceableProblem("An error while trying to determine the cluster controller from pod " + podName, throwable);
+                throw new ForceableProblem("An error while trying to determine the cluster controller from pod " + podRef.getPodName(), throwable);
             } else {
                 int index;
                 if (controllerCall < controllers.length) {
@@ -683,8 +711,8 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Config brokerConfig(String podName) throws ForceableProblem, InterruptedException {
-            ForceableProblem problem = getConfigsException.apply(getPodIndexFromPodName(podName));
+        protected Config brokerConfig(PodRef podRef) throws ForceableProblem, InterruptedException {
+            ForceableProblem problem = getConfigsException.apply(podRef.getPodId());
             if (problem != null) {
                 throw problem;
             } else return new Config(emptyList());

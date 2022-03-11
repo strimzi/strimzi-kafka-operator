@@ -1202,7 +1202,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 1_000,
                                 operationTimeoutMs,
                                 () -> new BackOff(250, 2, 10),
-                                replicas,
+                                KafkaCluster.generatePodList(reconciliation.name(), replicas),
                                 compositeFuture.resultAt(0),
                                 compositeFuture.resultAt(1),
                                 adminClientProvider,
