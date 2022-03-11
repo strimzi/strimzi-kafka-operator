@@ -36,21 +36,40 @@ if [[ $OC_INSTALLED = false && $KUBECTL_INSTALLED = false ]]; then
   error "There is no kubectl or oc installed"
 fi
 
+# check kube connectivity
+$KUBE_CLIENT version --request-timeout=10s 1>/dev/null
+
 readonly USAGE="
-Usage: ${0} --namespace=<string> --cluster=<string> --secrets=(off|hidden|all)
+Usage: ${0} --namespace=<string> --cluster=<string> [--bridge=<string>] [--connect=<string>] [--mm2=<string>] [--secrets=(off|hidden|all)]
+Bridge, connect and mm2 are optional, specify the component name if you want to get logs.
 Default level of secret verbosity is 'hidden' (only secret key will be reported).
 "
+
+NAMESPACE=""
+CLUSTER=""
+BRIDGE=""
+CONNECT=""
+MM2=""
 
 OPTSPEC=":-:"
 while getopts "$OPTSPEC" optchar; do
   case "${optchar}" in
     -)
       case "${OPTARG}" in
+        namespace=*)
+          NAMESPACE=${OPTARG#*=} && readonly NAMESPACE
+          ;;
         cluster=*)
           CLUSTER=${OPTARG#*=} && readonly CLUSTER
           ;;
-        namespace=*)
-          NAMESPACE=${OPTARG#*=} && readonly NAMESPACE
+        bridge=*)
+          BRIDGE=${OPTARG#*=} && readonly BRIDGE
+          ;;
+        connect=*)
+          CONNECT=${OPTARG#*=} && readonly CONNECT
+          ;;
+        mm2=*)
+          MM2=${OPTARG#*=} && readonly MM2
           ;;
         secrets=*)
           SECRETS_OPT=${OPTARG#*=} && readonly SECRETS_OPT
@@ -63,7 +82,7 @@ while getopts "$OPTSPEC" optchar; do
 done
 shift $((OPTIND-1))
 
-if [[ -z $CLUSTER && -z $NAMESPACE ]]; then
+if [[ -z $NAMESPACE && -z $CLUSTER ]]; then
   echo "--namespace and --cluster are mandatory options."
   error "$USAGE"
 fi
@@ -144,9 +163,13 @@ get_masked_secrets() {
 get_namespaced_yamls() {
   local type="$1"
   mkdir -p "$TMP"/reports/"$type"
-  local resources && resources=$($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" ||true)
+  local resources
+  resources=$($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" 2>/dev/null ||true)
+  resources="$resources $($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$BRIDGE" -o name -n "$BRIDGE" 2>/dev/null ||true)"
+  resources="$resources $($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$CONNECT" -o name -n "$NAMESPACE" 2>/dev/null ||true)"
+  resources="$resources $($KUBE_CLIENT get "$type" -l strimzi.io/cluster="$MM2" -o name -n "$NAMESPACE" 2>/dev/null ||true)"
+  echo "$type"
   if [[ -n $resources ]]; then
-    echo "$type"
     for res in $resources; do
       local filename && filename=$(echo "$res" | cut -f 2 -d "/")
       echo "    $res"
@@ -187,52 +210,65 @@ get_pod_logs() {
   local pod="$1"
   local con="${2-}"
   if [[ -n $pod ]]; then
-    # check if pod/container exists
-    local exists
-    if [[ -n $con ]]; then exists="$($KUBE_CLIENT -n "$NAMESPACE" exec "$pod" -c "$con" -- echo true 2>/dev/null ||true)"
-    else exists="$($KUBE_CLIENT -n "$NAMESPACE" exec "$pod" -- echo true 2>/dev/null ||true)"; fi
-    if [[ $exists == true ]]; then
-      local logs
-      # get current logs
-      if [[ -n $con ]]; then logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con" ||true)"
-      else logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" ||true)"; fi
-      if [[ -n $logs && -n $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log;
-      elif [[ -n $logs && -z $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod".log; fi
-      # get previous logs if available
-      if [[ -n $con ]]; then logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p -c "$con" 2>/dev/null ||true)"
-      else logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p 2>/dev/null ||true)"; fi
-      if [[ -n $logs && -n $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log.0;
-      elif [[ -n $logs && -z $con ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod".log.0; fi
+    local names && names=$($KUBE_CLIENT -n "$NAMESPACE" get po "$pod" -o jsonpath='{.spec.containers[*].name}' --ignore-not-found)
+    local count && count=$(echo "$names" | wc -w)
+    local logs
+    if [[ "$count" -eq 1 ]]; then
+      logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" ||true)"
+      if [[ -n $logs ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod".log; fi
+      logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p 2>/dev/null ||true)"
+      if [[ -n $logs ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod".log.0; fi
     fi
+    if [[ "$count" -gt 1 && -n "$con" && "$names" == *"$con"* ]]; then
+      logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con" ||true)"
+      if [[ -n $logs ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log; fi
+      logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p -c "$con" 2>/dev/null ||true)"
+      if [[ -n $logs ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log.0; fi
+    fi 
   fi
 }
 
 echo "podlogs"
 mkdir -p "$TMP"/reports/podlogs
 mkdir -p "$TMP"/reports/configs
-PODS=$($KUBE_CLIENT get pods -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" | cut -d "/" -f 2) && readonly PODS
+PODS=$($KUBE_CLIENT get po -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" | cut -d "/" -f 2)
+PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$BRIDGE" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
+PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$CONNECT" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
+PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$MM2" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
+readonly PODS
 for POD in $PODS; do
   echo "    $POD"
-  if [[ "$POD" == *"-entity-operator-"* ]]; then
-    get_pod_logs "$POD" topic-operator
-    get_pod_logs "$POD" user-operator
+  if [[ "$POD" =~ .*-zookeeper-[0-9]+ ]]; then
+    get_pod_logs "$POD" zookeeper
     get_pod_logs "$POD" tls-sidecar
+    $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c zookeeper -- \
+      cat /tmp/zookeeper.properties > "$TMP"/reports/configs/"$POD".cfg
   elif [[ "$POD" =~ .*-kafka-[0-9]+ ]]; then
     get_pod_logs "$POD" kafka
     get_pod_logs "$POD" tls-sidecar
     $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c kafka -- \
       cat /tmp/strimzi.properties > "$TMP"/reports/configs/"$POD".cfg
-  elif [[ "$POD" =~ .*-zookeeper-[0-9]+ ]]; then
-    get_pod_logs "$POD" zookeeper
+  elif [[ "$POD" == *"-entity-operator-"* ]]; then
+    get_pod_logs "$POD" topic-operator
+    get_pod_logs "$POD" user-operator
     get_pod_logs "$POD" tls-sidecar
-    $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c zookeeper -- \
-      cat /tmp/zookeeper.properties > "$TMP"/reports/configs/"$POD".cfg
+  elif [[ "$POD" == *"-kafka-exporter-"* ]]; then
+    get_pod_logs "$POD"
+  elif [[ "$POD" == *"-bridge-"* ]]; then
+    get_pod_logs "$POD"
+  elif [[ "$POD" == *"-connect-"* ]]; then
+    get_pod_logs "$POD"
+  elif [[ "$POD" == *"-mirrormaker2-"* ]]; then
+    get_pod_logs "$POD"
+  elif [[ "$POD" == *"-cruise-control-"* ]]; then
+    get_pod_logs "$POD" cruise-control
+    get_pod_logs "$POD" tls-sidecar
   fi
 done
 
+echo "clusteroperator"
 CO_DEPLOY=$($KUBE_CLIENT get deploy strimzi-cluster-operator -o name -n "$NAMESPACE" --ignore-not-found) && readonly CO_DEPLOY
 if [[ -n $CO_DEPLOY ]]; then
-  echo "clusteroperator"
   echo "    $CO_DEPLOY"
   $KUBE_CLIENT get deploy strimzi-cluster-operator -o yaml -n "$NAMESPACE" > "$TMP"/reports/deployments/cluster-operator.yaml
   $KUBE_CLIENT get po -l strimzi.io/kind=cluster-operator -o yaml -n "$NAMESPACE" > "$TMP"/reports/pods/cluster-operator.yaml
@@ -246,9 +282,24 @@ fi
 
 CO_RS=$($KUBE_CLIENT get rs -l strimzi.io/kind=cluster-operator -o name -n "$NAMESPACE" --ignore-not-found)
 if [[ -n $CO_RS ]]; then
+  echo "    $CO_RS"
   CO_RS=$(echo "$CO_RS" | tail -n1) && echo "    $CO_RS"
   CO_RS=$(echo "$CO_RS" | cut -d "/" -f 2) && readonly CO_RS
   $KUBE_CLIENT get rs "$CO_RS" -n "$NAMESPACE" > "$TMP"/reports/replicasets/"$CO_RS".yaml
+fi
+
+echo "draincleaner"
+DC_DEPLOY=$($KUBE_CLIENT get deploy strimzi-drain-cleaner -o name -n "$NAMESPACE" --ignore-not-found) && readonly DC_DEPLOY
+if [[ -n $DC_DEPLOY ]]; then
+  echo "    $DC_DEPLOY"
+  $KUBE_CLIENT get deploy strimzi-drain-cleaner -o yaml -n "$NAMESPACE" > "$TMP"/reports/deployments/drain-cleaner.yaml
+  $KUBE_CLIENT get po -l app=strimzi-drain-cleaner -o yaml -n "$NAMESPACE" > "$TMP"/reports/pods/drain-cleaner.yaml
+  DC_POD=$($KUBE_CLIENT get po -l app=strimzi-drain-cleaner -o name -n "$NAMESPACE" --ignore-not-found)
+  if [[ -n $DC_POD ]]; then
+    echo "    $DC_POD"
+    DC_POD=$(echo "$DC_POD" | cut -d "/" -f 2) && readonly DC_POD
+    get_pod_logs "$DC_POD"
+  fi
 fi
 
 echo "customresources"
@@ -279,13 +330,11 @@ for CRD in $CRDS; do
   fi
 done
 
+echo "events"
 EVENTS=$($KUBE_CLIENT get event -n "$NAMESPACE" --ignore-not-found) && readonly EVENTS
 if [[ -n $EVENTS ]]; then
-  echo "Events found"
   mkdir -p "$TMP"/reports/events
   echo "$EVENTS" > "$TMP"/reports/events/events.txt
-else
-  echo "Events not found"
 fi
 
 FILENAME="report-$(date +"%d-%m-%Y_%H-%M-%S")" && readonly FILENAME
