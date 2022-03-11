@@ -63,9 +63,9 @@
         </developer>
         <developer>
             <name>Stanislav Knot</name>
-            <email>sknot@redhat.com</email>
-            <organization>Red Hat</organization>
-            <organizationUrl>https://www.redhat.com</organizationUrl>
+            <email>knot@cngroup.dk</email>
+            <organization>CN Group</organization>
+            <organizationUrl>https://www.cngroup.dk/</organizationUrl>
         </developer>
     </developers>
 
