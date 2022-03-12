@@ -14,7 +14,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Random;
 
-import static io.strimzi.operator.common.Util.sha1Prefix;
+import static io.strimzi.operator.common.Util.hashStub;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 
 /**
@@ -49,7 +49,7 @@ final public class TestStorage {
     public TestStorage(ExtensionContext extensionContext, String namespaceName) {
         this.extensionContext = extensionContext;
         this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespaceName, extensionContext) : namespaceName;
-        this.clusterName = CLUSTER_NAME_PREFIX + sha1Prefix(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE)));
+        this.clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE)));
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.streamsTopicTargetName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.kafkaClientsName = clusterName + "-" + Constants.KAFKA_CLIENTS;

@@ -469,7 +469,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
         connectPodName = kubeClient().listPods(storage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String fileName = getPluginFileNameFromConnectPod(connectPodName);
         assertNotEquals(fileName, ECHO_SINK_FILE_NAME);
-        assertEquals(fileName, Util.sha1Prefix(ECHO_SINK_JAR_URL));
+        assertEquals(fileName, Util.hashStub(ECHO_SINK_JAR_URL));
     }
 
     @ParallelTest

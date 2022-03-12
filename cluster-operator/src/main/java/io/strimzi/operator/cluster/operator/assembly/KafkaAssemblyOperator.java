@@ -123,8 +123,6 @@ import org.apache.kafka.common.KafkaException;
 import org.quartz.CronExpression;
 
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
@@ -1260,7 +1258,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         this.zkMetricsAndLogsConfigMap = logAndMetricsConfigMap;
 
                         String loggingConfiguration = zkMetricsAndLogsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
-                        this.zkLoggingHash = Util.stringHash(loggingConfiguration);
+                        this.zkLoggingHash = Util.hashStub(loggingConfiguration);
 
                         return Future.succeededFuture(this);
                     });
@@ -2832,13 +2830,20 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(customCertificatesFuture);
         }
 
+        /**
+         * Generates hash stub of the certificate which is used to track when the certificate changes and rolling update needs to be triggered.
+         *
+         * @param certSecret        Secrets with the certificate
+         * @param customCertSecret  Identified where in the secret can you get the right certificate
+         *
+         * @return                  Hash stub of the certificate
+         */
         String getCertificateThumbprint(Secret certSecret, CertAndKeySecretSource customCertSecret)   {
             try {
                 X509Certificate cert = Ca.cert(certSecret, customCertSecret.getCertificate());
-                byte[] signature = MessageDigest.getInstance("SHA-256").digest(cert.getEncoded());
-                return Base64.getEncoder().encodeToString(signature);
-            } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
-                throw new RuntimeException("Failed to get certificate signature of " + customCertSecret.getCertificate() + " from Secret " + certSecret.getMetadata().getName(), e);
+                return Util.hashStub(cert.getEncoded());
+            } catch (CertificateEncodingException e) {
+                throw new RuntimeException("Failed to get certificate hashStub of " + customCertSecret.getCertificate() + " from Secret " + certSecret.getMetadata().getName(), e);
             }
         }
 
@@ -2864,11 +2869,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             KafkaConfiguration kc = KafkaConfiguration.unvalidated(reconciliation, sharedCm.getData().getOrDefault(KafkaCluster.BROKER_CONFIGURATION_FILENAME, ""));
 
             // We store hash of the broker configurations for later use in StatefulSet / PodSet and in rolling updates
-            this.kafkaBrokerConfigurationHash.put(sharedConfigurationId, Util.stringHash(brokerConfiguration + kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString()));
+            this.kafkaBrokerConfigurationHash.put(sharedConfigurationId, Util.hashStub(brokerConfiguration + kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString()));
 
             // This is used during Kafka rolling updates -> we have to store it for later
             this.kafkaLogging = sharedCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
-            this.kafkaLoggingAppendersHash = Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(this.kafkaLogging));
+            this.kafkaLoggingAppendersHash = Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(this.kafkaLogging));
 
             return configMapOperations.reconcile(reconciliation, namespace, kafkaCluster.getAncillaryConfigMapName(), sharedCm);
         }
@@ -2887,7 +2892,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     .compose(existingConfigMaps -> {
                         // This is used during Kafka rolling updates -> we have to store it for later
                         this.kafkaLogging = kafkaCluster.loggingConfiguration(kafkaCluster.getLogging(), metricsAndLogging.getLoggingCm());
-                        this.kafkaLoggingAppendersHash = Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(this.kafkaLogging));
+                        this.kafkaLoggingAppendersHash = Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(this.kafkaLogging));
 
                         List<ConfigMap> desiredConfigMaps = kafkaCluster.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, kafkaAdvertisedHostnames, kafkaAdvertisedPorts, featureGates.controlPlaneListenerEnabled());
                         List<Future> ops = new ArrayList<>(existingConfigMaps.size() + kafkaCluster.getReplicas());
@@ -2934,7 +2939,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             KafkaConfiguration kc = KafkaConfiguration.unvalidated(reconciliation, cm.getData().getOrDefault(KafkaCluster.BROKER_CONFIGURATION_FILENAME, ""));
 
                             // We store hash of the broker configurations for later use in Pod and in rolling updates
-                            this.kafkaBrokerConfigurationHash.put(brokerId, Util.stringHash(brokerConfiguration + kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString()));
+                            this.kafkaBrokerConfigurationHash.put(brokerId, Util.hashStub(brokerConfiguration + kc.unknownConfigsWithValues(kafkaCluster.getKafkaVersion()).toString()));
 
                             ops.add(configMapOperations.reconcile(reconciliation, namespace, cmName, cm));
                         }
