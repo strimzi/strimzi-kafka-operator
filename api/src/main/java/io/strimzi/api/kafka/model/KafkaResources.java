@@ -173,8 +173,11 @@ public class KafkaResources {
     /**
      * Returns the name of the external bootstrap {@code Service} for a {@code Kafka} cluster of the given name.
      * This {@code Service} will only exist if {@code Kafka.spec.kafka.listeners.external} is configured for a
-     * loadbalancer or NodePort in the {@code Kafka} resource with the given name.
+     * loadbalancer or NodePort in the {@code Kafka} resource with the given name. This is used only for the backwards
+     * compatible service names (listener name has to be `external` and port has to be 9094).
+     *
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
      * @return The name of the corresponding bootstrap {@code Service}.
      */
     public static String externalBootstrapServiceName(String clusterName) {

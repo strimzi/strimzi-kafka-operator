@@ -37,6 +37,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerConsumerSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerProducerSpec;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
@@ -221,9 +222,9 @@ public class ResourceUtils {
     public static ClientsCa createInitialClientsCa(Reconciliation reconciliation, String clusterName, Secret initialClientsCaCert, Secret initialClientsCaKey) {
         return new ClientsCa(reconciliation, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"),
-                KafkaCluster.clientsCaCertSecretName(clusterName),
+                KafkaResources.clientsCaCertificateSecretName(clusterName),
                 initialClientsCaCert,
-                KafkaCluster.clientsCaKeySecretName(clusterName),
+                KafkaResources.clientsCaKeySecretName(clusterName),
                 initialClientsCaKey, 365, 30, true, null);
     }
 
@@ -265,7 +266,7 @@ public class ResourceUtils {
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
-                        .withName(KafkaCluster.clientsCaKeySecretName(name))
+                        .withName(KafkaResources.clientsCaKeySecretName(name))
                         .withNamespace(namespace)
                         .withLabels(Labels.forStrimziCluster(name).toMap())
                         .endMetadata()
@@ -277,7 +278,7 @@ public class ResourceUtils {
         secrets.add(
                 new SecretBuilder()
                         .withNewMetadata()
-                        .withName(KafkaCluster.clientsCaCertSecretName(name))
+                        .withName(KafkaResources.clientsCaCertificateSecretName(name))
                         .withNamespace(namespace)
                         .withLabels(Labels.forStrimziCluster(name).toMap())
                         .endMetadata()

@@ -175,7 +175,7 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     protected static String defaultBootstrapServers(String cluster) {
-        return KafkaCluster.serviceName(cluster) + ":" + EntityTopicOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
+        return KafkaResources.bootstrapServiceName(cluster) + ":" + EntityTopicOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
     }
 
     public static String topicOperatorName(String cluster) {

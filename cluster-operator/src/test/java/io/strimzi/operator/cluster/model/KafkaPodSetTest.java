@@ -26,6 +26,7 @@ import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
@@ -99,13 +100,13 @@ public class KafkaPodSetTest {
     public void testDefaultPodDisruptionBudget()   {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         PodDisruptionBudget pdb = kc.generateCustomControllerPodDisruptionBudget();      
-        assertThat(pdb.getMetadata().getName(), is(KafkaCluster.kafkaClusterName(CLUSTER)));
+        assertThat(pdb.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
         assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
 
         io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generateCustomControllerPodDisruptionBudgetV1Beta1();
-        assertThat(pdbV1Beta1.getMetadata().getName(), is(KafkaCluster.kafkaClusterName(CLUSTER)));
+        assertThat(pdbV1Beta1.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
         assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdbV1Beta1.getSpec().getMinAvailable().getIntVal(), is(2));
         assertThat(pdbV1Beta1.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
@@ -147,7 +148,7 @@ public class KafkaPodSetTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         StrimziPodSet ps = kc.generatePodSet(3, true, null, null, brokerId -> Map.of("test-anno", kc.getPodName(brokerId)));
 
-        assertThat(ps.getMetadata().getName(), is(KafkaCluster.kafkaClusterName(CLUSTER)));
+        assertThat(ps.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(kc.getLabelsWithStrimziName(kc.getName(), null).toMap().entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").withDeleteClaim(false).build()).build())));
         assertThat(ps.getMetadata().getOwnerReferences().size(), is(1));
@@ -404,7 +405,7 @@ public class KafkaPodSetTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         StrimziPodSet ps = kc.generatePodSet(3, true, null, null, brokerId -> Map.of("special", "annotation"));
 
-        assertThat(ps.getMetadata().getName(), is(KafkaCluster.kafkaClusterName(CLUSTER)));
+        assertThat(ps.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(spsLabels.entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations().entrySet().containsAll(spsAnnos.entrySet()), is(true));
         assertThat(ps.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));

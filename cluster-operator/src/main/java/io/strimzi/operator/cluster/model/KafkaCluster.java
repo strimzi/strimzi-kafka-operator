@@ -116,8 +116,8 @@ public class KafkaCluster extends AbstractModel {
     protected static final String CONTROLPLANE_PORT_NAME = "tcp-ctrlplane"; // port name is up to 15 characters
 
     // Ingress and Route listeners advertise port 443 regardless what port is used in Kafka, so we store them here
-    protected static final int ROUTE_PORT = 443;
-    protected static final int INGRESS_PORT = 443;
+    public static final int ROUTE_PORT = 443;
+    public static final int INGRESS_PORT = 443;
 
     protected static final String KAFKA_NAME = "kafka";
     protected static final String CLUSTER_CA_CERTS_VOLUME = "cluster-ca";
@@ -241,10 +241,10 @@ public class KafkaCluster extends AbstractModel {
      */
     private KafkaCluster(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, APPLICATION_NAME);
-        this.name = kafkaClusterName(cluster);
-        this.serviceName = serviceName(cluster);
-        this.headlessServiceName = headlessServiceName(cluster);
-        this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
+        this.name = KafkaResources.kafkaStatefulSetName(cluster);
+        this.serviceName = KafkaResources.bootstrapServiceName(cluster);
+        this.headlessServiceName = KafkaResources.brokersServiceName(cluster);
+        this.ancillaryConfigMapName = KafkaResources.kafkaMetricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
@@ -258,24 +258,12 @@ public class KafkaCluster extends AbstractModel {
         this.initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
     }
 
-    public static String kafkaClusterName(String cluster) {
-        return KafkaResources.kafkaStatefulSetName(cluster);
-    }
-
-    public static String metricAndLogConfigsName(String cluster) {
-        return KafkaResources.kafkaMetricsAndLogConfigMapName(cluster);
-    }
-
-    public static String serviceName(String cluster) {
-        return KafkaResources.bootstrapServiceName(cluster);
-    }
-
     public static String podDnsName(String namespace, String cluster, int podId) {
         return podDnsName(namespace, cluster, KafkaCluster.kafkaPodName(cluster, podId));
     }
 
     public static String podDnsName(String namespace, String cluster, String podName) {
-        return DnsNameGenerator.podDnsName(namespace, KafkaCluster.headlessServiceName(cluster), podName);
+        return DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podName);
     }
 
     public static String podDnsNameWithoutClusterDomain(String namespace, String cluster, int podId) {
@@ -283,17 +271,7 @@ public class KafkaCluster extends AbstractModel {
     }
 
     public static String podDnsNameWithoutClusterDomain(String namespace, String cluster, String podName) {
-        return DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaCluster.headlessServiceName(cluster), podName);
-    }
-
-    /**
-     * Generates the name of the service used as bootstrap service for external clients.
-     *
-     * @param cluster The name of the cluster.
-     * @return The name of the external bootstrap service.
-     */
-    public static String externalBootstrapServiceName(String cluster) {
-        return KafkaResources.externalBootstrapServiceName(cluster);
+        return DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(cluster), podName);
     }
 
     /**
@@ -304,15 +282,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The name of the external service.
      */
     public static String externalServiceName(String cluster, int pod) {
-        return kafkaClusterName(cluster) + "-" + pod;
-    }
-
-    /**
-     * @param cluster The name of the cluster.
-     * @return The name of the headless service.
-     */
-    public static String headlessServiceName(String cluster) {
-        return KafkaResources.brokersServiceName(cluster);
+        return KafkaResources.kafkaStatefulSetName(cluster) + "-" + pod;
     }
 
     /**
@@ -323,15 +293,7 @@ public class KafkaCluster extends AbstractModel {
      * @return The name of the pod.
      */
     public static String kafkaPodName(String cluster, int pod) {
-        return kafkaClusterName(cluster) + "-" + pod;
-    }
-
-    /**
-     * @param cluster The name of the cluster.
-     * @return The name of the clients CA key Secret.
-     */
-    public static String clientsCaKeySecretName(String cluster) {
-        return KafkaResources.clientsCaKeySecretName(cluster);
+        return KafkaResources.kafkaStatefulSetName(cluster) + "-" + pod;
     }
 
     /**
@@ -348,14 +310,6 @@ public class KafkaCluster extends AbstractModel {
      */
     public static String jmxSecretName(String cluster) {
         return cluster + KafkaCluster.KAFKA_JMX_SECRET_SUFFIX;
-    }
-
-    /**
-     * @param cluster The name of the cluster.
-     * @return The name of the clients CA certificate Secret.
-     */
-    public static String clientsCaCertSecretName(String cluster) {
-        return KafkaResources.clientsCaCertificateSecretName(cluster);
     }
 
     public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
@@ -410,7 +364,7 @@ public class KafkaCluster extends AbstractModel {
         result.setJvmOptions(kafkaClusterSpec.getJvmOptions());
 
         if (kafkaClusterSpec.getJmxOptions() != null) {
-            result.setJmxEnabled(Boolean.TRUE);
+            result.isJmxEnabled = true;
             AuthenticationUtils.configureKafkaJmxOptions(kafkaClusterSpec.getJmxOptions().getAuthentication(), result);
         }
 
@@ -462,7 +416,7 @@ public class KafkaCluster extends AbstractModel {
         }
         List<GenericKafkaListener> listeners = kafkaClusterSpec.getListeners();
         ListenersValidator.validate(reconciliation, kafkaClusterSpec.getReplicas(), listeners);
-        result.setListeners(listeners);
+        result.listeners = listeners;
 
         // Set authorization
         if (kafkaClusterSpec.getAuthorization() instanceof KafkaAuthorizationKeycloak) {
@@ -477,7 +431,7 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
-        result.setAuthorization(kafkaClusterSpec.getAuthorization());
+        result.authorization = kafkaClusterSpec.getAuthorization();
 
         if (kafkaClusterSpec.getTemplate() != null) {
             KafkaClusterTemplate template = kafkaClusterSpec.getTemplate();
@@ -733,7 +687,7 @@ public class KafkaCluster extends AbstractModel {
             ports.add(createServicePort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(), "TCP"));
         }
 
-        if (isJmxEnabled()) {
+        if (isJmxEnabled) {
             ports.add(createServicePort(JMX_PORT_NAME, JMX_PORT, JMX_PORT, "TCP"));
         }
 
@@ -1393,20 +1347,6 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * @return The port of route for the external listener.
-     */
-    public int getRoutePort() {
-        return ROUTE_PORT;
-    }
-
-    /**
-     * @return The port of ingress for the external listener.
-     */
-    public int getIngressPort() {
-        return INGRESS_PORT;
-    }
-
-    /**
      * Generate the persistent volume claims for the storage It's called recursively on the related inner volumes if the
      * storage is of {@link Storage#TYPE_JBOD} type.
      *
@@ -1442,7 +1382,7 @@ public class KafkaCluster extends AbstractModel {
         volumeList.add(createTempDirVolume());
         volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(BROKER_CERTS_VOLUME, KafkaCluster.brokersSecretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaCluster.clientsCaCertSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaResources.clientsCaCertificateSecretName(cluster), isOpenShift));
 
         if (perBrokerConfiguration) {
             volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, podName));
@@ -1679,7 +1619,7 @@ public class KafkaCluster extends AbstractModel {
 
     @Override
     public String getServiceAccountName() {
-        return kafkaClusterName(cluster);
+        return KafkaResources.kafkaStatefulSetName(cluster);
     }
 
     @Override
@@ -1704,7 +1644,7 @@ public class KafkaCluster extends AbstractModel {
             }
         }
 
-        if (isJmxEnabled()) {
+        if (isJmxEnabled) {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_JMX_ENABLED, "true"));
             if (isJmxAuthenticated) {
                 varList.add(buildEnvVarFromSecret(ENV_VAR_KAFKA_JMX_USERNAME, jmxSecretName(cluster), SECRET_JMX_USERNAME_KEY));
@@ -1788,7 +1728,7 @@ public class KafkaCluster extends AbstractModel {
 
         NetworkPolicyPeer kafkaClusterPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector() // Kafka cluster
-                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
+                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(cluster))
                 .endPodSelector()
                 .build();
 
@@ -1866,7 +1806,7 @@ public class KafkaCluster extends AbstractModel {
         }
 
         // The JMX port (if enabled) is opened to all by default
-        if (isJmxEnabled()) {
+        if (isJmxEnabled) {
             NetworkPolicyIngressRule jmxRule = new NetworkPolicyIngressRuleBuilder()
                     .addNewPort()
                         .withNewPort(JMX_PORT)
@@ -1888,7 +1828,7 @@ public class KafkaCluster extends AbstractModel {
                 .endMetadata()
                 .withNewSpec()
                     .withNewPodSelector()
-                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, kafkaClusterName(cluster))
+                        .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(cluster))
                     .endPodSelector()
                     .withIngress(rules)
                 .endSpec()
@@ -1935,44 +1875,10 @@ public class KafkaCluster extends AbstractModel {
     }
 
     /**
-     * Sets the object with Kafka listeners configuration.
-     *
-     * @param listeners The listeners.
-     */
-    public void setListeners(List<GenericKafkaListener> listeners) {
-        this.listeners = listeners;
-    }
-
-    /**
      * @return The listeners
      */
     public List<GenericKafkaListener> getListeners() {
         return listeners;
-    }
-
-    /**
-     * @return Return if the jmx has been enabled
-     */
-    public boolean isJmxEnabled() {
-        return isJmxEnabled;
-    }
-
-    /**
-     * Sets the object with jmx options enabled
-     *
-     * @param jmxEnabled if jmx is enabled
-     */
-    public void setJmxEnabled(boolean jmxEnabled) {
-        isJmxEnabled = jmxEnabled;
-    }
-
-    /**
-     * Sets the object with Kafka authorization configuration.
-     *
-     * @param authorization The authorization.
-     */
-    public void setAuthorization(KafkaAuthorization authorization) {
-        this.authorization = authorization;
     }
 
     /**
