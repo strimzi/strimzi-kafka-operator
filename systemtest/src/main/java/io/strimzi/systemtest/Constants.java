@@ -192,6 +192,11 @@ public interface Constants {
     String SMOKE = "smoke";
 
     /**
+     * Tag for sanity tests
+     */
+    String SANITY = "sanity";
+
+    /**
      * Tag for tests, which results are not 100% reliable on all testing environments.
      */
     String FLAKY = "flaky";

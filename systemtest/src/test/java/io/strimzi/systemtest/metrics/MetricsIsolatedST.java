@@ -80,6 +80,7 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.METRICS;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.SANITY;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -91,6 +92,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Tag(SANITY)
+@Tag(ACCEPTANCE)
 @Tag(REGRESSION)
 @Tag(METRICS)
 @Tag(CRUISE_CONTROL)
@@ -174,7 +177,6 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
-    @Tag(ACCEPTANCE)
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testKafkaConnectRequests() {
@@ -214,7 +216,6 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @IsolatedTest
-    @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterDataAfterExchange(ExtensionContext extensionContext) {
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
@@ -276,7 +277,6 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
-    @Tag(ACCEPTANCE)
     void testClusterOperatorMetrics(ExtensionContext extensionContext) {
         clusterOperatorMetricsData = collector.toBuilder()
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
@@ -329,7 +329,6 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
-    @Tag(ACCEPTANCE)
     void testUserOperatorMetrics() {
         userOperatorMetricsData = collector.toBuilder()
             .withComponentType(ComponentType.UserOperator)
@@ -351,7 +350,6 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
-    @Tag(ACCEPTANCE)
     void testTopicOperatorMetrics() {
         topicOperatorMetricsData = collector.toBuilder()
             .withComponentType(ComponentType.TopicOperator)
@@ -378,7 +376,6 @@ public class MetricsIsolatedST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
-    @Tag(ACCEPTANCE)
     void testMirrorMaker2Metrics() {
         kafkaMirrorMaker2MetricsData = collector.toBuilder()
             .withComponentName(MIRROR_MAKER_CLUSTER)
@@ -397,7 +394,6 @@ public class MetricsIsolatedST extends AbstractST {
 
     @ParallelTest
     @Tag(BRIDGE)
-    @Tag(ACCEPTANCE)
     void testKafkaBridgeMetrics(ExtensionContext extensionContext) {
         String producerName = "bridge-producer";
         String consumerName = "bridge-consumer";
@@ -448,7 +444,6 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
-    @Tag(ACCEPTANCE)
     void testCruiseControlMetrics() {
 
         String cruiseControlMetrics = CruiseControlUtils.callApi(INFRA_NAMESPACE, CruiseControlUtils.SupportedHttpMethods.GET, "/metrics");

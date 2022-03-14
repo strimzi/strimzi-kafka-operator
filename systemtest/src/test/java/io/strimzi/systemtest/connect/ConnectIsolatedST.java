@@ -79,6 +79,7 @@ import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.SANITY;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 import static io.strimzi.systemtest.Constants.SMOKE;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
@@ -152,6 +153,7 @@ class ConnectIsolatedST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @Tag(SANITY)
     @Tag(SMOKE)
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaConnectAndPausedConnectorWithFileSinkPlugin(ExtensionContext extensionContext) {
