@@ -766,19 +766,19 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             if (featureGates.useStrimziPodSetsEnabled())   {
                                 return strimziPodSetOperator.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name))
                                         .compose(podSet -> {
-                                            if (podSet != null)    {
-                                                return Future.succeededFuture(podSet.getSpec().getPods().size());
+                                            if (podSet != null) {
+                                                return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), podSet.getSpec().getPods().size()));
                                             } else {
-                                                return Future.succeededFuture(0);
+                                                return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), 0));
                                             }
                                         });
                             } else {
                                 return stsOperations.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name))
                                         .compose(sts -> {
                                             if (sts != null)    {
-                                                return Future.succeededFuture(sts.getSpec().getReplicas());
+                                                return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), sts.getSpec().getReplicas()));
                                             } else {
-                                                return Future.succeededFuture(0);
+                                                return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), 0));
                                             }
                                         });
                             }
