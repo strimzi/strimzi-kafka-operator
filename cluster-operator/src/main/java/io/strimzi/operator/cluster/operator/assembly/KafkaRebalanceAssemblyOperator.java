@@ -321,7 +321,7 @@ public class KafkaRebalanceAssemblyOperator
         return Future.succeededFuture(kafkaRebalance);
     }
 
-    private RebalanceOptions.RebalanceOptionsBuilder convertRebalanceSpecToRebalanceOptions(KafkaRebalanceSpec kafkaRebalanceSpec, boolean usingJbodStorage) {
+    private RebalanceOptions.RebalanceOptionsBuilder convertRebalanceSpecToRebalanceOptions(KafkaRebalanceSpec kafkaRebalanceSpec) {
 
         RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder = new RebalanceOptions.RebalanceOptionsBuilder();
 
@@ -332,11 +332,7 @@ public class KafkaRebalanceAssemblyOperator
             rebalanceOptionsBuilder.withSkipHardGoalCheck();
         }
         if (kafkaRebalanceSpec.isRebalanceDisk()) {
-            if (usingJbodStorage) {
-                rebalanceOptionsBuilder.withRebalanceDisk();
-            } else {
-                LOGGER.warnOp("Intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks.");
-            }
+            rebalanceOptionsBuilder.withRebalanceDisk();
         }
         if (kafkaRebalanceSpec.getExcludedTopics() != null) {
             rebalanceOptionsBuilder.withExcludedTopics(kafkaRebalanceSpec.getExcludedTopics());
@@ -378,7 +374,14 @@ public class KafkaRebalanceAssemblyOperator
             return updateStatus(reconciliation, kafkaRebalance, status, null).compose(i -> Future.succeededFuture());
         }
 
-        RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec(), usingJbodStorage);
+        if (kafkaRebalance.getSpec().isRebalanceDisk() && !usingJbodStorage) {
+            String error = "Cannot set rebalanceDisk=true for Kafka clusters with a non-JBOD storage config. " +
+                "Intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks.";
+            LOGGER.errorCr(reconciliation, "Status updated to [NotReady] due to error: {}", new IllegalArgumentException(error).getMessage());
+            return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(), new IllegalArgumentException(error)).mapEmpty();
+        }
+
+        RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec());
 
         return computeNextStatus(reconciliation, host, apiClient, kafkaRebalance, currentState, rebalanceAnnotation, rebalanceOptionsBuilder)
            .compose(desiredStatusAndMap -> {
