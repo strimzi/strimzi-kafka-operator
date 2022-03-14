@@ -4,7 +4,7 @@ set +x
 
 EXEC="-jar $JAR_FILE -e -j $JSON_DIR -s $SECONDS_BETWEEN_RUNS -c $CONTINUE_ON_ERROR $ADDITIONAL_JARS_OPTS"
 GC_OPTS="-Xms${HEAP_SIZE}m -Xmx${HEAP_SIZE}m -XX:PermSize=${PERM_SIZE}m -XX:MaxPermSize=${MAX_PERM_SIZE}m"
-JMXTRANS_OPTS="$JMXTRANS_OPTS -Dlog4j2.configurationFile=file:///${JMXTRANS_HOME}/conf/log4j2.properties"
+JMXTRANS_OPTS="$JMXTRANS_OPTS -Dlogback.configurationFile=file:///${JMXTRANS_HOME}/conf/logback.xml"
 
 if [ -n "${KAFKA_JMX_USERNAME}" ]; then
   JMXTRANS_OPTS="$JMXTRANS_OPTS -Dkafka.username=${KAFKA_JMX_USERNAME} -Dkafka.password=${KAFKA_JMX_PASSWORD}"

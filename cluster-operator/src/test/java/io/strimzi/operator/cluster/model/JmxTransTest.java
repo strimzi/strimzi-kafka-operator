@@ -28,7 +28,6 @@ import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplateBuilder;
 import io.strimzi.api.kafka.model.template.JmxTransQueryTemplateBuilder;
-import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.components.JmxTransOutputWriter;
 import io.strimzi.operator.cluster.model.components.JmxTransQueries;
@@ -58,15 +57,12 @@ import static org.hamcrest.Matchers.hasProperty;
 
 @ParallelSuite
 public class JmxTransTest {
-    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 3;
     private final String image = "image";
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
-    private final Map<String, Object> metricsCm = singletonMap("animal", "wombat");
-    private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String metricsCMName = "metrics-cm";
     private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
     private final Map<String, Object> configuration = singletonMap("foo", "bar");
@@ -95,7 +91,7 @@ public class JmxTransTest {
             .endSpec()
             .build();
 
-    private final JmxTrans jmxTrans = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+    private final JmxTrans jmxTrans = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly);
 
     @ParallelTest
     public void testOutputDefinitionWriterDeserialization() {
@@ -257,7 +253,7 @@ public class JmxTransTest {
                     .endJmxTrans()
                 .endSpec()
                 .build();
-        JmxTrans jmxTrans = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        JmxTrans jmxTrans = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource);
 
         // Check Deployment
         Deployment dep = jmxTrans.generateDeployment(null, null);
@@ -312,7 +308,7 @@ public class JmxTransTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> envVars = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS).getEnvVars();
+        List<EnvVar> envVars = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource).getEnvVars();
 
         assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 envVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -347,7 +343,7 @@ public class JmxTransTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> envVars = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS).getEnvVars();
+        List<EnvVar> envVars = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource).getEnvVars();
 
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 envVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -379,7 +375,7 @@ public class JmxTransTest {
                 .endSpec()
                 .build();
 
-        JmxTrans jmxTrans = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        JmxTrans jmxTrans = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource);
         assertThat(jmxTrans.templateContainerSecurityContext, is(securityContext));
 
         Deployment deployment = jmxTrans.generateDeployment(null, null);

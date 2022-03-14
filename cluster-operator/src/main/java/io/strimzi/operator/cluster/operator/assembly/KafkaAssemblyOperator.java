@@ -4459,7 +4459,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> getJmxTransDescription() {
             try {
                 int numOfBrokers = kafkaCluster.getReplicas();
-                this.jmxTrans = JmxTrans.fromCrd(reconciliation, kafkaAssembly, versions);
+                this.jmxTrans = JmxTrans.fromCrd(reconciliation, kafkaAssembly);
                 if (this.jmxTrans != null) {
                     this.jmxTransConfigMap = jmxTrans.generateJmxTransConfigMap(kafkaAssembly.getSpec().getJmxTrans(), numOfBrokers);
                     this.jmxTransDeployment = jmxTrans.generateDeployment(imagePullPolicy, imagePullSecrets);

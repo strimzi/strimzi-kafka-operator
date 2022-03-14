@@ -73,7 +73,7 @@ public class JmxTrans extends AbstractModel {
     private boolean isDeployed;
     private boolean isJmxAuthenticated;
     private String configMapName;
-    private String clusterName;
+    private final String clusterName;
     private String loggingLevel;
 
     protected List<ContainerEnvVar> templateContainerEnvVars;
@@ -98,20 +98,10 @@ public class JmxTrans extends AbstractModel {
         this.name = JmxTransResources.deploymentName(cluster);
         this.clusterName = cluster;
         this.replicas = 1;
-        this.readinessPath = "/metrics";
-        this.livenessPath = "/metrics";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
-
-        this.mountPath = "/var/lib/kafka";
-
-        this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/usr/share/jmxtrans/conf/";
-
-        // Metrics must be enabled as JmxTrans is all about gathering JMX metrics from the Kafka brokers and pushing it to remote sources.
-        this.isMetricsEnabled = true;
     }
 
-    public static JmxTrans fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
+    public static JmxTrans fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly) {
         JmxTrans result = null;
         JmxTransSpec spec = kafkaAssembly.getSpec().getJmxTrans();
         if (spec != null) {
@@ -129,7 +119,7 @@ public class JmxTrans extends AbstractModel {
                 result.isJmxAuthenticated = true;
             }
 
-            result.loggingLevel = spec.getLogLevel() == null ? "" : spec.getLogLevel();
+            result.loggingLevel = spec.getLogLevel() == null ? "INFO" : spec.getLogLevel();
 
             result.setResources(spec.getResources());
 
@@ -236,20 +226,18 @@ public class JmxTrans extends AbstractModel {
     }
 
     public List<Volume> getVolumes() {
-        List<Volume> volumes = new ArrayList<>(3);
+        List<Volume> volumes = new ArrayList<>(2);
 
         volumes.add(createTempDirVolume());
         volumes.add(VolumeUtils.createConfigMapVolume(JMXTRANS_VOLUME_NAME, configMapName));
-        volumes.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaCluster.metricAndLogConfigsName(clusterName)));
 
         return volumes;
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>(3);
+        List<VolumeMount> volumeMountList = new ArrayList<>(2);
 
         volumeMountList.add(createTempDirVolumeMount());
-        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
         volumeMountList.add(VolumeUtils.createVolumeMount(JMXTRANS_VOLUME_NAME, JMX_FILE_PATH));
         return volumeMountList;
     }
