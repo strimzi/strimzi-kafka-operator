@@ -196,7 +196,7 @@ public class KafkaClusterTest {
         return TestUtils.map(
             Labels.STRIMZI_CLUSTER_LABEL, cluster,
             "my-user-label", "cromulent",
-            Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster),
+            Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(cluster),
             Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND,
             Labels.KUBERNETES_NAME_LABEL, KafkaCluster.APPLICATION_NAME,
             Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
@@ -354,7 +354,7 @@ public class KafkaClusterTest {
     }
 
     private void checkHeadlessService(Service headless) {
-        assertThat(headless.getMetadata().getName(), is(KafkaCluster.headlessServiceName(cluster)));
+        assertThat(headless.getMetadata().getName(), is(KafkaResources.brokersServiceName(cluster)));
         assertThat(headless.getSpec().getType(), is("ClusterIP"));
         assertThat(headless.getSpec().getClusterIP(), is("None"));
         assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
@@ -548,7 +548,7 @@ public class KafkaClusterTest {
     }
 
     private void checkStatefulSet(StatefulSet sts, Kafka cm, boolean isOpenShift) {
-        assertThat(sts.getMetadata().getName(), is(KafkaCluster.kafkaClusterName(cluster)));
+        assertThat(sts.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(cluster)));
         // ... in the same namespace ...
         assertThat(sts.getMetadata().getNamespace(), is(namespace));
         // ... with these labels
@@ -628,7 +628,7 @@ public class KafkaClusterTest {
     public void testPodNames() {
 
         for (int i = 0; i < replicas; i++) {
-            assertThat(kc.getPodName(i), is(KafkaCluster.kafkaClusterName(cluster) + "-" + i));
+            assertThat(kc.getPodName(i), is(KafkaResources.kafkaStatefulSetName(cluster) + "-" + i));
         }
     }
 
@@ -738,7 +738,7 @@ public class KafkaClusterTest {
 
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
-        assertThat(ext.getMetadata().getName(), is(KafkaCluster.externalBootstrapServiceName(cluster)));
+        assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(cluster)));
         assertThat(ext.getSpec().getType(), is("ClusterIP"));
         assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels().toMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
@@ -756,10 +756,10 @@ public class KafkaClusterTest {
 
         // Check bootstrap route
         Route brt = kc.generateExternalBootstrapRoutes().get(0);
-        assertThat(brt.getMetadata().getName(), is(KafkaCluster.serviceName(cluster)));
+        assertThat(brt.getMetadata().getName(), is(KafkaResources.bootstrapServiceName(cluster)));
         assertThat(brt.getSpec().getTls().getTermination(), is("passthrough"));
         assertThat(brt.getSpec().getTo().getKind(), is("Service"));
-        assertThat(brt.getSpec().getTo().getName(), is(KafkaCluster.externalBootstrapServiceName(cluster)));
+        assertThat(brt.getSpec().getTo().getName(), is(KafkaResources.externalBootstrapServiceName(cluster)));
         assertThat(brt.getSpec().getPort().getTargetPort(), is(new IntOrString(9094)));
         checkOwnerReference(kc.createOwnerReference(), brt);
 
@@ -815,7 +815,7 @@ public class KafkaClusterTest {
 
         // Check bootstrap route
         Route brt = kc.generateExternalBootstrapRoutes().get(0);
-        assertThat(brt.getMetadata().getName(), is(KafkaCluster.serviceName(cluster)));
+        assertThat(brt.getMetadata().getName(), is(KafkaResources.bootstrapServiceName(cluster)));
         assertThat(brt.getSpec().getHost(), is("my-boostrap.cz"));
 
         // Check per pod router
@@ -870,7 +870,7 @@ public class KafkaClusterTest {
 
         // Check bootstrap route
         Route brt = kc.generateExternalBootstrapRoutes().get(0);
-        assertThat(brt.getMetadata().getName(), is(KafkaCluster.serviceName(cluster)));
+        assertThat(brt.getMetadata().getName(), is(KafkaResources.bootstrapServiceName(cluster)));
         assertThat(brt.getMetadata().getAnnotations().get("anno"), is("anno-value"));
         assertThat(brt.getMetadata().getLabels().get("label"), is("label-value"));
 
@@ -910,7 +910,7 @@ public class KafkaClusterTest {
 
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
-        assertThat(ext.getMetadata().getName(), is(KafkaCluster.externalBootstrapServiceName(cluster)));
+        assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(cluster)));
         assertThat(ext.getMetadata().getFinalizers(), is(emptyList()));
         assertThat(ext.getSpec().getType(), is("LoadBalancer"));
         assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels().toMap()));
@@ -1259,7 +1259,7 @@ public class KafkaClusterTest {
 
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
-        assertThat(ext.getMetadata().getName(), is(KafkaCluster.externalBootstrapServiceName(cluster)));
+        assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(cluster)));
         assertThat(ext.getSpec().getType(), is("NodePort"));
         assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels().toMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
@@ -1340,7 +1340,7 @@ public class KafkaClusterTest {
 
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
-        assertThat(ext.getMetadata().getName(), is(KafkaCluster.externalBootstrapServiceName(cluster)));
+        assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(cluster)));
         assertThat(ext.getSpec().getType(), is("NodePort"));
         assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels().toMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, 32001, "TCP"))));
@@ -1762,7 +1762,7 @@ public class KafkaClusterTest {
     public void testControlPlanePortNetworkPolicy() {
         NetworkPolicyPeer kafkaBrokersPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
-                    .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)))
+                    .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(cluster)))
                 .endPodSelector()
                 .build();
 
@@ -1785,7 +1785,7 @@ public class KafkaClusterTest {
     public void testReplicationPortNetworkPolicy() {
         NetworkPolicyPeer kafkaBrokersPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector()
-                    .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(cluster)))
+                    .withMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(cluster)))
                 .endPodSelector()
                 .build();
 
@@ -2848,7 +2848,7 @@ public class KafkaClusterTest {
 
         // Check external bootstrap service
         Service ext = kc.generateExternalBootstrapServices().get(0);
-        assertThat(ext.getMetadata().getName(), is(KafkaCluster.externalBootstrapServiceName(cluster)));
+        assertThat(ext.getMetadata().getName(), is(KafkaResources.externalBootstrapServiceName(cluster)));
         assertThat(ext.getSpec().getType(), is("ClusterIP"));
         assertThat(ext.getSpec().getSelector(), is(kc.getSelectorLabels().toMap()));
         assertThat(ext.getSpec().getPorts(), is(Collections.singletonList(kc.createServicePort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094, 9094, "TCP"))));
@@ -2866,7 +2866,7 @@ public class KafkaClusterTest {
 
         // Check bootstrap ingress
         Ingress bing = kc.generateExternalBootstrapIngresses().get(0);
-        assertThat(bing.getMetadata().getName(), is(KafkaCluster.serviceName(cluster)));
+        assertThat(bing.getMetadata().getName(), is(KafkaResources.bootstrapServiceName(cluster)));
         assertThat(bing.getSpec().getIngressClassName(), is(nullValue()));
         assertThat(bing.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-bootstrap.com"));
         assertThat(bing.getMetadata().getLabels().get("label"), is("label-value"));
@@ -2877,12 +2877,12 @@ public class KafkaClusterTest {
         assertThat(bing.getSpec().getRules().get(0).getHost(), is("my-kafka-bootstrap.com"));
         assertThat(bing.getSpec().getRules().get(0).getHttp().getPaths().size(), is(1));
         assertThat(bing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath(), is("/"));
-        assertThat(bing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getName(), is(KafkaCluster.externalBootstrapServiceName(cluster)));
+        assertThat(bing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getName(), is(KafkaResources.externalBootstrapServiceName(cluster)));
         assertThat(bing.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().getPort().getNumber(), is(9094));
         checkOwnerReference(kc.createOwnerReference(), bing);
 
         io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress bingV1Beta1 = kc.generateExternalBootstrapIngressesV1Beta1().get(0);
-        assertThat(bingV1Beta1.getMetadata().getName(), is(KafkaCluster.serviceName(cluster)));
+        assertThat(bingV1Beta1.getMetadata().getName(), is(KafkaResources.bootstrapServiceName(cluster)));
         assertThat(bingV1Beta1.getSpec().getIngressClassName(), is(nullValue()));
         assertThat(bingV1Beta1.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-bootstrap.com"));
         assertThat(bingV1Beta1.getMetadata().getLabels().get("label"), is("label-value"));
@@ -2893,7 +2893,7 @@ public class KafkaClusterTest {
         assertThat(bingV1Beta1.getSpec().getRules().get(0).getHost(), is("my-kafka-bootstrap.com"));
         assertThat(bingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().size(), is(1));
         assertThat(bingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getPath(), is("/"));
-        assertThat(bingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServiceName(), is(KafkaCluster.externalBootstrapServiceName(cluster)));
+        assertThat(bingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServiceName(), is(KafkaResources.externalBootstrapServiceName(cluster)));
         assertThat(bingV1Beta1.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getServicePort(), is(new IntOrString(9094)));
         checkOwnerReference(kc.createOwnerReference(), bingV1Beta1);
 

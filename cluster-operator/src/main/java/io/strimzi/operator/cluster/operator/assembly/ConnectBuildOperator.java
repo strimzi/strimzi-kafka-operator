@@ -110,7 +110,7 @@ public class ConnectBuildOperator {
         }
 
         KafkaConnectDockerfile dockerfile = connectBuild.generateDockerfile();
-        String newBuildRevision = dockerfile.hashStub() + Util.sha1Prefix(connectBuild.getBuild().getOutput().getImage());
+        String newBuildRevision = dockerfile.hashStub() + Util.hashStub(connectBuild.getBuild().getOutput().getImage());
         ConfigMap dockerFileConfigMap = connectBuild.generateDockerfileConfigMap(dockerfile);
 
         if (newBuildRevision.equals(currentBuildRevision)

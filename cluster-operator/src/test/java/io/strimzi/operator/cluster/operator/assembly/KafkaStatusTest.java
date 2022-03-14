@@ -489,7 +489,7 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
+        when(mockStsOps.getAsync(eq(namespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
 
         // Mock the StrimziPodSet operator
         CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
@@ -611,7 +611,7 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
+        when(mockStsOps.getAsync(eq(namespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
 
         // Mock the StrimziPodSet operator
         CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
@@ -723,7 +723,7 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
+        when(mockStsOps.getAsync(eq(namespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
 
         // Mock the StrimziPodSet operator
         CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
@@ -832,7 +832,7 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
+        when(mockStsOps.getAsync(eq(namespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
 
         // Mock the StrimziPodSet operator
         CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
@@ -940,7 +940,7 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
+        when(mockStsOps.getAsync(eq(namespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
 
         // Mock the StrimziPodSet operator
         CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
@@ -1131,7 +1131,7 @@ public class KafkaStatusTest {
 
         // Mock the KafkaSetOperator
         StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(namespace), eq(KafkaCluster.kafkaClusterName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
+        when(mockStsOps.getAsync(eq(namespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture(kafkaCluster.generateStatefulSet(false, null, null, null)));
 
         // Mock the StrimziPodSet operator
         CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;

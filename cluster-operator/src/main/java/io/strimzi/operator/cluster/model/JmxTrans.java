@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.JmxTransResources;
 import io.strimzi.api.kafka.model.JmxTransSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplate;
@@ -196,7 +197,7 @@ public class JmxTrans extends AbstractModel {
         JmxTransServers servers = new JmxTransServers();
         servers.setServers(new ArrayList<>());
         ObjectMapper mapper = new ObjectMapper();
-        String headlessService = KafkaCluster.headlessServiceName(cluster);
+        String headlessService = KafkaResources.brokersServiceName(cluster);
         for (int brokerNumber = 0; brokerNumber < numOfBrokers; brokerNumber++) {
             String brokerServiceName = KafkaCluster.externalServiceName(clusterName, brokerNumber) + "." + headlessService;
             servers.getServers().add(convertSpecToServers(spec, brokerServiceName));
@@ -321,7 +322,7 @@ public class JmxTrans extends AbstractModel {
     }
 
     protected static io.fabric8.kubernetes.api.model.Probe jmxTransReadinessProbe(io.strimzi.api.kafka.model.Probe  kafkaJmxMetricsReadinessProbe, String clusterName) {
-        String internalBootstrapServiceName = KafkaCluster.headlessServiceName(clusterName);
+        String internalBootstrapServiceName = KafkaResources.brokersServiceName(clusterName);
         String metricsPortValue = String.valueOf(KafkaCluster.JMX_PORT);
         kafkaJmxMetricsReadinessProbe = kafkaJmxMetricsReadinessProbe == null ? DEFAULT_JMX_TRANS_PROBE : kafkaJmxMetricsReadinessProbe;
         return ProbeGenerator.execProbe(kafkaJmxMetricsReadinessProbe, Arrays.asList("/opt/jmx/jmxtrans_readiness_check.sh", internalBootstrapServiceName, metricsPortValue));
