@@ -306,6 +306,14 @@
         </profile>
 
         <profile>
+            <id>sanity</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>sanity</groups>
+            </properties>
+        </profile>
+
+        <profile>
             <id>bridge</id>
             <properties>
                 <skipTests>false</skipTests>
