@@ -224,7 +224,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     public Pod getPod(StatefulSet sts) {
         return new PodBuilder()
                 .withNewMetadataLike(sts.getSpec().getTemplate().getMetadata())
-                    .withName(KafkaCluster.kafkaClusterName(clusterName) + "-0")
+                    .withName(KafkaResources.kafkaStatefulSetName(clusterName) + "-0")
                 .endMetadata()
                 .withNewSpecLike(sts.getSpec().getTemplate().getSpec())
                 .endSpec()

@@ -596,7 +596,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /**
          * Asynchronously reconciles the cluster and clients CA secrets.
          * The cluster CA secret has to have the name determined by {@link AbstractModel#clusterCaCertSecretName(String)}.
-         * The clients CA secret has to have the name determined by {@link KafkaCluster#clientsCaCertSecretName(String)}.
+         * The clients CA secret has to have the name determined by {@link KafkaResources#clientsCaCertificateSecretName(String)}.
          * Within both the secrets the current certificate is stored under the key {@code ca.crt}
          * and the current key is stored under the key {@code ca.key}.
          */
@@ -610,8 +610,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     try {
                         String clusterCaCertName = AbstractModel.clusterCaCertSecretName(name);
                         String clusterCaKeyName = AbstractModel.clusterCaKeySecretName(name);
-                        String clientsCaCertName = KafkaCluster.clientsCaCertSecretName(name);
-                        String clientsCaKeyName = KafkaCluster.clientsCaKeySecretName(name);
+                        String clientsCaCertName = KafkaResources.clientsCaCertificateSecretName(name);
+                        String clientsCaKeyName = KafkaResources.clientsCaKeySecretName(name);
                         Secret clusterCaCertSecret = null;
                         Secret clusterCaKeySecret = null;
                         Secret clientsCaCertSecret = null;
@@ -764,7 +764,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return zkRollFuture
                         .compose(i -> {
                             if (featureGates.useStrimziPodSetsEnabled())   {
-                                return strimziPodSetOperator.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
+                                return strimziPodSetOperator.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name))
                                         .compose(podSet -> {
                                             if (podSet != null)    {
                                                 return Future.succeededFuture(podSet.getSpec().getPods().size());
@@ -773,7 +773,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                             }
                                         });
                             } else {
-                                return stsOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
+                                return stsOperations.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name))
                                         .compose(sts -> {
                                             if (sts != null)    {
                                                 return Future.succeededFuture(sts.getSpec().getReplicas());
@@ -877,9 +877,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> kafkaManualRollingUpdate() {
             Future<HasMetadata> futureController;
             if (featureGates.useStrimziPodSetsEnabled())   {
-                futureController = strimziPodSetOperator.getAsync(namespace, KafkaCluster.kafkaClusterName(name)).map(podSet -> (HasMetadata) podSet);
+                futureController = strimziPodSetOperator.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name)).map(podSet -> (HasMetadata) podSet);
             } else {
-                futureController = stsOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name)).map(sts -> (HasMetadata) sts);
+                futureController = stsOperations.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name)).map(sts -> (HasMetadata) sts);
             }
 
             return futureController.compose(controller -> {
@@ -1822,8 +1822,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return
          */
         Future<Void> getKafkaSetDescription()   {
-            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
-            Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(namespace, KafkaCluster.kafkaClusterName(name));
+            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name));
+            Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name));
 
             return CompositeFuture.join(stsFuture, podSetFuture)
                     .compose(res -> {
@@ -2537,7 +2537,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     .withName(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
-                                            .withPort(kafkaCluster.getRoutePort())
+                                            .withPort(KafkaCluster.ROUTE_PORT)
                                             .build())
                                     .build();
                             addListenerStatus(ls);
@@ -2573,7 +2573,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                             }
 
                                             registerAdvertisedHostname(finalBrokerId, listener, brokerAddress);
-                                            registerAdvertisedPort(finalBrokerId, listener, kafkaCluster.getRoutePort());
+                                            registerAdvertisedPort(finalBrokerId, listener, KafkaCluster.ROUTE_PORT);
 
                                             return Future.succeededFuture();
                                         });
@@ -2622,7 +2622,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     .withName(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
-                                            .withPort(kafkaCluster.getRoutePort())
+                                            .withPort(KafkaCluster.ROUTE_PORT)
                                             .build())
                                     .build();
                             addListenerStatus(ls);
@@ -2656,7 +2656,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 }
 
                                 registerAdvertisedHostname(finalBrokerId, listener, brokerAddress);
-                                registerAdvertisedPort(finalBrokerId, listener, kafkaCluster.getIngressPort());
+                                registerAdvertisedPort(finalBrokerId, listener, KafkaCluster.INGRESS_PORT);
                             }
 
                             return Future.succeededFuture();
@@ -2700,7 +2700,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     .withName(listener.getName())
                                     .withAddresses(new ListenerAddressBuilder()
                                             .withHost(bootstrapAddress)
-                                            .withPort(kafkaCluster.getRoutePort())
+                                            .withPort(KafkaCluster.ROUTE_PORT)
                                             .build())
                                     .build();
                             addListenerStatus(ls);
@@ -2734,7 +2734,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 }
 
                                 registerAdvertisedHostname(finalBrokerId, listener, brokerAddress);
-                                registerAdvertisedPort(finalBrokerId, listener, kafkaCluster.getIngressPort());
+                                registerAdvertisedPort(finalBrokerId, listener, KafkaCluster.INGRESS_PORT);
                             }
 
                             return Future.succeededFuture();
@@ -3276,7 +3276,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 // At least one broker needs rolling update => we can trigger it without checking the other brokers
                                 LOGGER.debugCr(reconciliation, "Kafka brokers needs rolling update to add or remove JBOD volumes");
 
-                                return stsOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
+                                return stsOperations.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name))
                                         .compose(sts -> {
                                             if (sts != null) {
                                                 int lastPodIndex = Math.min(kafkaCurrentReplicas, kafkaCluster.getReplicas()) - 1;
@@ -3359,7 +3359,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 return withKafkaStsDiff(stsOperations.reconcile(reconciliation, namespace, kafkaCluster.getName(), kafkaSts));
             } else {
                 // StatefulSets are disabled => delete the StatefulSet if it exists
-                return stsOperations.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
+                return stsOperations.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name))
                         .compose(sts -> {
                             if (sts != null)    {
                                 return withVoid(stsOperations.deleteAsync(reconciliation, namespace, kafkaCluster.getName(), false));
@@ -3389,10 +3389,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 }
 
                 StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(replicas, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, brokerId -> kafkaPodAnnotations(brokerId, false));
-                return withKafkaPodSetDiff(strimziPodSetOperator.reconcile(reconciliation, namespace, KafkaCluster.kafkaClusterName(name), kafkaPodSet));
+                return withKafkaPodSetDiff(strimziPodSetOperator.reconcile(reconciliation, namespace, KafkaResources.kafkaStatefulSetName(name), kafkaPodSet));
             } else {
                 // PodSets are disabled => delete the StrimziPodSet for Kafka
-                return strimziPodSetOperator.getAsync(namespace, KafkaCluster.kafkaClusterName(name))
+                return strimziPodSetOperator.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name))
                         .compose(podSet -> {
                             if (podSet != null)    {
                                 return withVoid(strimziPodSetOperator.deleteAsync(reconciliation, namespace, kafkaCluster.getName(), false));
@@ -3488,7 +3488,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return
          */
         Future<ReconciliationState> kafkaManualPodCleaning() {
-            return maybeManualPodCleaning(KafkaCluster.kafkaClusterName(name), kafkaCluster.getSelectorLabels(), kafkaCluster.generatePersistentVolumeClaims(oldKafkaStorage));
+            return maybeManualPodCleaning(KafkaResources.kafkaStatefulSetName(name), kafkaCluster.getSelectorLabels(), kafkaCluster.generatePersistentVolumeClaims(oldKafkaStorage));
         }
 
         /**
