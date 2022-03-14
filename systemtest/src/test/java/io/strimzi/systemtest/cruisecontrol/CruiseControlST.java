@@ -307,7 +307,6 @@ public class CruiseControlST extends AbstractST {
             .endSpec()
             .build());
 
-        final String errMessage = "Intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks.";
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(), testStorage.getClusterName(), KafkaRebalanceState.NotReady);
 
         // The intra-broker rebalance will fail for Kafka clusters with a non-JBOD configuration.

@@ -377,8 +377,8 @@ public class KafkaRebalanceAssemblyOperator
         if (kafkaRebalance.getSpec().isRebalanceDisk() && !usingJbodStorage) {
             String error = "Cannot set rebalanceDisk=true for Kafka clusters with a non-JBOD storage config. " +
                 "Intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks.";
-            LOGGER.errorCr(reconciliation, "Status updated to [NotReady] due to error: {}", new IllegalArgumentException(error).getMessage());
-            return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(), new IllegalArgumentException(error)).mapEmpty();
+            LOGGER.errorCr(reconciliation, "Status updated to [NotReady] due to error: {}", new InvalidResourceException(error).getMessage());
+            return updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(), new InvalidResourceException(error)).mapEmpty();
         }
 
         RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder = convertRebalanceSpecToRebalanceOptions(kafkaRebalance.getSpec());
