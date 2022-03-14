@@ -126,7 +126,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(logAndMetricsConfigMap -> {
                     String logging = logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
                     annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
-                            Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
+                            Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
                     desiredLogging.set(logging);
                     return configMapOperations.reconcile(reconciliation, namespace, connect.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })

@@ -208,7 +208,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     }
 
     public String getTlsThumbprint()    {
-        return "{external=COWn2zWLZMhoewfrmSTfUeKlQPifBKekyXzjm2iGTuc=, tls=vjPd/D/f0/X3yqitf65yoUZbyeWnQU4cPDJGbr7GA7I=}";
+        return "{external=fc4c92a1, tls=d33fd102}";
     }
 
     public Secret getExternalSecret() {

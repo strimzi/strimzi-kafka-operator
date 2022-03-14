@@ -34,7 +34,7 @@ public class PodRevision {
      */
     public static String getRevision(Reconciliation reconciliation, Pod pod) {
         try {
-            return Util.sha1Prefix(PodSetUtils.podToString(pod));
+            return Util.hashStub(PodSetUtils.podToString(pod));
         } catch (JsonProcessingException e) {
             LOGGER.warnCr(reconciliation, "Failed to get pod revision", e);
             throw new RuntimeException("Failed to get pod revision", e);

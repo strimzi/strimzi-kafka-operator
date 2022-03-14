@@ -168,7 +168,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 Deployment dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(mirrorMaker2.getName()));
                 Map annotations = new HashMap();
-                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(LOGGING_CONFIG)));
+                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(LOGGING_CONFIG)));
                 assertThat(dc, is(mirrorMaker2.generateDeployment(annotations, true, null, null)));
 
                 // Verify PodDisruptionBudget
@@ -370,7 +370,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                 Deployment dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(compareTo.getName()));
                 Map<String, String> annotations = new HashMap();
-                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG))));
+                annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(loggingCm.getData().get(compareTo.ANCILLARY_CM_KEY_LOG_CONFIG))));
                 assertThat(dc, is(compareTo.generateDeployment(annotations, true, null, null)));
 
                 // Verify PodDisruptionBudget
@@ -739,7 +739,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                     Deployment dc = capturedDc.get(0);
                     assertThat(dc.getMetadata().getName(), is(mirrorMaker2.getName()));
                     Map<String, String> annotations = new HashMap<>();
-                    annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(LOGGING_CONFIG)));
+                    annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(LOGGING_CONFIG)));
                     assertThat(dc, is(mirrorMaker2.generateDeployment(annotations, true, null, null)));
 
                     // Verify PodDisruptionBudget
@@ -834,7 +834,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                     Deployment dc = capturedDc.get(0);
                     assertThat(dc.getMetadata().getName(), is(mirrorMaker2.getName()));
                     Map annotations = new HashMap();
-                    annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(LOGGING_CONFIG)));
+                    annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH, Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(LOGGING_CONFIG)));
                     assertThat(dc, is(mirrorMaker2.generateDeployment(annotations, true, null, null)));
 
                     // Verify PodDisruptionBudget

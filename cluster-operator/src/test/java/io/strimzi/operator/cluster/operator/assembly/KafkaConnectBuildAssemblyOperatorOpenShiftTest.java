@@ -82,7 +82,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     private static final String OUTPUT_IMAGE = "my-connect-build:latest";
-    private static final String OUTPUT_IMAGE_HASH_STUB = Util.sha1Prefix(OUTPUT_IMAGE);
+    private static final String OUTPUT_IMAGE_HASH_STUB = Util.hashStub(OUTPUT_IMAGE);
 
     protected static Vertx vertx;
     private final KubernetesVersion kubernetesVersion = KubernetesVersion.V1_16;
@@ -605,7 +605,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         when(mockDepOps.reconcile(any(), anyString(), anyString(), depCaptor.capture())).thenReturn(Future.succeededFuture());
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.deploymentName(NAME)))).thenAnswer(inv -> {
             Deployment dep = oldConnect.generateDeployment(emptyMap(), false, null, null);
-            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub() + Util.sha1Prefix(oldBuild.getBuild().getOutput().getImage()));
+            dep.getSpec().getTemplate().getMetadata().getAnnotations().put(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, oldBuild.generateDockerfile().hashStub() + Util.hashStub(oldBuild.getBuild().getOutput().getImage()));
             dep.getSpec().getTemplate().getSpec().getContainers().get(0).setImage("my-connect-build-2@sha256:olddigest");
             return Future.succeededFuture(dep);
         });
@@ -680,7 +680,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
                     Deployment dep = capturedDeps.get(0);
                     assertThat(dep.getMetadata().getName(), is(connect.getName()));
                     assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImage(), is("my-connect-build-2@sha256:blablabla"));
-                    assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + Util.sha1Prefix(build.getBuild().getOutput().getImage())));
+                    assertThat(Annotations.stringAnnotation(dep.getSpec().getTemplate(), Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION, null), is(build.generateDockerfile().hashStub() + Util.hashStub(build.getBuild().getOutput().getImage())));
 
                     // Verify BuildConfig
                     List<BuildConfig> capturedBcs = buildConfigCaptor.getAllValues();
