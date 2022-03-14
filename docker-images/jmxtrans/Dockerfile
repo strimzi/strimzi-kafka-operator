@@ -28,6 +28,7 @@ RUN mkdir -p /usr/share/jmxtrans/lib/ \
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 COPY jmxtrans_readiness_check.sh /opt/jmx/
+COPY logback.xml ${JMXTRANS_HOME}/conf/
 
 #####
 # Add NC
