@@ -312,6 +312,26 @@ public class KafkaCluster extends AbstractModel {
         return cluster + KafkaCluster.KAFKA_JMX_SECRET_SUFFIX;
     }
 
+    public static List<String> generatePodList(String cluster, int replicas) {
+
+        ArrayList<String> podNames = new ArrayList<>(replicas);
+
+        for (int podId = 0; podId < replicas; podId++) {
+
+            podNames.add(kafkaPodName(cluster, podId));
+
+        }
+        return podNames;
+    }
+
+    /**
+     * @param cluster The name of the cluster.
+     * @return The name of the clients CA certificate Secret.
+     */
+    public static String clientsCaCertSecretName(String cluster) {
+        return KafkaResources.clientsCaCertificateSecretName(cluster);
+    }
+
     public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         return fromCrd(reconciliation, kafkaAssembly, versions, null, 0);
     }
