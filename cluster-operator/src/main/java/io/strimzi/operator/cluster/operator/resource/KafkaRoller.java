@@ -193,7 +193,7 @@ public class KafkaRoller {
             for (int podIndex = 0; podIndex < podList.size(); podIndex++) {
                 // Order the podNames unready first otherwise repeated reconciliations might each restart a pod
                 // only for it not to become ready and thus drive the cluster to a worse state.
-                pods.add(podOperations.isReady(namespace, podList.get(podIndex)) ? pods.size() : 0, new PodRef(podList.get(podIndex), indexOfPod(podList.get(podIndex))));
+                pods.add(podOperations.isReady(namespace, podList.get(podIndex)) ? pods.size() : 0, new PodRef(podList.get(podIndex), idOfPod(podList.get(podIndex))));
             }
             LOGGER.debugCr(reconciliation, "Initial order for rolling restart {}", pods);
             List<Future> futures = new ArrayList<>(podList.size());
@@ -399,7 +399,7 @@ public class KafkaRoller {
         return false;
     }
 
-    private int indexOfPod(String podName)  {
+    private int idOfPod(String podName)  {
         return Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
     }
 
