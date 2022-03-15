@@ -311,6 +311,6 @@ public class CruiseControlST extends AbstractST {
 
         // The intra-broker rebalance will fail for Kafka clusters with a non-JBOD configuration.
         KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus();
-        assertThat(kafkaRebalanceStatus.getConditions().get(0).getReason(), is("IllegalArgumentException"));
+        assertThat(kafkaRebalanceStatus.getConditions().get(0).getReason(), is("InvalidResourceException"));
     }
 }

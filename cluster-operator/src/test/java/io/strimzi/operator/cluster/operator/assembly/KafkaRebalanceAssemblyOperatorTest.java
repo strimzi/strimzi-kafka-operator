@@ -1210,6 +1210,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     assertThat(kr1, StateMatchers.hasState());
                     Condition condition = kcrao.rebalanceStateCondition(kr1.getStatus());
                     assertThat(condition.getReason(), is("InvalidResourceException"));
+                    assertThat(condition.getMessage(), is("Cannot set rebalanceDisk=true for Kafka clusters with a non-JBOD storage config. " +
+                        "Intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks."));
                     checkpoint.flag();
                 })));
     }
