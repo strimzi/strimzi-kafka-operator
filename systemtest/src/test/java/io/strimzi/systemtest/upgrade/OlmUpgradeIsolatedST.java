@@ -4,7 +4,9 @@
  */
 package io.strimzi.systemtest.upgrade;
 
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
@@ -36,6 +38,8 @@ import java.util.List;
 import static io.strimzi.systemtest.Constants.OLM_UPGRADE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+
 
 /**
  * This test class contains tests for Strimzi downgrade from version X to version X - 1.
@@ -55,6 +59,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
     private final String clusterName = "my-cluster";
     private final int messageUpgradeCount =  600;
     private KafkaClients kafkaBasicClientJob;
+    private KafkaTopic kafkaUpgradeTopic;
 
     @Test
     void testStrimziUpgrade(ExtensionContext extensionContext) throws IOException {
@@ -104,6 +109,17 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         waitForReadinessOfKafkaCluster();
 
         clusterOperator.getOlmResource().getClosedMapInstallPlan().put(clusterOperator.getOlmResource().getNonUsedInstallPlan(), Boolean.TRUE);
+
+        this.kafkaUpgradeTopic = new YAMLMapper().readValue(new File(dir, testParameters.getString("fromExamples") + "/examples/topic/kafka-topic.yaml"), KafkaTopic.class);
+        this.kafkaUpgradeTopic.getMetadata().setName(topicUpgradeName);
+        this.kafkaUpgradeTopic.getSpec().setReplicas(3);
+        this.kafkaUpgradeTopic.getSpec().setAdditionalProperty("min.insync.replicas", 2);
+
+        LOGGER.info("Deploy KafkaTopic: {}", this.kafkaUpgradeTopic.toString());
+
+        cmdKubeClient().applyContent(this.kafkaUpgradeTopic.toString());
+        ResourceManager.waitForResourceReadiness(KafkaTopic.RESOURCE_PLURAL + "." +
+            io.strimzi.api.kafka.model.Constants.V1BETA2 + "." + io.strimzi.api.kafka.model.Constants.RESOURCE_GROUP_NAME, topicUpgradeName);
 
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
         resourceManager.createResource(extensionContext, kafkaBasicClientJob.consumerStrimzi());

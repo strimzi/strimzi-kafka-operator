@@ -217,7 +217,7 @@ public class OlmResource implements SpecificResourceType {
      * Upgrade cluster operator by obtaining new install plan, which was not used and also approves installation by
      * changing the install plan YAML
      */
-    public static void upgradeClusterOperator() {
+    public void upgradeClusterOperator() {
         if (kubeClient().listPodsByPrefixInName(ResourceManager.getCoDeploymentName()).size() == 0) {
             throw new RuntimeException("We can not perform upgrade! Cluster operator pod is not present.");
         }
@@ -325,5 +325,9 @@ public class OlmResource implements SpecificResourceType {
 
     public static Map<String, Boolean> getClosedMapInstallPlan() {
         return CLOSED_MAP_INSTALL_PLAN;
+    }
+
+    public void setDeploymentName(String deploymentName) {
+        this.deploymentName = deploymentName;
     }
 }
