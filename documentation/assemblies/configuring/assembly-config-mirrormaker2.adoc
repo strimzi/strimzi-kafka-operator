@@ -39,6 +39,9 @@ include::../../modules/configuring/con-config-mirrormaker2-replication.adoc[leve
 //Config for mirrormmaker connectors
 include::../../modules/configuring/con-config-mirrormaker2-connectors.adoc[leveloffset=+1]
 
+//Increasing the number of tasks
+include::../../modules/configuring/con-config-mirrormaker2-tasks-max.adoc[leveloffset=+1]
+
 //Handling of ACLs in replication
 include::../../modules/configuring/con-config-mirrormaker2-acls.adoc[leveloffset=+1]
 

@@ -1,0 +1,43 @@
+// Module included in the following assemblies:
+//
+// assembly-config-mirrormaker2.adoc
+
+[id='con-mirrormaker-tasks-max-{context}']
+= Specifying a maximum number of tasks
+
+[role="_abstract"]
+Connectors create the tasks that are responsible for moving data in and out of Kafka.
+Each connector comprises one or more tasks that are distributed across a group of worker pods that run the tasks.
+
+Tasks run in parallel.
+If there are more tasks than workers, workers handle multiple tasks.
+
+You can specify the maximum number of connector tasks in your MirrorMaker configuration using the `tasksMax` property.
+Without specifying a maximum number of tasks, the default setting is a single task.
+If the infrastructure supports the processing overhead, increasing the number of tasks can improve throughput.
+
+.tasksMax configuration for a MirrorMaker connector
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+spec:
+  # ...
+  mirrors:
+  - sourceCluster: "my-cluster-source"
+    targetCluster: "my-cluster-target"
+    sourceConnector:
+      tasksMax: 10
+  # ...    
+----
+
+For sink and source connectors, the maximum number of tasks that can run in parallel depends on a number of factors.
+Common factors include the connector configuration, the type of external system, the expected throughput, and the number of workers.
+A connector creates fewer than the maximum number of tasks if it cannot achieve the parallelism.
+For sink connectors, the maximum number of tasks possible is one for each partition consumed.
+
+Suppose a source connector is used to connect to a database as an external data source.
+The connector might determine the required number of tasks based on the number of tables in the database and the maximum allowable number of tasks.
+The source connector might create fewer tasks than the maximum allowed if it’s not possible or desirable to split the source data into so many tasks.
