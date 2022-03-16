@@ -153,9 +153,9 @@ class KafkaST extends AbstractST {
         kafkaConfig.put("default.replication.factor", "1");
 
         Map<String, Object> updatedKafkaConfig = new HashMap<>();
-        updatedKafkaConfig.put("offsets.topic.replication.factor", "2");
-        updatedKafkaConfig.put("transaction.state.log.replication.factor", "2");
-        updatedKafkaConfig.put("default.replication.factor", "2");
+        updatedKafkaConfig.put("offsets.topic.replication.factor", "3");
+        updatedKafkaConfig.put("transaction.state.log.replication.factor", "3");
+        updatedKafkaConfig.put("default.replication.factor", "3");
 
         // Zookeeper Config
         Map<String, Object> zookeeperConfig = new HashMap<>();
@@ -179,7 +179,7 @@ class KafkaST extends AbstractST {
         final int updatedPeriodSeconds = 5;
         final int updatedFailureThreshold = 1;
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 2)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3)
             .editSpec()
                 .editKafka()
                     .withNewReadinessProbe()
@@ -204,7 +204,7 @@ class KafkaST extends AbstractST {
                     .endTemplate()
                 .endKafka()
                 .editZookeeper()
-                    .withReplicas(2)
+                    .withReplicas(3)
                     .withNewReadinessProbe()
                        .withInitialDelaySeconds(initialDelaySeconds)
                         .withTimeoutSeconds(timeoutSeconds)
@@ -294,7 +294,7 @@ class KafkaST extends AbstractST {
         checkKafkaConfiguration(namespaceName, kafkaStatefulSetName(clusterName), kafkaConfig, clusterName);
         checkSpecificVariablesInContainer(namespaceName, kafkaStatefulSetName(clusterName), "kafka", envVarGeneral);
 
-        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 2)) {
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 3)) {
             String kafkaConfiguration = kubeClient().getConfigMap(namespaceName, cmName).getData().get("server.config");
             assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
             assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
@@ -379,8 +379,8 @@ class KafkaST extends AbstractST {
             entityOperatorSpec.getTemplate().getTlsSidecarContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
         }, namespaceName);
 
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 2, zkSnapshot);
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 2, kafkaSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
         DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
@@ -390,7 +390,7 @@ class KafkaST extends AbstractST {
         checkKafkaConfiguration(namespaceName, kafkaStatefulSetName(clusterName), updatedKafkaConfig, clusterName);
         checkSpecificVariablesInContainer(namespaceName, kafkaStatefulSetName(clusterName), "kafka", envVarUpdated);
 
-        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 2)) {
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 3)) {
             String kafkaConfiguration = kubeClient(namespaceName).getConfigMap(namespaceName, cmName).getData().get("server.config");
             assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=2"));
             assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=2"));
@@ -398,9 +398,9 @@ class KafkaST extends AbstractST {
         }
 
         kafkaConfigurationFromPod = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "cat", "/tmp/strimzi.properties").out();
-        assertThat(kafkaConfigurationFromPod, containsString("offsets.topic.replication.factor=2"));
-        assertThat(kafkaConfigurationFromPod, containsString("transaction.state.log.replication.factor=2"));
-        assertThat(kafkaConfigurationFromPod, containsString("default.replication.factor=2"));
+        assertThat(kafkaConfigurationFromPod, containsString("offsets.topic.replication.factor=3"));
+        assertThat(kafkaConfigurationFromPod, containsString("transaction.state.log.replication.factor=3"));
+        assertThat(kafkaConfigurationFromPod, containsString("default.replication.factor=3"));
 
         LOGGER.info("Testing Zookeepers");
         checkReadinessLivenessProbe(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", updatedInitialDelaySeconds, updatedTimeoutSeconds,

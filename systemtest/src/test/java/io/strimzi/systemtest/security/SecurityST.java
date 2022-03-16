@@ -127,13 +127,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Running testCertificates {}", clusterName);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 2)
-                .editSpec()
-                    .editZookeeper()
-                        .withReplicas(2)
-                    .endZookeeper()
-                .endSpec()
-                .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
         LOGGER.info("Check Kafka bootstrap certificate");
         String outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(namespaceName, KafkaResources.tlsBootstrapAddress(clusterName), KafkaResources.bootstrapServiceName(clusterName),
@@ -149,7 +143,7 @@ class SecurityST extends AbstractST {
         List<String> kafkaPorts = new ArrayList<>(Arrays.asList("9091", "9093"));
         List<String> zkPorts = new ArrayList<>(Arrays.asList("2181", "3888"));
 
-        IntStream.rangeClosed(0, 1).forEach(podId -> {
+        IntStream.rangeClosed(0, 2).forEach(podId -> {
             String output;
 
             LOGGER.info("Checking certificates for podId {}", podId);
