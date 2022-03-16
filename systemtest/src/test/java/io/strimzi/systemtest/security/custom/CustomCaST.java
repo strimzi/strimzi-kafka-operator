@@ -50,6 +50,7 @@ import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -122,9 +123,9 @@ public class CustomCaST extends AbstractST {
         // --- verification phase (Rolling Update of components)
 
         // 7. save the current state of the Kafka, ZooKeeper and EntityOperator pods
-        final Map<String, String> kafkaPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getKafkaSelector());
-        final Map<String, String> zkPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getZookeeperSelector());
-        final Map<String, String> eoPod = DeploymentUtils.depSnapshot(KafkaResources.entityOperatorDeploymentName(ts.getClusterName()));
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getKafkaSelector());
+        Map<String, String> zkPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getZookeeperSelector());
+        Map<String, String> eoPod = DeploymentUtils.depSnapshot(ts.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(ts.getClusterName()));
 
         // 8. Resume reconciliation from the pause.
         LOGGER.info("Resume the reconciliation of the Kafka custom resource ({}).", KafkaResources.kafkaStatefulSetName(ts.getClusterName()));
@@ -138,9 +139,14 @@ public class CustomCaST extends AbstractST {
         //      c) and other components to trust the new CA certificate. (i.e., EntityOperator)
         //  When the rolling update is complete, the Cluster Operator
         //  will start a new one to generate new server certificates signed by the new CA key.
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getZookeeperSelector(), 1, zkPods);
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getKafkaSelector(), 1, kafkaPods);
-        DeploymentUtils.waitTillDepHasRolled(KafkaResources.entityOperatorDeploymentName(ts.getClusterName()), 1, eoPod);
+        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getZookeeperSelector(), 3, zkPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getKafkaSelector(), 3, kafkaPods);
+        eoPod = DeploymentUtils.waitTillDepHasRolled(ts.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(ts.getClusterName()), 1, eoPod);
+
+        // second Rolling update to generate new server certificates signed by the new CA key.
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getZookeeperSelector(), 3, zkPods);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getKafkaSelector(), 3, kafkaPods);
+        DeploymentUtils.waitTillDepHasRolled(ts.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(ts.getClusterName()), 1, eoPod);
 
         // 10. Try to produce messages
         producerMessages(extensionContext, ts);
@@ -197,8 +203,10 @@ public class CustomCaST extends AbstractST {
 
         // --- verification phase (Rolling Update of components)
 
-        // 7. save the current state of the Kafka
+        // 7. save the current state of the Kafka, ZooKeeper and EntityOperator pods
         final Map<String, String> kafkaPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getKafkaSelector());
+        final Map<String, String> zkPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getZookeeperSelector());
+        final Map<String, String> eoPod = DeploymentUtils.depSnapshot(ts.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(ts.getClusterName()));
 
         // 8. Resume reconciliation from the pause.
         LOGGER.info("Resume the reconciliation of the Kafka custom resource ({}).", KafkaResources.kafkaStatefulSetName(ts.getClusterName()));
@@ -209,7 +217,16 @@ public class CustomCaST extends AbstractST {
         // 9. On the next reconciliation, the Cluster Operator performs a `rolling update` only for the
         // Kafka cluster. When the rolling update is complete, the Cluster Operator will start a new one to
         // generate new server certificates signed by the new CA key.
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getKafkaSelector(), 1, kafkaPods);
+
+        // a) ZooKeeper must not roll
+        RollingUpdateUtils.waitForNoRollingUpdate(ts.getNamespaceName(), ts.getZookeeperSelector(), zkPods);
+        assertThat(RollingUpdateUtils.componentHasRolled(ts.getNamespaceName(), ts.getZookeeperSelector(), zkPods), is(Boolean.FALSE));
+
+        // b) Kafka has to roll
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getKafkaSelector(), 3, kafkaPods);
+
+        // c) EO must not roll
+        DeploymentUtils.waitForNoRollingUpdate(ts.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(ts.getClusterName()), eoPod);
 
         // 10. Try to produce messages
         producerMessages(extensionContext, ts);
@@ -250,7 +267,7 @@ public class CustomCaST extends AbstractST {
         }
 
         // 2. Create a Kafka cluster without implicit generation of CA
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(ts.getClusterName(), 1)
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(ts.getClusterName(), 3)
             .editOrNewSpec()
                 .withNewClientsCa()
                     .withRenewalDays(5)
@@ -260,12 +277,11 @@ public class CustomCaST extends AbstractST {
             // TODO: If I un-comment this and run testReplacingCustomClusterKeyPairToInvokeRenewalProcess test it will fail
             //  because only ZooKeeper pod will trigger RollingUpdate, Kafka pod has some errors:
             //  -> https://gist.github.com/see-quick/d32c569572ae396597ce88394dc46fed
-//
-//               .withNewClusterCa()
-//                    .withRenewalDays(5)
-//                    .withValidityDays(20)
-//                    .withGenerateCertificateAuthority(false)
-//                .endClusterCa()
+             .withNewClusterCa()
+                    .withRenewalDays(5)
+                    .withValidityDays(20)
+                    .withGenerateCertificateAuthority(false)
+                .endClusterCa()
             .endSpec()
             .build());
 
@@ -285,16 +301,18 @@ public class CustomCaST extends AbstractST {
     private void producerMessages(final ExtensionContext extensionContext, final TestStorage ts) {
         // 11. Try to produce messages
         final KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
+            .withNamespaceName(ts.getNamespaceName())
             .withProducerName(ts.getProducerName())
             .withConsumerName(ts.getClusterName())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(ts.getClusterName()))
             .withTopicName(ts.getTopicName())
+            .withUserName(ts.getUserName())
             .withMessageCount(MESSAGE_COUNT)
             .withDelayMs(10)
             .build();
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(ts.getNamespaceName(), ts.getClusterName(), ts.getUserName()).build());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerTlsStrimzi(ts.getClusterName(), ts.getUserName()));
+        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerTlsStrimzi(ts.getClusterName()));
 
         ClientUtils.waitForClientSuccess(ts.getProducerName(), ts.getNamespaceName(), MESSAGE_COUNT);
     }
