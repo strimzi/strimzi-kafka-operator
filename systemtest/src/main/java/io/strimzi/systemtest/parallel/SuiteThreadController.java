@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.parallel;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.StUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -66,39 +65,34 @@ public class SuiteThreadController {
         waitingTestCases = new ArrayList<>();
     }
 
-    public synchronized void addParallelSuite(ExtensionContext extensionContext) {
+    public void addParallelSuite(ExtensionContext extensionContext) {
         LOGGER.debug("[{}] - Adding parallel suite: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
 
-        runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.incrementAndGet());
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, runningTestSuitesInParallelCount.get());
+        runningTestSuitesInParallelCount.incrementAndGet();
 
         LOGGER.debug("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
     }
 
-    public synchronized void addParallelTest(ExtensionContext extensionContext) {
+    public void addParallelTest(ExtensionContext extensionContext) {
         LOGGER.debug("[{}] - Adding parallel test: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
 
-        runningTestCasesInParallelCount.set(runningTestCasesInParallelCount.incrementAndGet());
+        runningTestCasesInParallelCount.incrementAndGet();
 
         LOGGER.debug("[{}] - Parallel test count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestCasesInParallelCount.get());
     }
 
-    public synchronized void removeParallelSuite(ExtensionContext extensionContext) {
-        if (extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PARALLEL_CLASS_COUNT) == null) {
-            throw new RuntimeException("There is no parallel suite running.");
-        } else {
-            LOGGER.debug("[{}] - Removing parallel suite: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
-            runningTestSuitesInParallelCount.set(runningTestSuitesInParallelCount.decrementAndGet());
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PARALLEL_CLASS_COUNT, runningTestSuitesInParallelCount.get());
-        }
+    public void removeParallelSuite(ExtensionContext extensionContext) {
+        LOGGER.debug("[{}] - Removing parallel suite: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
+
+        runningTestSuitesInParallelCount.decrementAndGet();
 
         LOGGER.debug("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
     }
 
-    public synchronized void removeParallelTest(ExtensionContext extensionContext) {
+    public void removeParallelTest(ExtensionContext extensionContext) {
         LOGGER.debug("[{}] - Removing parallel test: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), extensionContext.getDisplayName());
 
-        runningTestCasesInParallelCount.set(runningTestCasesInParallelCount.decrementAndGet());
+        runningTestCasesInParallelCount.decrementAndGet();
 
         LOGGER.debug("[{}] - Parallel test count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestCasesInParallelCount.get());
     }
@@ -112,7 +106,7 @@ public class SuiteThreadController {
         while (preCondition) {
             LOGGER.trace("[{}] - Parallel suites count: {}", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()), runningTestSuitesInParallelCount.get());
             try {
-                Thread.sleep(STARTING_DELAY);
+                Thread.currentThread().sleep(STARTING_DELAY);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

@@ -15,7 +15,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NodeUtils;
-import io.strimzi.test.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;

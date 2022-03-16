@@ -367,7 +367,6 @@ public interface Constants {
      */
     String NAMESPACE_KEY = "NAMESPACE_NAME";
     String PREPARE_OPERATOR_ENV_KEY = "PREPARE_OPERATOR_ENV";
-    String PARALLEL_CLASS_COUNT = "PARALLEL_CLASS_COUNT";
 
     /**
      * Auxiliary variable for cluster operator deployment

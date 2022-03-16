@@ -18,7 +18,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;

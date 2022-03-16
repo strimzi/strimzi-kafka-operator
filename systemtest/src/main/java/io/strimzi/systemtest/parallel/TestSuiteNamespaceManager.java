@@ -134,6 +134,9 @@ public class TestSuiteNamespaceManager {
                 }
                 KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(testSuite), namespaceName);
                 NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceName));
+                if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
+                    StUtils.copyImagePullSecret(namespaceName);
+                }
             }
         }
     }
