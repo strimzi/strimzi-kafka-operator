@@ -53,7 +53,7 @@ class RecoveryIsolatedST extends AbstractST {
 
     static String sharedClusterName;
     private static final int KAFKA_REPLICAS = 3;
-    private static final int ZOOKEEPER_REPLICAS = 3;
+    private static final int ZOOKEEPER_REPLICAS = KAFKA_REPLICAS;
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryIsolatedST.class);
 
@@ -302,7 +302,7 @@ class RecoveryIsolatedST extends AbstractST {
         sharedClusterName = generateRandomNameOfKafka("recovery-cluster");
         String kafkaClientsName = Constants.KAFKA_CLIENTS + "-" + sharedClusterName;
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(sharedClusterName, KAFKA_REPLICAS, ZOOKEEPER_REPLICAS).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(sharedClusterName, KAFKA_REPLICAS).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(sharedClusterName, KafkaResources.plainBootstrapAddress(sharedClusterName), 1).build());
     }
