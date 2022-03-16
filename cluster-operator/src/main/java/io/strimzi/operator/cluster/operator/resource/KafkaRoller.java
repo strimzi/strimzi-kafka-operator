@@ -442,6 +442,7 @@ public class KafkaRoller {
     /**
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     private RestartPlan restartPlan(PodRef podRef, Pod pod, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem {
 
         List<String> reasonToRestartPod = Objects.requireNonNull(podNeedsRestart.apply(pod));
@@ -468,6 +469,7 @@ public class KafkaRoller {
         // Always get the broker config. This request gets sent to that specific broker, so it's a proof that we can
         // connect to the broker and that it's capable of responding.
         if (!initAdminClient()) {
+            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it does not seem to responding to connection attempts", podRef);
             return new RestartPlan(true);
         }
         Config brokerConfig;
@@ -483,7 +485,6 @@ public class KafkaRoller {
         }
 
         if (!needsRestart && allowReconfiguration) {
-
             LOGGER.traceCr(reconciliation, "Broker {}: description {}", podRef, brokerConfig);
             diff = new KafkaBrokerConfigurationDiff(reconciliation, brokerConfig, kafkaConfigProvider.apply(podRef.getPodId()), kafkaVersion, podRef.getPodId());
             loggingDiff = logging(podRef);
@@ -493,18 +494,24 @@ public class KafkaRoller {
                     LOGGER.debugCr(reconciliation, "Pod {} needs to be reconfigured.", podRef);
                     needsReconfig = true;
                 } else {
-                    LOGGER.debugCr(reconciliation, "Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", podRef);
+                    LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because reconfiguration cannot be done dynamically", podRef);
                     needsRestart = true;
                 }
             }
 
-            if (loggingDiff.getDiffSize() > 0) {
+            // needsRestart value might have changed from the check in the parent if. So we need to check it again.
+            if (!needsRestart && loggingDiff.getDiffSize() > 0) {
                 LOGGER.debugCr(reconciliation, "Pod {} logging needs to be reconfigured.", podRef);
                 needsReconfig = true;
             }
         } else if (needsRestart) {
             LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted. Reason: {}", podRef, reasonToRestartPod);
         }
+
+        if (podStuck)   {
+            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it seems to be stuck and restart might help", podRef);
+        }
+
         return new RestartPlan(needsRestart, needsReconfig, podStuck, diff, loggingDiff);
     }
 
