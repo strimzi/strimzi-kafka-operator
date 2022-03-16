@@ -141,7 +141,6 @@ class KafkaST extends AbstractST {
         LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
         envVarGeneral.put("TEST_ENV_1", "test.env.one");
         envVarGeneral.put("TEST_ENV_2", "test.env.two");
-
         LinkedHashMap<String, String> envVarUpdated = new LinkedHashMap<>();
         envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
         envVarUpdated.put("TEST_ENV_3", "test.env.three");
@@ -392,9 +391,9 @@ class KafkaST extends AbstractST {
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 3)) {
             String kafkaConfiguration = kubeClient(namespaceName).getConfigMap(namespaceName, cmName).getData().get("server.config");
-            assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=2"));
-            assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=2"));
-            assertThat(kafkaConfiguration, containsString("default.replication.factor=2"));
+            assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=3"));
+            assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=3"));
+            assertThat(kafkaConfiguration, containsString("default.replication.factor=3"));
         }
 
         kafkaConfigurationFromPod = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "cat", "/tmp/strimzi.properties").out();
