@@ -17,21 +17,12 @@ Data replication across clusters supports scenarios that require:
 * Provision of data at a specific location to improve latency
 
 If you are using MirrorMaker 2.0, you configure the `KafkaMirrorMaker2` resource.
+The full schema of the `KafkaMirrorMaker2` resource is described in the xref:type-KafkaMirrorMaker2-reference[KafkaMirrorMaker2 schema reference].
 
 MirrorMaker 2.0 introduces an entirely new way of replicating data between clusters.
 
 As a result, the resource configuration differs from the previous version of MirrorMaker.
 If you choose to use MirrorMaker 2.0, there is currently no legacy support, so any resources must be manually converted into the new format.
-
-How MirrorMaker 2.0 replicates data is described here:
-
-* xref:con-mirrormaker-{context}[MirrorMaker 2.0 data replication]
-
-The following procedure shows how the resource is configured for MirrorMaker 2.0:
-
-* xref:proc-mirrormaker-replication-{context}[Synchronizing data between Kafka clusters]
-
-The full schema of the `KafkaMirrorMaker2` resource is described in the xref:type-KafkaMirrorMaker2-reference[KafkaMirrorMaker2 schema reference].
 
 //Describes the underlying architecture and how it is used in replication
 include::../../modules/configuring/con-config-mirrormaker2-replication.adoc[leveloffset=+1]
@@ -45,8 +36,11 @@ include::../../modules/configuring/con-config-mirrormaker2-acls.adoc[leveloffset
 //Procedure to set up the configuration
 include::../../modules/configuring/proc-config-mirrormaker2-replication.adoc[leveloffset=+1]
 
+//Securing connections to and from mirrormaker
+include::../../modules/configuring/proc-config-mirrormaker2-securing-connection.adoc[leveloffset=+1]
+
 //Procedure to restart a connector
-include::../../modules/proc-manual-restart-mirrormaker2-connector.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector.adoc[leveloffset=+1]
 
 //Procedure to restart a connector task
-include::../../modules/proc-manual-restart-mirrormaker2-connector-task.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector-task.adoc[leveloffset=+1]

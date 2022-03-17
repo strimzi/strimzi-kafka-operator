@@ -3,9 +3,11 @@
 // assembly-config-mirrormaker2.adoc
 
 [id='proc-mirrormaker-replication-{context}']
-= Synchronizing data between Kafka clusters using MirrorMaker 2.0
+= Configuring Kafka MirrorMaker 2.0
 
-Use MirrorMaker 2.0 to synchronize data between Kafka clusters through configuration.
+[role="_abstract"]
+Use the properties of the `KafkaMirrorMaker2` resource to configure your Kafka MirrorMaker 2.0 deployment.
+Use MirrorMaker 2.0 to synchronize data between Kafka clusters
 
 The configuration must specify:
 
@@ -15,8 +17,6 @@ The configuration must specify:
 ** Cluster to cluster
 ** Topic to topic
 
-Use the properties of the `KafkaMirrorMaker2` resource to configure your Kafka MirrorMaker 2.0 deployment.
-
 NOTE: The previous version of MirrorMaker continues to be supported.
 If you wish to use the resources configured for the previous version,
 they must be updated to the format supported by MirrorMaker 2.0.
@@ -24,6 +24,7 @@ they must be updated to the format supported by MirrorMaker 2.0.
 MirrorMaker 2.0 provides default configuration values for properties such as replication factors.
 A minimal configuration, with defaults left unchanged, would be something like this example:
 
+.Minimal configuration for MirrorMaker 2.0
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}
@@ -49,10 +50,8 @@ This procedure shows a configuration that uses TLS encryption and authentication
 
 .Prerequisites
 
-* See the _Deploying and Upgrading Strimzi_ guide for instructions on running a:
-** link:{BookURLDeploying}#cluster-operator-str[Cluster Operator^]
-** link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]
-* Source and target Kafka clusters must be available
+* Strimzi is running
+* Source and target Kafka clusters are available
 
 .Procedure
 
