@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.StrimziPodSetTest;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -53,6 +52,8 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 class RecoveryIsolatedST extends AbstractST {
 
     static String sharedClusterName;
+    private static final int KAFKA_REPLICAS = 3;
+    private static final int ZOOKEEPER_REPLICAS = KAFKA_REPLICAS;
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryIsolatedST.class);
 
@@ -87,7 +88,7 @@ class RecoveryIsolatedST extends AbstractST {
 
         LOGGER.info("Waiting for recovery {}", kafkaName);
         StUtils.waitForStrimziPodSetOrStatefulSetRecovery(kafkaName, kafkaUid);
-        StUtils.waitForStrimziPodSetOrStatefulSetAndPodsReady(kafkaName, 3);
+        StUtils.waitForStrimziPodSetOrStatefulSetAndPodsReady(kafkaName, KAFKA_REPLICAS);
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
@@ -104,7 +105,7 @@ class RecoveryIsolatedST extends AbstractST {
 
         LOGGER.info("Waiting for recovery {}", zookeeperName);
         StUtils.waitForStrimziPodSetOrStatefulSetRecovery(zookeeperName, zookeeperUid);
-        StUtils.waitForStrimziPodSetOrStatefulSetAndPodsReady(zookeeperName, 2);
+        StUtils.waitForStrimziPodSetOrStatefulSetAndPodsReady(zookeeperName, ZOOKEEPER_REPLICAS);
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
@@ -168,14 +169,7 @@ class RecoveryIsolatedST extends AbstractST {
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaMetricsConfig with cluster {}", sharedClusterName);
 
-        String kafkaMetricsConfigName;
-        if (Environment.isStrimziPodSetEnabled())   {
-            // For PodSets, we delete one of the per-broker config maps
-            kafkaMetricsConfigName = KafkaResources.kafkaPodName(sharedClusterName, 1);
-        } else {
-            kafkaMetricsConfigName = KafkaResources.kafkaMetricsAndLogConfigMapName(sharedClusterName);
-        }
-
+        String kafkaMetricsConfigName = KafkaResources.kafkaMetricsAndLogConfigMapName(sharedClusterName);
         String kafkaMetricsConfigUid = kubeClient().getConfigMapUid(kafkaMetricsConfigName);
 
         kubeClient().deleteConfigMap(kafkaMetricsConfigName);
@@ -270,7 +264,7 @@ class RecoveryIsolatedST extends AbstractST {
 
         KafkaResource.replaceKafkaResource(sharedClusterName, k -> k.getSpec().getKafka().setResources(resourceReq));
 
-        RollingUpdateUtils.waitForComponentAndPodsReady(INFRA_NAMESPACE, kafkaSelector, 3);
+        RollingUpdateUtils.waitForComponentAndPodsReady(INFRA_NAMESPACE, kafkaSelector, KAFKA_REPLICAS);
         KafkaUtils.waitForKafkaReady(sharedClusterName);
     }
 
@@ -290,8 +284,8 @@ class RecoveryIsolatedST extends AbstractST {
         kafkaPodList.subList(0, kafkaPodList.size() - 1).forEach(pod -> kubeClient().deletePod(pod));
         zkPodList.subList(0, zkPodList.size() - 1).forEach(pod -> kubeClient().deletePod(pod));
 
-        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(kafkaName, 3);
-        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(zkName, 2);
+        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(kafkaName, KAFKA_REPLICAS);
+        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(zkName, ZOOKEEPER_REPLICAS);
         KafkaUtils.waitForKafkaReady(sharedClusterName);
     }
 
@@ -308,7 +302,7 @@ class RecoveryIsolatedST extends AbstractST {
         sharedClusterName = generateRandomNameOfKafka("recovery-cluster");
         String kafkaClientsName = Constants.KAFKA_CLIENTS + "-" + sharedClusterName;
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(sharedClusterName, 3, 2).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(sharedClusterName, KAFKA_REPLICAS).build());
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(false, kafkaClientsName).build());
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(sharedClusterName, KafkaResources.plainBootstrapAddress(sharedClusterName), 1).build());
     }
