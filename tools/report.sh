@@ -215,15 +215,15 @@ get_pod_logs() {
     local logs
     if [[ "$count" -eq 1 ]]; then
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" ||true)"
-      if [[ -n $logs ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod".log; fi
+      if [[ -n $logs ]]; then printf "%s" "$logs" > "$TMP"/reports/podlogs/"$pod".log; fi
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p 2>/dev/null ||true)"
-      if [[ -n $logs ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod".log.0; fi
+      if [[ -n $logs ]]; then printf "%s" "$logs" > "$TMP"/reports/podlogs/"$pod".log.0; fi
     fi
     if [[ "$count" -gt 1 && -n "$con" && "$names" == *"$con"* ]]; then
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con" ||true)"
-      if [[ -n $logs ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log; fi
+      if [[ -n $logs ]]; then printf "%s" "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log; fi
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p -c "$con" 2>/dev/null ||true)"
-      if [[ -n $logs ]]; then echo "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log.0; fi
+      if [[ -n $logs ]]; then printf "%s" "$logs" > "$TMP"/reports/podlogs/"$pod"-"$con".log.0; fi
     fi 
   fi
 }
