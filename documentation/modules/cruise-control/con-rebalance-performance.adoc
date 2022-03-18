@@ -4,14 +4,14 @@
 
 [id='con-rebalance-{context}']
 
-= Rebalance performance tuning overview 
+= Rebalance performance tuning overview
 
-You can adjust several performance tuning options for cluster rebalances. 
+You can adjust several performance tuning options for cluster rebalances.
 These options control how partition replica and leadership movements in a rebalance are executed, as well as the bandwidth that is allocated to a rebalance operation.
 
 == Partition reassignment commands
 
-xref:con-optimization-proposals-{context}[Optimization proposals] are comprised of separate partition reassignment commands. 
+xref:con-optimization-proposals-{context}[Optimization proposals] are comprised of separate partition reassignment commands.
 When you xref:proc-approving-optimization-proposal-{context}[approve] a proposal, the Cruise Control server applies these commands to the Kafka cluster.
 
 A partition reassignment command consists of either of the following types of operations:
@@ -27,26 +27,28 @@ The performance of the cluster during the rebalance is affected by the number of
 
 == Replica movement strategies
 
-Cluster rebalance performance is also influenced by the _replica movement strategy_ that is applied to the batches of partition reassignment commands. 
+Cluster rebalance performance is also influenced by the _replica movement strategy_ that is applied to the batches of partition reassignment commands.
 By default, Cruise Control uses the `BaseReplicaMovementStrategy`, which simply applies the commands in the order they were generated.
 However, if there are some very large partition reassignments early in the proposal, this strategy can slow down the application of the other reassignments.
 
 Cruise Control provides four alternative replica movement strategies that can be applied to optimization proposals:
 
 * `PrioritizeSmallReplicaMovementStrategy`: Order reassignments in order of ascending size.
-* `PrioritizeLargeReplicaMovementStrategy`: Order reassignments in order of descending size. 
+* `PrioritizeLargeReplicaMovementStrategy`: Order reassignments in order of descending size.
 * `PostponeUrpReplicaMovementStrategy`: Prioritize reassignments for replicas of partitions which have no out-of-sync replicas.
 * `PrioritizeMinIsrWithOfflineReplicasStrategy`: Prioritize reassignments with (At/Under)MinISR partitions with offline replicas.  This strategy will only work if `cruiseControl.config.concurrency.adjuster.min.isr.check.enabled` is set to `true` in the `Kafka` custom resource's spec.
 
 These strategies can be configured as a sequence.
-The first strategy attempts to compare two partition reassignments using its internal logic. 
+The first strategy attempts to compare two partition reassignments using its internal logic.
 If the reassignments are equivalent, then it passes them to the next strategy in the sequence to decide the order, and so on.
 
 == Intra-broker disk balancing
 
 Moving a large amount of data between disks on the same broker has less impact than between separate brokers.
 If you are running a Kafka deployment that uses JBOD storage with multiple disks on the same broker, Cruise Control can balance partitions between the disks.
+
 NOTE: If you are using JBOD storage with a single disk, intra-broker disk balancing will result in a proposal with 0 partition movements since there are no disks to balance between.
+
 To perform an intra-broker disk balance, set `rebalanceDisk` to `true` under the `KafkaRebalance.spec`.
 When setting `rebalanceDisk` to `true`, do not set a `goals` field in the `KafkaRebalance.spec`, as Cruise Control will automatically set the intra-broker goals and ignore the inter-broker goals.
 Cruise Control does not perform inter-broker and intra-broker balancing at the same time.
@@ -56,41 +58,44 @@ Cruise Control does not perform inter-broker and intra-broker balancing at the s
 Cruise Control provides several configuration options for tuning the rebalance parameters discussed above.
 You can set these tuning options at either the xref:ref-cruise-control-configuration-{context}[Cruise Control server] or xref:proc-generating-optimization-proposals-{context}[optimization proposal] levels:
 
-* The Cruise Control server setting can be set in the Kafka custom resource under `Kafka.spec.cruiseControl.config`. 
-* The individual rebalance performance configurations can be set under `KafkaRebalance.spec`. 
+* The Cruise Control server setting can be set in the Kafka custom resource under `Kafka.spec.cruiseControl.config`.
+* The individual rebalance performance configurations can be set under `KafkaRebalance.spec`.
 
-The relevant configurations are summarized below:
+The relevant configurations are summarized in the following table.
 
-|============================================================================================================================
-| Server and `KafkaRebalance` Configuration                | Description                                          | Default Value
+.Rebalance performance tuning configuration
+[cols="4m,4,2",options="header"]
+|===
+| Property and request parameter configurations
+| Description
+| Default Value
 
-| `num.concurrent.partition.movements.per.broker`   .2+| 
-  The maximum number of inter-broker partition movements in each partition reassignment batch              .2+| 5 
-| `concurrentPartitionMovementsPerBroker` 
+| `num.concurrent.partition.movements.per.broker` .2+|
+  The maximum number of inter-broker partition movements in each partition reassignment batch .2+| 5
+| `concurrent_partition_movements_per_broker`
 
-| `num.concurrent.intra.broker.partition.movements` .2+| 
-  The maximum number of intra-broker partition movements in each partition reassignment batch              .2+| 2
-| `concurrentIntraBrokerPartitionMovements`
+| `num.concurrent.intra.broker.partition.movements` .2+|
+  The maximum number of intra-broker partition movements in each partition reassignment batch .2+| 2
+| `concurrent_intra_broker_partition_movements`
 
-| `num.concurrent.leader.movements`                 .2+| 
-  The maximum number of partition leadership changes in each partition reassignment batch                  .2+| 1000        
-| `concurrentLeaderMovements`              
+| `num.concurrent.leader.movements` .2+|
+  The maximum number of partition leadership changes in each partition reassignment batch .2+| 1000
+| `concurrent_leader_movements`
 
-| `default.replication.throttle`                    .2+|
-  The bandwidth (in bytes per second) to be assigned to the reassigning of partitions                      .2+| No Limit    
-| `replicationThrottle`
+| `default.replication.throttle` .2+|
+  The bandwidth (in bytes per second) to assign to partition reassignment .2+| Null (no limit)
+| `replication_throttle`
 
-| `default.replica.movement.strategies`             .2+| 
-  The list of strategies (in priority order) used to determine the order in which partition reassignment commands are executed for generated proposals. 
-
-For the server setting, use a comma separated string with the fully qualified names of the strategy class (add `com.linkedin.kafka.cruisecontrol.executor.strategy.` to the start of each class name). For the `KafkaRebalance` resource setting use a YAML array of strategy class names.
-.2+| `BaseReplicaMovementStrategy`
+| `default.replica.movement.strategies` .2+|
+  The list of strategies (in priority order) used to determine the order in which partition reassignment commands are executed for generated proposals.
+  For the server setting, use a comma separated string with the fully qualified names of the strategy class (add `com.linkedin.kafka.cruisecontrol.executor.strategy.` to the start of each class name).
+  For the `KafkaRebalance` resource setting use a YAML array of strategy class names. .2+| `BaseReplicaMovementStrategy`
 | `replicaMovementStrategies`
 
-| `rebalanceDisk`   .1+|  Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. Only applies to Kafka deployments that use JBOD storage with multiple disks.               .1+| false
-|============================================================================================================================
+| `rebalanceDisk` |  Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. Only applies to Kafka deployments that use JBOD storage with multiple disks.               .1+| false
+|===
 
-Changing the default settings affects the length of time that the rebalance takes to complete, as well as the load placed on the Kafka cluster during the rebalance. 
+Changing the default settings affects the length of time that the rebalance takes to complete, as well as the load placed on the Kafka cluster during the rebalance.
 Using lower values reduces the load but increases the amount of time taken, and vice versa.
 
 .Additional resources

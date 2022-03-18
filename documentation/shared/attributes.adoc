@@ -87,7 +87,7 @@
 :KubernetesExternalDNS: link:https://github.com/kubernetes-incubator/external-dns[External DNS^]
 :ApacheKafkaBrokerConfig: link:https://kafka.apache.org/documentation/#brokerconfigs[Apache Kafka documentation^]
 :ApacheKafkaConnectConfig: link:https://kafka.apache.org/documentation/#connectconfigs[Apache Kafka documentation^]
-:ApacheZookeeperConfig: link:https://zookeeper.apache.org/doc/r3.5.8/zookeeperAdmin.html[ZooKeeper documentation^]
+:ApacheZookeeperConfig: link:https://zookeeper.apache.org/doc/current/[ZooKeeper documentation^]
 :ApacheKafkaConnectAPI: link:https://kafka.apache.org/documentation#connect_rest[Apache Kafka Connect API documentation^]
 :ApacheKafkaConsumerConfig: link:https://kafka.apache.org/documentation/#consumerconfigs[Apache Kafka configuration documentation for consumers^]
 :ApacheKafkaProducerConfig: link:https://kafka.apache.org/documentation/#producerconfigs[Apache Kafka configuration documentation for producers^]
@@ -107,7 +107,7 @@
 :JaegerHome: link:https://www.jaegertracing.io/[Jaeger^]
 :JaegerDocs: link:https://www.jaegertracing.io/docs/[Jaeger documentation^]
 :OPAAuthorizer: link:https://github.com/anderseknert/opa-kafka-plugin[Open Policy Agent plugin for Kafka authorization^]
-:external-cors-link: https://www.w3.org/TR/cors/
+:external-cors-link: link:https://fetch.spec.whatwg.org/[Fetch CORS specification^]
 :HelmCustomResourceDefinitions: link:https://helm.sh/docs/chart_best_practices/custom_resource_definitions/[Custom Resource Definitions for Helm^]
 
 // Container image names and repositories
