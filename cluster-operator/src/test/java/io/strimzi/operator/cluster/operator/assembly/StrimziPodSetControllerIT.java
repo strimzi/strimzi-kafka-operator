@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -597,6 +598,70 @@ public class StrimziPodSetControllerIT {
             podSetOp().inNamespace(NAMESPACE).withName(otherPodSetName).delete();
             client.pods().inNamespace(NAMESPACE).withName(otherPreExistingPodName).delete();
             client.pods().inNamespace(NAMESPACE).withName(preExistingPodName).delete();
+        }
+    }
+
+    /**
+     * Tests the non-cascading delete of the PodSet:
+     *   - Creation of StrimziPodSet and the managed pod
+     *   - Non-cascading deletion of the pod set
+     *   - Check the pod is still there
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testNonCascadingDeletion(VertxTestContext context) {
+        String podSetName = "basic-test";
+        String podName = podSetName + "-0";
+
+        try {
+            Pod pod = pod(podName, KAFKA_NAME, podSetName);
+            podSetOp().inNamespace(NAMESPACE).create(podSet(podSetName, KAFKA_NAME, pod));
+
+            // Check that pod is created
+            TestUtils.waitFor(
+                    "Wait for Pod to be created",
+                    100,
+                    10_000,
+                    () -> client.pods().inNamespace(NAMESPACE).withName(podName).get() != null,
+                    () -> context.failNow("Test timed out waiting for pod creation!"));
+
+            // Wait until the pod is ready
+            TestUtils.waitFor(
+                    "Wait for Pod to be ready",
+                    100,
+                    10_000,
+                    () -> client.pods().inNamespace(NAMESPACE).withName(podName).isReady(),
+                    () -> context.failNow("Test timed out waiting for pod readiness!"));
+
+            Pod actualPod = client.pods().inNamespace(NAMESPACE).withName(podName).get();
+
+            // Check OwnerReference was added
+            checkOwnerReference(actualPod, podSetName);
+
+            // Delete the PodSet in non-cascading way
+            podSetOp().inNamespace(NAMESPACE).withName(podSetName).withPropagationPolicy(DeletionPropagation.ORPHAN).delete();
+
+            // Check that the PodSet is deleted
+            TestUtils.waitFor(
+                    "Wait for StrimziPodSet deletion",
+                    100,
+                    10_000,
+                    () -> {
+                        StrimziPodSet podSet = podSetOp().inNamespace(NAMESPACE).withName(podSetName).get();
+                        return podSet == null;
+                    },
+                    () -> context.failNow("PodSet was not deleted"));
+
+            // Check that the pod still exists without owner reference
+            actualPod = client.pods().inNamespace(NAMESPACE).withName(podName).get();
+            assertThat(actualPod, is(notNullValue()));
+            assertThat(actualPod.getMetadata().getOwnerReferences().size(), is(0));
+
+            context.completeNow();
+        } finally {
+            podSetOp().inNamespace(NAMESPACE).withName(podSetName).delete();
+            client.pods().inNamespace(NAMESPACE).withName(podName).delete();
         }
     }
 }
