@@ -213,7 +213,7 @@ To resume the `Kafka` custom resource reconciliation, set the `pause-reconciliat
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate Kafka _NAME-OF-CUSTOM-RESOURCE_ strimzi.io/pause-reconciliation="false"
+kubectl annotate --overwrite Kafka _NAME-OF-CUSTOM-RESOURCE_ strimzi.io/pause-reconciliation="false"
 ----
 +
 You can also do the same by removing the `pause-reconciliation` annotation.
