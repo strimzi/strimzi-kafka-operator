@@ -107,31 +107,31 @@ public class Main {
 
         ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(vertx, client, pfa, config.featureGates(), config.getOperationTimeoutMs());
 
-        OpenSslCertManager certManager = new OpenSslCertManager();
-        PasswordGenerator passwordGenerator = new PasswordGenerator(12,
-                "abcdefghijklmnopqrstuvwxyz" +
-                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-                "abcdefghijklmnopqrstuvwxyz" +
-                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-                        "0123456789");
+        KafkaAssemblyOperator kafkaClusterOperations = null;
+        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = null;
+        KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator = null;
+        KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator = null;
+        KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator = null;
+        KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator = null;
 
-        KafkaAssemblyOperator kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa,
-                certManager, passwordGenerator, resourceOperatorSupplier, config);
-        KafkaConnectAssemblyOperator kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa,
-                resourceOperatorSupplier, config);
+        if (!config.isPodSetReconciliationOnly()) {
+            OpenSslCertManager certManager = new OpenSslCertManager();
+            PasswordGenerator passwordGenerator = new PasswordGenerator(12,
+                    "abcdefghijklmnopqrstuvwxyz" +
+                            "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                    "abcdefghijklmnopqrstuvwxyz" +
+                            "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
+                            "0123456789");
 
-        KafkaMirrorMaker2AssemblyOperator kafkaMirrorMaker2AssemblyOperator =
-                new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
+            kafkaClusterOperations = new KafkaAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
+            kafkaConnectClusterOperations = new KafkaConnectAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
+            kafkaMirrorMaker2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
+            kafkaMirrorMakerAssemblyOperator = new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
+            kafkaBridgeAssemblyOperator = new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
+            kafkaRebalanceAssemblyOperator = new KafkaRebalanceAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
+        }
 
-        KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator =
-                new KafkaMirrorMakerAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
-
-        KafkaBridgeAssemblyOperator kafkaBridgeAssemblyOperator =
-                new KafkaBridgeAssemblyOperator(vertx, pfa, certManager, passwordGenerator, resourceOperatorSupplier, config);
-
-        KafkaRebalanceAssemblyOperator kafkaRebalanceAssemblyOperator =
-                new KafkaRebalanceAssemblyOperator(vertx, pfa, resourceOperatorSupplier, config);
-
+        @SuppressWarnings({ "rawtypes" })
         List<Future> futures = new ArrayList<>(config.getNamespaces().size());
         for (String namespace : config.getNamespaces()) {
             Promise<String> prom = Promise.promise();
@@ -166,6 +166,7 @@ public class Main {
 
     /*test*/ static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
         if (config.isCreateClusterRoles()) {
+            @SuppressWarnings({ "rawtypes" })
             List<Future> futures = new ArrayList<>();
             ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
 
@@ -184,6 +185,7 @@ public class Main {
                                 StandardCharsets.UTF_8))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
                     ClusterRole role = ClusterRoleOperator.convertYamlToClusterRole(yaml);
+                    @SuppressWarnings({ "rawtypes" })
                     Future fut = cro.reconcile(new Reconciliation("start-cluster-operator", "Deployment", config.getOperatorNamespace(), "cluster-operator"), role.getMetadata().getName(), role);
                     futures.add(fut);
                 } catch (IOException e) {
