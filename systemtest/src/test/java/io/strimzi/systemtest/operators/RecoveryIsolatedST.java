@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.StrimziPodSetTest;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -169,7 +170,14 @@ class RecoveryIsolatedST extends AbstractST {
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaMetricsConfig with cluster {}", sharedClusterName);
 
-        String kafkaMetricsConfigName = KafkaResources.kafkaMetricsAndLogConfigMapName(sharedClusterName);
+        String kafkaMetricsConfigName;
+        if (Environment.isStrimziPodSetEnabled())   {
+            // For PodSets, we delete one of the per-broker config maps
+            kafkaMetricsConfigName = KafkaResources.kafkaPodName(sharedClusterName, 1);
+        } else {
+            kafkaMetricsConfigName = KafkaResources.kafkaMetricsAndLogConfigMapName(sharedClusterName);
+        }
+
         String kafkaMetricsConfigUid = kubeClient().getConfigMapUid(kafkaMetricsConfigName);
 
         kubeClient().deleteConfigMap(kafkaMetricsConfigName);
