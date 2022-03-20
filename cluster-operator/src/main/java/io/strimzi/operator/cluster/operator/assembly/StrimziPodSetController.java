@@ -211,6 +211,17 @@ public class StrimziPodSetController implements Runnable {
     }
 
     /**
+     * Checks whether the StrimziPodSet is being deleted or not. This is needed to handle non-cascading deletions.
+     *
+     * @param podSet    StrimziPodSet which needs to be checked whether it is being deleted
+     *
+     * @return          True if the PodSet is being deleted. False otherwise.
+     */
+    private boolean isDeleting(StrimziPodSet podSet)    {
+        return podSet.getMetadata().getDeletionTimestamp() != null;
+    }
+
+    /**
      * The main reconciliation logic which handles the reconciliations.
      *
      * @param reconciliation    Reconciliation identifier used for logging
@@ -224,6 +235,12 @@ public class StrimziPodSetController implements Runnable {
             LOGGER.debugCr(reconciliation, "StrimziPodSet is null => nothing to do");
         } else if (!matchesCrSelector(podSet))    {
             LOGGER.debugCr(reconciliation, "StrimziPodSet doesn't match the selector => nothing to do");
+        } else if (isDeleting(podSet))    {
+            // When the PodSet is deleted, the pod deletion is done by Kubernetes Garbage Collection. When the PodSet
+            // deletion is non-cascading, Kubernetes will remove the owner references. In order to avoid setting the
+            // owner reference again, we need to check if the PodSet is being deleted and if it is, we leave it to
+            // Kubernetes.
+            LOGGER.infoCr(reconciliation, "StrimziPodSet is deleting => nothing to do");
         } else {
             LOGGER.infoCr(reconciliation, "StrimziPodSet will be reconciled");
 
@@ -282,7 +299,9 @@ public class StrimziPodSetController implements Runnable {
                 strimziPodSetOperator.client().inNamespace(reconciliation.namespace()).patchStatus(updatedPodSet);
             } catch (KubernetesClientException e)   {
                 if (e.getCode() == 409) {
-                    LOGGER.debugCr(reconciliation, "StrimziPodSet {} in namespace {} changed while trying to update status", reconciliation.name(), reconciliation.namespace(), e);
+                    LOGGER.debugCr(reconciliation, "StrimziPodSet {} in namespace {} changed while trying to update status", reconciliation.name(), reconciliation.namespace());
+                } else if (e.getCode() == 404) {
+                    LOGGER.debugCr(reconciliation, "StrimziPodSet {} in namespace {} was deleted while trying to update status", reconciliation.name(), reconciliation.namespace());
                 } else {
                     LOGGER.errorCr(reconciliation, "Failed to update status of StrimziPodSet {} in namespace {}", reconciliation.name(), reconciliation.namespace(), e);
                 }
