@@ -181,7 +181,7 @@ In this example, a `Secret` contains TLS truststore and keystore user credential
 apiVersion: v1
 kind: Secret
 metadata:
-  name: mysecret
+  name: my-user
   labels:
     strimzi.io/kind: KafkaUser
     strimzi.io/cluster: my-cluster
@@ -214,9 +214,12 @@ spec:
   #...
   externalConfiguration:
     volumes:
-      - name: connector-config
+      - name: cluster-ca
         secret:
-          secretName: mysecret
+          secretName: my-cluster-cluster-ca-cert
+      - name: my-user
+        secret:
+          secretName: my-user
 ----
 <1> The `DirectoryConfigProvider` provides values from files in a directory. The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
 
@@ -237,10 +240,12 @@ spec:
   class: io.debezium.connector.mysql.MySqlConnector
   tasksMax: 2
   config:
-    security.protocol: SSL
-    ssl.truststore.type: PEM
-    ssl.truststore.location: "${directory:/opt/kafka/external-configuration/connector-config:ca.crt}"
-    ssl.keystore.type: PEM
-    ssl.keystore.location: "${directory:/opt/kafka/external-configuration/connector-config:user.key}"
+    # ...
+    database.history.producer.security.protocol: SSL
+    database.history.producer.ssl.truststore.type: PEM
+    database.history.producer.ssl.truststore.certificates: "${directory:/opt/kafka/external-configuration/cluster-ca:ca.crt}"
+    database.history.producer.ssl.keystore.type: PEM
+    database.history.producer.ssl.keystore.certificate.chain: "${directory:/opt/kafka/external-configuration/my-user:user.crt}"
+    database.history.producer.ssl.keystore.key: "${directory:/opt/kafka/external-configuration/my-user:user.key}"
     #...
 ----
