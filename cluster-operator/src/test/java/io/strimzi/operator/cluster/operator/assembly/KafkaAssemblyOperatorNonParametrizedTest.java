@@ -445,7 +445,8 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 "",
                 10,
                 10_000,
-                30);
+                30,
+                false);
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
                 supplier, config);

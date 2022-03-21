@@ -101,27 +101,33 @@ public class ClusterOperator extends AbstractVerticle {
             strimziPodSetController.start();
         }
 
+        @SuppressWarnings({ "rawtypes" })
         List<Future> watchFutures = new ArrayList<>(8);
-        List<AbstractOperator<?, ?, ?, ?>> operators = new ArrayList<>(asList(
-                kafkaAssemblyOperator, kafkaMirrorMakerAssemblyOperator,
-                kafkaConnectAssemblyOperator, kafkaBridgeAssemblyOperator, kafkaMirrorMaker2AssemblyOperator));
-        for (AbstractOperator<?, ?, ?, ?> operator : operators) {
-            watchFutures.add(operator.createWatch(namespace, operator.recreateWatch(namespace)).compose(w -> {
-                LOGGER.info("Opened watch for {} operator", operator.kind());
-                watchByKind.put(operator.kind(), w);
-                return Future.succeededFuture();
-            }));
-        }
 
-        watchFutures.add(AbstractConnectOperator.createConnectorWatch(kafkaConnectAssemblyOperator, namespace, config.getCustomResourceSelector()));
-        watchFutures.add(kafkaRebalanceAssemblyOperator.createRebalanceWatch(namespace));
+        if (!config.isPodSetReconciliationOnly()) {
+            List<AbstractOperator<?, ?, ?, ?>> operators = new ArrayList<>(asList(
+                    kafkaAssemblyOperator, kafkaMirrorMakerAssemblyOperator,
+                    kafkaConnectAssemblyOperator, kafkaBridgeAssemblyOperator, kafkaMirrorMaker2AssemblyOperator));
+            for (AbstractOperator<?, ?, ?, ?> operator : operators) {
+                watchFutures.add(operator.createWatch(namespace, operator.recreateWatch(namespace)).compose(w -> {
+                    LOGGER.info("Opened watch for {} operator", operator.kind());
+                    watchByKind.put(operator.kind(), w);
+                    return Future.succeededFuture();
+                }));
+            }
+
+            watchFutures.add(AbstractConnectOperator.createConnectorWatch(kafkaConnectAssemblyOperator, namespace, config.getCustomResourceSelector()));
+            watchFutures.add(kafkaRebalanceAssemblyOperator.createRebalanceWatch(namespace));
+        }
 
         CompositeFuture.join(watchFutures)
                 .compose(f -> {
                     LOGGER.info("Setting up periodic reconciliation for namespace {}", namespace);
                     this.reconcileTimer = vertx.setPeriodic(this.config.getReconciliationIntervalMs(), res2 -> {
-                        LOGGER.info("Triggering periodic reconciliation for namespace {}", namespace);
-                        reconcileAll("timer");
+                        if (!config.isPodSetReconciliationOnly()) {
+                            LOGGER.info("Triggering periodic reconciliation for namespace {}", namespace);
+                            reconcileAll("timer");
+                        }
                     });
                     return startHealthServer().map((Void) null);
                 })
@@ -137,7 +143,6 @@ public class ClusterOperator extends AbstractVerticle {
             if (watch != null) {
                 watch.close();
             }
-            // TODO remove the watch from the watchByKind
         }
 
         if (config.featureGates().useStrimziPodSetsEnabled()) {
@@ -152,13 +157,16 @@ public class ClusterOperator extends AbstractVerticle {
       Periodical reconciliation (in case we lost some event)
      */
     private void reconcileAll(String trigger) {
-        Handler<AsyncResult<Void>> ignore = ignored -> { };
-        kafkaAssemblyOperator.reconcileAll(trigger, namespace, ignore);
-        kafkaMirrorMakerAssemblyOperator.reconcileAll(trigger, namespace, ignore);
-        kafkaConnectAssemblyOperator.reconcileAll(trigger, namespace, ignore);
-        kafkaMirrorMaker2AssemblyOperator.reconcileAll(trigger, namespace, ignore);
-        kafkaBridgeAssemblyOperator.reconcileAll(trigger, namespace, ignore);
-        kafkaRebalanceAssemblyOperator.reconcileAll(trigger, namespace, ignore);
+        if (!config.isPodSetReconciliationOnly()) {
+            Handler<AsyncResult<Void>> ignore = ignored -> {
+            };
+            kafkaAssemblyOperator.reconcileAll(trigger, namespace, ignore);
+            kafkaMirrorMakerAssemblyOperator.reconcileAll(trigger, namespace, ignore);
+            kafkaConnectAssemblyOperator.reconcileAll(trigger, namespace, ignore);
+            kafkaMirrorMaker2AssemblyOperator.reconcileAll(trigger, namespace, ignore);
+            kafkaBridgeAssemblyOperator.reconcileAll(trigger, namespace, ignore);
+            kafkaRebalanceAssemblyOperator.reconcileAll(trigger, namespace, ignore);
+        }
     }
 
     /**

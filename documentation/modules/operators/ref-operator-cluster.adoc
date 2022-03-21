@@ -204,6 +204,10 @@ Set this environment variable to `false` to disable network policy generation. Y
 `STRIMZI_DNS_CACHE_TTL` :: Optional, default `30`.
 Number of seconds to cache successful name lookups in local DNS resolver. Any negative value means cache forever. Zero means do not cache. This can be useful to avoid connection errors due to long caching policies being applied.
 
+`STRIMZI_POD_SET_RECONCILIATION_ONLY` :: Optional, default `false`.
+When set to `true`, the Cluster Operator will reconcile only the `StrimziPodSet` resources and any changes to the other custom resources (`Kafka`, `KafkaConnect`, and so on) will be ignored.
+This mode is useful to ensure that your Pods will be recreated if needed, but no other changes happen to your clusters.
+
 `STRIMZI_FEATURE_GATES`:: Optional.
 Enables or disables features and functionality controlled by xref:ref-operator-cluster-feature-gates-{context}[feature gates].
 

@@ -47,14 +47,13 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_CUSTOM_RESOURCE_SELECTOR = "STRIMZI_CUSTOM_RESOURCE_SELECTOR";
     public static final String STRIMZI_FEATURE_GATES = "STRIMZI_FEATURE_GATES";
     public static final String STRIMZI_OPERATIONS_THREAD_POOL_SIZE = "STRIMZI_OPERATIONS_THREAD_POOL_SIZE";
+    public static final String STRIMZI_DNS_CACHE_TTL = "STRIMZI_DNS_CACHE_TTL";
+    public static final String STRIMZI_POD_SET_RECONCILIATION_ONLY = "STRIMZI_POD_SET_RECONCILIATION_ONLY";
 
     // Feature Flags
     public static final String STRIMZI_RBAC_SCOPE = "STRIMZI_RBAC_SCOPE";
-    public static final RbacScope DEFAULT_STRIMZI_RBAC_SCOPE = RbacScope.CLUSTER;
     public static final String STRIMZI_CREATE_CLUSTER_ROLES = "STRIMZI_CREATE_CLUSTER_ROLES";
-    public static final boolean DEFAULT_CREATE_CLUSTER_ROLES = false;
     public static final String STRIMZI_NETWORK_POLICY_GENERATION = "STRIMZI_NETWORK_POLICY_GENERATION";
-    public static final boolean DEFAULT_NETWORK_POLICY_GENERATION = true;
 
     // Env vars for configuring images
     public static final String STRIMZI_KAFKA_IMAGES = "STRIMZI_KAFKA_IMAGES";
@@ -72,7 +71,6 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE";
     public static final String STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE = "STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE";
     public static final String STRIMZI_DEFAULT_MAVEN_BUILDER = "STRIMZI_DEFAULT_MAVEN_BUILDER";
-    public static final String STRIMZI_DNS_CACHE_TTL = "STRIMZI_DNS_CACHE_TTL";
 
     // Env vars configured in the Cluster operator deployment but passed to all operands
     public static final String HTTP_PROXY = "HTTP_PROXY";
@@ -80,12 +78,17 @@ public class ClusterOperatorConfig {
     public static final String NO_PROXY = "NO_PROXY";
     public static final String FIPS_MODE = "FIPS_MODE";
 
+    // Default values
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
     public static final int DEFAULT_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = 10_000;
     public static final long DEFAULT_CONNECT_BUILD_TIMEOUT_MS = 300_000;
-    public static final int DEFAULT_STRIMZI_OPERATIONS_THREAD_POOL_SIZE = 10;
-    public static final int DEFAULT_STRIMZI_DNS_CACHE_TTL = 30;
+    public static final int DEFAULT_OPERATIONS_THREAD_POOL_SIZE = 10;
+    public static final int DEFAULT_DNS_CACHE_TTL = 30;
+    public static final RbacScope DEFAULT_STRIMZI_RBAC_SCOPE = RbacScope.CLUSTER;
+    public static final boolean DEFAULT_NETWORK_POLICY_GENERATION = true;
+    public static final boolean DEFAULT_CREATE_CLUSTER_ROLES = false;
+    public static final boolean DEFAULT_POD_SET_RECONCILIATION_ONLY = false;
 
     private final Set<String> namespaces;
     private final long reconciliationIntervalMs;
@@ -104,6 +107,7 @@ public class ClusterOperatorConfig {
     private final FeatureGates featureGates;
     private final int operationsThreadPoolSize;
     private final int dnsCacheTtlSec;
+    private final boolean podSetReconciliationOnly;
 
     /**
      * Constructor
@@ -125,6 +129,8 @@ public class ClusterOperatorConfig {
      * @param operationsThreadPoolSize The size of the thread pool used for various operations
      * @param zkAdminSessionTimeoutMs Session timeout for the Zookeeper Admin client used in ZK scaling operations
      * @param dnsCacheTtlSec Number of seconds to cache a successful DNS name lookup
+     * @param podSetReconciliationOnly Indicates whether this Cluster Operator instance should reconcile only the
+     *                                 StrimziPodSet resources or not
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     public ClusterOperatorConfig(
@@ -144,7 +150,8 @@ public class ClusterOperatorConfig {
             String featureGates,
             int operationsThreadPoolSize,
             int zkAdminSessionTimeoutMs,
-            int dnsCacheTtlSec) {
+            int dnsCacheTtlSec,
+            boolean podSetReconciliationOnly) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
@@ -162,6 +169,7 @@ public class ClusterOperatorConfig {
         this.operationsThreadPoolSize = operationsThreadPoolSize;
         this.zkAdminSessionTimeoutMs = zkAdminSessionTimeoutMs;
         this.dnsCacheTtlSec = dnsCacheTtlSec;
+        this.podSetReconciliationOnly = podSetReconciliationOnly;
     }
 
     /**
@@ -201,8 +209,8 @@ public class ClusterOperatorConfig {
         long reconciliationInterval = parseReconciliationInterval(map.get(STRIMZI_FULL_RECONCILIATION_INTERVAL_MS));
         long operationTimeout = parseTimeout(map.get(STRIMZI_OPERATION_TIMEOUT_MS), DEFAULT_OPERATION_TIMEOUT_MS);
         long connectBuildTimeout = parseTimeout(map.get(STRIMZI_CONNECT_BUILD_TIMEOUT_MS), DEFAULT_CONNECT_BUILD_TIMEOUT_MS);
-        boolean createClusterRoles = parseCreateClusterRoles(map.get(STRIMZI_CREATE_CLUSTER_ROLES));
-        boolean networkPolicyGeneration = parseNetworkPolicyGeneration(map.get(STRIMZI_NETWORK_POLICY_GENERATION));
+        boolean createClusterRoles = parseBoolean(map.get(STRIMZI_CREATE_CLUSTER_ROLES), DEFAULT_CREATE_CLUSTER_ROLES);
+        boolean networkPolicyGeneration = parseBoolean(map.get(STRIMZI_NETWORK_POLICY_GENERATION), DEFAULT_NETWORK_POLICY_GENERATION);
         ImagePullPolicy imagePullPolicy = parseImagePullPolicy(map.get(STRIMZI_IMAGE_PULL_POLICY));
         List<LocalObjectReference> imagePullSecrets = parseImagePullSecrets(map.get(STRIMZI_IMAGE_PULL_SECRETS));
         String operatorNamespace = map.get(STRIMZI_OPERATOR_NAMESPACE);
@@ -210,9 +218,10 @@ public class ClusterOperatorConfig {
         RbacScope rbacScope = parseRbacScope(map.get(STRIMZI_RBAC_SCOPE));
         Labels customResourceSelector = parseLabels(map, STRIMZI_CUSTOM_RESOURCE_SELECTOR);
         String featureGates = map.getOrDefault(STRIMZI_FEATURE_GATES, "");
-        int operationsThreadPoolSize = parseInt(map.get(STRIMZI_OPERATIONS_THREAD_POOL_SIZE), DEFAULT_STRIMZI_OPERATIONS_THREAD_POOL_SIZE);
+        int operationsThreadPoolSize = parseInt(map.get(STRIMZI_OPERATIONS_THREAD_POOL_SIZE), DEFAULT_OPERATIONS_THREAD_POOL_SIZE);
         int zkAdminSessionTimeout = parseInt(map.get(STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS), DEFAULT_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS);
-        int dnsCacheTtlSec = parseInt(map.get(STRIMZI_DNS_CACHE_TTL), DEFAULT_STRIMZI_DNS_CACHE_TTL);
+        int dnsCacheTtlSec = parseInt(map.get(STRIMZI_DNS_CACHE_TTL), DEFAULT_DNS_CACHE_TTL);
+        boolean podSetReconciliationOnly = parseBoolean(map.get(STRIMZI_POD_SET_RECONCILIATION_ONLY), DEFAULT_POD_SET_RECONCILIATION_ONLY);
 
         return new ClusterOperatorConfig(
                 namespaces,
@@ -231,7 +240,8 @@ public class ClusterOperatorConfig {
                 featureGates,
                 operationsThreadPoolSize,
                 zkAdminSessionTimeout,
-                dnsCacheTtlSec);
+                dnsCacheTtlSec,
+                podSetReconciliationOnly);
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {
@@ -283,24 +293,14 @@ public class ClusterOperatorConfig {
         return value;
     }
 
-    private static boolean parseCreateClusterRoles(String createClusterRolesEnvVar) {
-        boolean createClusterRoles = DEFAULT_CREATE_CLUSTER_ROLES;
+    /* test */ static boolean parseBoolean(String envVar, boolean defaultValue) {
+        boolean value = defaultValue;
 
-        if (createClusterRolesEnvVar != null) {
-            createClusterRoles = Boolean.parseBoolean(createClusterRolesEnvVar);
+        if (envVar != null) {
+            value = Boolean.parseBoolean(envVar);
         }
 
-        return createClusterRoles;
-    }
-
-    private static boolean parseNetworkPolicyGeneration(String networkPolicyGenerationEnvVar) {
-        boolean networkPolicyGeneration = DEFAULT_NETWORK_POLICY_GENERATION;
-
-        if (networkPolicyGenerationEnvVar != null) {
-            networkPolicyGeneration = Boolean.parseBoolean(networkPolicyGenerationEnvVar);
-        }
-
-        return networkPolicyGeneration;
+        return value;
     }
 
     /**
@@ -540,6 +540,13 @@ public class ClusterOperatorConfig {
         return dnsCacheTtlSec;
     }
 
+    /**
+     * @return Indicates whether this Cluster Operator instance should reconcile only the StrimziPodSet resources or not
+     */
+    public boolean isPodSetReconciliationOnly() {
+        return podSetReconciliationOnly;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -559,6 +566,7 @@ public class ClusterOperatorConfig {
                 ",featureGates=" + featureGates +
                 ",zkAdminSessionTimeoutMs=" + zkAdminSessionTimeoutMs +
                 ",dnsCacheTtlSec=" + dnsCacheTtlSec +
+                ",podSetReconciliationOnly=" + podSetReconciliationOnly +
                 ")";
     }
 }
