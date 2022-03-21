@@ -220,7 +220,7 @@ You can also do the same by removing the `pause-reconciliation` annotation.
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate Kafka _NAME-OF-CUSTOM-RESOURCE_ strimzi.io/pause-reconciliation-
+kubectl annotate Kafka _<name_of_custom_resource>_ strimzi.io/pause-reconciliation-
 ----
 
 On the next reconciliation, the Cluster Operator performs a rolling update of ZooKeeper, Kafka, and other components to trust the new CA certificate.

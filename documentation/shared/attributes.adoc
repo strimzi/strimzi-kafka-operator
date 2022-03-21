@@ -87,7 +87,7 @@
 :KubernetesExternalDNS: link:https://github.com/kubernetes-incubator/external-dns[External DNS^]
 :ApacheKafkaBrokerConfig: link:https://kafka.apache.org/documentation/#brokerconfigs[Apache Kafka documentation^]
 :ApacheKafkaConnectConfig: link:https://kafka.apache.org/documentation/#connectconfigs[Apache Kafka documentation^]
-:ApacheZookeeperConfig: link:https://zookeeper.apache.org/doc/current/[ZooKeeper documentation^]
+:ApacheZookeeperConfig: link:https://zookeeper.apache.org/doc/r3.6.3/[ZooKeeper documentation^]
 :ApacheKafkaConnectAPI: link:https://kafka.apache.org/documentation#connect_rest[Apache Kafka Connect API documentation^]
 :ApacheKafkaConsumerConfig: link:https://kafka.apache.org/documentation/#consumerconfigs[Apache Kafka configuration documentation for consumers^]
 :ApacheKafkaProducerConfig: link:https://kafka.apache.org/documentation/#producerconfigs[Apache Kafka configuration documentation for producers^]

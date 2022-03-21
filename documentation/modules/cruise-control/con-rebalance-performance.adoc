@@ -64,35 +64,45 @@ You can set these tuning options at either the xref:ref-cruise-control-configura
 The relevant configurations are summarized in the following table.
 
 .Rebalance performance tuning configuration
-[cols="4m,4,2",options="header"]
+[cols="4m,4m,1,2",options="header"]
 |===
-| Property and request parameter configurations
+| Cruise Control properties
+| KafkaRebalance properties
+| Default
 | Description
-| Default Value
 
-| `num.concurrent.partition.movements.per.broker` .2+|
-  The maximum number of inter-broker partition movements in each partition reassignment batch .2+| 5
-| `concurrent_partition_movements_per_broker`
+| `num.concurrent.partition.movements.per.broker`
+| `concurrentPartitionMovementsPerBroker`
+| 5
+| The maximum number of inter-broker partition movements in each partition reassignment batch
 
-| `num.concurrent.intra.broker.partition.movements` .2+|
-  The maximum number of intra-broker partition movements in each partition reassignment batch .2+| 2
-| `concurrent_intra_broker_partition_movements`
+| `num.concurrent.intra.broker.partition.movements`
+| `concurrentIntraBrokerPartitionMovements`
+| 2
+| The maximum number of intra-broker partition movements in each partition reassignment batch
 
-| `num.concurrent.leader.movements` .2+|
-  The maximum number of partition leadership changes in each partition reassignment batch .2+| 1000
-| `concurrent_leader_movements`
+| `num.concurrent.leader.movements`
+| `concurrentLeaderMovements`
+| 1000
+| The maximum number of partition leadership changes in each partition reassignment batch
 
-| `default.replication.throttle` .2+|
-  The bandwidth (in bytes per second) to assign to partition reassignment .2+| Null (no limit)
-| `replication_throttle`
+| `default.replication.throttle`
+| `replicationThrottle`
+| Null (no limit)
+| The bandwidth (in bytes per second) to assign to partition reassignment
 
-| `default.replica.movement.strategies` .2+|
-  The list of strategies (in priority order) used to determine the order in which partition reassignment commands are executed for generated proposals.
-  For the server setting, use a comma separated string with the fully qualified names of the strategy class (add `com.linkedin.kafka.cruisecontrol.executor.strategy.` to the start of each class name).
-  For the `KafkaRebalance` resource setting use a YAML array of strategy class names. .2+| `BaseReplicaMovementStrategy`
+
+| `default.replica.movement.strategies`
 | `replicaMovementStrategies`
+| `BaseReplicaMovementStrategy`
+| The list of strategies (in priority order) used to determine the order in which partition reassignment commands are executed for generated proposals.
+  For the server setting, use a comma separated string with the fully qualified names of the strategy class (add `com.linkedin.kafka.cruisecontrol.executor.strategy.` to the start of each class name).
+  For the `KafkaRebalance` resource setting use a YAML array of strategy class names.
 
-| `rebalanceDisk` |  Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. Only applies to Kafka deployments that use JBOD storage with multiple disks.               .1+| false
+d| -
+| `rebalanceDisk`
+| false
+| Enables intra-broker disk balancing, which balances disk space utilization between disks on the same broker. Only applies to Kafka deployments that use JBOD storage with multiple disks.
 |===
 
 Changing the default settings affects the length of time that the rebalance takes to complete, as well as the load placed on the Kafka cluster during the rebalance.

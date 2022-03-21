@@ -35,11 +35,11 @@ spec:
   # ...
 ----
 
-For sink and source connectors, the maximum number of tasks that can run in parallel depends on a number of factors.
+For connectors, the maximum number of tasks that can run in parallel depends on a number of factors.
 Common factors include the connector configuration, the type of external system, the expected throughput, and the number of workers.
 A connector creates fewer than the maximum number of tasks if it cannot achieve the parallelism.
-For sink connectors, the maximum number of tasks possible is one for each partition consumed.
+The maximum number of tasks possible is one for each partition being replicated from the source cluster.
 
 Suppose a source connector is used to connect to a database as an external data source.
 The connector might determine the required number of tasks based on the number of tables in the database and the maximum allowable number of tasks.
-The source connector might create fewer tasks than the maximum allowed if it’s not possible or desirable to split the source data into so many tasks.
+The connector might create fewer tasks than the maximum allowed if it’s not possible or desirable to split the source data into so many tasks.
