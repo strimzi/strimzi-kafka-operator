@@ -67,4 +67,4 @@ A service is created for each Kafka broker pod.
 +
 A service is created to serve as the _bootstrap address_ for connection to the Kafka cluster.
 +
-The cluster CA certificate to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
+The cluster CA certificate to verify the identity of the kafka brokers is also created in the secret `<cluster-name>-cluster-ca-cert`.

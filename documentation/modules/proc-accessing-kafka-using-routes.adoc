@@ -59,7 +59,7 @@ The services route the traffic from the OpenShift Routes to the Kafka brokers.
 An OpenShift `Route` resource is also created for each service to expose them using the HAProxy load balancer.
 DNS addresses used for connection are propagated to the `status` of each service.
 +
-The cluster CA certificate to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
+The cluster CA certificate to verify the identity of the kafka brokers is also created in the secret `<cluster-name>-cluster-ca-cert`.
 
 . Retrieve the address of the bootstrap service you can use to access the Kafka cluster from the status of the `Kafka` resource.
 +

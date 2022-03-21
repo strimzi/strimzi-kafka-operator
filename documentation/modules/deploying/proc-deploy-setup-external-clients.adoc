@@ -132,7 +132,7 @@ A service is created to serve as the _bootstrap address_ for connection to the K
 +
 A service is also created as the _external bootstrap address_ for external connection to the Kafka cluster using `nodeport` listeners.
 +
-The cluster CA certificate to verify the identity of the kafka brokers is also created with the same name as the `Kafka` resource.
+The cluster CA certificate to verify the identity of the kafka brokers is also created in the secret `<cluster-name>-cluster-ca-cert`.
 +
 NOTE: If you scale your Kafka cluster while using external listeners, it might trigger a rolling update of all Kafka brokers. This depends on the configuration.
 
