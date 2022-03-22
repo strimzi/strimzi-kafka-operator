@@ -263,19 +263,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         return createOrUpdatePromise.future();
     }
 
-    Future<Void> reconcile(ReconciliationState reconcileState)  {
-        Promise<Void> chainPromise = Promise.promise();
-
-        reconcileState.initialStatus()
-                .compose(state -> state.reconcileCas(this::dateSupplier))
-                .compose(state -> state.clusterOperatorSecret(this::dateSupplier))
-                .compose(state -> state.getKafkaClusterDescription())
-                .compose(state -> state.getZookeeperDescription()) // Has to be before the rollingUpdateForNewCaKey
-                .compose(state -> state.prepareVersionChange())
-                // Roll everything if a new CA is added to the trust store.
-                .compose(state -> state.rollingUpdateForNewCaKey())
-
-                .compose(state -> state.zkModelWarnings())
+    /**
+     * Run the reconciliation pipeline for the ZooKeeper cluster
+     *
+     * @param reconciliationState   Reconciliation State
+     *
+     * @return                      Future with Reconciliation State
+     */
+    Future<ReconciliationState> reconcileZooKeeper(ReconciliationState reconciliationState)    {
+        return reconciliationState.zkModelWarnings()
                 .compose(state -> state.zkJmxSecret())
                 .compose(state -> state.zkManualPodCleaning())
                 .compose(state -> state.zkNetPolicy())
@@ -299,9 +295,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.zkScalingCheck())
                 .compose(state -> state.zkServiceEndpointReadiness())
                 .compose(state -> state.zkHeadlessServiceEndpointReadiness())
-                .compose(state -> state.zkPersistentClaimDeletion())
+                .compose(state -> state.zkPersistentClaimDeletion());
+    }
 
-                .compose(state -> state.checkKafkaSpec())
+    /**
+     * Run the reconciliation pipeline for the Kafka cluster
+     *
+     * @param reconciliationState   Reconciliation State
+     *
+     * @return                      Future with Reconciliation State
+     */
+    Future<ReconciliationState> reconcileKafka(ReconciliationState reconciliationState)    {
+        return reconciliationState.checkKafkaSpec()
                 .compose(state -> state.kafkaModelWarnings())
                 .compose(state -> state.kafkaManualPodCleaning())
                 .compose(state -> state.kafkaNetPolicy())
@@ -340,9 +345,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaConfigurationConfigMapsCleanup())
                 // This has to run after all possible rolling updates which might move the pods to different nodes
                 .compose(state -> state.kafkaNodePortExternalListenerStatus())
-                .compose(state -> state.kafkaCustomCertificatesToStatus())
+                .compose(state -> state.kafkaCustomCertificatesToStatus());
+    }
 
-                .compose(state -> state.getEntityOperatorDescription())
+    /**
+     * Run the reconciliation pipeline for the Entity Operator cluster
+     *
+     * @param reconciliationState   Reconciliation State
+     *
+     * @return                      Future with Reconciliation State
+     */
+    Future<ReconciliationState> reconcileEntityOperator(ReconciliationState reconciliationState)    {
+        return reconciliationState.getEntityOperatorDescription()
                 .compose(state -> state.entityOperatorRole())
                 .compose(state -> state.entityTopicOperatorRole())
                 .compose(state -> state.entityUserOperatorRole())
@@ -355,9 +369,18 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityTopicOperatorSecret(this::dateSupplier))
                 .compose(state -> state.entityUserOperatorSecret(this::dateSupplier))
                 .compose(state -> state.entityOperatorDeployment())
-                .compose(state -> state.entityOperatorReady())
+                .compose(state -> state.entityOperatorReady());
+    }
 
-                .compose(state -> state.getCruiseControlDescription())
+    /**
+     * Run the reconciliation pipeline for the Cruise Control cluster
+     *
+     * @param reconciliationState   Reconciliation State
+     *
+     * @return                      Future with Reconciliation State
+     */
+    Future<ReconciliationState> reconcileCruiseControl(ReconciliationState reconciliationState)    {
+        return reconciliationState.getCruiseControlDescription()
                 .compose(state -> state.cruiseControlNetPolicy())
                 .compose(state -> state.cruiseControlServiceAccount())
                 .compose(state -> state.cruiseControlAncillaryCm())
@@ -365,20 +388,61 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.cruiseControlApiSecret())
                 .compose(state -> state.cruiseControlDeployment())
                 .compose(state -> state.cruiseControlService())
-                .compose(state -> state.cruiseControlReady())
+                .compose(state -> state.cruiseControlReady());
+    }
 
-                .compose(state -> state.getKafkaExporterDescription())
+    /**
+     * Run the reconciliation pipeline for the Kafka Exporter cluster
+     *
+     * @param reconciliationState   Reconciliation State
+     *
+     * @return                      Future with Reconciliation State
+     */
+    Future<ReconciliationState> reconcileKafkaExporter(ReconciliationState reconciliationState)    {
+        return reconciliationState.getKafkaExporterDescription()
                 .compose(state -> state.kafkaExporterServiceAccount())
                 .compose(state -> state.kafkaExporterSecret(this::dateSupplier))
                 .compose(state -> state.kafkaExporterDeployment())
-                .compose(state -> state.kafkaExporterReady())
+                .compose(state -> state.kafkaExporterReady());
+    }
 
-                .compose(state -> state.getJmxTransDescription())
+    /**
+     * Run the reconciliation pipeline for the JMX Trans cluster
+     *
+     * @param reconciliationState   Reconciliation State
+     *
+     * @return                      Future with Reconciliation State
+     */
+    Future<ReconciliationState> reconcileJmxTrans(ReconciliationState reconciliationState)    {
+        return reconciliationState.getJmxTransDescription()
                 .compose(state -> state.jmxTransServiceAccount())
                 .compose(state -> state.jmxTransConfigMap())
                 .compose(state -> state.jmxTransDeployment())
-                .compose(state -> state.jmxTransDeploymentReady())
+                .compose(state -> state.jmxTransDeploymentReady());
+    }
 
+    Future<Void> reconcile(ReconciliationState reconcileState)  {
+        Promise<Void> chainPromise = Promise.promise();
+
+        reconcileState.initialStatus()
+                // Preparation steps => prepare cluster descriptions, handle CA creation or changes
+                .compose(state -> state.reconcileCas(this::dateSupplier))
+                .compose(state -> state.clusterOperatorSecret(this::dateSupplier))
+                .compose(state -> state.getKafkaClusterDescription())
+                .compose(state -> state.getZookeeperDescription()) // Has to be before the rollingUpdateForNewCaKey
+                .compose(state -> state.prepareVersionChange())
+                // Roll everything if a new CA is added to the trust store.
+                .compose(state -> state.rollingUpdateForNewCaKey())
+
+                // Run reconciliations of the different components
+                .compose(state -> reconcileZooKeeper(state))
+                .compose(state -> reconcileKafka(state))
+                .compose(state -> reconcileEntityOperator(state))
+                .compose(state -> reconcileCruiseControl(state))
+                .compose(state -> reconcileKafkaExporter(state))
+                .compose(state -> reconcileJmxTrans(state))
+
+                // Finish the reconciliation
                 .map((Void) null)
                 .onComplete(chainPromise);
 
