@@ -73,7 +73,6 @@ import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
-import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -220,7 +219,6 @@ public abstract class AbstractModel {
     private Logging logging;
     protected boolean gcLoggingEnabled = true;
     private JvmOptions jvmOptions;
-    protected List<SystemProperty> javaSystemProperties = null;
 
     /**
      * Volume and Storage configuration
@@ -416,10 +414,6 @@ public abstract class AbstractModel {
 
     protected void setGcLoggingEnabled(boolean gcLoggingEnabled) {
         this.gcLoggingEnabled = gcLoggingEnabled;
-    }
-
-    protected void setJavaSystemProperties(List<SystemProperty> javaSystemProperties) {
-        this.javaSystemProperties = javaSystemProperties;
     }
 
     protected abstract String getDefaultLogConfigFileName();
@@ -1564,6 +1558,18 @@ public abstract class AbstractModel {
         String jvmPerformanceOptsString = jvmPerformanceOpts.toString().trim();
         if (!jvmPerformanceOptsString.isEmpty()) {
             envVars.add(buildEnvVar(ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, jvmPerformanceOptsString));
+        }
+    }
+
+    /**
+     * Adds STRIMZI_JAVA_SYSTEM_PROPERTIES variable to the EnvVar list if any system properties were specified.
+     *
+     * @param envVars List of Environment Variables to add to
+     */
+    protected void jvmSystemProperties(List<EnvVar> envVars) {
+        String jvmSystemPropertiesString = ModelUtils.getJavaSystemPropertiesToString(jvmOptions.getJavaSystemProperties());
+        if (!jvmSystemPropertiesString.isEmpty()) {
+            envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, jvmSystemPropertiesString));
         }
     }
 

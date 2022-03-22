@@ -221,9 +221,6 @@ public class EntityUserOperator extends AbstractModel {
                 result.setLogging(userOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setSecretPrefix(userOperatorSpec.getSecretPrefix() == null ? EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX : userOperatorSpec.getSecretPrefix());
-                if (userOperatorSpec.getJvmOptions() != null) {
-                    result.setJavaSystemProperties(userOperatorSpec.getJvmOptions().getJavaSystemProperties());
-                }
                 result.setJvmOptions(userOperatorSpec.getJvmOptions());
                 result.setResources(userOperatorSpec.getResources());
                 if (userOperatorSpec.getReadinessProbe() != null) {
@@ -288,7 +285,7 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(buildEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
         varList.add(buildEnvVar(ENV_VAR_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported)));
-        ModelUtils.javaOptions(varList, getJvmOptions(), javaSystemProperties);
+        ModelUtils.javaOptions(varList, getJvmOptions(), getJvmOptions().getJavaSystemProperties());
 
         // Add shared environment variables used for all containers
         varList.addAll(getRequiredEnvVars());
