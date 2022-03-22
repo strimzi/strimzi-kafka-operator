@@ -14,6 +14,8 @@
 * Support for the s390x platform
   _(The s390x support is currently considered as experimental. We are not aware of any issues, but the s390x build doesn't at this point undergo the same level of testing as the AMD64 container images.)_
 * Update Strimzi Kafka Bridge to 0.21.5
+* **Experimental** KRaft mode (ZooKeeper-less Kafka) which can be enabled using the `UseKRaft` feature gate.
+  **Important: Use it for development and testing only!**
 
 ### Changes, deprecations and removals
 
