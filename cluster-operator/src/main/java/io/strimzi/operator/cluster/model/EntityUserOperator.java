@@ -285,7 +285,7 @@ public class EntityUserOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(buildEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
         varList.add(buildEnvVar(ENV_VAR_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported)));
-        ModelUtils.javaOptions(varList, getJvmOptions(), getJvmOptions().getJavaSystemProperties());
+        ModelUtils.javaOptions(varList, getJvmOptions());
 
         // Add shared environment variables used for all containers
         varList.addAll(getRequiredEnvVars());

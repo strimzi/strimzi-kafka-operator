@@ -448,14 +448,13 @@ public class ModelUtils {
     }
 
     /**
-     * Get the set of JVM options and the Java system properties and fill corresponding Strimzi environment variables
+     * Get the set of JVM options, bringing the Java system properties as well, and fill corresponding Strimzi environment variables
      * in order to pass them to the running application on the command line
      *
      * @param envVars environment variables list to put the JVM options and Java system properties
      * @param jvmOptions JVM options
-     * @param javaSystemProperties Java system properties
      */
-    public static void javaOptions(List<EnvVar> envVars, JvmOptions jvmOptions, List<SystemProperty> javaSystemProperties) {
+    public static void javaOptions(List<EnvVar> envVars, JvmOptions jvmOptions) {
         StringBuilder strimziJavaOpts = new StringBuilder();
         String xms = jvmOptions != null ? jvmOptions.getXms() : null;
         if (xms != null) {
@@ -487,6 +486,7 @@ public class ModelUtils {
             envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_OPTS, optsTrim));
         }
 
+        List<SystemProperty> javaSystemProperties = jvmOptions != null ? jvmOptions.getJavaSystemProperties() : null;
         if (javaSystemProperties != null) {
             String propsTrim = ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties).trim();
             if (!propsTrim.isEmpty()) {
