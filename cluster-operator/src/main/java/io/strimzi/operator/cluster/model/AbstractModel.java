@@ -1569,7 +1569,7 @@ public abstract class AbstractModel {
     protected void jvmSystemProperties(List<EnvVar> envVars) {
         if (jvmOptions != null) {
             String jvmSystemPropertiesString = ModelUtils.getJavaSystemPropertiesToString(jvmOptions.getJavaSystemProperties());
-            if (!jvmSystemPropertiesString.isEmpty()) {
+            if (jvmSystemPropertiesString != null && !jvmSystemPropertiesString.isEmpty()) {
                 envVars.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, jvmSystemPropertiesString));
             }
         }
