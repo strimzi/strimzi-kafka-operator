@@ -10,6 +10,8 @@ Connectors create the tasks that are responsible for moving data in and out of K
 Each connector comprises one or more tasks that are distributed across a group of worker pods that run the tasks.
 
 Tasks run in parallel.
+Workers are assigned one or more tasks.
+A single task is handled by one worker pod, so you don't need more worker pods than tasks.
 If there are more tasks than workers, workers handle multiple tasks.
 
 You can specify the maximum number of connector tasks in your MirrorMaker configuration using the `tasksMax` property.
@@ -30,7 +32,7 @@ spec:
     targetCluster: "my-cluster-target"
     sourceConnector:
       tasksMax: 10
-  # ...    
+  # ...
 ----
 
 For sink and source connectors, the maximum number of tasks that can run in parallel depends on a number of factors.
