@@ -67,8 +67,6 @@ public class KafkaExporter extends AbstractModel {
     protected String logging;
     protected String version;
 
-    private boolean isDeployed;
-
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
 
@@ -103,12 +101,20 @@ public class KafkaExporter extends AbstractModel {
 
     }
 
+    /**
+     * Builds the KafkaExporter model from the Kafka custom resource. If KafkaExporter is not enabled, it will return null.
+     *
+     * @param reconciliation    Reconciliation marker for logging
+     * @param kafkaAssembly     The Kafka CR
+     * @param versions          The list of supported Kafka versions
+     *
+     * @return                  KafkaExporter model object when Kafka Exporter is enabled or null if it is disabled.
+     */
     public static KafkaExporter fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
-        KafkaExporter kafkaExporter = new KafkaExporter(reconciliation, kafkaAssembly);
-
         KafkaExporterSpec spec = kafkaAssembly.getSpec().getKafkaExporter();
+
         if (spec != null) {
-            kafkaExporter.isDeployed = true;
+            KafkaExporter kafkaExporter = new KafkaExporter(reconciliation, kafkaAssembly);
 
             kafkaExporter.setResources(spec.getResources());
 
@@ -155,17 +161,16 @@ public class KafkaExporter extends AbstractModel {
                 }
 
                 ModelUtils.parsePodTemplate(kafkaExporter, template.getPod());
+                kafkaExporter.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaExporter.templatePodLabels, DEFAULT_POD_LABELS);
             }
 
             kafkaExporter.setVersion(versions.supportedVersion(kafkaAssembly.getSpec().getKafka().getVersion()).version());
             kafkaExporter.setOwnerReference(kafkaAssembly);
+
+            return kafkaExporter;
         } else {
-            kafkaExporter.isDeployed = false;
+            return null;
         }
-
-        kafkaExporter.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaExporter.templatePodLabels, DEFAULT_POD_LABELS);
-
-        return kafkaExporter;
     }
 
     protected void setSaramaLoggingEnabled(boolean saramaLoggingEnabled) {
@@ -179,10 +184,6 @@ public class KafkaExporter extends AbstractModel {
     }
 
     public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        if (!isDeployed()) {
-            return null;
-        }
-
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("RollingUpdate")
                 .withRollingUpdate(new RollingUpdateDeploymentBuilder()
@@ -325,15 +326,6 @@ public class KafkaExporter extends AbstractModel {
     }
 
     /**
-     * Returns whether the Kafka Exporter is enabled or not
-     *
-     * @return True if Kafka exporter is enabled. False otherwise.
-     */
-    private boolean isDeployed() {
-        return isDeployed;
-    }
-
-    /**
      * Generate the Secret containing the Kafka Exporter certificate signed by the cluster CA certificate used for TLS based
      * internal communication with Kafka and Zookeeper.
      * It also contains the related Kafka Exporter private key.
@@ -344,9 +336,6 @@ public class KafkaExporter extends AbstractModel {
      * @return The generated Secret.
      */
     public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
-        if (!isDeployed()) {
-            return null;
-        }
         Secret secret = clusterCa.kafkaExporterSecret();
         return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaExporter.secretName(cluster), name,
                 "kafka-exporter", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
