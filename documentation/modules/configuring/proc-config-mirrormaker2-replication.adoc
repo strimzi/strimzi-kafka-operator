@@ -186,7 +186,7 @@ spec:
             key: awsSecretAccessKey
 ----
 <1> The Kafka Connect and Mirror Maker 2.0 xref:type-KafkaConnectSpec-reference[version], which will always be the same.
-<2> xref:con-common-configuration-replicas-reference[The number of replica nodes].
+<2> xref:con-common-configuration-replicas-reference[The number of replica nodes] for the workers that run tasks.
 <3> xref:type-KafkaMirrorMaker2Spec-reference[Kafka cluster alias] for Kafka Connect, which must specify the *target* Kafka cluster. The Kafka cluster is used by Kafka Connect for its internal topics.
 <4> xref:type-KafkaMirrorMaker2ClusterSpec-reference[Specification] for the Kafka clusters being synchronized.
 <5> xref:type-KafkaMirrorMaker2ClusterSpec-reference[Cluster alias] for the source Kafka cluster.
