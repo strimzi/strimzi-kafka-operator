@@ -20,7 +20,6 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
@@ -953,9 +952,6 @@ class SecurityST extends AbstractST {
         }, namespaceName);
 
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(namespaceName, clusterName);
-
-        KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName));
     }
 
     @ParallelNamespaceTest
@@ -1362,9 +1358,6 @@ class SecurityST extends AbstractST {
         LOGGER.info("Verifying that Kafka Connect status is Ready because of same TLS version");
 
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
-
-        KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaConnectResources.deploymentName(clusterName));
     }
 
     @ParallelNamespaceTest
@@ -1430,9 +1423,6 @@ class SecurityST extends AbstractST {
         LOGGER.info("Verifying that Kafka Connect status is Ready because of the same cipher suites complexity of algorithm");
 
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
-
-        KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaConnectResources.deploymentName(clusterName));
     }
 
     @ParallelNamespaceTest
