@@ -888,9 +888,6 @@ class SecurityST extends AbstractST {
         LOGGER.info("KafkaConnect with config {} will connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
-
-        KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaConnectResources.deploymentName(clusterName));
     }
 
     @ParallelNamespaceTest
