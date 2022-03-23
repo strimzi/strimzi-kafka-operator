@@ -50,4 +50,4 @@ spec:
 ----
 
 .Additional resources
-* link:{external-cors-link}[Fetch] CORS specification
+* {external-cors-link}
