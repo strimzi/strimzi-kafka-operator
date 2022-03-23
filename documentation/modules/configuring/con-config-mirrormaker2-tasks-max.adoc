@@ -35,11 +35,8 @@ spec:
   # ...
 ----
 
-For connectors, the maximum number of tasks that can run in parallel depends on a number of factors.
-Common factors include the connector configuration, the type of external system, the expected throughput, and the number of workers.
-A connector creates fewer than the maximum number of tasks if it cannot achieve the parallelism.
-The maximum number of tasks possible is one for each partition being replicated from the source cluster.
+For the source connector, the maximum number of tasks possible is one for each partition being replicated from the source cluster.
+For the checkpoint connector, the maximum number of tasks possible is one for each group being replicated from the source cluster.
+The number of tasks that are started for these connectors is the lower value between the maximum number of possible tasks and the value for `tasksMax`.
 
-Suppose a source connector is used to connect to a database as an external data source.
-The connector might determine the required number of tasks based on the number of tables in the database and the maximum allowable number of tasks.
-The connector might create fewer tasks than the maximum allowed if it’s not possible or desirable to split the source data into so many tasks.
+The heartbeat connector always uses a single task.
