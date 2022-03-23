@@ -18,6 +18,8 @@ import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
@@ -416,7 +418,7 @@ public class ModelUtils {
                 .orElse(Collections.emptyList());
     }
 
-    public static String getJavaSystemPropertiesToString(List<SystemProperty> javaSystemProperties) {
+    private static String getJavaSystemPropertiesToString(List<SystemProperty> javaSystemProperties) {
         if (javaSystemProperties == null) {
             return null;
         }
@@ -492,6 +494,98 @@ public class ModelUtils {
             if (!propsTrim.isEmpty()) {
                 envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, propsTrim));
             }
+        }
+    }
+
+    /**
+     * Adds the STRIMZI_JAVA_SYSTEM_PROPERTIES variable to the EnvVar list if any system properties were specified
+     * through the provided JVM options
+     *
+     * @param envVars list of the Environment Variables to add to
+     * @param jvmOptions JVM options
+     */
+    public static void jvmSystemProperties(List<EnvVar> envVars, JvmOptions jvmOptions) {
+        if (jvmOptions != null) {
+            String jvmSystemPropertiesString = ModelUtils.getJavaSystemPropertiesToString(jvmOptions.getJavaSystemProperties());
+            if (jvmSystemPropertiesString != null && !jvmSystemPropertiesString.isEmpty()) {
+                envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, jvmSystemPropertiesString));
+            }
+        }
+    }
+
+    /**
+     * Adds the KAFKA_JVM_PERFORMANCE_OPTS variable to the EnvVar list if any performance related options were specified
+     * through the provided JVM options
+     *
+     * @param envVars list of the Environment Variables to add to
+     * @param jvmOptions JVM options
+     */
+    public static void jvmPerformanceOptions(List<EnvVar> envVars, JvmOptions jvmOptions) {
+        StringBuilder jvmPerformanceOpts = new StringBuilder();
+
+        Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
+        if (xx != null) {
+            xx.forEach((k, v) -> {
+                jvmPerformanceOpts.append(' ').append("-XX:");
+
+                if ("true".equalsIgnoreCase(v))   {
+                    jvmPerformanceOpts.append("+").append(k);
+                } else if ("false".equalsIgnoreCase(v)) {
+                    jvmPerformanceOpts.append("-").append(k);
+                } else  {
+                    jvmPerformanceOpts.append(k).append("=").append(v);
+                }
+            });
+        }
+
+        String jvmPerformanceOptsString = jvmPerformanceOpts.toString().trim();
+        if (!jvmPerformanceOptsString.isEmpty()) {
+            envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, jvmPerformanceOptsString));
+        }
+    }
+
+    /**
+     * Adds KAFKA_HEAP_OPTS variable to the EnvVar list if any heap related options were specified through the provided JVM options
+     * If Xmx Java Options are not set DYNAMIC_HEAP_FRACTION and DYNAMIC_HEAP_MAX may also be set by using the ResourceRequirements
+     *
+     * @param envVars list of the Environment Variables to add to
+     * @param dynamicHeapFraction value to set for the DYNAMIC_HEAP_FRACTION
+     * @param dynamicHeapMaxBytes value to set for the DYNAMIC_HEAP_MAX
+     * @param jvmOptions JVM options
+     * @param resources the resource requirements
+     */
+    public static void heapOptions(List<EnvVar> envVars, double dynamicHeapFraction, long dynamicHeapMaxBytes, JvmOptions jvmOptions, ResourceRequirements resources) {
+        StringBuilder kafkaHeapOpts = new StringBuilder();
+
+        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
+        if (xms != null) {
+            kafkaHeapOpts.append("-Xms")
+                    .append(xms);
+        }
+
+        String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
+        if (xmx != null) {
+            // Honour user provided explicit max heap
+            kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
+        } else {
+            Map<String, Quantity> cpuMemory = resources != null ? resources.getRequests() : null;
+            // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
+            // too much memory on the kubelet.
+            if (cpuMemory != null && cpuMemory.get("memory") != null) {
+                envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION, Double.toString(dynamicHeapFraction)));
+                if (dynamicHeapMaxBytes > 0) {
+                    envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
+                }
+                // When no memory limit, `Xms`, and `Xmx` are defined then set a default `Xms` and
+                // leave `Xmx` undefined.
+            } else if (xms == null) {
+                kafkaHeapOpts.append("-Xms").append(AbstractModel.DEFAULT_JVM_XMS);
+            }
+        }
+
+        String kafkaHeapOptsString = kafkaHeapOpts.toString().trim();
+        if (!kafkaHeapOptsString.isEmpty()) {
+            envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS, kafkaHeapOptsString));
         }
     }
 

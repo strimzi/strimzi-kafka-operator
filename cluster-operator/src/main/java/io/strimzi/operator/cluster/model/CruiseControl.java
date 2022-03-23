@@ -529,9 +529,9 @@ public class CruiseControl extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_API_PORT,  String.valueOf(REST_API_PORT)));
         varList.add(buildEnvVar(ENV_VAR_API_HEALTHCHECK_PATH,  String.valueOf(API_HEALTHCHECK_PATH)));
 
-        heapOptions(varList, 1.0, 0L);
-        jvmPerformanceOptions(varList);
-        jvmSystemProperties(varList);
+        ModelUtils.heapOptions(varList, 1.0, 0L, getJvmOptions(), getResources());
+        ModelUtils.jvmPerformanceOptions(varList, getJvmOptions());
+        ModelUtils.jvmSystemProperties(varList, getJvmOptions());
 
         if (configuration != null && !configuration.getConfiguration().isEmpty()) {
             varList.add(buildEnvVar(ENV_VAR_CRUISE_CONTROL_CONFIGURATION, configuration.getConfiguration()));
