@@ -288,10 +288,6 @@ public class CruiseControl extends AbstractModel {
             cruiseControl.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
             cruiseControl.setJvmOptions(spec.getJvmOptions());
 
-            if (spec.getJvmOptions() != null) {
-                cruiseControl.setJavaSystemProperties(spec.getJvmOptions().getJavaSystemProperties());
-            }
-
             cruiseControl.setResources(spec.getResources());
             cruiseControl.setOwnerReference(kafkaAssembly);
             cruiseControl = updateTemplate(spec, cruiseControl);
@@ -533,15 +529,12 @@ public class CruiseControl extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_API_PORT,  String.valueOf(REST_API_PORT)));
         varList.add(buildEnvVar(ENV_VAR_API_HEALTHCHECK_PATH,  String.valueOf(API_HEALTHCHECK_PATH)));
 
-        heapOptions(varList, 1.0, 0L);
-        jvmPerformanceOptions(varList);
+        ModelUtils.heapOptions(varList, 1.0, 0L, getJvmOptions(), getResources());
+        ModelUtils.jvmPerformanceOptions(varList, getJvmOptions());
+        ModelUtils.jvmSystemProperties(varList, getJvmOptions());
 
         if (configuration != null && !configuration.getConfiguration().isEmpty()) {
             varList.add(buildEnvVar(ENV_VAR_CRUISE_CONTROL_CONFIGURATION, configuration.getConfiguration()));
-        }
-
-        if (javaSystemProperties != null) {
-            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
         }
 
         // Add shared environment variables used for all containers

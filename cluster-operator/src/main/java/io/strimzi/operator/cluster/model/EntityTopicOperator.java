@@ -239,9 +239,6 @@ public class EntityTopicOperator extends AbstractModel {
                 result.setTopicMetadataMaxAttempts(topicOperatorSpec.getTopicMetadataMaxAttempts());
                 result.setLogging(topicOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(topicOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled());
-                if (topicOperatorSpec.getJvmOptions() != null) {
-                    result.setJavaSystemProperties(topicOperatorSpec.getJvmOptions().getJavaSystemProperties());
-                }
                 result.setJvmOptions(topicOperatorSpec.getJvmOptions());
                 result.setResources(topicOperatorSpec.getResources());
                 if (topicOperatorSpec.getStartupProbe() != null) {
@@ -290,7 +287,7 @@ public class EntityTopicOperator extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(buildEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        ModelUtils.javaOptions(varList, getJvmOptions(), javaSystemProperties);
+        ModelUtils.javaOptions(varList, getJvmOptions());
 
         // Add shared environment variables used for all containers
         varList.addAll(getRequiredEnvVars());

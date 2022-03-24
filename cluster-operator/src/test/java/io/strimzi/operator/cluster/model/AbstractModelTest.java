@@ -86,7 +86,7 @@ public class AbstractModelTest {
         am.setJvmOptions(jvmOptions(xmx, xms));
         am.setResources(resources);
         List<EnvVar> envVars = new ArrayList<>(1);
-        am.heapOptions(envVars, dynamicFraction, dynamicMax);
+        ModelUtils.heapOptions(envVars, dynamicFraction, dynamicMax, am.getJvmOptions(), am.getResources());
         return envVars.stream().collect(Collectors.toMap(e -> e.getName(), e -> e.getValue()));
     }
 
@@ -169,7 +169,7 @@ public class AbstractModelTest {
         am.setLabels(Labels.forStrimziCluster("foo"));
         am.setJvmOptions(opts);
         List<EnvVar> envVars = new ArrayList<>(1);
-        am.jvmPerformanceOptions(envVars);
+        ModelUtils.jvmPerformanceOptions(envVars, am.getJvmOptions());
 
         if (!envVars.isEmpty()) {
             return envVars.get(0).getValue();

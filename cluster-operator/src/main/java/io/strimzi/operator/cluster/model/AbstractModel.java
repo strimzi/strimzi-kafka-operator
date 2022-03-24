@@ -73,7 +73,6 @@ import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
-import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -220,7 +219,6 @@ public abstract class AbstractModel {
     private Logging logging;
     protected boolean gcLoggingEnabled = true;
     private JvmOptions jvmOptions;
-    protected List<SystemProperty> javaSystemProperties = null;
 
     /**
      * Volume and Storage configuration
@@ -416,10 +414,6 @@ public abstract class AbstractModel {
 
     protected void setGcLoggingEnabled(boolean gcLoggingEnabled) {
         this.gcLoggingEnabled = gcLoggingEnabled;
-    }
-
-    protected void setJavaSystemProperties(List<SystemProperty> javaSystemProperties) {
-        this.javaSystemProperties = javaSystemProperties;
     }
 
     protected abstract String getDefaultLogConfigFileName();
@@ -1492,79 +1486,6 @@ public abstract class AbstractModel {
      */
     public JvmOptions getJvmOptions() {
         return jvmOptions;
-    }
-
-    /**
-     * Adds KAFKA_HEAP_OPTS variable to the EnvVar list if any heap related options were specified.
-     * NOTE: If Xmx Java Options are not set DYNAMIC_HEAP_FRACTION and DYNAMIC_HEAP_MAX may also be set
-     *
-     * @param envVars List of Environment Variables to add to
-     * @param dynamicHeapFraction List of Environment Variables
-     * @param dynamicHeapMaxBytes List of Environment Variables
-     */
-    protected void heapOptions(List<EnvVar> envVars, double dynamicHeapFraction, long dynamicHeapMaxBytes) {
-        StringBuilder kafkaHeapOpts = new StringBuilder();
-
-        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
-        if (xms != null) {
-            kafkaHeapOpts.append("-Xms")
-                    .append(xms);
-        }
-
-        String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
-        if (xmx != null) {
-            // Honour user provided explicit max heap
-            kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
-        } else {
-            ResourceRequirements resources = getResources();
-            Map<String, Quantity> cpuMemory = resources != null ? resources.getRequests() : null;
-            // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
-            // too much memory on the kubelet.
-            if (cpuMemory != null && cpuMemory.get("memory") != null) {
-                envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_FRACTION, Double.toString(dynamicHeapFraction)));
-                if (dynamicHeapMaxBytes > 0) {
-                    envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
-                }
-            // When no memory limit, `Xms`, and `Xmx` are defined then set a default `Xms` and
-            // leave `Xmx` undefined.
-            } else if (xms == null) {
-                kafkaHeapOpts.append("-Xms").append(DEFAULT_JVM_XMS);
-            }
-        }
-
-        String kafkaHeapOptsString = kafkaHeapOpts.toString().trim();
-        if (!kafkaHeapOptsString.isEmpty()) {
-            envVars.add(buildEnvVar(ENV_VAR_KAFKA_HEAP_OPTS, kafkaHeapOptsString));
-        }
-    }
-
-    /**
-     * Adds KAFKA_JVM_PERFORMANCE_OPTS variable to the EnvVar list if any performance related options were specified.
-     *
-     * @param envVars List of Environment Variables to add to
-     */
-    protected void jvmPerformanceOptions(List<EnvVar> envVars) {
-        StringBuilder jvmPerformanceOpts = new StringBuilder();
-
-        Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
-        if (xx != null) {
-            xx.forEach((k, v) -> {
-                jvmPerformanceOpts.append(' ').append("-XX:");
-
-                if ("true".equalsIgnoreCase(v))   {
-                    jvmPerformanceOpts.append("+").append(k);
-                } else if ("false".equalsIgnoreCase(v)) {
-                    jvmPerformanceOpts.append("-").append(k);
-                } else  {
-                    jvmPerformanceOpts.append(k).append("=").append(v);
-                }
-            });
-        }
-
-        String jvmPerformanceOptsString = jvmPerformanceOpts.toString().trim();
-        if (!jvmPerformanceOptsString.isEmpty()) {
-            envVars.add(buildEnvVar(ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, jvmPerformanceOptsString));
-        }
     }
 
     /**
