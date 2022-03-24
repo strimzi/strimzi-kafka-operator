@@ -134,10 +134,11 @@ spec:
       size: 100Gi
       deleteClaim: false
   entityOperator:
+    topicOperator: {}
     userOperator: {}
 ----
 
-. Create or update the `Kafka` resources.
+. Create or update the `Kafka` resources in separate namespaces.
 +
 [source,shell,subs=+quotes]
 ----
@@ -353,11 +354,11 @@ spec:
 NOTE: You can use a certificate issued outside the User Operator by setting `type` to `tls-external`.
 For more information, see xref:con-securing-client-authentication-str[User authentication].
 
-. Create or update the `KafkaUser` resources.
+. Create or update a `KafkaUser` resource in each of the namespaces you created for the source and target Kafka clusters.
 +
 [source,shell,subs=+quotes]
 ----
-kubectl apply -f _<kafka_user_configuration_file>_
+kubectl apply -f _<kafka_user_configuration_file>_ -n _<namespace>_
 ----
 +
 The User Operator creates the users representing the client (MirrorMaker), and the security credentials used for client authentication, based on the chosen authentication type.
@@ -432,11 +433,11 @@ spec:
 <1> The TLS certificates for the target Kafka cluster.
 <2> The user authentication for accessing the target Kafka cluster.
 
-. Create or update the `KafkaMirrorMaker2` resource.
+. Create or update the `KafkaMirrorMaker2` resource in the same namespace as the target Kafka cluster.
 +
 [source,shell,subs=+quotes]
 ----
-kubectl apply -f _<mirrormaker2_configuration_file>_
+kubectl apply -f _<mirrormaker2_configuration_file>_ -n _<namespace_of_target_cluster>_
 ----
 
 [role="_additional-resources"]
