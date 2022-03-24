@@ -73,7 +73,7 @@ public class CustomCaST extends AbstractST {
     void testReplacingCustomClusterKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         final TestStorage ts = new TestStorage(extensionContext);
         // 0. Generate root and intermediate certificate authority with cluster CA
-        SystemTestCertHolder clusterCa =  new SystemTestCertHolder(extensionContext,
+        SystemTestCertHolder clusterCa =  new SystemTestCertHolder(
             "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClusterCA",
             KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()),
             KafkaResources.clusterCaKeySecretName(ts.getClusterName()));
@@ -93,8 +93,8 @@ public class CustomCaST extends AbstractST {
 
         //  c) Encode your new CA certificate into base64.
         LOGGER.info("Generating a new custom 'Cluster certificate authority' with `Root` and `Intermediate` for Strimzi and PEM bundles.");
-        clusterCa = new SystemTestCertHolder(extensionContext,
-            "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClusterCA",
+        clusterCa = new SystemTestCertHolder(
+            "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClusterCAv2",
             KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()),
             KafkaResources.clusterCaKeySecretName(ts.getClusterName()));
 
@@ -156,7 +156,7 @@ public class CustomCaST extends AbstractST {
     void testReplacingCustomClientsKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
         final TestStorage ts = new TestStorage(extensionContext);
         // 0. Generate root and intermediate certificate authority with clients CA
-        SystemTestCertHolder clientsCa = new SystemTestCertHolder(extensionContext, "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClientsCA",
+        SystemTestCertHolder clientsCa = new SystemTestCertHolder("CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClientsCA",
             KafkaResources.clientsCaCertificateSecretName(ts.getClusterName()),
             KafkaResources.clientsCaKeySecretName(ts.getClusterName()));
 
@@ -175,7 +175,7 @@ public class CustomCaST extends AbstractST {
 
         //  c) Encode your new CA certificate into base64.
         LOGGER.info("Generating a new custom 'User certificate authority' with `Root` and `Intermediate` for Strimzi and PEM bundles.");
-        clientsCa = new SystemTestCertHolder(extensionContext,
+        clientsCa = new SystemTestCertHolder(
             "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClientsCA",
             KafkaResources.clientsCaCertificateSecretName(ts.getClusterName()),
             KafkaResources.clientsCaKeySecretName(ts.getClusterName()));
@@ -252,14 +252,14 @@ public class CustomCaST extends AbstractST {
         //     (f.e., Clients CA should not be generated, but the secrets were not found.)
         if (certificateAuthority.getCaCertSecretName().equals(KafkaResources.clusterCaCertificateSecretName(ts.getClusterName())) &&
             certificateAuthority.getCaKeySecretName().equals(KafkaResources.clusterCaKeySecretName(ts.getClusterName()))) {
-            final SystemTestCertHolder clientsCa = new SystemTestCertHolder(extensionContext,
+            final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
                 "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClientsCA",
                 KafkaResources.clientsCaCertificateSecretName(ts.getClusterName()),
                 KafkaResources.clientsCaKeySecretName(ts.getClusterName()));
             clientsCa.prepareCustomSecretsFromBundles(ts.getNamespaceName(), ts.getClusterName());
         } else {
             // otherwise we generate Cluster CA
-            final SystemTestCertHolder clusterCa = new SystemTestCertHolder(extensionContext,
+            final SystemTestCertHolder clusterCa = new SystemTestCertHolder(
                 "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClusterCA",
                 KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()),
                 KafkaResources.clusterCaKeySecretName(ts.getClusterName()));
@@ -274,9 +274,6 @@ public class CustomCaST extends AbstractST {
                     .withValidityDays(20)
                     .withGenerateCertificateAuthority(false)
                 .endClientsCa()
-            // TODO: If I un-comment this and run testReplacingCustomClusterKeyPairToInvokeRenewalProcess test it will fail
-            //  because only ZooKeeper pod will trigger RollingUpdate, Kafka pod has some errors:
-            //  -> https://gist.github.com/see-quick/d32c569572ae396597ce88394dc46fed
              .withNewClusterCa()
                     .withRenewalDays(5)
                     .withValidityDays(20)
@@ -322,11 +319,11 @@ public class CustomCaST extends AbstractST {
         final TestStorage ts = new TestStorage(extensionContext);
         final String testSuite = extensionContext.getRequiredTestClass().getSimpleName();
 
-        final SystemTestCertHolder clientsCa = new SystemTestCertHolder(extensionContext,
+        final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
             "CN=" + testSuite + "ClientsCA",
             KafkaResources.clientsCaCertificateSecretName(ts.getClusterName()),
             KafkaResources.clientsCaKeySecretName(ts.getClusterName()));
-        final SystemTestCertHolder clusterCa = new SystemTestCertHolder(extensionContext,
+        final SystemTestCertHolder clusterCa = new SystemTestCertHolder(
             "CN=" + testSuite + "ClusterCA",
             KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()),
             KafkaResources.clusterCaKeySecretName(ts.getClusterName()));
@@ -438,7 +435,7 @@ public class CustomCaST extends AbstractST {
         TestStorage ts = new TestStorage(extensionContext);
         final String testSuite = extensionContext.getRequiredTestClass().getSimpleName();
 
-        final SystemTestCertHolder clusterCa = new SystemTestCertHolder(extensionContext,
+        final SystemTestCertHolder clusterCa = new SystemTestCertHolder(
             "CN=" + testSuite + "ClusterCA",
             KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()),
             KafkaResources.clusterCaKeySecretName(ts.getClusterName()));
@@ -534,7 +531,7 @@ public class CustomCaST extends AbstractST {
         final TestStorage ts = new TestStorage(extensionContext);
         final String testSuite = extensionContext.getRequiredTestClass().getSimpleName();
 
-        final SystemTestCertHolder clientsCa = new SystemTestCertHolder(extensionContext,
+        final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
             "CN=" + testSuite + "ClientsCA",
             KafkaResources.clientsCaCertificateSecretName(ts.getClusterName()),
             KafkaResources.clientsCaKeySecretName(ts.getClusterName()));
