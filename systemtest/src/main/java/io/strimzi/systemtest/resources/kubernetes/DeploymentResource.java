@@ -20,7 +20,7 @@ public class DeploymentResource implements ResourceType<Deployment> {
     }
     @Override
     public Deployment get(String namespace, String name) {
-        return ResourceManager.kubeClient().namespace(namespace).getDeployment(name);
+        return ResourceManager.kubeClient().getDeployment(namespace, name);
     }
     @Override
     public void create(Deployment resource) {
