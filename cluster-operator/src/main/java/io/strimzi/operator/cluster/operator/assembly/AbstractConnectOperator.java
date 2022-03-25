@@ -408,7 +408,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         Timer.Sample connectorsReconciliationsTimerSample = Timer.start(metrics.meterRegistry());
 
         if (connector != null && Annotations.isReconciliationPausedWithAnnotation(connector)) {
-
             return maybeUpdateConnectorStatus(reconciliation, connector, null, null).compose(
                 i -> {
                     connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
@@ -420,51 +419,54 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
         reconcileConnector(reconciliation, host, apiClient, useResources, connectorName, connector)
                 .onComplete(result -> {
-                    connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
-
-                    if (result.succeeded())    {
+                    if (result.succeeded() && result.result() == null)  {
+                        // The reconciliation succeeded, but there is no status to be set => we complete the reconciliation and return
+                        // This normally means that the connector was deleted and there is no status to be set
                         connectorsSuccessfulReconciliationsCounter(reconciliation.namespace()).increment();
+                        connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
                         reconciliationResult.complete();
                     } else {
-                        connectorsFailedReconciliationsCounter(reconciliation.namespace()).increment();
-                        reconciliationResult.fail(result.cause());
+                        maybeUpdateConnectorStatus(reconciliation, connector, result.result(), result.cause())
+                                .onComplete(statusResult -> {
+                                    connectorsReconciliationsTimerSample.stop(connectorsReconciliationsTimer(reconciliation.namespace()));
+
+                                    if (result.succeeded() && statusResult.succeeded()) {
+                                        connectorsSuccessfulReconciliationsCounter(reconciliation.namespace()).increment();
+                                        reconciliationResult.complete();
+                                    } else {
+                                        // Reconciliation failed if either reconciliation or status update failed
+                                        connectorsFailedReconciliationsCounter(reconciliation.namespace()).increment();
+
+                                        // We suppress the error to not fail Connect reconciliation just because of a failing connector
+                                        reconciliationResult.complete();
+                                    }
+                                });
                     }
                 });
 
         return reconciliationResult.future();
     }
 
-    private Future<Void> reconcileConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
+    private Future<ConnectorStatusAndConditions> reconcileConnector(Reconciliation reconciliation, String host, KafkaConnectApi apiClient,
                                              boolean useResources, String connectorName, KafkaConnector connector) {
         if (connector == null) {
             if (useResources) {
                 LOGGER.infoCr(reconciliation, "deleting connector: {}", connectorName);
-                return apiClient.delete(reconciliation, host, port, connectorName);
+                return apiClient.delete(reconciliation, host, port, connectorName).mapEmpty();
             } else {
                 return Future.succeededFuture();
             }
         } else {
             LOGGER.infoCr(reconciliation, "creating/updating connector: {}", connectorName);
+
             if (connector.getSpec() == null) {
-                return maybeUpdateConnectorStatus(reconciliation, connector, null,
-                        new InvalidResourceException("spec property is required"));
+                return Future.failedFuture(new InvalidResourceException("spec property is required"));
             }
+            
             if (!useResources) {
-                return maybeUpdateConnectorStatus(reconciliation, connector, null,
-                        new NoSuchResourceException(reconciliation.kind() + " " + reconciliation.name() + " is not configured with annotation " + Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES));
+                return Future.failedFuture(new NoSuchResourceException(reconciliation.kind() + " " + reconciliation.name() + " is not configured with annotation " + Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES));
             } else {
-                Promise<Void> promise = Promise.promise();
-                maybeCreateOrUpdateConnector(reconciliation, host, apiClient, connectorName, connector.getSpec(), connector)
-                        .onComplete(result -> {
-                            if (result.succeeded()) {
-                                maybeUpdateConnectorStatus(reconciliation, connector, result.result(), null)
-                                    .onComplete(promise);
-                            } else {
-                                maybeUpdateConnectorStatus(reconciliation, connector, result.result(), result.cause())
-                                    .onComplete(promise);
-                            }
-                        });
-                return promise.future();
+                return maybeCreateOrUpdateConnector(reconciliation, host, apiClient, connectorName, connector.getSpec(), connector);
             }
         }
     }
