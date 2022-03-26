@@ -311,18 +311,7 @@ public class KafkaExporterTest {
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, null);
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        assertThat(ke.generateDeployment(true, null, null), is(nullValue()));
-        assertThat(ke.generateSecret(null, true), is(nullValue()));
-    }
-
-    @ParallelTest
-    public void testGenerateDeploymentWhenDisabled()   {
-        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
-                healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
-                kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, null);
-        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
-
-        assertThat(ke.generateDeployment(true, null, null), is(nullValue()));
+        assertThat(ke, is(nullValue()));
     }
 
     @ParallelTest
