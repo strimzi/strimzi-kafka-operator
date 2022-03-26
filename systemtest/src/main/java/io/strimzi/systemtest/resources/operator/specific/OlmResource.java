@@ -257,7 +257,7 @@ public class OlmResource implements SpecificResourceType {
      * @param operationTimeout operation timeout  of cluster operator
      * @param installationStrategy type of installation
      */
-    private static void createAndModifySubscription(String namespace, long reconciliationInterval, long operationTimeout,
+    private static void createAndModifySubscription(String namespace, long operationTimeout, long reconciliationInterval,
                                                     OlmInstallationStrategy installationStrategy, String version,
                                                     final String channelName) {
         try {
