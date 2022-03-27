@@ -51,6 +51,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
+import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.Logging;
@@ -1753,7 +1754,7 @@ public class KafkaCluster extends AbstractModel {
 
         NetworkPolicyPeer kafkaExporterPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector() // Kafka Exporter
-                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporter.kafkaExporterName(cluster))
+                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaExporterResources.deploymentName(cluster))
                 .endPodSelector()
                 .build();
 

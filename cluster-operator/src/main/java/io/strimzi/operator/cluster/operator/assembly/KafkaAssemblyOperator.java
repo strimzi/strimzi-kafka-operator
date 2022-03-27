@@ -32,6 +32,7 @@ import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.StrimziPodSet;
@@ -68,7 +69,6 @@ import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.JmxTrans;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
-import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
@@ -845,7 +845,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             if (this.clusterCa.keyReplaced()) {
                                 // EO, KE and CC need to be rolled only for new Cluster CA key.
                                 return rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reason.toString())
-                                        .compose(i2 -> rollDeploymentIfExists(KafkaExporter.kafkaExporterName(name), reason.toString()))
+                                        .compose(i2 -> rollDeploymentIfExists(KafkaExporterResources.deploymentName(name), reason.toString()))
                                         .compose(i2 -> rollDeploymentIfExists(CruiseControl.cruiseControlName(name), reason.toString()));
                             } else {
                                 return Future.succeededFuture();

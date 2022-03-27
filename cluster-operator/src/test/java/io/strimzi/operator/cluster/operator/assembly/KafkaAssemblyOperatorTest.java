@@ -31,6 +31,7 @@ import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxTransSpecBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptions;
@@ -590,7 +591,7 @@ public class KafkaAssemblyOperatorTest {
                 ClusterOperator.secretName(kafkaName));
 
         if (metrics)    {
-            expectedSecrets.add(KafkaExporter.secretName(kafkaName));
+            expectedSecrets.add(KafkaExporterResources.secretName(kafkaName));
         }
 
         expectedSecrets.addAll(secrets.stream().map(s -> s.getMetadata().getName()).collect(Collectors.toSet()));
@@ -1110,7 +1111,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.getAsync(clusterNamespace, EntityTopicOperator.secretName(clusterName))).thenReturn(
                 Future.succeededFuture()
         );
-        when(mockSecretOps.getAsync(clusterNamespace, KafkaExporter.secretName(clusterName))).thenReturn(
+        when(mockSecretOps.getAsync(clusterNamespace, KafkaExporterResources.secretName(clusterName))).thenReturn(
                 Future.succeededFuture()
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.clusterCaCertificateSecretName(clusterName))).thenReturn(
@@ -1170,10 +1171,10 @@ public class KafkaAssemblyOperatorTest {
         }
 
         if (metrics) {
-            when(mockDepOps.get(clusterNamespace, KafkaExporter.kafkaExporterName(clusterName))).thenReturn(
+            when(mockDepOps.get(clusterNamespace, KafkaExporterResources.deploymentName(clusterName))).thenReturn(
                     originalKafkaExporter.generateDeployment(true, null, null)
             );
-            when(mockDepOps.getAsync(clusterNamespace, KafkaExporter.kafkaExporterName(clusterName))).thenReturn(
+            when(mockDepOps.getAsync(clusterNamespace, KafkaExporterResources.deploymentName(clusterName))).thenReturn(
                     Future.succeededFuture(originalKafkaExporter.generateDeployment(true, null, null))
             );
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(

@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
@@ -94,7 +95,7 @@ public class ClusterCa extends Ca {
                 zkNodesSecret = secret;
             } else if (ClusterOperator.secretName(clusterName).equals(name)) {
                 clusterOperatorSecret = secret;
-            } else if (KafkaExporter.secretName(clusterName).equals(name)) {
+            } else if (KafkaExporterResources.secretName(clusterName).equals(name)) {
                 kafkaExporterSecret = secret;
             } else if (CruiseControl.secretName(clusterName).equals(name)) {
                 cruiseControlSecret = secret;
