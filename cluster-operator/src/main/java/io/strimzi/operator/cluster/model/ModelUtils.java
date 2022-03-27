@@ -45,23 +45,18 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
-import org.quartz.CronExpression;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TimeZone;
-import java.util.function.Supplier;
 
 import static java.util.Collections.emptyMap;
 
@@ -69,7 +64,6 @@ import static java.util.Collections.emptyMap;
  * ModelUtils is a utility class that holds generic static helper functions
  * These are generally to be used within the classes that extend the AbstractModel class
  */
-@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public class ModelUtils {
 
     private ModelUtils() {}
@@ -740,40 +734,6 @@ public class ModelUtils {
                             && owner.getName().equals(o.getName())
                             && owner.getUid().equals(o.getUid()));
         } else {
-            return false;
-        }
-    }
-
-    /**
-     * Checks whether maintenance time window is satisfied or not
-     *
-     * @param reconciliation        Reconciliation marker
-     * @param maintenanceWindows    List of maintenance windows
-     * @param dateSupplier          Date supplier
-     *
-     * @return                      True if we are in a maintenance window or if no maintenance windows are defined. False otherwise.
-     */
-    public static boolean isMaintenanceTimeWindowsSatisfied(Reconciliation reconciliation, List<String> maintenanceWindows, Supplier<Date> dateSupplier) {
-        String currentCron = null;
-        try {
-            boolean isSatisfiedBy = maintenanceWindows == null || maintenanceWindows.isEmpty();
-            if (!isSatisfiedBy) {
-                Date date = dateSupplier.get();
-                for (String cron : maintenanceWindows) {
-                    currentCron = cron;
-                    CronExpression cronExpression = new CronExpression(cron);
-                    // the user defines the cron expression in "UTC/GMT" timezone but CO pod
-                    // can be running on a different one, so setting it on the cron expression
-                    cronExpression.setTimeZone(TimeZone.getTimeZone("GMT"));
-                    if (cronExpression.isSatisfiedBy(date)) {
-                        isSatisfiedBy = true;
-                        break;
-                    }
-                }
-            }
-            return isSatisfiedBy;
-        } catch (ParseException e) {
-            LOGGER.warnCr(reconciliation, "The provided maintenance time windows list contains {} which is not a valid cron expression", currentCron);
             return false;
         }
     }

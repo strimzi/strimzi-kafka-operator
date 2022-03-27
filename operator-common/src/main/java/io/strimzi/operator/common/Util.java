@@ -33,6 +33,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
+import org.quartz.CronExpression;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -49,15 +50,18 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
@@ -706,6 +710,40 @@ public class Util {
                         return new String(bytes, StandardCharsets.US_ASCII);
                     })
                     .collect(Collectors.joining("\n"));
+        }
+    }
+
+    /**
+     * Checks whether maintenance time window is satisfied or not
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param maintenanceWindows    List of maintenance windows
+     * @param dateSupplier          Date supplier
+     *
+     * @return                      True if we are in a maintenance window or if no maintenance windows are defined. False otherwise.
+     */
+    public static boolean isMaintenanceTimeWindowsSatisfied(Reconciliation reconciliation, List<String> maintenanceWindows, Supplier<Date> dateSupplier) {
+        String currentCron = null;
+        try {
+            boolean isSatisfiedBy = maintenanceWindows == null || maintenanceWindows.isEmpty();
+            if (!isSatisfiedBy) {
+                Date date = dateSupplier.get();
+                for (String cron : maintenanceWindows) {
+                    currentCron = cron;
+                    CronExpression cronExpression = new CronExpression(cron);
+                    // the user defines the cron expression in "UTC/GMT" timezone but CO pod
+                    // can be running on a different one, so setting it on the cron expression
+                    cronExpression.setTimeZone(TimeZone.getTimeZone("GMT"));
+                    if (cronExpression.isSatisfiedBy(date)) {
+                        isSatisfiedBy = true;
+                        break;
+                    }
+                }
+            }
+            return isSatisfiedBy;
+        } catch (ParseException e) {
+            LOGGER.warnCr(reconciliation, "The provided maintenance time windows list contains {} which is not a valid cron expression", currentCron);
+            return false;
         }
     }
 }

@@ -16,6 +16,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -122,7 +123,7 @@ public class KafkaExporterReconciler {
                     .compose(oldSecret -> {
                         return secretOperator
                                 .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()),
-                                        kafkaExporter.generateSecret(clusterCa, ModelUtils.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, dateSupplier)))
+                                        kafkaExporter.generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, dateSupplier)))
                                 .compose(patchResult -> {
                                     if (patchResult instanceof ReconcileResult.Patched) {
                                         // The secret is patched and some changes to the existing certificates actually occurred

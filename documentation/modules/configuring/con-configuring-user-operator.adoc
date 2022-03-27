@@ -29,7 +29,7 @@ The `logging` property configures the logging of the User Operator.
 For more details, see xref:property-topic-operator-logging-reference[].
 
 `secretPrefix`::
-The `secretPrefix` property adds a prefix to the name of all Secrets created from the KafkaUser resource. For example, `STRIMZI_SECRET_PREFIX=kafka-` would prefix all Secret names with `kafka-`. So a KafkaUser named `my-user` would create a Secret named `kafka-my-user`.
+The `secretPrefix` property adds a prefix to the name of all Secrets created from the KafkaUser resource. For example, `secretPrefix: kafka-` would prefix all Secret names with `kafka-`. So a KafkaUser named `my-user` would create a Secret named `kafka-my-user`.
 
 .Example User Operator configuration
 [source,yaml,subs=attributes+]
