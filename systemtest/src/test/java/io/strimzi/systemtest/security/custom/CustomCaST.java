@@ -176,7 +176,7 @@ public class CustomCaST extends AbstractST {
         //  c) Encode your new CA certificate into base64.
         LOGGER.info("Generating a new custom 'User certificate authority' with `Root` and `Intermediate` for Strimzi and PEM bundles.");
         clientsCa = new SystemTestCertHolder(
-            "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClientsCA",
+            "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClientsCAv2",
             KafkaResources.clientsCaCertificateSecretName(ts.getClusterName()),
             KafkaResources.clientsCaKeySecretName(ts.getClusterName()));
 
