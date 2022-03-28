@@ -100,7 +100,7 @@
         <hamcrest.version>2.2</hamcrest.version>
         <valid4j.version>1.1</valid4j.version>
         <fasterxml.jackson-core.version>2.12.6</fasterxml.jackson-core.version>
-        <fasterxml.jackson-databind.version>2.12.6</fasterxml.jackson-databind.version>
+        <fasterxml.jackson-databind.version>2.13.2.1</fasterxml.jackson-databind.version>
         <fasterxml.jackson-dataformat.version>2.12.6</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.12.6</fasterxml.jackson-annotations.version>
         <kafka.version>3.1.0</kafka.version>
