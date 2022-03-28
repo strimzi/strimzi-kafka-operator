@@ -11,6 +11,7 @@
     * [AMQ Streams](https://www.redhat.com/en/resources/amq-streams-datasheet)
 * [SBB CFF FFS](https://www.sbb.ch/en/home.html)
 * [Swisscom](https://www.swisscom.ch/)
+* [CN Group](https://www.cngroup.dk/)
 
 Are you currently using Strimzi in production?
 Please let us know by adding your company name and, if you want, a description of your use case to this document!
