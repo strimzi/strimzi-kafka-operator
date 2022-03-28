@@ -126,8 +126,8 @@ public class KafkaExporter extends AbstractModel {
                 kafkaExporter.setLivenessProbe(spec.getLivenessProbe());
             }
 
-            kafkaExporter.setGroupRegex(spec.getGroupRegex());
-            kafkaExporter.setTopicRegex(spec.getTopicRegex());
+            kafkaExporter.groupRegex = spec.getGroupRegex();
+            kafkaExporter.topicRegex = spec.getTopicRegex();
 
             String image = spec.getImage();
             if (image == null) {
@@ -136,8 +136,8 @@ public class KafkaExporter extends AbstractModel {
             }
             kafkaExporter.setImage(image);
 
-            kafkaExporter.setLogging(spec.getLogging());
-            kafkaExporter.setSaramaLoggingEnabled(spec.getEnableSaramaLogging());
+            kafkaExporter.logging = spec.getLogging();
+            kafkaExporter.saramaLoggingEnabled = spec.getEnableSaramaLogging();
 
             if (spec.getTemplate() != null) {
                 KafkaExporterTemplate template = spec.getTemplate();
@@ -164,17 +164,13 @@ public class KafkaExporter extends AbstractModel {
                 kafkaExporter.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaExporter.templatePodLabels, DEFAULT_POD_LABELS);
             }
 
-            kafkaExporter.setVersion(versions.supportedVersion(kafkaAssembly.getSpec().getKafka().getVersion()).version());
+            kafkaExporter.version = versions.supportedVersion(kafkaAssembly.getSpec().getKafka().getVersion()).version();
             kafkaExporter.setOwnerReference(kafkaAssembly);
 
             return kafkaExporter;
         } else {
             return null;
         }
-    }
-
-    protected void setSaramaLoggingEnabled(boolean saramaLoggingEnabled) {
-        this.saramaLoggingEnabled = saramaLoggingEnabled;
     }
 
     protected List<ContainerPort> getContainerPortList() {
@@ -248,7 +244,7 @@ public class KafkaExporter extends AbstractModel {
         return varList;
     }
 
-    private int loggingMapping(String logLevel) {
+    private static int loggingMapping(String logLevel) {
         if (logLevel.equalsIgnoreCase("info")) {
             return 0;
         } else if (logLevel.equalsIgnoreCase("debug")) {
@@ -264,39 +260,10 @@ public class KafkaExporter extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>(3);
 
         volumeList.add(createTempDirVolume());
-        volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporter.secretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporterResources.secretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
 
         return volumeList;
-    }
-
-    /**
-     * Generates the name of the Kafka Exporter deployment
-     *
-     * @param kafkaCluster  Name of the Kafka Custom Resource
-     * @return  Name of the Kafka Exporter deployment
-     */
-    public static String kafkaExporterName(String kafkaCluster) {
-        return KafkaExporterResources.deploymentName(kafkaCluster);
-    }
-
-    /**
-     * Generates the name of the Kafka Exporter secret with certificates for connecting to Kafka brokers
-     *
-     * @param kafkaCluster  Name of the Kafka Custom Resource
-     * @return  Name of the Kafka Exporter secret
-     */
-    public static String secretName(String kafkaCluster) {
-        return KafkaExporterResources.secretName(kafkaCluster);
-    }
-
-    /**
-     * Get the name of the Kafka Exporter service account given the name of the {@code kafkaCluster}.
-     * @param kafkaCluster The cluster name
-     * @return The name of the KE service account.
-     */
-    public static String containerServiceAccountName(String kafkaCluster) {
-        return kafkaExporterName(kafkaCluster);
     }
 
     @Override
@@ -304,25 +271,9 @@ public class KafkaExporter extends AbstractModel {
         return null;
     }
 
-    private void setGroupRegex(String groupRegex) {
-        this.groupRegex = groupRegex;
-    }
-
-    private void setTopicRegex(String topicRegex) {
-        this.topicRegex = topicRegex;
-    }
-
     @Override
     protected String getServiceAccountName() {
         return KafkaExporterResources.serviceAccountName(cluster);
-    }
-
-    private void setLogging(String logging) {
-        this.logging = logging;
-    }
-
-    private void setVersion(String version) {
-        this.version = version;
     }
 
     /**
@@ -337,7 +288,7 @@ public class KafkaExporter extends AbstractModel {
      */
     public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         Secret secret = clusterCa.kafkaExporterSecret();
-        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaExporter.secretName(cluster), name,
+        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaExporterResources.secretName(cluster), name,
                 "kafka-exporter", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 }

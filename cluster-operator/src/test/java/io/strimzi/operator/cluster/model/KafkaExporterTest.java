@@ -101,10 +101,10 @@ public class KafkaExporterTest {
     private final Kafka resource =
             new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                     .editSpec()
-                    .editKafka()
-                    .withVersion(version)
-                    .endKafka()
-                    .withKafkaExporter(exporterOperator)
+                        .editKafka()
+                            .withVersion(version)
+                        .endKafka()
+                        .withKafkaExporter(exporterOperator)
                     .endSpec()
                     .build();
     private final KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
