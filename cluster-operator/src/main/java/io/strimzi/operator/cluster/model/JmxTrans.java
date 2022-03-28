@@ -35,6 +35,7 @@ import io.strimzi.operator.cluster.model.components.JmxTransOutputWriter;
 import io.strimzi.operator.cluster.model.components.JmxTransQueries;
 import io.strimzi.operator.cluster.model.components.JmxTransServer;
 import io.strimzi.operator.cluster.model.components.JmxTransServers;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 
@@ -63,19 +64,18 @@ public class JmxTrans extends AbstractModel {
     // Configuration for mounting `config.json` to be used as Config during run time of the JmxTrans
     public static final String JMXTRANS_CONFIGMAP_KEY = "config.json";
     public static final String JMXTRANS_VOLUME_NAME = "jmx-config";
-    public static final String CONFIG_MAP_ANNOTATION_KEY = "config-map-revision";
-    protected static final String JMX_METRICS_CONFIG_SUFFIX = "-jmxtrans-config";
+    public static final String ANNO_JMXTRANS_CONFIG_MAP_HASH = Annotations.STRIMZI_DOMAIN + "config-map-revision";
     public static final String JMX_FILE_PATH = "/var/lib/jmxtrans";
 
     protected static final String ENV_VAR_JMXTRANS_LOGGING_LEVEL = "JMXTRANS_LOGGING_LEVEL";
 
     protected static final String CO_ENV_VAR_CUSTOM_JMX_TRANS_POD_LABELS = "STRIMZI_CUSTOM_JMX_TRANS_LABELS";
 
-    private boolean isDeployed;
     private boolean isJmxAuthenticated;
-    private String configMapName;
-    private final String clusterName;
     private String loggingLevel;
+    private int numberOfBrokers;
+    private List<JmxTransOutputDefinitionTemplate> outputDefinitions;
+    private List<JmxTransQueryTemplate> kafkaQueries;
 
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
@@ -97,15 +97,23 @@ public class JmxTrans extends AbstractModel {
     protected JmxTrans(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, APPLICATION_NAME);
         this.name = JmxTransResources.deploymentName(cluster);
-        this.clusterName = cluster;
         this.replicas = 1;
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
     }
 
+    /**
+     * Builds the JMX Trans model from the Kafka custom resource. If JMX Trans is not enabled, it will return null.
+     *
+     * @param reconciliation    Reconciliation marker for logging
+     * @param kafkaAssembly     The Kafka CR
+     *
+     * @return                  JMX Trans model object when JMX Trans is enabled or null if it is disabled.
+     */
     public static JmxTrans fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly) {
-        JmxTrans result = null;
-        JmxTransSpec spec = kafkaAssembly.getSpec().getJmxTrans();
-        if (spec != null) {
+        JmxTransSpec jmxTransSpec = kafkaAssembly.getSpec().getJmxTrans();
+
+        if (jmxTransSpec != null) {
+            // JMX Trans requires JMX to be enabled in Kafka brokers. If it is not enabled, we throw InvalidResourceException
             if (kafkaAssembly.getSpec().getKafka().getJmxOptions() == null) {
                 String error = String.format("Can't start up JmxTrans '%s' in '%s' as Kafka spec.kafka.jmxOptions is not specified",
                         JmxTransResources.deploymentName(kafkaAssembly.getMetadata().getName()),
@@ -113,18 +121,17 @@ public class JmxTrans extends AbstractModel {
                 LOGGER.warnCr(reconciliation, error);
                 throw new InvalidResourceException(error);
             }
-            result = new JmxTrans(reconciliation, kafkaAssembly);
-            result.isDeployed = true;
 
-            if (kafkaAssembly.getSpec().getKafka().getJmxOptions().getAuthentication() instanceof KafkaJmxAuthenticationPassword) {
-                result.isJmxAuthenticated = true;
-            }
+            JmxTrans result = new JmxTrans(reconciliation, kafkaAssembly);
 
-            result.loggingLevel = spec.getLogLevel() == null ? "INFO" : spec.getLogLevel();
+            result.isJmxAuthenticated = kafkaAssembly.getSpec().getKafka().getJmxOptions().getAuthentication() instanceof KafkaJmxAuthenticationPassword;
+            result.numberOfBrokers = kafkaAssembly.getSpec().getKafka().getReplicas();
+            result.kafkaQueries = jmxTransSpec.getKafkaQueries();
+            result.outputDefinitions = jmxTransSpec.getOutputDefinitions();
+            result.loggingLevel = jmxTransSpec.getLogLevel() == null ? "INFO" : jmxTransSpec.getLogLevel();
+            result.setResources(jmxTransSpec.getResources());
 
-            result.setResources(spec.getResources());
-
-            String image = spec.getImage();
+            String image = jmxTransSpec.getImage();
             if (image == null) {
                 image = System.getenv().getOrDefault(STRIMZI_DEFAULT_JMXTRANS_IMAGE, "quay.io/strimzi/jmxtrans:latest");
             }
@@ -132,8 +139,8 @@ public class JmxTrans extends AbstractModel {
 
             result.setOwnerReference(kafkaAssembly);
 
-            if (spec.getTemplate() != null) {
-                JmxTransTemplate template = spec.getTemplate();
+            if (jmxTransSpec.getTemplate() != null) {
+                JmxTransTemplate template = jmxTransSpec.getTemplate();
 
                 if (template.getDeployment() != null && template.getDeployment().getMetadata() != null)  {
                     result.templateDeploymentLabels = template.getDeployment().getMetadata().getLabels();
@@ -155,17 +162,16 @@ public class JmxTrans extends AbstractModel {
                     result.templateServiceAccountAnnotations = template.getServiceAccount().getMetadata().getAnnotations();
                 }
             }
-            result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
-        }
 
-        return result;
+            result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
+
+            return result;
+        } else {
+            return null;
+        }
     }
 
     public Deployment generateDeployment(ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        if (!isDeployed()) {
-            return null;
-        }
-
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("RollingUpdate")
                 .withRollingUpdate(new RollingUpdateDeploymentBuilder()
@@ -189,48 +195,114 @@ public class JmxTrans extends AbstractModel {
     /**
      * Generates the string'd config that the JmxTrans deployment needs to run. It is configured by the user in the yaml
      * and this method will convert that into the config the JmxTrans understands.
-     * @param spec The JmxTrans that was defined by the user
-     * @param numOfBrokers number of kafka brokers
+     *
      * @return the jmx trans config file that targets each broker
      */
-    private String generateJMXConfig(JmxTransSpec spec, int numOfBrokers) throws JsonProcessingException {
-        JmxTransServers servers = new JmxTransServers();
-        servers.setServers(new ArrayList<>());
-        ObjectMapper mapper = new ObjectMapper();
+    private String generateJMXConfig() {
+        List<JmxTransQueries> queries = jmxTransQueries();
+        List<JmxTransServer> servers = new ArrayList<>(numberOfBrokers);
+
         String headlessService = KafkaResources.brokersServiceName(cluster);
-        for (int brokerNumber = 0; brokerNumber < numOfBrokers; brokerNumber++) {
-            String brokerServiceName = KafkaCluster.externalServiceName(clusterName, brokerNumber) + "." + headlessService;
-            servers.getServers().add(convertSpecToServers(spec, brokerServiceName));
+
+        for (int brokerNumber = 0; brokerNumber < numberOfBrokers; brokerNumber++) {
+            String brokerServiceName = KafkaCluster.externalServiceName(cluster, brokerNumber) + "." + headlessService;
+            servers.add(jmxTransServer(queries, brokerServiceName));
         }
+
+        JmxTransServers jmxTransConfiguration = new JmxTransServers();
+        jmxTransConfiguration.setServers(servers);
+
         try {
-            return mapper.writeValueAsString(servers);
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.writeValueAsString(jmxTransConfiguration);
         } catch (JsonProcessingException e) {
-            LOGGER.errorCr(reconciliation, "Could not create JmxTrans config json because: " + e.getMessage());
-            throw e;
+            LOGGER.errorCr(reconciliation, "Failed to convert JMX Trans configuration to JSON", e);
+            throw new RuntimeException("Failed to convert JMX Trans configuration to JSON", e);
         }
+    }
+
+    /**
+     * Generates the queries for the JMX Trans configuration
+     *
+     * @return  List with JMX Trans queries
+     */
+    private List<JmxTransQueries> jmxTransQueries() {
+        List<JmxTransQueries> queries = new ArrayList<>(kafkaQueries.size());
+
+        for (JmxTransQueryTemplate queryTemplate : kafkaQueries) {
+            JmxTransQueries query = new JmxTransQueries();
+            query.setObj(queryTemplate.getTargetMBean());
+            query.setAttr(queryTemplate.getAttributes());
+            query.setOutputWriters(new ArrayList<>());
+
+            for (JmxTransOutputDefinitionTemplate outputDefinitionTemplate : outputDefinitions) {
+                if (queryTemplate.getOutputs().contains(outputDefinitionTemplate.getName())) {
+                    JmxTransOutputWriter outputWriter = new JmxTransOutputWriter();
+                    outputWriter.setAtClass(outputDefinitionTemplate.getOutputType());
+
+                    if (outputDefinitionTemplate.getHost() != null) {
+                        outputWriter.setHost(outputDefinitionTemplate.getHost());
+                    }
+
+                    if (outputDefinitionTemplate.getPort() != null) {
+                        outputWriter.setPort(outputDefinitionTemplate.getPort());
+                    }
+
+                    if (outputDefinitionTemplate.getFlushDelayInSeconds()  != null) {
+                        outputWriter.setFlushDelayInSeconds(outputDefinitionTemplate.getFlushDelayInSeconds());
+                    }
+
+                    outputWriter.setTypeNames(outputDefinitionTemplate.getTypeNames());
+                    query.getOutputWriters().add(outputWriter);
+                }
+            }
+
+            queries.add(query);
+        }
+
+        return queries;
+    }
+
+    /**
+     * Generates the server configuration for given Kafka broker
+     *
+     * @param queries           List of Queries which should be used for this broker
+     * @param brokerServiceName Address of the service where to connect to the broker
+     *
+     * @return  JMX Trans server instance for given Kafka broker
+     */
+    private JmxTransServer jmxTransServer(List<JmxTransQueries> queries, String brokerServiceName) {
+        JmxTransServer server = new JmxTransServer();
+
+        server.setHost(brokerServiceName);
+        server.setPort(AbstractModel.JMX_PORT);
+        server.setQueries(queries);
+
+        if (isJmxAuthenticated) {
+            server.setUsername("${kafka.username}");
+            server.setPassword("${kafka.password}");
+        }
+
+        return server;
     }
 
     /**
      * Generates the JmxTrans config map
      *
-     * @param spec The JmxTransSpec that was defined by the user
-     * @param numOfBrokers number of kafka brokers
      * @return the config map that mounts the JmxTrans config
-     * @throws JsonProcessingException when JmxTrans config can't be created properly
      */
-    public ConfigMap generateJmxTransConfigMap(JmxTransSpec spec, int numOfBrokers) throws JsonProcessingException {
+    public ConfigMap generateConfigMap() {
         Map<String, String> data = new HashMap<>(1);
-        String jmxConfig = generateJMXConfig(spec, numOfBrokers);
-        data.put(JMXTRANS_CONFIGMAP_KEY, jmxConfig);
-        configMapName = jmxTransConfigName(clusterName);
-        return createConfigMap(jmxTransConfigName(clusterName), data);
+        data.put(JMXTRANS_CONFIGMAP_KEY, generateJMXConfig());
+
+        return createConfigMap(JmxTransResources.configMapName(cluster), data);
     }
 
     public List<Volume> getVolumes() {
         List<Volume> volumes = new ArrayList<>(2);
 
         volumes.add(createTempDirVolume());
-        volumes.add(VolumeUtils.createConfigMapVolume(JMXTRANS_VOLUME_NAME, configMapName));
+        volumes.add(VolumeUtils.createConfigMapVolume(JMXTRANS_VOLUME_NAME, JmxTransResources.configMapName(cluster)));
 
         return volumes;
     }
@@ -250,7 +322,7 @@ public class JmxTrans extends AbstractModel {
                 .withName(name)
                 .withImage(getImage())
                 .withEnv(getEnvVars())
-                .withReadinessProbe(jmxTransReadinessProbe(readinessProbeOptions, clusterName))
+                .withReadinessProbe(jmxTransReadinessProbe(readinessProbeOptions, cluster))
                 .withResources(getResources())
                 .withVolumeMounts(getVolumeMounts())
                 .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, getImage()))
@@ -266,10 +338,11 @@ public class JmxTrans extends AbstractModel {
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
 
-        if (isJmxAuthenticated()) {
+        if (isJmxAuthenticated) {
             varList.add(buildEnvVarFromSecret(KafkaCluster.ENV_VAR_KAFKA_JMX_USERNAME, KafkaCluster.jmxSecretName(cluster), KafkaCluster.SECRET_JMX_USERNAME_KEY));
             varList.add(buildEnvVarFromSecret(KafkaCluster.ENV_VAR_KAFKA_JMX_PASSWORD, KafkaCluster.jmxSecretName(cluster), KafkaCluster.SECRET_JMX_PASSWORD_KEY));
         }
+
         varList.add(buildEnvVar(ENV_VAR_JMXTRANS_LOGGING_LEVEL, loggingLevel));
 
         // Add shared environment variables used for all containers
@@ -278,25 +351,6 @@ public class JmxTrans extends AbstractModel {
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
 
         return varList;
-    }
-
-    /**
-     * Generates the name of the JmxTrans deployment
-     *
-     * @param kafkaCluster  Name of the Kafka Custom Resource
-     * @return  Name of the JmxTrans deployment
-     */
-    public static String jmxTransName(String kafkaCluster) {
-        return JmxTransResources.deploymentName(kafkaCluster);
-    }
-
-    /**
-     * Get the name of the JmxTrans service account given the name of the {@code kafkaCluster}.
-     * @param kafkaCluster The cluster name
-     * @return The name of the JmxTrans service account.
-     */
-    public static String containerServiceAccountName(String kafkaCluster) {
-        return JmxTransResources.serviceAccountName(kafkaCluster);
     }
 
     @Override
@@ -309,62 +363,10 @@ public class JmxTrans extends AbstractModel {
         return JmxTransResources.serviceAccountName(cluster);
     }
 
-    public static String jmxTransConfigName(String cluster) {
-        return cluster + JMX_METRICS_CONFIG_SUFFIX;
-    }
-
-    public boolean isDeployed() {
-        return isDeployed;
-    }
-
-    public boolean isJmxAuthenticated() {
-        return isJmxAuthenticated;
-    }
-
     protected static io.fabric8.kubernetes.api.model.Probe jmxTransReadinessProbe(io.strimzi.api.kafka.model.Probe  kafkaJmxMetricsReadinessProbe, String clusterName) {
         String internalBootstrapServiceName = KafkaResources.brokersServiceName(clusterName);
         String metricsPortValue = String.valueOf(KafkaCluster.JMX_PORT);
         kafkaJmxMetricsReadinessProbe = kafkaJmxMetricsReadinessProbe == null ? DEFAULT_JMX_TRANS_PROBE : kafkaJmxMetricsReadinessProbe;
         return ProbeGenerator.execProbe(kafkaJmxMetricsReadinessProbe, Arrays.asList("/opt/jmx/jmxtrans_readiness_check.sh", internalBootstrapServiceName, metricsPortValue));
     }
-
-    private JmxTransServer convertSpecToServers(JmxTransSpec spec, String brokerServiceName) {
-        JmxTransServer server = new JmxTransServer();
-        server.setHost(brokerServiceName);
-        server.setPort(AbstractModel.JMX_PORT);
-        if (isJmxAuthenticated()) {
-            server.setUsername("${kafka.username}");
-            server.setPassword("${kafka.password}");
-        }
-        List<JmxTransQueries> queries = new ArrayList<>();
-        for (JmxTransQueryTemplate queryTemplate : spec.getKafkaQueries()) {
-            JmxTransQueries query = new JmxTransQueries();
-            query.setObj(queryTemplate.getTargetMBean());
-            query.setAttr(queryTemplate.getAttributes());
-            query.setOutputWriters(new ArrayList<>());
-
-            for (JmxTransOutputDefinitionTemplate outputDefinitionTemplate : spec.getOutputDefinitions()) {
-                if (queryTemplate.getOutputs().contains(outputDefinitionTemplate.getName())) {
-                    JmxTransOutputWriter outputWriter = new JmxTransOutputWriter();
-                    outputWriter.setAtClass(outputDefinitionTemplate.getOutputType());
-                    if (outputDefinitionTemplate.getHost() != null) {
-                        outputWriter.setHost(outputDefinitionTemplate.getHost());
-                    }
-                    if (outputDefinitionTemplate.getPort() != null) {
-                        outputWriter.setPort(outputDefinitionTemplate.getPort());
-                    }
-                    if (outputDefinitionTemplate.getFlushDelayInSeconds()  != null) {
-                        outputWriter.setFlushDelayInSeconds(outputDefinitionTemplate.getFlushDelayInSeconds());
-                    }
-                    outputWriter.setTypeNames(outputDefinitionTemplate.getTypeNames());
-                    query.getOutputWriters().add(outputWriter);
-                }
-            }
-
-            queries.add(query);
-        }
-        server.setQueries(queries);
-        return server;
-    }
-
 }
