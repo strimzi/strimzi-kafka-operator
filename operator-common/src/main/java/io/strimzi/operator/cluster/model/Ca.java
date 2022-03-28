@@ -209,8 +209,7 @@ public abstract class Ca {
         this.clock = Clock.systemUTC();
     }
 
-    /** test **/
-    protected void setClock(Clock clock) {
+    /* test */ protected void setClock(Clock clock) {
         this.clock = clock;
     }
 
