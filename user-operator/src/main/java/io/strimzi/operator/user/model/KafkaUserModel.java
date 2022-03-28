@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.KafkaUserTlsExternalClientAuthentication;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
@@ -34,11 +35,13 @@ import javax.naming.ldap.LdapName;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class KafkaUserModel {
@@ -200,14 +203,18 @@ public class KafkaUserModel {
      * @param userSecret Secret with the user certificate
      * @param validityDays The number of days the certificate should be valid for.
      * @param renewalDays The renewal days.
+     * @param maintenanceWindows List of configured maintenance windows
+     * @param dateSupplier Date supplier used to check whether we are inside a maintenance window or not
      */
     @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     public void maybeGenerateCertificates(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator,
-                                          Secret clientsCaCertSecret, Secret clientsCaKeySecret,
-                                          Secret userSecret, int validityDays, int renewalDays) {
+                                          Secret clientsCaCertSecret, Secret clientsCaKeySecret, Secret userSecret, int validityDays,
+                                          int renewalDays, List<String> maintenanceWindows, Supplier<Date> dateSupplier) {
         validateCACertificates(clientsCaCertSecret, clientsCaKeySecret);
 
-        ClientsCa clientsCa = new ClientsCa(reconciliation, certManager,
+        ClientsCa clientsCa = new ClientsCa(
+                reconciliation,
+                certManager,
                 passwordGenerator,
                 clientsCaCertSecret.getMetadata().getName(),
                 clientsCaCertSecret,
@@ -215,57 +222,85 @@ public class KafkaUserModel {
                 clientsCaKeySecret,
                 validityDays,
                 renewalDays,
-                false, null);
+                false,
+                null);
         this.caCert = clientsCa.currentCaCertBase64();
+
         if (userSecret != null) {
             // Secret already exists -> lets verify if it has keys from the same CA
             String originalCaCrt = clientsCaCertSecret.getData().get("ca.crt");
             String caCrt = userSecret.getData().get("ca.crt");
             String userCrt = userSecret.getData().get("user.crt");
             String userKey = userSecret.getData().get("user.key");
-            String userKeyStore = userSecret.getData().get("user.p12");
-            String userKeyStorePassword = userSecret.getData().get("user.password");
+
             if (originalCaCrt != null
                     && originalCaCrt.equals(caCrt)
                     && userCrt != null
                     && !userCrt.isEmpty()
                     && userKey != null
-                    && !userKey.isEmpty()
-                    && !clientsCa.isExpiring(userSecret, "user.crt")) {
-
-                if (userKeyStore != null
-                        && !userKeyStore.isEmpty()
-                        && userKeyStorePassword != null
-                        && !userKeyStorePassword.isEmpty()) {
-
-                    this.userCertAndKey = new CertAndKey(
-                            decodeFromSecret(userSecret, "user.key"),
-                            decodeFromSecret(userSecret, "user.crt"),
-                            null,
-                            decodeFromSecret(userSecret, "user.p12"),
-                            new String(decodeFromSecret(userSecret, "user.password"), StandardCharsets.US_ASCII));
-                } else {
-                    // coming from an older operator version, the user secret exists but without keystore and password
-                    try {
-                        this.userCertAndKey = clientsCa.addKeyAndCertToKeyStore(name,
-                                decodeFromSecret(userSecret, "user.key"),
-                                decodeFromSecret(userSecret, "user.crt"));
-                    } catch (IOException e) {
-                        LOGGER.errorCr(reconciliation, "Error generating the keystore for user {}", name, e);
+                    && !userKey.isEmpty()) {
+                if (clientsCa.isExpiring(userSecret, "user.crt"))   {
+                    // The certificate exists but is expiring
+                    if (Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, dateSupplier))   {
+                        // => if we are in compliance with maintenance window, we renew it
+                        LOGGER.infoCr(reconciliation, "Certificate for user {} in namespace {} is within the renewal period and will be renewed", name, namespace);
+                        this.userCertAndKey = generateNewCertificate(reconciliation, clientsCa);
+                    } else {
+                        // => if we are outside of maintenance window, we reuse it
+                        LOGGER.infoCr(reconciliation, "Certificate for user {} in namespace {} is within the renewal period and will be renewed in the next maintenance window", name, namespace);
+                        this.userCertAndKey = reuseCertificate(reconciliation, clientsCa, userSecret);
                     }
+                } else {
+                    // The certificate exists and isn't expiring => we just reuse it
+                    this.userCertAndKey = reuseCertificate(reconciliation, clientsCa, userSecret);
                 }
-                return;
+            } else {
+                // User secret exists, but does not seem to contain the complete user certificate => we have to generate a new user certificate
+                this.userCertAndKey = generateNewCertificate(reconciliation, clientsCa);
             }
-        }
-
-        try {
-            this.userCertAndKey = clientsCa.generateSignedCert(name);
-        } catch (IOException e) {
-            LOGGER.errorCr(reconciliation, "Error generating signed certificate for user {}", name, e);
+        } else {
+            // User secret does not exist yet => we have to generate a new user certificate
+            this.userCertAndKey = generateNewCertificate(reconciliation, clientsCa);
         }
     }
 
-    private void validateCACertificates(Secret clientsCaCertSecret, Secret clientsCaKeySecret)   {
+    CertAndKey generateNewCertificate(Reconciliation reconciliation, Ca clientsCa) {
+        try {
+            return clientsCa.generateSignedCert(name);
+        } catch (IOException e) {
+            LOGGER.errorCr(reconciliation, "Error generating signed certificate for user {}", name, e);
+            return null;
+        }
+    }
+
+    CertAndKey reuseCertificate(Reconciliation reconciliation, Ca clientsCa, Secret userSecret) {
+        String userKeyStore = userSecret.getData().get("user.p12");
+        String userKeyStorePassword = userSecret.getData().get("user.password");
+
+        if (userKeyStore != null
+                && !userKeyStore.isEmpty()
+                && userKeyStorePassword != null
+                && !userKeyStorePassword.isEmpty()) {
+            return new CertAndKey(
+                    decodeFromSecret(userSecret, "user.key"),
+                    decodeFromSecret(userSecret, "user.crt"),
+                    null,
+                    decodeFromSecret(userSecret, "user.p12"),
+                    new String(decodeFromSecret(userSecret, "user.password"), StandardCharsets.US_ASCII));
+        } else {
+            // coming from an older operator version, the user secret exists but without keystore and password
+            try {
+                return clientsCa.addKeyAndCertToKeyStore(name,
+                        decodeFromSecret(userSecret, "user.key"),
+                        decodeFromSecret(userSecret, "user.crt"));
+            } catch (IOException e) {
+                LOGGER.errorCr(reconciliation, "Error generating the keystore for user {}", name, e);
+                return null;
+            }
+        }
+    }
+
+    void validateCACertificates(Secret clientsCaCertSecret, Secret clientsCaKeySecret)   {
         if (clientsCaCertSecret == null) {
             // CA certificate secret does not exist
             throw new InvalidCertificateException("The Clients CA Cert Secret is missing");

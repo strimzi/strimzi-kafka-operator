@@ -65,6 +65,7 @@ public class EntityUserOperator extends AbstractModel {
     public static final String ENV_VAR_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
     public static final String ENV_VAR_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
     public static final String ENV_VAR_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
+    public static final String ENV_VAR_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
             .withInitialDelaySeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
 
@@ -82,6 +83,7 @@ public class EntityUserOperator extends AbstractModel {
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
     private boolean aclsAdminApiSupported = false;
+    private List<String> maintenanceWindows;
 
     /**
      * @param reconciliation   The reconciliation
@@ -245,6 +247,10 @@ public class EntityUserOperator extends AbstractModel {
                     // plugin. This information is passed to the User Operator.
                     result.aclsAdminApiSupported = kafkaAssembly.getSpec().getKafka().getAuthorization().supportsAdminApi();
                 }
+
+                if (kafkaAssembly.getSpec().getMaintenanceTimeWindows() != null)    {
+                    result.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
+                }
             }
         }
         return result;
@@ -291,6 +297,12 @@ public class EntityUserOperator extends AbstractModel {
         varList.addAll(getRequiredEnvVars());
 
         addContainerEnvsToExistingEnvs(varList, templateContainerEnvVars);
+
+        // if maintenance time windows are set, we pass them as environment variable
+        if (maintenanceWindows != null && !maintenanceWindows.isEmpty())    {
+            // The Cron expressions can contain commas -> we use semi-colon as delimiter
+            varList.add(buildEnvVar(ENV_VAR_MAINTENANCE_TIME_WINDOWS, String.join(";", maintenanceWindows)));
+        }
 
         return varList;
     }

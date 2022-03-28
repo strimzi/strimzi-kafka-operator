@@ -708,7 +708,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 reconciliation.namespace(), reconciliation.name(), caLabels.toMap(),
                                 clusterCaCertLabels, clusterCaCertAnnotations,
                                 clusterCaConfig != null && !clusterCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
-                                ModelUtils.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier));
+                                Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier));
 
                         CertificateAuthority clientsCaConfig = kafkaAssembly.getSpec().getClientsCa();
 
@@ -726,7 +726,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         clientsCa.createRenewOrReplace(reconciliation.namespace(), reconciliation.name(),
                                 caLabels.toMap(), emptyMap(), emptyMap(),
                                 clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
-                                ModelUtils.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier));
+                                Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier));
 
                         List<Future> secretReconciliations = new ArrayList<>(2);
 
@@ -1759,7 +1759,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             vertx.createSharedWorkerExecutor("kubernetes-ops-pool").<ReconciliationState>executeBlocking(
                 future -> {
                     try {
-                        zkCluster.generateCertificates(kafkaAssembly, clusterCa, ModelUtils.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier));
+                        zkCluster.generateCertificates(kafkaAssembly, clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier));
                         future.complete(this);
                     } catch (Throwable e) {
                         future.fail(e);
@@ -2794,7 +2794,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     try {
                         kafkaCluster.generateCertificates(kafkaAssembly,
                                 clusterCa, kafkaBootstrapDnsName, kafkaBrokerDnsNames,
-                                ModelUtils.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier));
+                                Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier));
                         future.complete(this);
                     } catch (Throwable e) {
                         future.fail(e);
@@ -4087,7 +4087,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityTopicOperatorSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(EntityTopicOperator.secretName(name), entityOperator == null || entityOperator.getTopicOperator() == null ? null : entityOperator.getTopicOperator().generateSecret(clusterCa, ModelUtils.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier)))
+            return updateCertificateSecretWithDiff(EntityTopicOperator.secretName(name), entityOperator == null || entityOperator.getTopicOperator() == null ? null : entityOperator.getTopicOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier)))
                     .map(changed -> {
                         existingEntityTopicOperatorCertsChanged = changed;
                         return this;
@@ -4095,7 +4095,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityUserOperatorSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(EntityUserOperator.secretName(name), entityOperator == null || entityOperator.getUserOperator() == null ? null : entityOperator.getUserOperator().generateSecret(clusterCa, ModelUtils.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier)))
+            return updateCertificateSecretWithDiff(EntityUserOperator.secretName(name), entityOperator == null || entityOperator.getUserOperator() == null ? null : entityOperator.getUserOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier)))
                     .map(changed -> {
                         existingEntityUserOperatorCertsChanged = changed;
                         return this;
@@ -4148,7 +4148,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> cruiseControlSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(CruiseControl.secretName(name), cruiseControl == null ? null : cruiseControl.generateSecret(kafkaAssembly, clusterCa, ModelUtils.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier)))
+            return updateCertificateSecretWithDiff(CruiseControl.secretName(name), cruiseControl == null ? null : cruiseControl.generateSecret(kafkaAssembly, clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier)))
                     .map(changed -> {
                         existingCruiseControlCertsChanged = changed;
                         return this;
@@ -4338,7 +4338,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             Secret secret = ModelUtils.buildSecret(reconciliation, clusterCa, clusterCa.clusterOperatorSecret(), namespace,
                     ClusterOperator.secretName(name), "cluster-operator", "cluster-operator",
-                    labels, ownerRef, ModelUtils.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier));
+                    labels, ownerRef, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier));
 
             return withVoid(secretOperations.reconcile(reconciliation, namespace, ClusterOperator.secretName(name),
                     secret));

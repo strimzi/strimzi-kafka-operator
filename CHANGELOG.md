@@ -6,6 +6,7 @@
 * Increase the size of the `/tmp` volumes to 5Mi to allow unpacking of compression libraries
 * Use `/healthz` endpoint for Kafka Exporter health checks
 * Update Jackson Library to 2.12.6
+* Renew user certificates in User Operator only during maintenance windows
 
 ## 0.28.0
 

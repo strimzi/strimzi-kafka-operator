@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
@@ -79,9 +78,7 @@ public class EntityUserOperatorTest {
     private final String secretPrefix = "strimzi-";
     private final int uoReconciliationInterval = 120;
 
-    private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String metricsCMName = "metrics-cm";
-    private final ConfigMap metricsCM = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm(metricsCmJson, metricsCMName, "metrics-config.yml");
     private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
     private final List<SystemProperty> javaSystemProperties = new ArrayList<SystemProperty>() {{
             add(new SystemPropertyBuilder().withName("javax.net.debug").withValue("verbose").build());
@@ -359,5 +356,30 @@ public class EntityUserOperatorTest {
                     .orElseThrow()
                     .getValue(),
                 is(String.valueOf(authorizer.supportsAdminApi())));
+    }
+
+    @ParallelTest
+    public void testMaintenanceTimeWindows()    {
+        Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas,
+                image, healthDelay, healthTimeout, jmxMetricsConfig, singletonMap("foo", "bar"), emptyMap()))
+                .editSpec()
+                    .withNewEntityOperator()
+                        .withNewUserOperator()
+                        .endUserOperator()
+                    .endEntityOperator()
+                .endSpec()
+                .build();
+
+        EntityUserOperator f = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kafkaAssembly);
+        assertThat(f.getEnvVars().stream().anyMatch(a -> EntityUserOperator.ENV_VAR_MAINTENANCE_TIME_WINDOWS.equals(a.getName())), is(false));
+
+        kafkaAssembly = new KafkaBuilder(kafkaAssembly)
+                .editSpec()
+                    .withMaintenanceTimeWindows("* * 8-10 * * ?", "* * 14-15 * * ?")
+                .endSpec()
+                .build();
+
+        f = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kafkaAssembly);
+        assertThat(f.getEnvVars().stream().filter(a -> EntityUserOperator.ENV_VAR_MAINTENANCE_TIME_WINDOWS.equals(a.getName())).findFirst().orElseThrow().getValue(), is("* * 8-10 * * ?;* * 14-15 * * ?"));
     }
 }

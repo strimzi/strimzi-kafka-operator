@@ -37,15 +37,15 @@ public class ResourceUtils {
     public static final String CA_KEY_NAME = NAME + "-key";
     public static final String PASSWORD = "my-password";
 
-    public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels, boolean aclsAdminApiSupported, String scramShaPassworldLength) {
+    public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels, boolean aclsAdminApiSupported, String scramShaPasswordLength) {
         Map<String, String> envVars = new HashMap<>(4);
         envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE);
         envVars.put(UserOperatorConfig.STRIMZI_LABELS, labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));
         envVars.put(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, CA_CERT_NAME);
         envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
         envVars.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, Boolean.toString(aclsAdminApiSupported));
-        if (!scramShaPassworldLength.equals("12")) {
-            envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, scramShaPassworldLength);
+        if (!scramShaPasswordLength.equals("12")) {
+            envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, scramShaPasswordLength);
         }
 
         return UserOperatorConfig.fromMap(envVars);
