@@ -363,17 +363,6 @@ public class KafkaRebalanceAssemblyOperator
 
         LOGGER.infoCr(reconciliation, "Rebalance action from state [{}]", currentState);
 
-        if (Annotations.isReconciliationPausedWithAnnotation(kafkaRebalance)) {
-            // we need to do this check again because it was triggered by a watcher
-            KafkaRebalanceStatus status = new KafkaRebalanceStatus();
-
-            Set<Condition> unknownAndDeprecatedConditions = validate(reconciliation, kafkaRebalance);
-            unknownAndDeprecatedConditions.add(StatusUtils.getPausedCondition());
-            status.setConditions(new ArrayList<>(unknownAndDeprecatedConditions));
-
-            return updateStatus(reconciliation, kafkaRebalance, status, null).compose(i -> Future.succeededFuture());
-        }
-
         if (kafkaRebalance.getSpec().isRebalanceDisk() && !usingJbodStorage) {
             String error = "Cannot set rebalanceDisk=true for Kafka clusters with a non-JBOD storage config. " +
                 "Intra-broker balancing only applies to Kafka deployments that use JBOD storage with multiple disks.";
@@ -385,6 +374,9 @@ public class KafkaRebalanceAssemblyOperator
 
         return computeNextStatus(reconciliation, host, apiClient, kafkaRebalance, currentState, rebalanceAnnotation, rebalanceOptionsBuilder)
            .compose(desiredStatusAndMap -> {
+               if (Annotations.isReconciliationPausedWithAnnotation(kafkaRebalance)) {
+                   return updateStatus(reconciliation, kafkaRebalance, desiredStatusAndMap.status, null).compose(i -> Future.succeededFuture());
+               }
                // More events related to resource modification might be queued with a stale state. (potentially updated by the rebalance holding the lock)
                // Due to possible long rebalancing operations that take the lock for the entire period,
                // do a new get to retrieve the current resource state.
@@ -455,6 +447,8 @@ public class KafkaRebalanceAssemblyOperator
             case Ready:
                 // Rebalance Complete
                 return onReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
+            case ReconciliationPaused:
+                return onReconciliationPaused(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
             case NotReady:
                 // Error case
                 return onNotReady(reconciliation, host, apiClient, kafkaRebalance, rebalanceAnnotation, rebalanceOptionsBuilder);
@@ -731,6 +725,20 @@ public class KafkaRebalanceAssemblyOperator
             // Stay in the current NotReady state, returning null as next state
             return Future.succeededFuture(new MapAndStatus<>(null, null));
         }
+    }
+
+
+    private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onReconciliationPaused(Reconciliation reconciliation,
+                                                                             String host, CruiseControlApi apiClient,
+                                                                             KafkaRebalance kafkaRebalance,
+                                                                             KafkaRebalanceAnnotation rebalanceAnnotation,
+                                                                             RebalanceOptions.RebalanceOptionsBuilder rebalanceOptionsBuilder) {
+        if (Annotations.isReconciliationPausedWithAnnotation(kafkaRebalance)) {
+            Set<Condition> unknownAndDeprecatedConditions = validate(reconciliation, kafkaRebalance);
+            unknownAndDeprecatedConditions.add(StatusUtils.getPausedCondition());
+            return configMapOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName()).compose(loadmap -> Future.succeededFuture(new MapAndStatus<>(loadmap, buildRebalanceStatusFromPreviousStatus(kafkaRebalance.getStatus(), unknownAndDeprecatedConditions))));
+        }
+        return requestRebalance(reconciliation, host, apiClient, kafkaRebalance, true, rebalanceOptionsBuilder);
     }
 
     /**
@@ -1108,8 +1116,10 @@ public class KafkaRebalanceAssemblyOperator
                                             KafkaRebalanceStatus kafkaRebalanceStatus = currentKafkaRebalance.getStatus();
                                             KafkaRebalanceState currentState;
                                             // cluster rebalance is new or it is in one of the others states
-                                            if (kafkaRebalanceStatus == null || kafkaRebalanceStatus.getConditions().stream().filter(cond -> "ReconciliationPaused".equals(cond.getType())).findAny().isPresent()) {
+                                            if (kafkaRebalanceStatus == null) {
                                                 currentState = KafkaRebalanceState.New;
+                                            } else if (kafkaRebalanceStatus.getConditions().stream().filter(cond -> "ReconciliationPaused".equals(cond.getType())).findAny().isPresent()) {
+                                                currentState = KafkaRebalanceState.ReconciliationPaused;
                                             } else {
                                                 String rebalanceStateType = rebalanceStateConditionType(kafkaRebalanceStatus);
                                                 if (rebalanceStateType == null) {
