@@ -102,7 +102,6 @@ public abstract class Ca {
     private final PasswordGenerator passwordGenerator;
     protected final Reconciliation reconciliation;
     private Clock clock;
-    private static final ZoneId UTC = ZoneId.of("UTC");
 
     /**
      * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
