@@ -21,8 +21,11 @@ NOTE: Strimzi does not require Kubernetes raw block volumes.
 
 == File systems
 
-It is recommended that you configure your storage system to use the _XFS_ file system.
-Strimzi is also compatible with the _ext4_ file system, but this might require additional configuration for best results.
+Kafka uses a file system for storing, retrieving, and caching messages.
+Strimzi is compatible with the XFS and ext4 file systems, which are commonly used with Kafka.
+Consider the underlying architecture and requirements of your deployment when choosing and setting up your file system.
+
+For more information, refer to {ApacheKafkaFileSystem} in the Kafka documentation.
 
 == Apache Kafka and ZooKeeper storage
 Use separate disks for Apache Kafka and ZooKeeper.
