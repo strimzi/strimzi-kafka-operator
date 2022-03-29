@@ -4,27 +4,32 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
+import io.fabric8.kubernetes.api.model.Volume;
+import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
+import io.strimzi.api.kafka.model.JmxTransResources;
 import io.strimzi.api.kafka.model.JmxTransSpec;
 import io.strimzi.api.kafka.model.JmxTransSpecBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplateBuilder;
 import io.strimzi.api.kafka.model.template.JmxTransQueryTemplateBuilder;
@@ -47,13 +52,15 @@ import java.util.Map;
 
 import static io.strimzi.operator.cluster.CustomMatchers.hasEntries;
 import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasProperty;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
 public class JmxTransTest {
@@ -63,31 +70,26 @@ public class JmxTransTest {
     private final String image = "image";
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
-    private final String metricsCMName = "metrics-cm";
-    private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
-    private final Map<String, Object> configuration = singletonMap("foo", "bar");
-    private final InlineLogging kafkaLog = new InlineLogging();
-    private final InlineLogging zooLog = new InlineLogging();
 
     private final JmxTransSpec jmxTransSpec = new JmxTransSpecBuilder()
+            .withImage(image)
             .withOutputDefinitions(new JmxTransOutputDefinitionTemplateBuilder()
-                    .withName("Name")
-                    .withOutputType("output")
+                    .withName("standardOut")
+                    .withOutputType("com.googlecode.jmxtrans.model.output.StdOutWriter")
                     .build())
             .withKafkaQueries(new JmxTransQueryTemplateBuilder()
-                    .withOutputs("name")
-                    .withAttributes("attributes")
-                    .withTargetMBean("mbean")
+                    .withOutputs("standardOut")
+                    .withAttributes("Count")
+                    .withTargetMBean("kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec,topic=*")
                     .build())
             .build();
 
-    private final Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, kafkaLog, zooLog))
+    private final Kafka kafkaAssembly = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
             .editSpec()
                 .withJmxTrans(jmxTransSpec)
-                .editKafka().withJmxOptions(new KafkaJmxOptionsBuilder()
-                    .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder().build())
-                .build())
-            .endKafka()
+                .editKafka()
+                    .withJmxOptions(new KafkaJmxOptionsBuilder().withAuthentication(new KafkaJmxAuthenticationPasswordBuilder().build()).build())
+                .endKafka()
             .endSpec()
             .build();
 
@@ -165,24 +167,108 @@ public class JmxTransTest {
         assertThat(outputWriterJson.getJsonArray("typeNames").getList().get(0), is("SingleType"));
     }
 
-    @ParallelTest
-    public void testConfigMapOnScaleUp() throws JsonProcessingException  {
-        ConfigMap originalCM = jmxTrans.generateJmxTransConfigMap(jmxTransSpec, 1);
-        ConfigMap scaledCM = jmxTrans.generateJmxTransConfigMap(jmxTransSpec, 2);
-
-        assertThat(originalCM.getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length() <
-                        scaledCM.getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length(),
-                is(true));
+    private List<EnvVar> getExpectedEnvVars() {
+        List<EnvVar> expected = new ArrayList<>();
+        expected.add(new EnvVarBuilder().withName(KafkaCluster.ENV_VAR_KAFKA_JMX_USERNAME).withNewValueFrom().withNewSecretKeyRef().withName(KafkaCluster.jmxSecretName(cluster)).withKey(KafkaCluster.SECRET_JMX_USERNAME_KEY).endSecretKeyRef().endValueFrom().build());
+        expected.add(new EnvVarBuilder().withName(KafkaCluster.ENV_VAR_KAFKA_JMX_PASSWORD).withNewValueFrom().withNewSecretKeyRef().withName(KafkaCluster.jmxSecretName(cluster)).withKey(KafkaCluster.SECRET_JMX_PASSWORD_KEY).endSecretKeyRef().endValueFrom().build());
+        expected.add(new EnvVarBuilder().withName(JmxTrans.ENV_VAR_JMXTRANS_LOGGING_LEVEL).withValue("INFO").build());
+        return expected;
     }
 
     @ParallelTest
-    public void testConfigMapOnScaleDown() throws JsonProcessingException  {
-        ConfigMap originalCM = jmxTrans.generateJmxTransConfigMap(jmxTransSpec, 2);
-        ConfigMap scaledCM = jmxTrans.generateJmxTransConfigMap(jmxTransSpec, 1);
+    public void testGenerateDeployment() {
+        Deployment dep = jmxTrans.generateDeployment(null, null);
 
-        assertThat(originalCM.getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length() >
-                        scaledCM.getData().get(JmxTrans.JMXTRANS_CONFIGMAP_KEY).length(),
-                is(true));
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        assertThat(containers.size(), is(1));
+
+        assertThat(dep.getMetadata().getName(), is(JmxTransResources.deploymentName(cluster)));
+        assertThat(dep.getMetadata().getNamespace(), is(namespace));
+        assertThat(dep.getMetadata().getOwnerReferences().size(), is(1));
+        assertThat(dep.getMetadata().getOwnerReferences().get(0), is(jmxTrans.createOwnerReference()));
+
+        // checks on the main Exporter container
+        assertThat(containers.get(0).getImage(), is(image));
+        assertThat(containers.get(0).getEnv(), is(getExpectedEnvVars()));
+        assertThat(containers.get(0).getPorts().size(), is(0));
+        assertThat(dep.getSpec().getStrategy().getType(), is("RollingUpdate"));
+        assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxSurge(), is(new IntOrString(1)));
+        assertThat(dep.getSpec().getStrategy().getRollingUpdate().getMaxUnavailable(), is(new IntOrString(0)));
+
+        // Test healthchecks
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe(), is(nullValue()));
+
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getExec().getCommand(), is(List.of("/opt/jmx/jmxtrans_readiness_check.sh", KafkaResources.brokersServiceName(cluster), "9999")));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds(), is(JmxTransSpec.DEFAULT_HEALTHCHECK_DELAY));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds(), is(JmxTransSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
+
+        // Test volumes
+        List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
+        assertThat(volumes.size(), is(2));
+
+        Volume volume = volumes.stream().filter(vol -> AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
+        assertThat(volume, is(notNullValue()));
+        assertThat(volume.getEmptyDir().getMedium(), is("Memory"));
+        assertThat(volume.getEmptyDir().getSizeLimit(), is(new Quantity("5Mi")));
+
+        volume = volumes.stream().filter(vol -> JmxTrans.JMXTRANS_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
+        assertThat(volume, is(notNullValue()));
+        assertThat(volume.getConfigMap().getName(), is(JmxTransResources.configMapName(cluster)));
+
+        // Test volume mounts
+        List<VolumeMount> volumesMounts = dep.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts();
+        assertThat(volumesMounts.size(), is(2));
+
+        VolumeMount volumeMount = volumesMounts.stream().filter(vol -> AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
+        assertThat(volumeMount, is(notNullValue()));
+        assertThat(volumeMount.getMountPath(), is(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
+
+        volumeMount = volumesMounts.stream().filter(vol -> JmxTrans.JMXTRANS_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
+        assertThat(volumeMount, is(notNullValue()));
+        assertThat(volumeMount.getMountPath(), is(JmxTrans.JMX_FILE_PATH));
+    }
+
+    @ParallelTest
+    public void testImagePullPolicy() {
+        Deployment dep = jmxTrans.generateDeployment(ImagePullPolicy.ALWAYS, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
+
+        dep = jmxTrans.generateDeployment(ImagePullPolicy.IFNOTPRESENT, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
+    }
+
+    @ParallelTest
+    public void testConfigMap() {
+        ConfigMap cm = jmxTrans.generateConfigMap();
+
+        assertThat(cm.getMetadata().getName(), is(JmxTransResources.configMapName(cluster)));
+        assertThat(cm.getMetadata().getNamespace(), is(namespace));
+        assertThat(cm.getMetadata().getOwnerReferences().size(), is(1));
+        assertThat(cm.getMetadata().getOwnerReferences().get(0), is(jmxTrans.createOwnerReference()));
+
+        assertThat(cm.getData().getOrDefault(JmxTrans.JMXTRANS_CONFIGMAP_KEY, ""), is("{\"servers\":[{\"host\":\"foo-kafka-0.foo-kafka-brokers\",\"port\":9999,\"username\":\"${kafka.username}\",\"password\":\"${kafka.password}\",\"queries\":[{\"obj\":\"kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec,topic=*\",\"attr\":[\"Count\"],\"outputWriters\":[{\"@class\":\"com.googlecode.jmxtrans.model.output.StdOutWriter\"}]}]},{\"host\":\"foo-kafka-1.foo-kafka-brokers\",\"port\":9999,\"username\":\"${kafka.username}\",\"password\":\"${kafka.password}\",\"queries\":[{\"obj\":\"kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec,topic=*\",\"attr\":[\"Count\"],\"outputWriters\":[{\"@class\":\"com.googlecode.jmxtrans.model.output.StdOutWriter\"}]}]},{\"host\":\"foo-kafka-2.foo-kafka-brokers\",\"port\":9999,\"username\":\"${kafka.username}\",\"password\":\"${kafka.password}\",\"queries\":[{\"obj\":\"kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec,topic=*\",\"attr\":[\"Count\"],\"outputWriters\":[{\"@class\":\"com.googlecode.jmxtrans.model.output.StdOutWriter\"}]}]}]}"));
+    }
+
+    @ParallelTest
+    public void testNotDeployed() {
+        Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout);
+
+        JmxTrans jmxTrans = JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource);
+
+        assertThat(jmxTrans, is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testWithoutJmx() {
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withJmxTrans(jmxTransSpec)
+                .endSpec()
+                .build();
+
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> JmxTrans.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource));
+        assertThat(e.getMessage(), is("Can't start up JmxTrans 'foo-kafka-jmx-trans' in 'test' as Kafka spec.kafka.jmxOptions is not specified"));
     }
 
     @ParallelTest

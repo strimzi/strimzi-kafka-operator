@@ -3,7 +3,6 @@ set -e
 set +x
 
 EXEC="-jar $JAR_FILE -e -j $JSON_DIR -s $SECONDS_BETWEEN_RUNS -c $CONTINUE_ON_ERROR $ADDITIONAL_JARS_OPTS"
-GC_OPTS="-Xms${HEAP_SIZE}m -Xmx${HEAP_SIZE}m -XX:PermSize=${PERM_SIZE}m -XX:MaxPermSize=${MAX_PERM_SIZE}m"
 JMXTRANS_OPTS="$JMXTRANS_OPTS -Dlogback.configurationFile=file:///${JMXTRANS_HOME}/conf/logback.xml"
 
 if [ -n "${KAFKA_JMX_USERNAME}" ]; then
@@ -23,10 +22,10 @@ MONITOR_OPTS="-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.ssl=
 
 if [ "$1" = 'start-without-jmx' ]; then
     # shellcheck disable=SC2086
-    set /usr/bin/tini -w -e 143 -- java -server $JAVA_OPTS $JMXTRANS_OPTS $GC_OPTS $EXEC
+    set /usr/bin/tini -w -e 143 -- java -server $JAVA_OPTS $JMXTRANS_OPTS $EXEC
 elif [ "$1" = 'start-with-jmx' ]; then
     # shellcheck disable=SC2086
-    set /usr/bin/tini -w -e 143 -- java -server $JAVA_OPTS $JMXTRANS_OPTS $GC_OPTS $MONITOR_OPTS $EXEC
+    set /usr/bin/tini -w -e 143 -- java -server $JAVA_OPTS $JMXTRANS_OPTS $MONITOR_OPTS $EXEC
 fi
 
 exec "$@"
