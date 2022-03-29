@@ -44,13 +44,13 @@ spec:
 . Create or update the resource.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _KAFKA-CONFIG-FILE_
+kubectl apply -f _<kafka_configuration_file>_
 +
 `NodePort` type services are created for each Kafka broker, as well as an external _bootstrap service_.
 The bootstrap service routes external traffic to the Kafka brokers.
 Node addresses used for connection are propagated to the `status` of the Kafka custom resource.
 +
-The cluster CA certificate to verify the identity of the kafka brokers is also created in the secret `<cluster-name>-cluster-ca-cert`.
+The cluster CA certificate to verify the identity of the kafka brokers is also created in the secret `_<cluster_name>_-cluster-ca-cert`.
 
 . Retrieve the bootstrap address you can use to access the Kafka cluster from the status of the `Kafka` resource.
 +

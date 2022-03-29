@@ -147,7 +147,7 @@ kubectl apply -f _<kafka_configuration_file>_ -n _<namespace>_
 +
 The Cluster Operator creates the listeners and sets up the cluster and client certificate authority (CA) certificates to enable authentication within the Kafka cluster.
 +
-The certificates are created in the secret `<cluster-name>-cluster-ca-cert`.
+The certificates are created in the secret `_<cluster_name>_-cluster-ca-cert`.
 
 . Configure two `KafkaUser` resources, one for a user of the source Kafka cluster and one for a user of the target Kafka cluster.
 +

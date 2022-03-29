@@ -69,14 +69,14 @@ spec:
 . Create or update the resource.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _KAFKA-CONFIG-FILE_
+kubectl apply -f _<kafka_configuration_file>_
 +
 `ClusterIP` type services are created for each Kafka broker, as well as an additional _bootstrap service_.
 These services are used by the Ingress controller to route traffic to the Kafka brokers.
 An `Ingress` resource is also created for each service to expose them using the Ingress controller.
 The Ingress hosts are propagated to the `status` of each service.
 +
-The cluster CA certificate to verify the identity of the kafka brokers is also created in the secret `<cluster-name>-cluster-ca-cert`.
+The cluster CA certificate to verify the identity of the kafka brokers is also created in the secret `_<cluster_name>_-cluster-ca-cert`.
 +
 Use the address for the bootstrap host you specified in the `configuration` and port 443 (_BOOTSTRAP-HOST:443_) in your Kafka client as the _bootstrap address_ to connect to the Kafka cluster.
 

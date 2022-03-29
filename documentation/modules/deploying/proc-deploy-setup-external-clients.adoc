@@ -121,7 +121,7 @@ If you are using a `route` listener type, be careful that the whole length of th
 +
 [source,shell,subs=+quotes]
 ----
-kubectl apply -f _KAFKA-CONFIG-FILE_
+kubectl apply -f _<kafka_configuration_file>_
 ----
 +
 The Kafka cluster is configured with a Kafka broker listener using TLS authentication.
@@ -132,7 +132,7 @@ A service is created to serve as the _bootstrap address_ for connection to the K
 +
 A service is also created as the _external bootstrap address_ for external connection to the Kafka cluster using `nodeport` listeners.
 +
-The cluster CA certificate to verify the identity of the kafka brokers is also created in the secret `<cluster-name>-cluster-ca-cert`.
+The cluster CA certificate to verify the identity of the kafka brokers is also created in the secret `_<cluster_name>_-cluster-ca-cert`.
 +
 NOTE: If you scale your Kafka cluster while using external listeners, it might trigger a rolling update of all Kafka brokers. This depends on the configuration.
 

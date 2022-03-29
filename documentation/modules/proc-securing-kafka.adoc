@@ -59,7 +59,7 @@ If you are configuring an external listener, the configuration is dependent on t
 . Create or update the `Kafka` resource.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _KAFKA-CONFIG-FILE_
+kubectl apply -f _<kafka_configuration_file>_
 +
 The Kafka cluster is configured with a Kafka broker listener using TLS authentication.
 +
@@ -67,4 +67,4 @@ A service is created for each Kafka broker pod.
 +
 A service is created to serve as the _bootstrap address_ for connection to the Kafka cluster.
 +
-The cluster CA certificate to verify the identity of the kafka brokers is also created in the secret `<cluster-name>-cluster-ca-cert`.
+The cluster CA certificate to verify the identity of the kafka brokers is also created in the secret `_<cluster_name>_-cluster-ca-cert`.
