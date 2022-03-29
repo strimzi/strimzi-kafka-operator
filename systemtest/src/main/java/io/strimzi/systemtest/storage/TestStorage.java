@@ -41,6 +41,7 @@ final public class TestStorage {
     private String userName;
     private LabelSelector kafkaSelector;
     private LabelSelector zkSelector;
+    private String eoDeploymentName;
 
     public TestStorage(ExtensionContext extensionContext) {
         this(extensionContext, INFRA_NAMESPACE);
@@ -59,6 +60,7 @@ final public class TestStorage {
         this.userName = clusterName + "-" + USER;
         this.kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         this.zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        this.eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
 
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, this.namespaceName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CLUSTER_KEY, this.clusterName);
@@ -71,6 +73,7 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.USER_NAME_KEY, this.userName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_SELECTOR, this.kafkaSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ZOOKEEPER_SELECTOR, this.zkSelector);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ENTITY_OPERATOR_NAME, this.eoDeploymentName);
     }
 
     public void addToTestStorage(String key, Object value) {
@@ -119,5 +122,9 @@ final public class TestStorage {
 
     public LabelSelector getZookeeperSelector() {
         return (LabelSelector) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ZOOKEEPER_SELECTOR);
+    }
+
+    public String getEoDeploymentName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ENTITY_OPERATOR_NAME).toString();
     }
 }
