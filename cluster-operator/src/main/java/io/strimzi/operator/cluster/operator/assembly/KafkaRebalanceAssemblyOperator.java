@@ -1098,8 +1098,8 @@ public class KafkaRebalanceAssemblyOperator
                                 }
 
                                 CruiseControlConfiguration c = new CruiseControlConfiguration(reconciliation, kafka.getSpec().getCruiseControl().getConfig().entrySet());
-                                boolean apiAuthEnabled = CruiseControl.isApiAuthEnabled(c);
-                                boolean apiSslEnabled = CruiseControl.isApiSslEnabled(c);
+                                boolean apiAuthEnabled = c.isApiAuthEnabled();
+                                boolean apiSslEnabled = c.isApiSslEnabled();
                                 CruiseControlApi apiClient = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
 
                                 // get latest KafkaRebalance state as it may have changed

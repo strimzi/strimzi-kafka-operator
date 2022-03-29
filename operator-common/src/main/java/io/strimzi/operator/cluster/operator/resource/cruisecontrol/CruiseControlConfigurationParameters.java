@@ -49,6 +49,10 @@ public enum CruiseControlConfigurationParameters {
     CRUISE_CONTROL_SELF_HEALING_CONFIG_KEY("self.healing.goals"),
     CRUISE_CONTROL_ANOMALY_DETECTION_CONFIG_KEY("anomaly.detection.goals");
 
+    // Defaults
+    public static final boolean DEFAULT_WEBSERVER_SECURITY_ENABLED = true;
+    public static final boolean DEFAULT_WEBSERVER_SSL_ENABLED = true;
+
     private final String value;
 
     CruiseControlConfigurationParameters(String value) {
