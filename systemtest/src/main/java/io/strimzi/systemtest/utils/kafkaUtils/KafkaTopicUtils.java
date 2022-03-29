@@ -175,8 +175,8 @@ public class KafkaTopicUtils {
         LOGGER.info("{} KafkaTopics were created", topicCount);
     }
 
-    public static String describeTopicViaKafkaPod(String topicName, String kafkaPodName, String bootstrapServer) {
-        return cmdKubeClient().execInPod(kafkaPodName, "/opt/kafka/bin/kafka-topics.sh",
+    public static String describeTopicViaKafkaPod(final String namespaceName, String topicName, String kafkaPodName, String bootstrapServer) {
+        return cmdKubeClient().namespace(namespaceName).execInPod(kafkaPodName, "/opt/kafka/bin/kafka-topics.sh",
             "--topic",
             topicName,
             "--describe",
@@ -185,13 +185,13 @@ public class KafkaTopicUtils {
             .out();
     }
 
-    public static void waitForKafkaTopicSpecStability(String topicName, String podName, String bootstrapServer) {
+    public static void waitForKafkaTopicSpecStability(final String namespaceName, String topicName, String podName, String bootstrapServer) {
         int[] stableCounter = {0};
 
-        String oldSpec = describeTopicViaKafkaPod(topicName, podName, bootstrapServer);
+        String oldSpec = describeTopicViaKafkaPod(namespaceName, topicName, podName, bootstrapServer);
 
         TestUtils.waitFor("KafkaTopic's spec will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            if (oldSpec.equals(describeTopicViaKafkaPod(topicName, podName, bootstrapServer))) {
+            if (oldSpec.equals(describeTopicViaKafkaPod(namespaceName, topicName, podName, bootstrapServer))) {
                 stableCounter[0]++;
                 if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
                     LOGGER.info("KafkaTopic's spec is stable for {} polls intervals", stableCounter[0]);
