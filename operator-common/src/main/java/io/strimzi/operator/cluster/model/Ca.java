@@ -36,6 +36,7 @@ import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.SignStyle;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
@@ -848,10 +849,10 @@ public abstract class Ca {
     }
 
     public boolean certNeedsRenewal(X509Certificate cert)  {
-        Date notAfter = cert.getNotAfter();
-        LOGGER.traceCr(reconciliation, "Certificate {} expires on {}", cert.getSubjectDN(), notAfter);
-        long msTillExpired = notAfter.getTime() - System.currentTimeMillis();
-        return msTillExpired < renewalDays * 24L * 60L * 60L * 1000L;
+        Instant notAfter = cert.getNotAfter().toInstant();
+        Instant renewalPeriodBegin = notAfter.minus(renewalDays, ChronoUnit.DAYS);
+        LOGGER.traceCr(reconciliation, "Certificate {} expires on {} renewal period begins on {}", cert.getSubjectDN(), notAfter, renewalPeriodBegin);
+        return this.clock.instant().isAfter(renewalPeriodBegin);
     }
 
     /**
