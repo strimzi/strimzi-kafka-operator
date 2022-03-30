@@ -215,7 +215,7 @@ public class CustomCaST extends AbstractST {
         }, ts.getNamespaceName());
 
         // 9. On the next reconciliation, the Cluster Operator performs a `rolling update` only for the
-        // Kafka cluster. When the rolling update is complete, the Cluster Operator will start a new one to
+        // `Kafka pods`. When the rolling update is complete, the Cluster Operator will start a new one to
         // generate new server certificates signed by the new CA key.
 
         // a) ZooKeeper must not roll
@@ -459,7 +459,9 @@ public class CustomCaST extends AbstractST {
             .endSpec()
             .build());
 
+        final Map<String, String> zkPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getZookeeperSelector());
         final Map<String, String> kafkaPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getKafkaSelector());
+        final Map<String, String> eoPod = DeploymentUtils.depSnapshot(ts.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(ts.getClusterName()));
 
         Secret clusterCASecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
         X509Certificate cacert = SecretUtils.getCertificateFromSecret(clusterCASecret, "ca.crt");
@@ -486,8 +488,13 @@ public class CustomCaST extends AbstractST {
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(ts.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA), ts.getNamespaceName());
 
-        // Wait for reconciliation and verify certs have been updated
+        // On the next reconciliation, the Cluster Operator performs a `rolling update`:
+        //   a) ZooKeeper
+        //   b) Kafka
+        //   c) and other components to trust the new Cluster CA certificate. (i.e., EntityOperator)
+        RollingUpdateUtils.waitTillComponentHasRolled(ts.getNamespaceName(), ts.getZookeeperSelector(), 3, zkPods);
         RollingUpdateUtils.waitTillComponentHasRolled(ts.getNamespaceName(), ts.getKafkaSelector(), 3, kafkaPods);
+        DeploymentUtils.waitTillDepHasRolled(ts.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(ts.getClusterName()), 1, eoPod);
 
         // Read renewed secret/certs again
         clusterCASecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
