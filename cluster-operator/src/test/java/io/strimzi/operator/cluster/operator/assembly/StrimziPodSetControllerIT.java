@@ -62,7 +62,7 @@ public class StrimziPodSetControllerIT {
     private static final Map<String, String> MATCHING_LABELS = Map.of("selector", "matching");
     private static final String OTHER_KAFKA_NAME = "bar";
     private static final Map<String, String> OTHER_LABELS = Map.of("selector", "not-matching");
-    private static final int podSetControllerWorkQueueSize = 1024;
+    private static final int POD_SET_CONTROLLER_WORK_QUEUE_SIZE = 1024;
 
     private static KubernetesClient client;
     private static KubeClusterResource cluster;
@@ -224,7 +224,7 @@ public class StrimziPodSetControllerIT {
     }
 
     private static void startController()  {
-        controller = new StrimziPodSetController(NAMESPACE, Labels.fromMap(MATCHING_LABELS), kafkaOperator, podSetOperator, podOperator, podSetControllerWorkQueueSize);
+        controller = new StrimziPodSetController(NAMESPACE, Labels.fromMap(MATCHING_LABELS), kafkaOperator, podSetOperator, podOperator, POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
         controller.start();
     }
 

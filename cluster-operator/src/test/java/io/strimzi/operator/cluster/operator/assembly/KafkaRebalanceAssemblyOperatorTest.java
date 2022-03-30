@@ -942,7 +942,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 10,
                 10_000,
                 30,
-                false);
+                false,
+                1024);
 
         kcrao = new KafkaRebalanceAssemblyOperator(Vertx.vertx(), pfa, supplier, config);
 
