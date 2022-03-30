@@ -69,13 +69,13 @@ public class AbstractModelTest {
     @ParallelTest
     public void testJvmMemoryOptionsExplicit() {
         Map<String, String> env = getStringStringMap("4", "4",
-                0.5, 4_000_000_000L, null);
+                50, 4_000_000_000L, null);
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4 -Xmx4"));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is(nullValue()));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
-    private Map<String, String> getStringStringMap(String xmx, String xms, double dynamicFraction, long dynamicMax, ResourceRequirements resources) {
+    private Map<String, String> getStringStringMap(String xmx, String xms, int dynamicPercentage, long dynamicMax, ResourceRequirements resources) {
         Kafka resource = new KafkaBuilder()
                 .withNewMetadata()
                 .endMetadata()
@@ -86,25 +86,25 @@ public class AbstractModelTest {
         am.setJvmOptions(jvmOptions(xmx, xms));
         am.setResources(resources);
         List<EnvVar> envVars = new ArrayList<>(1);
-        ModelUtils.heapOptions(envVars, dynamicFraction, dynamicMax, am.getJvmOptions(), am.getResources());
+        ModelUtils.heapOptions(envVars, dynamicPercentage, dynamicMax, am.getJvmOptions(), am.getResources());
         return envVars.stream().collect(Collectors.toMap(e -> e.getName(), e -> e.getValue()));
     }
 
     @ParallelTest
     public void testJvmMemoryOptionsXmsOnly() {
         Map<String, String> env = getStringStringMap(null, "4",
-                0.5, 5_000_000_000L, null);
+                50, 5_000_000_000L, null);
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4"));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is(nullValue()));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
     @ParallelTest
     public void testJvmMemoryOptionsXmxOnly() {
         Map<String, String> env = getStringStringMap("4", null,
-                0.5, 5_000_000_000L, null);
+                50, 5_000_000_000L, null);
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xmx4"));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is(nullValue()));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
@@ -112,9 +112,9 @@ public class AbstractModelTest {
     @ParallelTest
     public void testJvmMemoryOptionsDefaultWithNoMemoryLimitOrJvmOptions() {
         Map<String, String> env = getStringStringMap(null, null,
-                0.5, 5_000_000_000L, null);
+                50, 5_000_000_000L, null);
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms" + AbstractModel.DEFAULT_JVM_XMS));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is(nullValue()));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }
 
@@ -126,18 +126,18 @@ public class AbstractModelTest {
     @ParallelTest
     public void testJvmMemoryOptionsDefaultWithMemoryLimit() {
         Map<String, String> env = getStringStringMap(null, "4",
-                0.5, 5_000_000_000L, getResourceRequest());
+                50, 5_000_000_000L, getResourceRequest());
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4"));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is("0.5"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is("50"));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("5000000000"));
     }
 
     @ParallelTest
     public void testJvmMemoryOptionsMemoryRequest() {
         Map<String, String> env = getStringStringMap(null, null,
-                0.7, 10_000_000_000L, getResourceRequest());
+                70, 10_000_000_000L, getResourceRequest());
         assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is(nullValue()));
-        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION), is("0.7"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is("70"));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("10000000000"));
     }
 

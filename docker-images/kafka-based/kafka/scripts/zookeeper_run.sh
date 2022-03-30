@@ -57,14 +57,15 @@ fi
 
 . ./set_kafka_jmx_options.sh "${ZOOKEEPER_JMX_ENABLED}" "${ZOOKEEPER_JMX_USERNAME}" "${ZOOKEEPER_JMX_PASSWORD}"
 
-if [ -z "$KAFKA_HEAP_OPTS" ] && [ -n "${DYNAMIC_HEAP_FRACTION}" ]; then
+if [ -z "$KAFKA_HEAP_OPTS" ] && [ -n "${STRIMZI_DYNAMIC_HEAP_PERCENTAGE}" ]; then
     . ./dynamic_resources.sh
-    # Calculate a max heap size based some DYNAMIC_HEAP_FRACTION of the heap
+    # Calculate a max heap size based some STRIMZI_DYNAMIC_HEAP_PERCENTAGE of the heap
     # available to a jvm using 100% of the GCroup-aware memory
-    # up to some optional DYNAMIC_HEAP_MAX
-    CALC_MAX_HEAP=$(get_heap_size "${DYNAMIC_HEAP_FRACTION}" "${DYNAMIC_HEAP_MAX}")
+    # up to some optional STRIMZI_DYNAMIC_HEAP_MAX
+    CALC_MAX_HEAP=$(get_heap_size "${STRIMZI_DYNAMIC_HEAP_PERCENTAGE}" "${STRIMZI_DYNAMIC_HEAP_MAX}")
     if [ -n "$CALC_MAX_HEAP" ]; then
       export KAFKA_HEAP_OPTS="-Xms${CALC_MAX_HEAP} -Xmx${CALC_MAX_HEAP}"
+      echo "Configuring ZooKeeper heap: $KAFKA_HEAP_OPTS"
     fi
 fi
 

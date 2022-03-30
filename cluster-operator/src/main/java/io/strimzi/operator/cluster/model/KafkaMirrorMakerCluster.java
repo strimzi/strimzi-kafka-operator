@@ -351,7 +351,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));
         }
 
-        ModelUtils.heapOptions(varList, 1.0, 0L, getJvmOptions(), getResources());
+        ModelUtils.heapOptions(varList, 75, 0L, getJvmOptions(), getResources());
         ModelUtils.jvmPerformanceOptions(varList, getJvmOptions());
         ModelUtils.jvmSystemProperties(varList, getJvmOptions());
 

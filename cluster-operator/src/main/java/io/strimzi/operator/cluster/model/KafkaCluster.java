@@ -1645,7 +1645,7 @@ public class KafkaCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        ModelUtils.heapOptions(varList, 0.5, 5L * 1024L * 1024L * 1024L, getJvmOptions(), getResources());
+        ModelUtils.heapOptions(varList, 50, 5L * 1024L * 1024L * 1024L, getJvmOptions(), getResources());
         ModelUtils.jvmPerformanceOptions(varList, getJvmOptions());
         ModelUtils.jvmSystemProperties(varList, getJvmOptions());
 

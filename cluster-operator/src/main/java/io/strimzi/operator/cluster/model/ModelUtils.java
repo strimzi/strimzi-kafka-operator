@@ -547,15 +547,15 @@ public class ModelUtils {
 
     /**
      * Adds KAFKA_HEAP_OPTS variable to the EnvVar list if any heap related options were specified through the provided JVM options
-     * If Xmx Java Options are not set DYNAMIC_HEAP_FRACTION and DYNAMIC_HEAP_MAX may also be set by using the ResourceRequirements
+     * If Xmx Java Options are not set STRIMZI_DYNAMIC_HEAP_PERCENTAGE and STRIMZI_DYNAMIC_HEAP_MAX may also be set by using the ResourceRequirements
      *
      * @param envVars list of the Environment Variables to add to
-     * @param dynamicHeapFraction value to set for the DYNAMIC_HEAP_FRACTION
-     * @param dynamicHeapMaxBytes value to set for the DYNAMIC_HEAP_MAX
+     * @param dynamicHeapPercentage value to set for the STRIMZI_DYNAMIC_HEAP_PERCENTAGE
+     * @param dynamicHeapMaxBytes value to set for the STRIMZI_DYNAMIC_HEAP_MAX
      * @param jvmOptions JVM options
      * @param resources the resource requirements
      */
-    public static void heapOptions(List<EnvVar> envVars, double dynamicHeapFraction, long dynamicHeapMaxBytes, JvmOptions jvmOptions, ResourceRequirements resources) {
+    public static void heapOptions(List<EnvVar> envVars, int dynamicHeapPercentage, long dynamicHeapMaxBytes, JvmOptions jvmOptions, ResourceRequirements resources) {
         StringBuilder kafkaHeapOpts = new StringBuilder();
 
         String xms = jvmOptions != null ? jvmOptions.getXms() : null;
@@ -573,7 +573,7 @@ public class ModelUtils {
             // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
             // too much memory on the kubelet.
             if (cpuMemory != null && cpuMemory.get("memory") != null) {
-                envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION, Double.toString(dynamicHeapFraction)));
+                envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE, Integer.toString(dynamicHeapPercentage)));
                 if (dynamicHeapMaxBytes > 0) {
                     envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
                 }
