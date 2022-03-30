@@ -152,8 +152,8 @@ public class KafkaConnectUtils {
      */
     public static void sendReceiveMessagesThroughConnect(String connectPodName, String topicName, String kafkaClientsPodName, String namespace, String clusterName) {
         LOGGER.info("Send and receive messages through KafkaConnect");
-        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(connectPodName);
-        KafkaConnectorUtils.createFileSinkConnector(kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, namespace, 8083));
+        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespace, connectPodName);
+        KafkaConnectorUtils.createFileSinkConnector(namespace, kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, namespace, 8083));
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
                 .withUsingPodName(kafkaClientsPodName)
@@ -168,6 +168,6 @@ public class KafkaConnectUtils {
                 internalKafkaClient.sendMessagesPlain(),
                 internalKafkaClient.receiveMessagesPlain()
         );
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(connectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespace, connectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
     }
 }
