@@ -49,6 +49,7 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_OPERATIONS_THREAD_POOL_SIZE = "STRIMZI_OPERATIONS_THREAD_POOL_SIZE";
     public static final String STRIMZI_DNS_CACHE_TTL = "STRIMZI_DNS_CACHE_TTL";
     public static final String STRIMZI_POD_SET_RECONCILIATION_ONLY = "STRIMZI_POD_SET_RECONCILIATION_ONLY";
+    public static final String STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE = "STRIMZI_POD_SET_CONTROLLER_SIZE";
 
     // Feature Flags
     public static final String STRIMZI_RBAC_SCOPE = "STRIMZI_RBAC_SCOPE";
@@ -80,6 +81,7 @@ public class ClusterOperatorConfig {
 
     // Default values
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
+    public static final int DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE = 1024;
     public static final long DEFAULT_OPERATION_TIMEOUT_MS = 300_000;
     public static final int DEFAULT_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = 10_000;
     public static final long DEFAULT_CONNECT_BUILD_TIMEOUT_MS = 300_000;
@@ -108,6 +110,7 @@ public class ClusterOperatorConfig {
     private final int operationsThreadPoolSize;
     private final int dnsCacheTtlSec;
     private final boolean podSetReconciliationOnly;
+    private final int podSetControllerWorkQueueSize;
 
     /**
      * Constructor
@@ -131,6 +134,7 @@ public class ClusterOperatorConfig {
      * @param dnsCacheTtlSec Number of seconds to cache a successful DNS name lookup
      * @param podSetReconciliationOnly Indicates whether this Cluster Operator instance should reconcile only the
      *                                 StrimziPodSet resources or not
+     * @param podSetControllerWorkQueueSize Indicates the size of the StrimziPodSetController work queue
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     public ClusterOperatorConfig(
@@ -151,7 +155,8 @@ public class ClusterOperatorConfig {
             int operationsThreadPoolSize,
             int zkAdminSessionTimeoutMs,
             int dnsCacheTtlSec,
-            boolean podSetReconciliationOnly) {
+            boolean podSetReconciliationOnly,
+            int podSetControllerWorkQueueSize) {
         this.namespaces = unmodifiableSet(new HashSet<>(namespaces));
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.operationTimeoutMs = operationTimeoutMs;
@@ -170,6 +175,7 @@ public class ClusterOperatorConfig {
         this.zkAdminSessionTimeoutMs = zkAdminSessionTimeoutMs;
         this.dnsCacheTtlSec = dnsCacheTtlSec;
         this.podSetReconciliationOnly = podSetReconciliationOnly;
+        this.podSetControllerWorkQueueSize = podSetControllerWorkQueueSize;
     }
 
     /**
@@ -222,6 +228,7 @@ public class ClusterOperatorConfig {
         int zkAdminSessionTimeout = parseInt(map.get(STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS), DEFAULT_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS);
         int dnsCacheTtlSec = parseInt(map.get(STRIMZI_DNS_CACHE_TTL), DEFAULT_DNS_CACHE_TTL);
         boolean podSetReconciliationOnly = parseBoolean(map.get(STRIMZI_POD_SET_RECONCILIATION_ONLY), DEFAULT_POD_SET_RECONCILIATION_ONLY);
+        int podSetControllerWorkQueueSize = parseInt(map.get(STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE), DEFAULT_POD_SET_CONTROLLER_WORK_QUEUE_SIZE);
 
         return new ClusterOperatorConfig(
                 namespaces,
@@ -241,7 +248,8 @@ public class ClusterOperatorConfig {
                 operationsThreadPoolSize,
                 zkAdminSessionTimeout,
                 dnsCacheTtlSec,
-                podSetReconciliationOnly);
+                podSetReconciliationOnly,
+                podSetControllerWorkQueueSize);
     }
 
     private static Set<String> parseNamespaceList(String namespacesList)   {
@@ -547,6 +555,13 @@ public class ClusterOperatorConfig {
         return podSetReconciliationOnly;
     }
 
+    /**
+     * @return Returns the size of the StrimziPodSetController work queue
+     */
+    public int getPodSetControllerWorkQueueSize() {
+        return podSetControllerWorkQueueSize;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -567,6 +582,7 @@ public class ClusterOperatorConfig {
                 ",zkAdminSessionTimeoutMs=" + zkAdminSessionTimeoutMs +
                 ",dnsCacheTtlSec=" + dnsCacheTtlSec +
                 ",podSetReconciliationOnly=" + podSetReconciliationOnly +
+                ",podSetControllerWorkQueueSize=" + podSetControllerWorkQueueSize +
                 ")";
     }
 }
