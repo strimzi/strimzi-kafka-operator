@@ -6,8 +6,6 @@ package io.strimzi.systemtest.specific;
 
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.Event;
-import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.NodeAffinity;
 import io.fabric8.kubernetes.api.model.NodeSelectorRequirement;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -47,6 +45,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.utils.specific.ScraperUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -241,12 +240,7 @@ public class SpecificIsolatedST extends AbstractST {
         kc = KafkaConnectResource.kafkaConnectClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName).get();
         assertThat(kc.getSpec().getRack().getTopologyKey(), is(rackKey));
 
-        // fetch scraper Pod name
-        final LabelSelector scraperLabelSelector = new LabelSelectorBuilder()
-            .addToMatchLabels(Constants.SCRAPER_LABEL_KEY, Constants.SCRAPER_LABEL_VALUE)
-            .build();
-        final String scraperPodName = kubeClient(clusterOperator.getDeploymentNamespace())
-            .listPods(clusterOperator.getDeploymentNamespace(), scraperLabelSelector).get(0).getMetadata().getName();
+        final String scraperPodName = ScraperUtils.getScraperPod(clusterOperator.getDeploymentNamespace()).getMetadata().getName();
 
         List<String> kcPods = kubeClient(clusterOperator.getDeploymentNamespace()).listPodNames(clusterOperator.getDeploymentNamespace(), clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(kcPods.get(0), TOPIC_NAME, kafkaClientsPodName, scraperPodName, clusterOperator.getDeploymentNamespace(), clusterName);
@@ -343,11 +337,7 @@ public class SpecificIsolatedST extends AbstractST {
         assertThat(connectPodNodeSelectorRequirement.getOperator(), is("Exists"));
 
         // fetch scraper Pod name
-        final LabelSelector scraperLabelSelector = new LabelSelectorBuilder()
-            .addToMatchLabels(Constants.SCRAPER_LABEL_KEY, Constants.SCRAPER_LABEL_VALUE)
-            .build();
-        final String scraperPodName = kubeClient(clusterOperator.getDeploymentNamespace())
-            .listPods(clusterOperator.getDeploymentNamespace(), scraperLabelSelector).get(0).getMetadata().getName();
+        final String scraperPodName = ScraperUtils.getScraperPod(clusterOperator.getDeploymentNamespace()).getMetadata().getName();
 
         KafkaConnectUtils.sendReceiveMessagesThroughConnect(connectPodName, topicName, kafkaClientsPodName, scraperPodName, clusterOperator.getDeploymentNamespace(), clusterName);
         // Revert changes for CO deployment
