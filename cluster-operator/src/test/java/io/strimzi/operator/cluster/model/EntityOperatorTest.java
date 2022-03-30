@@ -117,7 +117,7 @@ public class EntityOperatorTest {
     @ParallelTest
     public void testGenerateDeployment() {
 
-        Deployment dep = entityOperator.generateDeployment(true, Map.of(), null, null);
+        Deployment dep = entityOperator.generateDeployment(true, null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
@@ -161,23 +161,58 @@ public class EntityOperatorTest {
     @ParallelTest
     public void testFromCrdNoTopicAndUserOperatorInEntityOperator() {
         EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder().build();
-        Kafka resource =
-                new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
-                        .editSpec()
-                        .withEntityOperator(entityOperatorSpec)
-                        .endSpec()
-                        .build();
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withEntityOperator(entityOperatorSpec)
+                .endSpec()
+                .build();
+
         EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        assertThat(entityOperator.getTopicOperator(), is(nullValue()));
-        assertThat(entityOperator.getUserOperator(), is(nullValue()));
+        assertThat(entityOperator, is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testFromCrdNoTopicInEntityOperator() {
+        EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
+                .withNewUserOperator()
+                .endUserOperator()
+                .build();
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withEntityOperator(entityOperatorSpec)
+                .endSpec()
+                .build();
+
+        EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
+
+        assertThat(entityOperator.topicOperator(), is(nullValue()));
+        assertThat(entityOperator.userOperator(), is(notNullValue()));
+    }
+
+    @ParallelTest
+    public void testFromCrdNoUserOperatorInEntityOperator() {
+        EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
+                .withNewTopicOperator()
+                .endTopicOperator()
+                .build();
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withEntityOperator(entityOperatorSpec)
+                .endSpec()
+                .build();
+
+        EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
+
+        assertThat(entityOperator.topicOperator(), is(notNullValue()));
+        assertThat(entityOperator.userOperator(), is(nullValue()));
     }
 
     @ParallelTest
     public void withAffinityAndTolerations() throws IOException {
         ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, (kAssembly, versions) -> EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kAssembly, versions), this.getClass().getSimpleName() + ".withAffinityAndTolerations");
-        helper.assertDesiredResource("-DeploymentAffinity.yaml", zc -> zc.generateDeployment(true, Map.of(), null, null).getSpec().getTemplate().getSpec().getAffinity());
-        helper.assertDesiredResource("-DeploymentTolerations.yaml", zc -> zc.generateDeployment(true, Map.of(), null, null).getSpec().getTemplate().getSpec().getTolerations());
+        helper.assertDesiredResource("-DeploymentAffinity.yaml", zc -> zc.generateDeployment(true, null, null).getSpec().getTemplate().getSpec().getAffinity());
+        helper.assertDesiredResource("-DeploymentTolerations.yaml", zc -> zc.generateDeployment(true, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @ParallelTest
@@ -256,7 +291,7 @@ public class EntityOperatorTest {
         EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
         // Check Deployment
-        Deployment dep = entityOperator.generateDeployment(true, Map.of(), null, null);
+        Deployment dep = entityOperator.generateDeployment(true, null, null);
         assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
         assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnnotations.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
@@ -292,7 +327,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Map.of(), null, null);
+        Deployment dep = eo.generateDeployment(true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(123L));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle(), is(notNullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/entity_operator_stunnel_pre_stop.sh"), is(true));
@@ -310,7 +345,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Map.of(), null, null);
+        Deployment dep = eo.generateDeployment(true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(30L));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle(), is(notNullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/entity_operator_stunnel_pre_stop.sh"), is(true));
@@ -336,7 +371,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Map.of(), null, null);
+        Deployment dep = eo.generateDeployment(true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -361,7 +396,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Map.of(), null, secrets);
+        Deployment dep = eo.generateDeployment(true, null, secrets);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -387,7 +422,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Map.of(), null, singletonList(secret1));
+        Deployment dep = eo.generateDeployment(true, null, singletonList(secret1));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -405,7 +440,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Map.of(), null, null);
+        Deployment dep = eo.generateDeployment(true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
@@ -426,7 +461,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Map.of(), null, null);
+        Deployment dep = eo.generateDeployment(true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(123L));
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(456L));
@@ -445,7 +480,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Map.of(), null, null);
+        Deployment dep = eo.generateDeployment(true, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
@@ -528,12 +563,12 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Map.of(), ImagePullPolicy.ALWAYS, null);
+        Deployment dep = eo.generateDeployment(true, ImagePullPolicy.ALWAYS, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = eo.generateDeployment(true, Map.of(), ImagePullPolicy.IFNOTPRESENT, null);
+        dep = eo.generateDeployment(true, ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
@@ -579,7 +614,7 @@ public class EntityOperatorTest {
                         .endSpec()
                         .build();
 
-        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS).getTopicOperator().getEnvVars();
+        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS).topicOperator().getEnvVars();
 
         assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -624,7 +659,7 @@ public class EntityOperatorTest {
                         .endSpec()
                         .build();
 
-        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS).getTopicOperator().getEnvVars();
+        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS).topicOperator().getEnvVars();
 
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -670,7 +705,7 @@ public class EntityOperatorTest {
                         .endSpec()
                         .build();
 
-        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS).getUserOperator().getEnvVars();
+        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS).userOperator().getEnvVars();
 
         assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -714,7 +749,7 @@ public class EntityOperatorTest {
                         .endSpec()
                         .build();
 
-        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS).getUserOperator().getEnvVars();
+        List<EnvVar> containerEnvVars = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS).userOperator().getEnvVars();
 
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 containerEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -833,7 +868,7 @@ public class EntityOperatorTest {
                 .build();
 
         EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
-        Deployment deployment = eo.generateDeployment(false, null, null, null);
+        Deployment deployment = eo.generateDeployment(false, null, null);
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
                 hasItem(allOf(
@@ -870,7 +905,7 @@ public class EntityOperatorTest {
                 .build();
 
         EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
-        Deployment deployment = eo.generateDeployment(false, null, null, null);
+        Deployment deployment = eo.generateDeployment(false, null, null);
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
                 hasItem(allOf(
@@ -907,7 +942,7 @@ public class EntityOperatorTest {
                 .build();
 
         EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
-        Deployment deployment = eo.generateDeployment(false, null, null, null);
+        Deployment deployment = eo.generateDeployment(false, null, null);
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
                 hasItem(allOf(
@@ -921,6 +956,8 @@ public class EntityOperatorTest {
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                     .editOrNewEntityOperator()
+                        .withNewTopicOperator()
+                        .endTopicOperator()
                     .endEntityOperator()
                 .endSpec()
                 .build();
@@ -955,6 +992,8 @@ public class EntityOperatorTest {
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                 .editOrNewEntityOperator()
+                    .withNewTopicOperator()
+                    .endTopicOperator()
                 .endEntityOperator()
                 .endSpec()
                 .build();

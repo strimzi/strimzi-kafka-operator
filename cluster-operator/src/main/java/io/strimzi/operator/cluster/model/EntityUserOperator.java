@@ -19,7 +19,6 @@ import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -95,7 +94,6 @@ public class EntityUserOperator extends AbstractModel {
 
         // create a default configuration
         this.kafkaBootstrapServers = KafkaResources.bootstrapServiceName(cluster) + ":" + EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
-        this.watchedNamespace = namespace;
         this.reconciliationIntervalMs = EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
         this.secretPrefix = EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
@@ -108,65 +106,66 @@ public class EntityUserOperator extends AbstractModel {
     }
 
     /**
-     * Create an Entity User Operator from given desired resource
+     * Create an Entity User Operator from given desired resource. When User Operator (Or Entity Operator) are not
+     * enabled, it returns null.
      *
      * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity User Operator one
-     * @return Entity User Operator instance, null if not configured in the ConfigMap
+     *
+     * @return Entity User Operator instance, null if not configured
      */
     public static EntityUserOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly) {
-        EntityUserOperator result = null;
-        EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
-        if (entityOperatorSpec != null) {
+        if (kafkaAssembly.getSpec().getEntityOperator() != null
+                && kafkaAssembly.getSpec().getEntityOperator().getUserOperator() != null) {
+            EntityUserOperatorSpec userOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getUserOperator();
+            EntityUserOperator result = new EntityUserOperator(reconciliation, kafkaAssembly);
 
-            EntityUserOperatorSpec userOperatorSpec = entityOperatorSpec.getUserOperator();
-            if (userOperatorSpec != null) {
-                result = new EntityUserOperator(reconciliation, kafkaAssembly);
+            result.setOwnerReference(kafkaAssembly);
 
-                result.setOwnerReference(kafkaAssembly);
+            String image = userOperatorSpec.getImage();
+            if (image == null) {
+                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_USER_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
+            }
+            result.image = image;
 
-                String image = userOperatorSpec.getImage();
-                if (image == null) {
-                    image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_USER_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
-                }
-                result.image = image;
+            result.watchedNamespace = userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
+            result.reconciliationIntervalMs = userOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
+            result.secretPrefix = userOperatorSpec.getSecretPrefix() == null ? EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX : userOperatorSpec.getSecretPrefix();
+            result.setLogging(userOperatorSpec.getLogging());
+            result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
+            result.setJvmOptions(userOperatorSpec.getJvmOptions());
+            result.setResources(userOperatorSpec.getResources());
+            if (userOperatorSpec.getReadinessProbe() != null) {
+                result.setReadinessProbe(userOperatorSpec.getReadinessProbe());
+            }
+            if (userOperatorSpec.getLivenessProbe() != null) {
+                result.setLivenessProbe(userOperatorSpec.getLivenessProbe());
+            }
 
-                result.watchedNamespace = userOperatorSpec.getWatchedNamespace() != null ? userOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
-                result.reconciliationIntervalMs = userOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
-                result.secretPrefix = userOperatorSpec.getSecretPrefix() == null ? EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX : userOperatorSpec.getSecretPrefix();
-                result.setLogging(userOperatorSpec.getLogging());
-                result.setGcLoggingEnabled(userOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled());
-                result.setJvmOptions(userOperatorSpec.getJvmOptions());
-                result.setResources(userOperatorSpec.getResources());
-                if (userOperatorSpec.getReadinessProbe() != null) {
-                    result.setReadinessProbe(userOperatorSpec.getReadinessProbe());
-                }
-                if (userOperatorSpec.getLivenessProbe() != null) {
-                    result.setLivenessProbe(userOperatorSpec.getLivenessProbe());
-                }
-
-                if (kafkaAssembly.getSpec().getClientsCa() != null) {
-                    if (kafkaAssembly.getSpec().getClientsCa().getValidityDays() > 0) {
-                        result.clientsCaValidityDays = kafkaAssembly.getSpec().getClientsCa().getValidityDays();
-                    }
-
-                    if (kafkaAssembly.getSpec().getClientsCa().getRenewalDays() > 0) {
-                        result.clientsCaRenewalDays = kafkaAssembly.getSpec().getClientsCa().getRenewalDays();
-                    }
+            if (kafkaAssembly.getSpec().getClientsCa() != null) {
+                if (kafkaAssembly.getSpec().getClientsCa().getValidityDays() > 0) {
+                    result.clientsCaValidityDays = kafkaAssembly.getSpec().getClientsCa().getValidityDays();
                 }
 
-                if (kafkaAssembly.getSpec().getKafka().getAuthorization() != null) {
-                    // Indicates whether the Kafka Admin API for ACL management are supported by the configured authorizer
-                    // plugin. This information is passed to the User Operator.
-                    result.aclsAdminApiSupported = kafkaAssembly.getSpec().getKafka().getAuthorization().supportsAdminApi();
-                }
-
-                if (kafkaAssembly.getSpec().getMaintenanceTimeWindows() != null)    {
-                    result.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
+                if (kafkaAssembly.getSpec().getClientsCa().getRenewalDays() > 0) {
+                    result.clientsCaRenewalDays = kafkaAssembly.getSpec().getClientsCa().getRenewalDays();
                 }
             }
+
+            if (kafkaAssembly.getSpec().getKafka().getAuthorization() != null) {
+                // Indicates whether the Kafka Admin API for ACL management are supported by the configured authorizer
+                // plugin. This information is passed to the User Operator.
+                result.aclsAdminApiSupported = kafkaAssembly.getSpec().getKafka().getAuthorization().supportsAdminApi();
+            }
+
+            if (kafkaAssembly.getSpec().getMaintenanceTimeWindows() != null)    {
+                result.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
+            }
+
+            return result;
+        } else {
+            return null;
         }
-        return result;
     }
 
     @Override
@@ -303,7 +302,7 @@ public class EntityUserOperator extends AbstractModel {
     /**
      * @return Returns the namespace watched by the Topic Operator
      */
-    public String getWatchedNamespace() {
+    public String watchedNamespace() {
         return watchedNamespace;
     }
 

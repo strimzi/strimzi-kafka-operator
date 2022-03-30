@@ -162,7 +162,7 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.livenessProbeOptions.getSuccessThreshold(), is(livenessProbe.getSuccessThreshold()));
         assertThat(entityUserOperator.livenessProbeOptions.getFailureThreshold(), is(livenessProbe.getFailureThreshold()));
         assertThat(entityUserOperator.livenessProbeOptions.getPeriodSeconds(), is(livenessProbe.getPeriodSeconds()));
-        assertThat(entityUserOperator.getWatchedNamespace(), is(uoWatchedNamespace));
+        assertThat(entityUserOperator.watchedNamespace(), is(uoWatchedNamespace));
         assertThat(entityUserOperator.reconciliationIntervalMs, is(uoReconciliationInterval * 1000L));
         assertThat(entityUserOperator.kafkaBootstrapServers, is(String.format("%s:%d", KafkaResources.bootstrapServiceName(cluster), EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT)));
         assertThat(entityUserOperator.getLogging().getType(), is(userOperatorLogging.getType()));
@@ -185,7 +185,7 @@ public class EntityUserOperatorTest {
                         .build();
         EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
 
-        assertThat(entityUserOperator.getWatchedNamespace(), is(namespace));
+        assertThat(entityUserOperator.watchedNamespace(), is(namespace));
         assertThat(entityUserOperator.getImage(), is("quay.io/strimzi/operator:latest"));
         assertThat(entityUserOperator.reconciliationIntervalMs, is(EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000));
         assertThat(entityUserOperator.readinessProbeOptions.getInitialDelaySeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
@@ -381,5 +381,40 @@ public class EntityUserOperatorTest {
 
         f = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kafkaAssembly);
         assertThat(f.getEnvVars().stream().filter(a -> EntityUserOperator.ENV_VAR_MAINTENANCE_TIME_WINDOWS.equals(a.getName())).findFirst().orElseThrow().getValue(), is("* * 8-10 * * ?;* * 14-15 * * ?"));
+    }
+
+    @ParallelTest
+    public void testNoWatchedNamespace() {
+        EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
+                .withNewUserOperator()
+                .endUserOperator()
+                .build();
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withEntityOperator(entityOperatorSpec)
+                .endSpec()
+                .build();
+
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
+
+        assertThat(entityUserOperator.watchedNamespace(), is(namespace));
+    }
+
+    @ParallelTest
+    public void testWatchedNamespace() {
+        EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
+                .withNewUserOperator()
+                    .withWatchedNamespace("some-other-namespace")
+                .endUserOperator()
+                .build();
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                    .withEntityOperator(entityOperatorSpec)
+                .endSpec()
+                .build();
+
+        EntityUserOperator entityUserOperator = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
+
+        assertThat(entityUserOperator.watchedNamespace(), is("some-other-namespace"));
     }
 }

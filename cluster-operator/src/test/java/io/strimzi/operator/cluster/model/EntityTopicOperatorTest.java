@@ -140,7 +140,7 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator.livenessProbeOptions.getSuccessThreshold(), is(livenessProbe.getSuccessThreshold()));
         assertThat(entityTopicOperator.livenessProbeOptions.getFailureThreshold(), is(livenessProbe.getFailureThreshold()));
         assertThat(entityTopicOperator.livenessProbeOptions.getPeriodSeconds(), is(livenessProbe.getPeriodSeconds()));
-        assertThat(entityTopicOperator.getWatchedNamespace(), is(toWatchedNamespace));
+        assertThat(entityTopicOperator.watchedNamespace(), is(toWatchedNamespace));
         assertThat(entityTopicOperator.reconciliationIntervalMs, is(toReconciliationInterval * 1000));
         assertThat(entityTopicOperator.zookeeperSessionTimeoutMs, is(toZookeeperSessionTimeout * 1000));
         assertThat(entityTopicOperator.zookeeperConnect, is("localhost:2181"));
@@ -166,7 +166,7 @@ public class EntityTopicOperatorTest {
                         .build();
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
 
-        assertThat(entityTopicOperator.getWatchedNamespace(), is(namespace));
+        assertThat(entityTopicOperator.watchedNamespace(), is(namespace));
         assertThat(entityTopicOperator.getImage(), is("quay.io/strimzi/operator:latest"));
         assertThat(entityTopicOperator.reconciliationIntervalMs, is(EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000));
         assertThat(entityTopicOperator.zookeeperSessionTimeoutMs, is(EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000));
@@ -200,6 +200,41 @@ public class EntityTopicOperatorTest {
                         .build();
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
         assertThat(entityTopicOperator, is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testNoWatchedNamespace() {
+        EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
+                .withNewTopicOperator()
+                .endTopicOperator()
+                .build();
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                        .editSpec()
+                            .withEntityOperator(entityOperatorSpec)
+                        .endSpec()
+                        .build();
+
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
+
+        assertThat(entityTopicOperator.watchedNamespace(), is(namespace));
+    }
+
+    @ParallelTest
+    public void testWatchedNamespace() {
+        EntityOperatorSpec entityOperatorSpec = new EntityOperatorSpecBuilder()
+                .withNewTopicOperator()
+                    .withWatchedNamespace("some-other-namespace")
+                .endTopicOperator()
+                .build();
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                .withEntityOperator(entityOperatorSpec)
+                .endSpec()
+                .build();
+
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
+
+        assertThat(entityTopicOperator.watchedNamespace(), is("some-other-namespace"));
     }
 
     @ParallelTest

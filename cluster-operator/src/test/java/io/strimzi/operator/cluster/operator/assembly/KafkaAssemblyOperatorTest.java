@@ -1141,10 +1141,10 @@ public class KafkaAssemblyOperatorTest {
         // Mock Deployment get
         if (originalEntityOperator != null) {
             when(mockDepOps.get(clusterNamespace, KafkaResources.entityOperatorDeploymentName(clusterName))).thenReturn(
-                    originalEntityOperator.generateDeployment(true, Map.of(), null, null)
+                    originalEntityOperator.generateDeployment(true, null, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, KafkaResources.entityOperatorDeploymentName(clusterName))).thenReturn(
-                    Future.succeededFuture(originalEntityOperator.generateDeployment(true, Map.of(), null, null))
+                    Future.succeededFuture(originalEntityOperator.generateDeployment(true, null, null))
             );
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
                     Future.succeededFuture()

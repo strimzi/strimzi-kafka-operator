@@ -82,8 +82,6 @@ public class EntityOperator extends AbstractModel {
     private List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
     private SecurityContext templateTlsSidecarContainerSecurityContext;
 
-    private boolean isDeployed;
-
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_POD_LABELS);
@@ -105,18 +103,6 @@ public class EntityOperator extends AbstractModel {
         this.zookeeperConnect = ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }
 
-    public EntityTopicOperator getTopicOperator() {
-        return topicOperator;
-    }
-
-    public EntityUserOperator getUserOperator() {
-        return userOperator;
-    }
-
-    public boolean isDeployed() {
-        return isDeployed;
-    }
-
     /**
      * Create an Entity Operator from given desired resource
      *
@@ -126,11 +112,11 @@ public class EntityOperator extends AbstractModel {
      * @return Entity Operator instance, null if not configured in the ConfigMap
      */
     public static EntityOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
-        EntityOperator result = null;
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
 
-        if (entityOperatorSpec != null) {
-            result = new EntityOperator(reconciliation, kafkaAssembly);
+        if (entityOperatorSpec != null
+                && (entityOperatorSpec.getUserOperator() != null || entityOperatorSpec.getTopicOperator() != null)) {
+            EntityOperator result = new EntityOperator(reconciliation, kafkaAssembly);
 
             result.setOwnerReference(kafkaAssembly);
 
@@ -140,7 +126,6 @@ public class EntityOperator extends AbstractModel {
             result.tlsSidecar = entityOperatorSpec.getTlsSidecar();
             result.topicOperator = topicOperator;
             result.userOperator = userOperator;
-            result.isDeployed = result.getTopicOperator() != null || result.getUserOperator() != null;
 
             String tlsSideCarImage = entityOperatorSpec.getTlsSidecar() != null ? entityOperatorSpec.getTlsSidecar().getImage() : null;
             if (tlsSideCarImage == null) {
@@ -190,8 +175,19 @@ public class EntityOperator extends AbstractModel {
             }
 
             result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
+
+            return result;
+        } else {
+            return null;
         }
-        return result;
+    }
+
+    public EntityTopicOperator topicOperator() {
+        return topicOperator;
+    }
+
+    public EntityUserOperator userOperator() {
+        return userOperator;
     }
 
     @Override
@@ -199,13 +195,7 @@ public class EntityOperator extends AbstractModel {
         return null;
     }
 
-    public Deployment generateDeployment(boolean isOpenShift, Map<String, String> annotations, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-
-        if (!isDeployed()) {
-            LOGGER.warnCr(reconciliation, "Topic and/or User Operators not declared: Entity Operator will not be deployed");
-            return null;
-        }
-
+    public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("Recreate")
                 .build();
@@ -213,7 +203,7 @@ public class EntityOperator extends AbstractModel {
         return createDeployment(
                 updateStrategy,
                 Collections.emptyMap(),
-                annotations,
+                Map.of(),
                 getMergedAffinity(),
                 getInitContainers(imagePullPolicy),
                 getContainers(imagePullPolicy),
@@ -303,9 +293,6 @@ public class EntityOperator extends AbstractModel {
 
     @Override
     public ServiceAccount generateServiceAccount() {
-        if (!isDeployed()) {
-            return null;
-        }
         return super.generateServiceAccount();
     }
 

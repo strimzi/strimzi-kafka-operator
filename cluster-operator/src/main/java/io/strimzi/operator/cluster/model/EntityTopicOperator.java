@@ -18,7 +18,6 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -99,7 +98,6 @@ public class EntityTopicOperator extends AbstractModel {
         // create a default configuration
         this.kafkaBootstrapServers = KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT;
         this.zookeeperConnect = "localhost:" + EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT;
-        this.watchedNamespace = namespace;
         this.reconciliationIntervalMs = EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
         this.zookeeperSessionTimeoutMs = EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
@@ -111,49 +109,48 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     /**
-     * Create an Entity Topic Operator from given desired resource
+     * Create an Entity Topic Operator from given desired resource. When Topic Operator (Or Entity Operator) are not
+     * enabled, it returns null.
      *
      * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Topic Operator one
-     * @return Entity Topic Operator instance, null if not configured in the ConfigMap
+     *
+     * @return Entity Topic Operator instance, null if not configured
      */
     public static EntityTopicOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly) {
-        EntityTopicOperator result = null;
-        EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
-        if (entityOperatorSpec != null) {
+        if (kafkaAssembly.getSpec().getEntityOperator() != null
+                && kafkaAssembly.getSpec().getEntityOperator().getTopicOperator() != null) {
+            EntityTopicOperatorSpec topicOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getTopicOperator();
+            EntityTopicOperator result = new EntityTopicOperator(reconciliation, kafkaAssembly);
 
-            EntityTopicOperatorSpec topicOperatorSpec = entityOperatorSpec.getTopicOperator();
-            if (topicOperatorSpec != null) {
-
-                String namespace = kafkaAssembly.getMetadata().getNamespace();
-                result = new EntityTopicOperator(reconciliation, kafkaAssembly);
-
-                result.setOwnerReference(kafkaAssembly);
-                String image = topicOperatorSpec.getImage();
-                if (image == null) {
-                    image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
-                }
-                result.image = image;
-                result.watchedNamespace = topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : namespace;
-                result.reconciliationIntervalMs = topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
-                result.zookeeperSessionTimeoutMs = topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000;
-                result.topicMetadataMaxAttempts = topicOperatorSpec.getTopicMetadataMaxAttempts();
-                result.setLogging(topicOperatorSpec.getLogging());
-                result.setGcLoggingEnabled(topicOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled());
-                result.setJvmOptions(topicOperatorSpec.getJvmOptions());
-                result.setResources(topicOperatorSpec.getResources());
-                if (topicOperatorSpec.getStartupProbe() != null) {
-                    result.setStartupProbe(topicOperatorSpec.getStartupProbe());
-                }
-                if (topicOperatorSpec.getReadinessProbe() != null) {
-                    result.setReadinessProbe(topicOperatorSpec.getReadinessProbe());
-                }
-                if (topicOperatorSpec.getLivenessProbe() != null) {
-                    result.setLivenessProbe(topicOperatorSpec.getLivenessProbe());
-                }
+            result.setOwnerReference(kafkaAssembly);
+            String image = topicOperatorSpec.getImage();
+            if (image == null) {
+                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
             }
+            result.image = image;
+            result.watchedNamespace = topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();
+            result.reconciliationIntervalMs = topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
+            result.zookeeperSessionTimeoutMs = topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000;
+            result.topicMetadataMaxAttempts = topicOperatorSpec.getTopicMetadataMaxAttempts();
+            result.setLogging(topicOperatorSpec.getLogging());
+            result.setGcLoggingEnabled(topicOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled());
+            result.setJvmOptions(topicOperatorSpec.getJvmOptions());
+            result.setResources(topicOperatorSpec.getResources());
+            if (topicOperatorSpec.getStartupProbe() != null) {
+                result.setStartupProbe(topicOperatorSpec.getStartupProbe());
+            }
+            if (topicOperatorSpec.getReadinessProbe() != null) {
+                result.setReadinessProbe(topicOperatorSpec.getReadinessProbe());
+            }
+            if (topicOperatorSpec.getLivenessProbe() != null) {
+                result.setLivenessProbe(topicOperatorSpec.getLivenessProbe());
+            }
+
+            return result;
+        } else {
+            return null;
         }
-        return result;
     }
 
     @Override
@@ -275,7 +272,7 @@ public class EntityTopicOperator extends AbstractModel {
     /**
      * @return Returns the namespace watched by the Topic Operator
      */
-    public String getWatchedNamespace() {
+    public String watchedNamespace() {
         return watchedNamespace;
     }
 

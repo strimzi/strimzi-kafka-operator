@@ -14,12 +14,9 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
-import io.fabric8.kubernetes.api.model.rbac.Role;
-import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -61,9 +58,6 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
-import io.strimzi.operator.cluster.model.EntityOperator;
-import io.strimzi.operator.cluster.model.EntityTopicOperator;
-import io.strimzi.operator.cluster.model.EntityUserOperator;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
@@ -340,30 +334,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.kafkaCustomCertificatesToStatus());
     }
 
-    /**
-     * Run the reconciliation pipeline for the Entity Operator cluster
-     *
-     * @param reconciliationState   Reconciliation State
-     *
-     * @return                      Future with Reconciliation State
-     */
-    Future<ReconciliationState> reconcileEntityOperator(ReconciliationState reconciliationState)    {
-        return reconciliationState.getEntityOperatorDescription()
-                .compose(state -> state.entityOperatorRole())
-                .compose(state -> state.entityTopicOperatorRole())
-                .compose(state -> state.entityUserOperatorRole())
-                .compose(state -> state.entityOperatorServiceAccount())
-                .compose(state -> state.entityOperatorTopicOpRoleBindingForRole())
-                .compose(state -> state.entityOperatorUserOpRoleBindingForRole())
-                .compose(state -> state.entityOperatorTopicOpAncillaryCm())
-                .compose(state -> state.entityOperatorUserOpAncillaryCm())
-                .compose(state -> state.entityOperatorSecret())
-                .compose(state -> state.entityTopicOperatorSecret(this::dateSupplier))
-                .compose(state -> state.entityUserOperatorSecret(this::dateSupplier))
-                .compose(state -> state.entityOperatorDeployment())
-                .compose(state -> state.entityOperatorReady());
-    }
-
     Future<Void> reconcile(ReconciliationState reconcileState)  {
         Promise<Void> chainPromise = Promise.promise();
 
@@ -380,7 +350,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 // Run reconciliations of the different components
                 .compose(state -> reconcileZooKeeper(state))
                 .compose(state -> reconcileKafka(state))
-                .compose(state -> reconcileEntityOperator(state))
+                .compose(state -> state.reconcileEntityOperator(this::dateSupplier))
                 .compose(state -> state.reconcileCruiseControl(this::dateSupplier))
                 .compose(state -> state.reconcileKafkaExporter(this::dateSupplier))
                 .compose(state -> state.reconcileJmxTrans())
@@ -440,10 +410,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         @SuppressFBWarnings(value = "SS_SHOULD_BE_STATIC", justification = "Field cannot be static in inner class in Java 11")
         private final int sharedConfigurationId = -1; // "Fake" broker ID used to indicate hash stored for all brokers when shared configuration is used
 
-        /* test */ EntityOperator entityOperator;
-        /* test */ Deployment eoDeployment = null;
-        private ConfigMap topicOperatorMetricsAndLogsConfigMap = null;
-        private ConfigMap userOperatorMetricsAndLogsConfigMap;
         private Secret oldCoSecret;
 
         /* test */ Set<String> fsResizingRestartRequest = new HashSet<>();
@@ -451,8 +417,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         // Certificate change indicators
         private boolean existingZookeeperCertsChanged = false;
         private boolean existingKafkaCertsChanged = false;
-        private boolean existingEntityTopicOperatorCertsChanged = false;
-        private boolean existingEntityUserOperatorCertsChanged = false;
 
         // Custom Listener certificates
         private final Map<String, String> customListenerCertificates = new HashMap<>();
@@ -3783,278 +3747,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return withVoid(CompositeFuture.all(futures));
         }
 
-        final Future<ReconciliationState> getEntityOperatorDescription() {
-            this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, versions);
-
-            if (entityOperator != null) {
-                EntityTopicOperator topicOperator = entityOperator.getTopicOperator();
-                EntityUserOperator userOperator = entityOperator.getUserOperator();
-
-                return CompositeFuture.join(
-                            topicOperator == null ? Future.succeededFuture(null) :
-                                Util.metricsAndLogging(reconciliation, configMapOperations, kafkaAssembly.getMetadata().getNamespace(), topicOperator.getLogging(), null),
-                            userOperator == null ? Future.succeededFuture(null) :
-                                Util.metricsAndLogging(reconciliation, configMapOperations, kafkaAssembly.getMetadata().getNamespace(), userOperator.getLogging(), null))
-                        .compose(res -> {
-                            MetricsAndLogging toMetricsAndLogging = res.resultAt(0);
-                            MetricsAndLogging uoMetricsAndLogging = res.resultAt(1);
-
-                            if (topicOperator != null)  {
-                                this.topicOperatorMetricsAndLogsConfigMap = topicOperator.generateMetricsAndLogConfigMap(toMetricsAndLogging);
-                            }
-
-                            if (userOperator != null)   {
-                                this.userOperatorMetricsAndLogsConfigMap = userOperator.generateMetricsAndLogConfigMap(uoMetricsAndLogging);
-                            }
-
-                            this.eoDeployment = entityOperator.generateDeployment(pfa.isOpenshift(), emptyMap(), imagePullPolicy, imagePullSecrets);
-                            return Future.succeededFuture(this);
-                        });
-            } else {
-                return Future.succeededFuture(this);
-            }
-        }
-
-        // Deploy entity operator Role if entity operator is deployed
-        Future<ReconciliationState> entityOperatorRole() {
-            final Role role;
-            if (isEntityOperatorDeployed()) {
-                role = entityOperator.generateRole(namespace, namespace);
-            } else {
-                role = null;
-            }
-
-            return withVoid(roleOperations.reconcile(reconciliation,
-                    namespace,
-                    KafkaResources.entityOperatorDeploymentName(name),
-                    role));
-        }
-
-        // Deploy entity topic operator Role if entity operator is deployed
-        Future<ReconciliationState> entityTopicOperatorRole() {
-            final String topicWatchedNamespace;
-            if (isEntityOperatorDeployed()
-                    && entityOperator.getTopicOperator() != null
-                    && entityOperator.getTopicOperator().getWatchedNamespace() != null
-                    && !entityOperator.getTopicOperator().getWatchedNamespace().isEmpty()) {
-                topicWatchedNamespace = entityOperator.getTopicOperator().getWatchedNamespace();
-            } else {
-                topicWatchedNamespace = namespace;
-            }
-
-            final Future<ReconcileResult<Role>> topicWatchedNamespaceFuture;
-            if (!namespace.equals(topicWatchedNamespace)) {
-                topicWatchedNamespaceFuture = roleOperations.reconcile(reconciliation,
-                        topicWatchedNamespace,
-                        KafkaResources.entityOperatorDeploymentName(name),
-                        entityOperator.generateRole(namespace, topicWatchedNamespace));
-            } else {
-                topicWatchedNamespaceFuture = Future.succeededFuture();
-            }
-
-            return withVoid(topicWatchedNamespaceFuture);
-        }
-
-        // Deploy entity user operator Role if entity operator is deployed
-        Future<ReconciliationState> entityUserOperatorRole() {
-            final String userWatchedNamespace;
-            if (isEntityOperatorDeployed()
-                    && entityOperator.getUserOperator() != null
-                    && entityOperator.getUserOperator().getWatchedNamespace() != null
-                    && !entityOperator.getUserOperator().getWatchedNamespace().isEmpty()) {
-                userWatchedNamespace = entityOperator.getUserOperator().getWatchedNamespace();
-            } else {
-                userWatchedNamespace = namespace;
-            }
-
-            final Future<ReconcileResult<Role>> userWatchedNamespaceFuture;
-            if (!namespace.equals(userWatchedNamespace)) {
-                userWatchedNamespaceFuture = roleOperations.reconcile(reconciliation,
-                        userWatchedNamespace,
-                        KafkaResources.entityOperatorDeploymentName(name),
-                        entityOperator.generateRole(namespace, userWatchedNamespace));
-            } else {
-                userWatchedNamespaceFuture = Future.succeededFuture();
-            }
-
-            return withVoid(userWatchedNamespaceFuture);
-        }
-
-        Future<ReconciliationState> entityOperatorServiceAccount() {
-            return withVoid(serviceAccountOperations.reconcile(reconciliation, namespace,
-                    KafkaResources.entityOperatorDeploymentName(name),
-                    isEntityOperatorDeployed() ? entityOperator.generateServiceAccount() : null));
-        }
-
-        // Check for if the entity operator will be deployed as part of the reconciliation
-        // Related resources need to know this to know whether to deploy
-        private boolean isEntityOperatorDeployed() {
-            return eoDeployment != null;
-        }
-
-        Future<ReconciliationState> entityOperatorTopicOpRoleBindingForRole() {
-            // Don't deploy Role RoleBinding if the topic operator is not deployed,
-            // or if the topic operator needs to watch a different namespace
-            if (!isEntityOperatorDeployed()
-                    || entityOperator.getTopicOperator() == null) {
-                LOGGER.debugCr(reconciliation, "entityOperatorTopicOpRoleBindingForRole not required");
-                return withVoid(roleBindingOperations.reconcile(reconciliation,
-                        namespace,
-                        KafkaResources.entityTopicOperatorRoleBinding(name),
-                        null));
-            }
-
-
-            final String watchedNamespace;
-
-            if (entityOperator.getTopicOperator().getWatchedNamespace() != null
-                    && !entityOperator.getTopicOperator().getWatchedNamespace().isEmpty()) {
-                watchedNamespace = entityOperator.getTopicOperator().getWatchedNamespace();
-            } else {
-                watchedNamespace = namespace;
-            }
-
-            final Future<ReconcileResult<RoleBinding>> watchedNamespaceFuture;
-
-            if (!namespace.equals(watchedNamespace)) {
-                watchedNamespaceFuture = roleBindingOperations.reconcile(reconciliation,
-                        watchedNamespace,
-                        KafkaResources.entityTopicOperatorRoleBinding(name),
-                        entityOperator.getTopicOperator().generateRoleBindingForRole(namespace, watchedNamespace));
-            } else {
-                watchedNamespaceFuture = Future.succeededFuture();
-            }
-
-            // Create role binding for the the UI runs in (it needs to access the CA etc.)
-            Future<ReconcileResult<RoleBinding>> ownNamespaceFuture = roleBindingOperations.reconcile(reconciliation,
-                    namespace,
-                    KafkaResources.entityTopicOperatorRoleBinding(name),
-                    entityOperator.getTopicOperator().generateRoleBindingForRole(namespace, namespace));
-
-            return withVoid(CompositeFuture.join(ownNamespaceFuture, watchedNamespaceFuture));
-        }
-
-        Future<ReconciliationState> entityOperatorUserOpRoleBindingForRole() {
-            // Don't deploy Role RoleBinding if the user operator is not deployed,
-            // or if the user operator needs to watch a different namespace
-            if (!isEntityOperatorDeployed()
-                    || entityOperator.getUserOperator() == null) {
-                LOGGER.debugCr(reconciliation, "entityOperatorUserOpRoleBindingForRole not required");
-                return withVoid(roleBindingOperations.reconcile(reconciliation,
-                        namespace,
-                        KafkaResources.entityUserOperatorRoleBinding(name),
-                        null));
-            }
-
-
-            Future<ReconcileResult<RoleBinding>> ownNamespaceFuture;
-            Future<ReconcileResult<RoleBinding>> watchedNamespaceFuture;
-
-            String watchedNamespace = namespace;
-
-            if (entityOperator.getUserOperator().getWatchedNamespace() != null
-                    && !entityOperator.getUserOperator().getWatchedNamespace().isEmpty()) {
-                watchedNamespace = entityOperator.getUserOperator().getWatchedNamespace();
-            }
-
-            if (!namespace.equals(watchedNamespace)) {
-                watchedNamespaceFuture = roleBindingOperations.reconcile(reconciliation,
-                        watchedNamespace,
-                        KafkaResources.entityUserOperatorRoleBinding(name),
-                        entityOperator.getUserOperator().generateRoleBindingForRole(namespace, watchedNamespace));
-            } else {
-                watchedNamespaceFuture = Future.succeededFuture();
-            }
-
-            // Create role binding for the the UI runs in (it needs to access the CA etc.)
-            ownNamespaceFuture = roleBindingOperations.reconcile(reconciliation,
-                    namespace,
-                    KafkaResources.entityUserOperatorRoleBinding(name),
-                    entityOperator.getUserOperator().generateRoleBindingForRole(namespace, namespace));
-
-
-            return withVoid(CompositeFuture.join(ownNamespaceFuture, watchedNamespaceFuture));
-        }
-
-        Future<ReconciliationState> entityOperatorTopicOpAncillaryCm() {
-            return withVoid(configMapOperations.reconcile(reconciliation, namespace,
-                    isEntityOperatorDeployed() && entityOperator.getTopicOperator() != null ?
-                            entityOperator.getTopicOperator().getAncillaryConfigMapName() : KafkaResources.entityTopicOperatorLoggingConfigMapName(name),
-                    topicOperatorMetricsAndLogsConfigMap));
-        }
-
-        Future<ReconciliationState> entityOperatorUserOpAncillaryCm() {
-            return withVoid(configMapOperations.reconcile(reconciliation, namespace,
-                    isEntityOperatorDeployed() && entityOperator.getUserOperator() != null ?
-                            entityOperator.getUserOperator().getAncillaryConfigMapName() : KafkaResources.entityUserOperatorLoggingConfigMapName(name),
-                    userOperatorMetricsAndLogsConfigMap));
-        }
-
-        Future<ReconciliationState> entityOperatorDeployment() {
-            if (this.entityOperator != null && isEntityOperatorDeployed()) {
-                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.entityOperator.getName());
-                return future.compose(dep -> {
-                    // getting the current cluster CA generation from the current deployment, if exists
-                    int clusterCaCertGeneration = ModelUtils.caCertGeneration(this.clusterCa);
-
-                    Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
-                            Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCaCertGeneration));
-                    return deploymentOperations.reconcile(reconciliation, namespace, KafkaResources.entityOperatorDeploymentName(name), eoDeployment);
-                }).compose(recon -> {
-                    if (recon instanceof ReconcileResult.Noop)   {
-                        // Lets check if we need to roll the deployment manually
-                        if (existingEntityTopicOperatorCertsChanged || existingEntityUserOperatorCertsChanged) {
-                            return entityOperatorRollingUpdate();
-                        }
-                    }
-
-                    // No need to roll, we patched the deployment (and it will roll it self) or we created a new one
-                    return Future.succeededFuture(this);
-                });
-            } else  {
-                return withVoid(deploymentOperations.reconcile(reconciliation, namespace, KafkaResources.entityOperatorDeploymentName(name), null));
-            }
-        }
-
-        Future<ReconciliationState> entityOperatorRollingUpdate() {
-            return withVoid(deploymentOperations.rollingUpdate(reconciliation, namespace, KafkaResources.entityOperatorDeploymentName(name), operationTimeoutMs));
-        }
-
-        Future<ReconciliationState> entityOperatorReady() {
-            if (this.entityOperator != null && isEntityOperatorDeployed()) {
-                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.entityOperator.getName());
-                return future.compose(dep -> {
-                    return withVoid(deploymentOperations.waitForObserved(reconciliation, namespace, this.entityOperator.getName(), 1_000, operationTimeoutMs));
-                }).compose(dep -> {
-                    return withVoid(deploymentOperations.readiness(reconciliation, namespace, this.entityOperator.getName(), 1_000, operationTimeoutMs));
-                }).map(i -> this);
-            }
-            return withVoid(Future.succeededFuture());
-        }
-
-        // Clean up the old entity-operator-certificate which is generated in the old releases.
-        // Starting from this release, the Topic Operator and User Operator will use new dedicated certificate.
-        // Therefore, we need to remove the unused entity-operator-certificate
-        Future<ReconciliationState> entityOperatorSecret() {
-            return withVoid(secretOperations.reconcile(reconciliation, namespace, KafkaResources.entityOperatorSecretName(name), null));
-        }
-
-        Future<ReconciliationState> entityTopicOperatorSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(KafkaResources.entityTopicOperatorSecretName(name), entityOperator == null || entityOperator.getTopicOperator() == null ? null : entityOperator.getTopicOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier)))
-                    .map(changed -> {
-                        existingEntityTopicOperatorCertsChanged = changed;
-                        return this;
-                    });
-        }
-
-        Future<ReconciliationState> entityUserOperatorSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(KafkaResources.entityUserOperatorSecretName(name), entityOperator == null || entityOperator.getUserOperator() == null ? null : entityOperator.getUserOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier)))
-                    .map(changed -> {
-                        existingEntityUserOperatorCertsChanged = changed;
-                        return this;
-                    });
-        }
-
         private boolean isPodUpToDate(StatefulSet sts, Pod pod) {
             final int stsGeneration = StatefulSetOperator.getStsGeneration(sts);
             final int podGeneration = StatefulSetOperator.getPodGeneration(pod);
@@ -4345,6 +4037,40 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> reconcileCruiseControl(Supplier<Date> dateSupplier)    {
             return cruiseControlReconciler()
+                    .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, dateSupplier)
+                    .map(this);
+        }
+
+        /**
+         * Provider method for Entity Operator reconciler. Overriding this method can be used to get mocked reconciler.
+         *
+         * @return  Entity Operator reconciler
+         */
+        EntityOperatorReconciler entityOperatorReconciler()   {
+            return new EntityOperatorReconciler(
+                    reconciliation,
+                    operationTimeoutMs,
+                    kafkaAssembly,
+                    versions,
+                    clusterCa,
+                    deploymentOperations,
+                    secretOperations,
+                    serviceAccountOperations,
+                    roleOperations,
+                    roleBindingOperations,
+                    configMapOperations
+            );
+        }
+
+        /**
+         * Run the reconciliation pipeline for the Entity Operator
+         *
+         * @param dateSupplier  Date supplier used to check maintenance windows
+         *
+         * @return  Future with Reconciliation State
+         */
+        Future<ReconciliationState> reconcileEntityOperator(Supplier<Date> dateSupplier)    {
+            return entityOperatorReconciler()
                     .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, dateSupplier)
                     .map(this);
         }
