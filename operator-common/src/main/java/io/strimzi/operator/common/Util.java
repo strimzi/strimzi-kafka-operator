@@ -746,4 +746,15 @@ public class Util {
             return false;
         }
     }
+
+    /**
+     * Encodes a String into Base64
+     *
+     * @param encode    String which should be encoded
+     *
+     * @return          Base64 data
+     */
+    public static String encodeToBase64(String encode)  {
+        return Base64.getEncoder().encodeToString(encode.getBytes(StandardCharsets.US_ASCII));
+    }
 }

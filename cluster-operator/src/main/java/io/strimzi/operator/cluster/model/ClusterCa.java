@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -97,7 +98,7 @@ public class ClusterCa extends Ca {
                 clusterOperatorSecret = secret;
             } else if (KafkaExporterResources.secretName(clusterName).equals(name)) {
                 kafkaExporterSecret = secret;
-            } else if (CruiseControl.secretName(clusterName).equals(name)) {
+            } else if (CruiseControlResources.secretName(clusterName).equals(name)) {
                 cruiseControlSecret = secret;
             }
         }
@@ -123,22 +124,19 @@ public class ClusterCa extends Ca {
         return cruiseControlSecret;
     }
 
-    public Map<String, CertAndKey> generateCcCerts(Kafka kafka, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
-        String cluster = kafka.getMetadata().getName();
-        String namespace = kafka.getMetadata().getNamespace();
-
-        DnsNameGenerator ccDnsGenerator = DnsNameGenerator.of(namespace, CruiseControl.serviceName(cluster));
+    public Map<String, CertAndKey> generateCcCerts(String namespace, String kafkaName, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
+        DnsNameGenerator ccDnsGenerator = DnsNameGenerator.of(namespace, CruiseControlResources.serviceName(kafkaName));
 
         Function<Integer, Subject> subjectFn = i -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
-                    .withCommonName(CruiseControl.serviceName(cluster));
+                    .withCommonName(CruiseControlResources.serviceName(kafkaName));
 
-            subject.addDnsName(CruiseControl.serviceName(cluster));
-            subject.addDnsName(String.format("%s.%s",  CruiseControl.serviceName(cluster), namespace));
+            subject.addDnsName(CruiseControlResources.serviceName(kafkaName));
+            subject.addDnsName(String.format("%s.%s", CruiseControlResources.serviceName(kafkaName), namespace));
             subject.addDnsName(ccDnsGenerator.serviceDnsNameWithoutClusterDomain());
             subject.addDnsName(ccDnsGenerator.serviceDnsName());
-            subject.addDnsName(CruiseControl.serviceName(cluster));
+            subject.addDnsName(CruiseControlResources.serviceName(kafkaName));
             subject.addDnsName("localhost");
             return subject.build();
         };

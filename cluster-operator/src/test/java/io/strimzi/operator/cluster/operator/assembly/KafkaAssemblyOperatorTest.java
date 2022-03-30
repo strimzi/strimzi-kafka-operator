@@ -22,6 +22,7 @@ import io.fabric8.openshift.api.model.RouteIngressBuilder;
 import io.fabric8.openshift.api.model.RouteStatus;
 import io.fabric8.openshift.api.model.RouteStatusBuilder;
 import io.strimzi.api.kafka.StrimziPodSetList;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpecBuilder;
@@ -1120,7 +1121,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.getAsync(clusterNamespace, ClusterOperator.secretName(clusterName))).thenReturn(
                 Future.succeededFuture(new Secret())
         );
-        when(mockSecretOps.getAsync(clusterNamespace, CruiseControl.secretName(clusterName))).thenReturn(
+        when(mockSecretOps.getAsync(clusterNamespace, CruiseControlResources.secretName(clusterName))).thenReturn(
                 Future.succeededFuture()
         );
 
@@ -1156,11 +1157,11 @@ public class KafkaAssemblyOperatorTest {
         }
 
         if (originalCruiseControl != null) {
-            when(mockDepOps.get(clusterNamespace, CruiseControl.cruiseControlName(clusterName))).thenReturn(
-                    originalCruiseControl.generateDeployment(true, Map.of(), null, null)
+            when(mockDepOps.get(clusterNamespace, CruiseControlResources.deploymentName(clusterName))).thenReturn(
+                    originalCruiseControl.generateDeployment(true, null, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
-                    Future.succeededFuture(originalCruiseControl.generateDeployment(true, Map.of(), null, null))
+                    Future.succeededFuture(originalCruiseControl.generateDeployment(true, null, null))
             );
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
                     Future.succeededFuture()

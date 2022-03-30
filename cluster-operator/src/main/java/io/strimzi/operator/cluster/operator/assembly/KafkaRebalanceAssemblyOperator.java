@@ -1097,9 +1097,9 @@ public class KafkaRebalanceAssemblyOperator
                                     return Future.failedFuture(Util.missingSecretException(clusterNamespace, ccApiSecretName));
                                 }
 
-                                CruiseControlConfiguration c = new CruiseControlConfiguration(reconciliation, kafka.getSpec().getCruiseControl().getConfig().entrySet());
-                                boolean apiAuthEnabled = CruiseControl.isApiAuthEnabled(c);
-                                boolean apiSslEnabled = CruiseControl.isApiSslEnabled(c);
+                                CruiseControlConfiguration ccConfig = new CruiseControlConfiguration(reconciliation, kafka.getSpec().getCruiseControl().getConfig().entrySet());
+                                boolean apiAuthEnabled = ccConfig.isApiAuthEnabled();
+                                boolean apiSslEnabled = ccConfig.isApiSslEnabled();
                                 CruiseControlApi apiClient = cruiseControlClientProvider(ccSecret, ccApiSecret, apiAuthEnabled, apiSslEnabled);
 
                                 // get latest KafkaRebalance state as it may have changed

@@ -69,7 +69,7 @@ public class MockCruiseControl {
 
     public static final Secret CC_SECRET = new SecretBuilder()
             .withNewMetadata()
-              .withName(CruiseControl.secretName(CLUSTER))
+              .withName(CruiseControlResources.secretName(CLUSTER))
               .withNamespace(NAMESPACE)
             .endMetadata()
             .addToData("cruise-control.crt", MockCertManager.clusterCaCert())

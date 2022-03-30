@@ -60,7 +60,6 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
-import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.EntityTopicOperator;
@@ -137,14 +136,12 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.cluster.model.AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG;
 import static io.strimzi.operator.cluster.model.AbstractModel.ANNO_STRIMZI_IO_STORAGE;
 import static io.strimzi.operator.cluster.model.KafkaCluster.ANNO_STRIMZI_IO_KAFKA_VERSION;
 import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedIVVersions;
 import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersions;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
 
 /**
  * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
@@ -367,25 +364,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.entityOperatorReady());
     }
 
-    /**
-     * Run the reconciliation pipeline for the Cruise Control cluster
-     *
-     * @param reconciliationState   Reconciliation State
-     *
-     * @return                      Future with Reconciliation State
-     */
-    Future<ReconciliationState> reconcileCruiseControl(ReconciliationState reconciliationState)    {
-        return reconciliationState.getCruiseControlDescription()
-                .compose(state -> state.cruiseControlNetPolicy())
-                .compose(state -> state.cruiseControlServiceAccount())
-                .compose(state -> state.cruiseControlAncillaryCm())
-                .compose(state -> state.cruiseControlSecret(this::dateSupplier))
-                .compose(state -> state.cruiseControlApiSecret())
-                .compose(state -> state.cruiseControlDeployment())
-                .compose(state -> state.cruiseControlService())
-                .compose(state -> state.cruiseControlReady());
-    }
-
     Future<Void> reconcile(ReconciliationState reconcileState)  {
         Promise<Void> chainPromise = Promise.promise();
 
@@ -403,7 +381,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> reconcileZooKeeper(state))
                 .compose(state -> reconcileKafka(state))
                 .compose(state -> reconcileEntityOperator(state))
-                .compose(state -> reconcileCruiseControl(state))
+                .compose(state -> state.reconcileCruiseControl(this::dateSupplier))
                 .compose(state -> state.reconcileKafkaExporter(this::dateSupplier))
                 .compose(state -> state.reconcileJmxTrans())
 
@@ -468,10 +446,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private ConfigMap userOperatorMetricsAndLogsConfigMap;
         private Secret oldCoSecret;
 
-        CruiseControl cruiseControl;
-        Deployment ccDeployment = null;
-        private ConfigMap cruiseControlMetricsAndLogsConfigMap;
-
         /* test */ Set<String> fsResizingRestartRequest = new HashSet<>();
 
         // Certificate change indicators
@@ -479,7 +453,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private boolean existingKafkaCertsChanged = false;
         private boolean existingEntityTopicOperatorCertsChanged = false;
         private boolean existingEntityUserOperatorCertsChanged = false;
-        private boolean existingCruiseControlCertsChanged = false;
 
         // Custom Listener certificates
         private final Map<String, String> customListenerCertificates = new HashMap<>();
@@ -826,7 +799,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 // EO, KE and CC need to be rolled only for new Cluster CA key.
                                 return rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reason.toString())
                                         .compose(i2 -> rollDeploymentIfExists(KafkaExporterResources.deploymentName(name), reason.toString()))
-                                        .compose(i2 -> rollDeploymentIfExists(CruiseControl.cruiseControlName(name), reason.toString()));
+                                        .compose(i2 -> rollDeploymentIfExists(CruiseControlResources.deploymentName(name), reason.toString()));
                             } else {
                                 return Future.succeededFuture();
                             }
@@ -4092,116 +4065,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             return stsGeneration == podGeneration;
         }
 
-        /*test*/ final Future<ReconciliationState> getCruiseControlDescription() {
-            CruiseControl cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions, kafkaCluster.getStorage());
-
-            if (cruiseControl != null) {
-                return Util.metricsAndLogging(reconciliation, configMapOperations, kafkaAssembly.getMetadata().getNamespace(),
-                        cruiseControl.getLogging(), cruiseControl.getMetricsConfigInCm())
-                        .compose(metricsAndLogging -> {
-                            ConfigMap logAndMetricsConfigMap = cruiseControl.generateMetricsAndLogConfigMap(metricsAndLogging);
-
-                            Map<String, String> annotations = singletonMap(CruiseControl.ANNO_STRIMZI_IO_LOGGING, logAndMetricsConfigMap.getData().get(ANCILLARY_CM_KEY_LOG_CONFIG));
-
-                            this.cruiseControlMetricsAndLogsConfigMap = logAndMetricsConfigMap;
-                            this.cruiseControl = cruiseControl;
-                            this.ccDeployment = cruiseControl.generateDeployment(pfa.isOpenshift(), annotations, imagePullPolicy, imagePullSecrets);
-
-                            return Future.succeededFuture(this);
-                        });
-            } else {
-                return withVoid(Future.succeededFuture());
-            }
-        }
-
-        Future<ReconciliationState> cruiseControlServiceAccount() {
-            return withVoid(serviceAccountOperations.reconcile(reconciliation, namespace,
-                    CruiseControl.cruiseControlServiceAccountName(name),
-                    ccDeployment != null ? cruiseControl.generateServiceAccount() : null));
-        }
-
-        Future<ReconciliationState> cruiseControlAncillaryCm() {
-            return withVoid(configMapOperations.reconcile(reconciliation, namespace,
-                    ccDeployment != null && cruiseControl != null ?
-                            cruiseControl.getAncillaryConfigMapName() : CruiseControl.metricAndLogConfigsName(name),
-                    cruiseControlMetricsAndLogsConfigMap));
-        }
-
-        Future<ReconciliationState> cruiseControlSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(CruiseControl.secretName(name), cruiseControl == null ? null : cruiseControl.generateSecret(kafkaAssembly, clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier)))
-                    .map(changed -> {
-                        existingCruiseControlCertsChanged = changed;
-                        return this;
-                    });
-        }
-
-        Future<ReconciliationState> cruiseControlApiSecret() {
-            if (this.cruiseControl != null) {
-                Future<Secret> secretFuture = secretOperations.getAsync(namespace, CruiseControlResources.apiSecretName(name));
-                return secretFuture.compose(res -> {
-                    if (res == null) {
-                        return withVoid(secretOperations.reconcile(reconciliation, namespace, CruiseControlResources.apiSecretName(name),
-                                cruiseControl.generateApiSecret()));
-                    } else {
-                        return withVoid(Future.succeededFuture(this));
-                    }
-                });
-
-            } else {
-                return withVoid(secretOperations.reconcile(reconciliation, namespace, CruiseControlResources.apiSecretName(name), null));
-            }
-        }
-
-        Future<ReconciliationState> cruiseControlDeployment() {
-            if (this.cruiseControl != null && ccDeployment != null) {
-                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.cruiseControl.getName());
-                return future.compose(dep -> {
-                    return deploymentOperations.reconcile(reconciliation, namespace, this.cruiseControl.getName(), ccDeployment);
-                }).compose(recon -> {
-                    if (recon instanceof ReconcileResult.Noop)   {
-                        // Lets check if we need to roll the deployment manually
-                        if (existingCruiseControlCertsChanged) {
-                            return cruiseControlRollingUpdate();
-                        }
-                    }
-
-                    // No need to roll, we patched the deployment (and it will roll it self) or we created a new one
-                    return Future.succeededFuture(this);
-                });
-            } else {
-                return withVoid(deploymentOperations.reconcile(reconciliation, namespace, CruiseControl.cruiseControlName(name), null));
-            }
-        }
-
-        Future<ReconciliationState> cruiseControlRollingUpdate() {
-            return withVoid(deploymentOperations.rollingUpdate(reconciliation, namespace, CruiseControl.cruiseControlName(name), operationTimeoutMs));
-        }
-
-        Future<ReconciliationState> cruiseControlService() {
-            return withVoid(serviceOperations.reconcile(reconciliation, namespace, CruiseControl.serviceName(name), cruiseControl != null ? cruiseControl.generateService() : null));
-        }
-
-        Future<ReconciliationState> cruiseControlReady() {
-            if (this.cruiseControl != null && ccDeployment != null) {
-                Future<Deployment> future = deploymentOperations.getAsync(namespace, this.cruiseControl.getName());
-                return future.compose(dep -> {
-                    return withVoid(deploymentOperations.waitForObserved(reconciliation, namespace, this.cruiseControl.getName(), 1_000, operationTimeoutMs));
-                }).compose(dep -> {
-                    return withVoid(deploymentOperations.readiness(reconciliation, namespace, this.cruiseControl.getName(), 1_000, operationTimeoutMs));
-                }).map(i -> this);
-            }
-            return withVoid(Future.succeededFuture());
-        }
-
-        Future<ReconciliationState> cruiseControlNetPolicy() {
-            if (isNetworkPolicyGeneration) {
-                return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, CruiseControl.policyName(name),
-                        cruiseControl != null ? cruiseControl.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels) : null));
-            } else {
-                return withVoid(Future.succeededFuture());
-            }
-        }
-
         private boolean isPodCaCertUpToDate(Pod pod, Ca ca) {
             final int caCertGeneration = ModelUtils.caCertGeneration(ca);
             String podAnnotation = getCaCertAnnotation(ca);
@@ -4445,6 +4308,44 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> reconcileJmxTrans()    {
             return jmxTransReconciler()
                     .reconcile(imagePullPolicy, imagePullSecrets)
+                    .map(this);
+        }
+
+        /**
+         * Provider method for Cruise Control reconciler. Overriding this method can be used to get mocked reconciler.
+         *
+         * @return  Cruise Control reconciler
+         */
+        CruiseControlReconciler cruiseControlReconciler()   {
+            return new CruiseControlReconciler(
+                    reconciliation,
+                    kafkaAssembly,
+                    versions,
+                    kafkaCluster.getStorage(),
+                    clusterCa,
+                    operationTimeoutMs,
+                    operatorNamespace,
+                    operatorNamespaceLabels,
+                    isNetworkPolicyGeneration,
+                    deploymentOperations,
+                    secretOperations,
+                    serviceAccountOperations,
+                    serviceOperations,
+                    networkPolicyOperator,
+                    configMapOperations
+            );
+        }
+
+        /**
+         * Run the reconciliation pipeline for the Cruise Control
+         *
+         * @param dateSupplier  Date supplier used to check maintenance windows
+         *
+         * @return  Future with Reconciliation State
+         */
+        Future<ReconciliationState> reconcileCruiseControl(Supplier<Date> dateSupplier)    {
+            return cruiseControlReconciler()
+                    .reconcile(pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, dateSupplier)
                     .map(this);
         }
     }

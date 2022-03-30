@@ -29,6 +29,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
@@ -453,7 +454,7 @@ public class ZookeeperCluster extends AbstractModel {
         NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeer();
         LabelSelector labelSelector5 = new LabelSelector();
         Map<String, String> expressions5 = new HashMap<>(1);
-        expressions5.put(Labels.STRIMZI_NAME_LABEL, CruiseControl.cruiseControlName(cluster));
+        expressions5.put(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.deploymentName(cluster));
         labelSelector5.setMatchLabels(expressions5);
         cruiseControlPeer.setPodSelector(labelSelector5);
 
