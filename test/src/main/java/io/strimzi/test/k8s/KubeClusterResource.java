@@ -391,8 +391,7 @@ public class KubeClusterResource {
 
     private synchronized void deleteNamespaceFromSet(CollectorElement collectorElement, String namespaceName) {
         // dynamically removing from the map
-        // TODO: May caused ConcurrentHashMap modification
-        Set<String> testSuiteNamespaces = MAP_WITH_SUITE_NAMESPACES.get(collectorElement);
+        Set<String> testSuiteNamespaces = new HashSet<>(MAP_WITH_SUITE_NAMESPACES.get(collectorElement));
         testSuiteNamespaces.remove(namespaceName);
         MAP_WITH_SUITE_NAMESPACES.put(collectorElement, testSuiteNamespaces);
         LOGGER.trace("SUITE_NAMESPACE_MAP after deletion: {}", MAP_WITH_SUITE_NAMESPACES);

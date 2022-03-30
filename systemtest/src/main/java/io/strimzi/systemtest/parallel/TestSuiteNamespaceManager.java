@@ -19,6 +19,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -173,9 +174,9 @@ public class TestSuiteNamespaceManager {
 
     public void deleteAdditionalNamespaces(ExtensionContext extensionContext) {
         CollectorElement collectorElement = CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName());
-        Set<String> namespacesToDelete = KubeClusterResource.getMapWithSuiteNamespaces().get(collectorElement);
 
-        if (namespacesToDelete != null) {
+        if (KubeClusterResource.getMapWithSuiteNamespaces().get(collectorElement) != null) {
+            Set<String> namespacesToDelete = new HashSet<>(KubeClusterResource.getMapWithSuiteNamespaces().get(collectorElement));
             // delete namespaces for specific test suite (we can not delete in parallel because of ConcurrentModificationException)
             namespacesToDelete.forEach(ns -> {
                 if (!ns.equals(Constants.INFRA_NAMESPACE)) {
