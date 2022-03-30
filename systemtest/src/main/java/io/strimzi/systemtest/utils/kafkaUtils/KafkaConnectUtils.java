@@ -147,22 +147,24 @@ public class KafkaConnectUtils {
      * @param connectPodName kafkaConnect pod name
      * @param topicName topic to be used
      * @param kafkaClientsPodName kafkaClients pod name
+     * @param scraperPodName Scraper Pod used for call KafkaConnect API
      * @param namespace namespace name
      * @param clusterName cluster name
      */
-    public static void sendReceiveMessagesThroughConnect(String connectPodName, String topicName, String kafkaClientsPodName, String namespace, String clusterName) {
+    public static void sendReceiveMessagesThroughConnect(String connectPodName, String topicName, final String kafkaClientsPodName,
+                                                         final String scraperPodName, String namespace, String clusterName) {
         LOGGER.info("Send and receive messages through KafkaConnect");
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespace, connectPodName);
-        KafkaConnectorUtils.createFileSinkConnector(namespace, kafkaClientsPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, namespace, 8083));
+        KafkaConnectorUtils.createFileSinkConnector(namespace, scraperPodName, topicName, Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(clusterName, namespace, 8083));
 
         InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-                .withUsingPodName(kafkaClientsPodName)
-                .withTopicName(topicName)
-                .withNamespaceName(namespace)
-                .withClusterName(clusterName)
-                .withMessageCount(100)
-                .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-                .build();
+            .withUsingPodName(kafkaClientsPodName)
+            .withTopicName(topicName)
+            .withNamespaceName(namespace)
+            .withClusterName(clusterName)
+            .withMessageCount(100)
+            .withListenerName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+            .build();
 
         internalKafkaClient.checkProducedAndConsumedMessages(
                 internalKafkaClient.sendMessagesPlain(),
