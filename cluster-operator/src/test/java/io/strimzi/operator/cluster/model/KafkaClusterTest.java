@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -98,6 +99,9 @@ import org.hamcrest.CoreMatchers;
 import java.io.IOException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1522,6 +1526,44 @@ public class KafkaClusterTest {
 
         kc.generateCertificates(kafkaAssembly, clusterCa, externalBootstrapAddress, externalAddresses, true);
         return kc.generateBrokersSecret(clusterCa, clientsCa);
+    }
+
+    @ParallelTest
+    public void testRemoveExpiredCertificate() {
+        // simulate certificate creation at following time, with expire at 365 days later (by default)
+        String instantExpected = "2022-03-23T09:00:00Z";
+        Clock clock = Clock.fixed(Instant.parse(instantExpected), ZoneId.of("UTC"));
+
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), cluster, null, null);
+        clusterCa.setClock(clock);
+        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
+        assertThat(clusterCa.caCertSecret().getData().size(), is(3));
+
+        // force key replacement so certificate renewal ...
+        Secret caKeySecretWithReplaceAnno = new SecretBuilder(clusterCa.caKeySecret())
+                .editMetadata()
+                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_REPLACE, "true")
+                .endMetadata()
+                .build();
+        // ... simulated at the following time, with expire at 365 days later (by default)
+        instantExpected = "2022-03-23T11:00:00Z";
+        clock = Clock.fixed(Instant.parse(instantExpected), ZoneId.of("UTC"));
+
+        clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), cluster, clusterCa.caCertSecret(), caKeySecretWithReplaceAnno);
+        clusterCa.setClock(clock);
+        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
+        assertThat(clusterCa.caCertSecret().getData().size(), is(4));
+        assertThat(clusterCa.caCertSecret().getData().containsKey("ca-2023-03-23T09-00-00Z.crt"), is(true));
+
+        // running a CA reconcile simulated at following time (365 days later) expecting expired certificate being removed
+        instantExpected = "2023-03-23T10:00:00Z";
+        clock = Clock.fixed(Instant.parse(instantExpected), ZoneId.of("UTC"));
+
+        clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), cluster, clusterCa.caCertSecret(), clusterCa.caKeySecret());
+        clusterCa.setClock(clock);
+        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
+        assertThat(clusterCa.caCertSecret().getData().size(), is(3));
+        assertThat(clusterCa.caCertSecret().getData().containsKey("ca-2023-03-23T09-00-00Z.crt"), is(false));
     }
 
     @ParallelTest

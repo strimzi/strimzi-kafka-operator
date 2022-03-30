@@ -29,6 +29,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.chrono.IsoChronology;
@@ -100,6 +101,7 @@ public abstract class Ca {
 
     private final PasswordGenerator passwordGenerator;
     protected final Reconciliation reconciliation;
+    private Clock clock;
 
     /**
      * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
@@ -203,6 +205,11 @@ public abstract class Ca {
         this.generateCa = generateCa;
         this.policy = policy == null ? CertificateExpirationPolicy.RENEW_CERTIFICATE : policy;
         this.renewalType = RenewalType.NOOP;
+        this.clock = Clock.systemUTC();
+    }
+
+    /* test */ protected void setClock(Clock clock) {
+        this.clock = clock;
     }
 
     private static void delete(Reconciliation reconciliation, File file) {
@@ -798,7 +805,7 @@ public abstract class Ca {
             try {
                 X509Certificate cert = x509Certificate(Base64.getDecoder().decode(certText));
                 Instant expiryDate = cert.getNotAfter().toInstant();
-                remove = expiryDate.isBefore(Instant.now());
+                remove = expiryDate.isBefore(clock.instant());
                 if (remove) {
                     LOGGER.debugCr(reconciliation, "The certificate (data.{}) in Secret expired {}; removing it",
                             certName.replace(".", "\\."), expiryDate);
