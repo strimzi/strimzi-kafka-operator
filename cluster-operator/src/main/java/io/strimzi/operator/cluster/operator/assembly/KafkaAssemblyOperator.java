@@ -797,7 +797,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(i -> {
                             if (this.clusterCa.keyReplaced()) {
                                 // EO, KE and CC need to be rolled only for new Cluster CA key.
-                                return rollDeploymentIfExists(EntityOperator.entityOperatorName(name), reason.toString())
+                                return rollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(name), reason.toString())
                                         .compose(i2 -> rollDeploymentIfExists(KafkaExporterResources.deploymentName(name), reason.toString()))
                                         .compose(i2 -> rollDeploymentIfExists(CruiseControlResources.deploymentName(name), reason.toString()));
                             } else {
@@ -3826,7 +3826,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
             return withVoid(roleOperations.reconcile(reconciliation,
                     namespace,
-                    EntityOperator.getRoleName(name),
+                    KafkaResources.entityOperatorDeploymentName(name),
                     role));
         }
 
@@ -3846,7 +3846,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (!namespace.equals(topicWatchedNamespace)) {
                 topicWatchedNamespaceFuture = roleOperations.reconcile(reconciliation,
                         topicWatchedNamespace,
-                        EntityOperator.getRoleName(name),
+                        KafkaResources.entityOperatorDeploymentName(name),
                         entityOperator.generateRole(namespace, topicWatchedNamespace));
             } else {
                 topicWatchedNamespaceFuture = Future.succeededFuture();
@@ -3871,7 +3871,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (!namespace.equals(userWatchedNamespace)) {
                 userWatchedNamespaceFuture = roleOperations.reconcile(reconciliation,
                         userWatchedNamespace,
-                        EntityOperator.getRoleName(name),
+                        KafkaResources.entityOperatorDeploymentName(name),
                         entityOperator.generateRole(namespace, userWatchedNamespace));
             } else {
                 userWatchedNamespaceFuture = Future.succeededFuture();
@@ -3882,7 +3882,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> entityOperatorServiceAccount() {
             return withVoid(serviceAccountOperations.reconcile(reconciliation, namespace,
-                    EntityOperator.entityOperatorServiceAccountName(name),
+                    KafkaResources.entityOperatorDeploymentName(name),
                     isEntityOperatorDeployed() ? entityOperator.generateServiceAccount() : null));
         }
 
@@ -3900,7 +3900,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 LOGGER.debugCr(reconciliation, "entityOperatorTopicOpRoleBindingForRole not required");
                 return withVoid(roleBindingOperations.reconcile(reconciliation,
                         namespace,
-                        EntityTopicOperator.roleBindingForRoleName(name),
+                        KafkaResources.entityTopicOperatorRoleBinding(name),
                         null));
             }
 
@@ -3919,7 +3919,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (!namespace.equals(watchedNamespace)) {
                 watchedNamespaceFuture = roleBindingOperations.reconcile(reconciliation,
                         watchedNamespace,
-                        EntityTopicOperator.roleBindingForRoleName(name),
+                        KafkaResources.entityTopicOperatorRoleBinding(name),
                         entityOperator.getTopicOperator().generateRoleBindingForRole(namespace, watchedNamespace));
             } else {
                 watchedNamespaceFuture = Future.succeededFuture();
@@ -3928,7 +3928,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // Create role binding for the the UI runs in (it needs to access the CA etc.)
             Future<ReconcileResult<RoleBinding>> ownNamespaceFuture = roleBindingOperations.reconcile(reconciliation,
                     namespace,
-                    EntityTopicOperator.roleBindingForRoleName(name),
+                    KafkaResources.entityTopicOperatorRoleBinding(name),
                     entityOperator.getTopicOperator().generateRoleBindingForRole(namespace, namespace));
 
             return withVoid(CompositeFuture.join(ownNamespaceFuture, watchedNamespaceFuture));
@@ -3942,7 +3942,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 LOGGER.debugCr(reconciliation, "entityOperatorUserOpRoleBindingForRole not required");
                 return withVoid(roleBindingOperations.reconcile(reconciliation,
                         namespace,
-                        EntityUserOperator.roleBindingForRoleName(name),
+                        KafkaResources.entityUserOperatorRoleBinding(name),
                         null));
             }
 
@@ -3960,7 +3960,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (!namespace.equals(watchedNamespace)) {
                 watchedNamespaceFuture = roleBindingOperations.reconcile(reconciliation,
                         watchedNamespace,
-                        EntityUserOperator.roleBindingForRoleName(name),
+                        KafkaResources.entityUserOperatorRoleBinding(name),
                         entityOperator.getUserOperator().generateRoleBindingForRole(namespace, watchedNamespace));
             } else {
                 watchedNamespaceFuture = Future.succeededFuture();
@@ -3969,7 +3969,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // Create role binding for the the UI runs in (it needs to access the CA etc.)
             ownNamespaceFuture = roleBindingOperations.reconcile(reconciliation,
                     namespace,
-                    EntityUserOperator.roleBindingForRoleName(name),
+                    KafkaResources.entityUserOperatorRoleBinding(name),
                     entityOperator.getUserOperator().generateRoleBindingForRole(namespace, namespace));
 
 
@@ -3979,14 +3979,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> entityOperatorTopicOpAncillaryCm() {
             return withVoid(configMapOperations.reconcile(reconciliation, namespace,
                     isEntityOperatorDeployed() && entityOperator.getTopicOperator() != null ?
-                            entityOperator.getTopicOperator().getAncillaryConfigMapName() : EntityTopicOperator.metricAndLogConfigsName(name),
+                            entityOperator.getTopicOperator().getAncillaryConfigMapName() : KafkaResources.entityTopicOperatorLoggingConfigMapName(name),
                     topicOperatorMetricsAndLogsConfigMap));
         }
 
         Future<ReconciliationState> entityOperatorUserOpAncillaryCm() {
             return withVoid(configMapOperations.reconcile(reconciliation, namespace,
                     isEntityOperatorDeployed() && entityOperator.getUserOperator() != null ?
-                            entityOperator.getUserOperator().getAncillaryConfigMapName() : EntityUserOperator.metricAndLogConfigsName(name),
+                            entityOperator.getUserOperator().getAncillaryConfigMapName() : KafkaResources.entityUserOperatorLoggingConfigMapName(name),
                     userOperatorMetricsAndLogsConfigMap));
         }
 
@@ -3999,7 +3999,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
                     Annotations.annotations(eoDeployment.getSpec().getTemplate()).put(
                             Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(clusterCaCertGeneration));
-                    return deploymentOperations.reconcile(reconciliation, namespace, EntityOperator.entityOperatorName(name), eoDeployment);
+                    return deploymentOperations.reconcile(reconciliation, namespace, KafkaResources.entityOperatorDeploymentName(name), eoDeployment);
                 }).compose(recon -> {
                     if (recon instanceof ReconcileResult.Noop)   {
                         // Lets check if we need to roll the deployment manually
@@ -4012,12 +4012,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     return Future.succeededFuture(this);
                 });
             } else  {
-                return withVoid(deploymentOperations.reconcile(reconciliation, namespace, EntityOperator.entityOperatorName(name), null));
+                return withVoid(deploymentOperations.reconcile(reconciliation, namespace, KafkaResources.entityOperatorDeploymentName(name), null));
             }
         }
 
         Future<ReconciliationState> entityOperatorRollingUpdate() {
-            return withVoid(deploymentOperations.rollingUpdate(reconciliation, namespace, EntityOperator.entityOperatorName(name), operationTimeoutMs));
+            return withVoid(deploymentOperations.rollingUpdate(reconciliation, namespace, KafkaResources.entityOperatorDeploymentName(name), operationTimeoutMs));
         }
 
         Future<ReconciliationState> entityOperatorReady() {
@@ -4036,11 +4036,11 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         // Starting from this release, the Topic Operator and User Operator will use new dedicated certificate.
         // Therefore, we need to remove the unused entity-operator-certificate
         Future<ReconciliationState> entityOperatorSecret() {
-            return withVoid(secretOperations.reconcile(reconciliation, namespace, EntityOperator.secretName(name), null));
+            return withVoid(secretOperations.reconcile(reconciliation, namespace, KafkaResources.entityOperatorSecretName(name), null));
         }
 
         Future<ReconciliationState> entityTopicOperatorSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(EntityTopicOperator.secretName(name), entityOperator == null || entityOperator.getTopicOperator() == null ? null : entityOperator.getTopicOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier)))
+            return updateCertificateSecretWithDiff(KafkaResources.entityTopicOperatorSecretName(name), entityOperator == null || entityOperator.getTopicOperator() == null ? null : entityOperator.getTopicOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier)))
                     .map(changed -> {
                         existingEntityTopicOperatorCertsChanged = changed;
                         return this;
@@ -4048,7 +4048,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> entityUserOperatorSecret(Supplier<Date> dateSupplier) {
-            return updateCertificateSecretWithDiff(EntityUserOperator.secretName(name), entityOperator == null || entityOperator.getUserOperator() == null ? null : entityOperator.getUserOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier)))
+            return updateCertificateSecretWithDiff(KafkaResources.entityUserOperatorSecretName(name), entityOperator == null || entityOperator.getUserOperator() == null ? null : entityOperator.getUserOperator().generateSecret(clusterCa, Util.isMaintenanceTimeWindowsSatisfied(reconciliation, getMaintenanceTimeWindows(), dateSupplier)))
                     .map(changed -> {
                         existingEntityUserOperatorCertsChanged = changed;
                         return this;

@@ -62,8 +62,6 @@ import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.EntityOperator;
-import io.strimzi.operator.cluster.model.EntityTopicOperator;
-import io.strimzi.operator.cluster.model.EntityUserOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
@@ -598,8 +596,8 @@ public class KafkaAssemblyOperatorTest {
         expectedSecrets.addAll(secrets.stream().map(s -> s.getMetadata().getName()).collect(Collectors.toSet()));
         if (eoConfig != null) {
             // it's expected only when the Entity Operator is deployed by the Cluster Operator
-            expectedSecrets.add(EntityTopicOperator.secretName(kafkaName));
-            expectedSecrets.add(EntityUserOperator.secretName(kafkaName));
+            expectedSecrets.add(KafkaResources.entityTopicOperatorSecretName(kafkaName));
+            expectedSecrets.add(KafkaResources.entityUserOperatorSecretName(kafkaName));
         }
 
         when(mockDepOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(invocation -> {
@@ -608,7 +606,7 @@ public class KafkaAssemblyOperatorTest {
             if (desired != null) {
                 if (name.contains("operator")) {
                     if (entityOperator != null) {
-                        context.verify(() -> assertThat(desired.getMetadata().getName(), is(EntityOperator.entityOperatorName(kafkaName))));
+                        context.verify(() -> assertThat(desired.getMetadata().getName(), is(KafkaResources.entityOperatorDeploymentName(kafkaName))));
                     }
                 } else if (name.contains("exporter"))   {
                     context.verify(() -> assertThat(metrics, is(true)));
@@ -1109,7 +1107,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.getAsync(clusterNamespace, KafkaCluster.brokersSecretName(clusterName))).thenReturn(
                 Future.succeededFuture()
         );
-        when(mockSecretOps.getAsync(clusterNamespace, EntityTopicOperator.secretName(clusterName))).thenReturn(
+        when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.entityTopicOperatorSecretName(clusterName))).thenReturn(
                 Future.succeededFuture()
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaExporterResources.secretName(clusterName))).thenReturn(
@@ -1142,10 +1140,10 @@ public class KafkaAssemblyOperatorTest {
         );
         // Mock Deployment get
         if (originalEntityOperator != null) {
-            when(mockDepOps.get(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
+            when(mockDepOps.get(clusterNamespace, KafkaResources.entityOperatorDeploymentName(clusterName))).thenReturn(
                     originalEntityOperator.generateDeployment(true, Map.of(), null, null)
             );
-            when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
+            when(mockDepOps.getAsync(clusterNamespace, KafkaResources.entityOperatorDeploymentName(clusterName))).thenReturn(
                     Future.succeededFuture(originalEntityOperator.generateDeployment(true, Map.of(), null, null))
             );
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
@@ -1160,7 +1158,7 @@ public class KafkaAssemblyOperatorTest {
             when(mockDepOps.get(clusterNamespace, CruiseControlResources.deploymentName(clusterName))).thenReturn(
                     originalCruiseControl.generateDeployment(true, null, null)
             );
-            when(mockDepOps.getAsync(clusterNamespace, EntityOperator.entityOperatorName(clusterName))).thenReturn(
+            when(mockDepOps.getAsync(clusterNamespace, KafkaResources.entityOperatorDeploymentName(clusterName))).thenReturn(
                     Future.succeededFuture(originalCruiseControl.generateDeployment(true, null, null))
             );
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(

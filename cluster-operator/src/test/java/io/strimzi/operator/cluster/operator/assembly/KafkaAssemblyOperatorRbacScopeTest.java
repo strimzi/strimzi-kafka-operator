@@ -10,13 +10,13 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -341,7 +341,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                     assertThat(roleBindings.get(0), hasRoleRef(new RoleRefBuilder()
                             .withApiGroup("rbac.authorization.k8s.io")
                             .withKind("Role")
-                            .withName(EntityOperator.getRoleName(clusterName))
+                            .withName(KafkaResources.entityOperatorDeploymentName(clusterName))
                             .build()));
 
                     assertThat(roleBindingNames.get(1), is("test-instance-entity-topic-operator-role"));
@@ -349,7 +349,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                     assertThat(roleBindings.get(1), hasRoleRef(new RoleRefBuilder()
                             .withApiGroup("rbac.authorization.k8s.io")
                             .withKind("Role")
-                            .withName(EntityOperator.getRoleName(clusterName))
+                            .withName(KafkaResources.entityOperatorDeploymentName(clusterName))
                             .build()));
 
                     assertThat(roleBindingNames.get(2), is("test-instance-entity-user-operator-role"));
@@ -357,7 +357,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                     assertThat(roleBindings.get(2), hasRoleRef(new RoleRefBuilder()
                             .withApiGroup("rbac.authorization.k8s.io")
                             .withKind("Role")
-                            .withName(EntityOperator.getRoleName(clusterName))
+                            .withName(KafkaResources.entityOperatorDeploymentName(clusterName))
                             .build()));
 
                     assertThat(roleBindingNames.get(3), is("test-instance-entity-user-operator-role"));
@@ -365,7 +365,7 @@ public class KafkaAssemblyOperatorRbacScopeTest {
                     assertThat(roleBindings.get(3), hasRoleRef(new RoleRefBuilder()
                             .withApiGroup("rbac.authorization.k8s.io")
                             .withKind("Role")
-                            .withName(EntityOperator.getRoleName(clusterName))
+                            .withName(KafkaResources.entityOperatorDeploymentName(clusterName))
                             .build()));
 
                     List<String> roleNames = roleNameCaptor.getAllValues();

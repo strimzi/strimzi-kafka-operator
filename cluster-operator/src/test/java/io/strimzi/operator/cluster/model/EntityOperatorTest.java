@@ -33,6 +33,7 @@ import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
@@ -49,7 +50,6 @@ import org.junit.jupiter.api.AfterAll;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,11 +70,10 @@ import static org.hamcrest.Matchers.hasProperty;
 
 @ParallelSuite
 public class EntityOperatorTest {
-
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
 
     static Map<String, String> volumeMounts(List<VolumeMount> mounts) {
-        return mounts.stream().collect(Collectors.toMap(vm -> vm.getName(), vm -> vm.getMountPath()));
+        return mounts.stream().collect(Collectors.toMap(VolumeMount::getName, VolumeMount::getMountPath));
     }
 
     private final String namespace = "test";
@@ -118,13 +117,13 @@ public class EntityOperatorTest {
     @ParallelTest
     public void testGenerateDeployment() {
 
-        Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP, null, null);
+        Deployment dep = entityOperator.generateDeployment(true, Map.of(), null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
 
-        assertThat(dep.getMetadata().getName(), is(entityOperator.entityOperatorName(cluster)));
+        assertThat(dep.getMetadata().getName(), is(KafkaResources.entityOperatorDeploymentName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
-        assertThat(dep.getSpec().getReplicas(), is(Integer.valueOf(EntityOperatorSpec.DEFAULT_REPLICAS)));
+        assertThat(dep.getSpec().getReplicas(), is(EntityOperatorSpec.DEFAULT_REPLICAS));
         assertThat(dep.getMetadata().getOwnerReferences().size(), is(1));
         assertThat(dep.getMetadata().getOwnerReferences().get(0), is(entityOperator.createOwnerReference()));
 
@@ -135,28 +134,28 @@ public class EntityOperatorTest {
         // checks on the TLS sidecar container
         Container tlsSidecarContainer = containers.get(2);
         assertThat(tlsSidecarContainer.getImage(), is(image));
-        assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT), is(EntityOperator.defaultZookeeperConnect(cluster)));
+        assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT), is(ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT));
         assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL), is(TlsSidecarLogLevel.NOTICE.toValue()));
         assertThat(EntityOperatorTest.volumeMounts(tlsSidecarContainer.getVolumeMounts()), is(map(
                         EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
                         EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT,
                         EntityOperator.ETO_CERTS_VOLUME_NAME, EntityOperator.ETO_CERTS_VOLUME_MOUNT)));
-        assertThat(tlsSidecarContainer.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(tlsHealthDelay)));
-        assertThat(tlsSidecarContainer.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(tlsHealthTimeout)));
-        assertThat(tlsSidecarContainer.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(tlsHealthDelay)));
-        assertThat(tlsSidecarContainer.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(tlsHealthTimeout)));
+        assertThat(tlsSidecarContainer.getReadinessProbe().getInitialDelaySeconds(), is(tlsHealthDelay));
+        assertThat(tlsSidecarContainer.getReadinessProbe().getTimeoutSeconds(), is(tlsHealthTimeout));
+        assertThat(tlsSidecarContainer.getLivenessProbe().getInitialDelaySeconds(), is(tlsHealthDelay));
+        assertThat(tlsSidecarContainer.getLivenessProbe().getTimeoutSeconds(), is(tlsHealthTimeout));
 
         List<Volume> volumes = dep.getSpec().getTemplate().getSpec().getVolumes();
-        assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
-        assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
-        assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
+        assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
+        assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
+        assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
     }
 
     @ParallelTest
     public void testFromCrd() {
         assertThat(entityOperator.namespace, is(namespace));
         assertThat(entityOperator.cluster, is(cluster));
-        assertThat(entityOperator.getZookeeperConnect(), is(EntityOperator.defaultZookeeperConnect(cluster)));
+        assertThat(entityOperator.zookeeperConnect, is(ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT));
     }
 
     @ParallelTest
@@ -177,8 +176,8 @@ public class EntityOperatorTest {
     @ParallelTest
     public void withAffinityAndTolerations() throws IOException {
         ResourceTester<Kafka, EntityOperator> helper = new ResourceTester<>(Kafka.class, VERSIONS, (kAssembly, versions) -> EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), kAssembly, versions), this.getClass().getSimpleName() + ".withAffinityAndTolerations");
-        helper.assertDesiredResource("-DeploymentAffinity.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getAffinity());
-        helper.assertDesiredResource("-DeploymentTolerations.yaml", zc -> zc.generateDeployment(true, Collections.EMPTY_MAP, null, null).getSpec().getTemplate().getSpec().getTolerations());
+        helper.assertDesiredResource("-DeploymentAffinity.yaml", zc -> zc.generateDeployment(true, Map.of(), null, null).getSpec().getTemplate().getSpec().getAffinity());
+        helper.assertDesiredResource("-DeploymentTolerations.yaml", zc -> zc.generateDeployment(true, Map.of(), null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
 
     @ParallelTest
@@ -188,13 +187,13 @@ public class EntityOperatorTest {
                 Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
         Map<String, String> expectedDepLabels = new HashMap<>(depLabels);
         expectedDepLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
-        Map<String, String> depAnots = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> depAnnotations = TestUtils.map("a1", "v1", "a2", "v2");
 
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> podAnnotations = TestUtils.map("a3", "v3", "a4", "v4");
 
         Map<String, String> saLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> saAnots = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> saAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
 
         Toleration toleration = new TolerationBuilder()
                 .withEffect("NoSchedule")
@@ -230,13 +229,13 @@ public class EntityOperatorTest {
                                     .withNewDeployment()
                                         .withNewMetadata()
                                             .withLabels(depLabels)
-                                            .withAnnotations(depAnots)
+                                            .withAnnotations(depAnnotations)
                                         .endMetadata()
                                     .endDeployment()
                                     .withNewPod()
                                         .withNewMetadata()
                                             .withLabels(podLabels)
-                                            .withAnnotations(podAnots)
+                                            .withAnnotations(podAnnotations)
                                         .endMetadata()
                                         .withPriorityClassName("top-priority")
                                         .withSchedulerName("my-scheduler")
@@ -247,7 +246,7 @@ public class EntityOperatorTest {
                                     .withNewServiceAccount()
                                         .withNewMetadata()
                                             .withLabels(saLabels)
-                                            .withAnnotations(saAnots)
+                                            .withAnnotations(saAnnotations)
                                         .endMetadata()
                                     .endServiceAccount()
                                 .endTemplate()
@@ -257,14 +256,14 @@ public class EntityOperatorTest {
         EntityOperator entityOperator = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
         // Check Deployment
-        Deployment dep = entityOperator.generateDeployment(true, Collections.EMPTY_MAP, null, null);
+        Deployment dep = entityOperator.generateDeployment(true, Map.of(), null, null);
         assertThat(dep.getMetadata().getLabels().entrySet().containsAll(expectedDepLabels.entrySet()), is(true));
-        assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnots.entrySet()), is(true));
+        assertThat(dep.getMetadata().getAnnotations().entrySet().containsAll(depAnnotations.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
 
         // Check Pods
         assertThat(dep.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
-        assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
+        assertThat(dep.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnnotations.entrySet()), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(dep.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(dep.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
@@ -273,7 +272,7 @@ public class EntityOperatorTest {
         // Check Service Account
         ServiceAccount sa = entityOperator.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
-        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
+        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnnotations.entrySet()), is(true));
     }
 
     @ParallelTest
@@ -293,8 +292,8 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
+        Deployment dep = eo.generateDeployment(true, Map.of(), null, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(123L));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle(), is(notNullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/entity_operator_stunnel_pre_stop.sh"), is(true));
     }
@@ -311,8 +310,8 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
-        assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(30)));
+        Deployment dep = eo.generateDeployment(true, Map.of(), null, null);
+        assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(30L));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle(), is(notNullValue()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getLifecycle().getPreStop().getExec().getCommand().contains("/opt/stunnel/entity_operator_stunnel_pre_stop.sh"), is(true));
     }
@@ -337,7 +336,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
+        Deployment dep = eo.generateDeployment(true, Map.of(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -362,7 +361,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, secrets);
+        Deployment dep = eo.generateDeployment(true, Map.of(), null, secrets);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(true));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -388,7 +387,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, singletonList(secret1));
+        Deployment dep = eo.generateDeployment(true, Map.of(), null, singletonList(secret1));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret1), is(false));
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().contains(secret2), is(true));
@@ -406,7 +405,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
+        Deployment dep = eo.generateDeployment(true, Map.of(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
     }
 
@@ -427,11 +426,11 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
+        Deployment dep = eo.generateDeployment(true, Map.of(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
-        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(Long.valueOf(123)));
-        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(Long.valueOf(456)));
-        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(Long.valueOf(789)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(123L));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(456L));
+        assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(789L));
     }
 
     @ParallelTest
@@ -446,7 +445,7 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, null, null);
+        Deployment dep = eo.generateDeployment(true, Map.of(), null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
     }
 
@@ -529,12 +528,12 @@ public class EntityOperatorTest {
                 .build();
         EntityOperator eo = EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
 
-        Deployment dep = eo.generateDeployment(true, Collections.EMPTY_MAP, ImagePullPolicy.ALWAYS, null);
+        Deployment dep = eo.generateDeployment(true, Map.of(), ImagePullPolicy.ALWAYS, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
 
-        dep = eo.generateDeployment(true, Collections.EMPTY_MAP, ImagePullPolicy.IFNOTPRESENT, null);
+        dep = eo.generateDeployment(true, Map.of(), ImagePullPolicy.IFNOTPRESENT, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(1).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(2).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));

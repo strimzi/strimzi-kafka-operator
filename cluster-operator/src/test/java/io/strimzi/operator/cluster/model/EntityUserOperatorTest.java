@@ -80,7 +80,7 @@ public class EntityUserOperatorTest {
 
     private final String metricsCMName = "metrics-cm";
     private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
-    private final List<SystemProperty> javaSystemProperties = new ArrayList<SystemProperty>() {{
+    private final List<SystemProperty> javaSystemProperties = new ArrayList<>() {{
             add(new SystemPropertyBuilder().withName("javax.net.debug").withValue("verbose").build());
             add(new SystemPropertyBuilder().withName("something.else").withValue("42").build());
         }};
@@ -122,7 +122,7 @@ public class EntityUserOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_CERT_SECRET_NAME).withValue(KafkaResources.clientsCaCertificateSecretName(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_NAMESPACE).withValue(namespace).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLUSTER_CA_CERT_SECRET_NAME).withValue(KafkaCluster.clusterCaCertSecretName(cluster)).build());
-        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_EO_KEY_SECRET_NAME).withValue(EntityUserOperator.secretName(cluster)).build());
+        expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_EO_KEY_SECRET_NAME).withValue(KafkaResources.entityUserOperatorSecretName(cluster)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(AbstractModel.DEFAULT_JVM_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_VALIDITY).withValue(Integer.toString(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_CLIENTS_CA_RENEWAL).withValue(Integer.toString(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS)).build());
@@ -163,11 +163,11 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.livenessProbeOptions.getFailureThreshold(), is(livenessProbe.getFailureThreshold()));
         assertThat(entityUserOperator.livenessProbeOptions.getPeriodSeconds(), is(livenessProbe.getPeriodSeconds()));
         assertThat(entityUserOperator.getWatchedNamespace(), is(uoWatchedNamespace));
-        assertThat(entityUserOperator.getReconciliationIntervalMs(), is(uoReconciliationInterval * 1000L));
-        assertThat(entityUserOperator.getKafkaBootstrapServers(), is(String.format("%s:%d", KafkaResources.bootstrapServiceName(cluster), EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT)));
+        assertThat(entityUserOperator.reconciliationIntervalMs, is(uoReconciliationInterval * 1000L));
+        assertThat(entityUserOperator.kafkaBootstrapServers, is(String.format("%s:%d", KafkaResources.bootstrapServiceName(cluster), EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT)));
         assertThat(entityUserOperator.getLogging().getType(), is(userOperatorLogging.getType()));
         assertThat(((InlineLogging) entityUserOperator.getLogging()).getLoggers(), is(userOperatorLogging.getLoggers()));
-        assertThat(entityUserOperator.getSecretPrefix(), is(secretPrefix));
+        assertThat(entityUserOperator.secretPrefix, is(secretPrefix));
     }
 
     @ParallelTest
@@ -187,14 +187,14 @@ public class EntityUserOperatorTest {
 
         assertThat(entityUserOperator.getWatchedNamespace(), is(namespace));
         assertThat(entityUserOperator.getImage(), is("quay.io/strimzi/operator:latest"));
-        assertThat(entityUserOperator.getReconciliationIntervalMs(), is(EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000));
+        assertThat(entityUserOperator.reconciliationIntervalMs, is(EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000));
         assertThat(entityUserOperator.readinessProbeOptions.getInitialDelaySeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(entityUserOperator.readinessProbeOptions.getTimeoutSeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
         assertThat(entityUserOperator.livenessProbeOptions.getInitialDelaySeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(entityUserOperator.livenessProbeOptions.getTimeoutSeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
-        assertThat(entityUserOperator.getKafkaBootstrapServers(), is(EntityUserOperator.defaultBootstrapServers(cluster)));
+        assertThat(entityUserOperator.kafkaBootstrapServers, is(KafkaResources.bootstrapServiceName(cluster) + ":" + EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT));
         assertThat(entityUserOperator.getLogging(), is(nullValue()));
-        assertThat(entityUserOperator.getSecretPrefix(), is(EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX));
+        assertThat(entityUserOperator.secretPrefix, is(EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX));
     }
 
     @ParallelTest
@@ -227,12 +227,12 @@ public class EntityUserOperatorTest {
         assertThat(container.getName(), is(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME));
         assertThat(container.getImage(), is(entityUserOperator.getImage()));
         checkEnvVars(getExpectedEnvVars(), container.getEnv());
-        assertThat(container.getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(livenessProbe.getInitialDelaySeconds())));
-        assertThat(container.getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(livenessProbe.getTimeoutSeconds())));
-        assertThat(container.getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(readinessProbe.getInitialDelaySeconds())));
-        assertThat(container.getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(readinessProbe.getTimeoutSeconds())));
+        assertThat(container.getLivenessProbe().getInitialDelaySeconds(), is(livenessProbe.getInitialDelaySeconds()));
+        assertThat(container.getLivenessProbe().getTimeoutSeconds(), is(livenessProbe.getTimeoutSeconds()));
+        assertThat(container.getReadinessProbe().getInitialDelaySeconds(), is(readinessProbe.getInitialDelaySeconds()));
+        assertThat(container.getReadinessProbe().getTimeoutSeconds(), is(readinessProbe.getTimeoutSeconds()));
         assertThat(container.getPorts().size(), is(1));
-        assertThat(container.getPorts().get(0).getContainerPort(), is(Integer.valueOf(EntityUserOperator.HEALTHCHECK_PORT)));
+        assertThat(container.getPorts().get(0).getContainerPort(), is(EntityUserOperator.HEALTHCHECK_PORT));
         assertThat(container.getPorts().get(0).getName(), is(EntityUserOperator.HEALTHCHECK_PORT_NAME));
         assertThat(container.getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(EntityOperatorTest.volumeMounts(container.getVolumeMounts()), is(map(
@@ -269,10 +269,10 @@ public class EntityUserOperatorTest {
                         .build();
         EntityUserOperator entityUserOperator2 = EntityUserOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), defaultValues);
 
-        assertThat(entityUserOperator.getClientsCaValidityDays(), is(42L));
-        assertThat(entityUserOperator.getClientsCaRenewalDays(), is(69L));
-        assertThat(entityUserOperator2.getClientsCaValidityDays(), is(Long.valueOf(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS)));
-        assertThat(entityUserOperator2.getClientsCaRenewalDays(), is(Long.valueOf(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS)));
+        assertThat(entityUserOperator.clientsCaValidityDays, is(42));
+        assertThat(entityUserOperator.clientsCaRenewalDays, is(69));
+        assertThat(entityUserOperator2.clientsCaValidityDays, is(CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS));
+        assertThat(entityUserOperator2.clientsCaRenewalDays, is(CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS));
     }
 
     @ParallelTest

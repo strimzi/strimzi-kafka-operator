@@ -32,9 +32,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-
 /**
  * Represents the Topic Operator deployment
  */
@@ -43,7 +40,6 @@ public class EntityTopicOperator extends AbstractModel {
 
     protected static final String TOPIC_OPERATOR_CONTAINER_NAME = "topic-operator";
     private static final String NAME_SUFFIX = "-entity-topic-operator";
-    protected static final String METRICS_AND_LOG_CONFIG_SUFFIX = NAME_SUFFIX + "-config";
     private static final String CERT_SECRET_KEY_NAME = "entity-operator";
 
     // Port configuration
@@ -71,14 +67,14 @@ public class EntityTopicOperator extends AbstractModel {
     /*test*/ static final String TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-to-tmp";
 
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
-    private String kafkaBootstrapServers;
-    private String zookeeperConnect;
+    /* test */ String kafkaBootstrapServers;
+    /* test */ String zookeeperConnect;
 
     private String watchedNamespace;
-    private int reconciliationIntervalMs;
-    private int zookeeperSessionTimeoutMs;
-    private String resourceLabels;
-    private int topicMetadataMaxAttempts;
+    /* test */ int reconciliationIntervalMs;
+    /* test */ int zookeeperSessionTimeoutMs;
+    /* test */ String resourceLabels;
+    /* test */ int topicMetadataMaxAttempts;
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
 
@@ -88,7 +84,7 @@ public class EntityTopicOperator extends AbstractModel {
      */
     protected EntityTopicOperator(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, APPLICATION_NAME);
-        this.name = topicOperatorName(cluster);
+        this.name = cluster + NAME_SUFFIX;
         this.readinessPath = "/";
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.livenessPath = "/";
@@ -101,112 +97,17 @@ public class EntityTopicOperator extends AbstractModel {
                 .build();
 
         // create a default configuration
-        this.kafkaBootstrapServers = defaultBootstrapServers(cluster);
-        this.zookeeperConnect = defaultZookeeperConnect(cluster);
+        this.kafkaBootstrapServers = KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT;
+        this.zookeeperConnect = "localhost:" + EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT;
         this.watchedNamespace = namespace;
         this.reconciliationIntervalMs = EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1_000;
         this.zookeeperSessionTimeoutMs = EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1_000;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
         this.topicMetadataMaxAttempts = EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS;
 
-        this.ancillaryConfigMapName = metricAndLogConfigsName(cluster);
+        this.ancillaryConfigMapName = KafkaResources.entityTopicOperatorLoggingConfigMapName(cluster);
         this.logAndMetricsConfigVolumeName = "entity-topic-operator-metrics-and-logging";
         this.logAndMetricsConfigMountPath = "/opt/topic-operator/custom-config/";
-    }
-
-    public void setWatchedNamespace(String watchedNamespace) {
-        this.watchedNamespace = watchedNamespace;
-    }
-
-    public String getWatchedNamespace() {
-        return watchedNamespace;
-    }
-
-    public void setResourceLabels(String resourceLabels) {
-        this.resourceLabels = resourceLabels;
-    }
-
-    public String getResourceLabels() {
-        return resourceLabels;
-    }
-
-    public void setReconciliationIntervalMs(int reconciliationIntervalMs) {
-        this.reconciliationIntervalMs = reconciliationIntervalMs;
-    }
-
-    public int getReconciliationIntervalMs() {
-        return reconciliationIntervalMs;
-    }
-
-    public void setZookeeperSessionTimeoutMs(int zookeeperSessionTimeoutMs) {
-        this.zookeeperSessionTimeoutMs = zookeeperSessionTimeoutMs;
-    }
-
-    public int getZookeeperSessionTimeoutMs() {
-        return zookeeperSessionTimeoutMs;
-    }
-
-    public void setKafkaBootstrapServers(String kafkaBootstrapServers) {
-        this.kafkaBootstrapServers = kafkaBootstrapServers;
-    }
-
-    public String getKafkaBootstrapServers() {
-        return kafkaBootstrapServers;
-    }
-
-    public void setTopicMetadataMaxAttempts(int topicMetadataMaxAttempts) {
-        this.topicMetadataMaxAttempts = topicMetadataMaxAttempts;
-    }
-
-    public int getTopicMetadataMaxAttempts() {
-        return topicMetadataMaxAttempts;
-    }
-
-    protected static String defaultZookeeperConnect(String cluster) {
-        return String.format("%s:%d", "localhost", EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_PORT);
-    }
-
-    public void setZookeeperConnect(String zookeeperConnect) {
-        this.zookeeperConnect = zookeeperConnect;
-    }
-
-    public String getZookeeperConnect() {
-        return zookeeperConnect;
-    }
-
-    protected static String defaultBootstrapServers(String cluster) {
-        return KafkaResources.bootstrapServiceName(cluster) + ":" + EntityTopicOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
-    }
-
-    public static String topicOperatorName(String cluster) {
-        return cluster + NAME_SUFFIX;
-    }
-
-    public static String secretName(String cluster) {
-        return KafkaResources.entityTopicOperatorSecretName(cluster);
-    }
-
-    public static String metricAndLogConfigsName(String cluster) {
-        return cluster + METRICS_AND_LOG_CONFIG_SUFFIX;
-    }
-
-    /**
-     * Get the name of the TO role binding given the name of the {@code cluster}.
-     * @param cluster The cluster name.
-     * @return The name of the role binding.
-     */
-    public static String roleBindingForRoleName(String cluster) {
-        return cluster + "-entity-topic-operator-role";
-    }
-
-    @Override
-    protected String getDefaultLogConfigFileName() {
-        return "entityTopicOperatorDefaultLoggingProperties";
-    }
-
-    @Override
-    public String getAncillaryConfigMapKeyLogConfig() {
-        return "log4j2.properties";
     }
 
     /**
@@ -232,11 +133,11 @@ public class EntityTopicOperator extends AbstractModel {
                 if (image == null) {
                     image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
                 }
-                result.setImage(image);
-                result.setWatchedNamespace(topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : namespace);
-                result.setReconciliationIntervalMs(topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000);
-                result.setZookeeperSessionTimeoutMs(topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000);
-                result.setTopicMetadataMaxAttempts(topicOperatorSpec.getTopicMetadataMaxAttempts());
+                result.image = image;
+                result.watchedNamespace = topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : namespace;
+                result.reconciliationIntervalMs = topicOperatorSpec.getReconciliationIntervalSeconds() * 1_000;
+                result.zookeeperSessionTimeoutMs = topicOperatorSpec.getZookeeperSessionTimeoutSeconds() * 1_000;
+                result.topicMetadataMaxAttempts = topicOperatorSpec.getTopicMetadataMaxAttempts();
                 result.setLogging(topicOperatorSpec.getLogging());
                 result.setGcLoggingEnabled(topicOperatorSpec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled());
                 result.setJvmOptions(topicOperatorSpec.getJvmOptions());
@@ -257,13 +158,12 @@ public class EntityTopicOperator extends AbstractModel {
 
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-
-        return singletonList(new ContainerBuilder()
+        return List.of(new ContainerBuilder()
                 .withName(TOPIC_OPERATOR_CONTAINER_NAME)
                 .withImage(getImage())
                 .withArgs("/opt/strimzi/bin/topic_operator_run.sh")
                 .withEnv(getEnvVars())
-                .withPorts(singletonList(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
+                .withPorts(List.of(createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT, "TCP")))
                 .withStartupProbe(ProbeGenerator.httpProbe(startupProbeOptions, livenessPath + "healthy", HEALTHCHECK_PORT_NAME))
                 .withLivenessProbe(ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath + "healthy", HEALTHCHECK_PORT_NAME))
                 .withReadinessProbe(ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath + "ready", HEALTHCHECK_PORT_NAME))
@@ -298,11 +198,11 @@ public class EntityTopicOperator extends AbstractModel {
     }
 
     public List<Volume> getVolumes() {
-        return asList(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        return List.of(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        return asList(createTempDirVolumeMount(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
+        return List.of(createTempDirVolumeMount(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
                 VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath),
                 VolumeUtils.createVolumeMount(EntityOperator.ETO_CERTS_VOLUME_NAME, EntityOperator.ETO_CERTS_VOLUME_MOUNT),
                 VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
@@ -310,13 +210,13 @@ public class EntityTopicOperator extends AbstractModel {
 
     @Override
     protected String getRoleName() {
-        return EntityOperator.getRoleName(cluster);
+        return KafkaResources.entityOperatorDeploymentName(cluster);
     }
 
     public RoleBinding generateRoleBindingForRole(String namespace, String watchedNamespace) {
         Subject ks = new SubjectBuilder()
                 .withKind("ServiceAccount")
-                .withName(EntityOperator.entityOperatorServiceAccountName(cluster))
+                .withName(KafkaResources.entityOperatorDeploymentName(cluster))
                 .withNamespace(namespace)
                 .build();
 
@@ -327,10 +227,10 @@ public class EntityTopicOperator extends AbstractModel {
                 .build();
 
         RoleBinding rb = generateRoleBinding(
-                roleBindingForRoleName(cluster),
+                KafkaResources.entityTopicOperatorRoleBinding(cluster),
                 watchedNamespace,
                 roleRef,
-                singletonList(ks)
+                List.of(ks)
         );
 
         // We set OwnerReference only within the same namespace since it does not work cross-namespace
@@ -341,14 +241,6 @@ public class EntityTopicOperator extends AbstractModel {
         return rb;
     }
 
-    public void setContainerEnvVars(List<ContainerEnvVar> envVars) {
-        templateContainerEnvVars = envVars;
-    }
-
-    public void setContainerSecurityContext(SecurityContext securityContext) {
-        templateContainerSecurityContext = securityContext;
-    }
-
     /**
      * Transforms properties to log4j2 properties file format and adds property for reloading the config
      * @param properties map with properties
@@ -356,7 +248,7 @@ public class EntityTopicOperator extends AbstractModel {
      */
     @Override
     public String createLog4jProperties(OrderedProperties properties) {
-        if (!properties.asMap().keySet().contains("monitorInterval")) {
+        if (!properties.asMap().containsKey("monitorInterval")) {
             properties.addPair("monitorInterval", "30");
         }
         return super.createLog4jProperties(properties);
@@ -376,7 +268,24 @@ public class EntityTopicOperator extends AbstractModel {
      */
     public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
         Secret secret = clusterCa.entityTopicOperatorSecret();
-        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, EntityTopicOperator.secretName(cluster), name,
+        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaResources.entityTopicOperatorSecretName(cluster), name,
             CERT_SECRET_KEY_NAME, labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
+    }
+
+    /**
+     * @return Returns the namespace watched by the Topic Operator
+     */
+    public String getWatchedNamespace() {
+        return watchedNamespace;
+    }
+
+    @Override
+    protected String getDefaultLogConfigFileName() {
+        return "entityTopicOperatorDefaultLoggingProperties";
+    }
+
+    @Override
+    public String getAncillaryConfigMapKeyLogConfig() {
+        return "log4j2.properties";
     }
 }

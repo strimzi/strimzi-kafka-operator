@@ -12,89 +12,6 @@ public class KafkaResources {
     private KafkaResources() { }
 
     /**
-     * Returns the name of the ZooKeeper {@code StatefulSet} for a {@code Kafka} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding ZooKeeper {@code StatefulSet}.
-     */
-    public static String zookeeperStatefulSetName(String clusterName) {
-        return clusterName + "-zookeeper";
-    }
-
-    /**
-     * Returns the name of the ZooKeeper {@code Pod} for a {@code Kafka} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @param podNum The number of the ZooKeeper pod
-     * @return The name of the corresponding ZooKeeper {@code Pod}.
-     */
-    public static String zookeeperPodName(String clusterName, int podNum) {
-        return zookeeperStatefulSetName(clusterName) + "-" + podNum;
-    }
-
-    /**
-     * Returns the name of the Kafka {@code StatefulSet} for a {@code Kafka} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding Kafka {@code StatefulSet}.
-     */
-    public static String kafkaStatefulSetName(String clusterName) {
-        return clusterName + "-kafka";
-    }
-
-    /**
-     * Returns the name of the Kafka {@code Pod} for a {@code Kafka} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @param podNum The number of the Kafka pod
-     * @return The name of the corresponding Kafka {@code Pod}.
-     */
-    public static String kafkaPodName(String clusterName, int podNum) {
-        return kafkaStatefulSetName(clusterName) + "-" + podNum;
-    }
-
-    /**
-     * Returns the name of the Entity Operator {@code Deployment} for a {@code Kafka} cluster of the given name.
-     * This {@code Deployment} will only exist if {@code Kafka.spec.entityOperator} is configured in the
-     * {@code Kafka} resource with the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding Entity Operator {@code Deployment}.
-     */
-    public static String entityOperatorDeploymentName(String clusterName) {
-        return clusterName + "-entity-operator";
-    }
-
-    /**
-     * Returns the name of the Entity Operator {@code Secret} for a {@code Kafka} cluster of the given name.
-     * This {@code Secret} will only exist if {@code Kafka.spec.entityOperator} is configured in the
-     * {@code Kafka} resource with the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding Entity Operator {@code Secret}.
-     */
-    public static String entityOperatorSecretName(String clusterName) {
-        return entityOperatorDeploymentName(clusterName) + "-certs";
-    }
-
-    /**
-     * Returns the name of the Entity Topic Operator {@code Secret} for a {@code Kafka} cluster of the given name.
-     * This {@code Secret} will only exist if {@code Kafka.spec.entityOperator.topicOperator} is configured in the
-     * {@code Kafka} resource with the given name.
-     * Note: This secret is used by both EntityTopicOperator and the TLS sidecar in the same EntityOperator.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding Entity Topic Operator {@code Secret}.
-     */
-    public static String entityTopicOperatorSecretName(String clusterName) {
-        return clusterName + "-entity-topic-operator-certs";
-    }
-
-    /**
-     * Returns the name of the Entity User Operator {@code Secret} for a {@code Kafka} cluster of the given name.
-     * This {@code Secret} will only exist if {@code Kafka.spec.entityOperator.userOperator} is configured in the
-     * {@code Kafka} resource with the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding Entity Operator {@code Secret}.
-     */
-    public static String entityUserOperatorSecretName(String clusterName) {
-        return clusterName + "-entity-user-operator-certs";
-    }
-
-    /**
      * Returns the name of the Cluster CA certificate {@code Secret} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding Cluster CA certificate {@code Secret}.
@@ -128,6 +45,29 @@ public class KafkaResources {
      */
     public static String clientsCaKeySecretName(String clusterName) {
         return clusterName + "-clients-ca";
+    }
+
+    ////////
+    // Kafka methods
+    ////////
+
+    /**
+     * Returns the name of the Kafka {@code StatefulSet} for a {@code Kafka} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding Kafka {@code StatefulSet}.
+     */
+    public static String kafkaStatefulSetName(String clusterName) {
+        return clusterName + "-kafka";
+    }
+
+    /**
+     * Returns the name of the Kafka {@code Pod} for a {@code Kafka} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @param podNum The number of the Kafka pod
+     * @return The name of the corresponding Kafka {@code Pod}.
+     */
+    public static String kafkaPodName(String clusterName, int podNum) {
+        return kafkaStatefulSetName(clusterName) + "-" + podNum;
     }
 
     /**
@@ -204,6 +144,40 @@ public class KafkaResources {
     }
 
     /**
+     * Get the name of the resource init container role binding given the name of the {@code namespace} and {@code cluster}.
+     *
+     * @param cluster   The cluster name.
+     * @param namespace The namespace.
+     * @return The name of the init container's cluster role binding.
+     */
+    public static String initContainerClusterRoleBindingName(String cluster, String namespace) {
+        return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
+    }
+
+    ////////
+    // ZooKeeper methods
+    ////////
+
+    /**
+     * Returns the name of the ZooKeeper {@code StatefulSet} for a {@code Kafka} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding ZooKeeper {@code StatefulSet}.
+     */
+    public static String zookeeperStatefulSetName(String clusterName) {
+        return clusterName + "-zookeeper";
+    }
+
+    /**
+     * Returns the name of the ZooKeeper {@code Pod} for a {@code Kafka} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @param podNum The number of the ZooKeeper pod
+     * @return The name of the corresponding ZooKeeper {@code Pod}.
+     */
+    public static String zookeeperPodName(String clusterName, int podNum) {
+        return zookeeperStatefulSetName(clusterName) + "-" + podNum;
+    }
+
+    /**
      * Returns the name of the ZooKeeper metrics and log {@code ConfigMap} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding ZooKeeper metrics and log {@code ConfigMap}.
@@ -230,14 +204,104 @@ public class KafkaResources {
         return clusterName + "-zookeeper-nodes";
     }
 
+    ////////
+    // Entity Operator methods
+    ////////
+
     /**
-     * Get the name of the resource init container role binding given the name of the {@code namespace} and {@code cluster}.
-     *
-     * @param cluster   The cluster name.
-     * @param namespace The namespace.
-     * @return The name of the init container's cluster role binding.
+     * Returns the name of the Entity Operator {@code Deployment} for a {@code Kafka} cluster of the given name.
+     * This {@code Deployment} will only exist if {@code Kafka.spec.entityOperator} is configured in the
+     * {@code Kafka} resource with the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding Entity Operator {@code Deployment}.
      */
-    public static String initContainerClusterRoleBindingName(String cluster, String namespace) {
-        return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
+    public static String entityOperatorDeploymentName(String clusterName) {
+        return clusterName + "-entity-operator";
+    }
+
+    /**
+     * Returns the name of the Entity Operator {@code Secret} for a {@code Kafka} cluster of the given name.
+     * This {@code Secret} will only exist if {@code Kafka.spec.entityOperator} is configured in the
+     * {@code Kafka} resource with the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding Entity Operator {@code Secret}.
+     */
+    public static String entityOperatorSecretName(String clusterName) {
+        return entityOperatorDeploymentName(clusterName) + "-certs";
+    }
+
+    ////////
+    // Entity Topic Operator methods
+    ////////
+
+    /**
+     * Returns the name of the Entity Topic Operator {@code Secret} for a {@code Kafka} cluster of the given name.
+     * This {@code Secret} will only exist if {@code Kafka.spec.entityOperator.topicOperator} is configured in the
+     * {@code Kafka} resource with the given name.
+     * Note: This secret is used by both EntityTopicOperator and the TLS sidecar in the same EntityOperator.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding Entity Topic Operator {@code Secret}.
+     */
+    public static String entityTopicOperatorSecretName(String clusterName) {
+        return clusterName + "-entity-topic-operator-certs";
+    }
+
+    /**
+     * Returns the name of the Entity Topic Operator logging {@code ConfigMap} for a {@code Kafka} cluster of the given name.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the corresponding Entity Topic Operator metrics and log {@code ConfigMap}.
+     */
+    public static String entityTopicOperatorLoggingConfigMapName(String clusterName) {
+        return clusterName + "-entity-topic-operator-config";
+    }
+
+    /**
+     * Get the name of the Entity Topic Operator role binding given the name of the Kafka cluster.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the Entity Topic Operator role binding.
+     */
+    public static String entityTopicOperatorRoleBinding(String clusterName) {
+        return clusterName + "-entity-topic-operator-role";
+    }
+
+    ////////
+    // Entity User Operator methods
+    ////////
+
+    /**
+     * Returns the name of the Entity User Operator {@code Secret} for a {@code Kafka} cluster of the given name.
+     * This {@code Secret} will only exist if {@code Kafka.spec.entityOperator.userOperator} is configured in the
+     * {@code Kafka} resource with the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding Entity Operator {@code Secret}.
+     */
+    public static String entityUserOperatorSecretName(String clusterName) {
+        return clusterName + "-entity-user-operator-certs";
+    }
+
+    /**
+     * Returns the name of the Entity User Operator logging {@code ConfigMap} for a {@code Kafka} cluster of the given name.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the corresponding Entity User Operator metrics and log {@code ConfigMap}.
+     */
+    public static String entityUserOperatorLoggingConfigMapName(String clusterName) {
+        return clusterName + "-entity-user-operator-config";
+    }
+
+    /**
+     * Get the name of the Entity User Operator role binding given the name of the Kafka cluster.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the Entity User Operator role binding.
+     */
+    public static String entityUserOperatorRoleBinding(String clusterName) {
+        return clusterName + "-entity-user-operator-role";
     }
 }

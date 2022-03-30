@@ -73,17 +73,16 @@ public class EntityOperator extends AbstractModel {
 
     protected static final String CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_POD_LABELS = "STRIMZI_CUSTOM_ENTITY_OPERATOR_LABELS";
 
-    private String zookeeperConnect;
+    /* test */ String zookeeperConnect;
     private EntityTopicOperator topicOperator;
     private EntityUserOperator userOperator;
     private TlsSidecar tlsSidecar;
-    private List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
+    private String tlsSidecarImage;
 
+    private List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
     private SecurityContext templateTlsSidecarContainerSecurityContext;
 
-
     private boolean isDeployed;
-    private String tlsSidecarImage;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -94,57 +93,24 @@ public class EntityOperator extends AbstractModel {
     }
 
     /**
-
+     * Constructor
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param resource          Kafka custom resource
      */
     protected EntityOperator(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, APPLICATION_NAME);
-        this.name = entityOperatorName(cluster);
+        this.name = KafkaResources.entityOperatorDeploymentName(cluster);
         this.replicas = EntityOperatorSpec.DEFAULT_REPLICAS;
-        this.zookeeperConnect = defaultZookeeperConnect(cluster);
-    }
-
-    protected void setTlsSidecar(TlsSidecar tlsSidecar) {
-        this.tlsSidecar = tlsSidecar;
-    }
-
-    public void setTopicOperator(EntityTopicOperator topicOperator) {
-        this.topicOperator = topicOperator;
+        this.zookeeperConnect = ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }
 
     public EntityTopicOperator getTopicOperator() {
         return topicOperator;
     }
 
-    public void setUserOperator(EntityUserOperator userOperator) {
-        this.userOperator = userOperator;
-    }
-
     public EntityUserOperator getUserOperator() {
         return userOperator;
-    }
-
-    public static String entityOperatorName(String cluster) {
-        return KafkaResources.entityOperatorDeploymentName(cluster);
-    }
-
-    protected static String defaultZookeeperConnect(String cluster) {
-        return ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
-    }
-
-    public void setZookeeperConnect(String zookeeperConnect) {
-        this.zookeeperConnect = zookeeperConnect;
-    }
-
-    public String getZookeeperConnect() {
-        return zookeeperConnect;
-    }
-
-    public static String secretName(String cluster) {
-        return KafkaResources.entityOperatorSecretName(cluster);
-    }
-
-    public void setDeployed(boolean isDeployed) {
-        this.isDeployed = isDeployed;
     }
 
     public boolean isDeployed() {
@@ -152,7 +118,7 @@ public class EntityOperator extends AbstractModel {
     }
 
     /**
-     * Create a Entity Operator from given desired resource
+     * Create an Entity Operator from given desired resource
      *
      * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Operator one
@@ -162,15 +128,26 @@ public class EntityOperator extends AbstractModel {
     public static EntityOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
         EntityOperator result = null;
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
-        if (entityOperatorSpec != null) {
 
+        if (entityOperatorSpec != null) {
             result = new EntityOperator(reconciliation, kafkaAssembly);
 
             result.setOwnerReference(kafkaAssembly);
 
             EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly);
             EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly);
-            TlsSidecar tlsSidecar = entityOperatorSpec.getTlsSidecar();
+
+            result.tlsSidecar = entityOperatorSpec.getTlsSidecar();
+            result.topicOperator = topicOperator;
+            result.userOperator = userOperator;
+            result.isDeployed = result.getTopicOperator() != null || result.getUserOperator() != null;
+
+            String tlsSideCarImage = entityOperatorSpec.getTlsSidecar() != null ? entityOperatorSpec.getTlsSidecar().getImage() : null;
+            if (tlsSideCarImage == null) {
+                KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
+                tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
+            }
+            result.tlsSidecarImage = tlsSideCarImage;
 
             if (entityOperatorSpec.getTemplate() != null) {
                 EntityOperatorTemplate template = entityOperatorSpec.getTemplate();
@@ -183,11 +160,11 @@ public class EntityOperator extends AbstractModel {
                 ModelUtils.parsePodTemplate(result, template.getPod());
 
                 if (template.getTopicOperatorContainer() != null && template.getTopicOperatorContainer().getEnv() != null) {
-                    topicOperator.setContainerEnvVars(template.getTopicOperatorContainer().getEnv());
+                    topicOperator.templateContainerEnvVars = template.getTopicOperatorContainer().getEnv();
                 }
 
                 if (template.getTopicOperatorContainer() != null && template.getTopicOperatorContainer().getSecurityContext() != null) {
-                    topicOperator.setContainerSecurityContext(template.getTopicOperatorContainer().getSecurityContext());
+                    topicOperator.templateContainerSecurityContext = template.getTopicOperatorContainer().getSecurityContext();
                 }
 
                 if (template.getUserOperatorContainer() != null && template.getUserOperatorContainer().getEnv() != null) {
@@ -212,17 +189,6 @@ public class EntityOperator extends AbstractModel {
                 }
             }
 
-            result.setTlsSidecar(tlsSidecar);
-            result.setTopicOperator(topicOperator);
-            result.setUserOperator(userOperator);
-            result.setDeployed(result.getTopicOperator() != null || result.getUserOperator() != null);
-
-            String tlsSideCarImage = tlsSidecar != null ? tlsSidecar.getImage() : null;
-            if (tlsSideCarImage == null) {
-                KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
-                tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
-            }
-            result.tlsSidecarImage = tlsSideCarImage;
             result.templatePodLabels = Util.mergeLabelsOrAnnotations(result.templatePodLabels, DEFAULT_POD_LABELS);
         }
         return result;
@@ -316,13 +282,13 @@ public class EntityOperator extends AbstractModel {
         if (topicOperator != null) {
             volumeList.addAll(topicOperator.getVolumes());
             volumeList.add(createTempDirVolume(TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-            volumeList.add(VolumeUtils.createSecretVolume(ETO_CERTS_VOLUME_NAME, EntityTopicOperator.secretName(cluster), isOpenShift));
+            volumeList.add(VolumeUtils.createSecretVolume(ETO_CERTS_VOLUME_NAME, KafkaResources.entityTopicOperatorSecretName(cluster), isOpenShift));
         }
 
         if (userOperator != null) {
             volumeList.addAll(userOperator.getVolumes());
             volumeList.add(createTempDirVolume(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
-            volumeList.add(VolumeUtils.createSecretVolume(EUO_CERTS_VOLUME_NAME, EntityUserOperator.secretName(cluster), isOpenShift));
+            volumeList.add(VolumeUtils.createSecretVolume(EUO_CERTS_VOLUME_NAME, KafkaResources.entityUserOperatorSecretName(cluster), isOpenShift));
         }
 
         volumeList.add(createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
@@ -330,18 +296,9 @@ public class EntityOperator extends AbstractModel {
         return volumeList;
     }
 
-    /**
-     * Get the name of the Entity Operator service account given the name of the {@code cluster}.
-     * @param cluster The cluster name
-     * @return The name of the EO service account.
-     */
-    public static String entityOperatorServiceAccountName(String cluster) {
-        return entityOperatorName(cluster);
-    }
-
     @Override
     protected String getServiceAccountName() {
-        return entityOperatorServiceAccountName(cluster);
+        return KafkaResources.entityOperatorDeploymentName(cluster);
     }
 
     @Override
@@ -354,16 +311,7 @@ public class EntityOperator extends AbstractModel {
 
     @Override
     protected String getRoleName() {
-        return getRoleName(cluster);
-    }
-
-    /**
-     * Get the name of the Entity Operator Role given the name of the {@code cluster}.
-     * @param cluster The cluster name
-     * @return The name of the EO role.
-     */
-    public static String getRoleName(String cluster) {
-        return entityOperatorName(cluster);
+        return KafkaResources.entityOperatorDeploymentName(cluster);
     }
 
     /**

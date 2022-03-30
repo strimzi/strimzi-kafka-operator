@@ -88,9 +88,9 @@ public class ClusterCa extends Ca {
             String name = secret.getMetadata().getName();
             if (KafkaCluster.brokersSecretName(clusterName).equals(name)) {
                 brokersSecret = secret;
-            } else if (EntityTopicOperator.secretName(clusterName).equals(name)) {
+            } else if (KafkaResources.entityTopicOperatorSecretName(clusterName).equals(name)) {
                 entityTopicOperatorSecret = secret;
-            } else if (EntityUserOperator.secretName(clusterName).equals(name)) {
+            } else if (KafkaResources.entityUserOperatorSecretName(clusterName).equals(name)) {
                 entityUserOperatorSecret = secret;
             } else if (ZookeeperCluster.nodesSecretName(clusterName).equals(name)) {
                 zkNodesSecret = secret;
