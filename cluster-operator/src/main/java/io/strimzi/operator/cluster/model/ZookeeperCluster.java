@@ -439,7 +439,7 @@ public class ZookeeperCluster extends AbstractModel {
         NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeer();
         LabelSelector labelSelector3 = new LabelSelector();
         Map<String, String> expressions3 = new HashMap<>(1);
-        expressions3.put(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster));
+        expressions3.put(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(cluster));
         labelSelector3.setMatchLabels(expressions3);
         entityOperatorPeer.setPodSelector(labelSelector3);
 

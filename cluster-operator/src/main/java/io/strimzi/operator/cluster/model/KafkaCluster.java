@@ -1749,7 +1749,7 @@ public class KafkaCluster extends AbstractModel {
 
         NetworkPolicyPeer entityOperatorPeer = new NetworkPolicyPeerBuilder()
                 .withNewPodSelector() // Entity Operator
-                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(cluster))
+                     .addToMatchLabels(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(cluster))
                 .endPodSelector()
                 .build();
 
