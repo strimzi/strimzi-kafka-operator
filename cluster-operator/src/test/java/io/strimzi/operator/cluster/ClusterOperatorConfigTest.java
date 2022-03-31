@@ -83,7 +83,6 @@ public class ClusterOperatorConfigTest {
                 null,
                 null,
                 null,
-                ClusterOperatorConfig.RbacScope.CLUSTER,
                 null,
                 "",
                 10,
@@ -361,12 +360,6 @@ public class ClusterOperatorConfigTest {
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.fromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()));
         assertThat(e.getMessage(), containsString("Failed to parse labels from STRIMZI_CUSTOM_RESOURCE_SELECTOR"));
-    }
-
-    @Test
-    public void testRbacScopeValueOf() {
-        assertThat(ClusterOperatorConfig.RbacScope.valueOf("NAMESPACE"), is(ClusterOperatorConfig.RbacScope.NAMESPACE));
-        assertThat(ClusterOperatorConfig.RbacScope.valueOf("CLUSTER"), is(ClusterOperatorConfig.RbacScope.CLUSTER));
     }
 
     @Test

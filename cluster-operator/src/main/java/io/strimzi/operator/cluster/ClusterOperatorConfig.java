@@ -51,7 +51,6 @@ public class ClusterOperatorConfig {
     public static final String STRIMZI_POD_SET_RECONCILIATION_ONLY = "STRIMZI_POD_SET_RECONCILIATION_ONLY";
 
     // Feature Flags
-    public static final String STRIMZI_RBAC_SCOPE = "STRIMZI_RBAC_SCOPE";
     public static final String STRIMZI_CREATE_CLUSTER_ROLES = "STRIMZI_CREATE_CLUSTER_ROLES";
     public static final String STRIMZI_NETWORK_POLICY_GENERATION = "STRIMZI_NETWORK_POLICY_GENERATION";
 
@@ -85,7 +84,6 @@ public class ClusterOperatorConfig {
     public static final long DEFAULT_CONNECT_BUILD_TIMEOUT_MS = 300_000;
     public static final int DEFAULT_OPERATIONS_THREAD_POOL_SIZE = 10;
     public static final int DEFAULT_DNS_CACHE_TTL = 30;
-    public static final RbacScope DEFAULT_STRIMZI_RBAC_SCOPE = RbacScope.CLUSTER;
     public static final boolean DEFAULT_NETWORK_POLICY_GENERATION = true;
     public static final boolean DEFAULT_CREATE_CLUSTER_ROLES = false;
     public static final boolean DEFAULT_POD_SET_RECONCILIATION_ONLY = false;
@@ -102,7 +100,6 @@ public class ClusterOperatorConfig {
     private final List<LocalObjectReference> imagePullSecrets;
     private final String operatorNamespace;
     private final Labels operatorNamespaceLabels;
-    private final RbacScope rbacScope;
     private final Labels customResourceSelector;
     private final FeatureGates featureGates;
     private final int operationsThreadPoolSize;
@@ -111,8 +108,7 @@ public class ClusterOperatorConfig {
 
     /**
      * Constructor
-     *
-     * @param namespaces namespace in which the operator will run and create resources
+     *  @param namespaces namespace in which the operator will run and create resources
      * @param reconciliationIntervalMs    specify every how many milliseconds the reconciliation runs
      * @param operationTimeoutMs    timeout for internal operations specified in milliseconds
      * @param connectBuildTimeoutMs timeout used to wait for a Kafka Connect builds to finish
@@ -123,14 +119,12 @@ public class ClusterOperatorConfig {
      * @param imagePullSecrets Set of secrets for pulling container images from secured repositories
      * @param operatorNamespace Name of the namespace in which the operator is running
      * @param operatorNamespaceLabels Labels of the namespace in which the operator is running (used for network policies)
-     * @param rbacScope true to use Roles where possible instead of ClusterRoles
      * @param customResourceSelector Labels used to filter the custom resources seen by the cluster operator
      * @param featureGates Configuration string with feature gates settings
      * @param operationsThreadPoolSize The size of the thread pool used for various operations
      * @param zkAdminSessionTimeoutMs Session timeout for the Zookeeper Admin client used in ZK scaling operations
      * @param dnsCacheTtlSec Number of seconds to cache a successful DNS name lookup
      * @param podSetReconciliationOnly Indicates whether this Cluster Operator instance should reconcile only the
-     *                                 StrimziPodSet resources or not
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     public ClusterOperatorConfig(
@@ -145,7 +139,6 @@ public class ClusterOperatorConfig {
             List<LocalObjectReference> imagePullSecrets,
             String operatorNamespace,
             Labels operatorNamespaceLabels,
-            RbacScope rbacScope,
             Labels customResourceSelector,
             String featureGates,
             int operationsThreadPoolSize,
@@ -163,7 +156,6 @@ public class ClusterOperatorConfig {
         this.imagePullSecrets = imagePullSecrets;
         this.operatorNamespace = operatorNamespace;
         this.operatorNamespaceLabels = operatorNamespaceLabels;
-        this.rbacScope = rbacScope;
         this.customResourceSelector = customResourceSelector;
         this.featureGates = new FeatureGates(featureGates);
         this.operationsThreadPoolSize = operationsThreadPoolSize;
@@ -215,7 +207,6 @@ public class ClusterOperatorConfig {
         List<LocalObjectReference> imagePullSecrets = parseImagePullSecrets(map.get(STRIMZI_IMAGE_PULL_SECRETS));
         String operatorNamespace = map.get(STRIMZI_OPERATOR_NAMESPACE);
         Labels operatorNamespaceLabels = parseLabels(map, STRIMZI_OPERATOR_NAMESPACE_LABELS);
-        RbacScope rbacScope = parseRbacScope(map.get(STRIMZI_RBAC_SCOPE));
         Labels customResourceSelector = parseLabels(map, STRIMZI_CUSTOM_RESOURCE_SELECTOR);
         String featureGates = map.getOrDefault(STRIMZI_FEATURE_GATES, "");
         int operationsThreadPoolSize = parseInt(map.get(STRIMZI_OPERATIONS_THREAD_POOL_SIZE), DEFAULT_OPERATIONS_THREAD_POOL_SIZE);
@@ -235,7 +226,6 @@ public class ClusterOperatorConfig {
                 imagePullSecrets,
                 operatorNamespace,
                 operatorNamespaceLabels,
-                rbacScope,
                 customResourceSelector,
                 featureGates,
                 operationsThreadPoolSize,
@@ -301,37 +291,6 @@ public class ClusterOperatorConfig {
         }
 
         return value;
-    }
-
-    /**
-     * enum to represent the various permission modes the cluster operator can be set to
-     *
-     * CLUSTER is the default and uses ClusterRoles to set permissions
-     * NAMESPACE allows for the use of Roles where possible instead of ClusterRoles
-     */
-    public enum RbacScope {
-        CLUSTER(),
-        NAMESPACE();
-
-        public boolean canUseClusterRoles() {
-            return this.equals(RbacScope.CLUSTER);
-        }
-    }
-
-    private static RbacScope parseRbacScope(String rbacScopeEnvVar) {
-        RbacScope rbacScope = DEFAULT_STRIMZI_RBAC_SCOPE;
-
-        if (rbacScopeEnvVar != null) {
-            try {
-                rbacScope = RbacScope.valueOf(rbacScopeEnvVar);
-            } catch (IllegalArgumentException e) {
-                throw new InvalidConfigurationException(rbacScopeEnvVar
-                        + " is not a valid " + STRIMZI_RBAC_SCOPE + " value. " +
-                        STRIMZI_RBAC_SCOPE + " can have one of the following values: cluster, namespace.");
-            }
-        }
-
-        return rbacScope;
     }
 
     private static ImagePullPolicy parseImagePullPolicy(String imagePullPolicyEnvVar) {
@@ -509,13 +468,6 @@ public class ClusterOperatorConfig {
     }
 
     /**
-     * @return Permissions mode for the operator, whether to use Roles instead of ClusterRoles wherever possible.
-     */
-    public RbacScope getRbacScope() {
-        return rbacScope;
-    }
-
-    /**
      * @return Labels used for filtering custom resources
      */
     public Labels getCustomResourceSelector() {
@@ -561,7 +513,6 @@ public class ClusterOperatorConfig {
                 ",imagePullSecrets=" + imagePullSecrets +
                 ",operatorNamespace=" + operatorNamespace +
                 ",operatorNamespaceLabels=" + operatorNamespaceLabels +
-                ",rbacScope=" + rbacScope +
                 ",customResourceSelector=" + customResourceSelector +
                 ",featureGates=" + featureGates +
                 ",zkAdminSessionTimeoutMs=" + zkAdminSessionTimeoutMs +

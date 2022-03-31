@@ -762,31 +762,8 @@ public class ResourceUtils {
                 null,
                 null,
                 null,
-                ClusterOperatorConfig.RbacScope.CLUSTER,
                 null,
                 featureGates,
-                10,
-                10_000,
-                30,
-                false);
-    }
-
-    public static ClusterOperatorConfig dummyClusterOperatorConfigRolesOnly(KafkaVersion.Lookup versions, long operationTimeoutMs) {
-        return new ClusterOperatorConfig(
-                singleton("dummy"),
-                60_000,
-                operationTimeoutMs,
-                300_000,
-                false,
-                true,
-                versions,
-                null,
-                null,
-                null,
-                null,
-                ClusterOperatorConfig.RbacScope.NAMESPACE,
-                null,
-                "",
                 10,
                 10_000,
                 30,

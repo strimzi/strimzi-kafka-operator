@@ -376,7 +376,6 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 null,
                 null,
                 null,
-                ClusterOperatorConfig.RbacScope.CLUSTER,
                 Labels.fromMap(Map.of("selectorLabel", "value")),
                 "",
                 10,
