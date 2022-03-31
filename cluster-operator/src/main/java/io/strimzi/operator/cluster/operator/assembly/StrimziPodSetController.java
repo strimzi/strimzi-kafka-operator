@@ -83,6 +83,7 @@ public class StrimziPodSetController implements Runnable {
         this.strimziPodSetOperator = strimziPodSetOperator;
         this.crSelector = (crSelectorLabels == null || crSelectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, crSelectorLabels.toMap()));
         this.watchedNamespace = watchedNamespace;
+        this.workQueue = new ArrayBlockingQueue<>(podSetControllerWorkQueueSize);
 
         // Kafka informer and lister is used to get Kafka CRs quickly. This is needed for verification of the CR selector labels
         this.kafkaInformer = kafkaOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap());
@@ -130,7 +131,6 @@ public class StrimziPodSetController implements Runnable {
         }, 10 * 60 * 1000);
 
         controllerThread = new Thread(this, "StrimziPodSetController");
-        this.workQueue = new ArrayBlockingQueue<>(podSetControllerWorkQueueSize);
     }
 
     /**
