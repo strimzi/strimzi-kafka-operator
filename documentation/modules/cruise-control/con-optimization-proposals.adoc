@@ -24,7 +24,7 @@ The information provided is a summary of the full optimization proposal.
 Broker load:: The broker load shows before and after values for the proposed rebalance, so you can see the impact on each of the brokers in the cluster.
 A broker load is stored in a ConfigMap that contains data as a JSON string.
 
-== Accepting or rejecting an optimization proposal
+== Approving or rejecting an optimization proposal
 
 An optimization proposal summary shows the proposed scope of changes.
 
