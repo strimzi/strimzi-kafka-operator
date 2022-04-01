@@ -55,6 +55,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
@@ -472,6 +473,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
         assertEquals(fileName, Util.hashStub(ECHO_SINK_JAR_URL));
     }
 
+    @Tag(ACCEPTANCE)
     @ParallelTest
     void testBuildPluginUsingMavenCoordinatesArtifacts(ExtensionContext extensionContext) {
         TestStorage storage = new TestStorage(extensionContext, INFRA_NAMESPACE);
