@@ -48,7 +48,7 @@ spec:
 . Create or update the resource:
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _KAFKA-CONFIG-FILE_
+kubectl apply -f _<kafka_configuration_file>_
 +
 Kubernetes increases the capacity of the selected persistent volumes in response to a request from the Cluster Operator.
 When the resizing is complete, the Cluster Operator restarts all pods that use the resized persistent volumes.

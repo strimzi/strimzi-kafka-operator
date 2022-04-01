@@ -52,8 +52,8 @@ spec:
     #...
     config:
       #...
-      log.message.format.version: {LogMsgVersHigher}
-      inter.broker.protocol.version: {LogMsgVersHigher}
+      log.message.format.version: {DefaultInterBrokerVersion}
+      inter.broker.protocol.version: {DefaultInterBrokerVersion}
   # ...
 ----
 

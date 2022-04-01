@@ -30,11 +30,10 @@
 :KafkaVersionHigher: 3.1.0
 :ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 
-//log message format version and inter-broker protocol version
-:LogMsgVersLower: 3.0
-:LogMsgVersHigher: 3.1
-:InterBrokVersLower: 3.0
-:InterBrokVersHigher: 3.1
+//inter-broker protocol and log message version
+:DefaultInterBrokerVersion: 3.1
+:InterBrokerVersionLower: 3.0
+:InterBrokerVersionHigher: 3.1
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub^]

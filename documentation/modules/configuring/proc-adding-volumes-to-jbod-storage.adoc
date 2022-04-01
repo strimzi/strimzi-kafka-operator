@@ -54,7 +54,7 @@ spec:
 . Create or update the resource:
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _KAFKA-CONFIG-FILE_
+kubectl apply -f _<kafka_configuration_file>_
 
 . Create new topics or reassign existing partitions to the new disks.
 
