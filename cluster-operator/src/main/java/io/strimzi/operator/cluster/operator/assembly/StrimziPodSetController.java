@@ -70,13 +70,14 @@ public class StrimziPodSetController implements Runnable {
      * Creates the StrimziPodSet controller. The controller should normally exist once per operator for cluster-wide mode
      * or once per namespace for namespaced mode.
      *
-     * @param watchedNamespace      Namespace which should be watched. Use * for all namespaces.
-     * @param crSelectorLabels      Selector labels for custom resource managed by this operator instance. This is used
-     *                              to check that the pods belong to a Kafka cluster matching these labels.
-     * @param kafkaOperator         Kafka Operator for getting the Kafka custom resources
-     * @param strimziPodSetOperator StrimziPodSet Operator used to manage the StrimziPodSet resources - get them, update
-     *                              their status etc.
-     * @param podOperator           Pod operator for managing pods
+     * @param watchedNamespace              Namespace which should be watched. Use * for all namespaces.
+     * @param crSelectorLabels              Selector labels for custom resource managed by this operator instance. This is used
+     *                                      to check that the pods belong to a Kafka cluster matching these labels.
+     * @param kafkaOperator                 Kafka Operator for getting the Kafka custom resources
+     * @param strimziPodSetOperator         StrimziPodSet Operator used to manage the StrimziPodSet resources - get them, update
+     *                                      their status etc.
+     * @param podOperator                   Pod operator for managing pods
+     * @param podSetControllerWorkQueueSize Indicates the size of the StrimziPodSetController work queue
      */
     public StrimziPodSetController(String watchedNamespace, Labels crSelectorLabels, CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator, CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator, PodOperator podOperator, int podSetControllerWorkQueueSize) {
         this.podOperator = podOperator;
