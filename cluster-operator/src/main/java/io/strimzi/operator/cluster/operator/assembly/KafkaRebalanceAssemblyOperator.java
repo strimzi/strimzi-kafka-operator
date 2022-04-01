@@ -735,6 +735,18 @@ public class KafkaRebalanceAssemblyOperator
         }
     }
 
+    /**
+     * This method handles the transition from {@code ReconciliationPaused} state.
+     * When the reconciliatiom is unpaused {@link KafkaRebalance} , it calls the Cruise Control API for requesting a rebalance proposal.
+     * If the proposal is immediately ready, the next state is {@code ProposalReady}.
+     * If the proposal is not ready yet and Cruise Control is still processing it, the next state is {@code PendingProposal}.
+     *
+     * @param reconciliation Reconciliation information
+     * @param host Cruise Control service to which sending the rebalance proposal request
+     * @param apiClient Cruise Control REST API client instance
+     * @param rebalanceOptionsBuilder builder for the Cruise Control REST API client options
+     * @return a Future with the next {@code MapAndStatus<ConfigMap, KafkaRebalanceStatus>} including the ConfigMap and state
+     */
 
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> onReconciliationPaused(Reconciliation reconciliation,
                                                                              String host, CruiseControlApi apiClient,
@@ -1121,8 +1133,6 @@ public class KafkaRebalanceAssemblyOperator
                                             // cluster rebalance is new or it is in one of the others states
                                             if (kafkaRebalanceStatus == null) {
                                                 currentState = KafkaRebalanceState.New;
-                                            } else if (kafkaRebalanceStatus.getConditions().stream().filter(cond -> KafkaRebalanceState.ReconciliationPaused.toString().equals(cond.getType())).findAny().isPresent()) {
-                                                currentState = KafkaRebalanceState.ReconciliationPaused;
                                             } else {
                                                 String rebalanceStateType = rebalanceStateConditionType(kafkaRebalanceStatus);
                                                 if (rebalanceStateType == null) {
