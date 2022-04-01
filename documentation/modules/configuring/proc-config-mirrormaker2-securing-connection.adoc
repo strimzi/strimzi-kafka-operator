@@ -430,8 +430,8 @@ spec:
 ----
 <1> The TLS certificates for the source Kafka cluster. If they are in a separate namespace, copy the cluster secrets from the namespace of the Kafka cluster.
 <2> The user authentication for accessing the source Kafka cluster using the xref:type-KafkaClientAuthenticationTls-reference[TLS mechanism].
-<1> The TLS certificates for the target Kafka cluster.
-<2> The user authentication for accessing the target Kafka cluster.
+<3> The TLS certificates for the target Kafka cluster.
+<4> The user authentication for accessing the target Kafka cluster.
 
 . Create or update the `KafkaMirrorMaker2` resource in the same namespace as the target Kafka cluster.
 +
