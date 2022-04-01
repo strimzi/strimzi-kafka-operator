@@ -97,7 +97,7 @@ public class ClusterOperator extends AbstractVerticle {
         getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", config.getOperationsThreadPoolSize(), TimeUnit.SECONDS.toNanos(120));
 
         if (config.featureGates().useStrimziPodSetsEnabled()) {
-            strimziPodSetController = new StrimziPodSetController(namespace, config.getCustomResourceSelector(), resourceOperatorSupplier.kafkaOperator, resourceOperatorSupplier.strimziPodSetOperator, resourceOperatorSupplier.podOperations);
+            strimziPodSetController = new StrimziPodSetController(namespace, config.getCustomResourceSelector(), resourceOperatorSupplier.kafkaOperator, resourceOperatorSupplier.strimziPodSetOperator, resourceOperatorSupplier.podOperations, config.getPodSetControllerWorkQueueSize());
             strimziPodSetController.start();
         }
 

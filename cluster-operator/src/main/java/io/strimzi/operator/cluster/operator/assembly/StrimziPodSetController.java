@@ -58,7 +58,7 @@ public class StrimziPodSetController implements Runnable {
     private final Optional<LabelSelector> crSelector;
     private final String watchedNamespace;
 
-    private final BlockingQueue<SimplifiedReconciliation> workQueue = new ArrayBlockingQueue<>(1024);
+    private final BlockingQueue<SimplifiedReconciliation> workQueue;
     private final SharedIndexInformer<Pod> podInformer;
     private final SharedIndexInformer<StrimziPodSet> strimziPodSetInformer;
     private final SharedIndexInformer<Kafka> kafkaInformer;
@@ -78,11 +78,12 @@ public class StrimziPodSetController implements Runnable {
      *                              their status etc.
      * @param podOperator           Pod operator for managing pods
      */
-    public StrimziPodSetController(String watchedNamespace, Labels crSelectorLabels, CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator, CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator, PodOperator podOperator) {
+    public StrimziPodSetController(String watchedNamespace, Labels crSelectorLabels, CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator, CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator, PodOperator podOperator, int podSetControllerWorkQueueSize) {
         this.podOperator = podOperator;
         this.strimziPodSetOperator = strimziPodSetOperator;
         this.crSelector = (crSelectorLabels == null || crSelectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, crSelectorLabels.toMap()));
         this.watchedNamespace = watchedNamespace;
+        this.workQueue = new ArrayBlockingQueue<>(podSetControllerWorkQueueSize);
 
         // Kafka informer and lister is used to get Kafka CRs quickly. This is needed for verification of the CR selector labels
         this.kafkaInformer = kafkaOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap());
