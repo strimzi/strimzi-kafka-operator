@@ -40,8 +40,8 @@ spec:
   kafka:
     version: {KafkaVersionLower} <1>
     config:
-      log.message.format.version: "{LogMsgVersLower}" <2>
-      inter.broker.protocol.version: "{LogMsgVersLower}" <3>
+      log.message.format.version: "{InterBrokerVersionLower}" <2>
+      inter.broker.protocol.version: "{InterBrokerVersionLower}" <3>
       # ...
 ----
 <1> Kafka version is changed to the previous version.

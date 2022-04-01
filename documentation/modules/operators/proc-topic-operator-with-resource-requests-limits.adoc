@@ -42,4 +42,4 @@ spec:
 . Apply the new configuration to create or update the resource.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _KAFKA-CONFIG-FILE_
+kubectl apply -f _<kafka_configuration_file>_
