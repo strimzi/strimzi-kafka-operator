@@ -134,7 +134,7 @@ public class EntityOperatorTest {
         // checks on the TLS sidecar container
         Container tlsSidecarContainer = containers.get(2);
         assertThat(tlsSidecarContainer.getImage(), is(image));
-        assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT), is(ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT));
+        assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT), is(KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT));
         assertThat(AbstractModel.containerEnvVars(tlsSidecarContainer).get(ModelUtils.TLS_SIDECAR_LOG_LEVEL), is(TlsSidecarLogLevel.NOTICE.toValue()));
         assertThat(EntityOperatorTest.volumeMounts(tlsSidecarContainer.getVolumeMounts()), is(map(
                         EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH,
@@ -155,7 +155,7 @@ public class EntityOperatorTest {
     public void testFromCrd() {
         assertThat(entityOperator.namespace, is(namespace));
         assertThat(entityOperator.cluster, is(cluster));
-        assertThat(entityOperator.zookeeperConnect, is(ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT));
+        assertThat(entityOperator.zookeeperConnect, is(KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT));
     }
 
     @ParallelTest

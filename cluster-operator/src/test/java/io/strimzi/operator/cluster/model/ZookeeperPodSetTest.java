@@ -25,6 +25,7 @@ import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
@@ -86,12 +87,12 @@ public class ZookeeperPodSetTest {
         PodDisruptionBudget pdb = zc.generateCustomControllerPodDisruptionBudget();
         io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generateCustomControllerPodDisruptionBudgetV1Beta1();
 
-        assertThat(pdb.getMetadata().getName(), is(ZookeeperCluster.zookeeperClusterName(CLUSTER)));
+        assertThat(pdb.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
         assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));
 
-        assertThat(pdbV1Beta1.getMetadata().getName(), is(ZookeeperCluster.zookeeperClusterName(CLUSTER)));
+        assertThat(pdbV1Beta1.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
         assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdbV1Beta1.getSpec().getMinAvailable().getIntVal(), is(2));
         assertThat(pdbV1Beta1.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));
@@ -140,7 +141,7 @@ public class ZookeeperPodSetTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         StrimziPodSet ps = zc.generatePodSet(3, true, null, null, Map.of());
 
-        assertThat(ps.getMetadata().getName(), is(ZookeeperCluster.zookeeperClusterName(CLUSTER)));
+        assertThat(ps.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(zc.getLabelsWithStrimziName(zc.getName(), null).toMap().entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_STORAGE), is(ModelUtils.encodeStorageToJson(new PersistentClaimStorageBuilder().withSize("100Gi").withDeleteClaim(false).build())));
         assertThat(ps.getMetadata().getOwnerReferences().size(), is(1));
@@ -330,7 +331,7 @@ public class ZookeeperPodSetTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         StrimziPodSet ps = zc.generatePodSet(3, true, null, null, Map.of("special", "annotation"));
 
-        assertThat(ps.getMetadata().getName(), is(ZookeeperCluster.zookeeperClusterName(CLUSTER)));
+        assertThat(ps.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
         assertThat(ps.getMetadata().getLabels().entrySet().containsAll(spsLabels.entrySet()), is(true));
         assertThat(ps.getMetadata().getAnnotations().entrySet().containsAll(spsAnnos.entrySet()), is(true));
         assertThat(ps.getSpec().getSelector().getMatchLabels(), is(zc.getSelectorLabels().toMap()));

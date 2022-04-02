@@ -100,7 +100,7 @@ public class EntityOperator extends AbstractModel {
         super(reconciliation, resource, APPLICATION_NAME);
         this.name = KafkaResources.entityOperatorDeploymentName(cluster);
         this.replicas = EntityOperatorSpec.DEFAULT_REPLICAS;
-        this.zookeeperConnect = ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
+        this.zookeeperConnect = KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }
 
     /**

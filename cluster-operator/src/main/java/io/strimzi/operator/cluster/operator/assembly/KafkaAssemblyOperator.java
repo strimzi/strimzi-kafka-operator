@@ -906,9 +906,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkManualRollingUpdate() {
             Future<HasMetadata> futureController;
             if (featureGates.useStrimziPodSetsEnabled())   {
-                futureController = strimziPodSetOperator.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name)).map(podSet -> (HasMetadata) podSet);
+                futureController = strimziPodSetOperator.getAsync(namespace, KafkaResources.zookeeperStatefulSetName(name)).map(podSet -> (HasMetadata) podSet);
             } else {
-                futureController = stsOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name)).map(sts -> (HasMetadata) sts);
+                futureController = stsOperations.getAsync(namespace, KafkaResources.zookeeperStatefulSetName(name)).map(sts -> (HasMetadata) sts);
             }
 
             return futureController.compose(controller -> {
@@ -1228,8 +1228,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return
          */
         Future<Void> getZookeeperSetDescription()   {
-            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
-            Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name));
+            Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.zookeeperStatefulSetName(name));
+            Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(namespace, KafkaResources.zookeeperStatefulSetName(name));
 
             return CompositeFuture.join(stsFuture, podSetFuture)
                     .compose(res -> {
@@ -1318,7 +1318,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zookeeperServiceAccount() {
             return withVoid(serviceAccountOperations.reconcile(reconciliation, namespace,
-                    ZookeeperCluster.containerServiceAccountName(zkCluster.getCluster()),
+                    zkCluster.getServiceAccountName(),
                     zkCluster.generateServiceAccount()));
         }
 
@@ -1356,7 +1356,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> zkNodesSecret() {
-            return updateCertificateSecretWithDiff(ZookeeperCluster.nodesSecretName(name), zkCluster.generateNodesSecret(clusterCa))
+            return updateCertificateSecretWithDiff(KafkaResources.zookeeperSecretName(name), zkCluster.generateNodesSecret(clusterCa))
                     .map(changed -> {
                         existingZookeeperCertsChanged = changed;
                         return this;
@@ -1365,21 +1365,21 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> zkJmxSecret() {
             if (zkCluster.isJmxAuthenticated()) {
-                Future<Secret> secretFuture = secretOperations.getAsync(namespace, ZookeeperCluster.jmxSecretName(name));
+                Future<Secret> secretFuture = secretOperations.getAsync(namespace, KafkaResources.zookeeperJmxSecretName(name));
                 return secretFuture.compose(secret -> {
                     if (secret == null) {
-                        return withVoid(secretOperations.reconcile(reconciliation, namespace, ZookeeperCluster.jmxSecretName(name),
+                        return withVoid(secretOperations.reconcile(reconciliation, namespace, KafkaResources.zookeeperJmxSecretName(name),
                                 zkCluster.generateJmxSecret()));
                     }
                     return withVoid(Future.succeededFuture(ReconcileResult.noop(secret)));
                 });
             }
-            return withVoid(secretOperations.reconcile(reconciliation, namespace, ZookeeperCluster.jmxSecretName(name), null));
+            return withVoid(secretOperations.reconcile(reconciliation, namespace, KafkaResources.zookeeperJmxSecretName(name), null));
         }
 
         Future<ReconciliationState> zkNetPolicy() {
             if (isNetworkPolicyGeneration) {
-                return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, ZookeeperCluster.policyName(name), zkCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
+                return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, KafkaResources.zookeeperNetworkPolicyName(name), zkCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
             } else {
                 return withVoid(Future.succeededFuture());
             }
@@ -1412,7 +1412,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         Future<ReconciliationState> zkStatefulSet() {
             if (featureGates.useStrimziPodSetsEnabled())   {
                 // StatefulSets are disabled => delete the StatefulSet if it exists
-                return stsOperations.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+                return stsOperations.getAsync(namespace, KafkaResources.zookeeperStatefulSetName(name))
                         .compose(sts -> {
                             if (sts != null)    {
                                 return withVoid(stsOperations.deleteAsync(reconciliation, namespace, zkCluster.getName(), false));
@@ -1456,7 +1456,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 StrimziPodSet zkPodSet = zkCluster.generatePodSet(replicas, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, podAnnotations);
                 return withZkPodSetDiff(strimziPodSetOperator.reconcile(reconciliation, namespace, zkCluster.getName(), zkPodSet));
             } else {
-                return strimziPodSetOperator.getAsync(namespace, ZookeeperCluster.zookeeperClusterName(name))
+                return strimziPodSetOperator.getAsync(namespace, KafkaResources.zookeeperStatefulSetName(name))
                         .compose(podSet -> {
                             if (podSet != null)    {
                                 return withVoid(strimziPodSetOperator.deleteAsync(reconciliation, namespace, zkCluster.getName(), false));
@@ -1627,7 +1627,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .compose(ignore -> podOperations.waitFor(
                                 reconciliation,
                                 namespace,
-                                ZookeeperCluster.zookeeperPodName(name, desiredScale),
+                                KafkaResources.zookeeperPodName(name, desiredScale),
                                 "to be deleted",
                                 1_000L,
                                 operationTimeoutMs,
@@ -3437,7 +3437,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          * @return
          */
         Future<ReconciliationState> zkManualPodCleaning() {
-            return maybeManualPodCleaning(ZookeeperCluster.zookeeperClusterName(name), zkCluster.getSelectorLabels(), zkCluster.generatePersistentVolumeClaims());
+            return maybeManualPodCleaning(KafkaResources.zookeeperStatefulSetName(name), zkCluster.getSelectorLabels(), zkCluster.generatePersistentVolumeClaims());
         }
 
         /**

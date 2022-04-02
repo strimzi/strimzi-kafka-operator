@@ -182,7 +182,7 @@ public class KafkaBrokerConfigurationBuilder {
      */
     public KafkaBrokerConfigurationBuilder withZookeeper(String clusterName)  {
         printSectionHeader("Zookeeper");
-        writer.println(String.format("zookeeper.connect=%s:%d", ZookeeperCluster.serviceName(clusterName), ZookeeperCluster.CLIENT_TLS_PORT));
+        writer.println(String.format("zookeeper.connect=%s:%d", KafkaResources.zookeeperServiceName(clusterName), ZookeeperCluster.CLIENT_TLS_PORT));
         writer.println("zookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty");
         writer.println("zookeeper.ssl.client.enable=true");
         writer.println("zookeeper.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");

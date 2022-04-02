@@ -178,7 +178,7 @@ public class CruiseControl extends AbstractModel {
         this.logAndMetricsConfigMountPath = LOG_AND_METRICS_CONFIG_VOLUME_MOUNT;
         this.isMetricsEnabled = DEFAULT_CRUISE_CONTROL_METRICS_ENABLED;
 
-        this.zookeeperConnect = ZookeeperCluster.serviceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
+        this.zookeeperConnect = KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }
 
     /**

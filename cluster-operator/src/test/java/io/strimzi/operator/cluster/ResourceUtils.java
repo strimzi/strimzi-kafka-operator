@@ -55,7 +55,6 @@ import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
@@ -317,15 +316,15 @@ public class ResourceUtils {
 
         builder = new SecretBuilder()
                         .withNewMetadata()
-                            .withName(ZookeeperCluster.nodesSecretName(name))
+                            .withName(KafkaResources.zookeeperSecretName(name))
                             .withNamespace(namespace)
                             .withLabels(Labels.forStrimziCluster(name).toMap())
                         .endMetadata()
                         .addToData("cluster-ca.crt", Base64.getEncoder().encodeToString("cluster-ca-base64crt".getBytes()));
 
         for (int i = 0; i < zkReplicas; i++) {
-            builder.addToData(ZookeeperCluster.zookeeperPodName(name, i) + ".key", Base64.getEncoder().encodeToString("nodes-base64key".getBytes()))
-                    .addToData(ZookeeperCluster.zookeeperPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("nodes-base64crt".getBytes()));
+            builder.addToData(KafkaResources.zookeeperPodName(name, i) + ".key", Base64.getEncoder().encodeToString("nodes-base64key".getBytes()))
+                    .addToData(KafkaResources.zookeeperPodName(name, i) + ".crt", Base64.getEncoder().encodeToString("nodes-base64crt".getBytes()));
         }
         secrets.add(builder.build());
 
