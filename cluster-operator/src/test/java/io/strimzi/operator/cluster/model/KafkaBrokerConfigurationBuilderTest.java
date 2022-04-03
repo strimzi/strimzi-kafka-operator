@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationOpaBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationSimpleBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuthBuilder;
@@ -157,7 +158,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withZookeeper("my-cluster")
                 .build();
 
-        assertThat(configuration, isEquivalent(String.format("zookeeper.connect=%s:%d\n", ZookeeperCluster.serviceName("my-cluster"), ZookeeperCluster.CLIENT_TLS_PORT) +
+        assertThat(configuration, isEquivalent(String.format("zookeeper.connect=%s:%d\n", KafkaResources.zookeeperServiceName("my-cluster"), ZookeeperCluster.CLIENT_TLS_PORT) +
                 "zookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty\n" +
                 "zookeeper.ssl.client.enable=true\n" +
                 "zookeeper.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12\n" +

@@ -5,8 +5,10 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
@@ -289,7 +291,7 @@ public class ZookeeperLeaderFinder {
      * @return                  Hostname of the ZooKeeper node
      */
     protected String host(Reconciliation reconciliation, String podName) {
-        return ZookeeperCluster.podDnsName(reconciliation.namespace(), reconciliation.name(), podName);
+        return DnsNameGenerator.podDnsName(reconciliation.namespace(), KafkaResources.zookeeperHeadlessServiceName(reconciliation.name()), podName);
     }
 
     /**

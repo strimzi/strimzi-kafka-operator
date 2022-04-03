@@ -204,6 +204,39 @@ public class KafkaResources {
         return clusterName + "-zookeeper-nodes";
     }
 
+    /**
+     * Returns the name of the ZooKeeper Secret with server certificates.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the corresponding ZooKeeper Secret.
+     */
+    public static String zookeeperSecretName(String clusterName) {
+        return clusterName + "-zookeeper-nodes";
+    }
+
+    /**
+     * Returns the name of the ZooKeeper Secret with JMX credentials.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the corresponding ZooKeeper JMX Secret.
+     */
+    public static String zookeeperJmxSecretName(String clusterName) {
+        return clusterName + "-zookeeper-jmx";
+    }
+
+    /**
+     * Returns the name of the ZooKeeper Network Policy.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the corresponding ZooKeeper Network Policy.
+     */
+    public static String zookeeperNetworkPolicyName(String clusterName) {
+        return clusterName + "-network-policy-zookeeper";
+    }
+
     ////////
     // Entity Operator methods
     ////////

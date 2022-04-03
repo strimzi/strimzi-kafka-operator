@@ -92,7 +92,7 @@ public class ClusterCa extends Ca {
                 entityTopicOperatorSecret = secret;
             } else if (KafkaResources.entityUserOperatorSecretName(clusterName).equals(name)) {
                 entityUserOperatorSecret = secret;
-            } else if (ZookeeperCluster.nodesSecretName(clusterName).equals(name)) {
+            } else if (KafkaResources.zookeeperSecretName(clusterName).equals(name)) {
                 zkNodesSecret = secret;
             } else if (ClusterOperator.secretName(clusterName).equals(name)) {
                 clusterOperatorSecret = secret;
@@ -155,19 +155,19 @@ public class ClusterCa extends Ca {
         String cluster = kafka.getMetadata().getName();
         String namespace = kafka.getMetadata().getNamespace();
 
-        DnsNameGenerator zkDnsGenerator = DnsNameGenerator.of(namespace, ZookeeperCluster.serviceName(cluster));
-        DnsNameGenerator zkHeadlessDnsGenerator = DnsNameGenerator.of(namespace, ZookeeperCluster.headlessServiceName(cluster));
+        DnsNameGenerator zkDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperServiceName(cluster));
+        DnsNameGenerator zkHeadlessDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperHeadlessServiceName(cluster));
 
         Function<Integer, Subject> subjectFn = i -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
-                    .withCommonName(ZookeeperCluster.zookeeperClusterName(cluster));
-            subject.addDnsName(ZookeeperCluster.serviceName(cluster));
-            subject.addDnsName(String.format("%s.%s", ZookeeperCluster.serviceName(cluster), namespace));
+                    .withCommonName(KafkaResources.zookeeperStatefulSetName(cluster));
+            subject.addDnsName(KafkaResources.zookeeperServiceName(cluster));
+            subject.addDnsName(String.format("%s.%s", KafkaResources.zookeeperServiceName(cluster), namespace));
             subject.addDnsName(zkDnsGenerator.serviceDnsNameWithoutClusterDomain());
             subject.addDnsName(zkDnsGenerator.serviceDnsName());
-            subject.addDnsName(ZookeeperCluster.podDnsName(namespace, cluster, i));
-            subject.addDnsName(ZookeeperCluster.podDnsNameWithoutSuffix(namespace, cluster, i));
+            subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.zookeeperHeadlessServiceName(cluster), KafkaResources.zookeeperPodName(cluster, i)));
+            subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.zookeeperHeadlessServiceName(cluster), KafkaResources.zookeeperPodName(cluster, i)));
             subject.addDnsName(zkDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
             subject.addDnsName(zkDnsGenerator.wildcardServiceDnsName());
             subject.addDnsName(zkHeadlessDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
@@ -181,7 +181,7 @@ public class ClusterCa extends Ca {
             kafka.getSpec().getZookeeper().getReplicas(),
             subjectFn,
             zkNodesSecret,
-            podNum -> ZookeeperCluster.zookeeperPodName(cluster, podNum),
+            podNum -> KafkaResources.zookeeperPodName(cluster, podNum),
             isMaintenanceTimeWindowsSatisfied);
     }
 
