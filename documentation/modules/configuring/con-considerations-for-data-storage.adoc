@@ -21,7 +21,7 @@ NOTE: Strimzi does not require Kubernetes raw block volumes.
 
 == File systems
 
-Kafka uses a file system for storing, retrieving, and caching messages.
+Kafka uses a file system for storing messages.
 Strimzi is compatible with the XFS and ext4 file systems, which are commonly used with Kafka.
 Consider the underlying architecture and requirements of your deployment when choosing and setting up your file system.
 
