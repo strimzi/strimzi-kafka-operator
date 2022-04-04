@@ -9,14 +9,16 @@
 An _optimization proposal_ is a summary of proposed changes that would produce a more balanced Kafka cluster, with partition workloads distributed more evenly among the brokers.
 Each optimization proposal is based on the set of xref:con-optimization-goals-{context}[optimization goals] that was used to generate it, subject to any configured xref:capacity-configuration[capacity limits on broker resources].
 
-All optimization proposals are _dry runs_: you cannot approve a cluster rebalance without first generating an optimization proposal.
-There is no limit to the number of optimization proposals that can be generated.
+All optimization proposals are _estimates_ of the impact of a proposed rebalance.
+You can approve or reject a proposal.
+You cannot approve a cluster rebalance without first generating the optimization proposal.
 
 [[contents-optimization-proposals]]
 [discrete]
 == Contents of optimization proposals
 
 An optimization proposal comprises a summary and broker load.
+The summary is contained in the `KafkaRebalance` resource.
 
 Summary:: The summary provides an overview of the proposed cluster rebalance and indicates the scale of the changes involved.
 A summary of a successfully generated optimization proposal is contained in the `Status.OptimizationResult` property of the `KafkaRebalance` resource.
@@ -28,18 +30,34 @@ A broker load is stored in a ConfigMap that contains data as a JSON string.
 
 An optimization proposal summary shows the proposed scope of changes.
 
-You can return a summary from the command line using `kubectl describe kafkarebalance _<kafka_rebalance_resource_name>_ -n _<project_name>_`.
+You can return a summary from the command line.
+
+.Returning an optimization proposal summary
+[source,shell,subs=+quotes]
+----
+kubectl describe kafkarebalance _<kafka_rebalance_resource_name>_ -n _<project_name>_
+----
+
+You can also use the `jq` command line JSON parser tool.
+
+.Returning an optimization proposal summary using jq
+[source,shell,subs=+quotes]
+----
+`kubectl get kafkarebalance -o json | jq _<jq_query>_`.
+----
 
 Use the summary to decide whether to approve or reject an optimization proposal.
 
 Approving an optimization proposal:: You approve the optimization proposal by setting the `strimzi.io/rebalance` annotation of the `KafkaRebalance` resource to `approve`.
 Cruise Control applies the proposal to the Kafka cluster and starts a cluster rebalance operation.
-Rejecting an optimization proposal:: If you choose not to approve an optimization proposal, you can change the optimization goals and generate another proposal.
+Rejecting an optimization proposal:: If you choose not to approve an optimization proposal,
+you can xref:proc-generating-optimization-proposals-str[change the optimization goals] or xref:rebalance_tuning_options[update any of the rebalance performance tuning options], and then generate another proposal.
+You can use the `strimzi.io/refresh` annotation to generate a new optimization proposal for a `KafkaRebalance` resource.
 
 Use optimization proposals to assess the movements required for a rebalance.
 For example, a summary describes inter-broker and intra-broker movements.
 Inter-broker rebalancing moves data between separate brokers.
-Intra-broker rebalancing moves data between disks on the same broker.
+Intra-broker rebalancing moves data between disks on the same broker when you are using JBOD.
 Such information can be useful even if you don't go ahead and approve the proposal.
 
 You might reject an optimization proposal, or delay its approval, because of the additional load on a Kafka cluster when rebalancing.
@@ -48,6 +66,10 @@ In the following example, the proposal suggests the rebalancing of data between 
 The rebalance involves the movement of 55 partition replicas, totaling 12MB of data, across the brokers.
 Though the inter-broker movement of partition replicas has a high impact on performance, the total amount of data is not large.
 If the total data was much larger, you could reject the proposal, or time when to approve the rebalance to limit the impact on the performance of the Kafka cluster.
+
+Rebalance performance tuning options can help reduce the impact of data movement.
+If you can extend the rebalance period, you can divide the rebalance into smaller batches.
+Fewer data movements at a single time reduces the load on the cluster.
 
 .Example optimization proposal summary
 [source,yaml]
@@ -163,8 +185,9 @@ The first is the metric value before the optimization proposal is applied, the s
 
 NOTE: The ConfigMap appears when the KafkaRebalance resource is in the `ProposalReady` state and remains after the rebalance is complete.
 
-To extract the JSON string from the ConfigMap you could use the following command, which uses the jq command line JSON parser tool:
+You can use the `jq` command line JSON parser tool to extract the JSON string from the ConfigMap.
 
+.Extracting the JSON string from the ConfigMap
 [source,shell,subs=+quotes]
 ----
 kubectl get configmap _MY-REBALANCE_ -o json | jq '.["data"]["brokerLoad.json"]|fromjson|.'
