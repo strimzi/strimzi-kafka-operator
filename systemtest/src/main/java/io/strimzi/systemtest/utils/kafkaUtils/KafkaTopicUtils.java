@@ -184,7 +184,7 @@ public class KafkaTopicUtils {
 
             return expectedConf.entrySet().stream()
                     .allMatch(expected -> expected.getValue().toString().equals(actualConf.get(expected.getKey()).toString()));
-        } catch (NullPointerException e){
+        } catch (NullPointerException e) {
             LOGGER.error(e.getMessage());
             return false;
         }
