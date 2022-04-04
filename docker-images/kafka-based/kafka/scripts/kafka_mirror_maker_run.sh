@@ -74,18 +74,6 @@ if [ "$STRIMZI_TRACING" = "jaeger" ]; then
   export KAFKA_OPTS
 fi
 
-if [ -z "$KAFKA_HEAP_OPTS" ] && [ -n "${STRIMZI_DYNAMIC_HEAP_PERCENTAGE}" ]; then
-    . ./dynamic_resources.sh
-    # Calculate a max heap size based some STRIMZI_DYNAMIC_HEAP_PERCENTAGE of the heap
-    # available to a jvm using 100% of the GCroup-aware memory
-    # up to some optional STRIMZI_DYNAMIC_HEAP_MAX
-    CALC_MAX_HEAP=$(get_heap_size "${STRIMZI_DYNAMIC_HEAP_PERCENTAGE}" "${STRIMZI_DYNAMIC_HEAP_MAX}")
-    if [ -n "$CALC_MAX_HEAP" ]; then
-      export KAFKA_HEAP_OPTS="-Xms${CALC_MAX_HEAP} -Xmx${CALC_MAX_HEAP}"
-      echo "Configuring Mirror Maker heap: $KAFKA_HEAP_OPTS"
-    fi
-fi
-
 if [ -n "$KAFKA_MIRRORMAKER_INCLUDE" ]; then
     # shellcheck disable=SC2089
     include="--whitelist \"${KAFKA_MIRRORMAKER_INCLUDE}\""
@@ -116,6 +104,10 @@ if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
     export KAFKA_OPTS="${KAFKA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
 fi
 
+# Configure heap based on the available resources if needed
+. ./dynamic_resources.sh
+
+# Configure Garbage Collection logging
 . ./set_kafka_gc_options.sh
 
 set -x

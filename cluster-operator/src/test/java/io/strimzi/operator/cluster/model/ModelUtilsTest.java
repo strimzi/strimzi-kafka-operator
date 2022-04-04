@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
@@ -16,11 +17,14 @@ import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContextBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Toleration;
 import io.fabric8.kubernetes.api.model.TolerationBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
+import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -49,9 +53,11 @@ import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.Util.parseMap;
 import static java.util.Collections.emptyMap;
@@ -62,12 +68,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling"})
 @ParallelSuite
 public class ModelUtilsTest {
-
-    @Test
+    @ParallelTest
     public void testParseImageMap() {
         Map<String, String> m = parseMap(
                 KafkaVersionTestUtils.LATEST_KAFKA_VERSION + "=" + KafkaVersionTestUtils.LATEST_KAFKA_IMAGE + "\n  " +
@@ -624,5 +630,106 @@ public class ModelUtilsTest {
         // Multiple owner references
         pod.getMetadata().setOwnerReferences(List.of(otherOwner, owner));
         assertThat(ModelUtils.hasOwnerReference(pod, owner), is(true));
+    }
+
+    @ParallelTest
+    public void testInvalidHeapPercentage() {
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> ModelUtils.heapOptions(new ArrayList<>(), 0, 0, new JvmOptions(), new ResourceRequirements()));
+        assertThat(exception.getMessage(), is("The Heap percentage 0 is invalid. It has to be >0 and <= 100."));
+
+        exception = assertThrows(RuntimeException.class, () -> ModelUtils.heapOptions(new ArrayList<>(), 101, 0, new JvmOptions(), new ResourceRequirements()));
+        assertThat(exception.getMessage(), is("The Heap percentage 101 is invalid. It has to be >0 and <= 100."));
+    }
+
+    @ParallelTest
+    public void testValidHeapPercentage() {
+        Map<String, String> envVars = heapOptions(null, 1, 0, new ResourceRequirements(Map.of("memory", new Quantity("1Gi")), Map.of()));
+        assertThat(envVars.size(), is(1));
+        assertThat(envVars.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is("1"));
+
+        envVars = heapOptions(null, 100, 0, new ResourceRequirements(Map.of("memory", new Quantity("1Gi")), Map.of()));
+        assertThat(envVars.size(), is(1));
+        assertThat(envVars.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is("100"));
+    }
+    
+    @ParallelTest
+    public void testJvmMemoryOptionsExplicit() {
+        Map<String, String> env = heapOptions(jvmOptions("4", "4"), 50, 4_000_000_000L, null);
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4 -Xmx4"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testJvmMemoryOptionsXmsOnly() {
+        Map<String, String> env = heapOptions(jvmOptions(null, "4"), 50, 5_000_000_000L, null);
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testJvmMemoryOptionsXmxOnly() {
+        Map<String, String> env = heapOptions(jvmOptions("4", null), 50, 5_000_000_000L, null);
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xmx4"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testJvmMemoryOptionsDefaultWithNoMemoryLimitOrJvmOptions() {
+        Map<String, String> env = heapOptions(jvmOptions(null, null), 50, 5_000_000_000L, null);
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms" + AbstractModel.DEFAULT_JVM_XMS));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testJvmMemoryOptionsDefaultWithMemoryLimit() {
+        Map<String, String> env = heapOptions(jvmOptions(null, "4"), 50, 5_000_000_000L, new ResourceRequirements(Map.of("memory", new Quantity("1Gi")), Map.of()));
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms4"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is("50"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("5000000000"));
+    }
+
+    @ParallelTest
+    public void testJvmMemoryOptionsMemoryRequest() {
+        Map<String, String> env = heapOptions(null, 70, 10_000_000_000L, new ResourceRequirements(Map.of(), Map.of("memory", new Quantity("1Gi"))));
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is("70"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is("10000000000"));
+    }
+
+    /**
+     * Utility methods to get the heap options environment variables based on the given options
+     *
+     * @param jvmOpts           The JvmOptions configuration from the Strimzi model
+     * @param dynamicPercentage The dynamic heap percentage
+     * @param dynamicMax        The maximal heap
+     * @param resources         The configured resources
+     *
+     * @return                  Map with the environment variables with their names as the keys of the map
+     */
+    private static Map<String, String> heapOptions(JvmOptions jvmOpts, int dynamicPercentage, long dynamicMax, ResourceRequirements resources)  {
+        List<EnvVar> envVars = new ArrayList<>();
+
+        ModelUtils.heapOptions(envVars, dynamicPercentage, dynamicMax, jvmOpts, resources);
+
+        return envVars.stream().collect(Collectors.toMap(EnvVar::getName, EnvVar::getValue));
+    }
+
+    /**
+     * Utility method to create JvmOptions object.
+     *
+     * @param xmx   Configured -Xmx
+     * @param xms   Configured -Xms
+     *
+     * @return      New JvmOptions object
+     */
+    private static JvmOptions jvmOptions(String xmx, String xms) {
+        JvmOptions result = new JvmOptions();
+        result.setXms(xms);
+        result.setXmx(xmx);
+        return result;
     }
 }
