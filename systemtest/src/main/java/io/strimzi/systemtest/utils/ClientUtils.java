@@ -10,6 +10,7 @@ import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
@@ -52,19 +53,36 @@ public class ClientUtils {
         }
     }
 
-    public static void waitTillContinuousClientsFinish(String producerName, String consumerName, String namespace, int messageCount) {
+    public static void waitForClientsSuccess(String producerName, String consumerName, String namespace, int messageCount) {
+        waitForClientsSuccess(producerName, consumerName, namespace, messageCount, true);
+    }
+
+    public static void waitForClientsSuccess(String producerName, String consumerName, String namespace, int messageCount, boolean deleteAfterSuccess) {
         LOGGER.info("Waiting till producer {} and consumer {} finish", producerName, consumerName);
-        TestUtils.waitFor("continuous clients finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-            () -> kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, producerName, 1) && kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, consumerName, 1));
+        TestUtils.waitFor("clients finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
+            () -> kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, producerName, 1)
+                && kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, consumerName, 1));
+
+        if (deleteAfterSuccess) {
+            JobUtils.deleteJobsWithWait(namespace, producerName, consumerName);
+        }
     }
 
     public static void waitForClientSuccess(String jobName, String namespace, int messageCount) {
+        waitForClientSuccess(jobName, namespace, messageCount, true);
+    }
+
+    public static void waitForClientSuccess(String jobName, String namespace, int messageCount, boolean deleteAfterSuccess) {
         LOGGER.info("Waiting for producer/consumer:{} to finished", jobName);
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
             () -> {
                 LOGGER.debug("Job {} in namespace {}, has status {}", jobName, namespace, kubeClient().namespace(namespace).getJobStatus(jobName));
                 return kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, jobName, 1);
             });
+
+        if (deleteAfterSuccess) {
+            JobUtils.deleteJobWithWait(namespace, jobName);
+        }
     }
 
     public static void waitForClientTimeout(String jobName, String namespace, int messageCount) throws UnexpectedException {

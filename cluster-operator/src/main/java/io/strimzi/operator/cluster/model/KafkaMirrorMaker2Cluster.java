@@ -291,9 +291,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_2_OAUTH_REFRESH_TOKENS_CLUSTERS, clustersOauthRefreshTokens.toString()));
         }
 
-        if (javaSystemProperties != null) {
-            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
-        }
+        ModelUtils.jvmSystemProperties(varList, getJvmOptions());
 
         return varList;
     }

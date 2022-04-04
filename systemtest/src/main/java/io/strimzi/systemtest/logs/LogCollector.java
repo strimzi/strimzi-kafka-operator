@@ -290,9 +290,14 @@ public class LogCollector {
     }
 
     private void scrapeAndCreateLogs(File path, String podName, ContainerStatus containerStatus, String namespace) {
-        String log = kubeClient.getPodResource(namespace, podName).inContainer(containerStatus.getName()).getLog();
-        // Write logs from containers to files
-        writeFile(path + "/logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
+        try {
+            String log = kubeClient.getPodResource(namespace, podName).inContainer(containerStatus.getName()).getLog();
+            // Write logs from containers to files
+            writeFile(path + "/logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
+        } catch (Exception e) {
+            LOGGER.warn("Unable to collect log from pod: {} and container: {} - pod container is not initialized", podName, containerStatus.getName());
+        }
+
         // Describe all pods
         String describe = cmdKubeClient(namespace).describe("pod", podName);
         writeFile(path + "/describe-pod-" + podName + "-container-" + containerStatus.getName() + ".log", describe);

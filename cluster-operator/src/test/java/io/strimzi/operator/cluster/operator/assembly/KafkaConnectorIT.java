@@ -153,7 +153,7 @@ public class KafkaConnectorIT {
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa,
                 new ResourceOperatorSupplier(
                         null, null, null, null, null, null, null, null, null, null, null,
-                        null, null, null, null, null, null, null, null, null,
+                        null, null, null, null, null, null, null, null, null, null,
                         null, null, connectCrdOperator, null, null, null, null, null, null, metrics, null, null),
                 ClusterOperatorConfig.fromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),

@@ -151,12 +151,13 @@ public class ReconciliationST extends AbstractST {
         }, namespaceName);
 
         KafkaTopicUtils.waitForKafkaTopicStatus(namespaceName, topicName, CustomResourceStatus.ReconciliationPaused);
-        KafkaTopicUtils.waitForKafkaTopicSpecStability(topicName, KafkaResources.kafkaPodName(clusterName, 0), KafkaResources.plainBootstrapAddress(clusterName));
+        KafkaTopicUtils.waitForKafkaTopicSpecStability(namespaceName, topicName, KafkaResources.kafkaPodName(clusterName, 0), KafkaResources.plainBootstrapAddress(clusterName));
 
         LOGGER.info("Setting annotation to \"false\", partitions should be scaled to {}", SCALE_TO);
-        KafkaTopicResource.replaceTopicResource(topicName,
-            topic -> topic.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"));
-        KafkaTopicUtils.waitForKafkaTopicPartitionChange(topicName, SCALE_TO);
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName,
+            topic -> topic.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"),
+            namespaceName);
+        KafkaTopicUtils.waitForKafkaTopicPartitionChange(namespaceName, topicName, SCALE_TO);
 
         resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName).build());
 

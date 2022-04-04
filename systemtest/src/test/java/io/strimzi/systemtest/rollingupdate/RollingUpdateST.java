@@ -24,6 +24,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.annotations.StatefulSetTest;
 import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.ComponentType;
@@ -255,6 +256,10 @@ class RollingUpdateST extends AbstractST {
         internalKafkaClient.produceAndConsumesTlsMessagesUntilBothOperationsAreSuccessful();
     }
 
+    // When using StrimziPodSets, Kafka pods are not all rolled when scaling up or down.
+    // This test needs to be updated to support StrimziPodSets as well
+    //             => https://github.com/strimzi/strimzi-kafka-operator/issues/6493
+    @StatefulSetTest
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(SCALABILITY)
@@ -512,9 +517,11 @@ class RollingUpdateST extends AbstractST {
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
         Map<String, String> zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
 
-        ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName));
-        configMap.getData().put("new.kafka.config", "new.config.value");
-        kubeClient(namespaceName).getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMap);
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 3)) {
+            ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, cmName);
+            configMap.getData().put("new.kafka.config", "new.config.value");
+            kubeClient(namespaceName).getClient().configMaps().inNamespace(namespaceName).createOrReplace(configMap);
+        }
 
         PodUtils.verifyThatRunningPodsAreStable(namespaceName, clusterName);
 
@@ -801,8 +808,10 @@ class RollingUpdateST extends AbstractST {
         Object kafkaMetricsJsonToYaml = yamlReader.readValue(kafkaMetricsConf, Object.class);
         Object zkMetricsJsonToYaml = yamlReader.readValue(zkMetricsConf, Object.class);
         ObjectMapper jsonWriter = new ObjectMapper();
-        assertThat(kubeClient(namespace).getClient().configMaps().inNamespace(namespace).withName(KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName)).get().getData().get(Constants.METRICS_CONFIG_JSON_NAME),
-                is(jsonWriter.writeValueAsString(kafkaMetricsJsonToYaml)));
+        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 3)) {
+            assertThat(kubeClient(namespace).getClient().configMaps().inNamespace(namespace).withName(cmName).get().getData().get(Constants.METRICS_CONFIG_JSON_NAME),
+                    is(jsonWriter.writeValueAsString(kafkaMetricsJsonToYaml)));
+        }
         assertThat(kubeClient(namespace).getClient().configMaps().inNamespace(namespace).withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName)).get().getData().get(Constants.METRICS_CONFIG_JSON_NAME),
                 is(jsonWriter.writeValueAsString(zkMetricsJsonToYaml)));
 

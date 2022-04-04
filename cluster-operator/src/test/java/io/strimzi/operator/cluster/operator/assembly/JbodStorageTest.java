@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
@@ -313,7 +314,7 @@ public class JbodStorageTest {
     }
 
     private List<PersistentVolumeClaim> getPvcs(String namespace, String name) {
-        String kafkaStsName = KafkaCluster.kafkaClusterName(name);
+        String kafkaStsName = KafkaResources.kafkaStatefulSetName(name);
         Labels pvcSelector = Labels.forStrimziCluster(name).withStrimziKind(Kafka.RESOURCE_KIND).withStrimziName(kafkaStsName);
         return mockClient.persistentVolumeClaims()
                 .inNamespace(namespace)

@@ -14,9 +14,10 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -26,7 +27,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -40,8 +40,6 @@ import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
 @Tag(BRIDGE)
@@ -56,65 +54,74 @@ class HttpBridgeTlsST extends AbstractST {
 
     private final String httpBridgeTlsClusterName = "http-bridge-tls-cluster-name";
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(HttpBridgeTlsST.class.getSimpleName()).stream().findFirst().get();
-    private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
-    private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
     @ParallelTest
     void testSendSimpleMessageTls(ExtensionContext extensionContext) {
+
+        final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
+
         // Create topic
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        BridgeClients kafkaBridgeClientJobProduce = new BridgeClientsBuilder(kafkaBridgeClientJob).withTopicName(topicName).build();
+        BridgeClients kafkaBridgeClientJobProduce = new BridgeClientsBuilder(kafkaBridgeClientJob)
+            .withTopicName(topicName)
+            .withProducerName(producerName)
+            .build();
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeTlsClusterName, topicName)
             .editMetadata()
                 .withNamespace(namespace)
             .endMetadata()
             .build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJobProduce.producerStrimziBridge());
 
+        resourceManager.createResource(extensionContext, kafkaBridgeClientJobProduce.producerStrimziBridge());
         ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT);
 
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(topicName)
-            .withNamespaceName(namespace)
-            .withClusterName(httpBridgeTlsClusterName)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol(SecurityProtocol.SSL)
-            .withKafkaUsername(sharedKafkaUserName)
-            .withUsingPodName(kafkaClientsPodName)
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(httpBridgeTlsClusterName))
+            .withConsumerName(consumerName)
+            .withNamespaceName(namespace)
+            .withUserName(sharedKafkaUserName)
             .build();
 
-        assertThat(internalKafkaClient.receiveMessagesTls(), is(MESSAGE_COUNT));
+        resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(httpBridgeTlsClusterName));
+        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT);
     }
 
     @ParallelTest
     void testReceiveSimpleMessageTls(ExtensionContext extensionContext) {
+
+        final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
+        final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
+
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        BridgeClients kafkaBridgeClientJobConsume = new BridgeClientsBuilder(kafkaBridgeClientJob).withTopicName(topicName).build();
+        BridgeClients kafkaBridgeClientJobConsume = new BridgeClientsBuilder(kafkaBridgeClientJob)
+            .withTopicName(topicName)
+            .withConsumerName(consumerName)
+            .build();
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeTlsClusterName, topicName)
             .editMetadata()
                 .withNamespace(namespace)
             .endMetadata()
             .build());
+
         resourceManager.createResource(extensionContext, kafkaBridgeClientJobConsume.consumerStrimziBridge());
 
         // Send messages to Kafka
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(topicName)
-            .withNamespaceName(namespace)
-            .withClusterName(httpBridgeTlsClusterName)
             .withMessageCount(MESSAGE_COUNT)
-            .withSecurityProtocol(SecurityProtocol.SSL)
-            .withKafkaUsername(sharedKafkaUserName)
-            .withUsingPodName(kafkaClientsPodName)
-            .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(httpBridgeTlsClusterName))
+            .withProducerName(producerName)
+            .withNamespaceName(namespace)
+            .withUserName(sharedKafkaUserName)
             .build();
 
-        assertThat(internalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
-
-        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT);
+        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(httpBridgeTlsClusterName));
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, namespace, MESSAGE_COUNT);
     }
 
     @BeforeAll
@@ -182,8 +189,6 @@ class HttpBridgeTlsST extends AbstractST {
 
         kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeTlsClusterName))
-            .withProducerName(producerName)
-            .withConsumerName(consumerName)
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)

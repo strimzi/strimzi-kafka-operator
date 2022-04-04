@@ -58,7 +58,7 @@ public class StrimziPodSetController implements Runnable {
     private final Optional<LabelSelector> crSelector;
     private final String watchedNamespace;
 
-    private final BlockingQueue<SimplifiedReconciliation> workQueue = new ArrayBlockingQueue<>(1024);
+    private final BlockingQueue<SimplifiedReconciliation> workQueue;
     private final SharedIndexInformer<Pod> podInformer;
     private final SharedIndexInformer<StrimziPodSet> strimziPodSetInformer;
     private final SharedIndexInformer<Kafka> kafkaInformer;
@@ -70,19 +70,21 @@ public class StrimziPodSetController implements Runnable {
      * Creates the StrimziPodSet controller. The controller should normally exist once per operator for cluster-wide mode
      * or once per namespace for namespaced mode.
      *
-     * @param watchedNamespace      Namespace which should be watched. Use * for all namespaces.
-     * @param crSelectorLabels      Selector labels for custom resource managed by this operator instance. This is used
-     *                              to check that the pods belong to a Kafka cluster matching these labels.
-     * @param kafkaOperator         Kafka Operator for getting the Kafka custom resources
-     * @param strimziPodSetOperator StrimziPodSet Operator used to manage the StrimziPodSet resources - get them, update
-     *                              their status etc.
-     * @param podOperator           Pod operator for managing pods
+     * @param watchedNamespace              Namespace which should be watched. Use * for all namespaces.
+     * @param crSelectorLabels              Selector labels for custom resource managed by this operator instance. This is used
+     *                                      to check that the pods belong to a Kafka cluster matching these labels.
+     * @param kafkaOperator                 Kafka Operator for getting the Kafka custom resources
+     * @param strimziPodSetOperator         StrimziPodSet Operator used to manage the StrimziPodSet resources - get them, update
+     *                                      their status etc.
+     * @param podOperator                   Pod operator for managing pods
+     * @param podSetControllerWorkQueueSize Indicates the size of the StrimziPodSetController work queue
      */
-    public StrimziPodSetController(String watchedNamespace, Labels crSelectorLabels, CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator, CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator, PodOperator podOperator) {
+    public StrimziPodSetController(String watchedNamespace, Labels crSelectorLabels, CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator, CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator, PodOperator podOperator, int podSetControllerWorkQueueSize) {
         this.podOperator = podOperator;
         this.strimziPodSetOperator = strimziPodSetOperator;
         this.crSelector = (crSelectorLabels == null || crSelectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, crSelectorLabels.toMap()));
         this.watchedNamespace = watchedNamespace;
+        this.workQueue = new ArrayBlockingQueue<>(podSetControllerWorkQueueSize);
 
         // Kafka informer and lister is used to get Kafka CRs quickly. This is needed for verification of the CR selector labels
         this.kafkaInformer = kafkaOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap());
@@ -211,6 +213,17 @@ public class StrimziPodSetController implements Runnable {
     }
 
     /**
+     * Checks whether the StrimziPodSet is being deleted or not. This is needed to handle non-cascading deletions.
+     *
+     * @param podSet    StrimziPodSet which needs to be checked whether it is being deleted
+     *
+     * @return          True if the PodSet is being deleted. False otherwise.
+     */
+    private boolean isDeleting(StrimziPodSet podSet)    {
+        return podSet.getMetadata().getDeletionTimestamp() != null;
+    }
+
+    /**
      * The main reconciliation logic which handles the reconciliations.
      *
      * @param reconciliation    Reconciliation identifier used for logging
@@ -224,6 +237,12 @@ public class StrimziPodSetController implements Runnable {
             LOGGER.debugCr(reconciliation, "StrimziPodSet is null => nothing to do");
         } else if (!matchesCrSelector(podSet))    {
             LOGGER.debugCr(reconciliation, "StrimziPodSet doesn't match the selector => nothing to do");
+        } else if (isDeleting(podSet))    {
+            // When the PodSet is deleted, the pod deletion is done by Kubernetes Garbage Collection. When the PodSet
+            // deletion is non-cascading, Kubernetes will remove the owner references. In order to avoid setting the
+            // owner reference again, we need to check if the PodSet is being deleted and if it is, we leave it to
+            // Kubernetes.
+            LOGGER.infoCr(reconciliation, "StrimziPodSet is deleting => nothing to do");
         } else {
             LOGGER.infoCr(reconciliation, "StrimziPodSet will be reconciled");
 
@@ -282,7 +301,9 @@ public class StrimziPodSetController implements Runnable {
                 strimziPodSetOperator.client().inNamespace(reconciliation.namespace()).patchStatus(updatedPodSet);
             } catch (KubernetesClientException e)   {
                 if (e.getCode() == 409) {
-                    LOGGER.debugCr(reconciliation, "StrimziPodSet {} in namespace {} changed while trying to update status", reconciliation.name(), reconciliation.namespace(), e);
+                    LOGGER.debugCr(reconciliation, "StrimziPodSet {} in namespace {} changed while trying to update status", reconciliation.name(), reconciliation.namespace());
+                } else if (e.getCode() == 404) {
+                    LOGGER.debugCr(reconciliation, "StrimziPodSet {} in namespace {} was deleted while trying to update status", reconciliation.name(), reconciliation.namespace());
                 } else {
                     LOGGER.errorCr(reconciliation, "Failed to update status of StrimziPodSet {} in namespace {}", reconciliation.name(), reconciliation.namespace(), e);
                 }

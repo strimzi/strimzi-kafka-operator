@@ -72,6 +72,7 @@ import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.Constants.SANITY;
 import static io.strimzi.systemtest.security.SystemTestCertManager.exportToPemFiles;
 import static io.strimzi.systemtest.security.SystemTestCertManager.generateIntermediateCaCertAndKey;
 import static io.strimzi.systemtest.security.SystemTestCertManager.generateEndEntityCertAndKey;
@@ -672,6 +673,7 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @Tag(SANITY)
     @Tag(ACCEPTANCE)
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
@@ -1092,6 +1094,7 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @Tag(SANITY)
     @Tag(ACCEPTANCE)
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(INTERNAL_CLIENTS_USED)

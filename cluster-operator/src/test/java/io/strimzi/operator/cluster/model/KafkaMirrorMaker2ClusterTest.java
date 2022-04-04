@@ -28,7 +28,7 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
@@ -944,6 +944,12 @@ public class KafkaMirrorMaker2ClusterTest {
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
 
+        // Check PodDisruptionBudget
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kmm2.generatePodDisruptionBudgetV1Beta1();
+        assertThat(pdbV1Beta1.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
+        assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
+ 
+
         // Check Service Account
         ServiceAccount sa = kmm2.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
@@ -1331,6 +1337,9 @@ public class KafkaMirrorMaker2ClusterTest {
 
         PodDisruptionBudget pdb = kmm2.generatePodDisruptionBudget();
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
+
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kmm2.generatePodDisruptionBudgetV1Beta1();
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
     }
 
     @ParallelTest
@@ -1340,6 +1349,9 @@ public class KafkaMirrorMaker2ClusterTest {
 
         PodDisruptionBudget pdb = kmm2.generatePodDisruptionBudget();
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
+
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kmm2.generatePodDisruptionBudgetV1Beta1();
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
     }
 
     @ParallelTest

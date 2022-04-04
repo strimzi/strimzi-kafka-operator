@@ -164,7 +164,7 @@ public class PodTemplate implements Serializable, UnknownPropertyPreserving {
 
     @Description("The pod's HostAliases. " +
             "HostAliases is an optional list of hosts and IPs that will be injected into the Pod's hosts file if specified.")
-    @KubeLink(group = "core", version = "v1", kind = "HostAlias")
+    @KubeLink(group = "core", version = "v1", kind = "hostalias")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public List<HostAlias> getHostAliases() {
         return hostAliases;

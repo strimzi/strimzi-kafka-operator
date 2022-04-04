@@ -8,6 +8,8 @@ import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -29,6 +31,7 @@ public class UserOperatorConfig {
     public static final String STRIMZI_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
     public static final String STRIMZI_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
     public static final String STRIMZI_SCRAM_SHA_PASSWORD_LENGTH = "STRIMZI_SCRAM_SHA_PASSWORD_LENGTH";
+    public static final String STRIMZI_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
 
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_MS = 120_000;
     public static final String DEFAULT_KAFKA_BOOTSTRAP_SERVERS = "localhost:9091";
@@ -51,6 +54,7 @@ public class UserOperatorConfig {
     private final int clientsCaRenewalDays;
     private final boolean aclsAdminApiSupported;
     private final int scramPasswordLength;
+    private final List<String> maintenanceWindows;
 
     /**
      * Constructor
@@ -69,6 +73,7 @@ public class UserOperatorConfig {
      * @param clientsCaValidityDays Number of days for which the certificate should be valid
      * @param clientsCaRenewalDays How long before the certificate expiration should the user certificate be renewed
      * @param scramPasswordLength Length used for the Scram-Sha Password
+     * @param maintenanceWindows Lit of maintenance windows
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public UserOperatorConfig(String namespace,
@@ -84,7 +89,8 @@ public class UserOperatorConfig {
                               boolean aclsAdminApiSupported,
                               int clientsCaValidityDays,
                               int clientsCaRenewalDays,
-                              int scramPasswordLength) {
+                              int scramPasswordLength,
+                              List<String> maintenanceWindows) {
         this.namespace = namespace;
         this.reconciliationIntervalMs = reconciliationIntervalMs;
         this.kafkaBootstrapServers = kafkaBootstrapServers;
@@ -99,6 +105,7 @@ public class UserOperatorConfig {
         this.clientsCaValidityDays = clientsCaValidityDays;
         this.clientsCaRenewalDays = clientsCaRenewalDays;
         this.scramPasswordLength = scramPasswordLength;
+        this.maintenanceWindows = maintenanceWindows;
     }
 
     /**
@@ -169,9 +176,11 @@ public class UserOperatorConfig {
 
         int clientsCaRenewalDays = getIntProperty(map, UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL, CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS);
 
+        List<String> maintenanceWindows = parseMaintenanceTimeWindows(map.get(UserOperatorConfig.STRIMZI_MAINTENANCE_TIME_WINDOWS));
+
         return new UserOperatorConfig(namespace, reconciliationInterval, kafkaBootstrapServers, labels,
                 caCertSecretName, caKeySecretName, clusterCaCertSecretName, euoKeySecretName, caNamespace, secretPrefix,
-                aclsAdminApiSupported, clientsCaValidityDays, clientsCaRenewalDays, scramPasswordLength);
+                aclsAdminApiSupported, clientsCaValidityDays, clientsCaRenewalDays, scramPasswordLength, maintenanceWindows);
     }
 
     /**
@@ -222,6 +231,24 @@ public class UserOperatorConfig {
         } else {
             return defaultVal;
         }
+    }
+
+    /**
+     * Parses the maintenance time windows from string containing zero or more Cron expressions into a list of individual
+     * Cron expressions.
+     *
+     * @param maintenanceTimeWindows    String with semi-colon separate maintenance time windows (Cron expressions)
+     *
+     * @return  List of maintenance windows or null if there are no windows configured.
+     */
+    /* test */ static List<String> parseMaintenanceTimeWindows(String maintenanceTimeWindows) {
+        List<String> windows = null;
+
+        if (maintenanceTimeWindows != null && !maintenanceTimeWindows.isEmpty()) {
+            windows = Arrays.asList(maintenanceTimeWindows.split(";"));
+        }
+
+        return windows;
     }
 
     /**
@@ -308,6 +335,13 @@ public class UserOperatorConfig {
         return aclsAdminApiSupported;
     }
 
+    /**
+     * @return List of maintenance windows. Null if no maintenance windows were specified.
+     */
+    public List<String> getMaintenanceWindows() {
+        return maintenanceWindows;
+    }
+
     @Override
     public String toString() {
         return "ClusterOperatorConfig(" +
@@ -324,6 +358,7 @@ public class UserOperatorConfig {
                 ",clientsCaValidityDays=" + clientsCaValidityDays +
                 ",clientsCaRenewalDays=" + clientsCaRenewalDays +
                 ",scramPasswordLength=" + scramPasswordLength +
+                ",maintenanceWindows=" + maintenanceWindows +
                 ")";
     }
 }

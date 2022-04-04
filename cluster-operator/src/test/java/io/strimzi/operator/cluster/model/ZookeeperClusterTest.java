@@ -30,10 +30,12 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -103,8 +105,6 @@ public class ZookeeperClusterTest {
     private final String image = "image";
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
-    private final int tlsHealthDelay = 120;
-    private final int tlsHealthTimeout = 30;
     private final Map<String, Object> metricsCm = singletonMap("animal", "wombat");
     private final String metricsCmJson = "{\"animal\":\"wombat\"}";
     private final String metricsCMName = "metrics-cm";
@@ -142,7 +142,7 @@ public class ZookeeperClusterTest {
     private Map<String, String> expectedLabels()    {
         return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, cluster,
             "my-user-label", "cromulent",
-            Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(cluster),
+            Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(cluster),
             Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND,
             Labels.KUBERNETES_NAME_LABEL, ZookeeperCluster.APPLICATION_NAME,
             Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
@@ -152,19 +152,19 @@ public class ZookeeperClusterTest {
 
     @ParallelTest
     public void testGenerateService() {
-        Service headful = zc.generateService();
+        Service svc = zc.generateService();
 
-        assertThat(headful.getSpec().getType(), is("ClusterIP"));
-        assertThat(headful.getSpec().getSelector(), is(expectedSelectorLabels()));
-        assertThat(headful.getSpec().getPorts().size(), is(1));
-        assertThat(headful.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(ZookeeperCluster.CLIENT_TLS_PORT)));
-        assertThat(headful.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        assertThat(headful.getSpec().getIpFamilyPolicy(), is(nullValue()));
-        assertThat(headful.getSpec().getIpFamilies(), is(emptyList()));
-        assertThat(headful.getMetadata().getAnnotations(), is(nullValue()));
+        assertThat(svc.getSpec().getType(), is("ClusterIP"));
+        assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
+        assertThat(svc.getSpec().getPorts().size(), is(1));
+        assertThat(svc.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
+        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(ZookeeperCluster.CLIENT_TLS_PORT));
+        assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(svc.getSpec().getIpFamilyPolicy(), is(nullValue()));
+        assertThat(svc.getSpec().getIpFamilies(), is(emptyList()));
+        assertThat(svc.getMetadata().getAnnotations(), is(nullValue()));
 
-        checkOwnerReference(zc.createOwnerReference(), headful);
+        checkOwnerReference(zc.createOwnerReference(), svc);
     }
 
     @ParallelTest
@@ -177,18 +177,18 @@ public class ZookeeperClusterTest {
                 .endSpec()
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        Service headful = zc.generateService();
+        Service svc = zc.generateService();
 
-        assertThat(headful.getSpec().getType(), is("ClusterIP"));
-        assertThat(headful.getSpec().getSelector(), is(expectedSelectorLabels()));
-        assertThat(headful.getSpec().getPorts().size(), is(1));
-        assertThat(headful.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
-        assertThat(headful.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(ZookeeperCluster.CLIENT_TLS_PORT)));
-        assertThat(headful.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
+        assertThat(svc.getSpec().getType(), is("ClusterIP"));
+        assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
+        assertThat(svc.getSpec().getPorts().size(), is(1));
+        assertThat(svc.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
+        assertThat(svc.getSpec().getPorts().get(0).getPort(), is(ZookeeperCluster.CLIENT_TLS_PORT));
+        assertThat(svc.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
 
-        assertThat(headful.getMetadata().getAnnotations(), is(nullValue()));
+        assertThat(svc.getMetadata().getAnnotations(), is(nullValue()));
 
-        checkOwnerReference(zc.createOwnerReference(), headful);
+        checkOwnerReference(zc.createOwnerReference(), svc);
     }
 
     @ParallelTest
@@ -199,17 +199,17 @@ public class ZookeeperClusterTest {
     }
 
     private void checkHeadlessService(Service headless) {
-        assertThat(headless.getMetadata().getName(), is(ZookeeperCluster.headlessServiceName(cluster)));
+        assertThat(headless.getMetadata().getName(), is(KafkaResources.zookeeperHeadlessServiceName(cluster)));
         assertThat(headless.getSpec().getType(), is("ClusterIP"));
         assertThat(headless.getSpec().getClusterIP(), is("None"));
         assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headless.getSpec().getPorts().size(), is(3));
         assertThat(headless.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(ZookeeperCluster.CLIENT_TLS_PORT)));
+        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(ZookeeperCluster.CLIENT_TLS_PORT));
         assertThat(headless.getSpec().getPorts().get(1).getName(), is(ZookeeperCluster.CLUSTERING_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(Integer.valueOf(ZookeeperCluster.CLUSTERING_PORT)));
+        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(ZookeeperCluster.CLUSTERING_PORT));
         assertThat(headless.getSpec().getPorts().get(2).getName(), is(ZookeeperCluster.LEADER_ELECTION_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(Integer.valueOf(ZookeeperCluster.LEADER_ELECTION_PORT)));
+        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(ZookeeperCluster.LEADER_ELECTION_PORT));
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
@@ -227,20 +227,20 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
         Service headless = zc.generateHeadlessService();
 
-        assertThat(headless.getMetadata().getName(), is(ZookeeperCluster.headlessServiceName(cluster)));
+        assertThat(headless.getMetadata().getName(), is(KafkaResources.zookeeperHeadlessServiceName(cluster)));
         assertThat(headless.getSpec().getType(), is("ClusterIP"));
         assertThat(headless.getSpec().getClusterIP(), is("None"));
         assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(headless.getSpec().getPorts().size(), is(4));
         assertThat(headless.getSpec().getPorts().get(0).getName(), is(ZookeeperCluster.CLIENT_TLS_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(Integer.valueOf(ZookeeperCluster.CLIENT_TLS_PORT)));
+        assertThat(headless.getSpec().getPorts().get(0).getPort(), is(ZookeeperCluster.CLIENT_TLS_PORT));
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(1).getName(), is(ZookeeperCluster.CLUSTERING_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(Integer.valueOf(ZookeeperCluster.CLUSTERING_PORT)));
+        assertThat(headless.getSpec().getPorts().get(1).getPort(), is(ZookeeperCluster.CLUSTERING_PORT));
         assertThat(headless.getSpec().getPorts().get(2).getName(), is(ZookeeperCluster.LEADER_ELECTION_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(Integer.valueOf(ZookeeperCluster.LEADER_ELECTION_PORT)));
+        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(ZookeeperCluster.LEADER_ELECTION_PORT));
         assertThat(headless.getSpec().getPorts().get(3).getName(), is(ZookeeperCluster.JMX_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(Integer.valueOf(ZookeeperCluster.JMX_PORT)));
+        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(ZookeeperCluster.JMX_PORT));
         assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(headless.getSpec().getIpFamilies(), is(emptyList()));
@@ -365,7 +365,7 @@ public class ZookeeperClusterTest {
     }
 
     private void checkStatefulSet(StatefulSet sts) {
-        assertThat(sts.getMetadata().getName(), is(ZookeeperCluster.zookeeperClusterName(cluster)));
+        assertThat(sts.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(cluster)));
         // ... in the same namespace ...
         assertThat(sts.getMetadata().getNamespace(), is(namespace));
         // ... with these labels
@@ -379,19 +379,19 @@ public class ZookeeperClusterTest {
         assertThat(containers.size(), is(1));
 
         // checks on the main Zookeeper container
-        assertThat(sts.getSpec().getReplicas(), is(Integer.valueOf(replicas)));
+        assertThat(sts.getSpec().getReplicas(), is(replicas));
         assertThat(sts.getSpec().getPodManagementPolicy(), is(PodManagementPolicy.PARALLEL.toValue()));
         assertThat(containers.get(0).getImage(), is(image + "-zk"));
-        assertThat(containers.get(0).getLivenessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
-        assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
-        assertThat(containers.get(0).getLivenessProbe().getFailureThreshold(), is(Integer.valueOf(10)));
-        assertThat(containers.get(0).getLivenessProbe().getSuccessThreshold(), is(Integer.valueOf(4)));
-        assertThat(containers.get(0).getLivenessProbe().getPeriodSeconds(), is(Integer.valueOf(33)));
-        assertThat(containers.get(0).getReadinessProbe().getTimeoutSeconds(), is(Integer.valueOf(healthTimeout)));
-        assertThat(containers.get(0).getReadinessProbe().getInitialDelaySeconds(), is(Integer.valueOf(healthDelay)));
-        assertThat(containers.get(0).getReadinessProbe().getFailureThreshold(), is(Integer.valueOf(10)));
-        assertThat(containers.get(0).getReadinessProbe().getSuccessThreshold(), is(Integer.valueOf(4)));
-        assertThat(containers.get(0).getReadinessProbe().getPeriodSeconds(), is(Integer.valueOf(33)));
+        assertThat(containers.get(0).getLivenessProbe().getTimeoutSeconds(), is(healthTimeout));
+        assertThat(containers.get(0).getLivenessProbe().getInitialDelaySeconds(), is(healthDelay));
+        assertThat(containers.get(0).getLivenessProbe().getFailureThreshold(), is(10));
+        assertThat(containers.get(0).getLivenessProbe().getSuccessThreshold(), is(4));
+        assertThat(containers.get(0).getLivenessProbe().getPeriodSeconds(), is(33));
+        assertThat(containers.get(0).getReadinessProbe().getTimeoutSeconds(), is(healthTimeout));
+        assertThat(containers.get(0).getReadinessProbe().getInitialDelaySeconds(), is(healthDelay));
+        assertThat(containers.get(0).getReadinessProbe().getFailureThreshold(), is(10));
+        assertThat(containers.get(0).getReadinessProbe().getSuccessThreshold(), is(4));
+        assertThat(containers.get(0).getReadinessProbe().getPeriodSeconds(), is(33));
         OrderedProperties expectedConfig = new OrderedProperties().addMapPairs(ZookeeperConfiguration.DEFAULTS).addPair("foo", "bar");
         OrderedProperties actual = new OrderedProperties()
                 .addStringPairs(AbstractModel.containerEnvVars(containers.get(0)).get(ZookeeperCluster.ENV_VAR_ZOOKEEPER_CONFIGURATION));
@@ -407,7 +407,7 @@ public class ZookeeperClusterTest {
         assertThat(containers.get(0).getVolumeMounts().get(4).getMountPath(), is(ZookeeperCluster.ZOOKEEPER_CLUSTER_CA_VOLUME_MOUNT));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream()
             .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
+            .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity(AbstractModel.STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE)));
     }
 
     // TODO test volume claim templates
@@ -416,7 +416,7 @@ public class ZookeeperClusterTest {
     public void testPodNames() {
 
         for (int i = 0; i < replicas; i++) {
-            assertThat(zc.getPodName(i), is(ZookeeperCluster.zookeeperPodName(cluster, i)));
+            assertThat(zc.getPodName(i), is(KafkaResources.zookeeperPodName(cluster, i)));
         }
     }
 
@@ -434,8 +434,8 @@ public class ZookeeperClusterTest {
         PersistentVolumeClaim pvc = zc.getPersistentVolumeClaimTemplates().get(0);
 
         for (int i = 0; i < replicas; i++) {
-            assertThat(pvc.getMetadata().getName() + "-" + ZookeeperCluster.zookeeperPodName(cluster, i),
-                    is(zc.VOLUME_NAME + "-" + ZookeeperCluster.zookeeperPodName(cluster, i)));
+            assertThat(pvc.getMetadata().getName() + "-" + KafkaResources.zookeeperPodName(cluster, i),
+                    is(ZookeeperCluster.VOLUME_NAME + "-" + KafkaResources.zookeeperPodName(cluster, i)));
         }
     }
 
@@ -494,22 +494,22 @@ public class ZookeeperClusterTest {
                 Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
         Map<String, String> expectedStsLabels = new HashMap<>(ssLabels);
         expectedStsLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
-        Map<String, String> ssAnots = TestUtils.map("a1", "v1", "a2", "v2");
+        Map<String, String> ssAnnotations = TestUtils.map("a1", "v1", "a2", "v2");
 
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
-        Map<String, String> podAnots = TestUtils.map("a3", "v3", "a4", "v4");
+        Map<String, String> podAnnotations = TestUtils.map("a3", "v3", "a4", "v4");
 
         Map<String, String> svcLabels = TestUtils.map("l5", "v5", "l6", "v6");
-        Map<String, String> svcAnots = TestUtils.map("a5", "v5", "a6", "v6");
+        Map<String, String> svcAnnotations = TestUtils.map("a5", "v5", "a6", "v6");
 
         Map<String, String> hSvcLabels = TestUtils.map("l7", "v7", "l8", "v8");
-        Map<String, String> hSvcAnots = TestUtils.map("a7", "v7", "a8", "v8");
+        Map<String, String> hSvcAnnotations = TestUtils.map("a7", "v7", "a8", "v8");
 
         Map<String, String> pdbLabels = TestUtils.map("l9", "v9", "l10", "v10");
-        Map<String, String> pdbAnots = TestUtils.map("a9", "v9", "a10", "v10");
+        Map<String, String> pdbAnnotations = TestUtils.map("a9", "v9", "a10", "v10");
 
         Map<String, String> saLabels = TestUtils.map("l11", "v11", "l12", "v12");
-        Map<String, String> saAnots = TestUtils.map("a11", "v11", "a12", "v12");
+        Map<String, String> saAnnotations = TestUtils.map("a11", "v11", "a12", "v12");
 
         HostAlias hostAlias1 = new HostAliasBuilder()
                 .withHostnames("my-host-1", "my-host-2")
@@ -542,13 +542,13 @@ public class ZookeeperClusterTest {
                             .withNewStatefulset()
                                 .withNewMetadata()
                                     .withLabels(ssLabels)
-                                    .withAnnotations(ssAnots)
+                                    .withAnnotations(ssAnnotations)
                                 .endMetadata()
                             .endStatefulset()
                             .withNewPod()
                                 .withNewMetadata()
                                     .withLabels(podLabels)
-                                    .withAnnotations(podAnots)
+                                    .withAnnotations(podAnnotations)
                                 .endMetadata()
                                 .withPriorityClassName("top-priority")
                                 .withSchedulerName("my-scheduler")
@@ -560,7 +560,7 @@ public class ZookeeperClusterTest {
                             .withNewClientService()
                                 .withNewMetadata()
                                     .withLabels(svcLabels)
-                                    .withAnnotations(svcAnots)
+                                    .withAnnotations(svcAnnotations)
                                 .endMetadata()
                                 .withIpFamilyPolicy(IpFamilyPolicy.PREFER_DUAL_STACK)
                                 .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
@@ -568,7 +568,7 @@ public class ZookeeperClusterTest {
                             .withNewNodesService()
                                 .withNewMetadata()
                                     .withLabels(hSvcLabels)
-                                    .withAnnotations(hSvcAnots)
+                                    .withAnnotations(hSvcAnnotations)
                                 .endMetadata()
                                 .withIpFamilyPolicy(IpFamilyPolicy.SINGLE_STACK)
                                 .withIpFamilies(IpFamily.IPV6)
@@ -576,13 +576,13 @@ public class ZookeeperClusterTest {
                             .withNewPodDisruptionBudget()
                                 .withNewMetadata()
                                     .withLabels(pdbLabels)
-                                    .withAnnotations(pdbAnots)
+                                    .withAnnotations(pdbAnnotations)
                                 .endMetadata()
                             .endPodDisruptionBudget()
                             .withNewServiceAccount()
                                 .withNewMetadata()
                                     .withLabels(saLabels)
-                                    .withAnnotations(saAnots)
+                                    .withAnnotations(saAnnotations)
                                 .endMetadata()
                             .endServiceAccount()
                         .endTemplate()
@@ -594,43 +594,48 @@ public class ZookeeperClusterTest {
         // Check StatefulSet
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getMetadata().getLabels().entrySet().containsAll(expectedStsLabels.entrySet()), is(true));
-        assertThat(sts.getMetadata().getAnnotations().entrySet().containsAll(ssAnots.entrySet()), is(true));
+        assertThat(sts.getMetadata().getAnnotations().entrySet().containsAll(ssAnnotations.entrySet()), is(true));
         assertThat(sts.getSpec().getTemplate().getSpec().getPriorityClassName(), is("top-priority"));
 
         // Check Pods
         assertThat(sts.getSpec().getTemplate().getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
-        assertThat(sts.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnots.entrySet()), is(true));
+        assertThat(sts.getSpec().getTemplate().getMetadata().getAnnotations().entrySet().containsAll(podAnnotations.entrySet()), is(true));
         assertThat(sts.getSpec().getTemplate().getSpec().getSchedulerName(), is("my-scheduler"));
         assertThat(sts.getSpec().getTemplate().getSpec().getHostAliases(), containsInAnyOrder(hostAlias1, hostAlias2));
         assertThat(sts.getSpec().getTemplate().getSpec().getTopologySpreadConstraints(), containsInAnyOrder(tsc1, tsc2));
         assertThat(sts.getSpec().getTemplate().getSpec().getEnableServiceLinks(), is(false));
         assertThat(sts.getSpec().getTemplate().getSpec().getVolumes().stream()
             .filter(volume -> volume.getName().equalsIgnoreCase("strimzi-tmp"))
-            .findFirst().get().getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
+            .findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("10Mi")));
 
         // Check Service
         Service svc = zc.generateService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(svcLabels.entrySet()), is(true));
-        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnots.entrySet()), is(true));
+        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(svcAnnotations.entrySet()), is(true));
         assertThat(svc.getSpec().getIpFamilyPolicy(), is("PreferDualStack"));
         assertThat(svc.getSpec().getIpFamilies(), contains("IPv6", "IPv4"));
 
         // Check Headless Service
         svc = zc.generateHeadlessService();
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(hSvcLabels.entrySet()), is(true));
-        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(hSvcAnots.entrySet()), is(true));
+        assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(hSvcAnnotations.entrySet()), is(true));
         assertThat(svc.getSpec().getIpFamilyPolicy(), is("SingleStack"));
         assertThat(svc.getSpec().getIpFamilies(), contains("IPv6"));
 
         // Check PodDisruptionBudget
         PodDisruptionBudget pdb = zc.generatePodDisruptionBudget();
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
-        assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
+        assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnotations.entrySet()), is(true));
+
+        // Check PodDisruptionBudgetV1Beta1
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generatePodDisruptionBudgetV1Beta1();
+        assertThat(pdbV1Beta1.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
+        assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnotations.entrySet()), is(true));
 
         // Check Service Account
         ServiceAccount sa = zc.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
-        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnots.entrySet()), is(true));
+        assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnnotations.entrySet()), is(true));
     }
 
     @ParallelTest
@@ -650,7 +655,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(123)));
+        assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(123L));
     }
 
     @ParallelTest
@@ -661,7 +666,7 @@ public class ZookeeperClusterTest {
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
-        assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(Long.valueOf(30)));
+        assertThat(sts.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(30L));
     }
 
     @ParallelTest
@@ -762,9 +767,9 @@ public class ZookeeperClusterTest {
 
         StatefulSet sts = zc.generateStatefulSet(true, null, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
-        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(Long.valueOf(123)));
-        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(Long.valueOf(456)));
-        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(Long.valueOf(789)));
+        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getFsGroup(), is(123L));
+        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsGroup(), is(456L));
+        assertThat(sts.getSpec().getTemplate().getSpec().getSecurityContext().getRunAsUser(), is(789L));
     }
 
     @ParallelTest
@@ -796,6 +801,9 @@ public class ZookeeperClusterTest {
 
         PodDisruptionBudget pdb = zc.generatePodDisruptionBudget();
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
+
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generatePodDisruptionBudgetV1Beta1();
+        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(2)));        
     }
 
     @ParallelTest
@@ -814,7 +822,7 @@ public class ZookeeperClusterTest {
         Kafka kafkaAssembly = ResourceUtils.createKafka(namespace, cluster, replicas,
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configurationJson, emptyMap());
         kafkaAssembly.getSpec().getKafka().setRack(new RackBuilder().withTopologyKey("topology-key").build());
-        ZookeeperCluster kc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
+        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
         StatefulSet sts = zc.generateStatefulSet(true, ImagePullPolicy.ALWAYS, null);
         assertThat(sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
@@ -834,7 +842,7 @@ public class ZookeeperClusterTest {
         NetworkPolicy np = zc.generateNetworkPolicy("operator-namespace", null);
 
         LabelSelector podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(zc.getCluster())));
         assertThat(np.getSpec().getPodSelector(), is(podSelector));
 
         List<NetworkPolicyIngressRule> rules = np.getSpec().getIngress();
@@ -848,7 +856,7 @@ public class ZookeeperClusterTest {
 
         assertThat(zooRule.getFrom().size(), is(1));
         podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(zc.getCluster())));
         assertThat(zooRule.getFrom().get(0), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Port 2181
@@ -859,15 +867,15 @@ public class ZookeeperClusterTest {
         assertThat(clientsRule.getFrom().size(), is(5));
 
         podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaCluster.kafkaClusterName(zc.getCluster())));
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaResources.kafkaStatefulSetName(zc.getCluster())));
         assertThat(clientsRule.getFrom().get(0), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, ZookeeperCluster.zookeeperClusterName(zc.getCluster())));
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaResources.zookeeperStatefulSetName(zc.getCluster())));
         assertThat(clientsRule.getFrom().get(1), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, EntityOperator.entityOperatorName(zc.getCluster())));
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(zc.getCluster())));
         assertThat(clientsRule.getFrom().get(2), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         podSelector = new LabelSelector();
@@ -875,7 +883,7 @@ public class ZookeeperClusterTest {
         assertThat(clientsRule.getFrom().get(3), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).withNamespaceSelector(new LabelSelector()).build()));
 
         podSelector = new LabelSelector();
-        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, CruiseControl.cruiseControlName(zc.getCluster())));
+        podSelector.setMatchLabels(Collections.singletonMap(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.deploymentName(zc.getCluster())));
         assertThat(clientsRule.getFrom().get(4), is(new NetworkPolicyPeerBuilder().withPodSelector(podSelector).build()));
 
         // Port 9404
@@ -928,7 +936,7 @@ public class ZookeeperClusterTest {
         for (PersistentVolumeClaim pvc : pvcs) {
             assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
             assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
-            assertThat(pvc.getMetadata().getName().startsWith(zc.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(ZookeeperCluster.VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(1));
             assertThat(pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is("true"));
         }
@@ -957,7 +965,7 @@ public class ZookeeperClusterTest {
         for (PersistentVolumeClaim pvc : pvcs) {
             assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
             assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
-            assertThat(pvc.getMetadata().getName().startsWith(zc.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(ZookeeperCluster.VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
             assertThat(pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
         }
@@ -1002,7 +1010,7 @@ public class ZookeeperClusterTest {
                 assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd-az1"));
             }
 
-            assertThat(pvc.getMetadata().getName().startsWith(zc.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(ZookeeperCluster.VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
             assertThat(pvc.getMetadata().getAnnotations().get(AbstractModel.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
         }

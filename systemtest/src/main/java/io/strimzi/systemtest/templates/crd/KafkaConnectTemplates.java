@@ -19,6 +19,8 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -97,6 +99,17 @@ public class KafkaConnectTemplates {
 
     private static KafkaConnectBuilder deployKafkaConnectWithNetworkPolicy(ExtensionContext extensionContext, KafkaConnect kafkaConnect) {
         if (Environment.DEFAULT_TO_DENY_NETWORK_POLICIES) {
+            final String namespaceName = StUtils.isParallelNamespaceTest(extensionContext) && !Environment.isNamespaceRbacScope() ?
+                // if parallel namespace test use namespace from store and if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
+                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString() :
+                // otherwise use resource namespace
+                kafkaConnect.getMetadata().getNamespace();
+
+            final String scraperName = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.SCRAPER_KEY) != null ?
+                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.SCRAPER_KEY).toString() :
+                kafkaConnect.getMetadata().getName() + "-scraper";
+
+            ResourceManager.getInstance().createResource(extensionContext, ScraperTemplates.scraperPod(namespaceName, scraperName).build());
             NetworkPolicyResource.allowNetworkPolicySettingsForResource(extensionContext, kafkaConnect, KafkaConnectResources.deploymentName(kafkaConnect.getMetadata().getName()));
         }
         return new KafkaConnectBuilder(kafkaConnect);

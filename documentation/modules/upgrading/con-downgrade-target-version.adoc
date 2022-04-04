@@ -36,10 +36,10 @@ spec:
   kafka:
     version: {KafkaVersionHigher}
     config:
-      log.message.format.version: "{LogMsgVersLower}"
+      log.message.format.version: "{InterBrokerVersionLower}"
       # ...
 ----
 
-The downgrade would not be possible if the `log.message.format.version` was set at `"{LogMsgVersHigher}"` or a value was absent, so that the parameter took the default value for a {KafkaVersionHigher} broker of {LogMsgVersHigher}.
+The downgrade would not be possible if the `log.message.format.version` was set at `"{InterBrokerVersionHigher}"` or a value was absent, so that the parameter took the default value for a {KafkaVersionHigher} broker of {InterBrokerVersionHigher}.
 
 IMPORTANT: From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or higher, the `log.message.format.version` option is ignored and doesn't need to be set.

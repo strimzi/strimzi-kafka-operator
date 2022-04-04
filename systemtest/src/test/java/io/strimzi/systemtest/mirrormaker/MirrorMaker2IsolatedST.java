@@ -52,7 +52,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -709,7 +708,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
         // Deploy target kafka
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
-// Deploy Topic for example clients
+        // Deploy Topic for example clients
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, sourceExampleTopic).build());
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, 1, false).build());
@@ -749,7 +748,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        ClientUtils.waitTillContinuousClientsFinish(sourceProducerName, targetConsumerName, namespaceName, MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(sourceProducerName, targetConsumerName, namespaceName, MESSAGE_COUNT, false);
 
         LOGGER.info("Checking log of {} job if the headers are correct", targetConsumerName);
         String header1 = "key: header_key_one, value: header_value_one";
@@ -1096,9 +1095,6 @@ class MirrorMaker2IsolatedST extends AbstractST {
         ClientUtils.waitForClientSuccess(sourceProducerName, namespaceName, MESSAGE_COUNT);
         ClientUtils.waitForClientSuccess(sourceConsumerName, namespaceName, MESSAGE_COUNT);
 
-        JobUtils.deleteJobWithWait(namespaceName, sourceProducerName);
-        JobUtils.deleteJobWithWait(namespaceName, sourceConsumerName);
-
         LOGGER.info("Send {} messages to Source cluster.", MESSAGE_COUNT);
         KafkaClients internalClientSourceJob = new KafkaClientsBuilder(initialInternalClientSourceJob).withMessage("Producer B").build();
 
@@ -1112,15 +1108,12 @@ class MirrorMaker2IsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext,
             initialInternalClientTargetJob.consumerStrimzi());
         ClientUtils.waitForClientSuccess(targetConsumerName, namespaceName, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(namespaceName, sourceProducerName);
-        JobUtils.deleteJobWithWait(namespaceName, targetConsumerName);
 
         LOGGER.info("Send 50 messages to Source cluster");
         internalClientSourceJob = new KafkaClientsBuilder(internalClientSourceJob).withMessageCount(50).withMessage("Producer C").build();
         resourceManager.createResource(extensionContext,
             internalClientSourceJob.producerStrimzi());
         ClientUtils.waitForClientSuccess(sourceProducerName, namespaceName, 50);
-        JobUtils.deleteJobWithWait(namespaceName, sourceProducerName);
 
         LOGGER.info("Wait 1 second as 'sync.group.offsets.interval.seconds=1'. As this is insignificant wait, we're skipping it");
         LOGGER.info("Receive 10 msgs from source cluster");
@@ -1128,7 +1121,6 @@ class MirrorMaker2IsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext,
             internalClientSourceJob.consumerStrimzi());
         ClientUtils.waitForClientSuccess(sourceConsumerName, namespaceName, 10);
-        JobUtils.deleteJobWithWait(namespaceName, sourceConsumerName);
 
         LOGGER.info("Wait 1 second as 'sync.group.offsets.interval.seconds=1'. As this is insignificant wait, we're skipping it");
 
@@ -1137,7 +1129,6 @@ class MirrorMaker2IsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext,
             internalClientTargetJob.consumerStrimzi());
         ClientUtils.waitForClientSuccess(targetConsumerName, namespaceName, 40);
-        JobUtils.deleteJobWithWait(namespaceName, targetConsumerName);
 
         LOGGER.info("There should be no more messages to read. Try to consume at least 1 message. " +
                 "This client job should fail on timeout.");

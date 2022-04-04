@@ -451,6 +451,7 @@ class TopicOperator {
      * When the given {@code action} is complete it must complete its argument future,
      * which will complete the returned future
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     public Future<Void> executeWithTopicLockHeld(LogContext logContext, TopicName key, Reconciliation action) {
         String lockName = key.toString();
         int timeoutMs = 30 * 1_000;

@@ -10,9 +10,11 @@ import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -53,6 +55,7 @@ public class UserOperatorConfigTest {
         assertThat(config.getClientsCaRenewalDays(), is(10));
         assertThat(config.isAclsAdminApiSupported(), is(false));
         assertThat(config.getScramPasswordLength(), is(20));
+        assertThat(config.getMaintenanceWindows(), is(nullValue()));
     }
 
     @Test
@@ -149,5 +152,23 @@ public class UserOperatorConfigTest {
 
         UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
         assertThat(config.isAclsAdminApiSupported(), is(UserOperatorConfig.DEFAULT_STRIMZI_ACLS_ADMIN_API_SUPPORTED));
+    }
+
+    @Test
+    public void testMaintenanceTimeWindows()    {
+        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.envVars);
+
+        envVars.put(UserOperatorConfig.STRIMZI_MAINTENANCE_TIME_WINDOWS, "* * 8-10 * * ?;* * 14-15 * * ?");
+
+        UserOperatorConfig config = UserOperatorConfig.fromMap(envVars);
+        assertThat(config.getMaintenanceWindows(), is(List.of("* * 8-10 * * ?", "* * 14-15 * * ?")));
+    }
+
+    @Test
+    public void testParseMaintenanceTimeWindows()    {
+        assertThat(UserOperatorConfig.parseMaintenanceTimeWindows("* * 8-10 * * ?;* * 14-15 * * ?"), is(List.of("* * 8-10 * * ?", "* * 14-15 * * ?")));
+        assertThat(UserOperatorConfig.parseMaintenanceTimeWindows("* * 8-10 * * ?"), is(List.of("* * 8-10 * * ?")));
+        assertThat(UserOperatorConfig.parseMaintenanceTimeWindows(null), is(nullValue()));
+        assertThat(UserOperatorConfig.parseMaintenanceTimeWindows(""), is(nullValue()));
     }
 }

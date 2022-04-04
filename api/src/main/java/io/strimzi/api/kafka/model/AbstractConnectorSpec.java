@@ -27,7 +27,8 @@ import java.util.Map;
 @EqualsAndHashCode
 public abstract class AbstractConnectorSpec extends Spec {
     private static final long serialVersionUID = 1L;
-    private static final String FORBIDDEN_PARAMETERS = "connector.class, tasks.max";
+
+    public static final String FORBIDDEN_PARAMETERS = "connector.class, tasks.max";
 
     private Integer tasksMax;
     private Boolean pause;

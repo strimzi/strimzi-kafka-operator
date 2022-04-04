@@ -51,6 +51,17 @@ public class JobUtils {
     }
 
     /**
+     * Delete Jobs with wait
+     * @param namespace - name of the namespace
+     * @param names - job names
+     */
+    public static void deleteJobsWithWait(String namespace, String... names) {
+        for (String jobName : names) {
+            deleteJobWithWait(namespace, jobName);
+        }
+    }
+
+    /**
      * Wait for specific Job failure
      * @param jobName job name
      * @param timeout timeout in ms after which we assume that job failed

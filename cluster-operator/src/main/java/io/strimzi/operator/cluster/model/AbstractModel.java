@@ -52,8 +52,8 @@ import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetUpdateStrategyBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudgetBuilder;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
@@ -73,7 +73,6 @@ import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.MetricsConfig;
-import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -112,6 +111,7 @@ import static java.util.Collections.emptyMap;
 /**
  * AbstractModel an abstract base model for all components of the {@code Kafka} custom resource
  */
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 public abstract class AbstractModel {
 
     public static final String STRIMZI_CLUSTER_OPERATOR_NAME = "strimzi-cluster-operator";
@@ -219,7 +219,6 @@ public abstract class AbstractModel {
     private Logging logging;
     protected boolean gcLoggingEnabled = true;
     private JvmOptions jvmOptions;
-    protected List<SystemProperty> javaSystemProperties = null;
 
     /**
      * Volume and Storage configuration
@@ -417,10 +416,6 @@ public abstract class AbstractModel {
         this.gcLoggingEnabled = gcLoggingEnabled;
     }
 
-    protected void setJavaSystemProperties(List<SystemProperty> javaSystemProperties) {
-        this.javaSystemProperties = javaSystemProperties;
-    }
-
     protected abstract String getDefaultLogConfigFileName();
 
     /**
@@ -497,11 +492,16 @@ public abstract class AbstractModel {
     }
 
     /**
-     * @param logging The Logging to parse.
-     * @param externalCm The external ConfigMap, used if Logging is an instance of ExternalLogging
-     * @return The logging properties as a String in log4j/2 properties file format.
+     * Generates the logging configuration as a String. The configuration is generated based on the default logging
+     * configuration files from resources, the (optional) inline logging configuration from the custom resource
+     * and the (optional) external logging configuration in a user-provided ConfigMap.
+     *
+     * @param logging       The logging configuration from the custom resource
+     * @param externalCm    The user-provided ConfigMap with custom Log4j / Log4j2 file
+     *
+     * @return              String with the Log4j / Log4j2 properties used for configuration
      */
-    public String parseLogging(Logging logging, ConfigMap externalCm) {
+    public String loggingConfiguration(Logging logging, ConfigMap externalCm) {
         if (logging instanceof InlineLogging) {
             InlineLogging inlineLogging = (InlineLogging) logging;
             OrderedProperties newSettings = getDefaultLogConfig();
@@ -583,16 +583,18 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Generates a metrics and logging ConfigMap according to configured defaults.
+     * Generates a metrics and logging ConfigMap according to configured defaults. This is used with most operands, but
+     * not all of them. Kafka brokers have own methods in the KafkaCluster class. So does the Bridge. And Kafka Exporter
+     * has no metrics or logging ConfigMap at all.
      *
      * @param metricsAndLogging The external CMs
      * @return The generated ConfigMap.
      */
     public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
         Map<String, String> data = new HashMap<>(2);
-        data.put(getAncillaryConfigMapKeyLogConfig(), parseLogging(getLogging(), metricsAndLogging.getLoggingCm()));
+        data.put(getAncillaryConfigMapKeyLogConfig(), loggingConfiguration(getLogging(), metricsAndLogging.getLoggingCm()));
         if (getMetricsConfigInCm() != null) {
-            String parseResult = parseMetrics(metricsAndLogging.getMetricsCm());
+            String parseResult = metricsConfiguration(metricsAndLogging.getMetricsCm());
             if (parseResult != null) {
                 this.setMetricsEnabled(true);
                 data.put(ANCILLARY_CM_KEY_METRICS, parseResult);
@@ -601,7 +603,14 @@ public abstract class AbstractModel {
         return createConfigMap(ancillaryConfigMapName, data);
     }
 
-    protected String parseMetrics(ConfigMap externalCm) {
+    /**
+     * Generates Prometheus metrics configuration based on the JMXExporter configuration from the user-provided ConfigMap.
+     *
+     * @param externalCm    ConfigMap with the JMX Prometheus configuration YAML
+     *
+     * @return              String with JSON formatted metrics configuration
+     */
+    public String metricsConfiguration(ConfigMap externalCm) {
         if (getMetricsConfigInCm() != null) {
             if (getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
                 if (externalCm == null) {
@@ -611,7 +620,7 @@ public abstract class AbstractModel {
                 } else {
                     String data = externalCm.getData().get(((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey());
                     if (data == null) {
-                        LOGGER.warnCr(reconciliation, "ConfigMap {} does not contain specified key {}. Metrics disabled.", ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName(),
+                        LOGGER.warnCr(reconciliation, "ConfigMap {} does not contain specified key {}.", ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName(),
                                 ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey());
                         throw new InvalidResourceException("ConfigMap " + ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName()
                                 + " does not contain specified key " + ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey() + ".");
@@ -970,11 +979,15 @@ public abstract class AbstractModel {
     }
 
     protected ConfigMap createConfigMap(String name, Map<String, String> data) {
+        return createConfigMap(name, labels.toMap(), data);
+    }
+
+    protected ConfigMap createConfigMap(String name, Map<String, String> labels, Map<String, String> data) {
         return new ConfigMapBuilder()
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
-                    .withLabels(labels.toMap())
+                    .withLabels(labels)
                     .withOwnerReferences(createOwnerReference())
                 .endMetadata()
                 .withData(data)
@@ -1136,22 +1149,24 @@ public abstract class AbstractModel {
     /**
      * Creates the StrimziPodSet with the Pods which currently correspond to the existing StatefulSet pods.
      *
-     * @param replicas          Defines how many pods should be generated and stored in this StrimziPodSet
-     * @param setAnnotations    Map with annotations which should be set on the StrimziPodSet
-     * @param podAnnotations    Map with annotation which should be set on the Pods
-     * @param volumes           Function which returns a list of volumes which should be used by the Pod and its containers
-     * @param affinity          Affinity rules for the pods
-     * @param initContainers    List of init containers which should be used in the pods
-     * @param containers        List of containers which should be used in the pods
-     * @param imagePullSecrets  List of image pull secrets with container registry credentials
-     * @param isOpenShift       Flag to specify whether we are on OpenShift or not
+     * @param replicas                  Defines how many pods should be generated and stored in this StrimziPodSet
+     * @param setAnnotations            Map with annotations which should be set on the StrimziPodSet
+     * @param podAnnotationsProvider    Function which provides annotation map for a specific Pod. A function is used
+     *                                  instead of providing a map because in some cases, each pod might have different
+     *                                  annotations. So they need to be generated per-pod.
+     * @param volumes                   Function which returns a list of volumes which should be used by the Pod and its containers
+     * @param affinity                  Affinity rules for the pods
+     * @param initContainers            List of init containers which should be used in the pods
+     * @param containers                List of containers which should be used in the pods
+     * @param imagePullSecrets          List of image pull secrets with container registry credentials
+     * @param isOpenShift               Flag to specify whether we are on OpenShift or not
      *
-     * @return                  Generated StrimziPodSet with all pods
+     * @return                          Generated StrimziPodSet with all pods
      */
     protected StrimziPodSet createPodSet(
             int replicas,
             Map<String, String> setAnnotations,
-            Map<String, String> podAnnotations,
+            Function<Integer, Map<String, String>> podAnnotationsProvider,
             Function<String, List<Volume>> volumes,
             Affinity affinity,
             List<Container> initContainers,
@@ -1165,7 +1180,7 @@ public abstract class AbstractModel {
             Pod pod = createStatefulPod(
                     name,
                     podName,
-                    podAnnotations,
+                    podAnnotationsProvider.apply(i),
                     volumes.apply(podName),
                     affinity,
                     initContainers,
@@ -1474,79 +1489,6 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Adds KAFKA_HEAP_OPTS variable to the EnvVar list if any heap related options were specified.
-     * NOTE: If Xmx Java Options are not set DYNAMIC_HEAP_FRACTION and DYNAMIC_HEAP_MAX may also be set
-     *
-     * @param envVars List of Environment Variables to add to
-     * @param dynamicHeapFraction List of Environment Variables
-     * @param dynamicHeapMaxBytes List of Environment Variables
-     */
-    protected void heapOptions(List<EnvVar> envVars, double dynamicHeapFraction, long dynamicHeapMaxBytes) {
-        StringBuilder kafkaHeapOpts = new StringBuilder();
-
-        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
-        if (xms != null) {
-            kafkaHeapOpts.append("-Xms")
-                    .append(xms);
-        }
-
-        String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
-        if (xmx != null) {
-            // Honour user provided explicit max heap
-            kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
-        } else {
-            ResourceRequirements resources = getResources();
-            Map<String, Quantity> cpuMemory = resources != null ? resources.getRequests() : null;
-            // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
-            // too much memory on the kubelet.
-            if (cpuMemory != null && cpuMemory.get("memory") != null) {
-                envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_FRACTION, Double.toString(dynamicHeapFraction)));
-                if (dynamicHeapMaxBytes > 0) {
-                    envVars.add(buildEnvVar(ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
-                }
-            // When no memory limit, `Xms`, and `Xmx` are defined then set a default `Xms` and
-            // leave `Xmx` undefined.
-            } else if (xms == null) {
-                kafkaHeapOpts.append("-Xms").append(DEFAULT_JVM_XMS);
-            }
-        }
-
-        String kafkaHeapOptsString = kafkaHeapOpts.toString().trim();
-        if (!kafkaHeapOptsString.isEmpty()) {
-            envVars.add(buildEnvVar(ENV_VAR_KAFKA_HEAP_OPTS, kafkaHeapOptsString));
-        }
-    }
-
-    /**
-     * Adds KAFKA_JVM_PERFORMANCE_OPTS variable to the EnvVar list if any performance related options were specified.
-     *
-     * @param envVars List of Environment Variables to add to
-     */
-    protected void jvmPerformanceOptions(List<EnvVar> envVars) {
-        StringBuilder jvmPerformanceOpts = new StringBuilder();
-
-        Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
-        if (xx != null) {
-            xx.forEach((k, v) -> {
-                jvmPerformanceOpts.append(' ').append("-XX:");
-
-                if ("true".equalsIgnoreCase(v))   {
-                    jvmPerformanceOpts.append("+").append(k);
-                } else if ("false".equalsIgnoreCase(v)) {
-                    jvmPerformanceOpts.append("-").append(k);
-                } else  {
-                    jvmPerformanceOpts.append(k).append("=").append(v);
-                }
-            });
-        }
-
-        String jvmPerformanceOptsString = jvmPerformanceOpts.toString().trim();
-        if (!jvmPerformanceOptsString.isEmpty()) {
-            envVars.add(buildEnvVar(ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, jvmPerformanceOptsString));
-        }
-    }
-
-    /**
      * Generate the OwnerReference object to link newly created objects to their parent (the custom resource)
      *
      * @return The OwnerReference object
@@ -1595,6 +1537,27 @@ public abstract class AbstractModel {
     }
 
     /**
+     * Creates the PodDisruptionBudgetV1Beta1
+     *
+     * @return The default PodDisruptionBudgetV1Beta1
+     */
+    protected io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget createPodDisruptionBudgetV1Beta1()   {
+        return new io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withLabels(getLabelsWithStrimziName(name, templatePodDisruptionBudgetLabels).toMap())
+                    .withNamespace(namespace)
+                    .withAnnotations(templatePodDisruptionBudgetAnnotations)
+                    .withOwnerReferences(createOwnerReference())
+                .endMetadata()
+                .withNewSpec()
+                    .withNewMaxUnavailable(templatePodDisruptionBudgetMaxUnavailable)
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
+                .endSpec()
+                .build();
+    }
+
+    /**
      * Creates a PodDisruptionBudget for use with custom pod controller (such as StrimziPodSetController). Unlike
      * built-in controllers (Deployments, StatefulSets, Jobs, DaemonSets, ...), custom pod controllers can use only PDBs
      * with minAvailable in absolute numbers (i.e. no percentages).
@@ -1605,6 +1568,31 @@ public abstract class AbstractModel {
      */
     protected PodDisruptionBudget createCustomControllerPodDisruptionBudget()   {
         return new PodDisruptionBudgetBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withLabels(getLabelsWithStrimziName(name, templatePodDisruptionBudgetLabels).toMap())
+                    .withNamespace(namespace)
+                    .withAnnotations(templatePodDisruptionBudgetAnnotations)
+                    .withOwnerReferences(createOwnerReference())
+                .endMetadata()
+                .withNewSpec()
+                    .withMinAvailable(new IntOrString(replicas - templatePodDisruptionBudgetMaxUnavailable))
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(getSelectorLabels().toMap()).build())
+                .endSpec()
+                .build();
+    }
+
+    /**
+     * Creates a PodDisruptionBudget V1Beta1 for use with custom pod controller (such as StrimziPodSetController). Unlike
+     * built-in controllers (Deployments, StatefulSets, Jobs, DaemonSets, ...), custom pod controllers can use only PDBs
+     * with minAvailable in absolute numbers (i.e. no percentages).
+     * See https://kubernetes.io/docs/tasks/run-application/configure-pdb/#arbitrary-controllers-and-selectors for more
+     * details.
+     *
+     * @return The default PodDisruptionBudget V1Beta1
+     */
+    protected io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget createCustomControllerPodDisruptionBudgetV1Beta1()   {
+        return new io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetBuilder()
                 .withNewMetadata()
                     .withName(name)
                     .withLabels(getLabelsWithStrimziName(name, templatePodDisruptionBudgetLabels).toMap())

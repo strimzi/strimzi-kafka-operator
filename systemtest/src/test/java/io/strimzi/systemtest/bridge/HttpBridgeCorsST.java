@@ -13,8 +13,8 @@ import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.vertx.core.http.HttpMethod;
@@ -29,7 +29,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
@@ -46,12 +45,9 @@ public class HttpBridgeCorsST extends AbstractST {
     private static final String ALLOWED_ORIGIN = "https://strimzi.io";
     private static final String NOT_ALLOWED_ORIGIN = "https://evil.io";
 
-    private final String httpBridgeCorsClusterName = "http-bridge-cors-cluster-name";
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(HttpBridgeCorsST.class.getSimpleName()).stream().findFirst().get();
-    private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
-    private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
-    private String kafkaClientsPodName;
+    private String scraperPodName;
     private String bridgeUrl;
 
     @ParallelTest
@@ -70,7 +66,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         String url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         String headers = BridgeUtils.addHeadersToString(additionalHeaders, Constants.KAFKA_BRIDGE_JSON_JSON);
-        String response = cmdKubeClient().namespace(namespace).execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
+        String response = cmdKubeClient().namespace(namespace).execInPod(scraperPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
         LOGGER.info("Response from Bridge: {}", response);
 
         String responseAllowHeaders = BridgeUtils.getHeaderValue("access-control-allow-headers", response);
@@ -88,7 +84,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         headers = BridgeUtils.addHeadersToString(Collections.singletonMap("Origin", ALLOWED_ORIGIN));
-        response = cmdKubeClient().namespace(namespace).execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.GET, url, headers, "")).out().trim();
+        response = cmdKubeClient().namespace(namespace).execInPod(scraperPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.GET, url, headers, "")).out().trim();
         LOGGER.info("Response from Bridge: {}", response);
 
         assertThat(response, containsString("404"));
@@ -105,7 +101,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         String url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
         String headers = BridgeUtils.addHeadersToString(additionalHeaders);
-        String response = cmdKubeClient().namespace(namespace).execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
+        String response = cmdKubeClient().namespace(namespace).execInPod(scraperPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
         LOGGER.info("Response from Bridge: {}", response);
 
         LOGGER.info("Checking if response from Bridge is correct");
@@ -114,7 +110,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         additionalHeaders.remove("Access-Control-Request-Method", HttpMethod.POST.toString());
         headers = BridgeUtils.addHeadersToString(additionalHeaders);
-        response = cmdKubeClient().namespace(namespace).execInPod(kafkaClientsPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.POST, url, headers, "")).out().trim();
+        response = cmdKubeClient().namespace(namespace).execInPod(scraperPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.POST, url, headers, "")).out().trim();
         LOGGER.info("Response from Bridge: {}", response);
 
         LOGGER.info("Checking if response from Bridge is correct");
@@ -124,16 +120,18 @@ public class HttpBridgeCorsST extends AbstractST {
 
     @BeforeAll
     void beforeAll(ExtensionContext extensionContext) {
+        String httpBridgeCorsClusterName = "http-bridge-cors-cluster-name";
+
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeCorsClusterName, 1, 1)
             .editMetadata()
                 .withNamespace(namespace)
             .endMetadata()
             .build());
 
-        String kafkaClientsName = namespace + "-shared-" + Constants.KAFKA_CLIENTS;
+        String scraperName = namespace + "-shared-" + Constants.SCRAPER_NAME;
 
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(namespace, false, kafkaClientsName).build());
-        kafkaClientsPodName = kubeClient(namespace).listPodsByPrefixInName(namespace, kafkaClientsName).get(0).getMetadata().getName();
+        resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(namespace, scraperName).build());
+        scraperPodName = kubeClient(namespace).listPodsByPrefixInName(namespace, scraperName).get(0).getMetadata().getName();
 
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridgeWithCors(httpBridgeCorsClusterName, KafkaResources.plainBootstrapAddress(httpBridgeCorsClusterName),
             1, ALLOWED_ORIGIN, null)

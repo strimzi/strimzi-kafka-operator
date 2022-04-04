@@ -15,7 +15,7 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import io.strimzi.test.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

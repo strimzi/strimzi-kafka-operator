@@ -31,8 +31,8 @@ import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressList;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyList;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetList;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudgetList;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBindingList;
 import io.fabric8.kubernetes.api.model.rbac.Role;
@@ -55,6 +55,7 @@ import io.fabric8.kubernetes.client.dsl.PolicyAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
+import io.fabric8.kubernetes.client.dsl.V1PolicyAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.V1beta1PolicyAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import io.fabric8.openshift.api.model.Route;
@@ -100,6 +101,7 @@ public class MockKube {
     private final Map<String, Route> routeDb = db(emptySet());
     private final Map<String, BuildConfig> buildConfigDb = db(emptySet());
     private final Map<String, PodDisruptionBudget> pdbDb = db(emptySet());
+    private final Map<String, io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget> pdbDbV1Beta1 = db(emptySet());
     private final Map<String, RoleBinding> pdbRb = db(emptySet());
     private final Map<String, Role> roleDb = db(emptySet());
     private final Map<String, ClusterRoleBinding> pdbCrb = db(emptySet());
@@ -115,6 +117,7 @@ public class MockKube {
     private MockBuilder<Route, RouteList, Resource<Route>> routeMockBuilder;
     private MockBuilder<BuildConfig, BuildConfigList, BuildConfigResource<BuildConfig, Void, Build>> buildConfigMockBuilder;
     private MockBuilder<PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> podDisruptionBudgedMockBuilder;
+    private MockBuilder<io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget, io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetList, Resource<io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget>> podDisruptionBudgedV1Beta1MockBuilder;
     private MockBuilder<Role, RoleList, Resource<Role>> roleMockBuilder;
     private MockBuilder<RoleBinding, RoleBindingList, Resource<RoleBinding>> roleBindingMockBuilder;
     private MockBuilder<ClusterRoleBinding, ClusterRoleBindingList, Resource<ClusterRoleBinding>> clusterRoleBindingMockBuilder;
@@ -260,6 +263,7 @@ public class MockKube {
         routeMockBuilder = addMockBuilder("routes", new MockBuilder<>(Route.class, RouteList.class, MockBuilder.castClass(Resource.class), routeDb));
         buildConfigMockBuilder = addMockBuilder("buildConfigs", new MockBuilder<>(BuildConfig.class, BuildConfigList.class, MockBuilder.castClass(Resource.class), buildConfigDb));
         podDisruptionBudgedMockBuilder = addMockBuilder("poddisruptionbudgets", new MockBuilder<>(PodDisruptionBudget.class, PodDisruptionBudgetList.class, MockBuilder.castClass(Resource.class), pdbDb));
+        podDisruptionBudgedV1Beta1MockBuilder = addMockBuilder("poddisruptionbudgetsV1Beta1", new MockBuilder<>(io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget.class, io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetList.class, MockBuilder.castClass(Resource.class), pdbDbV1Beta1));
         roleBindingMockBuilder = addMockBuilder("rolebindings", new MockBuilder<>(RoleBinding.class, RoleBindingList.class, MockBuilder.castClass(Resource.class), pdbRb));
         roleMockBuilder = addMockBuilder("roles", new MockBuilder<>(Role.class, RoleList.class, MockBuilder.castClass(Resource.class), roleDb));
         clusterRoleBindingMockBuilder = addMockBuilder("clusterrolebindings", new MockBuilder<>(ClusterRoleBinding.class, ClusterRoleBindingList.class, MockBuilder.castClass(Resource.class), pdbCrb));
@@ -336,10 +340,14 @@ public class MockKube {
 
         // Policy group
         PolicyAPIGroupDSL policy = mock(PolicyAPIGroupDSL.class);
+        V1PolicyAPIGroupDSL v1policy = mock(V1PolicyAPIGroupDSL.class);
+        when(mockClient.policy()).thenReturn(policy);
+        when(policy.v1()).thenReturn(v1policy);
         V1beta1PolicyAPIGroupDSL v1beta1policy = mock(V1beta1PolicyAPIGroupDSL.class);
         when(mockClient.policy()).thenReturn(policy);
         when(policy.v1beta1()).thenReturn(v1beta1policy);
-        podDisruptionBudgedMockBuilder.build2(mockClient.policy().v1beta1()::podDisruptionBudget);
+        podDisruptionBudgedMockBuilder.build2(mockClient.policy().v1()::podDisruptionBudget);
+        podDisruptionBudgedV1Beta1MockBuilder.build2(mockClient.policy().v1beta1()::podDisruptionBudget);
 
         // RBAC group
         RbacAPIGroupDSL rbac = mock(RbacAPIGroupDSL.class);

@@ -154,12 +154,13 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .compose(logAndMetricsConfigMap -> {
                     String logging = logAndMetricsConfigMap.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
                     annotations.put(Annotations.ANNO_STRIMZI_LOGGING_DYNAMICALLY_UNCHANGEABLE_HASH,
-                        Util.stringHash(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
+                        Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging)));
                     desiredLogging.set(logging);
                     return configMapOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster))
-                .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generatePodDisruptionBudget()))
+                .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generatePodDisruptionBudget()) : Future.succeededFuture())
+                .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generatePodDisruptionBudgetV1Beta1()) : Future.succeededFuture())
                 .compose(i -> generateAuthHash(namespace, kafkaMirrorMaker2.getSpec()))
                 .compose(hash -> {
                     if (hash != null) {
@@ -301,7 +302,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                 .build();                      
 
                         prepareMirrorMaker2ConnectorConfig(reconciliation, mirror, clusterMap.get(sourceClusterAlias), clusterMap.get(targetClusterAlias), connectorSpec, mirrorMaker2Cluster);
-                        LOGGER.debugCr(reconciliation, "creating/updating connector {} config: {}", connectorName, asJson(reconciliation, connectorSpec).toString());
+                        LOGGER.debugCr(reconciliation, "creating/updating connector {} config: {}", connectorName, connectorSpec.getConfig());
                         return reconcileMirrorMaker2Connector(reconciliation, mirrorMaker2, apiClient, host, connectorName, connectorSpec, mirrorMaker2Status);
                     })
                     .collect(Collectors.toList()))

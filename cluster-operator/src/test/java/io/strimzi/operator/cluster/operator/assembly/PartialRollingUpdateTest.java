@@ -27,7 +27,6 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -158,11 +157,11 @@ public class PartialRollingUpdateTest {
         context.completeNow();
         LOGGER.info("bootstrap reconciliation complete");
 
-        this.kafkaSts = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaClusterName(CLUSTER_NAME)).get();
-        this.zkSts = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperClusterName(CLUSTER_NAME)).get();
-        this.zkPod0 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperPodName(CLUSTER_NAME, 0)).get();
-        this.zkPod1 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperPodName(CLUSTER_NAME, 1)).get();
-        this.zkPod2 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperPodName(CLUSTER_NAME, 2)).get();
+        this.kafkaSts = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).get();
+        this.zkSts = bootstrapClient.apps().statefulSets().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).get();
+        this.zkPod0 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, 0)).get();
+        this.zkPod1 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, 1)).get();
+        this.zkPod2 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, 2)).get();
         this.kafkaPod0 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaPodName(CLUSTER_NAME, 0)).get();
         this.kafkaPod1 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaPodName(CLUSTER_NAME, 1)).get();
         this.kafkaPod2 = bootstrapClient.pods().inNamespace(NAMESPACE).withName(KafkaCluster.kafkaPodName(CLUSTER_NAME, 2)).get();
@@ -246,7 +245,7 @@ public class PartialRollingUpdateTest {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             for (int i = 0; i <= 2; i++) {
-                Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperPodName(CLUSTER_NAME, i)).get();
+                Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, i)).get();
                 String generation = pod.getMetadata().getAnnotations().get(StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION);
                 int finalI = i;
                 context.verify(() -> assertThat("Pod " + finalI + " had unexpected generation " + generation, generation, is("3")));
@@ -276,7 +275,7 @@ public class PartialRollingUpdateTest {
             if (ar.failed()) ar.cause().printStackTrace();
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
             for (int i = 0; i <= 2; i++) {
-                Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(ZookeeperCluster.zookeeperPodName(CLUSTER_NAME, i)).get();
+                Pod pod = mockClient.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, i)).get();
                 String certGeneration = pod.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION);
                 int finalI = i;
                 context.verify(() -> assertThat("Pod " + finalI + " had unexpected cert generation " + certGeneration, certGeneration, is("3")));

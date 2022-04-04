@@ -1,12 +1,18 @@
 ## Strimzi backup
 
-Bash script for offline (_cold_) backups of Kafka clusters on Kubernetes or OpenShift. The script only supports a local file system. Make sure you have enough free disk space in the target directory.
+Bash script for offline (_cold_) backups of Kafka clusters on Kubernetes or OpenShift. 
+The script only supports a local file system, and you need to make sure to have enough free disk space in the target directory.
 
-If you think you don't need a backup strategy for Kafka because of its embedded data replication, then consider the impact of a misconfiguration, bug, or security breach that deletes all of your data. For online (_hot_) backups, you can use storage snapshotting or stream into object storage.
+If you think you don't need a backup strategy for Kafka because of its embedded data replication, then consider the impact of a misconfiguration, bug, or security breach that deletes all of your data. 
+For online (_hot_) backups, you can use storage snapshotting or stream into object storage.
 
 Run the script as a Kubernetes user with permission to work with PVC and Strimzi custom resources. 
 
-The procedure will stop the Cluster Operator and selected cluster for the duration of the backup. Before restoring the Kafka cluster you need to make sure to have the right version of Strimzi CRDs installed. If you have a single cluster-wide Cluster Operator, then you need to scale it down manually. You can run backup and restore procedures for different Kafka clusters in parallel. Consumer group offsets are included, but not Kafka Connect, MirrorMaker and Kafka Bridge custom resources.
+The procedure will stop the Cluster Operator and selected cluster for the duration of the backup. 
+Before restoring the Kafka cluster you need to make sure to have the right version of Strimzi CRDs installed. 
+If you have a single cluster-wide Cluster Operator, then you need to scale it down manually. 
+You can run backup and restore procedures for different Kafka clusters in parallel. 
+Consumer group offsets are included, but not Kafka Connect, MirrorMaker and Kafka Bridge custom resources.
 
 ## Requirements
 
@@ -14,8 +20,6 @@ The procedure will stop the Cluster Operator and selected cluster for the durati
 - tar 1.33+ (GNU)
 - kubectl 1.16+ (K8s CLI)
 - yq 4.6+ (YAML processor)
-- zip 3+ (Info-ZIP)
-- unzip 6+ (Info-ZIP)
 - enough disk space
 
 ## Usage example
@@ -49,7 +53,7 @@ kubectl run producer-perf -it --image="$CLIENT_IMAGE" --rm="true" --restart="Nev
     --throughput -1 --producer-props acks=1 bootstrap.servers="my-cluster-kafka-bootstrap:9092"
 
 # run backup procedure
-./tools/cold-backup/run.sh backup -n myproject -c my-cluster -t /tmp/my-cluster.zip
+./tools/cold-backup/run.sh backup -n myproject -c my-cluster -t /tmp/my-cluster.tgz
 
 # recreate the namespace and deploy the operator
 kubectl delete ns myproject
@@ -57,7 +61,7 @@ kubectl create ns myproject
 kubectl create -f ./install/cluster-operator
 
 # run restore procedure and wait for provisioning
-./tools/cold-backup/run.sh restore -n myproject -c my-cluster -s /tmp/my-cluster.zip
+./tools/cold-backup/run.sh restore -n myproject -c my-cluster -s /tmp/my-cluster.tgz
 
 # check consumer group offsets (expected: current-offset match)
 kubectl run consumer-groups -it --image="$CLIENT_IMAGE" --rm="true" --restart="Never" -- \

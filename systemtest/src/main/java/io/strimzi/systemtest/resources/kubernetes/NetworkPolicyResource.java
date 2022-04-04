@@ -168,7 +168,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
      */
     public static void allowNetworkPolicySettingsForResource(ExtensionContext extensionContext, HasMetadata resource, String deploymentName) {
         LabelSelector labelSelector = new LabelSelectorBuilder()
-            .addToMatchLabels(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE)
+            .addToMatchLabels(Constants.SCRAPER_LABEL_KEY, Constants.SCRAPER_LABEL_VALUE)
             .build();
 
         final String namespaceName = StUtils.isParallelNamespaceTest(extensionContext) && !Environment.isNamespaceRbacScope() ?

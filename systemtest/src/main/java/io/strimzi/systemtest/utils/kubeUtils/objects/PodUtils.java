@@ -211,7 +211,7 @@ public class PodUtils {
         TestUtils.waitFor(" Pod" + podNamePrefix + " will have " + expectedPods + " replicas",
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
-                if (kubeClient(namespaceName).listPodsByPrefixInName(podNamePrefix).size() == expectedPods) {
+                if (kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, podNamePrefix).size() == expectedPods) {
                     stableCounter[0]++;
                     if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
                         LOGGER.info("Pod replicas are stable for {} polls intervals", stableCounter[0]);

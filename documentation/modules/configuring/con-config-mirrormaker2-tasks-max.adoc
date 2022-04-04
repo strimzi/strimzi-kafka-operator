@@ -1,0 +1,42 @@
+// Module included in the following assemblies:
+//
+// assembly-config-mirrormaker2.adoc
+
+[id='con-mirrormaker-tasks-max-{context}']
+= Specifying a maximum number of tasks
+
+[role="_abstract"]
+Connectors create the tasks that are responsible for moving data in and out of Kafka.
+Each connector comprises one or more tasks that are distributed across a group of worker pods that run the tasks.
+
+Tasks run in parallel.
+Workers are assigned one or more tasks.
+A single task is handled by one worker pod, so you don't need more worker pods than tasks.
+If there are more tasks than workers, workers handle multiple tasks.
+
+You can specify the maximum number of connector tasks in your MirrorMaker configuration using the `tasksMax` property.
+Without specifying a maximum number of tasks, the default setting is a single task.
+If the infrastructure supports the processing overhead, increasing the number of tasks can improve throughput.
+
+.tasksMax configuration for a MirrorMaker connector
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+spec:
+  # ...
+  mirrors:
+  - sourceCluster: "my-cluster-source"
+    targetCluster: "my-cluster-target"
+    sourceConnector:
+      tasksMax: 10
+  # ...
+----
+
+For the source connector, the maximum number of tasks possible is one for each partition being replicated from the source cluster.
+For the checkpoint connector, the maximum number of tasks possible is one for each group being replicated from the source cluster.
+The number of tasks that are started for these connectors is the lower value between the maximum number of possible tasks and the value for `tasksMax`.
+
+The heartbeat connector always uses a single task.

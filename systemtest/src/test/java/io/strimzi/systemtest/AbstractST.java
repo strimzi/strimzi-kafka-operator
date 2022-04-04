@@ -51,7 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.common.Util.sha1Prefix;
+import static io.strimzi.operator.common.Util.hashStub;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -596,7 +596,7 @@ public abstract class AbstractST implements TestSeparator {
 
             LOGGER.info("Not first test we are gonna generate cluster name");
 
-            String clusterName = CLUSTER_NAME_PREFIX + sha1Prefix(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
+            String clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
             mapWithClusterNames.put(testName, clusterName);
             mapWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
@@ -620,16 +620,15 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     private final void beforeAllMustExecute(ExtensionContext extensionContext) {
+        if (StUtils.isParallelSuite(extensionContext)) {
+            parallelSuiteController.addParallelSuite(extensionContext);
+            parallelSuiteController.waitUntilAllowedNumberTestSuitesInParallel(extensionContext);
+        }
         try {
-            clusterOperator = SetupClusterOperator.getInstanceHolder();
-        } finally {
-            if (StUtils.isParallelSuite(extensionContext)) {
-                parallelSuiteController.addParallelSuite(extensionContext);
-                parallelSuiteController.waitUntilAllowedNumberTestSuitesInParallel(extensionContext);
-            }
             // (optional) create additional namespace/namespaces for test suites if needed
+            // in case `Terminating` issue with namespace we have to execute finally block
             testSuiteNamespaceManager.createAdditionalNamespaces(extensionContext);
-
+        } finally {
             if (StUtils.isIsolatedSuite(extensionContext)) {
                 cluster.setNamespace(Constants.INFRA_NAMESPACE);
                 // wait for parallel suites are done
@@ -639,6 +638,7 @@ public abstract class AbstractST implements TestSeparator {
             } else if (StUtils.isParallelSuite(extensionContext) && Environment.isNamespaceRbacScope()) {
                 cluster.setNamespace(Constants.INFRA_NAMESPACE);
             }
+            clusterOperator = SetupClusterOperator.getInstanceHolder();
         }
     }
 
@@ -673,8 +673,15 @@ public abstract class AbstractST implements TestSeparator {
     void tearDownTestCase(ExtensionContext extensionContext) throws Exception {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("[{} - After Each] - Clean up after test", StUtils.removePackageName(this.getClass().getName()));
-        afterEachMayOverride(extensionContext);
-        afterEachMustExecute(extensionContext);
+        // try with finally is needed because in worst case possible if the Cluster is unable to delete namespaces, which
+        // results in `Timeout after 480000 ms waiting for Namespace namespace-136 removal` it throws WaitException and
+        // does not proceed with the next method (i.e., afterEachMustExecute()). This ensures that if such problem happen
+        // it will always execute the second method.
+        try {
+            afterEachMayOverride(extensionContext);
+        } finally {
+            afterEachMustExecute(extensionContext);
+        }
     }
 
     @AfterAll

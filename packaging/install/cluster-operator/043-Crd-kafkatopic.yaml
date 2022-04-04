@@ -40,7 +40,7 @@ spec:
       type: integer
     - name: Ready
       description: The state of the custom resource
-      jsonPath: .status.conditions[?(@.type=="Ready")].status
+      jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
       type: string
     schema:
       openAPIV3Schema:
@@ -52,26 +52,19 @@ spec:
               partitions:
                 type: integer
                 minimum: 1
-                description: The number of partitions the topic should have. This
-                  cannot be decreased after topic creation. It can be increased after
-                  topic creation, but it is important to understand the consequences
-                  that has, especially for topics with semantic partitioning. When
-                  absent this will default to the broker configuration for `num.partitions`.
+                description: "The number of partitions the topic should have. This cannot be decreased after topic creation. It can be increased after topic creation, but it is important to understand the consequences that has, especially for topics with semantic partitioning. When absent this will default to the broker configuration for `num.partitions`."
               replicas:
                 type: integer
                 minimum: 1
                 maximum: 32767
-                description: The number of replicas the topic should have. When absent
-                  this will default to the broker configuration for `default.replication.factor`.
+                description: The number of replicas the topic should have. When absent this will default to the broker configuration for `default.replication.factor`.
               config:
                 x-kubernetes-preserve-unknown-fields: true
                 type: object
                 description: The topic configuration.
               topicName:
                 type: string
-                description: The name of the topic. When absent this will default
-                  to the metadata.name of the topic. It is recommended to not set
-                  this unless the topic name is not a valid Kubernetes resource name.
+                description: The name of the topic. When absent this will default to the metadata.name of the topic. It is recommended to not set this unless the topic name is not a valid Kubernetes resource name.
             description: The specification of the topic.
           status:
             type: object
@@ -83,30 +76,23 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: The unique identifier of a condition, used to distinguish
-                        between other conditions in the resource.
+                      description: "The unique identifier of a condition, used to distinguish between other conditions in the resource."
                     status:
                       type: string
-                      description: The status of the condition, either True, False
-                        or Unknown.
+                      description: "The status of the condition, either True, False or Unknown."
                     lastTransitionTime:
                       type: string
-                      description: Last time the condition of a type changed from
-                        one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
-                        in the UTC time zone.
+                      description: "Last time the condition of a type changed from one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone."
                     reason:
                       type: string
-                      description: The reason for the condition's last transition
-                        (a single word in CamelCase).
+                      description: The reason for the condition's last transition (a single word in CamelCase).
                     message:
                       type: string
-                      description: Human-readable message indicating details about
-                        the condition's last transition.
+                      description: Human-readable message indicating details about the condition's last transition.
                 description: List of status conditions.
               observedGeneration:
                 type: integer
-                description: The generation of the CRD that was last reconciled by
-                  the operator.
+                description: The generation of the CRD that was last reconciled by the operator.
               topicName:
                 type: string
                 description: Topic name.
@@ -131,7 +117,7 @@ spec:
       type: integer
     - name: Ready
       description: The state of the custom resource
-      jsonPath: .status.conditions[?(@.type=="Ready")].status
+      jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
       type: string
     schema:
       openAPIV3Schema:
@@ -143,26 +129,19 @@ spec:
               partitions:
                 type: integer
                 minimum: 1
-                description: The number of partitions the topic should have. This
-                  cannot be decreased after topic creation. It can be increased after
-                  topic creation, but it is important to understand the consequences
-                  that has, especially for topics with semantic partitioning. When
-                  absent this will default to the broker configuration for `num.partitions`.
+                description: "The number of partitions the topic should have. This cannot be decreased after topic creation. It can be increased after topic creation, but it is important to understand the consequences that has, especially for topics with semantic partitioning. When absent this will default to the broker configuration for `num.partitions`."
               replicas:
                 type: integer
                 minimum: 1
                 maximum: 32767
-                description: The number of replicas the topic should have. When absent
-                  this will default to the broker configuration for `default.replication.factor`.
+                description: The number of replicas the topic should have. When absent this will default to the broker configuration for `default.replication.factor`.
               config:
                 x-kubernetes-preserve-unknown-fields: true
                 type: object
                 description: The topic configuration.
               topicName:
                 type: string
-                description: The name of the topic. When absent this will default
-                  to the metadata.name of the topic. It is recommended to not set
-                  this unless the topic name is not a valid Kubernetes resource name.
+                description: The name of the topic. When absent this will default to the metadata.name of the topic. It is recommended to not set this unless the topic name is not a valid Kubernetes resource name.
             description: The specification of the topic.
           status:
             type: object
@@ -174,30 +153,23 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: The unique identifier of a condition, used to distinguish
-                        between other conditions in the resource.
+                      description: "The unique identifier of a condition, used to distinguish between other conditions in the resource."
                     status:
                       type: string
-                      description: The status of the condition, either True, False
-                        or Unknown.
+                      description: "The status of the condition, either True, False or Unknown."
                     lastTransitionTime:
                       type: string
-                      description: Last time the condition of a type changed from
-                        one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
-                        in the UTC time zone.
+                      description: "Last time the condition of a type changed from one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone."
                     reason:
                       type: string
-                      description: The reason for the condition's last transition
-                        (a single word in CamelCase).
+                      description: The reason for the condition's last transition (a single word in CamelCase).
                     message:
                       type: string
-                      description: Human-readable message indicating details about
-                        the condition's last transition.
+                      description: Human-readable message indicating details about the condition's last transition.
                 description: List of status conditions.
               observedGeneration:
                 type: integer
-                description: The generation of the CRD that was last reconciled by
-                  the operator.
+                description: The generation of the CRD that was last reconciled by the operator.
               topicName:
                 type: string
                 description: Topic name.
@@ -222,7 +194,7 @@ spec:
       type: integer
     - name: Ready
       description: The state of the custom resource
-      jsonPath: .status.conditions[?(@.type=="Ready")].status
+      jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
       type: string
     schema:
       openAPIV3Schema:
@@ -234,26 +206,19 @@ spec:
               partitions:
                 type: integer
                 minimum: 1
-                description: The number of partitions the topic should have. This
-                  cannot be decreased after topic creation. It can be increased after
-                  topic creation, but it is important to understand the consequences
-                  that has, especially for topics with semantic partitioning. When
-                  absent this will default to the broker configuration for `num.partitions`.
+                description: "The number of partitions the topic should have. This cannot be decreased after topic creation. It can be increased after topic creation, but it is important to understand the consequences that has, especially for topics with semantic partitioning. When absent this will default to the broker configuration for `num.partitions`."
               replicas:
                 type: integer
                 minimum: 1
                 maximum: 32767
-                description: The number of replicas the topic should have. When absent
-                  this will default to the broker configuration for `default.replication.factor`.
+                description: The number of replicas the topic should have. When absent this will default to the broker configuration for `default.replication.factor`.
               config:
                 x-kubernetes-preserve-unknown-fields: true
                 type: object
                 description: The topic configuration.
               topicName:
                 type: string
-                description: The name of the topic. When absent this will default
-                  to the metadata.name of the topic. It is recommended to not set
-                  this unless the topic name is not a valid Kubernetes resource name.
+                description: The name of the topic. When absent this will default to the metadata.name of the topic. It is recommended to not set this unless the topic name is not a valid Kubernetes resource name.
             description: The specification of the topic.
           status:
             type: object
@@ -265,30 +230,23 @@ spec:
                   properties:
                     type:
                       type: string
-                      description: The unique identifier of a condition, used to distinguish
-                        between other conditions in the resource.
+                      description: "The unique identifier of a condition, used to distinguish between other conditions in the resource."
                     status:
                       type: string
-                      description: The status of the condition, either True, False
-                        or Unknown.
+                      description: "The status of the condition, either True, False or Unknown."
                     lastTransitionTime:
                       type: string
-                      description: Last time the condition of a type changed from
-                        one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ',
-                        in the UTC time zone.
+                      description: "Last time the condition of a type changed from one status to another. The required format is 'yyyy-MM-ddTHH:mm:ssZ', in the UTC time zone."
                     reason:
                       type: string
-                      description: The reason for the condition's last transition
-                        (a single word in CamelCase).
+                      description: The reason for the condition's last transition (a single word in CamelCase).
                     message:
                       type: string
-                      description: Human-readable message indicating details about
-                        the condition's last transition.
+                      description: Human-readable message indicating details about the condition's last transition.
                 description: List of status conditions.
               observedGeneration:
                 type: integer
-                description: The generation of the CRD that was last reconciled by
-                  the operator.
+                description: The generation of the CRD that was last reconciled by the operator.
               topicName:
                 type: string
                 description: Topic name.

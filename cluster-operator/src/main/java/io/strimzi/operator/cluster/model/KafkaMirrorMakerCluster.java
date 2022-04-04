@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
@@ -178,9 +178,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
             kafkaMirrorMakerCluster.setLogging(spec.getLogging());
             kafkaMirrorMakerCluster.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
-            if (spec.getJvmOptions() != null) {
-                kafkaMirrorMakerCluster.setJavaSystemProperties(spec.getJvmOptions().getJavaSystemProperties());
-            }
             kafkaMirrorMakerCluster.setJvmOptions(spec.getJvmOptions());
 
             // Parse different types of metrics configurations
@@ -349,16 +346,14 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
             varList.add(buildEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_ABORT_ON_SEND_FAILURE, Boolean.toString(producer.getAbortOnSendFailure())));
         }
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        if (javaSystemProperties != null) {
-            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
-        }
 
         if (tracing != null) {
             varList.add(buildEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));
         }
 
-        heapOptions(varList, 1.0, 0L);
-        jvmPerformanceOptions(varList);
+        ModelUtils.heapOptions(varList, 1.0, 0L, getJvmOptions(), getResources());
+        ModelUtils.jvmPerformanceOptions(varList, getJvmOptions());
+        ModelUtils.jvmSystemProperties(varList, getJvmOptions());
 
         /** consumer */
         addConsumerEnvVars(varList);
@@ -438,6 +433,15 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
         return createPodDisruptionBudget();
+    }
+
+    /**
+     * Generates the PodDisruptionBudgetV1Beta1.
+     *
+     * @return The PodDisruptionBudgetV1Beta1.
+     */
+    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
+        return createPodDisruptionBudgetV1Beta1();
     }
 
     @Override

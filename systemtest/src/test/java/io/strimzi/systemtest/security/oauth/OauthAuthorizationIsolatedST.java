@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -165,7 +166,6 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, INFRA_NAMESPACE).build());
         resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
         String topicAName = TOPIC_A + "-" + clusterName;
 
@@ -208,7 +208,6 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, topicAName);
         resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
         // team A client shouldn't be able to consume messages with wrong consumer group
 
@@ -272,7 +271,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         resourceManager.createResource(extensionContext, teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
-        ClientUtils.waitTillContinuousClientsFinish(teamBProducerName, teamBConsumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(teamBProducerName, teamBConsumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
 
     @Description("As a member of team A, I can write to topics starting with 'x-' and " +
@@ -462,7 +461,6 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
         LOGGER.info("Adding the maxSecondsWithoutReauthentication to Kafka listener with OAuth authentication");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
@@ -552,7 +550,6 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
         LOGGER.info("Changing back to the original settings and checking, if the producer will be successful");
 
@@ -567,7 +564,6 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, INFRA_NAMESPACE, MESSAGE_COUNT);
-        JobUtils.deleteJobWithWait(INFRA_NAMESPACE, teamAProducerName);
 
         LOGGER.info("Changing configuration of Kafka back to it's original form");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(oauthClusterName, kafka -> {
@@ -690,7 +686,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
     @AfterAll
     void tearDown(ExtensionContext extensionContext) throws Exception {
         // delete keycloak before namespace
-        KeycloakUtils.deleteKeycloak(INFRA_NAMESPACE);
+        KeycloakUtils.deleteKeycloak(Constants.INFRA_NAMESPACE, clusterOperator.getDeploymentNamespace());
         // delete namespace etc.
         super.afterAllMayOverride(extensionContext);
     }

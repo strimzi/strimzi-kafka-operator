@@ -23,8 +23,6 @@ import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeoutException;
 
-import static io.strimzi.operator.cluster.model.CruiseControl.encodeToBase64;
-
 public class CruiseControlApiImpl implements CruiseControlApi {
     private static final boolean HTTP_CLIENT_ACTIVITY_LOGGING = false;
     public static final int HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS = -1; // use default internal HTTP client timeout
@@ -66,7 +64,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     private static HTTPHeader generateAuthHttpHeader(String user, String password) {
         String headerName = "Authorization";
-        String headerValue = "Basic " + encodeToBase64(String.join(":", user, password));
+        String headerValue = "Basic " + Util.encodeToBase64(String.join(":", user, password));
 
         return new HTTPHeader(headerName, headerValue);
     }

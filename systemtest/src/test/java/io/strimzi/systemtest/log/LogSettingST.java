@@ -215,7 +215,10 @@ class LogSettingST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespace, LOG_SETTING_CLUSTER_NAME, userName).build());
 
         LOGGER.info("Checking if Kafka, Zookeeper, TO and UO of cluster:{} has log level set properly", LOG_SETTING_CLUSTER_NAME);
-        assertThat("Kafka's log level is set properly", checkLoggersLevel(namespace, KAFKA_LOGGERS, kafkaMap), is(true));
+        StUtils.getKafkaConfigurationConfigMaps(LOG_SETTING_CLUSTER_NAME, 3)
+                .forEach(cmName -> {
+                    assertThat("Kafka's log level is set properly", checkLoggersLevel(namespace, KAFKA_LOGGERS, cmName), is(true));
+                });
         assertThat("Zookeeper's log level is set properly", checkLoggersLevel(namespace, ZOOKEEPER_LOGGERS, zookeeperMap), is(true));
         assertThat("Topic operator's log level is set properly", checkLoggersLevel(namespace, OPERATORS_LOGGERS, topicOperatorMap), is(true));
         assertThat("User operator's log level is set properly", checkLoggersLevel(namespace, OPERATORS_LOGGERS, userOperatorMap), is(true));

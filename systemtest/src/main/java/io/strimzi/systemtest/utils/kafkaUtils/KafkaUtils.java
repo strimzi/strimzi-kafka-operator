@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +44,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static io.strimzi.api.kafka.model.KafkaClusterSpec.FORBIDDEN_PREFIXES;
 import static io.strimzi.api.kafka.model.KafkaClusterSpec.FORBIDDEN_PREFIX_EXCEPTIONS;
@@ -478,5 +480,30 @@ public class KafkaUtils {
 
     private static String namespacedBootstrapAddress(String clusterName, String namespace, int port) {
         return KafkaResources.bootstrapServiceName(clusterName) + "." + namespace + ".svc:" + port;
+    }
+
+    /**
+     * Kafka scripts related methods
+     */
+    public static int getCurrentOffsets(String podName, String topicName, String consumerGroup) {
+        String offsetOutput = cmdKubeClient().execInPod(podName, "/opt/kafka/bin/kafka-consumer-groups.sh",
+                "--describe",
+                "--bootstrap-server",
+                "localhost:9092",
+                "--group",
+                consumerGroup)
+            .out()
+            .trim();
+
+        String replaced = offsetOutput.replaceAll("\\s\\s+", " ");
+
+        List<String> lines = Arrays.asList(replaced.split("\n"));
+        List<String> headers = Arrays.asList(lines.get(0).split(" "));
+        List<String> matchingLine = Arrays.asList(lines.stream().filter(line -> line.contains(topicName)).findFirst().get().split(" "));
+
+        Map<String, String> valuesMap = IntStream.range(0, headers.size()).boxed().collect(Collectors.toMap(headers::get, matchingLine::get));
+
+
+        return Integer.parseInt(valuesMap.get("CURRENT-OFFSET"));
     }
 }

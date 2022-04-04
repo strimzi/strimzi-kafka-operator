@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
@@ -66,8 +67,6 @@ public class KafkaExporter extends AbstractModel {
     protected String logging;
     protected String version;
 
-    private boolean isDeployed;
-
     protected List<ContainerEnvVar> templateContainerEnvVars;
     protected SecurityContext templateContainerSecurityContext;
 
@@ -102,12 +101,20 @@ public class KafkaExporter extends AbstractModel {
 
     }
 
+    /**
+     * Builds the KafkaExporter model from the Kafka custom resource. If KafkaExporter is not enabled, it will return null.
+     *
+     * @param reconciliation    Reconciliation marker for logging
+     * @param kafkaAssembly     The Kafka CR
+     * @param versions          The list of supported Kafka versions
+     *
+     * @return                  KafkaExporter model object when Kafka Exporter is enabled or null if it is disabled.
+     */
     public static KafkaExporter fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
-        KafkaExporter kafkaExporter = new KafkaExporter(reconciliation, kafkaAssembly);
-
         KafkaExporterSpec spec = kafkaAssembly.getSpec().getKafkaExporter();
+
         if (spec != null) {
-            kafkaExporter.isDeployed = true;
+            KafkaExporter kafkaExporter = new KafkaExporter(reconciliation, kafkaAssembly);
 
             kafkaExporter.setResources(spec.getResources());
 
@@ -119,8 +126,8 @@ public class KafkaExporter extends AbstractModel {
                 kafkaExporter.setLivenessProbe(spec.getLivenessProbe());
             }
 
-            kafkaExporter.setGroupRegex(spec.getGroupRegex());
-            kafkaExporter.setTopicRegex(spec.getTopicRegex());
+            kafkaExporter.groupRegex = spec.getGroupRegex();
+            kafkaExporter.topicRegex = spec.getTopicRegex();
 
             String image = spec.getImage();
             if (image == null) {
@@ -129,8 +136,8 @@ public class KafkaExporter extends AbstractModel {
             }
             kafkaExporter.setImage(image);
 
-            kafkaExporter.setLogging(spec.getLogging());
-            kafkaExporter.setSaramaLoggingEnabled(spec.getEnableSaramaLogging());
+            kafkaExporter.logging = spec.getLogging();
+            kafkaExporter.saramaLoggingEnabled = spec.getEnableSaramaLogging();
 
             if (spec.getTemplate() != null) {
                 KafkaExporterTemplate template = spec.getTemplate();
@@ -154,21 +161,16 @@ public class KafkaExporter extends AbstractModel {
                 }
 
                 ModelUtils.parsePodTemplate(kafkaExporter, template.getPod());
+                kafkaExporter.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaExporter.templatePodLabels, DEFAULT_POD_LABELS);
             }
 
-            kafkaExporter.setVersion(versions.supportedVersion(kafkaAssembly.getSpec().getKafka().getVersion()).version());
+            kafkaExporter.version = versions.supportedVersion(kafkaAssembly.getSpec().getKafka().getVersion()).version();
             kafkaExporter.setOwnerReference(kafkaAssembly);
+
+            return kafkaExporter;
         } else {
-            kafkaExporter.isDeployed = false;
+            return null;
         }
-
-        kafkaExporter.templatePodLabels = Util.mergeLabelsOrAnnotations(kafkaExporter.templatePodLabels, DEFAULT_POD_LABELS);
-
-        return kafkaExporter;
-    }
-
-    protected void setSaramaLoggingEnabled(boolean saramaLoggingEnabled) {
-        this.saramaLoggingEnabled = saramaLoggingEnabled;
     }
 
     protected List<ContainerPort> getContainerPortList() {
@@ -178,10 +180,6 @@ public class KafkaExporter extends AbstractModel {
     }
 
     public Deployment generateDeployment(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        if (!isDeployed()) {
-            return null;
-        }
-
         DeploymentStrategy updateStrategy = new DeploymentStrategyBuilder()
                 .withType("RollingUpdate")
                 .withRollingUpdate(new RollingUpdateDeploymentBuilder()
@@ -235,7 +233,7 @@ public class KafkaExporter extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION, version));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_GROUP_REGEX, groupRegex));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_TOPIC_REGEX, topicRegex));
-        varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER, KafkaCluster.serviceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
+        varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA, String.valueOf(saramaLoggingEnabled)));
 
         // Add shared environment variables used for all containers
@@ -246,7 +244,7 @@ public class KafkaExporter extends AbstractModel {
         return varList;
     }
 
-    private int loggingMapping(String logLevel) {
+    private static int loggingMapping(String logLevel) {
         if (logLevel.equalsIgnoreCase("info")) {
             return 0;
         } else if (logLevel.equalsIgnoreCase("debug")) {
@@ -262,39 +260,10 @@ public class KafkaExporter extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>(3);
 
         volumeList.add(createTempDirVolume());
-        volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporter.secretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KafkaExporterResources.secretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(CLUSTER_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
 
         return volumeList;
-    }
-
-    /**
-     * Generates the name of the Kafka Exporter deployment
-     *
-     * @param kafkaCluster  Name of the Kafka Custom Resource
-     * @return  Name of the Kafka Exporter deployment
-     */
-    public static String kafkaExporterName(String kafkaCluster) {
-        return KafkaExporterResources.deploymentName(kafkaCluster);
-    }
-
-    /**
-     * Generates the name of the Kafka Exporter secret with certificates for connecting to Kafka brokers
-     *
-     * @param kafkaCluster  Name of the Kafka Custom Resource
-     * @return  Name of the Kafka Exporter secret
-     */
-    public static String secretName(String kafkaCluster) {
-        return KafkaExporterResources.secretName(kafkaCluster);
-    }
-
-    /**
-     * Get the name of the Kafka Exporter service account given the name of the {@code kafkaCluster}.
-     * @param kafkaCluster The cluster name
-     * @return The name of the KE service account.
-     */
-    public static String containerServiceAccountName(String kafkaCluster) {
-        return kafkaExporterName(kafkaCluster);
     }
 
     @Override
@@ -302,34 +271,9 @@ public class KafkaExporter extends AbstractModel {
         return null;
     }
 
-    private void setGroupRegex(String groupRegex) {
-        this.groupRegex = groupRegex;
-    }
-
-    private void setTopicRegex(String topicRegex) {
-        this.topicRegex = topicRegex;
-    }
-
     @Override
     protected String getServiceAccountName() {
         return KafkaExporterResources.serviceAccountName(cluster);
-    }
-
-    private void setLogging(String logging) {
-        this.logging = logging;
-    }
-
-    private void setVersion(String version) {
-        this.version = version;
-    }
-
-    /**
-     * Returns whether the Kafka Exporter is enabled or not
-     *
-     * @return True if Kafka exporter is enabled. False otherwise.
-     */
-    private boolean isDeployed() {
-        return isDeployed;
     }
 
     /**
@@ -343,11 +287,8 @@ public class KafkaExporter extends AbstractModel {
      * @return The generated Secret.
      */
     public Secret generateSecret(ClusterCa clusterCa, boolean isMaintenanceTimeWindowsSatisfied) {
-        if (!isDeployed()) {
-            return null;
-        }
         Secret secret = clusterCa.kafkaExporterSecret();
-        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaExporter.secretName(cluster), name,
+        return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaExporterResources.secretName(cluster), name,
                 "kafka-exporter", labels, createOwnerReference(), isMaintenanceTimeWindowsSatisfied);
     }
 }

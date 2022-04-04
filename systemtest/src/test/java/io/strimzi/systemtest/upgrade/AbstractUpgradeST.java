@@ -31,7 +31,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.executor.ExecResult;
 import io.vertx.core.json.JsonArray;
@@ -562,11 +562,8 @@ public class AbstractUpgradeST extends AbstractST {
             // ##############################
             // Validate that continuous clients finished successfully
             // ##############################
-            ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, namespace, continuousClientsMessageCount);
+            ClientUtils.waitForClientsSuccess(producerName, consumerName, namespace, continuousClientsMessageCount);
             // ##############################
-            // Delete jobs to make same names available for next upgrade run during chain upgrade
-            kubeClient().deleteJob(producerName);
-            kubeClient().deleteJob(consumerName);
         }
     }
 

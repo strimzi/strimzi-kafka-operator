@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.CertificateAuthorityBuilder;
@@ -20,7 +19,6 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
-import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
@@ -37,6 +35,7 @@ import io.strimzi.systemtest.kafkaclients.clients.InternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaClientsTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
@@ -64,12 +63,8 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -95,9 +90,7 @@ import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
-import static io.strimzi.systemtest.security.SystemTestCertManager.STRIMZI_INTERMEDIATE_CA;
-import static io.strimzi.systemtest.security.SystemTestCertManager.convertPrivateKeyToPKCS8File;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.systemtest.Constants.SANITY;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -114,8 +107,6 @@ class SecurityST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(SecurityST.class);
     private static final String OPENSSL_RETURN_CODE = "Verify return code: 0 (ok)";
-    static final String STRIMZI_TEST_CLUSTER_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClusterCA";
-    static final String STRIMZI_TEST_CLIENTS_CA = "C=CZ, L=Prague, O=StrimziTest, CN=SecuritySTClientsCA";
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(SecurityST.class.getSimpleName()).stream().findFirst().get();
 
@@ -126,13 +117,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Running testCertificates {}", clusterName);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 2)
-                .editSpec()
-                    .editZookeeper()
-                        .withReplicas(2)
-                    .endZookeeper()
-                .endSpec()
-                .build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
         LOGGER.info("Check Kafka bootstrap certificate");
         String outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(namespaceName, KafkaResources.tlsBootstrapAddress(clusterName), KafkaResources.bootstrapServiceName(clusterName),
@@ -148,7 +133,7 @@ class SecurityST extends AbstractST {
         List<String> kafkaPorts = new ArrayList<>(Arrays.asList("9091", "9093"));
         List<String> zkPorts = new ArrayList<>(Arrays.asList("2181", "3888"));
 
-        IntStream.rangeClosed(0, 1).forEach(podId -> {
+        IntStream.rangeClosed(0, 2).forEach(podId -> {
             String output;
 
             LOGGER.info("Checking certificates for podId {}", podId);
@@ -211,6 +196,7 @@ class SecurityST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @Tag(SANITY)
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
@@ -886,9 +872,6 @@ class SecurityST extends AbstractST {
         LOGGER.info("KafkaConnect with config {} will connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
-
-        KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaConnectResources.deploymentName(clusterName));
     }
 
     @ParallelNamespaceTest
@@ -954,9 +937,6 @@ class SecurityST extends AbstractST {
         }, namespaceName);
 
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(namespaceName, clusterName);
-
-        KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName));
     }
 
     @ParallelNamespaceTest
@@ -1363,9 +1343,6 @@ class SecurityST extends AbstractST {
         LOGGER.info("Verifying that Kafka Connect status is Ready because of same TLS version");
 
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
-
-        KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaConnectResources.deploymentName(clusterName));
     }
 
     @ParallelNamespaceTest
@@ -1431,9 +1408,6 @@ class SecurityST extends AbstractST {
         LOGGER.info("Verifying that Kafka Connect status is Ready because of the same cipher suites complexity of algorithm");
 
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
-
-        KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaConnectResources.deploymentName(clusterName));
     }
 
     @ParallelNamespaceTest
@@ -1503,59 +1477,35 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     void testClusterCACertRenew(ExtensionContext extensionContext) {
-        checkClusterCACertRenew(extensionContext, false);
-    }
+        final TestStorage ts = new TestStorage(extensionContext, namespace);
 
-    @ParallelNamespaceTest
-    void testCustomClusterCACertRenew(ExtensionContext extensionContext) {
-        checkClusterCACertRenew(extensionContext, true);
-    }
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(ts.getClusterName(), 3)
+            .editOrNewSpec()
+                .withNewClusterCa()
+                    .withRenewalDays(15)
+                    .withValidityDays(20)
+                .endClusterCa()
+            .endSpec()
+            .build());
 
-    void checkClusterCACertRenew(ExtensionContext extensionContext, boolean customCA) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
-        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
+        final Map<String, String> zkPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getZookeeperSelector());
+        final Map<String, String> kafkaPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getKafkaSelector());
+        final Map<String, String> eoPod = DeploymentUtils.depSnapshot(ts.getNamespaceName(), ts.getEoDeploymentName());
 
-        if (customCA) {
-            generateAndDeployCustomStrimziCA(namespaceName, clusterName);
-            checkCustomCAsCorrectness(namespaceName, clusterName);
-            resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
-                .editOrNewSpec()
-                    .withNewClusterCa()
-                        .withRenewalDays(15)
-                        .withValidityDays(20)
-                        .withGenerateCertificateAuthority(false)
-                    .endClusterCa()
-                .endSpec()
-                .build());
-        } else {
-            resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
-                .editOrNewSpec()
-                    .withNewClusterCa()
-                        .withRenewalDays(15)
-                        .withValidityDays(20)
-                    .endClusterCa()
-                .endSpec()
-                .build());
-        }
-
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-
-        Secret clusterCASecret = kubeClient(namespaceName).getSecret(namespaceName, KafkaResources.clusterCaCertificateSecretName(clusterName));
+        Secret clusterCASecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
         X509Certificate cacert = SecretUtils.getCertificateFromSecret(clusterCASecret, "ca.crt");
         Date initialCertStartTime = cacert.getNotBefore();
         Date initialCertEndTime = cacert.getNotAfter();
 
         // Check Broker kafka certificate dates
-        Secret brokerCertCreationSecret = kubeClient(namespaceName).getSecret(namespaceName, clusterName + "-kafka-brokers");
-        X509Certificate kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, clusterName + "-kafka-0.crt");
+        Secret brokerCertCreationSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), ts.getClusterName() + "-kafka-brokers");
+        X509Certificate kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, ts.getClusterName() + "-kafka-0.crt");
         Date initialKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         Date initialKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
         // Check Zookeeper certificate dates
-        Secret zkCertCreationSecret = kubeClient(namespaceName).getSecret(namespaceName, clusterName + "-zookeeper-nodes");
-        X509Certificate zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, clusterName + "-zookeeper-0.crt");
+        Secret zkCertCreationSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), ts.getClusterName() + "-zookeeper-nodes");
+        X509Certificate zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, ts.getClusterName() + "-zookeeper-0.crt");
         Date initialZkCertStartTime = zkBrokerCert.getNotBefore();
         Date initialZkCertEndTime = zkBrokerCert.getNotAfter();
 
@@ -1563,29 +1513,32 @@ class SecurityST extends AbstractST {
         CertificateAuthority newClusterCA = new CertificateAuthority();
         newClusterCA.setRenewalDays(150);
         newClusterCA.setValidityDays(200);
-        if (customCA) {
-            newClusterCA.setGenerateCertificateAuthority(false);
-        }
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().setClusterCa(newClusterCA), namespaceName);
 
-        // Wait for reconciliation and verify certs have been updated
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(ts.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA), ts.getNamespaceName());
+
+        // On the next reconciliation, the Cluster Operator performs a `rolling update`:
+        //   a) ZooKeeper
+        //   b) Kafka
+        //   c) and other components to trust the new Cluster CA certificate. (i.e., EntityOperator)
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getZookeeperSelector(), 3, zkPods);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getKafkaSelector(), 3, kafkaPods);
+        DeploymentUtils.waitTillDepHasRolled(ts.getNamespaceName(), ts.getEoDeploymentName(), 1, eoPod);
 
         // Read renewed secret/certs again
-        clusterCASecret = kubeClient(namespaceName).getSecret(namespaceName, KafkaResources.clusterCaCertificateSecretName(clusterName));
+        clusterCASecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(ts.getClusterName()));
         cacert = SecretUtils.getCertificateFromSecret(clusterCASecret, "ca.crt");
         Date changedCertStartTime = cacert.getNotBefore();
         Date changedCertEndTime = cacert.getNotAfter();
 
         // Check renewed Broker kafka certificate dates
-        brokerCertCreationSecret = kubeClient(namespaceName).getSecret(namespaceName, clusterName + "-kafka-brokers");
-        kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, clusterName + "-kafka-0.crt");
+        brokerCertCreationSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), ts.getClusterName() + "-kafka-brokers");
+        kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, ts.getClusterName() + "-kafka-0.crt");
         Date changedKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         Date changedKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
         // Check renewed Zookeeper certificate dates
-        zkCertCreationSecret = kubeClient(namespaceName).getSecret(namespaceName, clusterName + "-zookeeper-nodes");
-        zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, clusterName + "-zookeeper-0.crt");
+        zkCertCreationSecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), ts.getClusterName() + "-zookeeper-nodes");
+        zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, ts.getClusterName() + "-zookeeper-0.crt");
         Date changedZkCertStartTime = zkBrokerCert.getNotBefore();
         Date changedZkCertEndTime = zkBrokerCert.getNotAfter();
 
@@ -1596,73 +1549,47 @@ class SecurityST extends AbstractST {
         LOGGER.info("Zookeeper cert creation dates: " + initialZkCertStartTime + " --> " + initialZkCertEndTime);
         LOGGER.info("Zookeeper cert changed dates:  " + changedZkCertStartTime + " --> " + changedZkCertEndTime);
 
-        if (customCA) {
-            assertThat("ClusterCA cert should not have changed.",
-                    initialCertEndTime.compareTo(changedCertEndTime) == 0);
-        } else {
-            String msg = "Error: original cert-end date: '" + initialCertEndTime +
-                    "' ends sooner than changed (prolonged) cert date '" + changedCertEndTime + "'!";
-            assertThat(msg, initialCertEndTime.compareTo(changedCertEndTime) < 0);
-        }
+        String msg = "Error: original cert-end date: '" + initialCertEndTime +
+            "' ends sooner than changed (prolonged) cert date '" + changedCertEndTime + "'!";
+        assertThat(msg, initialCertEndTime.compareTo(changedCertEndTime) < 0);
         assertThat("Broker certificates start dates have not been renewed.",
-                initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
+            initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
         assertThat("Broker certificates end dates have not been renewed.",
-                initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
+            initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
         assertThat("Zookeeper certificates start dates have not been renewed.",
-                initialZkCertStartTime.compareTo(changedZkCertStartTime) < 0);
+            initialZkCertStartTime.compareTo(changedZkCertStartTime) < 0);
         assertThat("Zookeeper certificates end dates have not been renewed.",
-                initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
+            initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
     }
 
     @ParallelNamespaceTest
     void testClientsCACertRenew(ExtensionContext extensionContext) {
-        checkClientsCACertRenew(extensionContext, false);
-    }
+        final TestStorage ts = new TestStorage(extensionContext, namespace);
 
-    @ParallelNamespaceTest
-    void testCustomClientsCACertRenew(ExtensionContext extensionContext) {
-        checkClientsCACertRenew(extensionContext, true);
-    }
-
-    void checkClientsCACertRenew(ExtensionContext extensionContext, boolean customCA) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        if (customCA) {
-            generateAndDeployCustomStrimziCA(namespaceName, clusterName);
-            checkCustomCAsCorrectness(namespaceName, clusterName);
-            resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
-                .editOrNewSpec()
-                    .withNewClientsCa()
-                        .withRenewalDays(15)
-                        .withValidityDays(20)
-                        .withGenerateCertificateAuthority(false)
-                    .endClientsCa()
-                .endSpec()
-                .build());
-        } else {
-            resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
-                .editOrNewSpec()
-                    .withNewClientsCa()
-                        .withRenewalDays(15)
-                        .withValidityDays(20)
-                    .endClientsCa()
-                .endSpec()
-                .build());
-        }
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(ts.getClusterName(), 3)
+            .editOrNewSpec()
+                .withNewClientsCa()
+                    .withRenewalDays(15)
+                    .withValidityDays(20)
+                .endClientsCa()
+            .endSpec()
+            .build());
 
         String username = "strimzi-tls-user-" + new Random().nextInt(Integer.MAX_VALUE);
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterName, username).build());
-        Map<String, String> entityPods = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(ts.getClusterName(), username).build());
+
+        final Map<String, String> zkPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getZookeeperSelector());
+        final Map<String, String> kafkaPods = PodUtils.podSnapshot(ts.getNamespaceName(), ts.getKafkaSelector());
+        final Map<String, String> eoPod = DeploymentUtils.depSnapshot(ts.getNamespaceName(), ts.getEoDeploymentName());
 
         // Check initial clientsCA validity days
-        Secret clientsCASecret = kubeClient(namespaceName).getSecret(namespaceName, KafkaResources.clientsCaCertificateSecretName(clusterName));
+        Secret clientsCASecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(ts.getClusterName()));
         X509Certificate cacert = SecretUtils.getCertificateFromSecret(clientsCASecret, "ca.crt");
         Date initialCertStartTime = cacert.getNotBefore();
         Date initialCertEndTime = cacert.getNotAfter();
 
         // Check initial kafkauser validity days
-        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, username), "user.crt");
+        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), username), "user.crt");
         Date initialKafkaUserCertStartTime = userCert.getNotBefore();
         Date initialKafkaUserCertEndTime = userCert.getNotAfter();
 
@@ -1670,21 +1597,27 @@ class SecurityST extends AbstractST {
         CertificateAuthority newClientsCA = new CertificateAuthority();
         newClientsCA.setRenewalDays(150);
         newClientsCA.setValidityDays(200);
-        if (customCA) {
-            newClientsCA.setGenerateCertificateAuthority(false);
-        }
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().setClientsCa(newClientsCA), namespaceName);
 
-        // Wait for reconciliation and verify certs have been updated
-        DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, entityPods);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(ts.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA), ts.getNamespaceName());
+
+        // On the next reconciliation, the Cluster Operator performs a `rolling update` only for the
+        // `Kafka pods`.
+        // a) ZooKeeper must not roll
+        RollingUpdateUtils.waitForNoRollingUpdate(ts.getNamespaceName(), ts.getZookeeperSelector(), zkPods);
+
+        // b) Kafka has to roll
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(ts.getNamespaceName(), ts.getKafkaSelector(), 3, kafkaPods);
+
+        // c) EO must roll (because User Operator uses Clients CA for issuing user certificates)
+        DeploymentUtils.waitTillDepHasRolled(ts.getNamespaceName(), ts.getEoDeploymentName(), 1, eoPod);
 
         // Read renewed secret/certs again
-        clientsCASecret = kubeClient(namespaceName).getSecret(namespaceName, KafkaResources.clientsCaCertificateSecretName(clusterName));
+        clientsCASecret = kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(ts.getClusterName()));
         cacert = SecretUtils.getCertificateFromSecret(clientsCASecret, "ca.crt");
         Date changedCertStartTime = cacert.getNotBefore();
         Date changedCertEndTime = cacert.getNotAfter();
 
-        userCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, username), "user.crt");
+        userCert = SecretUtils.getCertificateFromSecret(kubeClient(ts.getNamespaceName()).getSecret(ts.getNamespaceName(), username), "user.crt");
         Date changedKafkaUserCertStartTime = userCert.getNotBefore();
         Date changedKafkaUserCertEndTime = userCert.getNotAfter();
 
@@ -1693,173 +1626,13 @@ class SecurityST extends AbstractST {
         LOGGER.info("Initial userCert dates: " + initialKafkaUserCertStartTime + " --> " + initialKafkaUserCertEndTime);
         LOGGER.info("Changed userCert dates: " + changedKafkaUserCertStartTime + " --> " + changedKafkaUserCertEndTime);
 
-        if (customCA) {
-            assertThat("ClientsCA cert should not have changed.",
-                    initialCertEndTime.compareTo(changedCertEndTime) == 0);
-        } else {
-            String msg = "Error: original cert-end date: '" + initialCertEndTime +
-                    "' ends sooner than changed (prolonged) cert date '" + changedCertEndTime + "'";
-            assertThat(msg, initialCertEndTime.compareTo(changedCertEndTime) < 0);
-        }
+
+        String msg = "Error: original cert-end date: '" + initialCertEndTime +
+                "' ends sooner than changed (prolonged) cert date '" + changedCertEndTime + "'";
+        assertThat(msg, initialCertEndTime.compareTo(changedCertEndTime) < 0);
         assertThat("UserCert start date has been renewed",
                 initialKafkaUserCertStartTime.compareTo(changedKafkaUserCertStartTime) < 0);
         assertThat("UserCert end date has been renewed",
                 initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
-    }
-
-    @ParallelNamespaceTest
-    void testCustomClusterCAClientsCA(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-
-        generateAndDeployCustomStrimziCA(namespaceName, clusterName);
-        checkCustomCAsCorrectness(namespaceName, clusterName);
-
-        LOGGER.info(" Deploy kafka with new certs/secrets.");
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
-            .editSpec()
-                .withNewClusterCa()
-                    .withGenerateCertificateAuthority(false)
-                .endClusterCa()
-                .withNewClientsCa()
-                    .withGenerateCertificateAuthority(false)
-                .endClientsCa()
-                .editKafka()
-                    .withListeners(new GenericKafkaListenerBuilder()
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
-                                .withPort(9092)
-                                .withTls(false)
-                                .build(),
-                            new GenericKafkaListenerBuilder()
-                                .withType(KafkaListenerType.INTERNAL)
-                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                                .withPort(9093)
-                                .withTls(true)
-                                .withNewKafkaListenerAuthenticationTlsAuth()
-                                .endKafkaListenerAuthenticationTlsAuth()
-                                .build())
-                .endKafka()
-            .endSpec()
-            .build());
-
-        LOGGER.info("Check Kafka(s) and Zookeeper(s) certificates.");
-        X509Certificate kafkaCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, clusterName + "-kafka-brokers"), clusterName + "-kafka-0.crt");
-        assertThat("KafkaCert does not have expected test Issuer: " + kafkaCert.getIssuerDN(),
-                SystemTestCertManager.containsAllDN(kafkaCert.getIssuerX500Principal().getName(), STRIMZI_TEST_CLUSTER_CA));
-
-        X509Certificate zookeeperCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, clusterName + "-zookeeper-nodes"), clusterName + "-zookeeper-0.crt");
-        assertThat("ZookeeperCert does not have expected test Subject: " + zookeeperCert.getIssuerDN(),
-                SystemTestCertManager.containsAllDN(zookeeperCert.getIssuerX500Principal().getName(), STRIMZI_TEST_CLUSTER_CA));
-
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-
-        LOGGER.info("Check KafkaUser certificate.");
-        KafkaUser user = KafkaUserTemplates.tlsUser(clusterName, userName).build();
-        resourceManager.createResource(extensionContext, user);
-        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, userName), "user.crt");
-        assertThat("Generated ClientsCA does not have expected test Subject: " + userCert.getIssuerDN(),
-                SystemTestCertManager.containsAllDN(userCert.getIssuerX500Principal().getName(), STRIMZI_TEST_CLIENTS_CA));
-
-        LOGGER.info("Send and receive messages over TLS.");
-        resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(true, clusterName + "-" + Constants.KAFKA_CLIENTS, user).build());
-        final String kafkaClientsPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getMetadata().getName();
-
-        InternalKafkaClient internalKafkaClient = new InternalKafkaClient.Builder()
-                .withUsingPodName(kafkaClientsPodName)
-                .withTopicName(topicName)
-                .withNamespaceName(namespaceName)
-                .withClusterName(clusterName)
-                .withKafkaUsername(userName)
-                .withMessageCount(MESSAGE_COUNT)
-                .withListenerName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                .build();
-
-        LOGGER.info("Check for certificates used within kafka pod internal clients (producer/consumer)");
-        List<VolumeMount> volumeMounts = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-" + Constants.KAFKA_CLIENTS).get(0).getSpec().getContainers().get(0).getVolumeMounts();
-        for (VolumeMount vm : volumeMounts) {
-            if (vm.getMountPath().contains("user-secret-" + internalKafkaClient.getKafkaUsername())) {
-                assertThat("UserCert Issuer DN in clients pod is incorrect!", checkMountVolumeSecret(namespaceName, kafkaClientsPodName,
-                        vm, "issuer", STRIMZI_INTERMEDIATE_CA));
-                assertThat("UserCert Subject DN in clients pod is incorrect!", checkMountVolumeSecret(namespaceName, kafkaClientsPodName,
-                        vm, "subject", STRIMZI_TEST_CLIENTS_CA));
-
-            } else if (vm.getMountPath().contains("cluster-ca-" + internalKafkaClient.getKafkaUsername())) {
-                assertThat("ClusterCA Issuer DN in clients pod is incorrect!", checkMountVolumeSecret(namespaceName, kafkaClientsPodName,
-                        vm, "issuer", STRIMZI_INTERMEDIATE_CA));
-                assertThat("ClusterCA Subject DN in clients pod is incorrect!", checkMountVolumeSecret(namespaceName, kafkaClientsPodName,
-                        vm, "subject", STRIMZI_TEST_CLUSTER_CA));
-            }
-        }
-
-        LOGGER.info("Checking produced and consumed messages via TLS to pod:{}", kafkaClientsPodName);
-        internalKafkaClient.checkProducedAndConsumedMessages(
-                internalKafkaClient.sendMessagesTls(),
-                internalKafkaClient.receiveMessagesTls()
-        );
-    }
-
-    void checkCustomCAsCorrectness(String namespaceName, String clusterName) {
-        LOGGER.info("Check ClusterCA and ClientsCA certificates.");
-        X509Certificate clientsCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, KafkaResources.clientsCaCertificateSecretName(clusterName)), "ca.crt");
-        X509Certificate clusterCert = SecretUtils.getCertificateFromSecret(kubeClient(namespaceName).getSecret(namespaceName, KafkaResources.clusterCaCertificateSecretName(clusterName)), "ca.crt");
-
-        assertThat("Generated ClientsCA does not have expected Issuer: " + clientsCert.getIssuerDN(),
-                SystemTestCertManager.containsAllDN(clientsCert.getIssuerX500Principal().getName(), STRIMZI_INTERMEDIATE_CA));
-        assertThat("Generated ClientsCA does not have expected Subject: " + clientsCert.getSubjectDN(),
-                SystemTestCertManager.containsAllDN(clientsCert.getSubjectX500Principal().getName(), STRIMZI_TEST_CLIENTS_CA));
-
-        assertThat("Generated ClusterCA does not have expected Issuer: " + clusterCert.getIssuerDN(),
-                SystemTestCertManager.containsAllDN(clusterCert.getIssuerX500Principal().getName(), STRIMZI_INTERMEDIATE_CA));
-        assertThat("Generated ClusterCA does not have expected Subject: " + clusterCert.getSubjectDN(),
-                SystemTestCertManager.containsAllDN(clusterCert.getSubjectX500Principal().getName(), STRIMZI_TEST_CLUSTER_CA));
-    }
-
-    boolean checkMountVolumeSecret(String namespaceName, String podName, VolumeMount volumeMount, String principalDNType, String expectedPrincipal) {
-        String dn = cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
-                "openssl x509 -in " + volumeMount.getMountPath() + "/ca.crt -noout -nameopt RFC2253 -" + principalDNType).out().strip();
-        String certOutIssuer = dn.substring(principalDNType.length() + 1).replace("/", ",");
-        return SystemTestCertManager.containsAllDN(certOutIssuer, expectedPrincipal);
-    }
-
-    void generateAndDeployCustomStrimziCA(String namespaceName, String clusterName) {
-        LOGGER.info("Generating custom RootCA, IntermediateCA, and ClusterCA, ClientsCA for Strimzi and PEM bundles.");
-        SystemTestCertAndKey strimziRootCA = SystemTestCertManager.generateRootCaCertAndKey();
-        SystemTestCertAndKey intermediateCA = SystemTestCertManager.generateIntermediateCaCertAndKey(strimziRootCA);
-        SystemTestCertAndKey stClusterCA = SystemTestCertManager.generateStrimziCaCertAndKey(intermediateCA, STRIMZI_TEST_CLUSTER_CA);
-        SystemTestCertAndKey stClientsCA = SystemTestCertManager.generateStrimziCaCertAndKey(intermediateCA, STRIMZI_TEST_CLIENTS_CA);
-
-        // Create PEM bundles (strimzi root CA, intermediate CA, cluster|clients CA cert+key) for ClusterCA and ClientsCA
-        CertAndKeyFiles clusterBundle = SystemTestCertManager.exportToPemFiles(stClusterCA, intermediateCA, strimziRootCA);
-        CertAndKeyFiles clientsBundle = SystemTestCertManager.exportToPemFiles(stClientsCA, intermediateCA, strimziRootCA);
-
-        Map<String, String> secretLabels = new HashMap<>();
-        secretLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
-        secretLabels.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
-
-        try {
-            // Deploy ClusterCA secret
-            LOGGER.info("Deploy all certificates and keys as secrets.");
-            SecretUtils.deleteSecretWithWait(KafkaResources.clusterCaCertificateSecretName(clusterName), namespaceName);
-            SecretUtils.createCustomSecret(KafkaResources.clusterCaCertificateSecretName(clusterName), clusterName, namespaceName, clusterBundle);
-
-
-            SecretUtils.deleteSecretWithWait(KafkaResources.clusterCaKeySecretName(clusterName), namespaceName);
-            File strimziKeyPKCS8 = convertPrivateKeyToPKCS8File(stClusterCA.getPrivateKey());
-            SecretUtils.createSecretFromFile(strimziKeyPKCS8.getAbsolutePath(), "ca.key", KafkaResources.clusterCaKeySecretName(clusterName), namespaceName, secretLabels);
-
-            // ClientsCA secret part
-            SecretUtils.deleteSecretWithWait(KafkaResources.clientsCaCertificateSecretName(clusterName), namespaceName);
-            SecretUtils.createCustomSecret(KafkaResources.clientsCaCertificateSecretName(clusterName), clusterName, namespaceName, clientsBundle);
-
-            SecretUtils.deleteSecretWithWait(KafkaResources.clientsCaKeySecretName(clusterName), namespaceName);
-            File clientsKeyPKCS8 = convertPrivateKeyToPKCS8File(stClientsCA.getPrivateKey());
-            SecretUtils.createSecretFromFile(clientsKeyPKCS8.getAbsolutePath(), "ca.key", KafkaResources.clientsCaKeySecretName(clusterName), namespaceName, secretLabels);
-
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
-            e.printStackTrace();
-        }
     }
 }

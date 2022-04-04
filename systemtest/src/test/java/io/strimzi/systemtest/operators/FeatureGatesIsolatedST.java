@@ -328,6 +328,6 @@ public class FeatureGatesIsolatedST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(zkSelector, zkReplicas, zkPods);
         RollingUpdateUtils.waitTillComponentHasRolled(kafkaSelector, kafkaReplicas, kafkaPods);
 
-        ClientUtils.waitTillContinuousClientsFinish(producerName, consumerName, INFRA_NAMESPACE, messageCount);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, messageCount);
     }
 }

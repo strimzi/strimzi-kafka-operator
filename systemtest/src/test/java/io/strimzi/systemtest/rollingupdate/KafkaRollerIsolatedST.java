@@ -28,6 +28,7 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.StatefulSetTest;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -74,6 +75,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class KafkaRollerIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaRollerIsolatedST.class);
 
+    // When using StrimziPodSets, Kafka pods are not all rolled when scaling up or down.
+    // This test needs to be updated to support StrimziPodSets as well
+    //             => https://github.com/strimzi/strimzi-kafka-operator/issues/6493
+    @StatefulSetTest
     @ParallelNamespaceTest
     void testKafkaRollsWhenTopicIsUnderReplicated(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(INFRA_NAMESPACE, extensionContext);

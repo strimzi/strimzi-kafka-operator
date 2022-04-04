@@ -110,7 +110,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
 
     private Future<Void> createConnectCluster(VertxTestContext context, KafkaConnectApi kafkaConnectApi, boolean reconciliationPaused) {
-        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16);
+        PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(true, KubernetesVersion.V1_21);
         ResourceOperatorSupplier supplier = new ResourceOperatorSupplier(vertx, this.mockClient,
                 new ZookeeperLeaderFinder(vertx,
                     // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
@@ -131,7 +131,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
                     assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
                     assertThat(mockClient.configMaps().inNamespace(NAMESPACE).withName(KafkaConnectResources.metricsAndLogConfigMapName(CLUSTER_NAME)).get(), is(notNullValue()));
                     assertThat(mockClient.services().inNamespace(NAMESPACE).withName(KafkaConnectResources.serviceName(CLUSTER_NAME)).get(), is(notNullValue()));
-                    assertThat(mockClient.policy().v1beta1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
+                    assertThat(mockClient.policy().v1().podDisruptionBudget().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(notNullValue()));
                 } else {
                     assertThat(mockClient.apps().deployments().inNamespace(NAMESPACE).withName(KafkaConnectResources.deploymentName(CLUSTER_NAME)).get(), is(nullValue()));
                     verify(mockClient, never()).resources(KafkaConnect.class);

@@ -72,6 +72,7 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
 
         SuiteThreadController suiteThreadController = SuiteThreadController.getInstance();
         if (StUtils.isParallelSuite(extensionContext)) {
+            suiteThreadController.notifyParallelSuiteToAllowExecution(extensionContext);
             suiteThreadController.removeParallelSuite(extensionContext);
         }
 

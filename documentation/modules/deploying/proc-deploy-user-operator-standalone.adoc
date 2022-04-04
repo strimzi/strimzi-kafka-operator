@@ -13,7 +13,7 @@ A standalone deployment can operate with any Kafka cluster.
 
 Standalone deployment files are provided with Strimzi.
 Use the `05-Deployment-strimzi-user-operator.yaml` deployment file to deploy the User Operator.
-Add or set the environment variables needed to make a connection to a Kafka cluster.  
+Add or set the environment variables needed to make a connection to a Kafka cluster.
 
 .Prerequisites
 
@@ -75,6 +75,8 @@ spec:
               value: "kafka-"
             - name: STRIMZI_ACLS_ADMIN_API_SUPPORTED <14>
               value: "true"
+            - name: STRIMZI_MAINTENANCE_TIME_WINDOWS <15>
+              value: '* * 8-10 * * ?;* * 14-15 * * ?'
 ----
 <1> The Kubernetes namespace for the User Operator to watch for `KafkaUser` resources. Only one namespace can be specified.
 <2>  The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
@@ -99,7 +101,7 @@ The default is `30` days to initiate certificate renewal before the old certific
 When set to `false`, the User Operator will reject all resources with `simple` authorization ACL rules.
 This helps to avoid unnecessary exceptions in the Kafka cluster logs.
 The default is `true`.
-
+<15> (Optional) Semi-colon separated list of Cron Expressions defining the maintenance time windows during which the expiring user certificates will be renewed.
 
 . If you are using TLS to connect to the Kafka cluster, specify the secrets used to authenticate connection.
 Otherwise, go to the next step.
@@ -124,11 +126,19 @@ The `Secret` must also contain the password (`entity-operator.password`) for acc
 [source,shell,subs=+quotes]
 kubectl create -f install/user-operator
 
-. Verify that the User Operator has been deployed successfully.
+. Check the status of the deployment:
 +
-[source,shell,subs=+quotes]
-kubectl describe deployment strimzi-user-operator
+[source,shell,subs="+quotes"]
+----
+kubectl get deployments
+----
 +
-The User Operator is deployed when the `Replicas` entry shows `1 available`.
+.Output shows the deployment name and readiness
+[source,shell,subs="+quotes"]
+----
+NAME                   READY  UP-TO-DATE  AVAILABLE
+strimzi-user-operator  1/1    1           1
+----
 +
-NOTE: You might experience a delay with the deployment if you have a slow connection to the Kubernetes cluster and the User Operator images have not been downloaded before.
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `AVAILABLE` output shows `1`.

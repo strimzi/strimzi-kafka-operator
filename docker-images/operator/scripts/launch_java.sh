@@ -23,6 +23,11 @@ JAVA_OPTS="${JAVA_OPTS} $(get_gc_opts)"
 # Deny illegal access option is supported only on Java 9 and higher
 JAVA_OPTS="${JAVA_OPTS} --illegal-access=deny"
 
+# Default memory options used when the user didn't configured any of these options, we set the defaults
+if [[ "$JAVA_OPTS" != *"MinRAMPercentage"* && "$JAVA_OPTS" != *"MaxRAMPercentage"* && "$JAVA_OPTS" != *"InitialRAMPercentage"* ]]; then
+  JAVA_OPTS="${JAVA_OPTS} -XX:MinRAMPercentage=10 -XX:MaxRAMPercentage=20 -XX:InitialRAMPercentage=10"
+fi
+
 # Disable FIPS if needed
 if [ "$FIPS_MODE" = "disabled" ]; then
     JAVA_OPTS="${JAVA_OPTS} -Dcom.redhat.fips=false"

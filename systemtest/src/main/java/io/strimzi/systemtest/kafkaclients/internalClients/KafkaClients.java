@@ -38,6 +38,7 @@ public class KafkaClients extends BaseClients {
     private int messageCount;
     private String consumerGroup;
     private long delayMs;
+    private String userName;
 
     public String getProducerName() {
         return producerName;
@@ -97,28 +98,32 @@ public class KafkaClients extends BaseClients {
         this.delayMs = delayMs;
     }
 
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
     public Job producerStrimzi() {
         return defaultProducerStrimzi().build();
     }
 
-    public Job producerScramShaStrimzi(final String clusterName, final String kafkaUserName) {
-        // fetch secret
-        final String saslJaasConfigEncrypted = ResourceManager.kubeClient().getSecret(this.getNamespaceName(), kafkaUserName).getData().get("sasl.jaas.config");
-        final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
+    public Job producerScramShaPlainStrimzi() {
+        this.configureScramSha(SecurityProtocol.SASL_PLAINTEXT);
+        return defaultProducerStrimzi().build();
+    }
 
-        this.setAdditionalConfig(this.getAdditionalConfig() +
-            // scram-sha
-            "ssl.endpoint.identification.algorithm=\n" +
-                "sasl.mechanism=SCRAM-SHA-512\n" +
-                "security.protocol=" + SecurityProtocol.SASL_SSL + "\n" +
-                "sasl.jaas.config=" + saslJaasConfigDecrypted);
+    public Job producerScramShaTlsStrimzi(final String clusterName) {
+        this.configureScramSha(SecurityProtocol.SASL_SSL);
 
         return defaultProducerStrimzi()
             .editSpec()
                 .editTemplate()
                     .editSpec()
                         .editFirstContainer()
-                            .addToEnv(getClusterCaCertEnv(clusterName))
+                            .addToEnv(this.getClusterCaCertEnv(clusterName))
                         .endContainer()
                     .endSpec()
                 .endTemplate()
@@ -126,48 +131,21 @@ public class KafkaClients extends BaseClients {
             .build();
     }
 
-    public Job producerTlsStrimzi(final String clusterName, final String kafkaUserName) {
-        this.setAdditionalConfig(this.getAdditionalConfig() +
-            "ssl.endpoint.identification.algorithm=\n" +
-            "sasl.mechanism=GSSAPI\n" +
-            "security.protocol=" + SecurityProtocol.SSL + "\n");
-
-        EnvVar userCrt = new EnvVarBuilder()
-            .withName("USER_CRT")
-            .withNewValueFrom()
-                .withNewSecretKeyRef()
-                    .withName(kafkaUserName)
-                    .withKey("user.crt")
-                .endSecretKeyRef()
-            .endValueFrom()
-            .build();
-
-        EnvVar userKey = new EnvVarBuilder()
-            .withName("USER_KEY")
-            .withNewValueFrom()
-                .withNewSecretKeyRef()
-                    .withName(kafkaUserName)
-                    .withKey("user.key")
-                .endSecretKeyRef()
-            .endValueFrom()
-            .build();
+    public Job producerTlsStrimzi(final String clusterName) {
+        this.configureTls();
 
         return defaultProducerStrimzi()
             .editSpec()
                 .editTemplate()
                     .editSpec()
                         .editFirstContainer()
-                            .addToEnv(getClusterCaCertEnv(clusterName), userCrt, userKey)
+                            .addToEnv(this.getClusterCaCertEnv(clusterName))
+                            .addAllToEnv(this.getTlsEnvVars())
                         .endContainer()
                     .endSpec()
                 .endTemplate()
             .endSpec()
             .build();
-    }
-
-
-    public Job consumerStrimzi() {
-        return defaultConsumerStrimzi().build();
     }
 
     public JobBuilder defaultProducerStrimzi() {
@@ -247,6 +225,48 @@ public class KafkaClients extends BaseClients {
                     .endSpec()
                 .endTemplate()
             .endSpec();
+    }
+
+    public Job consumerScramShaPlainStrimzi() {
+        this.configureScramSha(SecurityProtocol.SASL_PLAINTEXT);
+        return defaultConsumerStrimzi().build();
+    }
+
+    public Job consumerScramShaTlsStrimzi(final String clusterName) {
+        this.configureScramSha(SecurityProtocol.SASL_SSL);
+
+        return defaultConsumerStrimzi()
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            .addToEnv(this.getClusterCaCertEnv(clusterName))
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build();
+    }
+
+    public Job consumerTlsStrimzi(final String clusterName) {
+        this.configureTls();
+
+        return defaultConsumerStrimzi()
+            .editSpec()
+                .editTemplate()
+                    .editSpec()
+                        .editFirstContainer()
+                            .addToEnv(this.getClusterCaCertEnv(clusterName))
+                            .addAllToEnv(this.getTlsEnvVars())
+                        .endContainer()
+                    .endSpec()
+                .endTemplate()
+            .endSpec()
+            .build();
+    }
+
+    public Job consumerStrimzi() {
+        return defaultConsumerStrimzi().build();
     }
 
     public JobBuilder defaultConsumerStrimzi() {
@@ -330,5 +350,56 @@ public class KafkaClients extends BaseClients {
                 .endSecretKeyRef()
             .endValueFrom()
             .build();
+    }
+
+    final protected void configureScramSha(SecurityProtocol securityProtocol) {
+        if (this.getUserName() == null || this.getUserName().isEmpty()) {
+            throw new InvalidParameterException("User name for SCRAM-SHA is not set");
+        }
+
+        final String saslJaasConfigEncrypted = ResourceManager.kubeClient().getSecret(this.getNamespaceName(), this.getUserName()).getData().get("sasl.jaas.config");
+        final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
+
+        this.setAdditionalConfig(this.getAdditionalConfig() +
+            // scram-sha
+            "ssl.endpoint.identification.algorithm=\n" +
+            "sasl.mechanism=SCRAM-SHA-512\n" +
+            "security.protocol=" + securityProtocol + "\n" +
+            "sasl.jaas.config=" + saslJaasConfigDecrypted);
+    }
+
+    final protected void configureTls() {
+        this.setAdditionalConfig(this.getAdditionalConfig() +
+            "ssl.endpoint.identification.algorithm=\n" +
+            "sasl.mechanism=GSSAPI\n" +
+            "security.protocol=" + SecurityProtocol.SSL + "\n");
+    }
+
+    protected List<EnvVar> getTlsEnvVars() {
+        if (this.getUserName() == null || this.getUserName().isEmpty()) {
+            throw new InvalidParameterException("User name for TLS is not set");
+        }
+
+        EnvVar userCrt = new EnvVarBuilder()
+            .withName("USER_CRT")
+            .withNewValueFrom()
+                .withNewSecretKeyRef()
+                    .withName(this.getUserName())
+                    .withKey("user.crt")
+                .endSecretKeyRef()
+            .endValueFrom()
+            .build();
+
+        EnvVar userKey = new EnvVarBuilder()
+            .withName("USER_KEY")
+            .withNewValueFrom()
+                .withNewSecretKeyRef()
+                    .withName(this.getUserName())
+                    .withKey("user.key")
+                .endSecretKeyRef()
+            .endValueFrom()
+            .build();
+
+        return List.of(userCrt, userKey);
     }
 }

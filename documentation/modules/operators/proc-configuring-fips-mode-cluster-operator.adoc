@@ -22,7 +22,7 @@ Caused by: sun.security.pkcs11.wrapper.PKCS11Exception: CKR_SESSION_READ_ONLY
 ----
 
 If you want to run Strimzi on your FIPS-enabled cluster, you can disable the OpenJDK FIPS mode by setting the `FIPS_MODE` environment variable to `disabled` in the deployment configuration for the Cluster Operator.
-The Strimzi deployment won't be FIPS compliant, but the Strimzi operators as well as all its operands will be able to run on the FIPS-enabled Kubernetes cluster.
+The Strimzi deployment won't be FIPS compliant, but the Strimzi operators as well as all of its operands will be able to run on the FIPS-enabled Kubernetes cluster.
 
 .Procedure
 

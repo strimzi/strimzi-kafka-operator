@@ -33,6 +33,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
+import org.quartz.CronExpression;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -49,15 +50,18 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
@@ -410,31 +414,6 @@ public class Util {
     }
 
     /**
-     * Computes and returns a hash from the String
-     * @param toBeHashed String to be hashed
-     * @return hash
-     */
-    public static String stringHash(String toBeHashed)  {
-        try {
-            MessageDigest hashFunc = MessageDigest.getInstance("SHA");
-
-            byte[] hash = hashFunc.digest(toBeHashed.getBytes(StandardCharsets.UTF_8));
-
-            StringBuffer stringHash = new StringBuffer();
-
-            for (int i = 0; i < hash.length; i++) {
-                String hex = Integer.toHexString(0xff & hash[i]);
-                if (hex.length() == 1) stringHash.append('0');
-                stringHash.append(hex);
-            }
-
-            return stringHash.toString();
-        } catch (NoSuchAlgorithmException e)    {
-            throw new RuntimeException("Failed to create SHA MessageDigest instance");
-        }
-    }
-
-    /**
      * Method parses all dynamically unchangeable entries from the logging configuration.
      * @param loggingConfiguration logging configuration to be parsed
      * @return String containing all unmodifiable entries.
@@ -500,14 +479,26 @@ public class Util {
     /**
      * Gets the first 8 characters from a SHA-1 hash of the provided String
      *
-     * @param   toBeHashed   String for which the hash will be returned
+     * @param   toBeHashed  String for which the hash will be returned
+     *
      * @return              First 8 characters of the SHA-1 hash
      */
-    public static String sha1Prefix(String toBeHashed)   {
+    public static String hashStub(String toBeHashed)   {
+        return hashStub(toBeHashed.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    /**
+     * Gets the first 8 characters from a SHA-1 hash of the provided byte array
+     *
+     * @param   toBeHashed  Byte array for which the hash will be returned
+     *
+     * @return              First 8 characters of the SHA-1 hash
+     */
+    public static String hashStub(byte[] toBeHashed)   {
         try {
             // This is used to generate unique identifier which is not used for security => using SHA-1 is ok
             MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
-            byte[] digest = sha1.digest(toBeHashed.getBytes(StandardCharsets.US_ASCII));
+            byte[] digest = sha1.digest(toBeHashed);
 
             return String.format("%040x", new BigInteger(1, digest)).substring(0, 8);
         } catch (NoSuchAlgorithmException e) {
@@ -720,5 +711,50 @@ public class Util {
                     })
                     .collect(Collectors.joining("\n"));
         }
+    }
+
+    /**
+     * Checks whether maintenance time window is satisfied or not
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param maintenanceWindows    List of maintenance windows
+     * @param dateSupplier          Date supplier
+     *
+     * @return                      True if we are in a maintenance window or if no maintenance windows are defined. False otherwise.
+     */
+    public static boolean isMaintenanceTimeWindowsSatisfied(Reconciliation reconciliation, List<String> maintenanceWindows, Supplier<Date> dateSupplier) {
+        String currentCron = null;
+        try {
+            boolean isSatisfiedBy = maintenanceWindows == null || maintenanceWindows.isEmpty();
+            if (!isSatisfiedBy) {
+                Date date = dateSupplier.get();
+                for (String cron : maintenanceWindows) {
+                    currentCron = cron;
+                    CronExpression cronExpression = new CronExpression(cron);
+                    // the user defines the cron expression in "UTC/GMT" timezone but CO pod
+                    // can be running on a different one, so setting it on the cron expression
+                    cronExpression.setTimeZone(TimeZone.getTimeZone("GMT"));
+                    if (cronExpression.isSatisfiedBy(date)) {
+                        isSatisfiedBy = true;
+                        break;
+                    }
+                }
+            }
+            return isSatisfiedBy;
+        } catch (ParseException e) {
+            LOGGER.warnCr(reconciliation, "The provided maintenance time windows list contains {} which is not a valid cron expression", currentCron);
+            return false;
+        }
+    }
+
+    /**
+     * Encodes a String into Base64
+     *
+     * @param encode    String which should be encoded
+     *
+     * @return          Base64 data
+     */
+    public static String encodeToBase64(String encode)  {
+        return Base64.getEncoder().encodeToString(encode.getBytes(StandardCharsets.US_ASCII));
     }
 }

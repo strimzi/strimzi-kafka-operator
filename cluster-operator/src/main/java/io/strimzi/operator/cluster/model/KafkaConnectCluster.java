@@ -32,7 +32,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRuleBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeerBuilder;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
@@ -195,6 +195,7 @@ public class KafkaConnectCluster extends AbstractModel {
      * from the instantiation of the (subclass of) KafkaConnectCluster,
      * thus permitting reuse of the setter-calling code for subclasses.
      */
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     protected static <C extends KafkaConnectCluster> C fromSpec(Reconciliation reconciliation,
                                                                 KafkaConnectSpec spec,
                                                                 KafkaVersion.Lookup versions,
@@ -219,9 +220,6 @@ public class KafkaConnectCluster extends AbstractModel {
         kafkaConnect.setResources(spec.getResources());
         kafkaConnect.setLogging(spec.getLogging());
         kafkaConnect.setGcLoggingEnabled(spec.getJvmOptions() == null ? DEFAULT_JVM_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled());
-        if (spec.getJvmOptions() != null) {
-            kafkaConnect.setJavaSystemProperties(spec.getJvmOptions().getJavaSystemProperties());
-        }
 
         kafkaConnect.setJvmOptions(spec.getJvmOptions());
 
@@ -540,12 +538,10 @@ public class KafkaConnectCluster extends AbstractModel {
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(buildEnvVar(ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(buildEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        if (javaSystemProperties != null) {
-            varList.add(buildEnvVar(ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties)));
-        }
 
-        heapOptions(varList, 1.0, 0L);
-        jvmPerformanceOptions(varList);
+        ModelUtils.heapOptions(varList, 1.0, 0L, getJvmOptions(), getResources());
+        ModelUtils.jvmPerformanceOptions(varList, getJvmOptions());
+        ModelUtils.jvmSystemProperties(varList, getJvmOptions());
 
         if (tls != null) {
             populateTLSEnvVars(varList);
@@ -677,6 +673,15 @@ public class KafkaConnectCluster extends AbstractModel {
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
         return createPodDisruptionBudget();
+    }
+
+    /**
+     * Generates the PodDisruptionBudgetV1Beta1
+     *
+     * @return The PodDisruptionBudgetV1Beta1.
+     */
+    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
+        return createPodDisruptionBudgetV1Beta1();
     }
 
     @Override

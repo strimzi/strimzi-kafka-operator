@@ -25,9 +25,11 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
+import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -46,13 +48,16 @@ import org.mockito.ArgumentCaptor;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -89,6 +94,21 @@ public class KafkaAssemblyOperatorPodSetTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
+    private static final Map<Integer, Map<String, String>> ADVERTISED_HOSTNAMES = Map.of(
+            0, Map.of("PLAIN_9092", "broker-0"),
+            1, Map.of("PLAIN_9092", "broker-1"),
+            2, Map.of("PLAIN_9092", "broker-2"),
+            3, Map.of("PLAIN_9092", "broker-3"),
+            4, Map.of("PLAIN_9092", "broker-4")
+    );
+
+    private static final Map<Integer, Map<String, String>> ADVERTISED_PORTS = Map.of(
+            0, Map.of("PLAIN_9092", "10000"),
+            1, Map.of("PLAIN_9092", "10001"),
+            2, Map.of("PLAIN_9092", "10002"),
+            3, Map.of("PLAIN_9092", "10003"),
+            4, Map.of("PLAIN_9092", "10004")
+    );
 
     protected static Vertx vertx;
 
@@ -112,12 +132,19 @@ public class KafkaAssemblyOperatorPodSetTest {
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, null);
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, null);
+        StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of()));
+        ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkPodSet));
@@ -160,6 +187,12 @@ public class KafkaAssemblyOperatorPodSetTest {
                     assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-1")), is(List.of()));
                     assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-2")), is(List.of()));
 
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(3));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2")));
+
+                    assertThat(cmDeletionCaptor.getAllValues().size(), is(1));
+                    assertThat(cmDeletionCaptor.getAllValues().get(0), is("my-cluster-kafka-config"));
+
                     async.flag();
                 })));
     }
@@ -174,12 +207,19 @@ public class KafkaAssemblyOperatorPodSetTest {
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, null);
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, null);
+        StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS, true)));
+        ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(null)); // The PodSet does not exist yet in the first reconciliation
@@ -227,6 +267,12 @@ public class KafkaAssemblyOperatorPodSetTest {
                     assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-1")), is(List.of()));
                     assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-2")), is(List.of()));
 
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(3));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2")));
+
+                    assertThat(cmDeletionCaptor.getAllValues().size(), is(1));
+                    assertThat(cmDeletionCaptor.getAllValues().get(0), is("my-cluster-kafka-config"));
+
                     async.flag();
                 })));
     }
@@ -241,12 +287,19 @@ public class KafkaAssemblyOperatorPodSetTest {
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, null);
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, null);
+        StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS, true)));
+        ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(any(), eq(zkCluster.getName()))).thenReturn(Future.succeededFuture(zkPodSet)); // The PodSet still exists and should be deleted in the first reconciliation
@@ -294,6 +347,12 @@ public class KafkaAssemblyOperatorPodSetTest {
                     assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-1")), is(List.of()));
                     assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-2")), is(List.of()));
 
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(1));
+                    assertThat(cmReconciliationCaptor.getAllValues().get(0), is("my-cluster-kafka-config"));
+
+                    assertThat(cmDeletionCaptor.getAllValues().size(), is(3));
+                    assertThat(cmDeletionCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2")));
+
                     async.flag();
                 })));
     }
@@ -319,7 +378,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         ZookeeperCluster oldZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
         StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, null);
         KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
-        StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, null);
+        StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
 
         ZookeeperCluster newZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         KafkaCluster newKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
@@ -328,6 +387,11 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS, true)));
+        when(mockCmOps.reconcile(any(), any(), startsWith("my-cluster-kafka-"), any())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.deleteAsync(any(), any(), eq("my-cluster-kafka-config"), anyBoolean())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(any(), eq(newZkCluster.getName()))).thenReturn(Future.succeededFuture(oldZkPodSet));
@@ -395,7 +459,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         ZookeeperCluster oldZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
         StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(oldKafka.getSpec().getZookeeper().getReplicas(), false, null, null, null);
         KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
-        StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSet(oldKafka.getSpec().getKafka().getReplicas(), false, null, null, null);
+        StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSet(oldKafka.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
 
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
@@ -405,6 +469,13 @@ public class KafkaAssemblyOperatorPodSetTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
+
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS, true)));
+        ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
         // Kafka
@@ -459,6 +530,14 @@ public class KafkaAssemblyOperatorPodSetTest {
                     // Still one maybe-roll invocation
                     assertThat(kao.maybeRollKafkaInvocations, is(1));
 
+                    // CMs for all pods are reconciled
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(3));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2")));
+
+                    // Only the shared CM is deleted
+                    assertThat(cmDeletionCaptor.getAllValues().size(), is(1));
+                    assertThat(cmDeletionCaptor.getAllValues().get(0), is("my-cluster-kafka-config"));
+
                     async.flag();
                 })));
     }
@@ -484,7 +563,7 @@ public class KafkaAssemblyOperatorPodSetTest {
         ZookeeperCluster oldZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
         StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(oldKafka.getSpec().getZookeeper().getReplicas(), false, null, null, null);
         KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
-        StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSet(oldKafka.getSpec().getKafka().getReplicas(), false, null, null, null);
+        StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSet(oldKafka.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
 
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
@@ -494,6 +573,13 @@ public class KafkaAssemblyOperatorPodSetTest {
         SecretOperator secretOps = supplier.secretOperations;
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(secretOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(new Secret()));
+
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.listAsync(any(), eq(oldKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(oldKafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS, true)));
+        ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
+        when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
         // Zoo
@@ -549,6 +635,14 @@ public class KafkaAssemblyOperatorPodSetTest {
                     // Still one maybe-roll invocation
                     assertThat(kao.maybeRollKafkaInvocations, is(1));
 
+                    // CMs for all remaining pods are reconciled
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(3));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2")));
+
+                    // The shared CM + the CMs for scaled down pods are deleted
+                    assertThat(cmDeletionCaptor.getAllValues().size(), is(3));
+                    assertThat(cmDeletionCaptor.getAllValues(), is(List.of("my-cluster-kafka-3", "my-cluster-kafka-4", "my-cluster-kafka-config")));
+
                     async.flag();
                 })));
     }
@@ -589,17 +683,24 @@ public class KafkaAssemblyOperatorPodSetTest {
                     .compose(state -> state.kafkaManualPodCleaning())
                     .compose(state -> state.kafkaManualRollingUpdate())
                     .compose(state -> state.kafkaScaleDown())
+                    .compose(state -> state.kafkaConfigurationConfigMaps())
                     .compose(state -> state.kafkaStatefulSet())
                     .compose(state -> state.kafkaPodSet())
                     .compose(state -> state.kafkaRollToAddOrRemoveVolumes())
                     .compose(state -> state.kafkaRollingUpdate())
                     .compose(state -> state.kafkaScaleUp())
+                    .compose(state -> state.kafkaConfigurationConfigMapsCleanup())
                     .mapEmpty();
         }
 
         class MockReconciliationState extends ReconciliationState {
+
+
             MockReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 super(reconciliation, kafkaAssembly);
+
+                kafkaAdvertisedHostnames.putAll(ADVERTISED_HOSTNAMES);
+                kafkaAdvertisedPorts.putAll(ADVERTISED_PORTS);
             }
 
             @Override

@@ -15,7 +15,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NodeUtils;
-import io.strimzi.test.annotations.IsolatedSuite;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
@@ -90,9 +90,7 @@ public class ClusterOperationIsolatedST extends AbstractST {
             NodeUtils.cordonNode(node.getMetadata().getName(), true);
         });
 
-        producerNames.forEach(producerName -> ClientUtils.waitTillContinuousClientsFinish(producerName, consumerNames.get(producerName.indexOf(producerName)), NAMESPACE, continuousClientsMessageCount));
-        producerNames.forEach(producerName -> kubeClient().deleteJob(producerName));
-        consumerNames.forEach(consumerName -> kubeClient().deleteJob(consumerName));
+        producerNames.forEach(producerName -> ClientUtils.waitForClientsSuccess(producerName, consumerNames.get(producerName.indexOf(producerName)), NAMESPACE, continuousClientsMessageCount));
     }
 
     @BeforeAll

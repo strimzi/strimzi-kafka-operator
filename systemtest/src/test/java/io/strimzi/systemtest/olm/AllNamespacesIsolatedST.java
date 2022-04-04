@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.olm;
 
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -19,6 +18,7 @@ import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.OLM;
+import static io.strimzi.systemtest.Constants.WATCH_ALL_NAMESPACES;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Tag(OLM)
@@ -26,7 +26,6 @@ import static io.strimzi.systemtest.Constants.OLM;
 public class AllNamespacesIsolatedST extends OlmAbstractST {
 
     public static final String NAMESPACE = "olm-namespace";
-    public static OlmResource olmResource;
 
     @Test
     @Order(1)
@@ -82,12 +81,15 @@ public class AllNamespacesIsolatedST extends OlmAbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        cluster.setNamespace(cluster.getDefaultOlmNamespace());
+        // delete shared ClusterOperator
+        clusterOperator.unInstall();
+        clusterOperator = clusterOperator.defaultInstallation()
+            .withNamespace(cluster.getDefaultOlmNamespace())
+            .withWatchingNamespaces(WATCH_ALL_NAMESPACES)
+            .createInstallation()
+            // run always OLM installation
+            .runOlmInstallation();
 
-        olmResource = new OlmResource(cluster.getDefaultOlmNamespace());
-        olmResource.create(extensionContext);
-
-        cluster.setNamespace(NAMESPACE);
-        cluster.createNamespace(NAMESPACE);
+        cluster.setNamespace(clusterOperator.getDeploymentNamespace());
     }
 }

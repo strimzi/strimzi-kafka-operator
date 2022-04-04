@@ -94,32 +94,25 @@ when you are testing new Strimzi features.
 
 There are other values you can pass to the `-o` option.
 For example, by using `-o yaml` you get the output in YAML format.
-Usng `-o json` will return it as JSON.
+Using `-o json` will return it as JSON.
 
 You can see all the options in `kubectl get --help`.
 
 One of the most useful options is the {K8SJsonPath}, which allows you to pass JSONPath expressions to query the Kubernetes API.
 A JSONPath expression can extract or navigate specific parts of any resource.
 
-For example, you can use the JSONPath expression `{.status.listeners[?(@.type=="tls")].bootstrapServers}`
+For example, you can use the JSONPath expression `{.status.listeners[?(@.name=="tls")].bootstrapServers}`
 to get the bootstrap address from the status of the Kafka custom resource and use it in your Kafka clients.
 
-Here, the command finds the `bootstrapServers` value of the `tls` listeners.
+Here, the command finds the `bootstrapServers` value of the listener named `tls`:
 
 [source,shell]
 ----
-kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.type=="tls")].bootstrapServers}{"\n"}'
+kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.name=="tls")].bootstrapServers}{"\n"}'
 
 my-cluster-kafka-bootstrap.myproject.svc:9093
 ----
 
-By changing the type condition to `@.type=="external"` or `@.type=="plain"` you can also get the address of the other Kafka listeners.
-
-[source,shell]
-----
-kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.type=="external")].bootstrapServers}{"\n"}'
-
-192.168.1.247:9094
-----
+By changing the name condition you can also get the address of the other Kafka listeners.
 
 You can use `jsonpath` to extract any other property or group of properties from any custom resource.

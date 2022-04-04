@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
@@ -32,11 +33,13 @@ import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Level;
+import org.junit.jupiter.api.ClassDescriptor;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -62,12 +65,23 @@ public class StUtils {
 
     private static final Pattern VERSION_IMAGE_PATTERN = Pattern.compile("(?<version>[0-9.]+)=(?<image>[^\\s]*)");
 
-    private static final BiFunction<String, ExtensionContext, Boolean> CONTAINS_ANNOTATION =
-        (annotationName, extensionContext) -> Arrays.stream(extensionContext.getElement().get().getAnnotations()).filter(
-            annotation -> annotation.annotationType().getName()
-                .toLowerCase(Locale.ENGLISH)
-                // more than one because in some cases the TestSuite can inherit the annotation
-                .contains(annotationName)).count() >= 1;
+    private static final BiFunction<String, Object, Boolean> CONTAINS_ANNOTATION =
+        (annotationName, annotationHolder) -> {
+            Annotation[] annotations;
+            if (annotationHolder instanceof ExtensionContext) {
+                annotations = ((ExtensionContext) annotationHolder).getElement().get().getAnnotations();
+            } else if (annotationHolder instanceof ClassDescriptor) {
+                annotations = ((ClassDescriptor) annotationHolder).getTestClass().getAnnotations();
+            } else {
+                throw new RuntimeException("Using type: " + annotationHolder + " which is not supported!");
+            }
+            return Arrays.stream(annotations).filter(
+                annotation -> annotation.annotationType().getName()
+                    .toLowerCase(Locale.ENGLISH)
+                    // more than one because in some cases the TestSuite can inherit the annotation
+                    .contains(annotationName)).count() >= 1;
+
+        };
 
     private StUtils() { }
 
@@ -363,52 +377,52 @@ public class StUtils {
 
     /**
      * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelTest}
-     * @param extensionContext context of the test case
+     * @param annotationHolder context of the test case
      * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelTest},
      * otherwise false
      */
-    public static boolean isParallelTest(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_TEST, extensionContext);
+    public static boolean isParallelTest(Object annotationHolder) {
+        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_TEST, annotationHolder);
     }
 
     /**
      * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedTest}
-     * @param extensionContext context of the test case
+     * @param annotationHolder context of the test case
      * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedTest},
      * otherwise false
      */
-    public static boolean isIsolatedTest(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_TEST, extensionContext);
+    public static boolean isIsolatedTest(Object annotationHolder) {
+        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_TEST, annotationHolder);
     }
 
     /**
      * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest}
-     * @param extensionContext context of the test case
+     * @param annotationHolder context of the test case
      * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest},
      * otherwise false
      */
-    public static boolean isParallelNamespaceTest(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_NAMESPACE, extensionContext);
+    public static boolean isParallelNamespaceTest(Object annotationHolder) {
+        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_NAMESPACE, annotationHolder);
     }
 
     /**
      * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelSuite}
-     * @param extensionContext context of the test case
+     * @param annotationHolder context of the test case
      * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelSuite},
      * otherwise false
      */
-    public static boolean isParallelSuite(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_SUITE, extensionContext);
+    public static boolean isParallelSuite(Object annotationHolder) {
+        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_SUITE, annotationHolder);
     }
 
     /**
      * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedSuite}
-     * @param extensionContext context of the test case
+     * @param annotationHolder context of the test case
      * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedSuite},
      * otherwise false
      */
-    public static boolean isIsolatedSuite(ExtensionContext extensionContext) {
-        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_SUITE, extensionContext);
+    public static boolean isIsolatedSuite(Object annotationHolder) {
+        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_SUITE, annotationHolder);
     }
 
     /**
@@ -616,5 +630,28 @@ public class StUtils {
 
     public static Map<String, String> getStrimziPodSetOrStatefulSetMatchLabels(String resourceName, boolean isSpsEnabled) {
         return getStrimziPodSetOrStatefulSetMatchLabels(kubeClient().getNamespace(), resourceName, isSpsEnabled);
+    }
+
+    /**
+     * Returns a list of names of ConfigMaps with broker configuration files. For StatefulSets, the list has only one
+     * item with the shared ConfigMap. For StrimziPodSets, it should be a ConfigMap per broker.
+     *
+     * @param kafkaClusterName  Name of the Kafka cluster
+     * @param replicas          Number of Kafka replicas
+     *
+     * @return                  List with ConfigMaps containing the configuration
+     */
+    public static List<String> getKafkaConfigurationConfigMaps(String kafkaClusterName, int replicas)    {
+        List<String> cmNames = new ArrayList<>(replicas);
+
+        if (Environment.isStrimziPodSetEnabled())   {
+            for (int i = 0; i < replicas; i++)  {
+                cmNames.add(KafkaResources.kafkaPodName(kafkaClusterName, i));
+            }
+        } else {
+            cmNames.add(KafkaResources.kafkaMetricsAndLogConfigMapName(kafkaClusterName));
+        }
+
+        return cmNames;
     }
 }

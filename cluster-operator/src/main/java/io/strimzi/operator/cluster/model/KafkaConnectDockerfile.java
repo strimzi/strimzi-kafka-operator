@@ -152,7 +152,7 @@ public class KafkaConnectDockerfile {
             artifactMap.entrySet().forEach(plugin -> {
                 plugin.getValue().forEach(mvn -> {
                     String repo = mvn.getRepository() == null ? MavenArtifact.DEFAULT_REPOSITORY : maybeAppendSlash(mvn.getRepository());
-                    String artifactHash = Util.sha1Prefix(mvn.getGroup() + "/" + mvn.getArtifact() + "/" + mvn.getVersion());
+                    String artifactHash = Util.hashStub(mvn.getGroup() + "/" + mvn.getArtifact() + "/" + mvn.getVersion());
                     String artifactDir = plugin.getKey() + "/" + artifactHash;
 
                     Cmd cmd = run("curl", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
@@ -301,7 +301,7 @@ public class KafkaConnectDockerfile {
      */
     private void addJarArtifact(PrintWriter writer, String connectorPath, JarArtifact jar) {
         checkUrlIsPresent(jar);
-        String artifactHash = Util.sha1Prefix(jar.getUrl());
+        String artifactHash = Util.hashStub(jar.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String artifactPath = artifactDir + "/" + artifactHash + ".jar";
         addUnmodifiedArtifact(writer, jar, artifactDir, artifactPath);
@@ -316,7 +316,7 @@ public class KafkaConnectDockerfile {
      */
     private void addOtherArtifact(PrintWriter writer, String connectorPath, OtherArtifact other) {
         checkUrlIsPresent(other);
-        String artifactHash = Util.sha1Prefix(other.getUrl());
+        String artifactHash = Util.hashStub(other.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String fileName = other.getFileName() != null ? other.getFileName() : artifactHash;
         String artifactPath = artifactDir + "/" + fileName;
@@ -355,7 +355,7 @@ public class KafkaConnectDockerfile {
      */
     private void addTgzArtifact(PrintWriter writer, String connectorPath, TgzArtifact tgz) {
         checkUrlIsPresent(tgz);
-        String artifactHash = Util.sha1Prefix(tgz.getUrl());
+        String artifactHash = Util.hashStub(tgz.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".tgz";
 
@@ -384,7 +384,7 @@ public class KafkaConnectDockerfile {
      */
     private void addZipArtifact(PrintWriter writer, String connectorPath, ZipArtifact zip) {
         checkUrlIsPresent(zip);
-        String artifactHash = Util.sha1Prefix(zip.getUrl());
+        String artifactHash = Util.hashStub(zip.getUrl());
         String artifactDir = connectorPath + "/" + artifactHash;
         String archivePath = connectorPath + "/" + artifactHash + ".zip";
 
@@ -416,7 +416,7 @@ public class KafkaConnectDockerfile {
      */
     private void addMavenArtifact(PrintWriter writer, String connectorName, MavenArtifact mvn) {
         checkGavIsPresent(mvn);
-        String artifactHash = Util.sha1Prefix(mvn.getGroup() + "/" + mvn.getArtifact() + "/" + mvn.getVersion());
+        String artifactHash = Util.hashStub(mvn.getGroup() + "/" + mvn.getArtifact() + "/" + mvn.getVersion());
 
         Cmd run = run("/tmp/artifacts/" + connectorName + "/" + artifactHash, BASE_PLUGIN_PATH + connectorName + "/" + artifactHash);
         writer.append("COPY --from=downloadArtifacts ").println(run);
@@ -474,7 +474,7 @@ public class KafkaConnectDockerfile {
      * @return  Dockerfile hash stub
      */
     public String hashStub()    {
-        return Util.sha1Prefix(dockerfile);
+        return Util.hashStub(dockerfile);
     }
 
 
