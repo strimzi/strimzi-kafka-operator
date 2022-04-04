@@ -21,7 +21,12 @@ import java.util.concurrent.CompletableFuture;
 
 
 public class KafkaTopicScalabilityUtils {
+    /**
+     * This class contains crucial methods to create, modify and check large amount of kafka topics
+     * */
+
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicUtils.class);
+    private KafkaTopicScalabilityUtils() {}
 
     public static void createTopicsViaK8s(ExtensionContext extensionContext, String namespaceName, String clusterName, String topicPrefix,
                                           int numberOfTopics, int numberOfPartitions, int numberOfReplicas, int minInSyncReplicas) {

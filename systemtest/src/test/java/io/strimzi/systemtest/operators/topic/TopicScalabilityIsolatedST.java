@@ -36,7 +36,7 @@ public class TopicScalabilityIsolatedST extends AbstractST {
     final String topicPrefix = "example-topic";
 
 
-    @IsolatedTest
+    @IsolatedTest("This test needs to run isolated due to access problems in parallel execution - using the same namespace")
     void testBigAmountOfTopicsCreatingViaK8s(ExtensionContext extensionContext) {
         final String namespace = INFRA_NAMESPACE;
 

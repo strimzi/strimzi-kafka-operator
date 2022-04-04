@@ -179,9 +179,15 @@ public class KafkaTopicUtils {
     }
 
     public static boolean configsAreEqual(Map<String, Object> actualConf, Map<String, Object> expectedConf) {
-        if (expectedConf.size() != actualConf.size()) return false;
-        return expectedConf.entrySet().stream()
-                .allMatch(expected -> expected.getValue().toString().equals(actualConf.get(expected.getKey()).toString()));
+        try {
+            if (expectedConf.size() != actualConf.size()) return false;
+
+            return expectedConf.entrySet().stream()
+                    .allMatch(expected -> expected.getValue().toString().equals(actualConf.get(expected.getKey()).toString()));
+        } catch (NullPointerException e){
+            LOGGER.error(e.getMessage());
+            return false;
+        }
     }
 
     public static void waitForKafkaTopicsCount(final String namespaceName, int topicCount, String clusterName) {
