@@ -1789,5 +1789,7 @@ class KafkaST extends AbstractST {
 
         kubeClient(namespaceName).getClient().resources(KafkaTopic.class, KafkaTopicList.class).inNamespace(namespaceName).delete();
         kubeClient(namespaceName).getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
+
+        testSuiteNamespaceManager.deleteParallelNamespace(extensionContext);
     }
 }
