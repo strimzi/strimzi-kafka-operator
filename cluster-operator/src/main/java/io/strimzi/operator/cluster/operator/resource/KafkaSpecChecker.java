@@ -10,7 +10,6 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.StorageUtils;
-import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 
 import java.util.ArrayList;
@@ -26,7 +25,6 @@ import java.util.regex.Pattern;
  */
 public class KafkaSpecChecker {
     private final KafkaCluster kafkaCluster;
-    private final ZookeeperCluster zkCluster;
     private final String kafkaBrokerVersion;
 
     // This pattern is used to extract the MAJOR.MINOR version from the protocol or format version fields
@@ -38,13 +36,9 @@ public class KafkaSpecChecker {
      * @param kafkaCluster The model generated based on the spec. This is requested so that default
      *                     values not included in the spec can be taken into account, without needing
      *                     this class to include awareness of what defaults are applied.
-     * @param zkCluster The model generated based on the spec. This is requested so that default
-     *                     values not included in the spec can be taken into account, without needing
-     *                     this class to include awareness of what defaults are applied.
      */
-    public KafkaSpecChecker(KafkaSpec spec, KafkaVersion.Lookup versions, KafkaCluster kafkaCluster, ZookeeperCluster zkCluster) {
+    public KafkaSpecChecker(KafkaSpec spec, KafkaVersion.Lookup versions, KafkaCluster kafkaCluster) {
         this.kafkaCluster = kafkaCluster;
-        this.zkCluster = zkCluster;
 
         if (spec.getKafka().getVersion() != null) {
             this.kafkaBrokerVersion = spec.getKafka().getVersion();
@@ -59,8 +53,6 @@ public class KafkaSpecChecker {
         checkKafkaInterBrokerProtocolVersion(warnings);
         checkKafkaReplicationConfig(warnings);
         checkKafkaStorage(warnings);
-        checkZooKeeperStorage(warnings);
-        checkZooKeeperReplicas(warnings);
         return warnings;
     }
 
@@ -144,34 +136,4 @@ public class KafkaSpecChecker {
                     "A Kafka cluster with a single replica and ephemeral storage will lose topic messages after any restart or rolling update."));
         }
     }
-
-    /**
-     * Checks for a single-node ZooKeeper cluster using ephemeral storage. This is potentially a problem as it
-     * means any restarts of the pod will cause the loss of cluster metadata.
-     *
-     * @param warnings List to add a warning to, if appropriate.
-     */
-    private void checkZooKeeperStorage(List<Condition> warnings) {
-        if (zkCluster.getReplicas() == 1 && StorageUtils.usesEphemeral(zkCluster.getStorage())) {
-            warnings.add(StatusUtils.buildWarningCondition("ZooKeeperStorage",
-                    "A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used."));
-        }
-    }
-
-    /**
-     * Checks for an even number of ZooKeeper replicas. As ZooKeeper is dependent on maintaining a quorum,
-     * this means that users should deploy clusters with an odd number of nodes.
-     *
-     * @param warnings List to add a warning to, if appropriate.
-     */
-    private void checkZooKeeperReplicas(List<Condition> warnings) {
-        if (zkCluster.getReplicas() == 2) {
-            warnings.add(StatusUtils.buildWarningCondition("ZooKeeperReplicas",
-                    "Running ZooKeeper with two nodes is not advisable as both replicas will be needed to avoid downtime. It is recommended that a minimum of three replicas are used."));
-        } else if (zkCluster.getReplicas() % 2 == 0) {
-            warnings.add(StatusUtils.buildWarningCondition("ZooKeeperReplicas",
-                    "Running ZooKeeper with an odd number of replicas is recommended."));
-        }
-    }
-
 }

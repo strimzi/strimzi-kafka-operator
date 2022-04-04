@@ -1099,7 +1099,7 @@ public class KafkaAssemblyOperatorTest {
                 Future.succeededFuture(originalKafkaCluster.generateJmxSecret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.zookeeperJmxSecretName(clusterName))).thenReturn(
-                Future.succeededFuture(originalZookeeperCluster.generateJmxSecret())
+                Future.succeededFuture(originalZookeeperCluster.generateJmxSecret(null))
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.zookeeperSecretName(clusterName))).thenReturn(
                 Future.succeededFuture()

@@ -43,7 +43,6 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
@@ -799,66 +798,5 @@ public class KafkaAssemblyOperatorMockTest {
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(v -> async.flag());
-    }
-
-    /** Test the ZK version change functions */
-    private void reconcileZkVersionChange(VertxTestContext context, String initialKafkaVersion, String changedKafkaVersion, String changedImage) {
-        // We set the versions in the initial cluster to allow downgrades / upgrades
-        KafkaVersion lowerVersion = KafkaVersion.compareDottedVersions(initialKafkaVersion, changedKafkaVersion) > 0 ? VERSIONS.version(changedKafkaVersion) : VERSIONS.version(initialKafkaVersion);
-
-        Map<String, Object> config = new HashMap<>(2);
-        config.put(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, lowerVersion.messageVersion());
-        config.put(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, lowerVersion.protocolVersion());
-
-        cluster.getSpec().getKafka().setConfig(config);
-        cluster.getSpec().getKafka().setVersion(initialKafkaVersion);
-
-        // We prepare updated Kafka with new version
-        Kafka updatedKafka = new KafkaBuilder(cluster)
-                .editSpec()
-                    .editKafka()
-                        .withVersion(changedKafkaVersion)
-                    .endKafka()
-                .endSpec()
-                .build();
-
-        KafkaAssemblyOperator.ReconciliationState initialState = operator.new ReconciliationState(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
-                updatedKafka);
-
-        Checkpoint async = context.checkpoint();
-        initialReconcile(context)
-            .onComplete(context.succeeding())
-            .compose(v -> initialState.getKafkaClusterDescription())
-            .compose(v -> initialState.prepareVersionChange())
-            .compose(v -> initialState.getZookeeperDescription())
-            .compose(state -> state.zkVersionChange())
-            .onComplete(context.succeeding(state -> context.verify(() -> {
-                assertThat(state.zkCluster.getImage(), is(changedImage));
-                async.flag();
-            })));
-    }
-
-    @ParameterizedTest
-    @MethodSource("data")
-    public void testReconcileZookeeperUpgradeFromPreviousToLatest(Params params, VertxTestContext context) {
-        init(params);
-
-        String initialKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
-        String changedKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
-        String changedImage = KafkaVersionTestUtils.LATEST_KAFKA_IMAGE;
-
-        reconcileZkVersionChange(context, initialKafkaVersion, changedKafkaVersion, changedImage);
-    }
-
-    @ParameterizedTest
-    @MethodSource("data")
-    public void testReconcileZookeeperDowngradeFromLatestToPrevious(Params params, VertxTestContext context) {
-        init(params);
-
-        String initialKafkaVersion = KafkaVersionTestUtils.LATEST_KAFKA_VERSION;
-        String changedKafkaVersion = KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION;
-        String changedImage = KafkaVersionTestUtils.PREVIOUS_KAFKA_IMAGE;
-
-        reconcileZkVersionChange(context, initialKafkaVersion, changedKafkaVersion, changedImage);
     }
 }
