@@ -13,7 +13,7 @@ A standalone deployment can operate with any Kafka cluster.
 
 Standalone deployment files are provided with Strimzi.
 Use the `05-Deployment-strimzi-user-operator.yaml` deployment file to deploy the User Operator.
-Add or set the environment variables needed to make a connection to a Kafka cluster.  
+Add or set the environment variables needed to make a connection to a Kafka cluster.
 
 .Prerequisites
 
@@ -126,11 +126,19 @@ The `Secret` must also contain the password (`entity-operator.password`) for acc
 [source,shell,subs=+quotes]
 kubectl create -f install/user-operator
 
-. Verify that the User Operator has been deployed successfully.
+. Check the status of the deployment:
 +
-[source,shell,subs=+quotes]
-kubectl describe deployment strimzi-user-operator
+[source,shell,subs="+quotes"]
+----
+kubectl get deployments
+----
 +
-The User Operator is deployed when the `Replicas` entry shows `1 available`.
+.Output shows the deployment name and readiness
+[source,shell,subs="+quotes"]
+----
+NAME                   READY  UP-TO-DATE  AVAILABLE
+strimzi-user-operator  1/1    1           1
+----
 +
-NOTE: You might experience a delay with the deployment if you have a slow connection to the Kubernetes cluster and the User Operator images have not been downloaded before.
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `AVAILABLE` output shows `1`.

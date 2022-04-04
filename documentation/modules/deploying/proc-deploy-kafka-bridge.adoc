@@ -28,12 +28,24 @@ In this procedure, we use the following example file:
 kubectl apply -f examples/bridge/kafka-bridge.yaml
 ----
 
-. Verify that Kafka Bridge was successfully deployed:
+. Check the status of the deployment:
 +
-[source,shell,subs="attributes+"]
+[source,shell,subs="+quotes"]
 ----
-kubectl get deployments
+kubectl get deployments -n _<my_cluster_operator_namespace>_
 ----
++
+.Output shows the deployment name and readiness
+[source,shell,subs="+quotes"]
+----
+NAME              READY  UP-TO-DATE  AVAILABLE
+my-bridge-bridge  1/1    1           1
+----
++
+`my-bridge` is the name of the Kafka Bridge cluster.
++
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `AVAILABLE` output shows `1`.
 
 [role="_additional-resources"]
 .Additional resources

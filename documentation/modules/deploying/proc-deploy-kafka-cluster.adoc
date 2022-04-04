@@ -78,12 +78,32 @@ kubectl apply -f examples/kafka/kafka-ephemeral.yaml
 [source,shell,subs="attributes+"]
 kubectl apply -f examples/kafka/kafka-persistent.yaml
 
-. Verify that the Kafka cluster was successfully deployed:
+. Check the status of the deployment:
 +
-[source,shell,subs="attributes+"]
+[source,shell,subs="+quotes"]
 ----
-kubectl get deployments
+kubectl get pods -n _<my_cluster_operator_namespace>_
 ----
++
+.Output shows the pod names and readiness
+[source,shell,subs="+quotes"]
+----
+NAME                        READY   STATUS    RESTARTS
+my-cluster-entity-operator  3/3     Running   0
+my-cluster-kafka-0          1/1     Running   0
+my-cluster-kafka-1          1/1     Running   0
+my-cluster-kafka-2          1/1     Running   0
+my-cluster-zookeeper-0      1/1     Running   0
+my-cluster-zookeeper-1      1/1     Running   0
+my-cluster-zookeeper-2      1/1     Running   0
+----
++
+`my-cluster` is the name of the Kafka cluster.
++
+With the default deployment, you install an Entity Operator cluster, 3 Kafka pods, and 3 ZooKeeper pods.
++
+`READY` shows the number of replicas that are ready/expected.
+The deployment is successful when the `STATUS` shows as `Running`.
 
 [role="_additional-resources"]
 .Additional resources
