@@ -624,7 +624,7 @@ class RollingUpdateST extends AbstractST {
 
         TestUtils.waitFor("rolling update starts", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient(namespace).listPods(namespace).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
-                    .map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).size() < kubeClient().listPods().size());
+                    .map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).size() < kubeClient().listPods(namespace).size());
 
         LabelSelector coLabelSelector = kubeClient(INFRA_NAMESPACE).getDeployment(INFRA_NAMESPACE, ResourceManager.getCoDeploymentName()).getSpec().getSelector();
         LOGGER.info("Deleting Cluster Operator pod with labels {}", coLabelSelector);
@@ -634,7 +634,7 @@ class RollingUpdateST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(namespace, zkSelector, 3, zkPods);
 
         TestUtils.waitFor("rolling update starts", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient(namespace).listPods().stream().map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).contains("Pending"));
+            () -> kubeClient(namespace).listPods(namespace).stream().map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).contains("Pending"));
 
         LOGGER.info("Deleting Cluster Operator pod with labels {}", coLabelSelector);
         kubeClient(INFRA_NAMESPACE).deletePodsByLabelSelector(coLabelSelector);
