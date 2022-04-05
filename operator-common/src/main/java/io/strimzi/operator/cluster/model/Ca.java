@@ -808,11 +808,6 @@ public abstract class Ca {
         this.caCertsRemoved = removeCerts(this.caCertSecret.getData(), entry -> OLD_CA_CERT_PATTERN.matcher(entry.getKey()).matches()) > 0;
         if (this.caCertsRemoved) {
             LOGGER.infoCr(reconciliation, "{}: Old CA certificates removed", this);
-            /*
-            this.caCertSecret = new SecretBuilder(this.caCertSecret)
-                    .withData(this.caCertSecret.getData())
-                    .build();
-             */
         }
     }
 
