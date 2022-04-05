@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
@@ -46,6 +47,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(DrainCleanerIsolatedST.class);
     private static SetupDrainCleaner drainCleaner = new SetupDrainCleaner();
 
+    @Tag(ACCEPTANCE)
     @IsolatedTest
     @RequiredMinKubeApiVersion(version = 1.17)
     void testDrainCleanerWithComponents(ExtensionContext extensionContext) {
