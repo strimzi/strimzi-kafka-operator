@@ -47,6 +47,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
@@ -66,6 +68,10 @@ import static java.util.Collections.singletonMap;
 public abstract class Ca {
 
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(Ca.class);
+
+    private static final Pattern OLD_CA_CERT_PATTERN = Pattern.compile(
+            "^ca-\\d{4}-\\d{2}-\\d{2}T\\d{2}-\\d{2}-\\d{2}Z.crt$"
+    );
 
     private static final DateTimeFormatter DATE_TIME_FORMATTER = new DateTimeFormatterBuilder()
             .appendValue(YEAR, 4, 10, SignStyle.EXCEEDS_PAD)
@@ -557,7 +563,7 @@ public abstract class Ca {
                         addCertCaToTrustStore(CA_CRT, certData);
                     }
             }
-            this.caCertsRemoved = removeExpiredCerts(certData) > 0;
+            this.caCertsRemoved = removeCerts(certData, this::removeExpiredCert) > 0;
         }
         SecretCertProvider secretCertProvider = new SecretCertProvider();
 
@@ -794,32 +800,66 @@ public abstract class Ca {
         return INIT_GENERATION;
     }
 
-    private int removeExpiredCerts(Map<String, String> newData) {
+    /**
+     * Remove old certificates that are stored in the CA Secret matching the "ca-YYYY-MM-DDTHH-MM-SSZ.crt" naming pattern.
+     * NOTE: mostly used when a CA certificate is renewed by replacing the key
+     */
+    public void maybeDeleteOldCerts() {
+        this.caCertsRemoved = removeCerts(this.caCertSecret.getData(), entry -> OLD_CA_CERT_PATTERN.matcher(entry.getKey()).matches()) > 0;
+        if (this.caCertsRemoved) {
+            LOGGER.infoCr(reconciliation, "{}: Old CA certificates removed", this);
+            /*
+            this.caCertSecret = new SecretBuilder(this.caCertSecret)
+                    .withData(this.caCertSecret.getData())
+                    .build();
+             */
+        }
+    }
+
+    /**
+     * Predicate used to remove expired certificates that are stored in the CA Secret
+     *
+     * @param entry entry in the CA Secret data section to check
+     * @return if the certificate is expired and has to be removed
+     */
+    private boolean removeExpiredCert(Map.Entry<String, String> entry) {
+        boolean remove = false;
+        String certName = entry.getKey();
+        String certText = entry.getValue();
+        try {
+            X509Certificate cert = x509Certificate(Base64.getDecoder().decode(certText));
+            Instant expiryDate = cert.getNotAfter().toInstant();
+            remove = expiryDate.isBefore(clock.instant());
+            if (remove) {
+                LOGGER.debugCr(reconciliation, "The certificate (data.{}) in Secret expired {}; removing it",
+                        certName.replace(".", "\\."), expiryDate);
+            }
+        } catch (CertificateException e) {
+            // doesn't remove stores and related password
+            if (!certName.endsWith(".p12") && !certName.endsWith(".password")) {
+                remove = true;
+                LOGGER.debugCr(reconciliation, "The certificate (data.{}) in Secret is not an X.509 certificate; removing it",
+                        certName.replace(".", "\\."));
+            }
+        }
+        return remove;
+    }
+
+    /**
+     * Remove certificates from the CA related Secret and store which match the provided predicate
+     *
+     * @param newData data section of the CA Secret containing certificates
+     * @param predicate predicate to match for removing a certificate
+     * @return the number of removed certificates
+     */
+    private int removeCerts(Map<String, String> newData, Predicate<Map.Entry<String, String>> predicate) {
         Iterator<Map.Entry<String, String>> iter = newData.entrySet().iterator();
         List<String> removed = new ArrayList<>();
         while (iter.hasNext()) {
             Map.Entry<String, String> entry = iter.next();
-            String certName = entry.getKey();
-            String certText = entry.getValue();
-            boolean remove = false;
-            try {
-                X509Certificate cert = x509Certificate(Base64.getDecoder().decode(certText));
-                Instant expiryDate = cert.getNotAfter().toInstant();
-                remove = expiryDate.isBefore(clock.instant());
-                if (remove) {
-                    LOGGER.debugCr(reconciliation, "The certificate (data.{}) in Secret expired {}; removing it",
-                            certName.replace(".", "\\."), expiryDate);
-                }
-            } catch (CertificateException e) {
-
-                // doesn't remove stores and related password
-                if (!certName.endsWith(".p12") && !certName.endsWith(".password")) {
-                    remove = true;
-                    LOGGER.debugCr(reconciliation, "The certificate (data.{}) in Secret is not an X.509 certificate; removing it",
-                            certName.replace(".", "\\."));
-                }
-            }
+            boolean remove = predicate.test(entry);
             if (remove) {
+                String certName = entry.getKey();
                 LOGGER.debugCr(reconciliation, "Removing data.{} from Secret",
                         certName.replace(".", "\\."));
                 iter.remove();

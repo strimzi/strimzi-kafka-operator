@@ -404,8 +404,8 @@ public class EntityOperatorReconciler {
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityOperatorDeploymentName(reconciliation.name()), deployment)
                     .compose(patchResult -> {
                         if (patchResult instanceof ReconcileResult.Noop)   {
-                            // Deployment needs ot be rolled because the certificate secret changed
-                            if (existingEntityTopicOperatorCertsChanged || existingEntityUserOperatorCertsChanged) {
+                            // Deployment needs ot be rolled because the certificate secret changed or older/expired cluster CA removed
+                            if (existingEntityTopicOperatorCertsChanged || existingEntityUserOperatorCertsChanged || clusterCa.certsRemoved()) {
                                 return rollDeployment();
                             }
                         }
