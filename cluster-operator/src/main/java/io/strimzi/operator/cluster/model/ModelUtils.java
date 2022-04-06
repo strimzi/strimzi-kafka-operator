@@ -547,15 +547,19 @@ public class ModelUtils {
 
     /**
      * Adds KAFKA_HEAP_OPTS variable to the EnvVar list if any heap related options were specified through the provided JVM options
-     * If Xmx Java Options are not set DYNAMIC_HEAP_FRACTION and DYNAMIC_HEAP_MAX may also be set by using the ResourceRequirements
+     * If Xmx Java Options are not set STRIMZI_DYNAMIC_HEAP_PERCENTAGE and STRIMZI_DYNAMIC_HEAP_MAX may also be set by using the ResourceRequirements
      *
      * @param envVars list of the Environment Variables to add to
-     * @param dynamicHeapFraction value to set for the DYNAMIC_HEAP_FRACTION
-     * @param dynamicHeapMaxBytes value to set for the DYNAMIC_HEAP_MAX
+     * @param dynamicHeapPercentage value to set for the STRIMZI_DYNAMIC_HEAP_PERCENTAGE
+     * @param dynamicHeapMaxBytes value to set for the STRIMZI_DYNAMIC_HEAP_MAX
      * @param jvmOptions JVM options
      * @param resources the resource requirements
      */
-    public static void heapOptions(List<EnvVar> envVars, double dynamicHeapFraction, long dynamicHeapMaxBytes, JvmOptions jvmOptions, ResourceRequirements resources) {
+    public static void heapOptions(List<EnvVar> envVars, int dynamicHeapPercentage, long dynamicHeapMaxBytes, JvmOptions jvmOptions, ResourceRequirements resources) {
+        if (dynamicHeapPercentage <= 0 || dynamicHeapPercentage > 100)  {
+            throw new RuntimeException("The Heap percentage " + dynamicHeapPercentage + " is invalid. It has to be >0 and <= 100.");
+        }
+
         StringBuilder kafkaHeapOpts = new StringBuilder();
 
         String xms = jvmOptions != null ? jvmOptions.getXms() : null;
@@ -569,17 +573,28 @@ public class ModelUtils {
             // Honour user provided explicit max heap
             kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
         } else {
-            Map<String, Quantity> cpuMemory = resources != null ? resources.getRequests() : null;
-            // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
-            // too much memory on the kubelet.
-            if (cpuMemory != null && cpuMemory.get("memory") != null) {
-                envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_FRACTION, Double.toString(dynamicHeapFraction)));
+            // Get the resources => if requests are set, take request. If requests are not set, try limits
+            Quantity configuredMemory = null;
+            if (resources != null)  {
+                if (resources.getRequests() != null && resources.getRequests().get("memory") != null)    {
+                    configuredMemory = resources.getRequests().get("memory");
+                } else if (resources.getLimits() != null && resources.getLimits().get("memory") != null)   {
+                    configuredMemory = resources.getLimits().get("memory");
+                }
+            }
+
+            if (configuredMemory != null) {
+                // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
+                // too much memory on the kubelet.
+
+                envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE, Integer.toString(dynamicHeapPercentage)));
+
                 if (dynamicHeapMaxBytes > 0) {
                     envVars.add(AbstractModel.buildEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
                 }
+            } else if (xms == null) {
                 // When no memory limit, `Xms`, and `Xmx` are defined then set a default `Xms` and
                 // leave `Xmx` undefined.
-            } else if (xms == null) {
                 kafkaHeapOpts.append("-Xms").append(AbstractModel.DEFAULT_JVM_XMS);
             }
         }
