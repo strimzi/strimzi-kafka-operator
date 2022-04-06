@@ -30,12 +30,12 @@ A broker load is stored in a ConfigMap that contains data as a JSON string.
 
 An optimization proposal summary shows the proposed scope of changes.
 
-You can return a summary from the command line.
+You can use the name of the `KafkaRebalance` resource to return a summary from the command line.
 
 .Returning an optimization proposal summary
 [source,shell,subs=+quotes]
 ----
-kubectl describe kafkarebalance _<kafka_rebalance_resource_name>_ -n _<project_name>_
+kubectl describe kafkarebalance _<kafka_rebalance_resource_name>_ -n _<namespace>_
 ----
 
 You can also use the `jq` command line JSON parser tool.
@@ -57,7 +57,7 @@ You can use the `strimzi.io/refresh` annotation to generate a new optimization p
 Use optimization proposals to assess the movements required for a rebalance.
 For example, a summary describes inter-broker and intra-broker movements.
 Inter-broker rebalancing moves data between separate brokers.
-Intra-broker rebalancing moves data between disks on the same broker when you are using JBOD.
+Intra-broker rebalancing moves data between disks on the same broker when you are using a JBOD storage configuration.
 Such information can be useful even if you don't go ahead and approve the proposal.
 
 You might reject an optimization proposal, or delay its approval, because of the additional load on a Kafka cluster when rebalancing.
@@ -103,8 +103,8 @@ Status:
   Session Id:                             a4f833bd-2055-4213-bfdd-ad21f95bf184
 ----
 
-The proposal will also move 24 partition leaders to different replicas.
-This requires a change to ZooKeeper configuration, which has a low impact on performance.
+The proposal will also move 24 partition leaders to different brokers.
+This requires a change to the ZooKeeper configuration, which has a low impact on performance.
 
 The balancedness scores are measurements of the overall balance of the Kafka Cluster before and after the optimization proposal is approved.
 A balancedness score is based on optimization goals.
@@ -185,12 +185,20 @@ The first is the metric value before the optimization proposal is applied, the s
 
 NOTE: The ConfigMap appears when the KafkaRebalance resource is in the `ProposalReady` state and remains after the rebalance is complete.
 
-You can use the `jq` command line JSON parser tool to extract the JSON string from the ConfigMap.
+You can use the name of the ConfigMap to view its data from the command line.
 
-.Extracting the JSON string from the ConfigMap
+.Returning ConfigMap data
 [source,shell,subs=+quotes]
 ----
-kubectl get configmap _MY-REBALANCE_ -o json | jq '.["data"]["brokerLoad.json"]|fromjson|.'
+kubectl describe configmaps _<my_rebalance_configmap_name>_ -n _<namespace>_
+----
+
+You can also use the `jq` command line JSON parser tool to extract the JSON string from the ConfigMap.
+
+.Extracting the JSON string from the ConfigMap using jq
+[source,shell,subs=+quotes]
+----
+kubectl get configmaps _<my_rebalance_configmap_name>_ -o json | jq '.["data"]["brokerLoad.json"]|fromjson|.'
 ----
 
 The following table explains the properties contained in the optimization proposal's broker load ConfigMap:
