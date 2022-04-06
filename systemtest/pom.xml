@@ -401,7 +401,7 @@
                     kafka/ConfigProviderST,
                     operators/topic/ThrottlingQuotaST,
                     tracing/**/*ST,
-                    watcher/**/*ST
+<!--                    watcher/**/*ST-->
                 </it.test>
             </properties>
         </profile>
