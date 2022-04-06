@@ -220,11 +220,18 @@ public class KafkaRoller {
         final BackOff backOff;
         private long connectionErrorStart = 0L;
 
-        RestartContext(Supplier<BackOff> backOffSupplier) {
+        boolean needsRestart;
+        boolean needsReconfig;
+        boolean forceRestart;
+        KafkaBrokerConfigurationDiff diff;
+        KafkaBrokerLoggingConfigurationDiff logDiff;
+
+       RestartContext(Supplier<BackOff> backOffSupplier) {
             promise = Promise.promise();
             backOff = backOffSupplier.get();
             backOff.delayMs();
         }
+
 
         public void clearConnectionError() {
             connectionErrorStart = 0L;
@@ -296,31 +303,6 @@ public class KafkaRoller {
         return ctx.promise.future();
     }
 
-    /** Described how the "restart" (which might actually just be a reconfigure) will be performed. */
-    static class RestartPlan {
-        private final boolean needsRestart;
-        private final boolean needsReconfig;
-        private final boolean forceRestart;
-        private final KafkaBrokerConfigurationDiff diff;
-        private final KafkaBrokerLoggingConfigurationDiff logDiff;
-
-        public RestartPlan(boolean needsRestart, boolean needsReconfig, boolean forceRestart, KafkaBrokerConfigurationDiff diff, KafkaBrokerLoggingConfigurationDiff logDiff) {
-            this.needsRestart = needsRestart;
-            this.needsReconfig = needsReconfig;
-            this.forceRestart = forceRestart;
-            this.diff = diff;
-            this.logDiff = logDiff;
-        }
-
-        public RestartPlan(boolean forceRestart) {
-            this.needsRestart = false;
-            this.needsReconfig = false;
-            this.forceRestart = forceRestart;
-            this.diff = null;
-            this.logDiff = null;
-        }
-    }
-
     /**
      * Restart the given pod now if necessary according to {@link #podNeedsRestart}.
      * This method blocks.
@@ -342,15 +324,15 @@ public class KafkaRoller {
         }
 
         try {
-            RestartPlan restartPlan = restartPlan(podRef, pod, restartContext);
-            if (restartPlan.forceRestart || restartPlan.needsRestart || restartPlan.needsReconfig) {
-                if (!restartPlan.forceRestart && deferController(podRef, restartContext)) {
+            restartPlan(podRef, pod, restartContext);
+            if (restartContext.forceRestart || restartContext.needsRestart || restartContext.needsReconfig) {
+                if (!restartContext.forceRestart && deferController(podRef, restartContext)) {
                     LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to roll", podRef);
                     throw new ForceableProblem("Pod " + podRef.getPodName() + " is currently the controller and there are other pods still to roll");
                 } else {
-                    if (restartPlan.forceRestart || canRoll(podRef, 60_000, TimeUnit.MILLISECONDS, false)) {
+                    if (restartContext.forceRestart || canRoll(podRef, 60_000, TimeUnit.MILLISECONDS, false)) {
                         // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
-                        if (restartPlan.forceRestart || !maybeDynamicUpdateBrokerConfig(podRef.getPodId(), restartPlan)) {
+                        if (restartContext.forceRestart || !maybeDynamicUpdateBrokerConfig(podRef.getPodId(), restartContext)) {
                             LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", podRef);
                             restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                         } else {
@@ -422,12 +404,12 @@ public class KafkaRoller {
      * Dynamically update the broker config if the plan says we can.
      * Return false if the broker was successfully updated dynamically.
      */
-    private boolean maybeDynamicUpdateBrokerConfig(int podId, RestartPlan restartPlan) throws InterruptedException {
+    private boolean maybeDynamicUpdateBrokerConfig(int podId, RestartContext restartContext) throws InterruptedException {
         boolean updatedDynamically;
 
-        if (restartPlan.needsReconfig) {
+        if (restartContext.needsReconfig) {
             try {
-                dynamicUpdateBrokerConfig(podId, allClient, restartPlan.diff, restartPlan.logDiff);
+                dynamicUpdateBrokerConfig(podId, allClient, restartContext.diff, restartContext.logDiff);
                 updatedDynamically = true;
             } catch (ForceableProblem e) {
                 LOGGER.debugCr(reconciliation, "Pod {} could not be updated dynamically ({}), will restart", podId, e);
@@ -443,7 +425,7 @@ public class KafkaRoller {
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
-    private RestartPlan restartPlan(PodRef podRef, Pod pod, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem {
+    private void restartPlan(PodRef podRef, Pod pod, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem {
 
         List<String> reasonToRestartPod = Objects.requireNonNull(podNeedsRestart.apply(pod));
         boolean podStuck = pod != null
@@ -470,7 +452,11 @@ public class KafkaRoller {
         // connect to the broker and that it's capable of responding.
         if (!initAdminClient()) {
             LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it does not seem to responding to connection attempts", podRef);
-            return new RestartPlan(true);
+            restartContext.needsRestart = false;
+            restartContext.needsReconfig = false;
+            restartContext.forceRestart = true;
+            restartContext.diff = null;
+            restartContext.logDiff = null;
         }
         Config brokerConfig;
         try {
@@ -511,8 +497,11 @@ public class KafkaRoller {
         if (podStuck)   {
             LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it seems to be stuck and restart might help", podRef);
         }
-
-        return new RestartPlan(needsRestart, needsReconfig, podStuck, diff, loggingDiff);
+        restartContext.needsRestart = needsRestart;
+        restartContext.needsReconfig = needsReconfig;
+        restartContext.forceRestart = podStuck;
+        restartContext.diff = diff;
+        restartContext.logDiff = loggingDiff;
     }
 
     /**
