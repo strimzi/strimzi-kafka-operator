@@ -522,9 +522,7 @@ public class SetupClusterOperator {
      * This includes ClusterRoles themselves as well as RoleBindings that reference them.
      */
     public File switchClusterRolesToRolesIfNeeded(File oldFile) {
-        boolean isRbacScope = this.extraEnvVars.stream().anyMatch(it -> it.getName().equals(Environment.STRIMZI_RBAC_SCOPE_ENV) && it.getValue().equals(Environment.STRIMZI_RBAC_SCOPE_NAMESPACE));
-
-        if (Environment.isNamespaceRbacScope() || isRbacScope || this.clusterOperatorRBACType == ClusterOperatorRBACType.NAMESPACE) {
+        if (Environment.isNamespaceRbacScope() || this.clusterOperatorRBACType == ClusterOperatorRBACType.NAMESPACE) {
             try {
                 final String[] fileNameArr = oldFile.getName().split("-");
                 // change ClusterRole to Role
