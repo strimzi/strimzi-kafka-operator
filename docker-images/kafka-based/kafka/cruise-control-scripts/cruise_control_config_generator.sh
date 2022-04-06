@@ -21,9 +21,6 @@ ln -sf /dev/stdout $CC_ACCESS_LOG
 # Write the config file
 cat <<EOF
 bootstrap.servers=$STRIMZI_KAFKA_BOOTSTRAP_SERVERS
-partition.metric.sample.store.topic=strimzi.cruisecontrol.partitionmetricsamples
-broker.metric.sample.store.topic=strimzi.cruisecontrol.modeltrainingsamples
-metric.reporter.topic=strimzi.cruisecontrol.metrics
 capacity.config.file=$CC_CAPACITY_FILE
 cluster.configs.file=$CC_CLUSTER_CONFIG_FILE
 webserver.accesslog.path=$CC_ACCESS_LOG

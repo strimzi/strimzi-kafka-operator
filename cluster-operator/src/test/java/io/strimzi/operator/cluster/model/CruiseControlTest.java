@@ -66,6 +66,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static io.strimzi.operator.cluster.model.CruiseControl.API_HEALTHCHECK_PATH;
 import static io.strimzi.operator.cluster.model.CruiseControl.API_USER_NAME;
@@ -871,6 +872,61 @@ public class CruiseControlTest {
 
         assertThat(cc.isMetricsEnabled(), is(false));
         assertThat(cc.getMetricsConfigInCm(), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testDefaultTopicNames() {
+        CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
+                .withImage(ccImage)
+                .withConfig(ccConfig)
+                .build();
+
+        Kafka resource = createKafka(cruiseControlSpec);
+
+        CruiseControl cc = createCruiseControl(resource);
+        Deployment dep = cc.generateDeployment(true, null, null);
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        // checks on the main Cruise Control container
+        Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
+        List<EnvVar> envVarList = ccContainer.getEnv();
+        Optional<EnvVar> configEnvVar = envVarList.stream().filter(envVar -> envVar.getName().equals(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION))
+                .findFirst();
+        assertThat(configEnvVar.isPresent(), is(true));
+        String config = configEnvVar.get().getValue();
+        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_PARTITION_METRIC_TOPIC_NAME)));
+        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRIC_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_BROKER_METRIC_TOPIC_NAME)));
+        assertThat(config, containsString(String.format("%s=%s", CruiseControlConfigurationParameters.CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME)));
+    }
+
+    @ParallelTest
+    public void testCustomTopicNames() {
+        Map<String, String> topicConfigs = new HashMap<>();
+        topicConfigs.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_PARTITION_METRIC_TOPIC_NAME.getValue(), "partition-topic");
+        topicConfigs.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_BROKER_METRIC_TOPIC_NAME.getValue(), "broker-topic");
+        topicConfigs.put(CruiseControlConfigurationParameters.CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME.getValue(), "metric-reporter-topic");
+        Map<String, Object> customConfig = ccConfig;
+        customConfig.putAll(topicConfigs);
+
+        CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
+                .withImage(ccImage)
+                .withConfig(customConfig)
+                .build();
+
+        Kafka resource = createKafka(cruiseControlSpec);
+
+        CruiseControl cc = createCruiseControl(resource);
+        Deployment dep = cc.generateDeployment(true, null, null);
+        List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
+
+        // checks on the main Cruise Control container
+        Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
+        List<EnvVar> envVarList = ccContainer.getEnv();
+        Optional<EnvVar> configEnvVar = envVarList.stream().filter(envVar -> envVar.getName().equals(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION))
+                .findFirst();
+        assertThat(configEnvVar.isPresent(), is(true));
+        String config = configEnvVar.get().getValue();
+        topicConfigs.forEach((configParam, name) -> assertThat(config, containsString(String.format("%s=%s", configParam, name))));
     }
 
     @AfterAll
