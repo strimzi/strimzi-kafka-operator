@@ -80,7 +80,7 @@ import static java.util.Collections.unmodifiableList;
 @Version(Constants.V1BETA2)
 @Group(Constants.RESOURCE_GROUP_NAME)
 @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
-public class KafkaMirrorMaker2 extends CustomResource<KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status> implements Namespaced, UnknownPropertyPreserving {
+public class KafkaMirrorMaker2 extends CustomResource<KafkaMirrorMaker2Spec, KafkaMirrorMaker2Status> implements Namespaced, UnknownPropertyPreserving, RackAware {
     private static final long serialVersionUID = 1L;
 
     public static final String SCOPE = "Namespaced";
@@ -181,5 +181,11 @@ public class KafkaMirrorMaker2 extends CustomResource<KafkaMirrorMaker2Spec, Kaf
     @Override
     public void setAdditionalProperty(String name, Object value) {
         this.additionalProperties.put(name, value);
+    }
+
+    @Override
+    @Description("Rack awareness configuration.")
+    public Rack getRack() {
+        return spec.getRack();
     }
 }

@@ -642,7 +642,7 @@ It must have the value `custom` for the type `KafkaAuthorizationCustom`.
 [id='type-Rack-{context}']
 ### `Rack` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnect-{context}[`KafkaConnect`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 
 xref:type-Rack-schema-{context}[Full list of `Rack` schema properties]
 
@@ -1601,6 +1601,8 @@ Used in: xref:type-ListenerStatus-{context}[`ListenerStatus`]
 |xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`]
 |status  1.2+<.<a|The status of the Kafka Connect cluster.
 |xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`]
+|rack    1.2+<.<a|Rack awareness configuration.
+|xref:type-Rack-{context}[`Rack`]
 |====
 
 [id='type-KafkaConnectSpec-{context}']
@@ -2997,6 +2999,8 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`]
 |status  1.2+<.<a|The status of the Kafka MirrorMaker 2.0 cluster.
 |xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`]
+|rack    1.2+<.<a|Rack awareness configuration.
+|xref:type-Rack-{context}[`Rack`]
 |====
 
 [id='type-KafkaMirrorMaker2Spec-{context}']
@@ -3042,6 +3046,8 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
 |metricsConfig          1.2+<.<a|Metrics configuration. The type depends on the value of the `metricsConfig.type` property within the given object, which must be one of [jmxPrometheusExporter].
 |xref:type-JmxPrometheusExporterMetrics-{context}[`JmxPrometheusExporterMetrics`]
+|rack                   1.2+<.<a|Configuration of the node label which will be used as the client.rack consumer configuration.
+|xref:type-Rack-{context}[`Rack`]
 |====
 
 [id='type-KafkaMirrorMaker2ClusterSpec-{context}']

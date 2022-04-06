@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static io.strimzi.operator.cluster.ClusterOperatorConfig.DEFAULT_STRIMZI_OPERATOR_IMAGE;
+
 /**
  * Represents the Topic Operator deployment
  */
@@ -126,7 +128,7 @@ public class EntityTopicOperator extends AbstractModel {
             result.setOwnerReference(kafkaAssembly);
             String image = topicOperatorSpec.getImage();
             if (image == null) {
-                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
+                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE, DEFAULT_STRIMZI_OPERATOR_IMAGE);
             }
             result.image = image;
             result.watchedNamespace = topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();

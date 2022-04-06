@@ -89,6 +89,7 @@ public class ClusterOperatorConfig {
     public static final boolean DEFAULT_NETWORK_POLICY_GENERATION = true;
     public static final boolean DEFAULT_CREATE_CLUSTER_ROLES = false;
     public static final boolean DEFAULT_POD_SET_RECONCILIATION_ONLY = false;
+    public static final String DEFAULT_STRIMZI_OPERATOR_IMAGE = "quay.io/strimzi/operator:latest";
 
     private final Set<String> namespaces;
     private final long reconciliationIntervalMs;

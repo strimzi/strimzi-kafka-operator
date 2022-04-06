@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static io.strimzi.operator.cluster.ClusterOperatorConfig.DEFAULT_STRIMZI_OPERATOR_IMAGE;
+
 /**
  * Represents the User Operator deployment
  */
@@ -124,7 +126,7 @@ public class EntityUserOperator extends AbstractModel {
 
             String image = userOperatorSpec.getImage();
             if (image == null) {
-                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_USER_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
+                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_USER_OPERATOR_IMAGE, DEFAULT_STRIMZI_OPERATOR_IMAGE);
             }
             result.image = image;
 

@@ -9,16 +9,17 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertSecretSource;
+import io.strimzi.api.kafka.model.ClientTls;
 import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.KafkaConnectSpecBuilder;
-import io.strimzi.api.kafka.model.ClientTls;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
+import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
@@ -32,6 +33,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
+
+import static io.strimzi.operator.cluster.ClusterOperatorConfig.DEFAULT_STRIMZI_OPERATOR_IMAGE;
+import static io.strimzi.operator.cluster.ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE;
 
 public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     protected static final String APPLICATION_NAME = "kafka-mirror-maker-2";
@@ -114,7 +118,6 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     private static KafkaConnectSpec buildKafkaConnectSpec(KafkaMirrorMaker2Spec spec, KafkaMirrorMaker2ClusterSpec connectCluster) {
-        
         ClientTls connectTls = null;
         ClientTls mirrorMaker2ConnectClusterTls = connectCluster.getTls();
         if (mirrorMaker2ConnectClusterTls != null) {
@@ -125,7 +128,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
             }
         }
 
-        return new KafkaConnectSpecBuilder()
+        KafkaConnectSpecBuilder kafkaConnectSpecBuilder = new KafkaConnectSpecBuilder()
                 .withBootstrapServers(connectCluster.getBootstrapServers())
                 .withTls(connectTls)
                 .withAuthentication(connectCluster.getAuthentication())
@@ -142,9 +145,16 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 .withMetricsConfig(spec.getMetricsConfig())
                 .withTracing(spec.getTracing())
                 .withTemplate(spec.getTemplate())
-                .withExternalConfiguration(spec.getExternalConfiguration())
-                .build();
+                .withExternalConfiguration(spec.getExternalConfiguration());
 
+        Rack rack = spec.getRack();
+        if (rack != null) {
+            kafkaConnectSpecBuilder
+                    .withRack(rack)
+                    .withImage(System.getenv().getOrDefault(STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, DEFAULT_STRIMZI_OPERATOR_IMAGE));
+        }
+
+        return kafkaConnectSpecBuilder.build();
     }
 
     @Override

@@ -1846,7 +1846,7 @@ public class KafkaClusterTest {
         assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnotations.entrySet()), is(true));
 
         // Check ClusterRoleBinding
-        ClusterRoleBinding crb = kc.generateClusterRoleBinding("namespace");
+        ClusterRoleBinding crb = kc.generateInitContainerClusterRoleBinding("namespace");
         assertThat(crb.getMetadata().getLabels().entrySet().containsAll(crbLabels.entrySet()), is(true));
         assertThat(crb.getMetadata().getAnnotations().entrySet().containsAll(crbAnnotations.entrySet()), is(true));
 
@@ -3141,7 +3141,7 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        ClusterRoleBinding crb = kc.generateClusterRoleBinding(testNamespace);
+        ClusterRoleBinding crb = kc.generateInitContainerClusterRoleBinding(testNamespace);
 
         assertThat(crb.getMetadata().getName(), is(KafkaResources.initContainerClusterRoleBindingName(cluster, testNamespace)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
@@ -3163,7 +3163,7 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        ClusterRoleBinding crb = kc.generateClusterRoleBinding(testNamespace);
+        ClusterRoleBinding crb = kc.generateInitContainerClusterRoleBinding(testNamespace);
 
         assertThat(crb.getMetadata().getName(), is(KafkaResources.initContainerClusterRoleBindingName(cluster, testNamespace)));
         assertThat(crb.getMetadata().getNamespace(), is(nullValue()));
@@ -3179,7 +3179,7 @@ public class KafkaClusterTest {
                 image, healthDelay, healthTimeout, jmxMetricsConfig, configuration, emptyMap());
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        ClusterRoleBinding crb = kc.generateClusterRoleBinding(testNamespace);
+        ClusterRoleBinding crb = kc.generateInitContainerClusterRoleBinding(testNamespace);
 
         assertThat(crb, is(nullValue()));
     }

@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static io.strimzi.operator.cluster.ClusterOperatorConfig.DEFAULT_STRIMZI_OPERATOR_IMAGE;
 import static io.strimzi.test.TestUtils.map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -167,7 +168,7 @@ public class EntityTopicOperatorTest {
         EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
 
         assertThat(entityTopicOperator.watchedNamespace(), is(namespace));
-        assertThat(entityTopicOperator.getImage(), is("quay.io/strimzi/operator:latest"));
+        assertThat(entityTopicOperator.getImage(), is(DEFAULT_STRIMZI_OPERATOR_IMAGE));
         assertThat(entityTopicOperator.reconciliationIntervalMs, is(EntityTopicOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000));
         assertThat(entityTopicOperator.zookeeperSessionTimeoutMs, is(EntityTopicOperatorSpec.DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS * 1000));
         assertThat(entityTopicOperator.topicMetadataMaxAttempts, is(EntityTopicOperatorSpec.DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS));

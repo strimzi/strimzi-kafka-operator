@@ -1840,6 +1840,16 @@ spec:
                     - type
                     - valueFrom
                   description: Metrics configuration.
+                rack:
+                  type: object
+                  properties:
+                    topologyKey:
+                      type: string
+                      example: topology.kubernetes.io/zone
+                      description: A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config and `client.rack` in Kafka Connect.
+                  required:
+                    - topologyKey
+                  description: Configuration of the node label which will be used as the client.rack consumer configuration.
               required:
                 - connectCluster
               description: The specification of the Kafka MirrorMaker 2.0 cluster.
@@ -1901,3 +1911,13 @@ spec:
                   type: integer
                   description: The current number of pods being used to provide this resource.
               description: The status of the Kafka MirrorMaker 2.0 cluster.
+            rack:
+              type: object
+              properties:
+                topologyKey:
+                  type: string
+                  example: topology.kubernetes.io/zone
+                  description: A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set the broker's `broker.rack` config and `client.rack` in Kafka Connect.
+              required:
+                - topologyKey
+              description: Rack awareness configuration.

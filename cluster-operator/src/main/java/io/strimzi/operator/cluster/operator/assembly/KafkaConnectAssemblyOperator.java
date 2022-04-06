@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaConnectList;
@@ -23,12 +22,11 @@ import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -103,14 +101,14 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         Map<String, String> annotations = new HashMap<>(2);
 
-        LOGGER.debugCr(reconciliation, "Updating Kafka Connect cluster");
-
+        String clusterRoleBindingName = KafkaConnectResources.initContainerClusterRoleBindingName(kafkaConnect.getMetadata().getName(), namespace);
         boolean connectHasZeroReplicas = connect.getReplicas() == 0;
-
         final AtomicReference<String> image = new AtomicReference<>();
         final AtomicReference<String> desiredLogging = new AtomicReference<>();
+
+        LOGGER.debugCr(reconciliation, "Updating Kafka Connect cluster");
         connectServiceAccount(reconciliation, namespace, KafkaConnectResources.serviceAccountName(connect.getCluster()), connect)
-                .compose(i -> connectInitClusterRoleBinding(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
+                .compose(i -> clusterRoleBindingForRackAwareness(reconciliation, clusterRoleBindingName, kafkaConnect, connect))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, connect, isUseResources(kafkaConnect)))
                 .compose(i -> connectBuildOperator.reconcile(reconciliation, namespace, connect.getName(), build))
                 .compose(buildInfo -> {
@@ -166,28 +164,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     @Override
     protected KafkaConnectStatus createStatus() {
         return new KafkaConnectStatus();
-    }
-
-    /**
-     * Creates (or deletes) the ClusterRoleBinding required for the init container used for client rack-awareness.
-     * The init-container needs to be able to read the labels from the node it is running on to be able to determine
-     * the `client.rack` option.
-     *
-     * @param reconciliation    The reconciliation
-     * @param namespace         Namespace of the service account to which the ClusterRole should be bound
-     * @param name              Name of the ClusterRoleBinding
-     * @param connectCluster    Name of the Connect cluster
-     * @return                  Future for tracking the asynchronous result of the ClusterRoleBinding reconciliation
-     */
-    Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(Reconciliation reconciliation, String namespace, String name, KafkaConnectCluster connectCluster) {
-        ClusterRoleBinding desired = connectCluster.generateClusterRoleBinding();
-
-        return withIgnoreRbacError(reconciliation,
-                clusterRoleBindingOperations.reconcile(reconciliation,
-                        KafkaConnectResources.initContainerClusterRoleBindingName(name, namespace),
-                        desired),
-                desired
-        );
     }
 
     /**
