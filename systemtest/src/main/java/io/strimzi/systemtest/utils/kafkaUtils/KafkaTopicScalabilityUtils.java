@@ -19,23 +19,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-
+/**
+ * This class contains crucial methods to create, modify and check large amount of kafka topics
+ * */
 public class KafkaTopicScalabilityUtils {
-    /**
-     * This class contains crucial methods to create, modify and check large amount of kafka topics
-     * */
+
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaTopicUtils.class);
     private KafkaTopicScalabilityUtils() {}
 
     public static void createTopicsViaK8s(ExtensionContext extensionContext, String namespaceName, String clusterName, String topicPrefix,
                                           int numberOfTopics, int numberOfPartitions, int numberOfReplicas, int minInSyncReplicas) {
-        LOGGER.info("Creating topics via Kubernetes");
+        LOGGER.info("Creating {} topics via Kubernetes",numberOfTopics);
 
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopicName = topicPrefix + i;
-            LOGGER.debug("Creating topic {}", currentTopicName);
-
             ResourceManager.getInstance().createResource(extensionContext, false, KafkaTopicTemplates.topic(
                             clusterName, currentTopicName, numberOfPartitions, numberOfReplicas, minInSyncReplicas, namespaceName).build());
         }
@@ -58,23 +56,22 @@ public class KafkaTopicScalabilityUtils {
     }
 
     public static void waitForTopicsNotReady(String namespaceName, String topicPrefix, int numberOfTopics) {
-        LOGGER.info("Verifying that topics are in NotReady state");
+        LOGGER.info("Verifying that {} topics are in NotReady state", numberOfTopics);
         KafkaTopicScalabilityUtils.waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.NotReady);
     }
 
     public static void waitForTopicsReady(String namespaceName, String topicPrefix, int numberOfTopics) {
-        LOGGER.info("Verifying that topics are in Ready state");
+        LOGGER.info("Verifying that {} topics are in Ready state", numberOfTopics);
         KafkaTopicScalabilityUtils.waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.Ready);
     }
 
     public static void waitForTopicsContainConfig(String namespaceName, String topicPrefix, int numberOfTopics, Map<String, Object> config) {
-        LOGGER.info("Verifying that topics contain right config");
+        LOGGER.info("Verifying that {} topics contain right config", numberOfTopics);
         List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopic = topicPrefix + i;
             topics.add(CompletableFuture.runAsync(() -> {
-                LOGGER.info("Verifying topic " + currentTopic);
                 KafkaTopicUtils.waitForTopicConfigContains(namespaceName, currentTopic, config);
             }));
         }
@@ -86,12 +83,11 @@ public class KafkaTopicScalabilityUtils {
     }
 
     public static void modifyBigAmountOfTopics(String namespaceName, String topicPrefix, int numberOfTopics, KafkaTopicSpec topicSpec) {
-        LOGGER.info("Modify topics via Kubernetes");
+        LOGGER.info("Modify {} topics via Kubernetes", numberOfTopics);
         List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopicName = topicPrefix + i;
-            LOGGER.info("Modify topic {}", currentTopicName);
             KafkaTopicResource.replaceTopicResourceInSpecificNamespace(currentTopicName, kafkaTopic -> kafkaTopic.setSpec(topicSpec), namespaceName);
         }
     }
