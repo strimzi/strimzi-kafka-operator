@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.topic;
 
-import io.apicurio.registry.utils.ConcurrentUtil;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -17,6 +16,7 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.core.http.HttpServer;
 import io.vertx.micrometer.backends.BackendRegistries;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -32,9 +32,11 @@ import io.strimzi.operator.common.InvalidConfigurationException;
 
 import java.security.Security;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 
 public class Session extends AbstractVerticle {
 
@@ -48,6 +50,8 @@ public class Session extends AbstractVerticle {
 
 
     private final Config config;
+    private final WorkerExecutor executor;
+    private final TopicOperatorState topicOperatorState;
     private final KubernetesClient kubeClient;
 
     /*test*/ KafkaImpl kafka;
@@ -67,9 +71,26 @@ public class Session extends AbstractVerticle {
     private Zk zk;
     private volatile HttpServer healthServer;
 
-    public Session(KubernetesClient kubeClient, Config config) {
+    /**
+     * @param kubeClient kubernetes client
+     * @param config  TopicOperator config
+     * @param executor vertx worker executor for long blocking tasks
+     */
+    public Session(KubernetesClient kubeClient, Config config, WorkerExecutor executor) {
+        this(kubeClient, config, executor, new TopicOperatorState());
+    }
+
+    /**
+     * @param kubeClient kubernetes client
+     * @param config  TopicOperator config
+     * @param executor vertx worker executor for taks that can block longer than 10 seconds
+     * @param topicOperatorState used to communicate liveness/readiness to health server from things that can potentially fail
+     */
+    public Session(KubernetesClient kubeClient, Config config, WorkerExecutor executor, TopicOperatorState topicOperatorState) {
         this.kubeClient = kubeClient;
         this.config = config;
+        this.executor = executor;
+        this.topicOperatorState = topicOperatorState;
         StringBuilder sb = new StringBuilder(System.lineSeparator());
         for (Config.Value<?> v: Config.keys()) {
             sb.append("\t").append(v.key).append(": ").append(Util.maskPassword(v.key, config.get(v).toString())).append(System.lineSeparator());
@@ -171,96 +192,114 @@ public class Session extends AbstractVerticle {
         String clientId = config.get(Config.CLIENT_ID);
         LOGGER.debug("Using client-Id {}", clientId);
 
-        Zk.create(vertx, config.get(Config.ZOOKEEPER_CONNECT),
-                this.config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(),
-                this.config.get(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS).intValue(),
-            zkResult -> {
-                if (zkResult.failed()) {
-                    start.fail(zkResult.cause());
-                    return;
-                }
-                this.zk = zkResult.result();
-                LOGGER.debug("Using ZooKeeper {}", zk);
+        startHealthServer(topicOperatorState)
+                .onFailure(t -> {
+                    LOGGER.error("Failed to start health server", t);
 
-                String topicsPath = config.get(Config.TOPICS_PATH);
-                TopicStore topicStore;
-                if (config.get(Config.USE_ZOOKEEPER_TOPIC_STORE)) {
-                    topicStore = new ZkTopicStore(zk, topicsPath);
-                } else {
-                    boolean exists = zk.getPathExists(topicsPath);
-                    CompletionStage<KafkaStreamsTopicStoreService> cs;
-                    if (exists) {
-                        cs = Zk2KafkaStreams.upgrade(zk, config, adminClientProperties(), false);
-                    } else {
-                        KafkaStreamsTopicStoreService ksc = new KafkaStreamsTopicStoreService();
-                        cs = ksc.start(config, adminClientProperties()).thenCompose(s -> CompletableFuture.completedFuture(ksc));
-                    }
-                    topicStore = ConcurrentUtil.result(
-                            cs.handle((s, t) -> {
-                                if (t != null) {
-                                    LOGGER.error("Failed to create topic store.", t);
-                                    start.fail(t);
-                                    return null; // [1]
-                                } else {
-                                    service = s;
-                                    return s.store;
-                                }
-                            }));
-                    if (topicStore == null) {
-                        return; // [1]
-                    }
-                }
+                    // Not really necessary to set this, as a health server that didn't state, will never return a 200
+                    // But wanted to keep it consistent with out failure states
+                    topicOperatorState.setAlive(false);
+                    start.fail(t);
+                })
+                .onSuccess(httpServer -> healthServer = httpServer)
+                .compose(ignored -> Zk.create(vertx,
+                        config.get(Config.ZOOKEEPER_CONNECT),
+                        config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(),
+                        config.get(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS).intValue()))
+                .onFailure(cause -> {
+                    LOGGER.error("Failed to start ZK client", cause);
+                    topicOperatorState.setAlive(false);
+                    start.fail(cause);
+                })
+                .onSuccess(zookeeper -> {
+                    zk = zookeeper;
+                    LOGGER.debug("Using ZooKeeper {}", zk);
+                })
+                .compose(zk -> executor.executeBlocking((Handler<Promise<TopicStore>>) storePromise -> {
+                    Instant startedAt = Instant.now();
+                    TopicStore topicStore = createTopicStore(zk, config);
+                    LOGGER.info("Topic store created, took {} ms", Duration.between(startedAt, Instant.now()).toMillis());
+                    storePromise.complete(topicStore);
+                }))
+                .onFailure(cause -> {
+                    LOGGER.error("Failed to create topic store.", cause);
+                    topicOperatorState.setAlive(false);
+                    start.fail(cause);
+                })
+                .onSuccess(topicStore -> LOGGER.debug("Using TopicStore {}", topicStore))
+                .compose(topicStore -> createTopicOperatorAndZkWatchers(labels, namespace, topicStore))
+                .compose(topicOperator -> {
+                    Promise<Void> initReconcilePromise = Promise.promise();
+                    watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), this::startWatcher);
+                    LOGGER.debug("Starting watcher");
+                    return startWatcher().compose(ignored -> Future.succeededFuture(initReconcilePromise));
+                })
+                .onSuccess(this::createPeriodicReconcileTrigger)
+                .onSuccess(ignored -> {
+                    start.complete();
+                    topicOperatorState.setReady(true);
+                    LOGGER.info("Started");
+                });
+    }
 
-                LOGGER.debug("Using TopicStore {}", topicStore);
+    private Future<TopicOperator> createTopicOperatorAndZkWatchers(Labels labels, String namespace, TopicStore topicStore) {
+        topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, labels, namespace, config, new MicrometerMetricsProvider());
+        LOGGER.debug("Using Operator {}", topicOperator);
 
-                this.topicOperator = new TopicOperator(vertx, kafka, k8s, topicStore, labels, namespace, config, new MicrometerMetricsProvider());
-                LOGGER.debug("Using Operator {}", topicOperator);
+        topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
+        LOGGER.debug("Using TopicConfigsWatcher {}", topicConfigsWatcher);
+        topicWatcher = new ZkTopicWatcher(topicOperator);
+        LOGGER.debug("Using TopicWatcher {}", topicWatcher);
+        topicsWatcher = new ZkTopicsWatcher(topicOperator, topicConfigsWatcher, topicWatcher);
+        LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
+        topicsWatcher.start(zk);
+        return Future.succeededFuture(topicOperator);
+    }
 
-                this.topicConfigsWatcher = new TopicConfigsWatcher(topicOperator);
-                LOGGER.debug("Using TopicConfigsWatcher {}", topicConfigsWatcher);
-                this.topicWatcher = new ZkTopicWatcher(topicOperator);
-                LOGGER.debug("Using TopicWatcher {}", topicWatcher);
-                this.topicsWatcher = new ZkTopicsWatcher(topicOperator, topicConfigsWatcher, topicWatcher);
-                LOGGER.debug("Using TopicsWatcher {}", topicsWatcher);
-                topicsWatcher.start(zk);
-
-                Promise<Void> initReconcilePromise = Promise.promise();
-
-                watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), this::startWatcher);
-                LOGGER.debug("Starting watcher");
-                startWatcher().compose(
-                    ignored -> {
-                        LOGGER.debug("Starting health server");
-                        return Future.<Void>succeededFuture();
-                    })
-                    .compose(i -> startHealthServer())
-                    .onComplete(finished -> {
-                        Session.this.healthServer = finished.result();
-                        start.complete();
-                    });
-
-                final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
-                Handler<Long> periodic = new Handler<>() {
-                    @Override
-                    public void handle(Long oldTimerId) {
-                        if (!stopped) {
-                            timerId = null;
-                            boolean isInitialReconcile = oldTimerId == null;
-                            topicOperator.getPeriodicReconciliationsCounter().increment();
-                            topicOperator.reconcileAllTopics(isInitialReconcile ? "initial " : "periodic ").onComplete(result -> {
-                                if (isInitialReconcile) {
-                                    initReconcilePromise.complete();
-                                }
-                                if (!stopped) {
-                                    timerId = vertx.setTimer(interval, this);
-                                }
-                            });
+    private void createPeriodicReconcileTrigger(Promise<Void> initReconcilePromise) {
+        final Long interval = config.get(Config.FULL_RECONCILIATION_INTERVAL_MS);
+        Handler<Long> periodic = new Handler<>() {
+            @Override
+            public void handle(Long oldTimerId) {
+                if (!stopped) {
+                    timerId = null;
+                    boolean isInitialReconcile = oldTimerId == null;
+                    topicOperator.getPeriodicReconciliationsCounter().increment();
+                    topicOperator.reconcileAllTopics(isInitialReconcile ? "initial " : "periodic ").onComplete(result -> {
+                        if (isInitialReconcile) {
+                            initReconcilePromise.complete();
                         }
-                    }
-                };
-                periodic.handle(null);
-                LOGGER.info("Started");
-            });
+                        if (!stopped) {
+                            timerId = vertx.setTimer(interval, this);
+                        }
+                    });
+                }
+            }
+        };
+        periodic.handle(null);
+    }
+
+    private TopicStore createTopicStore(Zk zk, Config config) {
+        String topicsPath = config.get(Config.TOPICS_PATH);
+        if (config.get(Config.USE_ZOOKEEPER_TOPIC_STORE)) {
+            return new ZkTopicStore(zk, topicsPath);
+        } else {
+            boolean exists = zk.getPathExists(topicsPath);
+            CompletionStage<KafkaStreamsTopicStoreService> cs;
+            if (exists) {
+                cs = Zk2KafkaStreams.upgrade(zk, config, adminClientProperties(), false);
+            } else {
+                KafkaStreamsTopicStoreService ksc = new KafkaStreamsTopicStoreService();
+                cs = ksc.start(config, adminClientProperties()).thenCompose(s -> CompletableFuture.completedFuture(ksc));
+            }
+            try {
+                KafkaStreamsTopicStoreService kafkaStreamsTopicStoreService = cs.toCompletableFuture().get();
+                this.service = kafkaStreamsTopicStoreService;
+                return kafkaStreamsTopicStoreService.store;
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     private void setSaslConfigs(Properties kafkaClientProps) {
@@ -297,7 +336,7 @@ public class Session extends AbstractVerticle {
         }
     }
 
-    Properties adminClientProperties() {
+    Properties  adminClientProperties() {
         Properties kafkaClientProps = new Properties();
         kafkaClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         kafkaClientProps.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, config.get(Config.APPLICATION_ID));
@@ -363,17 +402,20 @@ public class Session extends AbstractVerticle {
     /**
      * Start an HTTP health server
      */
-    private Future<HttpServer> startHealthServer() {
+    private Future<HttpServer> startHealthServer(TopicOperatorState tos) {
 
         return this.vertx.createHttpServer()
                 .requestHandler(request -> {
-
-                    if (request.path().equals("/healthy")) {
-                        request.response().setStatusCode(200).end();
-                    } else if (request.path().equals("/ready")) {
-                        request.response().setStatusCode(200).end();
-                    } else if (request.path().equals("/metrics")) {
-                        request.response().setStatusCode(200).end(metricsRegistry.scrape());
+                    switch (request.path()) {
+                        case "/healthy":
+                            request.response().setStatusCode(tos.isAlive() ? 200 : 500).end();
+                            break;
+                        case "/ready":
+                            request.response().setStatusCode(tos.isReady() ? 200 : 500).end();
+                            break;
+                        case "/metrics":
+                            request.response().setStatusCode(200).end(metricsRegistry.scrape());
+                            break;
                     }
                 })
                 .listen(HEALTH_SERVER_PORT);

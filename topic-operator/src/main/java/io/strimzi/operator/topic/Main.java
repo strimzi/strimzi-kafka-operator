@@ -11,6 +11,7 @@ import io.vertx.core.Vertx;
 import java.util.HashMap;
 import java.util.Map;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.WorkerExecutor;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.logging.log4j.LogManager;
@@ -24,6 +25,11 @@ import org.apache.logging.log4j.Logger;
 public class Main {
 
     private final static Logger LOGGER = LogManager.getLogger(Main.class);
+
+    static String blockingWorkerPoolName = "blocking-ops-executor";
+
+    // TODO, change this if/when this worker pool is shared with ZkImpl that has its own worker pool also
+    static int blockingWorkerPoolSize  = 1;
 
     public static void main(String[] args) {
         LOGGER.info("TopicOperator {} is starting", Main.class.getPackage().getImplementationVersion());
@@ -47,7 +53,9 @@ public class Main {
                         .setJvmMetricsEnabled(true)
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
-        Session session = new Session(kubeClient, config);
+
+        WorkerExecutor executor = vertx.createSharedWorkerExecutor(blockingWorkerPoolName, blockingWorkerPoolSize);
+        Session session = new Session(kubeClient, config, executor);
         vertx.deployVerticle(session, ar -> {
             if (ar.succeeded()) {
                 LOGGER.info("Session deployed");

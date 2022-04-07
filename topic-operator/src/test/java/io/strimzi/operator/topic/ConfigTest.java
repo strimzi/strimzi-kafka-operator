@@ -38,16 +38,12 @@ public class ConfigTest {
 
     @Test
     public void testUnknownKeyThrows() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            new Config(Collections.singletonMap("foo", "bar"));
-        });
+        assertThrows(IllegalArgumentException.class, () -> new Config(Collections.singletonMap("foo", "bar")));
     }
 
     @Test
     public void testEmptyMapThrows() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            Config c = new Config(Collections.emptyMap());
-        });
+        assertThrows(IllegalArgumentException.class, () -> new Config(Collections.emptyMap()));
     }
 
     @Test
@@ -84,7 +80,7 @@ public class ConfigTest {
         map.put(Config.TC_TOPIC_METADATA_MAX_ATTEMPTS, "3");
 
         Config c = new Config(map);
-        assertThat(c.get(Config.TOPIC_METADATA_MAX_ATTEMPTS).intValue(), is(3));
+        assertThat(c.get(Config.TOPIC_METADATA_MAX_ATTEMPTS), is(3));
     }
 
     @Test
@@ -94,7 +90,7 @@ public class ConfigTest {
         KubernetesClient kubeClient = mockKube.build();
 
         Config config = new Config(map);
-        Session session = new Session(kubeClient, config);
+        Session session = new Session(kubeClient, config, null);
         Properties adminClientProps = session.adminClientProperties();
 
         assertThat(adminClientProps.getProperty(AdminClientConfig.SECURITY_PROTOCOL_CONFIG), is("PLAINTEXT"));
@@ -110,7 +106,7 @@ public class ConfigTest {
         KubernetesClient kubeClient = mockKube.build();
 
         Config config = new Config(map);
-        Session session = new Session(kubeClient, config);
+        Session session = new Session(kubeClient, config, null);
         Properties adminClientProps = session.adminClientProperties();
 
         assertThat(adminClientProps.getProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG), is("HTTPS"));
@@ -125,7 +121,7 @@ public class ConfigTest {
         KubernetesClient kubeClient = mockKube.build();
 
         Config config = new Config(map);
-        Session session = new Session(kubeClient, config);
+        Session session = new Session(kubeClient, config, null);
         Properties adminClientProps = session.adminClientProperties();
 
         assertThat(adminClientProps.getProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG), is("HTTPS"));
@@ -140,16 +136,16 @@ public class ConfigTest {
         KubernetesClient kubeClient = mockKube.build();
 
         Config config = new Config(map);
-        Session session = new Session(kubeClient, config);
-        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties());
+        Session session = new Session(kubeClient, config, null);
+        assertThrows(InvalidConfigurationException.class, session::adminClientProperties);
 
         String username = "admin";
         String password = "password";
         map.put(Config.SASL_USERNAME.key, username);
         map.put(Config.SASL_PASSWORD.key, password);
         Config configWithCredentials = new Config(map);
-        Session sessionWithCredentials = new Session(kubeClient, configWithCredentials);
-        assertThrows(IllegalArgumentException.class, () -> sessionWithCredentials.adminClientProperties());
+        Session sessionWithCredentials = new Session(kubeClient, configWithCredentials, null);
+        assertThrows(IllegalArgumentException.class, sessionWithCredentials::adminClientProperties);
     }
 
     @Test
@@ -162,8 +158,8 @@ public class ConfigTest {
         KubernetesClient kubeClient = mockKube.build();
 
         Config config = new Config(map);
-        Session session = new Session(kubeClient, config);
-        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties());
+        Session session = new Session(kubeClient, config, null);
+        assertThrows(InvalidConfigurationException.class, session::adminClientProperties);
     }
 
     @Test
@@ -176,8 +172,8 @@ public class ConfigTest {
         KubernetesClient kubeClient = mockKube.build();
 
         Config config = new Config(map);
-        Session session = new Session(kubeClient, config);
-        assertThrows(InvalidConfigurationException.class, () -> session.adminClientProperties());
+        Session session = new Session(kubeClient, config, null);
+        assertThrows(InvalidConfigurationException.class, session::adminClientProperties);
     }
 
     @Test
@@ -197,7 +193,7 @@ public class ConfigTest {
 
         map.put(Config.SASL_MECHANISM.key, "scram-sha-256");
         Config configSHA256 = new Config(map);
-        Session sessionSHA256 = new Session(kubeClient, configSHA256);
+        Session sessionSHA256 = new Session(kubeClient, configSHA256, null);
 
         Properties adminClientPropsSHA256 = sessionSHA256.adminClientProperties();
         assertThat(adminClientPropsSHA256.getProperty(SaslConfigs.SASL_MECHANISM), is("SCRAM-SHA-256"));
@@ -205,7 +201,7 @@ public class ConfigTest {
 
         map.put(Config.SASL_MECHANISM.key, "scram-sha-512");
         Config configSHA512 = new Config(map);
-        Session sessionSHA512 = new Session(kubeClient, configSHA512);
+        Session sessionSHA512 = new Session(kubeClient, configSHA512, null);
 
         Properties adminClientPropsSHA512 = sessionSHA512.adminClientProperties();
         assertThat(adminClientPropsSHA512.getProperty(SaslConfigs.SASL_MECHANISM), is("SCRAM-SHA-512"));
@@ -213,7 +209,7 @@ public class ConfigTest {
 
         map.put(Config.SASL_MECHANISM.key, "plain");
         Config configPlain = new Config(map);
-        Session sessionPlain = new Session(kubeClient, configPlain);
+        Session sessionPlain = new Session(kubeClient, configPlain, null);
 
         Properties adminClientPropsPlain = sessionPlain.adminClientProperties();
         assertThat(adminClientPropsPlain.getProperty(SaslConfigs.SASL_MECHANISM), is("PLAIN"));
