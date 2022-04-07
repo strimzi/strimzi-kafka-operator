@@ -416,6 +416,8 @@ public class Session extends AbstractVerticle {
                         case "/metrics":
                             request.response().setStatusCode(200).end(metricsRegistry.scrape());
                             break;
+                        default:
+                            request.response().setStatusCode(404).end();
                     }
                 })
                 .listen(HEALTH_SERVER_PORT);
