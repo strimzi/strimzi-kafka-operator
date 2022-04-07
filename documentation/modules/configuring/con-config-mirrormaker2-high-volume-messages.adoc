@@ -1,0 +1,70 @@
+// Module included in the following assemblies:
+//
+// assembly-config-mirrormaker2.adoc
+
+[id='con-mirrormaker-high-volume-messages-{context}']
+= Handling high volumes of messages
+
+[role="_abstract"]
+If your MirrorMaker 2.0 deployment is going to be handling a high volume of messages, you might need to adjust its configuration to support it.
+
+The flush pipeline for data replication is *source topic -> (Kafka Connect) source message queue -> producer buffer -> target topic*.
+An offset flush timeout period (`offset.flush.timeout.ms`) is the time to wait for the producer buffer (`producer.buffer.memory`) to flush and offset data to be committed.
+Try to avoid a situation where a large producer buffer and an insufficient offset flush timeout period causes a _failed to flush_ or _failed to commit offsets_ type of error.
+
+This type of error means that there are too many messages in the producer buffer, so they can't all be flushed before the offset flush timeout is reached.
+
+If you are getting this type of error, try the following configuration changes:
+
+* Decreasing the default value in bytes of the `producer.buffer.memory`
+* Increasing the default value in milliseconds of the `offset.flush.timeout.ms`
+
+The changes should help to keep the underlying Kafka Connect queue of outstanding messages at a manageable size.
+You might need to adjust the values to have the desired effect.
+
+If these configuration changes don't resolve the error, you can try increasing the number of tasks that run in parallel by doing the following.
+
+* xref:con-mirrormaker-tasks-max-{context}[Increasing the number of tasks] using the `tasksMax` property
+* Increasing the number of nodes for the workers that run tasks using the `replicas` property
+
+.Example MirrorMaker 2.0 configuration for handling high volumes of messages
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+spec:
+  version: {DefaultKafkaVersion}
+  replicas: 5
+  connectCluster: "my-cluster-target"
+  clusters:
+  - alias: "my-cluster-source"
+    bootstrapServers: my-cluster-source-kafka-bootstrap:9092
+  - alias: "my-cluster-target"
+    config:
+      offset.flush.timeout.ms: 10000
+      producer.buffer.memory: 8388608
+    bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+  mirrors:
+  - sourceCluster: "my-cluster-source"
+    targetCluster: "my-cluster-target"
+    sourceConnector:
+      tasksMax: 10
+----
+
+== Checking the message flow
+
+If you are using Prometheus and Grafana to monitor your deployment, you can check the MirrorMaker 2.0 message flow.
+The example MirrorMaker 2.0 Grafana dashboard provided with Strimzi shows the following metrics related to the flush pipeline.
+
+* The number of messages in Kafka Connect's outstanding messages queue
+* The available bytes of the producer buffer
+* The offset commit timeout in milliseconds
+
+You can use these metrics to gauge whether or not you need to tune your configuration based on the volume of messages.
+
+[role="_additional-resources"]
+.Additional resources
+
+* link:{BookURLDeploying}#assembly-metrics-setup-{context}[Grafana dashboards^]
