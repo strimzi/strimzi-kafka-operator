@@ -17,15 +17,15 @@ import java.util.List;
  * lead to problems.
  */
 public class ZooKeeperSpecChecker {
-    private final ZookeeperCluster zoo;
+    private final ZookeeperCluster zk;
 
     /**
-     * @param zoo The model generated based on the spec. This is requested so that default
+     * @param zk The model generated based on the spec. This is requested so that default
      *                     values not included in the spec can be taken into account, without needing
      *                     this class to include awareness of what defaults are applied.
      */
-    public ZooKeeperSpecChecker(ZookeeperCluster zoo) {
-        this.zoo = zoo;
+    public ZooKeeperSpecChecker(ZookeeperCluster zk) {
+        this.zk = zk;
     }
 
     public List<Condition> run() {
@@ -42,7 +42,7 @@ public class ZooKeeperSpecChecker {
      * @param warnings List to add a warning to, if appropriate.
      */
     private void checkZooKeeperStorage(List<Condition> warnings) {
-        if (zoo.getReplicas() == 1 && StorageUtils.usesEphemeral(zoo.getStorage())) {
+        if (zk.getReplicas() == 1 && StorageUtils.usesEphemeral(zk.getStorage())) {
             warnings.add(StatusUtils.buildWarningCondition("ZooKeeperStorage",
                     "A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used."));
         }
@@ -55,10 +55,10 @@ public class ZooKeeperSpecChecker {
      * @param warnings List to add a warning to, if appropriate.
      */
     private void checkZooKeeperReplicas(List<Condition> warnings) {
-        if (zoo.getReplicas() == 2) {
+        if (zk.getReplicas() == 2) {
             warnings.add(StatusUtils.buildWarningCondition("ZooKeeperReplicas",
                     "Running ZooKeeper with two nodes is not advisable as both replicas will be needed to avoid downtime. It is recommended that a minimum of three replicas are used."));
-        } else if (zoo.getReplicas() % 2 == 0) {
+        } else if (zk.getReplicas() % 2 == 0) {
             warnings.add(StatusUtils.buildWarningCondition("ZooKeeperReplicas",
                     "Running ZooKeeper with an odd number of replicas is recommended."));
         }
