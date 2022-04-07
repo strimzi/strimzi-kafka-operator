@@ -151,23 +151,20 @@ public class ClusterCa extends Ca {
             isMaintenanceTimeWindowsSatisfied);
     }
 
-    public Map<String, CertAndKey> generateZkCerts(Kafka kafka, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
-        String cluster = kafka.getMetadata().getName();
-        String namespace = kafka.getMetadata().getNamespace();
-
-        DnsNameGenerator zkDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperServiceName(cluster));
-        DnsNameGenerator zkHeadlessDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperHeadlessServiceName(cluster));
+    public Map<String, CertAndKey> generateZkCerts(String namespace, String kafkaName, int replicas, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
+        DnsNameGenerator zkDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperServiceName(kafkaName));
+        DnsNameGenerator zkHeadlessDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperHeadlessServiceName(kafkaName));
 
         Function<Integer, Subject> subjectFn = i -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
-                    .withCommonName(KafkaResources.zookeeperStatefulSetName(cluster));
-            subject.addDnsName(KafkaResources.zookeeperServiceName(cluster));
-            subject.addDnsName(String.format("%s.%s", KafkaResources.zookeeperServiceName(cluster), namespace));
+                    .withCommonName(KafkaResources.zookeeperStatefulSetName(kafkaName));
+            subject.addDnsName(KafkaResources.zookeeperServiceName(kafkaName));
+            subject.addDnsName(String.format("%s.%s", KafkaResources.zookeeperServiceName(kafkaName), namespace));
             subject.addDnsName(zkDnsGenerator.serviceDnsNameWithoutClusterDomain());
             subject.addDnsName(zkDnsGenerator.serviceDnsName());
-            subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.zookeeperHeadlessServiceName(cluster), KafkaResources.zookeeperPodName(cluster, i)));
-            subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.zookeeperHeadlessServiceName(cluster), KafkaResources.zookeeperPodName(cluster, i)));
+            subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.zookeeperHeadlessServiceName(kafkaName), KafkaResources.zookeeperPodName(kafkaName, i)));
+            subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.zookeeperHeadlessServiceName(kafkaName), KafkaResources.zookeeperPodName(kafkaName, i)));
             subject.addDnsName(zkDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
             subject.addDnsName(zkDnsGenerator.wildcardServiceDnsName());
             subject.addDnsName(zkHeadlessDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
@@ -178,10 +175,10 @@ public class ClusterCa extends Ca {
         LOGGER.debugCr(reconciliation, "{}: Reconciling zookeeper certificates", this);
         return maybeCopyOrGenerateCerts(
             reconciliation,
-            kafka.getSpec().getZookeeper().getReplicas(),
+            replicas,
             subjectFn,
             zkNodesSecret,
-            podNum -> KafkaResources.zookeeperPodName(cluster, podNum),
+            podNum -> KafkaResources.zookeeperPodName(kafkaName, podNum),
             isMaintenanceTimeWindowsSatisfied);
     }
 
