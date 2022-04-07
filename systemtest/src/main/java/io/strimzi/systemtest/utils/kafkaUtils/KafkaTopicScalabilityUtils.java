@@ -30,7 +30,7 @@ public class KafkaTopicScalabilityUtils {
 
     public static void createTopicsViaK8s(ExtensionContext extensionContext, String namespaceName, String clusterName, String topicPrefix,
                                           int numberOfTopics, int numberOfPartitions, int numberOfReplicas, int minInSyncReplicas) {
-        LOGGER.info("Creating {} topics via Kubernetes",numberOfTopics);
+        LOGGER.info("Creating {} topics via Kubernetes", numberOfTopics);
 
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopicName = topicPrefix + i;
