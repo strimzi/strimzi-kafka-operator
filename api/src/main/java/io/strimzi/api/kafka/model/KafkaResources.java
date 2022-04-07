@@ -154,6 +154,39 @@ public class KafkaResources {
         return "strimzi-" + namespace + "-" + cluster + "-kafka-init";
     }
 
+    /**
+     * Returns the name of the Kafka Secret with server certificates.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the corresponding Kafka Secret.
+     */
+    public static String kafkaSecretName(String clusterName) {
+        return clusterName + "-kafka-brokers";
+    }
+
+    /**
+     * Returns the name of the Kafka Secret with JMX credentials.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the corresponding Kafka JMX Secret.
+     */
+    public static String kafkaJmxSecretName(String clusterName) {
+        return clusterName + "-kafka-jmx";
+    }
+
+    /**
+     * Returns the name of the Kafka Network Policy.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the corresponding Kafka Network Policy.
+     */
+    public static String kafkaNetworkPolicyName(String clusterName) {
+        return clusterName + "-network-policy-kafka";
+    }
+
     ////////
     // ZooKeeper methods
     ////////

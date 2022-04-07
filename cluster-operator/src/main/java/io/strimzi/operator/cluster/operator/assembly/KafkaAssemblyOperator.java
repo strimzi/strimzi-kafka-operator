@@ -529,7 +529,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 clientsCaCertSecret = secret;
                             } else if (secretName.equals(clientsCaKeyName)) {
                                 clientsCaKeySecret = secret;
-                            } else if (secretName.equals(KafkaCluster.brokersSecretName(name))) {
+                            } else if (secretName.equals(KafkaResources.kafkaSecretName(name))) {
                                 brokersSecret = secret;
                             }
                         }
@@ -2317,7 +2317,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaBrokersSecret() {
-            return updateCertificateSecretWithDiff(KafkaCluster.brokersSecretName(name), kafkaCluster.generateBrokersSecret(clusterCa, clientsCa))
+            return updateCertificateSecretWithDiff(KafkaResources.kafkaSecretName(name), kafkaCluster.generateBrokersSecret(clusterCa, clientsCa))
                     .map(changed -> {
                         existingKafkaCertsChanged = changed;
                         return this;
@@ -2326,22 +2326,22 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
 
         Future<ReconciliationState> kafkaJmxSecret() {
             if (kafkaCluster.isJmxAuthenticated()) {
-                Future<Secret> secretFuture = secretOperations.getAsync(namespace, KafkaCluster.jmxSecretName(name));
+                Future<Secret> secretFuture = secretOperations.getAsync(namespace, KafkaResources.kafkaJmxSecretName(name));
                 return secretFuture.compose(res -> {
                     if (res == null) {
-                        return withVoid(secretOperations.reconcile(reconciliation, namespace, KafkaCluster.jmxSecretName(name),
+                        return withVoid(secretOperations.reconcile(reconciliation, namespace, KafkaResources.kafkaJmxSecretName(name),
                                 kafkaCluster.generateJmxSecret()));
                     }
                     return withVoid(Future.succeededFuture(this));
                 });
 
             }
-            return withVoid(secretOperations.reconcile(reconciliation, namespace, KafkaCluster.jmxSecretName(name), null));
+            return withVoid(secretOperations.reconcile(reconciliation, namespace, KafkaResources.kafkaJmxSecretName(name), null));
         }
 
         Future<ReconciliationState> kafkaNetPolicy() {
             if (isNetworkPolicyGeneration) {
-                return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, KafkaCluster.networkPolicyName(name), kafkaCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
+                return withVoid(networkPolicyOperator.reconcile(reconciliation, namespace, KafkaResources.kafkaNetworkPolicyName(name), kafkaCluster.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels)));
             } else {
                 return withVoid(Future.succeededFuture());
             }
