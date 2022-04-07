@@ -32,6 +32,8 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -128,7 +130,10 @@ public class KafkaBrokerConfigurationBuilder {
                                                              String replicationFactor, String minInSyncReplicas)   {
         if (cruiseControl != null) {
             printSectionHeader("Cruise Control configuration");
-            writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=strimzi.cruisecontrol.metrics");
+            Map<String, Object> config = cruiseControl.getConfig();
+            String metricsTopicName = Optional.ofNullable(config.get(CruiseControlConfigurationParameters.CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME.getValue()))
+                            .orElse(CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME).toString();
+            writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=" + metricsTopicName);
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS");
             // using the brokers service because the Admin client, in the Cruise Control metrics reporter, is not able to connect
             // to the pods behind the bootstrap one when they are not ready during startup.
