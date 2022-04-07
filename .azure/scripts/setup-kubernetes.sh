@@ -12,7 +12,7 @@ DEFAULT_MINIKUBE_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1
 MINIKUBE_MEMORY=${MINIKUBE_MEMORY:-$DEFAULT_MINIKUBE_MEMORY}
 MINIKUBE_CPU=${MINIKUBE_CPU:-$DEFAULT_MINIKUBE_CPU}
 
-# reserve a memory the operating system (specifically 1GB).
+# reserve a memory for the operating system (specifically 1GB).
 MINIKUBE_MEMORY=$(( $MINIKUBE_MEMORY-1000 ))
 
 echo "[INFO] MINIKUBE_MEMORY: ${MINIKUBE_MEMORY}"
