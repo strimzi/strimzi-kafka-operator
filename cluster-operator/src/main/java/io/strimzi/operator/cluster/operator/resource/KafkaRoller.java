@@ -219,16 +219,17 @@ public class KafkaRoller {
         final Promise<Void> promise;
         final BackOff backOff;
         private long connectionErrorStart = 0L;
+
         boolean needsRestart;
         boolean needsReconfig;
         boolean forceRestart;
         KafkaBrokerConfigurationDiff diff;
         KafkaBrokerLoggingConfigurationDiff logDiff;
 
-       RestartContext(Supplier<BackOff> backOffSupplier) {
-           promise = Promise.promise();
-           backOff = backOffSupplier.get();
-           backOff.delayMs();
+        RestartContext(Supplier<BackOff> backOffSupplier) {
+            promise = Promise.promise();
+            backOff = backOffSupplier.get();
+            backOff.delayMs();
         }
 
         public void clearConnectionError() {
