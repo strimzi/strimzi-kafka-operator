@@ -495,7 +495,7 @@ class KafkaST extends AbstractST {
             .endSpec()
             .build());
 
-        // Make snapshots for Kafka cluster to meke sure that there is no rolling update after CO reconciliation
+        // Make snapshots for Kafka cluster to make sure that there is no rolling update after CO reconciliation
         final String zkStsName = KafkaResources.zookeeperStatefulSetName(clusterName);
         final String kafkaStsName = kafkaStatefulSetName(clusterName);
         final String eoDepName = KafkaResources.entityOperatorDeploymentName(clusterName);

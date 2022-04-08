@@ -39,6 +39,7 @@ import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -57,12 +58,15 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.time.Duration;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1316,6 +1320,71 @@ class ConnectIsolatedST extends AbstractST {
 
         final String kafkaConnectPodNameAfterRU = kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName();
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespaceName, kafkaConnectPodNameAfterRU);
+    }
+
+    @ParallelNamespaceTest
+    @Tag(INTERNAL_CLIENTS_USED)
+    // When adding unexpected config option (tasks.max) - connectors are restarted on every reconciliation
+    void testKafkaConnectRestartingConnector(ExtensionContext extensionContext) throws InterruptedException {
+        TestStorage storage = new TestStorage(extensionContext);
+
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storage.getClusterName(), 3).build());
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(extensionContext, storage.getClusterName(), 1, false)
+            .editMetadata()
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+            .endMetadata()
+            .editOrNewSpec()
+                .withBootstrapServers(KafkaResources.tlsBootstrapAddress(storage.getClusterName()))
+                .addToConfig("key.converter.schemas.enable", false)
+                .addToConfig("value.converter.schemas.enable", false)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .withNewInlineLogging()
+                    .addToLoggers("connect.root.logger.level", "INFO")
+                .endInlineLogging()
+            .endSpec()
+            .build());
+
+        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(storage.getClusterName())
+            .editSpec()
+                .withTasksMax(2)
+                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                .addToConfig("topics", storage.getTopicName())
+                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+            .endSpec()
+            .build());
+
+        String connectorName = storage.getClusterName();
+        String coExpectedLog = "KafkaConnect(" + storage.getNamespaceName() + "/" + connectorName + "): Configuration option \"tasks.max\" is forbidden and will be ignored";
+        String coNotExpectedLog = "KafkaConnect(" + storage.getNamespaceName() + "/" + connectorName + "): Configuration parameter tasks.max in KafkaConnector.spec.config will be ignored and the value from KafkaConnector.spec will be used instead";
+
+        // Following log should not be present more than once on every reconciliation (30s)
+        String kcCreationLog = "[" + connectorName + "|worker] Finished creating connector " + connectorName;
+
+        final String coPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(INFRA_NAMESPACE, Constants.STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();
+        final String kafkaConnectPodName = kubeClient(storage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.deploymentName(storage.getClusterName())).get(0).getMetadata().getName();
+
+        String kcLogOutput = ResourceManager.cmdKubeClient().namespace(storage.getNamespaceName()).execInCurrentNamespace(Level.INFO, "logs", kafkaConnectPodName).out();
+        String coLogOutput = ResourceManager.cmdKubeClient().namespace(INFRA_NAMESPACE).execInCurrentNamespace(Level.INFO, "logs", coPodName).out();
+
+        assertThat(kcLogOutput, CoreMatchers.containsString(kcCreationLog));
+        assertThat(coLogOutput, not(CoreMatchers.containsString(coExpectedLog)));
+
+        KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(storage.getNamespaceName()).withName(storage.getClusterName()).get();
+        Map<String, Object> kcConfig = kafkaConnector.getSpec().getConfig();
+        kcConfig.put("tasks.max", 10);
+
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(storage.getClusterName(),
+                kc -> kc.getSpec().setConfig(kcConfig), storage.getNamespaceName());
+        KafkaConnectorUtils.waitForConnectorReady(storage.getNamespaceName(), storage.getClusterName());
+
+        Thread.sleep(Constants.SAFETY_RECONCILIATION_INTERVAL);
+        kcLogOutput = ResourceManager.cmdKubeClient().namespace(storage.getNamespaceName()).execInCurrentNamespace(Level.INFO, "logs", kafkaConnectPodName, "--since=" + Duration.ofMillis(Constants.SAFETY_RECONCILIATION_INTERVAL).getSeconds() + "s").out();
+        coLogOutput = ResourceManager.cmdKubeClient().namespace(INFRA_NAMESPACE).execInCurrentNamespace(Level.INFO, "logs", coPodName, "--since=" + Duration.ofMillis(Constants.SAFETY_RECONCILIATION_INTERVAL).getSeconds() + "s").out();
+
+        assertThat(kcLogOutput, not(CoreMatchers.containsString(kcCreationLog)));
+        assertThat(coLogOutput, CoreMatchers.containsString(coExpectedLog));
+        assertThat(coLogOutput, not(CoreMatchers.containsString(coNotExpectedLog)));
     }
 
     @BeforeAll
