@@ -30,6 +30,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -130,9 +131,8 @@ public class KafkaBrokerConfigurationBuilder {
                                                              String replicationFactor, String minInSyncReplicas)   {
         if (cruiseControl != null) {
             printSectionHeader("Cruise Control configuration");
-            Map<String, Object> config = cruiseControl.getConfig();
-            String metricsTopicName = Optional.ofNullable(config.get(CruiseControlConfigurationParameters.CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME.getValue()))
-                            .orElse(CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME).toString();
+            Map<String, Object> config = Optional.ofNullable(cruiseControl.getConfig()).orElseGet(HashMap::new);
+            String metricsTopicName = config.getOrDefault(CruiseControlConfigurationParameters.CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME).toString();
             writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=" + metricsTopicName);
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS");
             // using the brokers service because the Admin client, in the Cruise Control metrics reporter, is not able to connect
