@@ -17,6 +17,10 @@
         </license>
     </licenses>
 
+    <properties>
+        <mockito.version>4.4.0</mockito.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.strimzi</groupId>
@@ -141,7 +145,7 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
+            <artifactId>mockito-inline</artifactId>
         </dependency>
         <dependency>
             <groupId>io.strimzi</groupId>

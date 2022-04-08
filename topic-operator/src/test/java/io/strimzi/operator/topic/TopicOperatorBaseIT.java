@@ -22,7 +22,6 @@ import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.exceptions.NoClusterException;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.WorkerExecutor;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -212,8 +211,7 @@ public abstract class TopicOperatorBaseIT {
     protected void startTopicOperator(StrimziKafkaCluster kafkaCluster) throws InterruptedException, ExecutionException, TimeoutException {
 
         LOGGER.info("Starting Topic Operator");
-        WorkerExecutor executor = vertx.createSharedWorkerExecutor(Main.blockingWorkerPoolName, Main.blockingWorkerPoolSize);
-        session = new Session(kubeClient, new Config(topicOperatorConfig(kafkaCluster)), executor);
+        session = new Session(kubeClient, new Config(topicOperatorConfig(kafkaCluster)));
 
         CompletableFuture<Void> async = new CompletableFuture<>();
         vertx.deployVerticle(session, ar -> {

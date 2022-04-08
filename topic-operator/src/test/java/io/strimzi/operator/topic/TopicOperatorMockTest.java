@@ -17,7 +17,6 @@ import io.strimzi.test.mockkube.MockKube;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -106,8 +105,7 @@ public class TopicOperatorMockTest {
             Config.FULL_RECONCILIATION_INTERVAL_MS.key, "10000"
         ));
 
-        WorkerExecutor executor = vertx.createSharedWorkerExecutor(Main.blockingWorkerPoolName, Main.blockingWorkerPoolSize);
-        session = new Session(kubeClient, topicConfig, executor);
+        session = new Session(kubeClient, topicConfig);
 
         Checkpoint async = context.checkpoint();
         vertx.deployVerticle(session, ar -> {

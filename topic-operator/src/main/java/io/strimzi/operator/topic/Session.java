@@ -13,9 +13,11 @@ import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.topic.zk.Zk;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.core.http.HttpServer;
 import io.vertx.micrometer.backends.BackendRegistries;
@@ -37,6 +39,11 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiFunction;
+
+import static io.strimzi.operator.topic.Config.ZOOKEEPER_CONNECT;
+import static io.strimzi.operator.topic.Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS;
+import static io.strimzi.operator.topic.Config.ZOOKEEPER_SESSION_TIMEOUT_MS;
 
 public class Session extends AbstractVerticle {
 
@@ -50,9 +57,11 @@ public class Session extends AbstractVerticle {
 
 
     private final Config config;
-    private final WorkerExecutor executor;
+    private WorkerExecutor executor;
     private final TopicOperatorState topicOperatorState;
     private final KubernetesClient kubeClient;
+    private final BiFunction<Zk, Config, TopicStore> topicStoreCreator;
+    private final BiFunction<Vertx, Config, Future<Zk>> zkClientCreator;
 
     /*test*/ KafkaImpl kafka;
     private AdminClient adminClient;
@@ -65,7 +74,9 @@ public class Session extends AbstractVerticle {
     /*test*/ ZkTopicWatcher topicWatcher;
     /*test*/ PrometheusMeterRegistry metricsRegistry;
     K8sTopicWatcher watcher;
-    /** The id of the periodic reconciliation timer. This is null during a periodic reconciliation. */
+    /**
+     * The id of the periodic reconciliation timer. This is null during a periodic reconciliation.
+     */
     private volatile Long timerId;
     private volatile boolean stopped = false;
     private Zk zk;
@@ -73,30 +84,39 @@ public class Session extends AbstractVerticle {
 
     /**
      * @param kubeClient kubernetes client
-     * @param config  TopicOperator config
-     * @param executor vertx worker executor for long blocking tasks
+     * @param config     TopicOperator config
      */
-    public Session(KubernetesClient kubeClient, Config config, WorkerExecutor executor) {
-        this(kubeClient, config, executor, new TopicOperatorState());
+    public Session(KubernetesClient kubeClient, Config config) {
+        this(kubeClient, config, null, null, new TopicOperatorState());
     }
 
     /**
-     * @param kubeClient kubernetes client
-     * @param config  TopicOperator config
-     * @param executor vertx worker executor for taks that can block longer than 10 seconds
+     * Constructor is package private for testing
+     *
+     * @param kubeClient         kubernetes client
+     * @param config             TopicOperator config
+     * @param topicStoreCreator  indirection to allow unit testing of start-up sequence with mock topicstore creation
+     * @param zkClientCreator    indirection to allow unit testing of start-up sequence with mock ZK client creation
      * @param topicOperatorState used to communicate liveness/readiness to health server from things that can potentially fail
      */
-    public Session(KubernetesClient kubeClient, Config config, WorkerExecutor executor, TopicOperatorState topicOperatorState) {
+    Session(KubernetesClient kubeClient, Config config, BiFunction<Zk, Config, TopicStore> topicStoreCreator, BiFunction<Vertx, Config, Future<Zk>> zkClientCreator, TopicOperatorState topicOperatorState) {
+        this.topicStoreCreator = topicStoreCreator == null ? this::createTopicStore : topicStoreCreator;
+        this.zkClientCreator = zkClientCreator == null ? this::createZk : zkClientCreator;
         this.kubeClient = kubeClient;
         this.config = config;
-        this.executor = executor;
         this.topicOperatorState = topicOperatorState;
         StringBuilder sb = new StringBuilder(System.lineSeparator());
-        for (Config.Value<?> v: Config.keys()) {
+        for (Config.Value<?> v : Config.keys()) {
             sb.append("\t").append(v.key).append(": ").append(Util.maskPassword(v.key, config.get(v).toString())).append(System.lineSeparator());
         }
         LOGGER.info("Using config:{}", sb.toString());
         this.metricsRegistry = (PrometheusMeterRegistry) BackendRegistries.getDefaultNow();
+    }
+
+    @Override
+    public void init(Vertx vertx, Context context) {
+        super.init(vertx, context);
+        executor = vertx.createSharedWorkerExecutor("blocking-startup-ops", 1);
     }
 
     /**
@@ -193,53 +213,55 @@ public class Session extends AbstractVerticle {
         LOGGER.debug("Using client-Id {}", clientId);
 
         startHealthServer(topicOperatorState)
-                .onFailure(t -> {
-                    LOGGER.error("Failed to start health server", t);
-
-                    // Not really necessary to set this, as a health server that didn't state, will never return a 200
-                    // But wanted to keep it consistent with out failure states
-                    topicOperatorState.setAlive(false);
-                    start.fail(t);
-                })
+                .onFailure(cause -> LOGGER.error("Failed to start health server", cause))
                 .onSuccess(httpServer -> healthServer = httpServer)
-                .compose(ignored -> Zk.create(vertx,
-                        config.get(Config.ZOOKEEPER_CONNECT),
-                        config.get(Config.ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(),
-                        config.get(Config.ZOOKEEPER_CONNECTION_TIMEOUT_MS).intValue()))
-                .onFailure(cause -> {
-                    LOGGER.error("Failed to start ZK client", cause);
-                    topicOperatorState.setAlive(false);
-                    start.fail(cause);
-                })
-                .onSuccess(zookeeper -> {
-                    zk = zookeeper;
-                    LOGGER.debug("Using ZooKeeper {}", zk);
-                })
-                .compose(zk -> executor.executeBlocking((Handler<Promise<TopicStore>>) storePromise -> {
-                    Instant startedAt = Instant.now();
-                    TopicStore topicStore = createTopicStore(zk, config);
-                    LOGGER.info("Topic store created, took {} ms", Duration.between(startedAt, Instant.now()).toMillis());
-                    storePromise.complete(topicStore);
-                }))
-                .onFailure(cause -> {
-                    LOGGER.error("Failed to create topic store.", cause);
-                    topicOperatorState.setAlive(false);
-                    start.fail(cause);
-                })
+                .compose(ignored -> zkClientCreator.apply(vertx, config))
+                .onSuccess(zookeeper -> zk = zookeeper)
+                .compose(zk -> executor.executeBlocking(createTopicStoreAsync(zk, config)))
                 .onSuccess(topicStore -> LOGGER.debug("Using TopicStore {}", topicStore))
                 .compose(topicStore -> createTopicOperatorAndZkWatchers(labels, namespace, topicStore))
-                .compose(topicOperator -> {
-                    Promise<Void> initReconcilePromise = Promise.promise();
-                    watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), this::startWatcher);
-                    LOGGER.debug("Starting watcher");
-                    return startWatcher().compose(ignored -> Future.succeededFuture(initReconcilePromise));
-                })
+                .compose(this::createK8sWatcher)
                 .onSuccess(this::createPeriodicReconcileTrigger)
                 .onSuccess(ignored -> {
                     start.complete();
                     topicOperatorState.setReady(true);
                     LOGGER.info("Started");
+                })
+                .onFailure(cause -> {
+                    topicOperatorState.setAlive(false);
+                    start.fail(cause);
+                    LOGGER.error("Topic operator start up failed, cause was", cause);
                 });
+    }
+
+    private Future<Promise<Void>> createK8sWatcher(TopicOperator topicOperator) {
+        Promise<Void> initReconcilePromise = Promise.promise();
+        watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), this::startWatcher);
+        LOGGER.debug("Starting watcher");
+        return startWatcher().compose(ignored -> Future.succeededFuture(initReconcilePromise));
+    }
+
+    private Handler<Promise<TopicStore>> createTopicStoreAsync(Zk zk, Config config) {
+        return storePromise -> {
+            Instant startedAt = Instant.now();
+            try {
+                TopicStore topicStore = topicStoreCreator.apply(zk, config);
+                LOGGER.info("Topic store created, took {} ms", Duration.between(startedAt, Instant.now()).toMillis());
+                storePromise.complete(topicStore);
+            } catch (Exception e) {
+                LOGGER.error("Failed to create topic store.", e);
+                storePromise.fail(e);
+            }
+        };
+    }
+
+    private Future<Zk> createZk(Vertx vertx, Config config) {
+        return Zk.create(vertx,
+                         config.get(ZOOKEEPER_CONNECT),
+                         config.get(ZOOKEEPER_SESSION_TIMEOUT_MS).intValue(),
+                         config.get(ZOOKEEPER_CONNECTION_TIMEOUT_MS).intValue())
+                 .onFailure(cause -> LOGGER.error("Failed to start ZK client", cause))
+                 .onSuccess(zookeeper -> LOGGER.debug("Using ZooKeeper {}", zookeeper));
     }
 
     private Future<TopicOperator> createTopicOperatorAndZkWatchers(Labels labels, String namespace, TopicStore topicStore) {
@@ -336,7 +358,7 @@ public class Session extends AbstractVerticle {
         }
     }
 
-    Properties  adminClientProperties() {
+    Properties adminClientProperties() {
         Properties kafkaClientProps = new Properties();
         kafkaClientProps.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, config.get(Config.KAFKA_BOOTSTRAP_SERVERS));
         kafkaClientProps.setProperty(StreamsConfig.APPLICATION_ID_CONFIG, config.get(Config.APPLICATION_ID));
@@ -405,21 +427,21 @@ public class Session extends AbstractVerticle {
     private Future<HttpServer> startHealthServer(TopicOperatorState tos) {
 
         return this.vertx.createHttpServer()
-                .requestHandler(request -> {
-                    switch (request.path()) {
-                        case "/healthy":
-                            request.response().setStatusCode(tos.isAlive() ? 200 : 500).end();
-                            break;
-                        case "/ready":
-                            request.response().setStatusCode(tos.isReady() ? 200 : 500).end();
-                            break;
-                        case "/metrics":
-                            request.response().setStatusCode(200).end(metricsRegistry.scrape());
-                            break;
-                        default:
-                            request.response().setStatusCode(404).end();
-                    }
-                })
-                .listen(HEALTH_SERVER_PORT);
+                         .requestHandler(request -> {
+                             switch (request.path()) {
+                                 case "/healthy":
+                                     request.response().setStatusCode(tos.isAlive() ? 200 : 500).end();
+                                     break;
+                                 case "/ready":
+                                     request.response().setStatusCode(tos.isReady() ? 200 : 500).end();
+                                     break;
+                                 case "/metrics":
+                                     request.response().setStatusCode(200).end(metricsRegistry.scrape());
+                                     break;
+                                 default:
+                                     request.response().setStatusCode(404).end();
+                             }
+                         })
+                         .listen(HEALTH_SERVER_PORT);
     }
 }
