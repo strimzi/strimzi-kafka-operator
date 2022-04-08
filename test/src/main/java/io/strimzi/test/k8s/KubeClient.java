@@ -635,6 +635,10 @@ public class KubeClient {
         return checkSucceededJobStatus(getNamespace(), jobName, 1);
     }
 
+    public boolean checkSucceededJobStatus(String namespace, String jobName) {
+        return checkSucceededJobStatus(namespace, jobName, 1);
+    }
+
     public boolean checkSucceededJobStatus(String namespaceName, String jobName, int expectedSucceededPods) {
         return getJobStatus(namespaceName, jobName).getSucceeded().equals(expectedSucceededPods);
     }
