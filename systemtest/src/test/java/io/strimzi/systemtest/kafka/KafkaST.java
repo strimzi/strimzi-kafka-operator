@@ -981,6 +981,8 @@ class KafkaST extends AbstractST {
             kafkaClients.producerStrimzi(),
             kafkaClients.consumerStrimzi()
         );
+
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 
     @ParallelNamespaceTest
@@ -1037,7 +1039,6 @@ class KafkaST extends AbstractST {
     void testLabelModificationDoesNotBreakCluster(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final int kafkaReplicas = 3;
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 
         Map<String, String> labels = new HashMap<>();
         final String[] labelKeys = {"label-name-1", "label-name-2", ""};
@@ -1069,7 +1070,8 @@ class KafkaST extends AbstractST {
         );
         ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector);
+        Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
         StUtils.waitForStatefulSetOrStrimziPodSetLabelsChange(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), labels);
@@ -1097,6 +1099,9 @@ class KafkaST extends AbstractST {
             resource.getMetadata().getLabels().put(labelKeys[1], labelValues[1]);
             resource.getMetadata().getLabels().put(labelKeys[2], labelValues[2]);
         }, testStorage.getNamespaceName());
+
+        zkPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 1, zkPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
 
         labels.put(labelKeys[0], labelValues[0]);
         labels.put(labelKeys[1], labelValues[1]);
@@ -1127,8 +1132,6 @@ class KafkaST extends AbstractST {
 
         verifyPresentLabels(labels, StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName())));
 
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), kafkaSelector, 3, kafkaPods);
-
         LOGGER.info("Verifying via kafka pods");
         labels = kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)).getMetadata().getLabels();
 
@@ -1138,11 +1141,15 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Removing labels: {} -> {}, {} -> {}, {} -> {}", labelKeys[0], labels.get(labelKeys[0]),
             labelKeys[1], labels.get(labelKeys[1]), labelKeys[2], labels.get(labelKeys[2]));
+
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), resource -> {
             resource.getMetadata().getLabels().remove(labelKeys[0]);
             resource.getMetadata().getLabels().remove(labelKeys[1]);
             resource.getMetadata().getLabels().remove(labelKeys[2]);
         }, testStorage.getNamespaceName());
+
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 1, zkPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
 
         labels.remove(labelKeys[0]);
         labels.remove(labelKeys[1]);
@@ -1172,8 +1179,6 @@ class KafkaST extends AbstractST {
         LOGGER.info("Verifying kafka labels via stateful set");
         verifyNullLabels(labelKeys, StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName())));
 
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), kafkaSelector, 3, kafkaPods);
-
         LOGGER.info("Waiting for kafka pod labels deletion {}", labels.toString());
         PodUtils.waitUntilPodLabelsDeletion(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), labelKeys[0], labelKeys[1], labelKeys[2]);
 
@@ -1186,6 +1191,7 @@ class KafkaST extends AbstractST {
             kafkaClients.producerStrimzi(),
             kafkaClients.consumerStrimzi()
         );
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 
     @ParallelNamespaceTest
