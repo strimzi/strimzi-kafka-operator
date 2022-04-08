@@ -9,6 +9,8 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -189,6 +191,11 @@ public class KafkaTemplates {
                     .addToConfig("transaction.state.log.replication.factor", Math.min(kafkaReplicas, 3))
                     .addToConfig("default.replication.factor", Math.min(kafkaReplicas, 3))
                     .addToConfig("min.insync.replicas", Math.min(Math.max(kafkaReplicas - 1, 1), 2))
+                    .withResources(
+                        new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("512Mi"))
+                            .addToRequests("memory", new Quantity("512Mi"))
+                            .build())
                     .withListeners(new GenericKafkaListenerBuilder()
                                 .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                                 .withPort(9092)
@@ -210,17 +217,32 @@ public class KafkaTemplates {
                     .withNewInlineLogging()
                         .addToLoggers("zookeeper.root.logger", "DEBUG")
                     .endInlineLogging()
+                    .withResources(
+                        new ResourceRequirementsBuilder()
+                            .addToLimits("memory", new Quantity("256Mi"))
+                            .addToRequests("memory", new Quantity("256Mi"))
+                            .build())
                 .endZookeeper()
                 .editEntityOperator()
                     .editUserOperator()
                         .withNewInlineLogging()
                             .addToLoggers("rootLogger.level", "DEBUG")
                         .endInlineLogging()
+                        .withResources(
+                            new ResourceRequirementsBuilder()
+                                .addToLimits("memory", new Quantity("256Mi"))
+                                .addToRequests("memory", new Quantity("256Mi"))
+                                .build())
                     .endUserOperator()
                     .editTopicOperator()
                         .withNewInlineLogging()
                             .addToLoggers("rootLogger.level", "DEBUG")
                         .endInlineLogging()
+                        .withResources(
+                            new ResourceRequirementsBuilder()
+                                .addToLimits("memory", new Quantity("256Mi"))
+                                .addToRequests("memory", new Quantity("256Mi"))
+                                .build())
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec();
