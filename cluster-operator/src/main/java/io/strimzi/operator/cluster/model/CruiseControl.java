@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
-import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContext;
@@ -38,7 +37,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
-import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.certs.CertAndKey;
@@ -84,11 +82,10 @@ public class CruiseControl extends AbstractModel {
     private static final String API_AUTH_FILE_KEY = APPLICATION_NAME + ".apiAuthFile";
     protected static final String API_HEALTHCHECK_PATH = "/kafkacruisecontrol/state";
 
-    protected static final String TLS_SIDECAR_NAME = "tls-sidecar";
-    protected static final String TLS_SIDECAR_CC_CERTS_VOLUME_NAME = "cc-certs";
-    protected static final String TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cc-certs/";
-    protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
-    protected static final String TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT = "/etc/tls-sidecar/cluster-ca-certs/";
+    protected static final String TLS_CC_CERTS_VOLUME_NAME = "cc-certs";
+    protected static final String TLS_CC_CERTS_VOLUME_MOUNT = "/etc/cruise-control/cc-certs/";
+    protected static final String TLS_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
+    protected static final String TLS_CA_CERTS_VOLUME_MOUNT = "/etc/cruise-control/cluster-ca-certs/";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "cruise-control-metrics-and-logging";
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
     protected static final String API_AUTH_CONFIG_VOLUME_NAME = "api-auth-config";
@@ -96,13 +93,7 @@ public class CruiseControl extends AbstractModel {
 
     protected static final String API_AUTH_CREDENTIALS_FILE = API_AUTH_CONFIG_VOLUME_MOUNT + API_AUTH_FILE_KEY;
 
-    // Volume name of the temporary volume used by the TLS sidecar container
-    // Because the container shares the pod with other containers, it needs to have unique name
-    /*test*/ static final String TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-tls-sidecar-tmp";
-
     public static final String ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED = "CRUISE_CONTROL_METRICS_ENABLED";
-
-    private final String zookeeperConnect;
 
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 1;
@@ -117,8 +108,6 @@ public class CruiseControl extends AbstractModel {
             .withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
             .build();
 
-    private TlsSidecar tlsSidecar;
-    private String tlsSidecarImage;
     private String minInsyncReplicas = "1";
     private boolean sslEnabled;
     private boolean authEnabled;
@@ -130,7 +119,6 @@ public class CruiseControl extends AbstractModel {
 
     // Cruise Control configuration keys (EnvVariables)
     protected static final String ENV_VAR_CRUISE_CONTROL_CONFIGURATION = "CRUISE_CONTROL_CONFIGURATION";
-    protected static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
     protected static final String ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
     protected static final String ENV_VAR_MIN_INSYNC_REPLICAS = "MIN_INSYNC_REPLICAS";
 
@@ -146,10 +134,7 @@ public class CruiseControl extends AbstractModel {
 
     // Templates
     protected List<ContainerEnvVar> templateCruiseControlContainerEnvVars;
-    protected List<ContainerEnvVar> templateTlsSidecarContainerEnvVars;
-
     protected SecurityContext templateCruiseControlContainerSecurityContext;
-    protected SecurityContext templateTlsSidecarContainerSecurityContext;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -177,8 +162,6 @@ public class CruiseControl extends AbstractModel {
         this.logAndMetricsConfigVolumeName = LOG_AND_METRICS_CONFIG_VOLUME_NAME;
         this.logAndMetricsConfigMountPath = LOG_AND_METRICS_CONFIG_VOLUME_MOUNT;
         this.isMetricsEnabled = DEFAULT_CRUISE_CONTROL_METRICS_ENABLED;
-
-        this.zookeeperConnect = KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }
 
     /**
@@ -208,13 +191,6 @@ public class CruiseControl extends AbstractModel {
                 image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
             cruiseControl.setImage(image);
-
-            String tlsSideCarImage = ccSpec.getTlsSidecar() != null ? ccSpec.getTlsSidecar().getImage() : null;
-            if (tlsSideCarImage == null) {
-                tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
-            }
-            cruiseControl.tlsSidecarImage = tlsSideCarImage;
-            cruiseControl.tlsSidecar = ccSpec.getTlsSidecar();
 
             cruiseControl.updateConfiguration(ccSpec);
             CruiseControlConfiguration ccConfiguration = (CruiseControlConfiguration) cruiseControl.getConfiguration();
@@ -265,16 +241,8 @@ public class CruiseControl extends AbstractModel {
                     cruiseControl.templateCruiseControlContainerEnvVars = template.getCruiseControlContainer().getEnv();
                 }
 
-                if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getEnv() != null) {
-                    cruiseControl.templateTlsSidecarContainerEnvVars = template.getTlsSidecarContainer().getEnv();
-                }
-
                 if (template.getCruiseControlContainer() != null && template.getCruiseControlContainer().getSecurityContext() != null) {
                     cruiseControl.templateCruiseControlContainerSecurityContext = template.getCruiseControlContainer().getSecurityContext();
-                }
-
-                if (template.getTlsSidecarContainer() != null && template.getTlsSidecarContainer().getSecurityContext() != null) {
-                    cruiseControl.templateTlsSidecarContainerSecurityContext = template.getTlsSidecarContainer().getSecurityContext();
                 }
 
                 if (template.getServiceAccount() != null && template.getServiceAccount().getMetadata() != null) {
@@ -361,17 +329,16 @@ public class CruiseControl extends AbstractModel {
 
     protected List<Volume> getVolumes(boolean isOpenShift) {
         return List.of(createTempDirVolume(),
-                createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
-                createSecretVolume(TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift),
-                createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
+                createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift),
+                createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
                 createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift),
                 createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
     }
 
     protected List<VolumeMount> getVolumeMounts() {
         return List.of(createTempDirVolumeMount(),
-                createVolumeMount(CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT),
-                createVolumeMount(CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT),
+                createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT),
+                createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT),
                 createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT),
                 createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
     }
@@ -398,7 +365,6 @@ public class CruiseControl extends AbstractModel {
 
     @Override
     protected List<Container> getContainers(ImagePullPolicy imagePullPolicy) {
-        List<Container> containers = new ArrayList<>(2);
         Container container = new ContainerBuilder()
                 .withName(CRUISE_CONTROL_CONTAINER_NAME)
                 .withImage(getImage())
@@ -421,30 +387,7 @@ public class CruiseControl extends AbstractModel {
                 .withSecurityContext(templateCruiseControlContainerSecurityContext)
                 .build();
 
-        Container tlsSidecarContainer = new ContainerBuilder()
-                .withName(TLS_SIDECAR_NAME)
-                .withImage(tlsSidecarImage)
-                .withCommand("/opt/stunnel/cruise_control_stunnel_run.sh")
-                .withLivenessProbe(ProbeGenerator.tlsSidecarLivenessProbe(tlsSidecar))
-                .withReadinessProbe(ProbeGenerator.tlsSidecarReadinessProbe(tlsSidecar))
-                .withResources(tlsSidecar != null ? tlsSidecar.getResources() : null)
-                .withEnv(getTlsSidecarEnvVars())
-                .withVolumeMounts(createTempDirVolumeMount(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
-                        createVolumeMount(TLS_SIDECAR_CC_CERTS_VOLUME_NAME, TLS_SIDECAR_CC_CERTS_VOLUME_MOUNT),
-                        createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT))
-                .withLifecycle(new LifecycleBuilder().withNewPreStop().withNewExec()
-                        .withCommand("/opt/stunnel/cruise_control_stunnel_pre_stop.sh",
-                                String.valueOf(templateTerminationGracePeriodSeconds))
-                        .endExec().endPreStop()
-                        .build())
-                .withImagePullPolicy(determineImagePullPolicy(imagePullPolicy, tlsSidecarImage))
-                .withSecurityContext(templateTlsSidecarContainerSecurityContext)
-                .build();
-
-        containers.add(container);
-        containers.add(tlsSidecarContainer);
-
-        return containers;
+        return Collections.singletonList(container);
     }
 
     @Override
@@ -508,19 +451,6 @@ public class CruiseControl extends AbstractModel {
         return CruiseControlResources.serviceAccountName(cluster);
     }
 
-    protected List<EnvVar> getTlsSidecarEnvVars() {
-        List<EnvVar> varList = new ArrayList<>();
-        varList.add(ModelUtils.tlsSidecarLogEnvVar(tlsSidecar));
-        varList.add(buildEnvVar(ENV_VAR_ZOOKEEPER_CONNECT, zookeeperConnect));
-
-        // Add shared environment variables used for all containers
-        varList.addAll(getRequiredEnvVars());
-
-        addContainerEnvsToExistingEnvs(varList, templateTlsSidecarContainerEnvVars);
-
-        return varList;
-    }
-
     /**
      * Creates Cruise Control API auth usernames, passwords, and credentials file
      *
@@ -558,7 +488,7 @@ public class CruiseControl extends AbstractModel {
 
     /**
      * Generate the Secret containing the Cruise Control certificate signed by the cluster CA certificate used for TLS based
-     * internal communication with Kafka and Zookeeper.
+     * internal communication with Kafka
      * It also contains the related Cruise Control private key.
      *
      * @param namespace Namespace in which the Cruise Control cluster runs
