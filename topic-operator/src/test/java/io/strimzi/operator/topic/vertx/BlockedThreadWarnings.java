@@ -39,7 +39,6 @@ public class BlockedThreadWarnings {
 
     public void reset() {
         warningsLogged.set(0);
-        pickedUpByVertx.set(false);
     }
 
 }

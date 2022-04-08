@@ -99,17 +99,12 @@ class SessionTest {
             throw new InvalidStateStoreException("I couldn't find your store");
         };
 
-        // Unfortunately, Mockito's capacity to mock statics is limited to the current thread, and as Vert.x calls
-        // the static ZK::create method in another thread, I have introduced a level of indirection to be able to
-        // test the session
-
         TopicOperatorState tos = new TopicOperatorState();
         Promise<Void> startupPromise = Promise.promise();
 
         Session operatorSession = new Session(kubeClient, config, failingStoreCreator, zkCreation, tos);
         operatorSession.init(vertx, vertx.getOrCreateContext());
 
-        // Luckily, the admin client's static factory method _is_ called in this thread
         try (MockedStatic<AdminClient> ignored = Mockito.mockStatic(AdminClient.class)) {
             operatorSession.start(startupPromise);
         }

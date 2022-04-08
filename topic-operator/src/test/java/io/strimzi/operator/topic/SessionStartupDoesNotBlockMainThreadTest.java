@@ -23,6 +23,7 @@ import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -68,6 +69,11 @@ public class SessionStartupDoesNotBlockMainThreadTest {
     MockitoSession mockitoSession;
     private Vertx vertx;
 
+    @BeforeAll
+    static void beforeAll() {
+        BlockedThreadWarnings.getInstance().reset();
+    }
+
     @BeforeEach
     void setup() {
         mockitoSession = Mockito.mockitoSession().initMocks(this).startMocking();
@@ -76,8 +82,8 @@ public class SessionStartupDoesNotBlockMainThreadTest {
         // This was the only way I could find to access it, and believe me, I'm not super happy about it either.
         System.setProperty("vertx.logger-delegate-factory-class-name", OverrideBlockedThreadCheckerLoggerDelegateFactory.class.getName());
 
-        // Set max block low, and check interval to have of that, so that we can verify that blocking behaviour happens (and then is fixed)
-        // without making the test really slow
+        // Set max block low, and check interval to half of that,
+        // so that we can verify that blocking behaviour happens (and then is fixed) without making the test really slow
         VertxOptions options = new VertxOptions()
                 .setMaxEventLoopExecuteTime(maxBlock.toMillis())
                 .setMaxEventLoopExecuteTimeUnit(TimeUnit.MILLISECONDS)
