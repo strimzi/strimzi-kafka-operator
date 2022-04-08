@@ -135,7 +135,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @SuppressWarnings({
     "checkstyle:ClassDataAbstractionCoupling",
-    "checkstyle:ClassFanOutComplexity"
+    "checkstyle:ClassFanOutComplexity",
+    "checkstyle:JavaNCSS"
 })
 @ParallelSuite
 public class KafkaClusterTest {
@@ -1590,6 +1591,38 @@ public class KafkaClusterTest {
         clock = Clock.fixed(Instant.parse(instantExpected), UTC);
         clusterCa.setClock(clock);
         assertThat(clusterCa.isExpiring(clusterCa.caCertSecret(), Ca.CA_CRT), is(true));
+    }
+
+    @ParallelTest
+    public void testRemoveOldCertificate() {
+        // simulate certificate creation at following time, with expire at 365 days later (by default)
+        String instantExpected = "2022-03-23T09:00:00Z";
+        Clock clock = Clock.fixed(Instant.parse(instantExpected), UTC);
+
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), cluster, null, null);
+        clusterCa.setClock(clock);
+        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
+        assertThat(clusterCa.caCertSecret().getData().size(), is(3));
+
+        // force key replacement so certificate renewal ...
+        Secret caKeySecretWithReplaceAnno = new SecretBuilder(clusterCa.caKeySecret())
+                .editMetadata()
+                .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_REPLACE, "true")
+                .endMetadata()
+                .build();
+        // ... simulated at the following time, with expire at 365 days later (by default)
+        instantExpected = "2022-03-23T11:00:00Z";
+        clock = Clock.fixed(Instant.parse(instantExpected), UTC);
+
+        clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(clock), new PasswordGenerator(10, "a", "a"), cluster, clusterCa.caCertSecret(), caKeySecretWithReplaceAnno);
+        clusterCa.setClock(clock);
+        clusterCa.createRenewOrReplace(namespace, cluster, emptyMap(), emptyMap(), emptyMap(), null, true);
+        assertThat(clusterCa.caCertSecret().getData().size(), is(4));
+        assertThat(clusterCa.caCertSecret().getData().containsKey("ca-2023-03-23T09-00-00Z.crt"), is(true));
+
+        clusterCa.maybeDeleteOldCerts();
+        assertThat(clusterCa.caCertSecret().getData().size(), is(3));
+        assertThat(clusterCa.caCertSecret().getData().containsKey("ca-2023-03-23T09-00-00Z.crt"), is(false));
     }
 
     @ParallelTest

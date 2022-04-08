@@ -372,6 +372,7 @@ class SecurityST extends AbstractST {
     void testAutoReplaceClusterCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
+                3, // additional third rolling due to the removal of the older cluster CA certificate
                 true,
                 true,
                 true,
@@ -385,6 +386,7 @@ class SecurityST extends AbstractST {
     void testAutoReplaceClientsCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
+                2,
                 false,
                 true,
                 false,
@@ -398,6 +400,7 @@ class SecurityST extends AbstractST {
     void testAutoReplaceAllCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
             extensionContext,
+                3, // additional third rolling due to the removal of the older cluster CA certificate
                 true,
                 true,
                 true,
@@ -406,6 +409,7 @@ class SecurityST extends AbstractST {
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
     void autoReplaceSomeKeysTriggeredByAnno(ExtensionContext extensionContext,
+                                            int expectedRolls,
                                             boolean zkShouldRoll,
                                             boolean kafkaShouldRoll,
                                             boolean eoShouldRoll,
@@ -480,46 +484,31 @@ class SecurityST extends AbstractST {
             kubeClient(namespaceName).patchSecret(namespaceName, secretName, annotated);
         }
 
-        if (zkShouldRoll) {
-            LOGGER.info("Wait for zk to rolling restart (1)...");
-            zkPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, zkPods);
-        }
+        for (int i = 1; i <= expectedRolls; i++) {
+            if (zkShouldRoll) {
+                LOGGER.info("Wait for zk to rolling restart ({})...", i);
+                zkPods = i < expectedRolls ?
+                        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, zkPods) :
+                        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, zkSelector, 3, zkPods);
+            }
 
-        if (kafkaShouldRoll) {
-            LOGGER.info("Wait for kafka to rolling restart (1)...");
-            kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, kafkaPods);
-        }
+            if (kafkaShouldRoll) {
+                LOGGER.info("Wait for kafka to rolling restart ({})...", i);
+                kafkaPods = i < expectedRolls ?
+                        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, kafkaPods) :
+                        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, kafkaSelector, 3, kafkaPods);
+            }
 
-        if (eoShouldRoll) {
-            LOGGER.info("Wait for EO to rolling restart (1)...");
-            eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
-        }
+            if (eoShouldRoll) {
+                LOGGER.info("Wait for EO to rolling restart ({})...", i);
+                eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
+            }
 
-        if (keAndCCShouldRoll) {
-            LOGGER.info("Wait for KafkaExporter and CruiseControl to rolling restart (1)...");
-            kePod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaExporterResources.deploymentName(clusterName), 1, kePod);
-            ccPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, ccPod);
-        }
-
-        if (zkShouldRoll) {
-            LOGGER.info("Wait for zk to rolling restart (2)...");
-            zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, zkSelector, 3, zkPods);
-        }
-
-        if (kafkaShouldRoll) {
-            LOGGER.info("Wait for kafka to rolling restart (2)...");
-            kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, kafkaSelector, 3, kafkaPods);
-        }
-
-        if (eoShouldRoll) {
-            LOGGER.info("Wait for EO to rolling restart (2)...");
-            eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
-        }
-
-        if (keAndCCShouldRoll) {
-            LOGGER.info("Wait for KafkaExporter and CruiseControl to rolling restart (2)...");
-            kePod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaExporterResources.deploymentName(clusterName), 1, kePod);
-            ccPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, ccPod);
+            if (keAndCCShouldRoll) {
+                LOGGER.info("Wait for KafkaExporter and CruiseControl to rolling restart ({})...", i);
+                kePod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaExporterResources.deploymentName(clusterName), 1, kePod);
+                ccPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, ccPod);
+            }
         }
 
         LOGGER.info("Checking the certificates have been replaced");

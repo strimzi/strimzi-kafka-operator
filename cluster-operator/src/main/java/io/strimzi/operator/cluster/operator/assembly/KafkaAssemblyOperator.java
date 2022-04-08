@@ -305,6 +305,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.prepareVersionChange())
                 // Roll everything if a new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaKey())
+                // Remove older Cluster CA certificates if renewal happened with a new CA private key
+                .compose(state -> state.maybeRemoveOldClusterCaCertificates())
 
                 // Run reconciliations of the different components
                 .compose(state -> state.reconcileZooKeeper(this::dateSupplier))
@@ -632,6 +634,44 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (ca != null && !ca.isGenerateCertificateAuthority() && (certSecret == null || keySecret == null))   {
                 throw new InvalidConfigurationException(caDescription + " should not be generated, but the secrets were not found.");
             }
+        }
+
+        /**
+         * Remove older cluster CA certificates if present in the corresponding Secret
+         * after a renewal by replacing the corresponding CA private key
+         */
+        Future<ReconciliationState> maybeRemoveOldClusterCaCertificates() {
+            // building the selector for Kafka related components
+            Labels labels =  Labels.forStrimziCluster(name).withStrimziKind(Kafka.RESOURCE_KIND);
+            return podOperations.listAsync(namespace, labels)
+                    .compose(pods -> {
+                        // still no Pods, a new Kafka cluster is under creation
+                        if (pods.isEmpty()) {
+                            return Future.succeededFuture();
+                        }
+                        int clusterCaCertGeneration = clusterCa.certGeneration();
+                        LOGGER.debugCr(reconciliation, "Current cluster CA cert generation {}", clusterCaCertGeneration);
+                        // only if all Kafka related components pods are updated to the new cluster CA cert generation,
+                        // there is the possibility that we should remove the older cluster CA from the Secret and stores
+                        for (Pod pod : pods) {
+                            int podClusterCaCertGeneration = Integer.parseInt(pod.getMetadata().getAnnotations().get(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION));
+                            LOGGER.debugCr(reconciliation, "Pod {} cluster CA cert generation {}", pod.getMetadata().getName(), podClusterCaCertGeneration);
+                            if (clusterCaCertGeneration != podClusterCaCertGeneration) {
+                                return Future.succeededFuture();
+                            }
+                        }
+                        LOGGER.debugCr(reconciliation, "Maybe there are old cluster CA certificates to remove");
+                        this.clusterCa.maybeDeleteOldCerts();
+                        return Future.succeededFuture(this.clusterCa);
+                    })
+                    .compose(ca -> {
+                        if (ca != null && ca.certsRemoved()) {
+                            return secretOperations.reconcile(reconciliation, namespace, AbstractModel.clusterCaCertSecretName(name), ca.caCertSecret());
+                        } else {
+                            return Future.succeededFuture();
+                        }
+                    })
+                    .map(this);
         }
 
         /**
