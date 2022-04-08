@@ -7,6 +7,7 @@
 * Use `/healthz` endpoint for Kafka Exporter health checks
 * Update Jackson Library to 2.12.6
 * Renew user certificates in User Operator only during maintenance windows
+* Ensure Topic Operator using Kafka Streams state store can start up successfully 
 
 ## 0.28.0
 
