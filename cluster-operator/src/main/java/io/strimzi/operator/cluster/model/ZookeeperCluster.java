@@ -29,7 +29,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPort;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
-import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
@@ -359,20 +358,12 @@ public class ZookeeperCluster extends AbstractModel {
         clusterOperatorPeer.setPodSelector(labelSelector4);
         ModelUtils.setClusterOperatorNetworkPolicyNamespaceSelector(clusterOperatorPeer, namespace, operatorNamespace, operatorNamespaceLabels);
 
-        NetworkPolicyPeer cruiseControlPeer = new NetworkPolicyPeer();
-        LabelSelector labelSelector5 = new LabelSelector();
-        Map<String, String> expressions5 = new HashMap<>(1);
-        expressions5.put(Labels.STRIMZI_NAME_LABEL, CruiseControlResources.deploymentName(cluster));
-        labelSelector5.setMatchLabels(expressions5);
-        cruiseControlPeer.setPodSelector(labelSelector5);
-
         // This is a hack because we have no guarantee that the CO namespace has some particular labels
         List<NetworkPolicyPeer> clientsPortPeers = new ArrayList<>(4);
         clientsPortPeers.add(kafkaClusterPeer);
         clientsPortPeers.add(zookeeperClusterPeer);
         clientsPortPeers.add(entityOperatorPeer);
         clientsPortPeers.add(clusterOperatorPeer);
-        clientsPortPeers.add(cruiseControlPeer);
         clientsIngressRule.setFrom(clientsPortPeers);
 
         rules.add(clientsIngressRule);
