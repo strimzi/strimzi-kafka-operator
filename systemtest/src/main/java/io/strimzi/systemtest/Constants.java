@@ -395,7 +395,7 @@ public interface Constants {
      * (because if we use default configuration, the Cluster Operator Pod occasionally restarting because of OOM)
      */
     String CLUSTER_OPERATOR_RESOURCE_CPU_LIMITS = "128m";
-    String CLUSTER_OPERATOR_RESOURCE_MEMORY_LIMITS = "384Mi";
+    String CLUSTER_OPERATOR_RESOURCE_MEMORY_LIMITS = "512Mi";
     String CLUSTER_OPERATOR_RESOURCE_CPU_REQUESTS = "64m";
-    String CLUSTER_OPERATOR_RESOURCE_MEMORY_REQUESTS = "384Mi";
+    String CLUSTER_OPERATOR_RESOURCE_MEMORY_REQUESTS = "512Mi";
 }
