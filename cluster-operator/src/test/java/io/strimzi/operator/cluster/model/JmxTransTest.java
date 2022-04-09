@@ -169,8 +169,8 @@ public class JmxTransTest {
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
-        expected.add(new EnvVarBuilder().withName(KafkaCluster.ENV_VAR_KAFKA_JMX_USERNAME).withNewValueFrom().withNewSecretKeyRef().withName(KafkaCluster.jmxSecretName(cluster)).withKey(KafkaCluster.SECRET_JMX_USERNAME_KEY).endSecretKeyRef().endValueFrom().build());
-        expected.add(new EnvVarBuilder().withName(KafkaCluster.ENV_VAR_KAFKA_JMX_PASSWORD).withNewValueFrom().withNewSecretKeyRef().withName(KafkaCluster.jmxSecretName(cluster)).withKey(KafkaCluster.SECRET_JMX_PASSWORD_KEY).endSecretKeyRef().endValueFrom().build());
+        expected.add(new EnvVarBuilder().withName(KafkaCluster.ENV_VAR_KAFKA_JMX_USERNAME).withNewValueFrom().withNewSecretKeyRef().withName(KafkaResources.kafkaJmxSecretName(cluster)).withKey(KafkaCluster.SECRET_JMX_USERNAME_KEY).endSecretKeyRef().endValueFrom().build());
+        expected.add(new EnvVarBuilder().withName(KafkaCluster.ENV_VAR_KAFKA_JMX_PASSWORD).withNewValueFrom().withNewSecretKeyRef().withName(KafkaResources.kafkaJmxSecretName(cluster)).withKey(KafkaCluster.SECRET_JMX_PASSWORD_KEY).endSecretKeyRef().endValueFrom().build());
         expected.add(new EnvVarBuilder().withName(JmxTrans.ENV_VAR_JMXTRANS_LOGGING_LEVEL).withValue("INFO").build());
         return expected;
     }

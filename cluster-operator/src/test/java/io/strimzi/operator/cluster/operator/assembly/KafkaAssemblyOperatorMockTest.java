@@ -42,7 +42,6 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
-import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
@@ -331,8 +330,8 @@ public class KafkaAssemblyOperatorMockTest {
                 assertResourceRequirements(context, KafkaResources.kafkaStatefulSetName(CLUSTER_NAME));
                 assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaKeySecretName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
+                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
+                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
                 assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperSecretName(CLUSTER_NAME)).get(), is(notNullValue()));
             })));
     }
@@ -358,8 +357,8 @@ public class KafkaAssemblyOperatorMockTest {
         initialReconcileThenDeleteSecretsThenReconcile(context,
                 KafkaResources.clientsCaKeySecretName(CLUSTER_NAME),
                 KafkaResources.clientsCaCertificateSecretName(CLUSTER_NAME),
-                KafkaCluster.clusterCaCertSecretName(CLUSTER_NAME),
-                KafkaCluster.brokersSecretName(CLUSTER_NAME),
+                KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME),
+                KafkaResources.kafkaSecretName(CLUSTER_NAME),
                 KafkaResources.zookeeperSecretName(CLUSTER_NAME),
                 ClusterOperator.secretName(CLUSTER_NAME));
     }
@@ -700,14 +699,14 @@ public class KafkaAssemblyOperatorMockTest {
 
         int scaleDownTo = kafkaReplicas - 1;
         // final ordinal will be deleted
-        String deletedPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, scaleDownTo);
+        String deletedPod = KafkaResources.kafkaPodName(CLUSTER_NAME, scaleDownTo);
 
         AtomicInteger brokersInternalCertsCount = new AtomicInteger();
 
         Checkpoint async = context.checkpoint();
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                brokersInternalCertsCount.set(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get()
+                brokersInternalCertsCount.set(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get()
                         .getData()
                         .size());
 
@@ -733,7 +732,7 @@ public class KafkaAssemblyOperatorMockTest {
                         is(nullValue()));
 
                 // removing one pod, the related private and public keys, keystore and password (4 entries) should not be in the Secrets
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get()
+                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get()
                                 .getData(),
                         aMapWithSize(brokersInternalCertsCount.get() - 4));
 
@@ -752,11 +751,11 @@ public class KafkaAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         int scaleUpTo = kafkaReplicas + 1;
-        String newPod = KafkaCluster.kafkaPodName(CLUSTER_NAME, kafkaReplicas);
+        String newPod = KafkaResources.kafkaPodName(CLUSTER_NAME, kafkaReplicas);
 
         initialReconcile(context)
             .onComplete(context.succeeding(v -> context.verify(() -> {
-                brokersInternalCertsCount.set(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get()
+                brokersInternalCertsCount.set(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get()
                         .getData()
                         .size());
 
@@ -782,7 +781,7 @@ public class KafkaAssemblyOperatorMockTest {
                         is(notNullValue()));
 
                 // adding one pod, the related private and public keys, keystore and password should be added to the Secrets
-                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaCluster.brokersSecretName(CLUSTER_NAME)).get().getData(),
+                assertThat(client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get().getData(),
                         aMapWithSize(brokersInternalCertsCount.get() + 4));
 
                 // TODO assert no rolling update

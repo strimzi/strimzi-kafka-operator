@@ -35,6 +35,8 @@ import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.AdminClientProvider;
@@ -153,7 +155,7 @@ public class KafkaRoller {
      * of the given {@code pod}.
      */
     protected Future<Pod> pod(Integer podId) {
-        return podOperations.getAsync(namespace, KafkaCluster.kafkaPodName(cluster, podId));
+        return podOperations.getAsync(namespace, KafkaResources.kafkaPodName(cluster, podId));
     }
 
     private final ScheduledExecutorService singleExecutor = Executors.newSingleThreadScheduledExecutor(
@@ -702,7 +704,7 @@ public class KafkaRoller {
     protected Admin adminClient(List<Integer> bootstrapPods, boolean ceShouldBeFatal) throws ForceableProblem, FatalProblem {
         List<String> podNames = bootstrapPods.stream().map(podId -> podName(podId)).collect(Collectors.toList());
         try {
-            String bootstrapHostnames = podNames.stream().map(podName -> KafkaCluster.podDnsName(this.namespace, this.cluster, podName) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
+            String bootstrapHostnames = podNames.stream().map(podName -> DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podName) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
             LOGGER.debugCr(reconciliation, "Creating AdminClient for {}", bootstrapHostnames);
             return adminClientProvider.createAdminClient(bootstrapHostnames, this.clusterCaCertSecret, this.coKeySecret, "cluster-operator");
         } catch (KafkaException e) {
@@ -722,7 +724,7 @@ public class KafkaRoller {
     }
 
     String podName(int podId) {
-        return KafkaCluster.kafkaPodName(this.cluster, podId);
+        return KafkaResources.kafkaPodName(this.cluster, podId);
     }
     
     /**

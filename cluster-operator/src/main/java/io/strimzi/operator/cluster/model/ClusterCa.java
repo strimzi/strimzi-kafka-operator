@@ -86,7 +86,7 @@ public class ClusterCa extends Ca {
     public void initCaSecrets(List<Secret> secrets) {
         for (Secret secret: secrets) {
             String name = secret.getMetadata().getName();
-            if (KafkaCluster.brokersSecretName(clusterName).equals(name)) {
+            if (KafkaResources.kafkaSecretName(clusterName).equals(name)) {
                 brokersSecret = secret;
             } else if (KafkaResources.entityTopicOperatorSecretName(clusterName).equals(name)) {
                 entityTopicOperatorSecret = secret;
@@ -203,8 +203,8 @@ public class ClusterCa extends Ca {
             subject.addDnsName(String.format("%s.%s", KafkaResources.brokersServiceName(cluster), namespace));
             subject.addDnsName(kafkaHeadlessDnsGenerator.serviceDnsNameWithoutClusterDomain());
             subject.addDnsName(kafkaHeadlessDnsGenerator.serviceDnsName());
-            subject.addDnsName(KafkaCluster.podDnsName(namespace, cluster, i));
-            subject.addDnsName(KafkaCluster.podDnsNameWithoutClusterDomain(namespace, cluster, i));
+            subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), KafkaResources.kafkaPodName(cluster, i)));
+            subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(cluster), KafkaResources.kafkaPodName(cluster, i)));
 
             if (externalBootstrapAddresses != null)   {
                 for (String dnsName : externalBootstrapAddresses) {
@@ -234,7 +234,7 @@ public class ClusterCa extends Ca {
             kafka.getSpec().getKafka().getReplicas(),
             subjectFn,
             brokersSecret,
-            podNum -> KafkaCluster.kafkaPodName(cluster, podNum),
+            podNum -> KafkaResources.kafkaPodName(cluster, podNum),
             isMaintenanceTimeWindowsSatisfied);
     }
 
