@@ -191,8 +191,6 @@ public class TracingST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, targetKafkaTracingClient.consumerWithTracing());
-        ClientUtils.waitForClientSuccess(targetKafkaTracingClient.getConsumerName(), storageMap.get(extensionContext).getNamespaceName(), MESSAGE_COUNT);
-
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(storageMap.get(extensionContext).getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
             .editSpec()
                 .withNewJaegerTracing()

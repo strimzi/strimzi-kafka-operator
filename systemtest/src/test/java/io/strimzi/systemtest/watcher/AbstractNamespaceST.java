@@ -17,6 +17,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
@@ -45,18 +46,8 @@ public abstract class AbstractNamespaceST extends AbstractST {
         String previousNamespace = cluster.setNamespace(namespace);
         LOGGER.info("Check if Kafka Cluster {} in namespace {}", clusterName, namespace);
 
-        TestUtils.waitFor("Kafka Cluster status is not in desired state: Ready", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
-            Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
-                    .getStatus().getConditions().get(0);
-            LOGGER.info("Kafka condition status: {}", kafkaCondition.getStatus());
-            LOGGER.info("Kafka condition type: {}", kafkaCondition.getType());
-            return kafkaCondition.getType().equals(Ready.toString());
-        });
+        KafkaUtils.waitForKafkaReady(namespace, clusterName);
 
-        Condition kafkaCondition = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get()
-                .getStatus().getConditions().get(0);
-
-        assertThat(kafkaCondition.getType(), is(Ready.toString()));
         cluster.setNamespace(previousNamespace);
     }
 
