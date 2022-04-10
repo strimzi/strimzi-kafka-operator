@@ -67,6 +67,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -285,7 +286,9 @@ class CustomResourceStatusIsolatedST extends AbstractST {
             .build());
 
         assertKafkaConnectStatus(1, connectUrl);
-        assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of());
+        // TODO: this should be `List.of(EXAMPLE_TOPIC_NAME)` or what? Because it does not have any reason to be empty
+        //  because we edit spec of KafkaConnector and use that `EXAMPLE_TOPIC_NAME` to be inside that topic...
+        assertKafkaConnectorStatus(1, "RUNNING|UNASSIGNED", "source", List.of(EXAMPLE_TOPIC_NAME));
 
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, kb -> kb.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
@@ -611,14 +614,22 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     @SuppressWarnings("unchecked")
     void assertKafkaConnectorStatus(long expectedObservedGeneration, String connectorStates, String type, List<String> topics) {
         KafkaConnectorStatus kafkaConnectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(Constants.INFRA_NAMESPACE).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
-        assertThat(kafkaConnectorStatus.getObservedGeneration(), is(expectedObservedGeneration));
-        Map<String, Object> connectorStatus = kafkaConnectorStatus.getConnectorStatus();
-        String currentState = ((LinkedHashMap<String, String>) connectorStatus.get("connector")).get("state");
-        assertThat(connectorStates, containsString(currentState));
-        assertThat(connectorStatus.get("name"), is(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME));
-        assertThat(connectorStatus.get("type"), is(type));
-        assertThat(connectorStatus.get("tasks"), notNullValue());
-        assertThat(kafkaConnectorStatus.getTopics(), is(topics));
+
+        TestUtils.waitFor("wait until KafkaConnector status has excepted observed generation", Constants.GLOBAL_POLL_INTERVAL,
+            Constants.GLOBAL_TIMEOUT, () -> {
+                boolean formulaResult = kafkaConnectorStatus.getObservedGeneration() == expectedObservedGeneration;
+
+                final Map<String, Object> connectorStatus = kafkaConnectorStatus.getConnectorStatus();
+                final String currentState = ((LinkedHashMap<String, String>) connectorStatus.get("connector")).get("state");
+
+                formulaResult = formulaResult && connectorStates.contains(currentState);
+                formulaResult = formulaResult && connectorStatus.get("name").equals(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+                formulaResult = formulaResult && connectorStatus.get("type").equals(type);
+                formulaResult = formulaResult && connectorStatus.get("tasks") != null;
+                formulaResult = formulaResult && kafkaConnectorStatus.getTopics().equals(topics);
+
+                return formulaResult;
+            });
     }
 
     void assertKafkaTopicStatus(long expectedObservedGeneration, String topicName) {
