@@ -779,11 +779,11 @@ public class ResourceUtils {
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(long operationTimeoutMs) {
-        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), operationTimeoutMs, "");
+        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), operationTimeoutMs, "");
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig() {
-        return dummyClusterOperatorConfig(new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap()), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "");
+        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "");
     }
 
     /**

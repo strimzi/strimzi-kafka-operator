@@ -26,7 +26,6 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
-import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -142,13 +141,13 @@ public class ZooKeeperReconciler {
             Kafka kafkaAssembly,
             KafkaVersionChange versionChange,
             Storage oldStorage,
-            Integer currentReplicas,
+            int currentReplicas,
             ClusterCa clusterCa
     ) {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.zk = ZookeeperCluster.fromCrd(reconciliation, kafkaAssembly, config.versions(), oldStorage, currentReplicas != null ? currentReplicas : 0);
+        this.zk = ZookeeperCluster.fromCrd(reconciliation, kafkaAssembly, config.versions(), oldStorage, currentReplicas);
         this.versionChange = versionChange;
         this.currentReplicas = currentReplicas;
         this.clusterCa = clusterCa;
@@ -177,111 +176,6 @@ public class ZooKeeperReconciler {
 
         this.zooScalerProvider = supplier.zkScalerProvider;
         this.zooLeaderFinder = supplier.zookeeperLeaderFinder;
-    }
-
-    /**
-     * Constructs the ZooKeeper reconciler
-     *
-     * @param reconciliation                        Reconciliation marker
-     * @param vertx                                 Vert.x instance
-     * @param operationTimeoutMs                    Timeout for Kubernetes operations
-     * @param kafkaAssembly                         The Kafka custom resource
-     * @param versions                              The supported Kafka versions
-     * @param versionChange                         Description of Kafka upgrade / downgrade state
-     * @param currentReplicas                       The current number of replicas
-     * @param oldStorage                            The storage configuration of the current cluster (null if it does not exist yet)
-     * @param clusterCa                             The Cluster CA instance
-     * @param operatorNamespace                     Namespace where the Cluster Operator is running (used to generate network policies)
-     * @param operatorNamespaceLabels               Labels of the namespace where the Cluster Operator is running (used to generate network policies)
-     * @param isNetworkPolicyGeneration             Flag indicating whether network policies should be generated or not
-     * @param pfa                                   PlatformFeaturesAvailability describing the environment we run in
-     * @param featureGates                          FeatureGates configuration
-     * @param adminSessionTimeoutMs                 Timeout for the ZooKeeper client
-     * @param imagePullPolicy                       Policy for pulling images
-     * @param imagePullSecrets                      Secret for pulling images
-     * @param stsOperator                           The StatefulSet operator for working with Kubernetes StatefulSets
-     * @param strimziPodSetOperator                 Operator for StrimziPodSets
-     * @param secretOperator                        The Secret operator for working with Kubernetes Secrets
-     * @param serviceAccountOperator                The Service Account operator for working with Kubernetes Service Accounts
-     * @param serviceOperator                       The Service operator for working with Kubernetes Service Accounts
-     * @param pvcOperator                           The Role operator for working with Kubernetes Roles
-     * @param storageClassOperator                  The Role Binding operator for working with Kubernetes Role Bindings
-     * @param configMapOperator                     The Config Map operator for working with Kubernetes Config Maps
-     * @param networkPolicyOperator                 The Network Policy operator for working with Kubernetes Service Accounts
-     * @param podDisruptionBudgetOperator           PDB version v1 operator
-     * @param podDisruptionBudgetV1Beta1Operator    PDB version v1beta1 operator
-     * @param podOperator                           Pod operator
-     * @param zooScalerProvider                     Provider of the ZooKeeper Scaler instance
-     * @param zooLeaderFinder                       Provider of the ZooKeeper Leader Finder instance
-     */
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    public ZooKeeperReconciler(
-            Reconciliation reconciliation,
-            Vertx vertx,
-            long operationTimeoutMs,
-            Kafka kafkaAssembly,
-            KafkaVersion.Lookup versions,
-            KafkaVersionChange versionChange,
-            Storage oldStorage,
-            Integer currentReplicas,
-            ClusterCa clusterCa,
-            String operatorNamespace,
-            Labels operatorNamespaceLabels,
-            boolean isNetworkPolicyGeneration,
-            PlatformFeaturesAvailability pfa,
-            FeatureGates featureGates,
-            int adminSessionTimeoutMs,
-            ImagePullPolicy imagePullPolicy,
-            List<LocalObjectReference> imagePullSecrets,
-
-            StatefulSetOperator stsOperator,
-            CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> strimziPodSetOperator,
-            SecretOperator secretOperator,
-            ServiceAccountOperator serviceAccountOperator,
-            ServiceOperator serviceOperator,
-            PvcOperator pvcOperator,
-            StorageClassOperator storageClassOperator,
-            ConfigMapOperator configMapOperator,
-            NetworkPolicyOperator networkPolicyOperator,
-            PodDisruptionBudgetOperator podDisruptionBudgetOperator,
-            PodDisruptionBudgetV1Beta1Operator podDisruptionBudgetV1Beta1Operator,
-            PodOperator podOperator,
-
-            ZookeeperScalerProvider zooScalerProvider,
-            ZookeeperLeaderFinder zooLeaderFinder
-    ) {
-        this.reconciliation = reconciliation;
-        this.vertx = vertx;
-        this.operationTimeoutMs = operationTimeoutMs;
-        this.zk = ZookeeperCluster.fromCrd(reconciliation, kafkaAssembly, versions, oldStorage, currentReplicas != null ? currentReplicas : 0);
-        this.versionChange = versionChange;
-        this.currentReplicas = currentReplicas;
-        this.clusterCa = clusterCa;
-        this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
-        this.operatorNamespace = operatorNamespace;
-        this.operatorNamespaceLabels = operatorNamespaceLabels;
-        this.isNetworkPolicyGeneration = isNetworkPolicyGeneration;
-        this.pfa = pfa;
-        this.featureGates = featureGates;
-        this.adminSessionTimeoutMs = adminSessionTimeoutMs;
-        this.imagePullPolicy = imagePullPolicy;
-        this.imagePullSecrets = imagePullSecrets;
-
-        this.stsOperator = stsOperator;
-        this.strimziPodSetOperator = strimziPodSetOperator;
-        this.secretOperator = secretOperator;
-        this.serviceAccountOperator = serviceAccountOperator;
-        this.serviceOperator = serviceOperator;
-        this.pvcOperator = pvcOperator;
-        this.storageClassOperator = storageClassOperator;
-        this.configMapOperator = configMapOperator;
-        this.networkPolicyOperator = networkPolicyOperator;
-        this.podDisruptionBudgetOperator = podDisruptionBudgetOperator;
-        this.podDisruptionBudgetV1Beta1Operator = podDisruptionBudgetV1Beta1Operator;
-        this.podOperator = podOperator;
-
-        this.zooScalerProvider = zooScalerProvider;
-        this.zooLeaderFinder = zooLeaderFinder;
     }
 
     /**
@@ -544,6 +438,8 @@ public class ZooKeeperReconciler {
     /**
      * Manages the Secret with the node certificates used by the ZooKeeper nodes.
      *
+     * @param dateSupplier  Date supplier for checking the maintenance windows
+     *
      * @return  Completes when the Secret was successfully created or updated
      */
     Future<Void> certificateSecret(Supplier<Date> dateSupplier) {
@@ -664,7 +560,7 @@ public class ZooKeeperReconciler {
      * @return  Future which completes when the PodSet is created, updated or deleted
      */
     Future<Void> podSet() {
-        return podSet(currentReplicas != null ? currentReplicas : zk.getReplicas());
+        return podSet(currentReplicas > 0 ? currentReplicas : zk.getReplicas());
     }
 
     /**
@@ -764,7 +660,7 @@ public class ZooKeeperReconciler {
     Future<Void> scaleDown() {
         int desired = zk.getReplicas();
 
-        if (currentReplicas != null && currentReplicas > desired) {
+        if (currentReplicas > desired) {
             // With scaling
             LOGGER.infoCr(reconciliation, "Scaling Zookeeper down from {} to {} replicas", currentReplicas, desired);
 
@@ -898,7 +794,7 @@ public class ZooKeeperReconciler {
                         podOperator,
                         operationTimeoutMs,
                         IntStream
-                                .range(0, currentReplicas != null && currentReplicas < zk.getReplicas() ? currentReplicas : zk.getReplicas())
+                                .range(0, currentReplicas > 0 && currentReplicas < zk.getReplicas() ? currentReplicas : zk.getReplicas())
                                 .mapToObj(i -> KafkaResources.zookeeperPodName(reconciliation.name(), i))
                                 .collect(Collectors.toList())
                 );
@@ -913,7 +809,7 @@ public class ZooKeeperReconciler {
     Future<Void> scaleUp() {
         int desired = zk.getReplicas();
 
-        if (currentReplicas != null && currentReplicas < desired) {
+        if (currentReplicas > 0 && currentReplicas < desired) {
             LOGGER.infoCr(reconciliation, "Scaling Zookeeper up from {} to {} replicas", currentReplicas, desired);
 
             return zkScaler(currentReplicas)

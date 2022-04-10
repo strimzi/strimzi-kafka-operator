@@ -1096,7 +1096,7 @@ public class KafkaAssemblyOperatorTest {
                 emptyList()
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.kafkaJmxSecretName(clusterName))).thenReturn(
-                Future.succeededFuture(originalKafkaCluster.generateJmxSecret())
+                Future.succeededFuture(originalKafkaCluster.generateJmxSecret(null))
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.zookeeperJmxSecretName(clusterName))).thenReturn(
                 Future.succeededFuture(originalZookeeperCluster.generateJmxSecret(null))
@@ -1340,7 +1340,7 @@ public class KafkaAssemblyOperatorTest {
             invocation -> new ArrayList<>(asList(
                     barClientsCa.caKeySecret(),
                     barClientsCa.caCertSecret(),
-                    barCluster.generateBrokersSecret(barClusterCa, barClientsCa),
+                    barCluster.generateCertificatesSecret(barClusterCa, barClientsCa, Set.of(), Map.of(), true),
                     barClusterCa.caCertSecret()))
         );
         when(mockSecretOps.get(eq(kafkaNamespace), eq(AbstractModel.clusterCaCertSecretName(bar.getMetadata().getName())))).thenReturn(barSecrets.get(0));
@@ -1425,7 +1425,7 @@ public class KafkaAssemblyOperatorTest {
             invocation -> new ArrayList<>(asList(
                     barClientsCa.caKeySecret(),
                     barClientsCa.caCertSecret(),
-                    barCluster.generateBrokersSecret(barClusterCa, barClientsCa),
+                    barCluster.generateCertificatesSecret(barClusterCa, barClientsCa, Set.of(), Map.of(), true),
                     barClusterCa.caCertSecret()))
         );
 

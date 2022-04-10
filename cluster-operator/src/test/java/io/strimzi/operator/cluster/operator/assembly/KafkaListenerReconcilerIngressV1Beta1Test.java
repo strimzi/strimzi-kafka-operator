@@ -5,39 +5,30 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.certs.CertManager;
-import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
-import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.IngressV1Beta1Operator;
-import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
+import io.strimzi.operator.common.operator.resource.RouteOperator;
+import io.strimzi.operator.common.operator.resource.SecretOperator;
+import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -54,28 +45,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
-public class KafkaAssemblyOperatorIngressKafkaListenerTest {
-
+public class KafkaListenerReconcilerIngressV1Beta1Test {
+    private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     public static final String NAMESPACE = "test";
     public static final String NAME = "my-kafka";
-    private static Vertx vertx;
-    private final OpenSslCertManager certManager = new OpenSslCertManager();
-    private final PasswordGenerator passwordGenerator = new PasswordGenerator(12,
-            "abcdefghijklmnopqrstuvwxyz" +
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-            "abcdefghijklmnopqrstuvwxyz" +
-                    "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-                    "0123456789");
-
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
-    }
-
-    @AfterAll
-    public static void after() {
-        vertx.close();
-    }
 
     @Test
     public void testIngressV1Beta1(VertxTestContext context) {
@@ -117,26 +90,9 @@ public class KafkaAssemblyOperatorIngressKafkaListenerTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
-        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
-
-        // Mock the KafkaSet operations
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(NAMESPACE), eq(KafkaResources.kafkaStatefulSetName(NAME)))).thenReturn(Future.succeededFuture());
-
-        // Mock the StrimziPodSet operator
-        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
-
-        // Mock the Pod operations
-        PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock ingress v1beta1 ops
         IngressV1Beta1Operator mockIngressV1Beta1ops = supplier.ingressV1Beta1Operations;
@@ -152,12 +108,19 @@ public class KafkaAssemblyOperatorIngressKafkaListenerTest {
         when(mockIngressOps.reconcile(any(), anyString(), anyString(), ingressCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Ingress())));
         when(mockIngressOps.hasIngressAddress(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        KafkaAssemblyOperator op = new MockKafkaAssemblyOperatorForIngressTests(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
-                supplier, ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup()));
-        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
+        MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME),
+                kafkaCluster,
+                new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16),
+                supplier.secretOperations,
+                supplier.serviceOperations,
+                supplier.routeOperations,
+                supplier.ingressOperations,
+                supplier.ingressV1Beta1Operations
+        );
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(reconciliation)
+        reconciler.reconcile()
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(ingressCaptor.getAllValues().size(), is(0));
                     assertThat(ingressV1Beta1Captor.getAllValues().size(), is(4));
@@ -210,26 +173,9 @@ public class KafkaAssemblyOperatorIngressKafkaListenerTest {
                     .endEntityOperator()
                 .endSpec()
                 .build();
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
-
-        // Mock the CRD Operator for Kafka resources
-        CrdOperator mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
-        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
-
-        // Mock the KafkaSet operations
-        StatefulSetOperator mockStsOps = supplier.stsOperations;
-        when(mockStsOps.getAsync(eq(NAMESPACE), eq(KafkaResources.kafkaStatefulSetName(NAME)))).thenReturn(Future.succeededFuture());
-
-        // Mock the StrimziPodSet operator
-        CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> mockPodSetOps = supplier.strimziPodSetOperator;
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
-
-        // Mock the Pod operations
-        PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock ingress v1beta1 ops
         IngressV1Beta1Operator mockIngressV1Beta1ops = supplier.ingressV1Beta1Operations;
@@ -245,12 +191,19 @@ public class KafkaAssemblyOperatorIngressKafkaListenerTest {
         when(mockIngressOps.reconcile(any(), anyString(), anyString(), ingressCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Ingress())));
         when(mockIngressOps.hasIngressAddress(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
-        KafkaAssemblyOperator op = new MockKafkaAssemblyOperatorForIngressTests(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
-                supplier, ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup()));
-        Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
+        MockKafkaListenersReconciler reconciler = new MockKafkaListenersReconciler(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME),
+                kafkaCluster,
+                new PlatformFeaturesAvailability(false, KubernetesVersion.V1_22),
+                supplier.secretOperations,
+                supplier.serviceOperations,
+                supplier.routeOperations,
+                supplier.ingressOperations,
+                supplier.ingressV1Beta1Operations
+        );
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(reconciliation)
+        reconciler.reconcile()
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(ingressCaptor.getAllValues().size(), is(4));
                     assertThat(ingressV1Beta1Captor.getAllValues().size(), is(0));
@@ -264,28 +217,28 @@ public class KafkaAssemblyOperatorIngressKafkaListenerTest {
     }
 
     /**
-     * Override KafkaAssemblyOperator to only run reconciliation steps that concern the Ingress resources feature
+     * Override KafkaListenersReconciler to only run reconciliation steps that concern the Ingress resources feature
      */
-    class MockKafkaAssemblyOperatorForIngressTests extends KafkaAssemblyOperator {
-        public MockKafkaAssemblyOperatorForIngressTests(
-                Vertx vertx,
+    static class MockKafkaListenersReconciler extends KafkaListenersReconciler {
+        public MockKafkaListenersReconciler(
+                Reconciliation reconciliation,
+                KafkaCluster kafka,
                 PlatformFeaturesAvailability pfa,
-                CertManager certManager,
-                PasswordGenerator passwordGenerator,
-                ResourceOperatorSupplier supplier,
-                ClusterOperatorConfig config
-        ) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+                SecretOperator secretOperator,
+                ServiceOperator serviceOperator,
+                RouteOperator routeOperator,
+                IngressOperator ingressOperator,
+                IngressV1Beta1Operator ingressV1Beta1Operator) {
+            super(reconciliation, kafka, null, pfa, 300_000L, secretOperator, serviceOperator, routeOperator, ingressOperator, ingressV1Beta1Operator);
         }
 
         @Override
-        Future<Void> reconcile(ReconciliationState reconcileState)  {
-            return reconcileState.getKafkaClusterDescription()
-                    .compose(state -> state.kafkaIngresses())
-                    .compose(state -> state.kafkaIngressesV1Beta1())
-                    .compose(state -> state.kafkaIngressesReady())
-                    .compose(state -> state.kafkaIngressesV1Beta1Ready())
-                    .map((Void) null);
+        public Future<ReconciliationResult> reconcile()  {
+            return ingresses()
+                    .compose(i -> ingressesV1Beta1())
+                    .compose(i -> ingressesReady())
+                    .compose(i -> ingressesV1Beta1Ready())
+                    .compose(i -> Future.succeededFuture(result));
         }
     }
 }

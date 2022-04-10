@@ -9,8 +9,10 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.JmxTransResources;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.JmxTrans;
+import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -40,27 +42,23 @@ public class JmxTransReconciler {
      * Constructs the JMX Trans reconciler
      *
      * @param reconciliation            Reconciliation marker
-     * @param operationTimeoutMs        Timeout for Kubernetes operations
+     * @param config                    Cluster Operator Configuration
+     * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param kafkaAssembly             The Kafka custom resource
-     * @param deploymentOperator        The Deployment operator for working with Kubernetes Deployments
-     * @param configMapOperator         The Config Map operator for working with Kubernetes Config Maps
-     * @param serviceAccountOperator    The Service Account operator for working with Kubernetes Service Accounts
      */
     public JmxTransReconciler(
             Reconciliation reconciliation,
-            long operationTimeoutMs,
-            Kafka kafkaAssembly,
-            DeploymentOperator deploymentOperator,
-            ConfigMapOperator configMapOperator,
-            ServiceAccountOperator serviceAccountOperator
+            ClusterOperatorConfig config,
+            ResourceOperatorSupplier supplier,
+            Kafka kafkaAssembly
     ) {
         this.reconciliation = reconciliation;
-        this.operationTimeoutMs = operationTimeoutMs;
+        this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.jmxTrans = JmxTrans.fromCrd(reconciliation, kafkaAssembly);
 
-        this.deploymentOperator = deploymentOperator;
-        this.configMapOperator = configMapOperator;
-        this.serviceAccountOperator = serviceAccountOperator;
+        this.deploymentOperator = supplier.deploymentOperations;
+        this.configMapOperator = supplier.configMapOperations;
+        this.serviceAccountOperator = supplier.serviceAccountOperations;
     }
 
     /**
