@@ -62,12 +62,9 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
 
     @ParallelTest
     @Tag(CONNECT)
-    void testScopeKafkaConnectSetIncorrectly(ExtensionContext extensionContext) throws UnexpectedException {
+    void testScopeKafkaConnectSetIncorrectly(ExtensionContext extensionContext) {
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
-        final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         // SCOPE TESTING
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, kafkaClientsName).build());
@@ -105,12 +102,9 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
 
     @ParallelTest
     @Tag(CONNECT)
-    void testScopeKafkaConnectSetCorrectly(ExtensionContext extensionContext) throws UnexpectedException {
+    void testScopeKafkaConnectSetCorrectly(ExtensionContext extensionContext) {
         final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
-        final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         // SCOPE TESTING
         resourceManager.createResource(extensionContext, KafkaClientsTemplates.kafkaClients(INFRA_NAMESPACE, false, kafkaClientsName).build());
@@ -153,8 +147,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
     }
 
     @ParallelTest
-    void testClientScopeKafkaSetCorrectly(ExtensionContext extensionContext) throws UnexpectedException {
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
+    void testClientScopeKafkaSetCorrectly(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
@@ -183,7 +176,6 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
 
     @IsolatedTest("Modification of shared Kafka cluster")
     void testClientScopeKafkaSetIncorrectly(ExtensionContext extensionContext) throws UnexpectedException {
-        final String kafkaClientsName = mapWithKafkaClientNames.get(extensionContext.getDisplayName());
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;

@@ -60,8 +60,8 @@ public class ClientUtils {
     public static void waitForClientsSuccess(String producerName, String consumerName, String namespace, int messageCount, boolean deleteAfterSuccess) {
         LOGGER.info("Waiting till producer {} and consumer {} finish", producerName, consumerName);
         TestUtils.waitFor("clients finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-            () -> kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, producerName, 1)
-                && kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, consumerName, 1),
+            () -> kubeClient().checkSucceededJobStatus(namespace, producerName, 1)
+                && kubeClient().checkSucceededJobStatus(namespace, consumerName, 1),
             () -> {
                 JobUtils.logCurrentJobStatus(producerName, namespace);
                 JobUtils.logCurrentJobStatus(consumerName, namespace);
@@ -81,7 +81,7 @@ public class ClientUtils {
         TestUtils.waitFor("job finished", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
             () -> {
                 LOGGER.debug("Job {} in namespace {}, has status {}", jobName, namespace, kubeClient().namespace(namespace).getJobStatus(jobName));
-                return kubeClient().namespace(namespace).checkSucceededJobStatus(namespace, jobName, 1);
+                return kubeClient().checkSucceededJobStatus(namespace, jobName, 1);
             },
             () -> JobUtils.logCurrentJobStatus(jobName, namespace));
 
@@ -94,8 +94,8 @@ public class ClientUtils {
         LOGGER.info("Waiting for producer/consumer:{} to finish with failure.", jobName);
         try {
             TestUtils.waitFor("Job did not finish within time limit (as expected).", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
-                () -> kubeClient().namespace(namespace).checkSucceededJobStatus(jobName));
-            if (kubeClient().namespace(namespace).getJobStatus(jobName).getFailed().equals(1)) {
+                () -> kubeClient().checkSucceededJobStatus(namespace, jobName));
+            if (kubeClient().getJobStatus(namespace, jobName).getFailed().equals(1)) {
                 LOGGER.debug("Job finished with 1 failed pod (expected - timeout).");
             } else {
                 JobUtils.logCurrentJobStatus(jobName, namespace);
