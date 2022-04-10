@@ -122,12 +122,6 @@ cruiseControl:
     repository: ""
     name: kafka
     tagPrefix: ""
-tlsSidecarCruiseControl:
-  image:
-    registry: ""
-    repository: ""
-    name: kafka
-    tagPrefix: ""
 kanikoExecutor:
   image:
     registry: ""

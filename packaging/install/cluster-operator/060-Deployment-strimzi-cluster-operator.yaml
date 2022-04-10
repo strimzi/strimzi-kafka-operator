@@ -53,8 +53,6 @@ spec:
               value: quay.io/strimzi/kafka:latest-kafka-3.1.0
             - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
               value: quay.io/strimzi/kafka:latest-kafka-3.1.0
-            - name: STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE
-              value: quay.io/strimzi/kafka:latest-kafka-3.1.0
             - name: STRIMZI_KAFKA_IMAGES
               value: |
                 3.0.0=quay.io/strimzi/kafka:latest-kafka-3.0.0

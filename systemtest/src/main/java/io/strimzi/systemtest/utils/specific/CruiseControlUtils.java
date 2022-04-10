@@ -60,7 +60,7 @@ public class CruiseControlUtils {
         String args = " -k ";
 
         if (withCredentials) {
-            args = " --cacert /etc/tls-sidecar/cc-certs/cruise-control.crt"
+            args = " --cacert /etc/cruise-control/cc-certs/cruise-control.crt"
                 + " --user admin:$(cat /opt/cruise-control/api-auth-config/cruise-control.apiAdminPassword) ";
         }
 

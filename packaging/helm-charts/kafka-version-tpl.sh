@@ -24,7 +24,6 @@ do
     entity_operator_tls_sidecar_version="{{ default .Values.defaultImageRegistry .Values.tlsSidecarEntityOperator.image.registry }}/{{ default .Values.defaultImageRepository .Values.tlsSidecarEntityOperator.image.repository }}/{{ .Values.tlsSidecarEntityOperator.image.name }}:{{ default .Values.defaultImageTag .Values.tlsSidecarEntityOperator.image.tagPrefix }}-kafka-${version}"
     kafka_exporter_version="{{ default .Values.defaultImageRegistry .Values.kafkaExporter.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafkaExporter.image.repository }}/{{ .Values.kafkaExporter.image.name }}:{{ default .Values.defaultImageTag .Values.kafkaExporter.image.tagPrefix }}-kafka-${version}"
     cruise_control_version="{{ default .Values.defaultImageRegistry .Values.cruiseControl.image.registry }}/{{ default .Values.defaultImageRepository .Values.cruiseControl.image.repository }}/{{ .Values.cruiseControl.image.name }}:{{ default .Values.defaultImageTag .Values.cruiseControl.image.tagPrefix }}-kafka-${version}"
-    cruise_control_tls_sidecar_version="{{ default .Values.defaultImageRegistry .Values.tlsSidecarCruiseControl.image.registry }}/{{ default .Values.defaultImageRepository .Values.tlsSidecarCruiseControl.image.repository }}/{{ .Values.tlsSidecarCruiseControl.image.name }}:{{ default .Values.defaultImageTag .Values.tlsSidecarCruiseControl.image.tagPrefix }}-kafka-${version}"
     kafka_versions="${kafka_versions}
 ${version}={{ default .Values.defaultImageRegistry .Values.kafka.image.registry }}/{{ default .Values.defaultImageRepository .Values.kafka.image.repository }}/{{ .Values.kafka.image.name }}:{{ default .Values.defaultImageTag .Values.kafka.image.tagPrefix }}-kafka-${version}"
     kafka_connect_versions="${kafka_connect_versions}
@@ -59,8 +58,6 @@ cat >"$out" <<EOF
               value: ${kafka_exporter_version}
             - name: STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE
               value: ${cruise_control_version}
-            - name: STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE
-              value: ${cruise_control_tls_sidecar_version}
             - name: STRIMZI_KAFKA_IMAGES
               value: | ${kafka_versions}
             - name: STRIMZI_KAFKA_CONNECT_IMAGES
