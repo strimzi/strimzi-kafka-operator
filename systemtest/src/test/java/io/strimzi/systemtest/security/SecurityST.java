@@ -501,13 +501,20 @@ class SecurityST extends AbstractST {
 
             if (eoShouldRoll) {
                 LOGGER.info("Wait for EO to rolling restart ({})...", i);
-                eoPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
+                eoPod = i < expectedRolls ?
+                    DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), eoPod) :
+                    DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
             }
 
             if (keAndCCShouldRoll) {
                 LOGGER.info("Wait for KafkaExporter and CruiseControl to rolling restart ({})...", i);
-                kePod = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaExporterResources.deploymentName(clusterName), 1, kePod);
-                ccPod = DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, ccPod);
+                kePod = i < expectedRolls ?
+                    DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaExporterResources.deploymentName(clusterName), kePod) :
+                    DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaExporterResources.deploymentName(clusterName), 1, kePod);
+
+                ccPod = i < expectedRolls ?
+                    DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), ccPod) :
+                    DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, ccPod);
             }
         }
 
