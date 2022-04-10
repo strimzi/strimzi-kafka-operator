@@ -179,22 +179,11 @@ public class KafkaTopicUtils {
     }
 
     public static boolean configsAreEqual(Map<String, Object> actualConf, Map<String, Object> expectedConf) {
-        if (expectedConf == null) {
-            LOGGER.debug("Expected config is null");
-            return false;
-        }
-        if (actualConf == null) {
-            LOGGER.debug("Actual config is null");
-            return false;
-        }
-
-        if (expectedConf.size() != actualConf.size()) {
-            LOGGER.debug("Configs are not the same length");
-            return false;
-        }
-
-        return expectedConf.entrySet().stream()
+        if ((actualConf != null && expectedConf != null) && (expectedConf.size() == actualConf.size())) {
+            return expectedConf.entrySet().stream()
                     .allMatch(expected -> expected.getValue().toString().equals(actualConf.get(expected.getKey()).toString()));
+        }
+        return false;
     }
 
     public static void waitForKafkaTopicsCount(final String namespaceName, int topicCount, String clusterName) {

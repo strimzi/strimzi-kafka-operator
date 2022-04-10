@@ -40,6 +40,7 @@ public class KafkaTopicScalabilityUtils {
     }
 
     public static void waitForTopicStatus(String namespaceName, String topicPrefix, int numberOfTopics, Enum<?> state) {
+        LOGGER.info("Verifying that {} topics are in {} state", numberOfTopics, state.toString());
         List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++) {
@@ -56,12 +57,10 @@ public class KafkaTopicScalabilityUtils {
     }
 
     public static void waitForTopicsNotReady(String namespaceName, String topicPrefix, int numberOfTopics) {
-        LOGGER.info("Verifying that {} topics are in NotReady state", numberOfTopics);
         KafkaTopicScalabilityUtils.waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.NotReady);
     }
 
     public static void waitForTopicsReady(String namespaceName, String topicPrefix, int numberOfTopics) {
-        LOGGER.info("Verifying that {} topics are in Ready state", numberOfTopics);
         KafkaTopicScalabilityUtils.waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.Ready);
     }
 
