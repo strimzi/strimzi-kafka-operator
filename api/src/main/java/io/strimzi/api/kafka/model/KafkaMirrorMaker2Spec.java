@@ -20,10 +20,10 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"version", "replicas", "image", "connectCluster",
-    "clusters", "mirrors", "resources",
-    "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions",
-    "affinity", "tolerations", "logging", "metrics", "tracing",
-    "template", "externalConfiguration"})
+    "clusters", "mirrors", "resources", "livenessProbe", "readinessProbe",
+    "jvmOptions", "jmxOptions", "affinity", "tolerations", "logging",
+    "clientRackInitImage", "rack", "metrics", "tracing",
+    "template", "externalConfiguration" })
 @EqualsAndHashCode(callSuper = true, doNotUseGetters = true)
 public class KafkaMirrorMaker2Spec extends AbstractKafkaConnectSpec {
 
@@ -32,7 +32,6 @@ public class KafkaMirrorMaker2Spec extends AbstractKafkaConnectSpec {
     private List<KafkaMirrorMaker2ClusterSpec> clusters;
     private String connectCluster;
     private List<KafkaMirrorMaker2MirrorSpec> mirrors;
-    private Rack rack;
 
     @Description("Kafka clusters for mirroring.")
     public List<KafkaMirrorMaker2ClusterSpec> getClusters() {
@@ -60,15 +59,5 @@ public class KafkaMirrorMaker2Spec extends AbstractKafkaConnectSpec {
 
     public void setMirrors(List<KafkaMirrorMaker2MirrorSpec> mirrors) {
         this.mirrors = mirrors;
-    }
-
-    @Description("Configuration of the node label which will be used as the client.rack consumer configuration.")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    public Rack getRack() {
-        return rack;
-    }
-
-    public void setRack(Rack rack) {
-        this.rack = rack;
     }
 }

@@ -1620,7 +1620,7 @@ public class KafkaCluster extends AbstractModel {
      * @param assemblyNamespace The namespace.
      * @return The cluster role binding.
      */
-    public ClusterRoleBinding generateInitContainerClusterRoleBinding(String assemblyNamespace) {
+    public ClusterRoleBinding generateClusterRoleBinding(String assemblyNamespace) {
         if (rack != null || isExposedWithNodePort()) {
             Subject ks = new SubjectBuilder()
                     .withKind("ServiceAccount")

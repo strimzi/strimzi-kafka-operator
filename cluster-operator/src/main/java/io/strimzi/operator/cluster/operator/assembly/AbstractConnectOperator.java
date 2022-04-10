@@ -33,7 +33,6 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectorSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.RackAware;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
@@ -900,17 +899,17 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * to determine the `client.rack` option.
      *
      * @param reconciliation The reconciliation
-     * @param name Name of the ClusterRoleBinding
-     * @param resource Rack aware resource
+     * @param name ClusterRoleBinding name
+     * @param spec Cluster spec
      * @param cluster Cluster instance
      * @return Future for tracking the asynchronous result of the ClusterRoleBinding reconciliation
      */
     protected Future<ReconcileResult<ClusterRoleBinding>> clusterRoleBindingForRackAwareness(Reconciliation reconciliation,
                                                                                              String name,
-                                                                                             RackAware resource,
+                                                                                             AbstractKafkaConnectSpec spec,
                                                                                              KafkaConnectCluster cluster) {
         ClusterRoleBinding clusterRoleBinding =
-                resource.getRack() != null ? cluster.generateKafkaClientClusterRoleBinding(name) : null;
+                spec.getRack() != null ? cluster.generateKafkaClientClusterRoleBinding(name) : null;
         return withIgnoreRbacError(reconciliation,
                 clusterRoleBindingOperations.reconcile(reconciliation, name, clusterRoleBinding),
                 clusterRoleBinding

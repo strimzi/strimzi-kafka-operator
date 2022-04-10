@@ -9,10 +9,10 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.ClientTls;
 import io.strimzi.api.kafka.model.GenericSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.KafkaConnectSpecBuilder;
+import io.strimzi.api.kafka.model.ClientTls;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
@@ -118,6 +118,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     }
 
     private static KafkaConnectSpec buildKafkaConnectSpec(KafkaMirrorMaker2Spec spec, KafkaMirrorMaker2ClusterSpec connectCluster) {
+
         ClientTls connectTls = null;
         ClientTls mirrorMaker2ConnectClusterTls = connectCluster.getTls();
         if (mirrorMaker2ConnectClusterTls != null) {

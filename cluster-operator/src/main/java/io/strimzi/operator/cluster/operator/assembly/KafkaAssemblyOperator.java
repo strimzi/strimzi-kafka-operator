@@ -1235,7 +1235,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         }
 
         Future<ReconciliationState> kafkaInitClusterRoleBinding() {
-            ClusterRoleBinding desired = kafkaCluster.generateInitContainerClusterRoleBinding(namespace);
+            ClusterRoleBinding desired = kafkaCluster.generateClusterRoleBinding(namespace);
 
             return withVoid(withIgnoreRbacError(reconciliation,
                     clusterRoleBindingOperations.reconcile(reconciliation,
