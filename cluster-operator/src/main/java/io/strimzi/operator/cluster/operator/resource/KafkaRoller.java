@@ -456,6 +456,7 @@ public class KafkaRoller {
             restartContext.forceRestart = true;
             restartContext.diff = null;
             restartContext.logDiff = null;
+            return;
         }
         Config brokerConfig;
         try {
