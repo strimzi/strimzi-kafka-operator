@@ -197,7 +197,7 @@ public abstract class AbstractOperator<
                         }
                     });
                     pausedResourceCounter(namespace).getAndIncrement();
-                    LOGGER.debugCr(reconciliation, "Reconciliation of {} {} is paused", kind, name);
+                    LOGGER.infoCr(reconciliation, "Reconciliation of {} {} is paused", kind, name);
                     return createOrUpdate.future();
                 } else if (cr.getSpec() == null) {
                     InvalidResourceException exception = new InvalidResourceException("Spec cannot be null");
