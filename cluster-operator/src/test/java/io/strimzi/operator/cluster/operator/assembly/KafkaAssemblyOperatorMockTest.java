@@ -46,6 +46,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -63,6 +64,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -281,7 +283,8 @@ public class KafkaAssemblyOperatorMockTest {
         ResourceOperatorSupplier supplier = supplierWithMocks();
         ClusterOperatorConfig config = ResourceUtils.dummyClusterOperatorConfig(VERSIONS);
         operator = new KafkaAssemblyOperator(vertx, pfa, new MockCertManager(),
-                new PasswordGenerator(10, "a", "a"), supplier, config);
+                new PasswordGenerator(10, "a", "a"), supplier, config,
+                Mockito.mock(KubernetesEventsPublisher.class));
     }
 
     private ResourceOperatorSupplier supplierWithMocks() {

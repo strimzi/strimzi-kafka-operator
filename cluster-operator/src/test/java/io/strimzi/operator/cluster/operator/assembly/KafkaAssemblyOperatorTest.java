@@ -71,6 +71,7 @@ import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetDiff;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -103,6 +104,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -676,7 +678,8 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config);
+                config,
+                Mockito.mock(KubernetesEventsPublisher.class));
 
         // Now try to create a KafkaCluster based on this CM
         Checkpoint async = context.checkpoint();
@@ -1243,7 +1246,8 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config);
+                config,
+                Mockito.mock(KubernetesEventsPublisher.class));
 
         // Now try to update a KafkaCluster based on this CM
         Checkpoint async = context.checkpoint();
@@ -1350,7 +1354,8 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config) {
+                config,
+                Mockito.mock(KubernetesEventsPublisher.class)) {
             @Override
             public Future<KafkaStatus> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 String name = kafkaAssembly.getMetadata().getName();
@@ -1435,7 +1440,8 @@ public class KafkaAssemblyOperatorTest {
                 certManager,
                 passwordGenerator,
                 supplier,
-                config) {
+                config,
+                Mockito.mock(KubernetesEventsPublisher.class)) {
             @Override
             public Future<KafkaStatus> createOrUpdate(Reconciliation reconciliation, Kafka kafkaAssembly) {
                 String name = kafkaAssembly.getMetadata().getName();

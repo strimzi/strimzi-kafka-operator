@@ -849,9 +849,9 @@ public class ZooKeeperReconciler {
      */
     Future<Void> rollingUpdate() {
         if (featureGates.useStrimziPodSetsEnabled())   {
-            return maybeRollZooKeeper(pod -> ReconcilerUtils.reasonsToRestartPod(reconciliation, podSetDiff.resource(), pod, fsResizingRestartRequest, existingCertsChanged, clusterCa));
+            return maybeRollZooKeeper(pod -> ReconcilerUtils.reasonsToRestartPod(reconciliation, podSetDiff.resource(), pod, fsResizingRestartRequest, existingCertsChanged, clusterCa).getAllReasonNotes());
         } else {
-            return maybeRollZooKeeper(pod -> ReconcilerUtils.reasonsToRestartPod(reconciliation, statefulSetDiff.resource(), pod, fsResizingRestartRequest, existingCertsChanged, clusterCa));
+            return maybeRollZooKeeper(pod -> ReconcilerUtils.reasonsToRestartPod(reconciliation, statefulSetDiff.resource(), pod, fsResizingRestartRequest, existingCertsChanged, clusterCa).getAllReasonNotes());
         }
     }
 

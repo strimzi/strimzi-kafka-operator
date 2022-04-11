@@ -30,6 +30,7 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -46,6 +47,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -141,7 +143,8 @@ public class JbodStorageTest {
 
         this.operator = new KafkaAssemblyOperator(this.vertx, pfa, new MockCertManager(),
                 new PasswordGenerator(10, "a", "a"), ros,
-                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000),
+                Mockito.mock(KubernetesEventsPublisher.class));
     }
 
     @Test

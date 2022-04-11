@@ -20,6 +20,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -130,7 +131,8 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
-                supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
+                supplier, ResourceUtils.dummyClusterOperatorConfig(1L),
+                Mockito.mock(KubernetesEventsPublisher.class));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
@@ -210,7 +212,8 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
-                supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
+                supplier, ResourceUtils.dummyClusterOperatorConfig(1L),
+                Mockito.mock(KubernetesEventsPublisher.class));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
@@ -284,7 +287,8 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
-                supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
+                supplier, ResourceUtils.dummyClusterOperatorConfig(1L),
+                Mockito.mock(KubernetesEventsPublisher.class));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
@@ -321,7 +325,8 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(mockCrbOps.reconcile(any(), eq(KafkaResources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_16), certManager, passwordGenerator,
-                supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
+                supplier, ResourceUtils.dummyClusterOperatorConfig(1L),
+                Mockito.mock(KubernetesEventsPublisher.class));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
@@ -385,7 +390,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
                 1024);
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.V1_19), certManager, passwordGenerator,
-                supplier, config);
+                supplier, config, Mockito.mock(KubernetesEventsPublisher.class));
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();

@@ -65,6 +65,8 @@ import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeUtils;
 import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.model.RestartReason;
+import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.model.StorageDiff;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
@@ -76,6 +78,7 @@ import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZooKeeperRoller;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
@@ -167,6 +170,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private final ZookeeperScalerProvider zkScalerProvider;
     private final AdminClientProvider adminClientProvider;
     private final ZookeeperLeaderFinder zookeeperLeaderFinder;
+    private final KubernetesEventsPublisher eventsPublisher;
 
     /**
      * @param vertx The Vertx instance
@@ -175,10 +179,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
      * @param passwordGenerator Password generator
      * @param supplier Supplies the operators for different resources
      * @param config ClusterOperator configuration. Used to get the user-configured image pull policy and the secrets.
+     * @param eventsPublisher publishes pod restarts reasons as Kubernetes events
      */
     public KafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa,
                                  CertManager certManager, PasswordGenerator passwordGenerator,
-                                 ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+                                 ResourceOperatorSupplier supplier, ClusterOperatorConfig config,
+                                 KubernetesEventsPublisher eventsPublisher) {
         super(vertx, pfa, Kafka.RESOURCE_KIND, certManager, passwordGenerator,
                 supplier.kafkaOperator, supplier, config);
         this.operationTimeoutMs = config.getOperationTimeoutMs();
@@ -203,6 +209,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         this.zkScalerProvider = supplier.zkScalerProvider;
         this.adminClientProvider = supplier.adminClientProvider;
         this.zookeeperLeaderFinder = supplier.zookeeperLeaderFinder;
+        this.eventsPublisher = eventsPublisher;
     }
 
     @Override
@@ -302,7 +309,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.reconcileCas(this::dateSupplier))
                 .compose(state -> state.clusterOperatorSecret(this::dateSupplier))
                 .compose(state -> state.getKafkaClusterDescription())
-                .compose(state -> state.prepareVersionChange())
+                .compose(state ->   state.prepareVersionChange())
                 // Roll everything if a new CA is added to the trust store.
                 .compose(state -> state.rollingUpdateForNewCaKey())
                 // Remove older Cluster CA certificates if renewal happened with a new CA private key
@@ -682,10 +689,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> rollingUpdateForNewCaKey() {
             List<String> reason = new ArrayList<>(2);
+            RestartReasons kafkaRollReasons = RestartReasons.empty();
+
             if (this.clusterCa.keyReplaced()) {
+                kafkaRollReasons.add(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED);
                 reason.add("trust new cluster CA certificate signed by new key");
             }
             if (this.clientsCa.keyReplaced()) {
+                kafkaRollReasons.add(RestartReason.CLIENT_CA_CERT_KEY_REPLACED);
                 reason.add("trust new clients CA certificate signed by new key");
             }
             if (!reason.isEmpty()) {
@@ -694,6 +705,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     LOGGER.debugCr(reconciliation, "Rolling Pod {} to {}", pod.getMetadata().getName(), reason);
                     return reason;
                 };
+
+                Function<Pod, RestartReasons> rollKafkaPodWithReasons = pod -> {
+                    LOGGER.debugCr(reconciliation, "Rolling Pod {} to {}", pod.getMetadata().getName(), kafkaRollReasons.getAllReasonNotes());
+                    return  kafkaRollReasons;
+                };
+
 
                 if (this.clusterCa.keyReplaced()) {
                     // ZooKeeper is rolled only for new Cluster CA key
@@ -745,8 +762,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                         brokerId -> null,
                                         null,
                                         kafkaCluster.getKafkaVersion(),
-                                        true
-                                ).rollingRestart(rollPodAndLogReason))
+                                        true,
+                                        eventsPublisher
+                                ).rollingRestart(rollKafkaPodWithReasons))
                         .compose(i -> {
                             if (this.clusterCa.keyReplaced()) {
                                 // EO, KE and CC need to be rolled only for new Cluster CA key.
@@ -802,9 +820,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             return maybeRollKafka(kafkaCluster.getReplicas(), pod -> {
                                 if (pod != null && podsToRoll.contains(pod.getMetadata().getName())) {
                                     LOGGER.debugCr(reconciliation, "Rolling Kafka pod {} due to manual rolling update annotation on a pod", pod.getMetadata().getName());
-                                    return singletonList("manual rolling update annotation on a pod");
+                                    return RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE);
                                 } else {
-                                    return new ArrayList<>();
+                                    return RestartReasons.empty();
                                 }
                             });
                         } else {
@@ -839,7 +857,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                             }
                             LOGGER.debugCr(reconciliation, "Rolling Kafka pod {} due to manual rolling update annotation",
                                     pod.getMetadata().getName());
-                            return singletonList("manual rolling update");
+                            return RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE);
                         });
                     } else {
                         // The controller is not annotated to roll all pods.
@@ -1000,7 +1018,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          *
          * @return succeeded future if kafka pod was rolled and is ready
          */
-        Future<Void> maybeRollKafka(int replicas, Function<Pod, List<String>> podNeedsRestart) {
+        Future<Void> maybeRollKafka(int replicas, Function<Pod, RestartReasons> podNeedsRestart) {
             return maybeRollKafka(replicas, podNeedsRestart, true);
         }
 
@@ -1013,7 +1031,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          *
          * @return succeeded future if kafka pod was rolled and is ready
          */
-        Future<Void> maybeRollKafka(int replicas, Function<Pod, List<String>> podNeedsRestart, boolean allowReconfiguration) {
+        Future<Void> maybeRollKafka(int replicas, Function<Pod, RestartReasons> podNeedsRestart, boolean allowReconfiguration) {
             return ReconcilerUtils.clientSecrets(reconciliation, secretOperations)
                     .compose(compositeFuture ->
                             new KafkaRoller(
@@ -1036,7 +1054,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                     },
                                     kafkaLogging,
                                     kafkaCluster.getKafkaVersion(),
-                                    allowReconfiguration
+                                    allowReconfiguration,
+                                    eventsPublisher
                             ).rollingRestart(podNeedsRestart));
         }
 
@@ -2445,7 +2464,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          *
          * @return
          */
-        Future<ReconciliationState> maybeRollKafkaInSequence(StatefulSet sts, Function<Pod, List<String>> podNeedsRestart, int nextPod, int lastPod) {
+        Future<ReconciliationState> maybeRollKafkaInSequence(StatefulSet sts, Function<Pod, RestartReasons> podNeedsRestart, int nextPod, int lastPod) {
             if (nextPod <= lastPod)  {
                 final int podToRoll = nextPod;
 
@@ -2453,7 +2472,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     if (pod != null && pod.getMetadata().getName().endsWith("-" + podToRoll))    {
                         return podNeedsRestart.apply(pod);
                     } else {
-                        return new ArrayList<>();
+                        return RestartReasons.empty();
                     }
                 }, false)
                         .compose(ignore -> maybeRollKafkaInSequence(sts, podNeedsRestart, nextPod + 1, lastPod));
@@ -2535,7 +2554,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          *
          * @return  Empty list when no restart is needed. List containing the restart reason if the restart is needed.
          */
-        private List<String> needsRestartBecauseAddedOrRemovedJbodVolumes(Pod pod, JbodStorage desiredStorage, int currentReplicas, int desiredReplicas)  {
+        private RestartReasons needsRestartBecauseAddedOrRemovedJbodVolumes(Pod pod, JbodStorage desiredStorage, int currentReplicas, int desiredReplicas)  {
             if (pod != null
                     && pod.getMetadata() != null) {
                 String jsonStorage = Annotations.stringAnnotation(pod, ANNO_STRIMZI_IO_STORAGE, null);
@@ -2544,12 +2563,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     Storage currentStorage = ModelUtils.decodeStorageFromJson(jsonStorage);
 
                     if (new StorageDiff(reconciliation, currentStorage, desiredStorage, currentReplicas, desiredReplicas).isVolumesAddedOrRemoved())    {
-                        return singletonList("JBOD volumes were added or removed");
+                        return RestartReasons.of(RestartReason.JBOD_VOLUMES_CHANGED);
                     }
                 }
             }
 
-            return new ArrayList<>();
+            return RestartReasons.empty();
         }
 
         /**

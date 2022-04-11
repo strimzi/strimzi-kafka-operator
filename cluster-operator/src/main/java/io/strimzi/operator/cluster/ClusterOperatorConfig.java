@@ -108,6 +108,7 @@ public class ClusterOperatorConfig {
     private final int dnsCacheTtlSec;
     private final boolean podSetReconciliationOnly;
     private final int podSetControllerWorkQueueSize;
+    private String operatorId;
 
     /**
      * Constructor
@@ -540,5 +541,9 @@ public class ClusterOperatorConfig {
                 ",podSetReconciliationOnly=" + podSetReconciliationOnly +
                 ",podSetControllerWorkQueueSize=" + podSetControllerWorkQueueSize +
                 ")";
+    }
+
+    public String getOperatorId() {
+        return operatorId;
     }
 }

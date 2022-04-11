@@ -33,9 +33,12 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.RestartReason;
+import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScalerProvider;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -47,6 +50,7 @@ import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,7 +58,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
@@ -76,7 +79,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
     private Kafka kafka;
     private KafkaAssemblyOperator operator;
     private KubernetesClient client;
-    private final List<Function<Pod, List<String>>> functionArgumentCaptor = new ArrayList<>();
+    private final List<Function<Pod, RestartReasons>> functionArgumentCaptor = new ArrayList<>();
 
     /**
      * Mock the KafkaAssemblyOperator and override reconcile to only run through the steps we want to test
@@ -84,14 +87,14 @@ public class KafkaAssemblyOperatorCustomCertTest {
     class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
 
         public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, mock(KubernetesEventsPublisher.class));
         }
 
         @Override
         ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
             return new ReconciliationState(reconciliation, kafkaAssembly) {
                 @Override
-                Future<Void> maybeRollKafka(int replicas, Function<Pod, List<String>> podNeedsRestart) {
+                Future<Void> maybeRollKafka(int replicas, Function<Pod, RestartReasons> podNeedsRestart) {
                     functionArgumentCaptor.add(podNeedsRestart);
                     return Future.succeededFuture();
                 }
@@ -241,7 +244,7 @@ public class KafkaAssemblyOperatorCustomCertTest {
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getTlsThumbprint()));
 
                 assertThat(functionArgumentCaptor, hasSize(1));
-                assertThat(functionArgumentCaptor.get(0).apply(getPod(reconcileSts)), empty());
+                assertThat(functionArgumentCaptor.get(0).apply(getPod(reconcileSts)), Matchers.is(RestartReasons.empty()));
                 async.flag();
             })));
     }
@@ -256,17 +259,17 @@ public class KafkaAssemblyOperatorCustomCertTest {
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getTlsThumbprint()));
 
                 assertThat(functionArgumentCaptor, hasSize(1));
-                Function<Pod, List<String>> isPodToRestart = functionArgumentCaptor.get(0);
+                Function<Pod, RestartReasons> isPodToRestart = functionArgumentCaptor.get(0);
 
                 Pod pod = getPod(reconcileSts);
                 assertThat("There are no changes in broker config, the restart should not be needed",
-                        isPodToRestart.apply(pod), empty());
+                        isPodToRestart.apply(pod),  Matchers.is(RestartReasons.empty()));
 
                 pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS,
                         Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
                 assertThat("Tls listener thumbprint annotation changed, pod should need restart",
-                        isPodToRestart.apply(pod).get(0),
-                        equalTo("custom certificate one or more listeners changed"));
+                        isPodToRestart.apply(pod),
+                        equalTo(RestartReasons.of(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE)));
 
                 async.flag();
             })));
@@ -282,18 +285,18 @@ public class KafkaAssemblyOperatorCustomCertTest {
                         hasEntry(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, getTlsThumbprint()));
 
                 assertThat(functionArgumentCaptor, hasSize(1));
-                Function<Pod, List<String>> isPodToRestart = functionArgumentCaptor.get(0);
+                Function<Pod, RestartReasons> isPodToRestart = functionArgumentCaptor.get(0);
 
                 Pod pod = getPod(reconcileSts);
 
                 assertThat("There are no changes in broker config, the restart should not be needed",
-                        isPodToRestart.apply(pod), empty());
+                        isPodToRestart.apply(pod),  Matchers.is(RestartReasons.empty()));
 
                 pod.getMetadata().getAnnotations().put(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS,
                         Base64.getEncoder().encodeToString("Not the right one!".getBytes()));
 
-                assertThat(isPodToRestart.apply(pod).get(0),
-                        equalTo("custom certificate one or more listeners changed"));
+                assertThat(isPodToRestart.apply(pod),
+                        equalTo(RestartReasons.of(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE)));
 
                 async.flag();
             })));
@@ -331,10 +334,10 @@ public class KafkaAssemblyOperatorCustomCertTest {
                 assertThat(reconcileSts.getSpec().getTemplate().getMetadata().getAnnotations(),
                         not(hasKey(KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS)));
 
-                List<Function<Pod, List<String>>> capturedFunctions = functionArgumentCaptor;
+                List<Function<Pod, RestartReasons>> capturedFunctions = functionArgumentCaptor;
                 assertThat(capturedFunctions, hasSize(1));
-                Function<Pod, List<String>> isPodToRestart = capturedFunctions.get(0);
-                assertThat(isPodToRestart.apply(getPod(reconcileSts)), empty());
+                Function<Pod, RestartReasons> isPodToRestart = capturedFunctions.get(0);
+                assertThat(isPodToRestart.apply(getPod(reconcileSts)),  Matchers.is(RestartReasons.empty()));
 
                 async.flag();
             })));

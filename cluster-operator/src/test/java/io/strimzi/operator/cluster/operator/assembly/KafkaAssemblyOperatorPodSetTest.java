@@ -27,9 +27,12 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.model.RestartReason;
+import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -49,6 +52,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.Date;
@@ -59,6 +63,7 @@ import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -206,14 +211,14 @@ public class KafkaAssemblyOperatorPodSetTest {
         kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     assertThat(zr.maybeRollZooKeeperInvocations, is(1));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-0")), is(List.of()));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-1")), is(List.of()));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-2")), is(List.of()));
+                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-0")), empty());
+                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-1")), empty());
+                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-2")), empty());
 
                     assertThat(kao.maybeRollKafkaInvocations, is(1));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-0")), is(List.of()));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-1")), is(List.of()));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-2")), is(List.of()));
+                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-0")), is(RestartReasons.empty()));
+                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-1")), is(RestartReasons.empty()));
+                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-2")), is(RestartReasons.empty()));
 
                     assertThat(cmReconciliationCaptor.getAllValues().size(), is(3));
                     assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2")));
@@ -299,14 +304,14 @@ public class KafkaAssemblyOperatorPodSetTest {
                     verify(mockStsOps, times(1)).deleteAsync(any(), any(), eq(zkCluster.getName()), eq(false));
 
                     assertThat(zr.maybeRollZooKeeperInvocations, is(1));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-0")), is(List.of()));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-1")), is(List.of()));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-2")), is(List.of()));
+                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-0")), empty());
+                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-1")), empty());
+                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-2")), empty());
 
                     assertThat(kao.maybeRollKafkaInvocations, is(1));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-0")), is(List.of()));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-1")), is(List.of()));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-2")), is(List.of()));
+                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-0")), is(RestartReasons.empty()));
+                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-1")), is(RestartReasons.empty()));
+                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-2")), is(RestartReasons.empty()));
 
                     assertThat(cmReconciliationCaptor.getAllValues().size(), is(3));
                     assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2")));
@@ -392,14 +397,14 @@ public class KafkaAssemblyOperatorPodSetTest {
                     verify(mockPodSetOps, times(1)).deleteAsync(any(), any(), eq(zkCluster.getName()), eq(false));
 
                     assertThat(zr.maybeRollZooKeeperInvocations, is(1));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-0")), is(List.of()));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-1")), is(List.of()));
-                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-2")), is(List.of()));
+                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-0")), empty());
+                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-1")), empty());
+                    assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(zkPodSet, "my-cluster-zookeeper-2")), empty());
 
                     assertThat(kao.maybeRollKafkaInvocations, is(1));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-0")), is(List.of()));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-1")), is(List.of()));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-2")), is(List.of()));
+                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-0")), is(RestartReasons.empty()));
+                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-1")), is(RestartReasons.empty()));
+                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-2")), is(RestartReasons.empty()));
 
                     assertThat(cmReconciliationCaptor.getAllValues().size(), is(1));
                     assertThat(cmReconciliationCaptor.getAllValues().get(0), is("my-cluster-kafka-config"));
@@ -497,9 +502,9 @@ public class KafkaAssemblyOperatorPodSetTest {
                     assertThat(zr.zooPodNeedsRestart.apply(podFromPodSet(oldZkPodSet, "my-cluster-zookeeper-2")), is(List.of("Pod has old revision")));
 
                     assertThat(kao.maybeRollKafkaInvocations, is(1));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSet, "my-cluster-kafka-0")), is(List.of("Pod has old revision")));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSet, "my-cluster-kafka-1")), is(List.of("Pod has old revision")));
-                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSet, "my-cluster-kafka-2")), is(List.of("Pod has old revision")));
+                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSet, "my-cluster-kafka-0")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
+                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSet, "my-cluster-kafka-1")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
+                    assertThat(kao.kafkaPodNeedsRestart.apply(podFromPodSet(oldKafkaPodSet, "my-cluster-kafka-2")), is(RestartReasons.of(RestartReason.POD_HAS_OLD_REVISION)));
 
                     async.flag();
                 })));
@@ -749,10 +754,10 @@ public class KafkaAssemblyOperatorPodSetTest {
         ZooKeeperReconciler mockZooKeeperReconciler;
 
         int maybeRollKafkaInvocations = 0;
-        Function<Pod, List<String>> kafkaPodNeedsRestart = null;
+        Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
 
         public MockKafkaAssemblyOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, PasswordGenerator passwordGenerator, ResourceOperatorSupplier supplier, ClusterOperatorConfig config, ZooKeeperReconciler mockZooKeeperReconciler) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, Mockito.mock(KubernetesEventsPublisher.class));
             this.mockZooKeeperReconciler = mockZooKeeperReconciler;
         }
 
@@ -788,7 +793,7 @@ public class KafkaAssemblyOperatorPodSetTest {
             }
 
             @Override
-            Future<Void> maybeRollKafka(int replicas, Function<Pod, List<String>> podNeedsRestart) {
+            Future<Void> maybeRollKafka(int replicas, Function<Pod, RestartReasons> podNeedsRestart) {
                 maybeRollKafkaInvocations++;
                 kafkaPodNeedsRestart = podNeedsRestart;
                 return Future.succeededFuture();

@@ -28,6 +28,7 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -43,6 +44,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
@@ -142,7 +144,8 @@ public class PartialRollingUpdateTest {
 
         ResourceOperatorSupplier supplier = supplier(bootstrapClient);
         KafkaAssemblyOperator kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier,
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000), Mockito.mock(KubernetesEventsPublisher.class));
 
         LOGGER.info("bootstrap reconciliation");
         CountDownLatch createAsync = new CountDownLatch(1);
@@ -198,7 +201,8 @@ public class PartialRollingUpdateTest {
         ResourceOperatorSupplier supplier = supplier(mockClient);
 
         this.kco = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.V1_16),
-                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000));
+                new MockCertManager(), new PasswordGenerator(10, "a", "a"), supplier,
+                ResourceUtils.dummyClusterOperatorConfig(VERSIONS, 2_000), Mockito.mock(KubernetesEventsPublisher.class));
         LOGGER.info("Started test KafkaAssemblyOperator");
     }
 

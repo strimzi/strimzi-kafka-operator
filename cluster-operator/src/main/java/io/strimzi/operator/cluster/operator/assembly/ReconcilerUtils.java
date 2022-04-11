@@ -15,6 +15,8 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.model.RestartReason;
+import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.Annotations;
@@ -97,59 +99,59 @@ public class ReconcilerUtils {
      *
      * @return null or empty if the restart is not needed, reason String otherwise
      */
-    public static List<String> reasonsToRestartPod(Reconciliation reconciliation, HasMetadata ctrlResource, Pod pod, Set<String> fsResizingRestartRequest, boolean nodeCertsChange, Ca... cas) {
+    public static RestartReasons reasonsToRestartPod(Reconciliation reconciliation, HasMetadata ctrlResource, Pod pod, Set<String> fsResizingRestartRequest, boolean nodeCertsChange, Ca... cas) {
         if (pod == null)    {
             // When the Pod doesn't exist, it doesn't need to be restarted.
             // It will be created with new configuration.
-            return new ArrayList<>();
+            return RestartReasons.empty();
         }
 
-        List<String> reasons = new ArrayList<>(3);
+        RestartReasons restartReasons = RestartReasons.empty();
 
         if (ctrlResource instanceof StatefulSet) {
             StatefulSet sts = (StatefulSet) ctrlResource;
 
             if (!isStatefulSetGenerationUpToDate(reconciliation, sts, pod)) {
-                reasons.add("Pod has old generation");
+                restartReasons.add(RestartReason.POD_HAS_OLD_GENERATION);
             }
 
             if (!isCustomCertUpToDate(reconciliation, sts, pod)) {
-                reasons.add("custom certificate one or more listeners changed");
+                restartReasons.add(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE);
             }
         } else if (ctrlResource instanceof StrimziPodSet) {
             StrimziPodSet podSet = (StrimziPodSet) ctrlResource;
 
             if (PodRevision.hasChanged(pod, podSet)) {
-                reasons.add("Pod has old revision");
+                restartReasons.add(RestartReason.POD_HAS_OLD_REVISION);
             }
         }
 
         for (Ca ca: cas) {
             if (ca.certRenewed()) {
-                reasons.add(ca + " certificate renewal");
+                restartReasons.add(RestartReason.CA_CERT_RENEWED, ca + " certificate renewal");
             }
             if (ca.certsRemoved()) {
-                reasons.add(ca + " certificate removal");
+                restartReasons.add(RestartReason.CA_CERT_REMOVED, ca + " certificate removal");
             }
             if (!isPodCaCertUpToDate(pod, ca)) {
-                reasons.add("Pod has old " + ca + " certificate generation");
+                restartReasons.add(RestartReason.CA_CERT_HAS_OLD_GENERATION, "Pod has old " + ca + " certificate generation");
             }
         }
 
         if (fsResizingRestartRequest.contains(pod.getMetadata().getName()))   {
-            reasons.add("file system needs to be resized");
+            restartReasons.add(RestartReason.FILE_SYSTEM_RESIZE_NEEDED);
         }
 
         if (nodeCertsChange) {
-            reasons.add("server certificates changed");
+            restartReasons.add(RestartReason.SERVER_CERT_CHANGE);
         }
 
-        if (!reasons.isEmpty()) {
+        if (!restartReasons.isEmpty()) {
             LOGGER.debugCr(reconciliation, "Rolling pod {} due to {}",
-                    pod.getMetadata().getName(), reasons);
+                    pod.getMetadata().getName(), restartReasons.getAllReasonNotes());
         }
 
-        return reasons;
+        return restartReasons;
     }
 
     /**

@@ -23,6 +23,7 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
+import io.strimzi.operator.cluster.operator.resource.events.KubernetesEventsPublisher;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mockito;
 
 import static java.util.Collections.emptyList;
 import static org.hamcrest.CoreMatchers.is;
@@ -256,7 +258,7 @@ public class KafkaAssemblyOperatorLoadBalancerKafkaListenerTest {
                 ResourceOperatorSupplier supplier,
                 ClusterOperatorConfig config
         ) {
-            super(vertx, pfa, certManager, passwordGenerator, supplier, config);
+            super(vertx, pfa, certManager, passwordGenerator, supplier, config, Mockito.mock(KubernetesEventsPublisher.class));
         }
 
         @Override
