@@ -1,13 +1,9 @@
 Configures a TLS sidecar, which is a container that runs in a pod, but serves a supporting purpose.
 In Strimzi, the TLS sidecar uses TLS to encrypt and decrypt communication between components and ZooKeeper.
 
-The TLS sidecar is used in:
+The TLS sidecar is used in the Entity Operator.
 
-* Entity Operator
-
-The TLS sidecar is configured using the `tlsSidecar` property in:
-
-* `Kafka.spec.entityOperator`
+The TLS sidecar is configured using the `tlsSidecar` property in `Kafka.spec.entityOperator`.
 
 The TLS sidecar supports the following additional options:
 
