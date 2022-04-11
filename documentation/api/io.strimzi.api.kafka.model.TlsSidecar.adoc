@@ -4,12 +4,10 @@ In Strimzi, the TLS sidecar uses TLS to encrypt and decrypt communication betwee
 The TLS sidecar is used in:
 
 * Entity Operator
-* Cruise Control
 
 The TLS sidecar is configured using the `tlsSidecar` property in:
 
 * `Kafka.spec.entityOperator`
-* `Kafka.spec.cruiseControl`
 
 The TLS sidecar supports the following additional options:
 
@@ -58,24 +56,5 @@ spec:
         limits:
           cpu: 500m
           memory: 128Mi
-    # ...
-  cruiseControl:
-    # ...
-    tlsSidecar:
-      image: my-org/my-image:latest
-      resources:
-        requests:
-          cpu: 200m
-          memory: 64Mi
-        limits:
-          cpu: 500m
-          memory: 128Mi
-      logLevel: debug
-      readinessProbe:
-        initialDelaySeconds: 15
-        timeoutSeconds: 5
-      livenessProbe:
-        initialDelaySeconds: 15
-        timeoutSeconds: 5
     # ...
 ----
