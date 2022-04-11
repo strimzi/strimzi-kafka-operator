@@ -131,8 +131,10 @@ public class KafkaBrokerConfigurationBuilder {
                                                              String replicationFactor, String minInSyncReplicas)   {
         if (cruiseControl != null) {
             printSectionHeader("Cruise Control configuration");
-            Map<String, Object> config = Optional.ofNullable(cruiseControl.getConfig()).orElseGet(HashMap::new);
-            String metricsTopicName = config.getOrDefault(CruiseControlConfigurationParameters.CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME.getValue(), CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME).toString();
+            String metricsTopicName = Optional.ofNullable(cruiseControl.getConfig())
+                    .map(config -> config.get(CruiseControlConfigurationParameters.CRUISE_CONTROL_METRIC_REPORTER_TOPIC_NAME.getValue()))
+                    .map(Object::toString)
+                    .orElse(CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME);
             writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=" + metricsTopicName);
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS");
             // using the brokers service because the Admin client, in the Cruise Control metrics reporter, is not able to connect
